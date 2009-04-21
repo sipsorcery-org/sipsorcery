@@ -1,0 +1,11 @@
+<sipproviders>
+ <sipprovider>
+  <owner>user</owner>
+  <providername>blueface</providername>
+  <providerusername>user</providerusername>
+  <providerpassword>password</providerpassword>
+  <providerserver>sip.blueface.ie</providerserver>
+  <registerenabled>true</registerenabled>
+  <registercontact>sip:user@10.0.0.100</registercontact>
+ </sipprovider>
+</sipproviders>

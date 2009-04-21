@@ -1,0 +1,8 @@
+<dialplans>
+ <dialplan username='user'>
+  <![CDATA[#Ruby
+sys.Log("call to #{req.URI.ToString()} from #{req.Header.From.ToString()}")
+sys.Dial("blueface")
+  ]]>
+ </dialplan>
+</dialplans>

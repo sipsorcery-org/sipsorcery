@@ -1,0 +1,7 @@
+<sipaccounts>
+ <sipaccount>
+  <sipusername>user</sipusername>
+  <sippassword>password</sippassword>
+  <domain>10.0.0.100</domain>
+ </sipaccount>
+</sipaccounts>
