@@ -1,0 +1,199 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{55898587-8456-40D4-BB88-C9FC8BD6BA9C}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>SIPSorcery.Net</AssemblyName>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>Library</OutputType>
+    <RootNamespace>SIPSorcery.Net</RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>..\Build\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>false</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>true</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>none</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\stable\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework, Version=2.2.2.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\stable\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System">
+      <Name>System</Name>
+    </Reference>
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data">
+      <Name>System.Data</Name>
+    </Reference>
+    <Reference Include="System.Data.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Serialization, Version=3.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL" />
+    <Reference Include="System.ServiceModel">
+      <RequiredTargetFramework>3.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.ServiceModel.Web">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="ZedGraph, Version=5.0.1.41097, Culture=neutral, PublicKeyToken=02a83cbd123fcd60, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\stable\ZedGraph.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DNS\DNSManager.cs" />
+    <Compile Include="DNS\DNSRequest.cs" />
+    <Compile Include="DNS\DNSResponse.cs" />
+    <Compile Include="DNS\Header.cs" />
+    <Compile Include="DNS\Question.cs" />
+    <Compile Include="DNS\Records\Record.cs" />
+    <Compile Include="DNS\Records\RecordA.cs" />
+    <Compile Include="DNS\Records\RecordAAAA.cs" />
+    <Compile Include="DNS\Records\RecordCNAME.cs" />
+    <Compile Include="DNS\Records\RecordHINFO.cs" />
+    <Compile Include="DNS\Records\RecordMB.cs" />
+    <Compile Include="DNS\Records\RecordMD.cs" />
+    <Compile Include="DNS\Records\RecordMF.cs" />
+    <Compile Include="DNS\Records\RecordMG.cs" />
+    <Compile Include="DNS\Records\RecordMINFO.cs" />
+    <Compile Include="DNS\Records\RecordMR.cs" />
+    <Compile Include="DNS\Records\RecordMX.cs" />
+    <Compile Include="DNS\Records\RecordNAPTR.cs" />
+    <Compile Include="DNS\Records\RecordNS.cs" />
+    <Compile Include="DNS\Records\RecordNULL.cs" />
+    <Compile Include="DNS\Records\RecordPTR.cs" />
+    <Compile Include="DNS\Records\RecordReader.cs" />
+    <Compile Include="DNS\Records\RecordSOA.cs" />
+    <Compile Include="DNS\Records\RecordSRV.cs" />
+    <Compile Include="DNS\Records\RecordTXT.cs" />
+    <Compile Include="DNS\Records\RecordUnknown.cs" />
+    <Compile Include="DNS\Records\RecordWKS.cs" />
+    <Compile Include="DNS\Resolver.cs" />
+    <Compile Include="DNS\RR.cs" />
+    <Compile Include="DNS\Structs.cs" />
+    <Compile Include="ICMP\ICMP.cs" />
+    <Compile Include="ICMP\ICMPListener.cs" />
+    <Compile Include="RTCP\RTCP.cs" />
+    <Compile Include="RTCP\RTCPHeader.cs" />
+    <Compile Include="RTCP\RTCPPacket.cs" />
+    <Compile Include="RTCP\RTCPReportHeader.cs" />
+    <Compile Include="RTCP\RTCPReportPacket.cs" />
+    <Compile Include="RTP\RTPHeader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RTP\RTPPacket.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RTP\RTPPayloadTypes.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RTP\RTPSink.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RTSP\AssemblyStreamState.cs" />
+    <Compile Include="RTSP\RTSPClient.cs" />
+    <Compile Include="RTSP\RTSPContants.cs" />
+    <Compile Include="RTSP\RTSPHeader.cs" />
+    <Compile Include="RTSP\RTSPMessage.cs" />
+    <Compile Include="RTSP\RTSPRequest.cs" />
+    <Compile Include="RTSP\RTSPResponse.cs" />
+    <Compile Include="RTSP\RTSPURL.cs" />
+    <Compile Include="SDP\NetTestDescription.cs" />
+    <Compile Include="SDP\NetTestDescriptor.cs" />
+    <Compile Include="SDP\SDP.cs" />
+    <Compile Include="SDP\SessionDescriptionTypes.cs" />
+    <Compile Include="STUN\Program.cs" />
+    <Compile Include="STUN\STUNAppState.cs" />
+    <Compile Include="STUN\STUNAttribute.cs" />
+    <Compile Include="STUN\STUNClient.cs" />
+    <Compile Include="STUN\STUNHeader.cs" />
+    <Compile Include="STUN\STUNListener.cs" />
+    <Compile Include="STUN\STUNMessage.cs" />
+    <Compile Include="STUN\STUNServer.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
+      <Project>{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}</Project>
+      <Name>SIPSorcery.Sys</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,9 @@
+﻿<NUnitProject>
+  <Settings activeconfig="Debug" />
+  <Config name="Debug" binpathtype="Auto">
+    <assembly path="Build\SIPSorcery.SIP.Core.dll" />
+    <assembly path="Build\SIPSorcery.SIP.App.dll" />
+    <assembly path="Build\SIPSorcery.Sys.dll" />
+  </Config>
+  <Config name="Release" binpathtype="Auto" />
+</NUnitProject>

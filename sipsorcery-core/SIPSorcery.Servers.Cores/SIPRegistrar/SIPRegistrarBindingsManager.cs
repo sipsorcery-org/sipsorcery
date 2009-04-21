@@ -1,0 +1,295 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Data.Linq;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using SIPSorcery.SIP;
+using SIPSorcery.SIP.App;
+using SIPSorcery.Sys;
+using log4net;
+
+namespace SIPSorcery.Servers {
+
+    public class SIPRegistrarBindingsManager {
+
+        private const int CHECK_REGEXPIRY_DURATION = 1000;          // Period at which to check for expired bindings.
+        public const int NATKEEPALIVE_DEFAULTSEND_INTERVAL = 15;
+        private const int MAX_USERAGENT_LENGTH = 128;
+        public const int MINIMUM_EXPIRY_SECONDS = 60;
+        private const int DEFAULT_BINDINGS_PER_USER = 1;            // The default maixmim number of bindings that will be allowed for each unique SIP account.
+        private const int DEFAULT_EXPIRY_SECONDS = 180;
+        private const int REMOVE_EXPIRED_BINDINGS_INTERVAL = 3000;    // The interval in seconds at which to check for and remove expired bindings.
+
+        private string m_sipRegisterRemoveAll = SIPConstants.SIP_REGISTER_REMOVEALL;
+        private string m_sipExpiresParameterKey = SIPContactHeader.EXPIRES_PARAMETER_KEY;
+
+        private static ILog logger = AppState.GetLogger("sipregistrar");
+
+        private SIPMonitorLogDelegate SIPMonitorEventLog_External;
+        private SendNATKeepAliveDelegate SendNATKeepAlive_External;
+
+        private SIPAssetPersistor<SIPRegistrarBinding> m_bindingsPersistor;
+        private Dictionary<string, SIPUserAgentConfiguration> m_userAgentConfigs;
+        private int m_maxBindingsPerAccount;
+        private bool m_stop;
+           
+        public SIPRegistrarBindingsManager(
+            SIPMonitorLogDelegate sipMonitorEventLog,
+            SIPAssetPersistor<SIPRegistrarBinding> bindingsPersistor,
+            SendNATKeepAliveDelegate sendNATKeepAlive,
+            int maxBindingsPerAccount,
+            Dictionary<string, SIPUserAgentConfiguration> userAgentConfigs)
+        {
+            SIPMonitorEventLog_External = sipMonitorEventLog;
+            m_bindingsPersistor = bindingsPersistor;
+            SendNATKeepAlive_External = sendNATKeepAlive;
+            m_maxBindingsPerAccount = (maxBindingsPerAccount != 0) ? maxBindingsPerAccount : DEFAULT_BINDINGS_PER_USER;
+            m_userAgentConfigs = userAgentConfigs;
+        }
+
+        public void Start() {
+            ThreadPool.QueueUserWorkItem(ExpireBindings);
+        }
+
+        private void ExpireBindings(object state) {
+            try {
+                while (!m_stop) {
+                    m_bindingsPersistor.Count(b => b.ExpiryTime < DateTime.Now);
+                    Thread.Sleep(REMOVE_EXPIRED_BINDINGS_INTERVAL);
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception ExpireBindings. " + excp.Message);
+            }
+        }
+
+        /// <summary>
+        /// Updates the bindings list for a registrar's address-of-records.
+        /// </summary>
+        /// <param name="proxyEndPoint">If the request arrived at this registrar via a proxy then this will contain the end point of the proxy.</param>
+        /// <param name="uacRecvdEndPoint">The public end point the UAC REGISTER request was deemded to have originated from.</param>
+        /// <param name="registrarEndPoint">The registrar end point the registration request was received on.</param>
+        /// <param name="maxAllowedExpiry">The maximum allowed expiry that can be granted to this binding request.</param>
+        /// <returns>If the binding update was successful the expiry time for it is returned otherwise 0.</returns>
+        public int UpdateBinding(
+            SIPAccount sipAccount,
+            SIPEndPoint proxySIPEndPoint,
+            SIPEndPoint remoteSIPEndPoint,
+            SIPEndPoint registrarSIPEndPoint,
+            SIPURI bindingURI,
+            string callId,
+            int cseq,
+            int expiresHeaderValue,
+            string userAgent,
+            out SIPResponseStatusCodesEnum responseStatus,
+            out string responseMessage) {
+            
+            int bindingExpiry = 0;
+            int maxAllowedExpiry = GetUserAgentExpiry(userAgent);
+            responseMessage = null;
+            string sipAccountAOR = sipAccount.SIPUsername + "@" + sipAccount.SIPDomain;
+
+            try {
+                userAgent = (userAgent != null && userAgent.Length > MAX_USERAGENT_LENGTH) ? userAgent.Substring(0, MAX_USERAGENT_LENGTH) : userAgent;
+
+                if (bindingURI.Host == m_sipRegisterRemoveAll) {
+                   
+                    #region Process remove all bindings.
+
+                    if (expiresHeaderValue == 0) {
+                        // Removing all bindings for user.
+                        FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingRemoval, "Remove all bindings requested for " + sipAccountAOR + ".", sipAccount.SIPUsername));
+
+                        List<SIPRegistrarBinding> bindings = m_bindingsPersistor.Get(b => b.SIPAccountId == sipAccount.Id, 0, Int32.MaxValue);
+                        // Mark all the current bindings as expired.
+                        for (int index = 0; index < bindings.Count; index++) {
+                            bindings[index].RemovalReason = SIPBindingRemovalReason.ClientExpiredAll;
+                            bindings[index].Expiry = 0;
+                            m_bindingsPersistor.Update(bindings[index]);
+                        }
+
+                        responseStatus = SIPResponseStatusCodesEnum.Ok;
+                    }
+                    else {
+                        // Remove all header cannot be present with other headers and must have an Expiry equal to 0.
+                        responseStatus = SIPResponseStatusCodesEnum.BadRequest;
+                    }
+
+                    #endregion
+                }
+                else {
+                    int requestedExpiry = (bindingURI.Parameters.Has(m_sipExpiresParameterKey)) ? Convert.ToInt32(bindingURI.Parameters.Has(m_sipExpiresParameterKey)) : expiresHeaderValue;
+                        requestedExpiry = (requestedExpiry == -1) ? maxAllowedExpiry : requestedExpiry;   // This will happen if the Expires header and the Expiry on the Contact are both missing.
+                        bindingExpiry = (requestedExpiry > maxAllowedExpiry) ? maxAllowedExpiry : requestedExpiry;
+                        bindingExpiry = (bindingExpiry < MINIMUM_EXPIRY_SECONDS) ? MINIMUM_EXPIRY_SECONDS : bindingExpiry;
+
+                        bindingURI.Parameters.Remove(m_sipExpiresParameterKey);
+                        SIPRegistrarBinding binding = m_bindingsPersistor.Get(b => b.SIPAccountId == sipAccount.Id && b.ContactSIPURI == bindingURI);
+
+                    if (binding != null) {
+                        if (requestedExpiry <= 0) {
+                            FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingExpired, "Binding expired by client for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ".", sipAccount.SIPUsername));
+                            m_bindingsPersistor.Delete(binding);
+                        }
+                        else{
+                            FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Registrar, "Binding update request for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ", expiry requested " + requestedExpiry + "s granted " + bindingExpiry + "s.", sipAccount.SIPUsername));
+                            binding.RefreshBinding(bindingExpiry, remoteSIPEndPoint, proxySIPEndPoint, registrarSIPEndPoint);
+                            m_bindingsPersistor.Update(binding);
+                        }
+                    }
+                    else {
+                            if (requestedExpiry > 0) {
+                                FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingInProgress, "New binding request for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ", expiry requested " + requestedExpiry + "s granted " + bindingExpiry + "s.", sipAccount.SIPUsername));
+
+                                if (m_bindingsPersistor.Count(b => b.SIPAccountId == sipAccount.Id) >= m_maxBindingsPerAccount) {
+                                    // Need to remove the oldest binding to stay within limit.
+                                    SIPRegistrarBinding oldestBinding = m_bindingsPersistor.Get(b => b.SIPAccountId == sipAccount.Id, 0, Int32.MaxValue).OrderBy(x => x.LastUpdate).Last();
+                                    FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingInProgress, "Binding limit exceeded for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + " removing oldest binding to stay within limit of " + m_maxBindingsPerAccount + ".", sipAccount.SIPUsername));
+                                    m_bindingsPersistor.Delete(oldestBinding);
+                                }
+
+                                SIPRegistrarBinding newBinding = new SIPRegistrarBinding(sipAccount, bindingURI, callId, cseq, userAgent, remoteSIPEndPoint, proxySIPEndPoint, registrarSIPEndPoint, bindingExpiry);
+                                m_bindingsPersistor.Add(newBinding);
+                            }
+                            else {
+                                FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingFailed, "New binding received for " + sipAccountAOR + " with expired contact," + bindingURI.ToString() + " no update.", sipAccount.SIPUsername));
+                            }
+                        }
+
+                    responseStatus = SIPResponseStatusCodesEnum.Ok;
+                }
+
+                return bindingExpiry;
+            }
+            catch (Exception excp) {
+                logger.Error("Exception UpdateBinding. " + excp.Message);
+                FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Error, "Registrar error updating binding: " + excp.Message + " Binding not updated.", sipAccount.SIPUsername));
+                responseStatus = SIPResponseStatusCodesEnum.InternalServerError;
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Gets a SIP contact header for this address-of-record based on the bindings list.
+        /// </summary>
+        /// <returns></returns>
+        public List<SIPContactHeader> GetContactHeader(Guid sipAccountId) {
+
+            List<SIPRegistrarBinding> bindings = m_bindingsPersistor.Get(b => b.SIPAccountId == sipAccountId.ToString(), 0, Int32.MaxValue);
+
+            if (bindings != null && bindings.Count > 0) {
+                List<SIPContactHeader> contactHeaderList = new List<SIPContactHeader>();
+
+                foreach (SIPRegistrarBinding binding in bindings) {
+                    SIPContactHeader bindingContact = new SIPContactHeader(null, binding.MangledContactSIPURI);
+                    bindingContact.Expires = Convert.ToInt32(binding.ExpiryTime.Subtract(DateTime.Now).TotalSeconds % Int32.MaxValue);
+                    contactHeaderList.Add(bindingContact);
+                }
+
+                return contactHeaderList;
+            }
+            else {
+                return null;
+            }
+        }
+
+        private void SendNATKeepAlives() {
+            /*try {
+                lock (regRecord.Bindings) {
+                    if (regRecord.Bindings.Count > 0) {
+                        foreach (SIPRegistrarBinding binding in regRecord.GetBindings()) {
+                            if (regRecord.NATSendKeepAlives && SendNATKeepAlive_External != null && binding.MangledContactURI != null) {
+                                // If a user has been specified as requiring NAT keep-alives to be sent then they are identified here and a message is sent to
+                                // the SIP proxy with the contact socket the keep-alive should be sent to.
+                                if (binding.LastNATKeepAliveSendTime == null || DateTime.Now.Subtract(binding.LastNATKeepAliveSendTime.Value).TotalSeconds > NATKeepAliveSendInterval) {
+                                    IPEndPoint sendFromEndPoint = (binding.ProxyEndPoint == null) ? binding.RegistrarEndPoint : binding.ProxyEndPoint;
+                                    SendNATKeepAlive_External(new NATKeepAliveMessage(new SIPEndPoint(SIPProtocolsEnum.udp, IPSocket.ParseSocketString(binding.MangledContactURI.Host)), sendFromEndPoint));
+                                    binding.LastNATKeepAliveSendTime = DateTime.Now;
+                                    FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.NATKeepAlive, SIPMonitorEventTypesEnum.NATKeepAlive, "Requesting NAT keep-alive from proxy socket " + sendFromEndPoint + " to " + binding.ContactURI.Protocol + ":" + binding.MangledContactURI.ToString() + " for " + regRecord.AddressOfRecord.ToString() + ".", regRecord.AuthUser));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception SendNATKeepAlives. " + excp.Message);
+            }*/
+        }
+
+        /// <summary>
+        /// Makes a decision on what the maximum allowed expiry is for a REGISTER request. Allows different expiry values to be accepted from different user agents.
+        /// This is useful as some user agents ignore the expiry value set by the server and setting a higher value for that user agent can stop the registrar
+        /// expiring it.
+        /// </summary>
+        /// <param name="userAgent">The useragent to get the maximum expiry for.</param>
+        /// <returns>The maximum expiry value that will be accepted.</returns>
+        private int GetUserAgentExpiry(string userAgent) {
+            int expiry = DEFAULT_EXPIRY_SECONDS;
+
+            try {
+                if (m_userAgentConfigs != null && m_userAgentConfigs.Count > 0) {
+                    bool userAgentMatchFound = false;
+                    if (userAgent != null && userAgent.Trim().Length > 0) {
+                        foreach (string userAgentPattern in m_userAgentConfigs.Keys) {
+                            if (Regex.Match(userAgent, userAgentPattern, RegexOptions.IgnoreCase).Success) {
+                                expiry = m_userAgentConfigs[userAgentPattern].MaxAllowedExpiryTime;
+                                userAgentMatchFound = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!userAgentMatchFound) {
+                        expiry = DEFAULT_EXPIRY_SECONDS;
+                    }
+                }
+
+                //logger.Debug("Expiry for " + userAgent + " is " + expiry + "s, request was " + requestedExpiry + ".");
+                return expiry;
+            }
+            catch (Exception excp) {
+                logger.Error("Exception GetUserAgentExpiry. " + excp);
+                return expiry;
+            }
+        }
+
+        /// <summary>
+        /// Makes a decision on whether the user agent supports a list of current contacts being returned in the Ok response as mandated by the SIP standard
+        /// or whether it is broken and will only work if the exact header from the request is returned.
+        /// </summary>
+        /// <param name="userAgent">The useragent to check whether contact lists are supported or not..</param>
+        /// <returns>True if the useragent supports the standard and lists false otherwise.</returns>
+        public bool GetUserAgentContactListSupport(string userAgent) {
+            bool listSupported = true;
+
+            try {
+                if (m_userAgentConfigs != null && m_userAgentConfigs.Count > 0) {
+                    if (!userAgent.IsNullOrBlank()) {
+                        foreach (string userAgentPattern in m_userAgentConfigs.Keys) {
+                            if (Regex.Match(userAgent, userAgentPattern, RegexOptions.IgnoreCase).Success) {
+                                listSupported = m_userAgentConfigs[userAgentPattern].ContactListSupported;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                return listSupported;
+            }
+            catch (Exception excp) {
+                logger.Error("Exception GetUserAgentContactListSupport. " + excp);
+                return true;
+            }
+        }
+
+        private void FireSIPMonitorLogEvent(SIPMonitorEvent monitorEvent) {
+            if (SIPMonitorEventLog_External != null) {
+                SIPMonitorEventLog_External(monitorEvent);
+            }
+        }
+    }
+}

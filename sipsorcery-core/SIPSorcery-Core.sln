@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0B7CB4A2-B101-473E-B5A8-3B746A232647}"
+	ProjectSection(SolutionItems) = preProject
+		readme.txt = readme.txt
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.CRM", "SIPSorcery.CRM\SIPSorcery.CRM.csproj", "{F951789F-1ABB-42E8-BB51-F028DC4824EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Sys", "SIPSorcery.Sys\SIPSorcery.Sys.csproj", "{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIP.Core", "SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj", "{01D01BC6-231F-4FD6-BADF-51C509AB495F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIP.App", "SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj", "{339648E6-3B61-4A27-B4A2-38A8216B1D7E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Net", "SIPSorcery.Net\SIPSorcery.Net.csproj", "{55898587-8456-40D4-BB88-C9FC8BD6BA9C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Servers.Cores", "SIPSorcery.Servers.Cores\SIPSorcery.Servers.Cores.csproj", "{CEA8E4DD-9CE4-4878-B075-34522417ACD0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F951789F-1ABB-42E8-BB51-F028DC4824EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F951789F-1ABB-42E8-BB51-F028DC4824EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F951789F-1ABB-42E8-BB51-F028DC4824EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F951789F-1ABB-42E8-BB51-F028DC4824EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{339648E6-3B61-4A27-B4A2-38A8216B1D7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{339648E6-3B61-4A27-B4A2-38A8216B1D7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{339648E6-3B61-4A27-B4A2-38A8216B1D7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{339648E6-3B61-4A27-B4A2-38A8216B1D7E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CEA8E4DD-9CE4-4878-B075-34522417ACD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEA8E4DD-9CE4-4878-B075-34522417ACD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEA8E4DD-9CE4-4878-B075-34522417ACD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CEA8E4DD-9CE4-4878-B075-34522417ACD0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{CEA8E4DD-9CE4-4878-B075-34522417ACD0} = {0B7CB4A2-B101-473E-B5A8-3B746A232647}
+	EndGlobalSection
+EndGlobal
