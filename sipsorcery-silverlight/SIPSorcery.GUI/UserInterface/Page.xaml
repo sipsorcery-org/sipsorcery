@@ -1,0 +1,16 @@
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/client/2007"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	x:Class="SIPSorcery.Page"
+	Width="Auto" Height="Auto" xmlns:SIPSorcery="clr-namespace:SIPSorcery" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" Loaded="Page_Loaded" TabNavigation="Local" d:DesignHeight="700.524" d:DesignWidth="1024" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalAlignment="Stretch" MinHeight="0" MinWidth="0">
+
+	<ScrollViewer Height="Auto" MinHeight="0" x:Name="m_mainPageBorder" VerticalAlignment="Stretch" Background="#FF000000" ScrollViewer.VerticalScrollBarVisibility="Auto" BorderBrush="#FF000000" HorizontalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+		<Grid Height="Auto" x:Name="m_topCanvas" Width="Auto">
+			<SIPSorcery:LoginControl Height="Auto" x:Name="m_loginControl" VerticalAlignment="Top" IsTabStop="True" TabIndex="1" VerticalContentAlignment="Top" Padding="0,0,0,140" HorizontalAlignment="Right" Width="Auto" HorizontalContentAlignment="Right"/>
+			<Canvas Height="41" HorizontalAlignment="Left" VerticalAlignment="Top" Width="267" x:Name="m_appStatusCanvas">
+				<TextBlock Height="30" Width="240.565" Canvas.Left="24" Text="Persistor service connection message" TextWrapping="Wrap" Foreground="#FFA0F927" x:Name="m_appStatusMessage" Canvas.Top="4"/>
+				<Ellipse Height="12" Width="12" Canvas.Left="8" Fill="#FF2000FF" Stroke="#FF000000" Canvas.Top="6" x:Name="m_appStatusIcon"/>
+			</Canvas>
+		</Grid>
+	</ScrollViewer>
+</UserControl>

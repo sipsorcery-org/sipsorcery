@@ -1,0 +1,14 @@
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/client/2007"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	x:Class="SIPSorcery.Client.FlowChartDemo.RubyScriptDiagram"
+	d:DesignWidth="640" d:DesignHeight="480" Width="78" Height="42">
+
+	<Canvas x:Name="m_diagramCanvas" Background="#FF002DFF" Width="74" Height="44" MouseLeftButtonDown="Diagram_MouseDown">
+		<Ellipse Height="14" Width="23" Canvas.Left="24" Canvas.Top="39.5" Fill="#FF0E2E84" Stroke="#FF000000" MouseLeftButtonDown="ConnectionSource_MouseLeftButtonDown" x:Name="m_connectionSource"/>
+		<Ellipse Height="14" Width="23" Fill="#FF0E2E84" Stroke="#FF000000" Canvas.Left="24" Canvas.Top="-9.5" MouseLeftButtonUp="ConnectionSink_MouseLeftButtonUp" x:Name="m_connectionSink" MouseLeftButtonDown="ConnectionSink_MouseLeftButtonDown"/>
+	</Canvas>
+</UserControl>

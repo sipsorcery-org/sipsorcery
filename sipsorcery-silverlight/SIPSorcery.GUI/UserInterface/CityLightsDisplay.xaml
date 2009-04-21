@@ -1,0 +1,23 @@
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	x:Class="SIPSorcery.CityLightsDisplay"
+	d:DesignWidth="1024" d:DesignHeight="768" Background="#FF000000" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" MinWidth="0" MinHeight="0" xmlns:SIPSorcery="clr-namespace:SIPSorcery" Width="1000" Height="700" Margin="0,0,0,10">
+
+	<Grid Height="700" HorizontalAlignment="Stretch" MinHeight="600" MinWidth="1000" x:Name="LayoutRoot" VerticalAlignment="Stretch" Width="1000" Background="#FF000000">
+		<TextBlock Height="Auto" Text="" TextWrapping="Wrap" Foreground="#FF93FF00" x:Name="m_monitorEventTextBox" Margin="0,25,0,0" VerticalAlignment="Top" Width="900" HorizontalAlignment="Center"/>
+		<Canvas x:Name="m_heatPointMap" Background="#FF000000" Width="900" Height="500" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" VerticalAlignment="Center">
+			<Canvas.RenderTransform>
+				<TransformGroup>
+					<ScaleTransform ScaleX="1" ScaleY="1"/>
+					<SkewTransform/>
+					<RotateTransform/>
+					<TranslateTransform X="0" Y="0"/>
+				</TransformGroup>
+			</Canvas.RenderTransform>
+		</Canvas>
+	</Grid>
+</UserControl>

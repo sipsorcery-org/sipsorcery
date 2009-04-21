@@ -1,0 +1,101 @@
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/client/2007"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:data="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Data" 
+	xmlns:sipsorcery="clr-namespace:SIPSorcery;assembly=SIPSorcery" 
+	xmlns:sipsorceryui="clr-namespace:SIPSorcery.UIControls;assembly=SIPSorcery"  
+	mc:Ignorable="d"
+	x:Class="SIPSorcery.SIPCallManager"
+	d:DesignWidth="800" d:DesignHeight="409.283" Width="1024" xmlns:SIPSorcery="clr-namespace:SIPSorcery" OpacityMask="{x:Null}" Height="Auto" HorizontalContentAlignment="Center" VerticalContentAlignment="Stretch" ScrollViewer.VerticalScrollBarVisibility="Disabled" HorizontalAlignment="Center">
+
+	<UserControl.Resources>
+		<sipsorcery:SIPURIConverter x:Key="SIPURIStringConverter" />
+		<sipsorcery:DateTimeConverter x:Key="DateTimeConverter" />
+	</UserControl.Resources>
+
+	<StackPanel Height="Auto" x:Name="m_sipAccountManagerGrid" Width="Auto" Background="#FF000000" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+		<sipsorceryui:AssetViewPanel Height="Auto" x:Name="m_sipCallsPanel" Width="Auto" Margin="0,5,0,5">
+			<Border BorderBrush="#FFA1FA28" BorderThickness="1,1,1,1" Height="150" x:Name="m_listBorder" Width="1024">
+				<data:DataGrid ColumnHeaderHeight="24" SelectionMode="Single" x:Name="m_sipCallsDataGrid" AutoGenerateColumns="False" FontSize="11" 
+					RowBackground="Azure"
+	            	AlternatingRowBackground="LightSteelBlue" MouseLeftButtonUp="SIPCallsDataGrid_MouseLeftButtonUp">
+					 <data:DataGrid.Columns>
+						<data:DataGridTextColumn 
+		                    Header="Owner" 
+		                    Width="SizeToCells"
+		                    Binding="{Binding Path=Owner}" 
+							IsReadOnly="True"
+							MinWidth="80" />
+					 	<data:DataGridTextColumn 
+							Header="Remote" 
+							Width="SizeToCells"
+							Binding="{Binding Path=SIPDialogue.RemoteTarget, Converter={StaticResource SIPURIStringConverter}}" 
+							IsReadOnly="True"
+							MinWidth="200"/>
+		 			</data:DataGrid.Columns>
+				</data:DataGrid>
+			</Border>
+		</sipsorceryui:AssetViewPanel>
+		<sipsorceryui:AssetViewPanel Height="Auto" x:Name="m_sipCDRsPanel" Width="Auto" Margin="0,5,0,5">
+			<Border BorderBrush="#FFA1FA28" BorderThickness="1,1,1,1" Height="222" x:Name="m_sipCDRsBorder" Width="1024">
+				<data:DataGrid ColumnHeaderHeight="24" SelectionMode="Single" x:Name="m_cdrsGrid" AutoGenerateColumns="False" FontSize="11" 
+				RowBackground="Azure"
+				AlternatingRowBackground="LightSteelBlue" Height="Auto" Width="Auto">
+				<data:DataGrid.Columns>
+					<data:DataGridTextColumn 
+						Header="Call Date" 
+						Width="SizeToCells"
+						Binding="{Binding Path=Created, Converter={StaticResource DateTimeConverter}}" 
+						IsReadOnly="True"
+						MinWidth="200"/>
+					<data:DataGridTextColumn 
+		                    Header="Owner" 
+		                    Width="SizeToCells"
+		                    Binding="{Binding Path=Owner}" 
+							IsReadOnly="True"
+							MinWidth="80" />
+					<data:DataGridTextColumn 
+		                    Header="Direction" 
+		                    Width="SizeToCells"
+		                    Binding="{Binding Path=CallDirection}" 
+							IsReadOnly="True"
+							MinWidth="80" />
+					<data:DataGridTextColumn 
+						Header="Destination" 
+						Width="SizeToCells"
+						Binding="{Binding Path=Destination, Converter={StaticResource SIPURIStringConverter}}" 
+						IsReadOnly="True"
+						MinWidth="150" />
+					<data:DataGridTextColumn 
+						Header="Remote IP" 
+						Width="SizeToCells"
+						Binding="{Binding Path=RemoteSocket}" 
+						IsReadOnly="True"
+						MinWidth="100" />
+					<data:DataGridTextColumn 
+						Header="Answered" 
+						Width="SizeToCells"
+						Binding="{Binding Path=AnswerTime, Converter={StaticResource DateTimeConverter}}" 
+						IsReadOnly="True"
+						MinWidth="100" />
+					<data:DataGridTextColumn 
+						Header="Answer Status" 
+						Width="SizeToCells"
+						Binding="{Binding Path=AnswerStatus}" 
+						IsReadOnly="True"
+						MinWidth="80" />
+					<data:DataGridTextColumn 
+						Header="Hungup" 
+						Width="SizeToCells"
+						Binding="{Binding Path=HungupTime, Converter={StaticResource DateTimeConverter}}" 
+						IsReadOnly="True"
+						MinWidth="100" />
+				</data:DataGrid.Columns>
+			</data:DataGrid>
+			</Border>
+		</sipsorceryui:AssetViewPanel>
+
+	</StackPanel>
+</UserControl>

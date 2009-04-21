@@ -1,0 +1,16 @@
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	x:Class="SIPSorcery.Client.FlowChartDemo.DiagramContentEditor"
+	d:DesignWidth="640" d:DesignHeight="480" Width="366" Height="344">
+
+	<Grid x:Name="LayoutRoot" Background="White" Width="368" Height="354" >
+		<TextBlock Height="18" Margin="20,8,98,0" VerticalAlignment="Top" Text="" TextWrapping="Wrap" x:Name="m_diagramTitle"/>
+		<Button Height="18" HorizontalAlignment="Left" Margin="96,0,0,31" VerticalAlignment="Bottom" Width="57" Content="Update" x:Name="m_updateButton" Click="UpdateButton_Click"/>
+		<Button Height="18" HorizontalAlignment="Right" Margin="0,0,115,31" VerticalAlignment="Bottom" Width="60" Content="Cancel" x:Name="m_cancelButton" Click="CancelButton_Click"/>
+		<TextBox x:Name="m_diagramContent" Width="330" AcceptsReturn="True" Text="" TextWrapping="Wrap" VerticalScrollBarVisibility="Visible" Margin="19,40,19,69"/>
+	</Grid>
+</UserControl>

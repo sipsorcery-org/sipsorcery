@@ -1,0 +1,19 @@
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	x:Class="SIPSorcery.Client.FlowChartDemo.AppPopup"
+	d:DesignWidth="640" d:DesignHeight="480" MinWidth="300" MinHeight="200" MaxWidth="300" MaxHeight="200">
+
+	<Grid x:Name="LayoutRoot" Background="White" >
+		<Canvas x:Name="m_popupCanvas">
+			<TextBlock Height="113" Margin="0,0,0,0" Width="284" Text="Content" TextWrapping="Wrap" Canvas.Top="42" Canvas.Left="8" FontSize="12"/>
+			<Canvas Height="25" Width="284" Background="#FFB4B4B4" Canvas.Left="8" Canvas.Top="8">
+				<TextBlock Height="24" Width="284" OpacityMask="#FF4F4141" Text="Title" TextWrapping="Wrap" HorizontalAlignment="Center" Canvas.Top="1" Canvas.Left="125.41" VerticalAlignment="Center"/>
+			</Canvas>
+			<Button Height="23" Width="71" Content="Close" x:Name="m_closeButton" Click="CloseErrorPopup" Canvas.Top="169" Canvas.Left="120"/>
+		</Canvas>
+	</Grid>
+</UserControl>

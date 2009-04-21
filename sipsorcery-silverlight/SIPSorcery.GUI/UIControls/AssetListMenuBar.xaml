@@ -1,0 +1,24 @@
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	x:Class="SIPSorcery.AssetListMenuBar" d:DesignHeight="20" Height="20" Width="900">
+
+	<Grid x:Name="LayoutRoot">
+		<Canvas Background="#FFA0F927">
+			<Button Content="Add" x:Name="m_addButton" Width="50" Height="20" Canvas.Left="212.977" Click="AddButton_Click" Canvas.Top="0.031" />
+			<Button Content="&lt;&lt;" x:Name="m_pageFirstButton" Width="33.333" Height="20" Canvas.Left="320.977" Click="PageFirstButton_Click" Canvas.Top="0.364" />
+			<Button Content="&lt;" x:Name="m_pagePreviousButton" Width="33" Height="20" Canvas.Left="357.977" Click="PagePreviousButton_Click" Canvas.Top="0.364" />
+			<Button Content="&gt;" x:Name="m_pageNextButton" Width="33" Height="20" Canvas.Left="597.46" Click="PageNextButton_Click" Canvas.Top="0.364" />
+			<Button Content="&gt;&gt;" x:Name="m_pageLastButton" Width="33" Height="20" Canvas.Left="634.46" Canvas.Top="0.031" Click="PageLastButton_Click" />
+			<TextBlock Height="18" VerticalAlignment="Center" Width="196.811" Canvas.Left="394.977" Canvas.Top="2.031" Text="Initialising..." TextAlignment="Center" TextWrapping="Wrap" x:Name="m_displayedRecordsTextBlock"/>
+			<TextBox Height="20" Width="118.172" Canvas.Left="737" Text="" TextWrapping="Wrap" FontSize="10" FontFamily="Verdana" Canvas.Top="-1.136" x:Name="m_filterTextBox"/>
+			<Button Content="Filter" x:Name="m_filterButton" Width="33" Height="20" Canvas.Left="859" Click="FilterButton_Click" Canvas.Top="0.364" />
+			<Button Content="Refresh" x:Name="m_refreshButton" Width="50" Height="20" Canvas.Left="266.977" Click="RefreshButton_Click" Canvas.Top="0.031" />
+			<TextBlock Width="190.113" Text="Asset Menu Bar Title" TextAlignment="Left" TextWrapping="Wrap" x:Name="m_assetTitle" Height="20" Canvas.Top="0" FontWeight="Normal" FontFamily="Portable User Interface" Canvas.Left="8" FontSize="14"/>
+			<Button Content="Delete" x:Name="m_deleteButton" Width="42" Click="DeleteButton_Click" Height="20" Canvas.Top="0" Canvas.Left="681" />
+		</Canvas>
+	</Grid>
+</UserControl>

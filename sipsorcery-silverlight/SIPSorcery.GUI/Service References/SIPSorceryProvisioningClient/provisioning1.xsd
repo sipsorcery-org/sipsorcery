@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP" xmlns:ser="http://schemas.microsoft.com/2003/10/Serialization/" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+  <xs:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd4" namespace="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
+  <xs:complexType name="SIPURI">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Headers" nillable="true" type="tns:SIPParameters" />
+      <xs:element minOccurs="0" name="Host" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Parameters" nillable="true" type="tns:SIPParameters" />
+      <xs:element minOccurs="0" name="Scheme" type="tns:SIPSchemesEnum" />
+      <xs:element minOccurs="0" name="User" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SIPURI" nillable="true" type="tns:SIPURI" />
+  <xs:complexType name="SIPParameters">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="TagDelimiter" type="ser:char" />
+      <xs:element xmlns:q1="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="m_dictionary" nillable="true" type="q1:ArrayOfKeyValueOfstringstring" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SIPParameters" nillable="true" type="tns:SIPParameters" />
+  <xs:simpleType name="SIPSchemesEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="sip">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">1</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="sips">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">2</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="SIPSchemesEnum" nillable="true" type="tns:SIPSchemesEnum" />
+  <xs:complexType name="SIPDialogue">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="AdminMemberId" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Id" type="ser:guid" />
+      <xs:element minOccurs="0" name="Owner" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RemoteTarget" nillable="true" type="tns:SIPURI" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SIPDialogue" nillable="true" type="tns:SIPDialogue" />
+  <xs:complexType name="SIPCDR">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="AdminMemberId" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="AnswerReasonPhrase" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="AnswerStatus" type="xs:int" />
+      <xs:element minOccurs="0" name="AnswerTime" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="BridgeId" type="ser:guid" />
+      <xs:element minOccurs="0" name="CDRId" type="ser:guid" />
+      <xs:element minOccurs="0" name="CallDirection" type="tns:SIPCallDirection" />
+      <xs:element minOccurs="0" name="Created" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Destination" nillable="true" type="tns:SIPURI" />
+      <xs:element minOccurs="0" name="HangupReason" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="HangupTime" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Owner" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ProgressReasonPhrase" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ProgressStatus" type="xs:int" />
+      <xs:element minOccurs="0" name="ProgressTime" nillable="true" type="xs:dateTime" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SIPCDR" nillable="true" type="tns:SIPCDR" />
+  <xs:simpleType name="SIPCallDirection">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="None" />
+      <xs:enumeration value="In" />
+      <xs:enumeration value="Out" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="SIPCallDirection" nillable="true" type="tns:SIPCallDirection" />
+</xs:schema>

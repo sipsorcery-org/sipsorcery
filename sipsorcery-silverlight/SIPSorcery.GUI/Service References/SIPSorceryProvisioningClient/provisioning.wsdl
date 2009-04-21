@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:tns="http://www.sipsorcery.com" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" targetNamespace="http://www.sipsorcery.com" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.sipsorcery.com/Imports">
+      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd0" namespace="http://www.sipsorcery.com" />
+      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" />
+      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd3" namespace="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP" />
+      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd4" namespace="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="SIPProvisioningWebService_IsAlive_InputMessage">
+    <wsdl:part name="parameters" element="tns:IsAlive" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_IsAlive_OutputMessage">
+    <wsdl:part name="parameters" element="tns:IsAliveResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_Login_InputMessage">
+    <wsdl:part name="parameters" element="tns:Login" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_Login_OutputMessage">
+    <wsdl:part name="parameters" element="tns:LoginResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_Logout_InputMessage">
+    <wsdl:part name="parameters" element="tns:Logout" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_Logout_OutputMessage">
+    <wsdl:part name="parameters" element="tns:LogoutResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPDomains_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPDomains" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPDomains_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPDomainsResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPAccountsCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPAccountsCount" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPAccountsCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPAccountsCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPAccounts_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPAccounts" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPAccounts_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPAccountsResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_AddSIPAccount_InputMessage">
+    <wsdl:part name="parameters" element="tns:AddSIPAccount" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_AddSIPAccount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:AddSIPAccountResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_UpdateSIPAccount_InputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateSIPAccount" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_UpdateSIPAccount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateSIPAccountResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_DeleteSIPAccount_InputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteSIPAccount" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_DeleteSIPAccount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteSIPAccountResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPRegistrarBindingsCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPRegistrarBindingsCount" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPRegistrarBindingsCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPRegistrarBindingsCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPRegistrarBindings_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPRegistrarBindings" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPRegistrarBindings_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPRegistrarBindingsResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPProvidersCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProvidersCount" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPProvidersCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProvidersCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPProviders_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProviders" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPProviders_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProvidersResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_AddSIPProvider_InputMessage">
+    <wsdl:part name="parameters" element="tns:AddSIPProvider" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_AddSIPProvider_OutputMessage">
+    <wsdl:part name="parameters" element="tns:AddSIPProviderResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_UpdateSIPProvider_InputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateSIPProvider" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_UpdateSIPProvider_OutputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateSIPProviderResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_DeleteSIPProvider_InputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteSIPProvider" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_DeleteSIPProvider_OutputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteSIPProviderResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPProviderBindingsCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProviderBindingsCount" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPProviderBindingsCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProviderBindingsCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPProviderBindings_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProviderBindings" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetSIPProviderBindings_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProviderBindingsResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetDialPlansCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetDialPlansCount" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetDialPlansCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetDialPlansCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetDialPlans_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetDialPlans" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetDialPlans_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetDialPlansResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_AddDialPlan_InputMessage">
+    <wsdl:part name="parameters" element="tns:AddDialPlan" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_AddDialPlan_OutputMessage">
+    <wsdl:part name="parameters" element="tns:AddDialPlanResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_UpdateDialPlan_InputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateDialPlan" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_UpdateDialPlan_OutputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateDialPlanResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_DeleteDialPlan_InputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteDialPlan" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_DeleteDialPlan_OutputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteDialPlanResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetCallsCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetCallsCount" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetCallsCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetCallsCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetCalls_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetCalls" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetCalls_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetCallsResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetCDRsCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetCDRsCount" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetCDRsCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetCDRsCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetCDRs_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetCDRs" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_GetCDRs_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetCDRsResponse" />
+  </wsdl:message>
+  <wsdl:portType name="SIPProvisioningWebService">
+    <wsdl:operation name="IsAlive">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/IsAlive" message="tns:SIPProvisioningWebService_IsAlive_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/IsAliveResponse" message="tns:SIPProvisioningWebService_IsAlive_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="Login">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/Login" message="tns:SIPProvisioningWebService_Login_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/LoginResponse" message="tns:SIPProvisioningWebService_Login_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="Logout">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/Logout" message="tns:SIPProvisioningWebService_Logout_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/LogoutResponse" message="tns:SIPProvisioningWebService_Logout_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPDomains">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPDomains" message="tns:SIPProvisioningWebService_GetSIPDomains_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPDomainsResponse" message="tns:SIPProvisioningWebService_GetSIPDomains_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPAccountsCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPAccountsCount" message="tns:SIPProvisioningWebService_GetSIPAccountsCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPAccountsCountResponse" message="tns:SIPProvisioningWebService_GetSIPAccountsCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPAccounts">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPAccounts" message="tns:SIPProvisioningWebService_GetSIPAccounts_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPAccountsResponse" message="tns:SIPProvisioningWebService_GetSIPAccounts_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="AddSIPAccount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/AddSIPAccount" message="tns:SIPProvisioningWebService_AddSIPAccount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/AddSIPAccountResponse" message="tns:SIPProvisioningWebService_AddSIPAccount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateSIPAccount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/UpdateSIPAccount" message="tns:SIPProvisioningWebService_UpdateSIPAccount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/UpdateSIPAccountResponse" message="tns:SIPProvisioningWebService_UpdateSIPAccount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteSIPAccount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteSIPAccount" message="tns:SIPProvisioningWebService_DeleteSIPAccount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteSIPAccountResponse" message="tns:SIPProvisioningWebService_DeleteSIPAccount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPRegistrarBindingsCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPRegistrarBindingsCount" message="tns:SIPProvisioningWebService_GetSIPRegistrarBindingsCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPRegistrarBindingsCountResponse" message="tns:SIPProvisioningWebService_GetSIPRegistrarBindingsCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPRegistrarBindings">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPRegistrarBindings" message="tns:SIPProvisioningWebService_GetSIPRegistrarBindings_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPRegistrarBindingsResponse" message="tns:SIPProvisioningWebService_GetSIPRegistrarBindings_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPProvidersCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProvidersCount" message="tns:SIPProvisioningWebService_GetSIPProvidersCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProvidersCountResponse" message="tns:SIPProvisioningWebService_GetSIPProvidersCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPProviders">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProviders" message="tns:SIPProvisioningWebService_GetSIPProviders_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProvidersResponse" message="tns:SIPProvisioningWebService_GetSIPProviders_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="AddSIPProvider">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/AddSIPProvider" message="tns:SIPProvisioningWebService_AddSIPProvider_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/AddSIPProviderResponse" message="tns:SIPProvisioningWebService_AddSIPProvider_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateSIPProvider">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/UpdateSIPProvider" message="tns:SIPProvisioningWebService_UpdateSIPProvider_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/UpdateSIPProviderResponse" message="tns:SIPProvisioningWebService_UpdateSIPProvider_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteSIPProvider">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteSIPProvider" message="tns:SIPProvisioningWebService_DeleteSIPProvider_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteSIPProviderResponse" message="tns:SIPProvisioningWebService_DeleteSIPProvider_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPProviderBindingsCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProviderBindingsCount" message="tns:SIPProvisioningWebService_GetSIPProviderBindingsCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProviderBindingsCountResponse" message="tns:SIPProvisioningWebService_GetSIPProviderBindingsCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPProviderBindings">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProviderBindings" message="tns:SIPProvisioningWebService_GetSIPProviderBindings_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProviderBindingsResponse" message="tns:SIPProvisioningWebService_GetSIPProviderBindings_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDialPlansCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetDialPlansCount" message="tns:SIPProvisioningWebService_GetDialPlansCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetDialPlansCountResponse" message="tns:SIPProvisioningWebService_GetDialPlansCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDialPlans">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetDialPlans" message="tns:SIPProvisioningWebService_GetDialPlans_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetDialPlansResponse" message="tns:SIPProvisioningWebService_GetDialPlans_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="AddDialPlan">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/AddDialPlan" message="tns:SIPProvisioningWebService_AddDialPlan_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/AddDialPlanResponse" message="tns:SIPProvisioningWebService_AddDialPlan_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateDialPlan">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/UpdateDialPlan" message="tns:SIPProvisioningWebService_UpdateDialPlan_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/UpdateDialPlanResponse" message="tns:SIPProvisioningWebService_UpdateDialPlan_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteDialPlan">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteDialPlan" message="tns:SIPProvisioningWebService_DeleteDialPlan_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteDialPlanResponse" message="tns:SIPProvisioningWebService_DeleteDialPlan_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetCallsCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetCallsCount" message="tns:SIPProvisioningWebService_GetCallsCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetCallsCountResponse" message="tns:SIPProvisioningWebService_GetCallsCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetCalls">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetCalls" message="tns:SIPProvisioningWebService_GetCalls_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetCallsResponse" message="tns:SIPProvisioningWebService_GetCalls_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetCDRsCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetCDRsCount" message="tns:SIPProvisioningWebService_GetCDRsCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetCDRsCountResponse" message="tns:SIPProvisioningWebService_GetCDRsCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetCDRs">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetCDRs" message="tns:SIPProvisioningWebService_GetCDRs_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetCDRsResponse" message="tns:SIPProvisioningWebService_GetCDRs_OutputMessage" />
+    </wsdl:operation>
+  </wsdl:portType>
+</wsdl:definitions>

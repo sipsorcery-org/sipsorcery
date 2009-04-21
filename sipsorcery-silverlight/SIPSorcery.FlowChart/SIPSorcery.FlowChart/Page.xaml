@@ -1,0 +1,21 @@
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/client/2007"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	x:Class="SIPSorcery.Client.FlowChartDemo.Page"
+	Width="640" Height="480" Loaded="UserControl_Loaded" xmlns:SIPSorcery_Client_FlowChartDemo="clr-namespace:SIPSorcery.Client.FlowChartDemo" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d">
+
+	<Canvas x:Name="LayoutRoot" Background="#FF050000" Width="643.75" Height="620">
+		<ScrollViewer Height="407" Width="598.5" HorizontalScrollBarVisibility="Visible" Canvas.Top="49.25" Canvas.Left="24" x:Name="m_flowChartScrollView">
+		<Canvas Height="446" x:Name="m_flowChartCanvas" Width="599" OpacityMask="#FF383838" Background="#FF94959D" Canvas.Left="10.5" Canvas.Top="7" MouseMove="FlowChartCanvas_MouseMove" MouseLeftButtonUp="FlowChartCanvas_MouseLeftButtonUp" MouseLeave="FlowChartCanvas_MouseLeave">
+			<Ellipse Height="27.5" Width="28.5" Canvas.Left="251.5" Canvas.Top="23.5" Fill="#FF2541C4" Stroke="#FF000000" x:Name="m_startPoint" MouseLeftButtonDown="StartPoint_MouseLeftButtonDown"/>
+		</Canvas>
+		</ScrollViewer>
+		<TextBlock Height="16" Width="86" Canvas.Left="499" Canvas.Top="13.769" Text="" TextWrapping="Wrap" Foreground="#FFF8F5F5" FontSize="12" x:Name="m_yScroll"/>
+		<Button Height="21" Width="55" Canvas.Left="265.25" Canvas.Top="13.769" Content="Run" Click="RunScript"/>
+		<TextBox Foreground="#FF46B500" Background="#FF353535" FontWeight="Bold" Height="122.5" x:Name="m_activityTextBox" Width="598.5" Canvas.Left="24" Canvas.Top="478.125" HorizontalScrollBarVisibility="Visible" Text="" TextWrapping="Wrap" VerticalScrollBarVisibility="Visible" AcceptsReturn="True"/>
+		<Button Height="18.75" Width="48.75" Canvas.Left="24" Canvas.Top="18.75" Click="BlockButton_Click" Content="Block"/>
+		<Button Height="18.75" Width="56.25" Canvas.Left="76.75" Canvas.Top="18.75" Content="Decision" Click="DecisionButton_Click"/>
+		<Button Height="17.5" Width="55" Content="Save" Canvas.Top="17.269" Canvas.Left="362" Click="Save"/>
+		<Button Height="17.5" Width="55" Content="Load" Click="Load" Canvas.Left="421" Canvas.Top="17.269"/>
+	</Canvas>
+</UserControl>

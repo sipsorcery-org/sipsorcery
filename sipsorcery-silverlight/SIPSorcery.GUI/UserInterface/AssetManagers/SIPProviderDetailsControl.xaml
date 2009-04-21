@@ -1,0 +1,85 @@
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/client/2007"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	x:Class="SIPSorcery.SIPProviderDetailsControl" xmlns:System="clr-namespace:System;assembly=mscorlib" Height="Auto" Width="Auto" Padding="0,5,0,5" d:DesignHeight="518" Margin="0,10,0,0">
+
+	<StackPanel Height="Auto" x:Name="LayoutRoot" Background="#FF000000">
+		<Border Height="Auto" Width="475" BorderBrush="#FFA0F927" BorderThickness="1,1,1,1" CornerRadius="5,5,5,5">
+			<StackPanel Height="Auto" Width="Auto">
+				<Canvas Height="51" Margin="0,5,0,5" x:Name="m_statusGrid" Width="457">
+					<Button Content="X" x:Name="m_closeButton" Click="CloseButton_Click" Width="23" Height="20" Canvas.Left="434" />
+					<Border BorderThickness="1,1,1,1" BorderBrush="#FFA0F927" CornerRadius="5,5,5,5" Background="#FF282828" Height="51" Width="421">
+						<TextBlock Height="48" Width="406" Text="Ready" TextWrapping="Wrap" Foreground="#FFA0F927" x:Name="m_statusTextBlock"/>
+					</Border>
+				</Canvas>
+				<StackPanel Height="Auto" x:Name="m_standardSettingsPanel" Width="457" Margin="0,0,0,10">
+					<Canvas Height="20" x:Name="m_providerIdCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="00-00-00-00" FontSize="12" Height="20" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" x:Name="m_providerId" Width="337" Canvas.Left="120" Canvas.Top="0" />
+						<TextBlock TextWrapping="Wrap" Text="Id" FontSize="12" Height="20" Width="47" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" d:LayoutOverrides="Width" x:Name="m_providerIdHeading" Canvas.Left="8" Canvas.Top="0" />
+					</Canvas>
+					<Canvas Height="20" x:Name="m_providerNameCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="Provider Name" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerNameHeading" Canvas.Left="8" Canvas.Top="0" />
+						<TextBox Text="" FontSize="12" x:Name="m_providerName" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="200" Canvas.Left="120"/>
+					</Canvas>
+					<Canvas Height="20" x:Name="m_providerUsernameCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="Username" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerUsernameHeading" Canvas.Left="8" Canvas.Top="0" />
+						<TextBox Text="" FontSize="12" x:Name="m_providerUsername" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="200" Canvas.Left="120"/>
+					</Canvas>
+					<Canvas Height="20" x:Name="m_providerPasswordCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="Password" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerPasswordHeading" Canvas.Left="8" Canvas.Top="0" />
+						<TextBox Text="" FontSize="12" x:Name="m_providerPassword" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="200" Canvas.Left="120"/>
+					</Canvas>
+					<Canvas Height="20" x:Name="m_providerServerCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="Server" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerServerHeading" Canvas.Left="8" Canvas.Top="0" />
+						<TextBox Text="" FontSize="12" x:Name="m_providerServer" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="250" Canvas.Left="120"/>
+					</Canvas>
+					<Canvas Height="20" x:Name="m_providerRegisterCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="Register" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerRegisterHeading" Canvas.Left="8" Canvas.Top="0" />
+						<CheckBox Height="18" Width="17" Content="" x:Name="m_providerRegister" d:LayoutOverrides="Width, Height" Canvas.Left="121.032" Canvas.Top="0.439" Checked="ProviderRegister_Checked" Unchecked="ProviderRegister_Unchecked"/>
+					</Canvas>
+					<Canvas Height="20" x:Name="m_provideRegisterContactCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="Register Contact" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerRegisterContactHeading" Canvas.Left="8" Canvas.Top="0" />
+						<TextBox Text="" FontSize="12" x:Name="m_providerRegisterContact" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="337" Canvas.Left="120" IsEnabled="False"/>
+					</Canvas>
+					<TextBlock Height="16" Width="142.295" Text="show advanced settings" TextWrapping="Wrap" Foreground="Purple" TextDecorations="Underline" Cursor="Hand" d:LayoutOverrides="Height" MouseLeftButtonUp="AdvancedSettings_MouseLeftButtonUp" Margin="8,5,0,0" HorizontalAlignment="Left" x:Name="m_advancedSettingsMenu"/>
+				</StackPanel>
+				<StackPanel Height="Auto" x:Name="m_advancedProviderSettings" Width="473">
+					<Canvas Height="20" x:Name="m_providerOutboundProxyCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="Outbound Proxy" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerOutboundProxyHeading" Canvas.Left="8" Canvas.Top="0" />
+						<TextBox Text="" FontSize="12" x:Name="m_providerOutboundProxy" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="250" Canvas.Left="120"/>
+					</Canvas>
+					<Canvas Height="20" x:Name="m_providerAuthUsernameCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="Auth Username" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerAuthUsernameHeading" Canvas.Left="8" Canvas.Top="0" />
+						<TextBox Text="" FontSize="12" x:Name="m_providerAuthUsername" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="200" Canvas.Left="120"/>
+					</Canvas>
+					<Canvas Height="20" x:Name="m_providerFromHeaderCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="From Header" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerFromHeaderHeading" Canvas.Left="8" Canvas.Top="0" />
+						<TextBox Text="" FontSize="12" x:Name="m_providerFromHeader" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="337" Canvas.Left="120"/>
+					</Canvas>
+					<Canvas Height="20" x:Name="m_providerRegisterExpiryCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="Register Expiry" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerRegisterExpiryHeading" Canvas.Left="8" Canvas.Top="0" />
+						<TextBox Text="" FontSize="12" x:Name="m_providerRegisterExpiry" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="60" Canvas.Left="120" MaxLength="4" IsEnabled="False"/>
+					</Canvas>
+					<Canvas Height="20" x:Name="m_providerRegisterRealmCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="Register Realm" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerRegisterRealmHeading" Canvas.Left="8" Canvas.Top="0" />
+						<TextBox Text="" FontSize="12" x:Name="m_providerRegisterRealm" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="250" Canvas.Left="120" IsEnabled="False"/>
+					</Canvas>
+					<Canvas Height="20" x:Name="m_providerRegisterServerCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="Register Server" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerRegisterServerHeading" Canvas.Left="8" Canvas.Top="0" />
+						<TextBox Text="" FontSize="12" x:Name="m_providerRegisterServer" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="250" Canvas.Left="120" IsEnabled="False"/>
+					</Canvas>
+					<Canvas Height="74" x:Name="m_providerCustomerHeadersCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="Custom Headers" FontSize="12" Height="20" Width="97" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerCustomHeadersHeading" Canvas.Left="8" Canvas.Top="0" />
+						<ListBox Height="50" x:Name="m_providerCustomHeaders" Width="320" Canvas.Left="120" Canvas.Top="24" MouseLeftButtonUp="CustomHeaders_MouseLeftButtonUp" />
+						<TextBlock Height="16" Width="30.313" Text="add" TextWrapping="Wrap" Foreground="Purple" TextDecorations="Underline" Cursor="Hand" Canvas.Left="428.687" Canvas.Top="2.439" MouseLeftButtonUp="AddCustomHeader_MouseLeftButtonUp" />
+						<TextBox Text="" FontSize="12" x:Name="m_providerCustom" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Height="20" Width="294" Canvas.Left="120"/>
+					</Canvas>
+				</StackPanel>
+				<Button Content="Update" Height="22" x:Name="m_applyButton" Click="ApplyButtonClicked" Width="47" VerticalContentAlignment="Bottom" Margin="0,5,0,5" />
+			</StackPanel>
+		</Border>
+	</StackPanel>
+</UserControl>

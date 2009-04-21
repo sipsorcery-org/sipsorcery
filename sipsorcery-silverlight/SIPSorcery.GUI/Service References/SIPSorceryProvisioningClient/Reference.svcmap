@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReferenceGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ID="75faa728-1e0c-4804-8ab4-22eec37266e6" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+  <ClientOptions>
+    <GenerateAsynchronousMethods>true</GenerateAsynchronousMethods>
+    <EnableDataBinding>true</EnableDataBinding>
+    <ExcludedTypes />
+    <ImportXmlTypes>false</ImportXmlTypes>
+    <GenerateInternalTypes>false</GenerateInternalTypes>
+    <GenerateMessageContracts>false</GenerateMessageContracts>
+    <NamespaceMappings />
+    <CollectionMappings>
+      <CollectionMapping TypeName="System.Collections.ObjectModel.ObservableCollection`1" Category="List" />
+    </CollectionMappings>
+    <GenerateSerializableTypes>false</GenerateSerializableTypes>
+    <Serializer>Auto</Serializer>
+    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferencedAssemblies />
+    <ReferencedDataContractTypes />
+    <ServiceContractMappings />
+  </ClientOptions>
+  <MetadataSources>
+    <MetadataSource Address="http://localhost:8080/provisioning" Protocol="http" SourceId="1" />
+  </MetadataSources>
+  <Metadata>
+    <MetadataFile FileName="provisioning.xsd" MetadataType="Schema" ID="74733819-ed26-40e0-b85f-2fbb06c0d3d9" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd2" />
+    <MetadataFile FileName="provisioning1.xsd" MetadataType="Schema" ID="504eb963-5928-4fe3-af9a-0c5874f768ff" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd3" />
+    <MetadataFile FileName="provisioning2.xsd" MetadataType="Schema" ID="b67e20d8-3be0-4fc3-a079-4515b52cdafb" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd0" />
+    <MetadataFile FileName="provisioning3.xsd" MetadataType="Schema" ID="cb4bacaa-2b4c-4fa2-aa86-50f24cb0f66a" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd1" />
+    <MetadataFile FileName="provisioning4.xsd" MetadataType="Schema" ID="b6a63657-7166-4b3b-a05c-12b4edd32bd4" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd4" />
+    <MetadataFile FileName="SIPProvisioningWebService1.wsdl" MetadataType="Wsdl" ID="9996f5b6-0919-4008-801f-385376a8ee88" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?wsdl" />
+    <MetadataFile FileName="provisioning.disco" MetadataType="Disco" ID="4cc8699f-4c03-447a-ad7c-2cab9b5f5e0b" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?disco" />
+    <MetadataFile FileName="provisioning.wsdl" MetadataType="Wsdl" ID="58732bc2-20f6-4fb8-8694-6f44d135fd7b" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?wsdl=wsdl0" />
+  </Metadata>
+  <Extensions>
+    <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
+    <ExtensionFile FileName="configuration.svcinfo" Name="configuration.svcinfo" />
+  </Extensions>
+</ReferenceGroup>
