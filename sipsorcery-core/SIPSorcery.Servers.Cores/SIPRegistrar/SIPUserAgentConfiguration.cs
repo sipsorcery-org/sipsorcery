@@ -44,6 +44,10 @@ using System.Xml;
 using SIPSorcery.Sys;
 using log4net;
 
+#if UNITTEST
+using NUnit.Framework;
+#endif
+
 namespace SIPSorcery.Servers
 {
     public class SIPUserAgentConfiguration

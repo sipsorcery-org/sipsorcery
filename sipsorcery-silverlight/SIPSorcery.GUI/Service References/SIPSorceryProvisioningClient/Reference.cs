@@ -23,6 +23,32 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         
         bool EndIsAlive(System.IAsyncResult result);
         
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/CreateCustomer", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/CreateCustomerResponse")]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain>))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(SIPSorcery.SIP.App.SIPDomain))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount>))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(SIPSorcery.SIP.App.SIPAccount))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding>))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(SIPSorcery.SIP.App.SIPRegistrarBinding))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider>))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(SIPSorcery.SIP.App.SIPProvider))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding>))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(SIPSorcery.SIP.App.SIPProviderBinding))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan>))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(SIPSorcery.SIP.App.SIPDialPlan))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset>))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(SIPSorcery.SIP.App.SIPDialogueAsset))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset>))]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(SIPSorcery.SIP.App.SIPCDRAsset))]
+        System.IAsyncResult BeginCreateCustomer(SIPSorcery.CRM.Customer customer, System.AsyncCallback callback, object asyncState);
+        
+        void EndCreateCustomer(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteCustomer", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteCustomerResponse")]
+        System.IAsyncResult BeginDeleteCustomer(string customerUsername, System.AsyncCallback callback, object asyncState);
+        
+        void EndDeleteCustomer(System.IAsyncResult result);
+        
         [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/Login", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/LoginResponse")]
         System.IAsyncResult BeginLogin(string username, string password, System.AsyncCallback callback, object asyncState);
         
@@ -666,6 +692,18 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         
         private System.Threading.SendOrPostCallback onIsAliveCompletedDelegate;
         
+        private BeginOperationDelegate onBeginCreateCustomerDelegate;
+        
+        private EndOperationDelegate onEndCreateCustomerDelegate;
+        
+        private System.Threading.SendOrPostCallback onCreateCustomerCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginDeleteCustomerDelegate;
+        
+        private EndOperationDelegate onEndDeleteCustomerDelegate;
+        
+        private System.Threading.SendOrPostCallback onDeleteCustomerCompletedDelegate;
+        
         private BeginOperationDelegate onBeginLoginDelegate;
         
         private EndOperationDelegate onEndLoginDelegate;
@@ -855,6 +893,10 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         
         public event System.EventHandler<IsAliveCompletedEventArgs> IsAliveCompleted;
         
+        public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> CreateCustomerCompleted;
+        
+        public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> DeleteCustomerCompleted;
+        
         public event System.EventHandler<LoginCompletedEventArgs> LoginCompleted;
         
         public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> LogoutCompleted;
@@ -953,6 +995,96 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
                 this.onIsAliveCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnIsAliveCompleted);
             }
             base.InvokeAsync(this.onBeginIsAliveDelegate, null, this.onEndIsAliveDelegate, this.onIsAliveCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginCreateCustomer(SIPSorcery.CRM.Customer customer, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginCreateCustomer(customer, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        void SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndCreateCustomer(System.IAsyncResult result) {
+            base.Channel.EndCreateCustomer(result);
+        }
+        
+        private System.IAsyncResult OnBeginCreateCustomer(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            SIPSorcery.CRM.Customer customer = ((SIPSorcery.CRM.Customer)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginCreateCustomer(customer, callback, asyncState);
+        }
+        
+        private object[] OnEndCreateCustomer(System.IAsyncResult result) {
+            ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndCreateCustomer(result);
+            return null;
+        }
+        
+        private void OnCreateCustomerCompleted(object state) {
+            if ((this.CreateCustomerCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.CreateCustomerCompleted(this, new System.ComponentModel.AsyncCompletedEventArgs(e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void CreateCustomerAsync(SIPSorcery.CRM.Customer customer) {
+            this.CreateCustomerAsync(customer, null);
+        }
+        
+        public void CreateCustomerAsync(SIPSorcery.CRM.Customer customer, object userState) {
+            if ((this.onBeginCreateCustomerDelegate == null)) {
+                this.onBeginCreateCustomerDelegate = new BeginOperationDelegate(this.OnBeginCreateCustomer);
+            }
+            if ((this.onEndCreateCustomerDelegate == null)) {
+                this.onEndCreateCustomerDelegate = new EndOperationDelegate(this.OnEndCreateCustomer);
+            }
+            if ((this.onCreateCustomerCompletedDelegate == null)) {
+                this.onCreateCustomerCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnCreateCustomerCompleted);
+            }
+            base.InvokeAsync(this.onBeginCreateCustomerDelegate, new object[] {
+                        customer}, this.onEndCreateCustomerDelegate, this.onCreateCustomerCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginDeleteCustomer(string customerUsername, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginDeleteCustomer(customerUsername, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        void SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndDeleteCustomer(System.IAsyncResult result) {
+            base.Channel.EndDeleteCustomer(result);
+        }
+        
+        private System.IAsyncResult OnBeginDeleteCustomer(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string customerUsername = ((string)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginDeleteCustomer(customerUsername, callback, asyncState);
+        }
+        
+        private object[] OnEndDeleteCustomer(System.IAsyncResult result) {
+            ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndDeleteCustomer(result);
+            return null;
+        }
+        
+        private void OnDeleteCustomerCompleted(object state) {
+            if ((this.DeleteCustomerCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.DeleteCustomerCompleted(this, new System.ComponentModel.AsyncCompletedEventArgs(e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void DeleteCustomerAsync(string customerUsername) {
+            this.DeleteCustomerAsync(customerUsername, null);
+        }
+        
+        public void DeleteCustomerAsync(string customerUsername, object userState) {
+            if ((this.onBeginDeleteCustomerDelegate == null)) {
+                this.onBeginDeleteCustomerDelegate = new BeginOperationDelegate(this.OnBeginDeleteCustomer);
+            }
+            if ((this.onEndDeleteCustomerDelegate == null)) {
+                this.onEndDeleteCustomerDelegate = new EndOperationDelegate(this.OnEndDeleteCustomer);
+            }
+            if ((this.onDeleteCustomerCompletedDelegate == null)) {
+                this.onDeleteCustomerCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnDeleteCustomerCompleted);
+            }
+            base.InvokeAsync(this.onBeginDeleteCustomerDelegate, new object[] {
+                        customerUsername}, this.onEndDeleteCustomerDelegate, this.onDeleteCustomerCompletedDelegate, userState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
@@ -2268,6 +2400,30 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
                 object[] _args = new object[0];
                 bool _result = ((bool)(base.EndInvoke("IsAlive", _args, result)));
                 return _result;
+            }
+            
+            public System.IAsyncResult BeginCreateCustomer(SIPSorcery.CRM.Customer customer, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = customer;
+                System.IAsyncResult _result = base.BeginInvoke("CreateCustomer", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public void EndCreateCustomer(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                base.EndInvoke("CreateCustomer", _args, result);
+            }
+            
+            public System.IAsyncResult BeginDeleteCustomer(string customerUsername, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = customerUsername;
+                System.IAsyncResult _result = base.BeginInvoke("DeleteCustomer", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public void EndDeleteCustomer(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                base.EndInvoke("DeleteCustomer", _args, result);
             }
             
             public System.IAsyncResult BeginLogin(string username, string password, System.AsyncCallback callback, object asyncState) {

@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
+using SIPSorcery.CRM;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -18,8 +19,7 @@ using SIPSorcery.SIPSorceryProvisioningClient;
 
 namespace SIPSorcery.Persistence
 {
-    public class SIPSorceryGUITestPersistor : SIPSorceryPersistor
-    {
+    public class SIPSorceryGUITestPersistor : SIPSorceryPersistor {
         public static string DUMMY_OWNER = "dummy";
 
         private static string m_dummyAuthId = "dummy";
@@ -53,7 +53,7 @@ namespace SIPSorcery.Persistence
         };
 
         private static ObservableCollection<SIPProvider> m_sipProviderBindings = new ObservableCollection<SIPProvider>();
-  
+
         public override event IsAliveCompleteDelegate IsAliveComplete;
         public override event LoginCompleteDelegate LoginComplete;
         public override event LogoutCompleteDelegate LogoutComplete;
@@ -81,165 +81,129 @@ namespace SIPSorcery.Persistence
         public override event GetCallsCompleteDelegate GetCallsComplete;
         public override event GetCDRsCountCompleteDelegate GetCDRsCountComplete;
         public override event GetCDRsCompleteDelegate GetCDRsComplete;
+        public override event CreateCustomerCompleteDelegate CreateCustomerComplete;
+        public override event DeleteCustomerCompleteDelegate DeleteCustomerComplete;
 
-        public override void IsAliveAsync()
-        {
-            if (IsAliveComplete != null)
-            {
-                IsAliveComplete(new IsAliveCompletedEventArgs(new object[]{true}, null, false, null));
+        public override event MethodInvokerDelegate SessionExpired;
+
+        public override void IsAliveAsync() {
+            if (IsAliveComplete != null) {
+                IsAliveComplete(new IsAliveCompletedEventArgs(new object[] { true }, null, false, null));
             }
         }
 
-        public override void LoginAsync(string username, string password)
-        {
-            if (LoginComplete != null)
-            {
+        public override void LoginAsync(string username, string password) {
+            if (LoginComplete != null) {
                 LoginComplete(new LoginCompletedEventArgs(new object[] { m_dummyAuthId }, null, false, null));
-            } 
-        }
-
-        public override void LogoutAsync()
-        {
-            if (LogoutComplete != null)
-            {
-                LogoutComplete(new AsyncCompletedEventArgs(null, false, null));
-            } 
-        }
-
-        public override void GetSIPDomainsAsync(string where, int offset, int count)
-        { 
-            if(GetSIPDomainsComplete != null)
-            {
-                GetSIPDomainsComplete(new GetSIPDomainsCompletedEventArgs(new object[]{m_sipDomains}, null, false, null));
             }
         }
-        
-        public override void GetSIPAccountsCountAsync(string where)
-        {
-            if (GetSIPAccountsCountComplete != null)
-            {
+
+        public override void LogoutAsync() {
+            if (LogoutComplete != null) {
+                LogoutComplete(new AsyncCompletedEventArgs(null, false, null));
+            }
+        }
+
+        public override void GetSIPDomainsAsync(string where, int offset, int count) {
+            if (GetSIPDomainsComplete != null) {
+                GetSIPDomainsComplete(new GetSIPDomainsCompletedEventArgs(new object[] { m_sipDomains }, null, false, null));
+            }
+        }
+
+        public override void GetSIPAccountsCountAsync(string where) {
+            if (GetSIPAccountsCountComplete != null) {
                 GetSIPAccountsCountComplete(new GetSIPAccountsCountCompletedEventArgs(new object[] { m_sipAccounts.Count }, null, false, null));
             }
         }
 
-        public override void GetSIPAccountsAsync(string where, int offset, int count)
-        {
-            if (GetSIPAccountsComplete != null)
-            {
+        public override void GetSIPAccountsAsync(string where, int offset, int count) {
+            if (GetSIPAccountsComplete != null) {
                 GetSIPAccountsComplete(new GetSIPAccountsCompletedEventArgs(new object[] { m_sipAccounts }, null, false, null));
             }
         }
 
-        public override void AddSIPAccountAsync(SIPAccount sipAccount)
-        {
-            if (AddSIPAccountComplete != null)
-            {
-                AddSIPAccountComplete(new AddSIPAccountCompletedEventArgs(new object[]{sipAccount}, null, false, null));
+        public override void AddSIPAccountAsync(SIPAccount sipAccount) {
+            if (AddSIPAccountComplete != null) {
+                AddSIPAccountComplete(new AddSIPAccountCompletedEventArgs(new object[] { sipAccount }, null, false, null));
             }
         }
 
-        public override void UpdateSIPAccount(SIPAccount sipAccount)
-        {
-            if (UpdateSIPAccountComplete != null)
-            {
-                UpdateSIPAccountComplete(new UpdateSIPAccountCompletedEventArgs(new object[]{sipAccount}, null, false, null));
+        public override void UpdateSIPAccount(SIPAccount sipAccount) {
+            if (UpdateSIPAccountComplete != null) {
+                UpdateSIPAccountComplete(new UpdateSIPAccountCompletedEventArgs(new object[] { sipAccount }, null, false, null));
             }
         }
 
-        public override void DeleteSIPAccount(SIPAccount sipAccount)
-        {
-            if (DeleteSIPAccountComplete != null)
-            {
-                DeleteSIPAccountComplete(new DeleteSIPAccountCompletedEventArgs(new object[]{sipAccount}, null, false, null));
+        public override void DeleteSIPAccount(SIPAccount sipAccount) {
+            if (DeleteSIPAccountComplete != null) {
+                DeleteSIPAccountComplete(new DeleteSIPAccountCompletedEventArgs(new object[] { sipAccount }, null, false, null));
             }
         }
 
-        public override void GetRegistrarBindingsAsync(string where, int offset, int count)
-        {
-            if (GetRegistrarBindingsComplete != null)
-            {
+        public override void GetRegistrarBindingsAsync(string where, int offset, int count) {
+            if (GetRegistrarBindingsComplete != null) {
                 GetRegistrarBindingsComplete(new GetSIPRegistrarBindingsCompletedEventArgs(new object[] { m_sipBindings }, null, false, null));
             }
         }
 
-        public override void GetRegistrarBindingsCountAsync(string whereExpression)
-        {
-            if (GetRegistrarBindingsCountComplete != null)
-            {
+        public override void GetRegistrarBindingsCountAsync(string whereExpression) {
+            if (GetRegistrarBindingsCountComplete != null) {
                 GetRegistrarBindingsCountComplete(new GetSIPRegistrarBindingsCountCompletedEventArgs(new object[] { m_sipBindings.Count }, null, false, null));
             }
         }
-        
-        public override void GetDialPlansCountAsync(string where)
-        {
-            if (GetDialPlansCountComplete != null)
-            {
-                GetDialPlansCountComplete(new GetDialPlansCountCompletedEventArgs(new object[]{m_dialPlans.Count}, null, false, null));
+
+        public override void GetDialPlansCountAsync(string where) {
+            if (GetDialPlansCountComplete != null) {
+                GetDialPlansCountComplete(new GetDialPlansCountCompletedEventArgs(new object[] { m_dialPlans.Count }, null, false, null));
             }
         }
 
-        public override void GetDialPlansAsync(string where, int offset, int count)
-        {
-            if (GetDialPlansComplete != null)
-            {
-                GetDialPlansComplete(new GetDialPlansCompletedEventArgs(new object[]{m_dialPlans}, null, false, null));
+        public override void GetDialPlansAsync(string where, int offset, int count) {
+            if (GetDialPlansComplete != null) {
+                GetDialPlansComplete(new GetDialPlansCompletedEventArgs(new object[] { m_dialPlans }, null, false, null));
             }
         }
 
-        public override void DeleteDialPlanAsync(SIPDialPlan dialPlan)
-        {
-            if (DeleteDialPlanComplete != null)
-            {
+        public override void DeleteDialPlanAsync(SIPDialPlan dialPlan) {
+            if (DeleteDialPlanComplete != null) {
                 DeleteDialPlanComplete(new DeleteDialPlanCompletedEventArgs(new object[] { dialPlan }, null, false, null));
             }
         }
 
-        public override void UpdateDialPlanAsync(SIPDialPlan dialPlan)
-        {
-            if (UpdateDialPlanComplete != null)
-            {
+        public override void UpdateDialPlanAsync(SIPDialPlan dialPlan) {
+            if (UpdateDialPlanComplete != null) {
                 UpdateDialPlanComplete(new UpdateDialPlanCompletedEventArgs(new object[] { dialPlan }, null, false, null));
             }
         }
 
-        public override void AddDialPlanAsync(SIPDialPlan dialPlan)
-        {
-            if (AddDialPlanComplete != null)
-            {
+        public override void AddDialPlanAsync(SIPDialPlan dialPlan) {
+            if (AddDialPlanComplete != null) {
                 AddDialPlanComplete(new AddDialPlanCompletedEventArgs(new object[] { dialPlan }, null, false, null));
             }
         }
 
-        public override void GetSIPProvidersCountAsync(string where)
-        {
+        public override void GetSIPProvidersCountAsync(string where) {
             //getSIPProvidersCountCompleteHandler(new GetSIPProvidersCountCompletedEventArgs(new object[] { m_sipProviders.Count }, null, false, null));
         }
 
-        public override void GetSIPProvidersAsync(string where, int offset, int count)
-        {
+        public override void GetSIPProvidersAsync(string where, int offset, int count) {
             //getSIPProvidersCompleteHandler(new GetSIPProvidersCompletedEventArgs(new object[] { m_sipProviders }, null, false, null));
         }
 
-        public override void DeleteSIPProviderAsync(SIPProvider sipProvider)
-        {
-            if (DeleteSIPProviderComplete != null)
-            {
+        public override void DeleteSIPProviderAsync(SIPProvider sipProvider) {
+            if (DeleteSIPProviderComplete != null) {
                 DeleteSIPProviderComplete(new DeleteSIPProviderCompletedEventArgs(new object[] { sipProvider }, null, false, null));
             }
         }
 
-        public override void UpdateSIPProviderAsync(SIPProvider sipProvider)
-        {
-            if (UpdateSIPProviderComplete != null)
-            {
-                UpdateSIPProviderComplete(new UpdateSIPProviderCompletedEventArgs(new object[]{sipProvider}, null, false, null));
+        public override void UpdateSIPProviderAsync(SIPProvider sipProvider) {
+            if (UpdateSIPProviderComplete != null) {
+                UpdateSIPProviderComplete(new UpdateSIPProviderCompletedEventArgs(new object[] { sipProvider }, null, false, null));
             }
         }
 
-        public override void AddSIPProviderAsync(SIPProvider sipProvider)
-        {
-            if (AddSIPProviderComplete != null)
-            {
+        public override void AddSIPProviderAsync(SIPProvider sipProvider) {
+            if (AddSIPProviderComplete != null) {
                 AddSIPProviderComplete(new AddSIPProviderCompletedEventArgs(new object[] { sipProvider }, null, false, null));
             }
         }
@@ -252,23 +216,27 @@ namespace SIPSorcery.Persistence
 
         }
 
-        public override void GetCallsCountAsync(string whereExpression)
-        {
+        public override void GetCallsCountAsync(string whereExpression) {
             throw new NotImplementedException();
         }
 
-        public override void GetCallsAsync(string whereExpressionn, int offset, int count)
-        {
+        public override void GetCallsAsync(string whereExpressionn, int offset, int count) {
             throw new NotImplementedException();
         }
 
-        public override void GetCDRsCountAsync(string whereExpression)
-        {
+        public override void GetCDRsCountAsync(string whereExpression) {
             throw new NotImplementedException();
         }
 
-        public override void GetCDRsAsync(string whereExpressionn, int offset, int count)
-        {
+        public override void GetCDRsAsync(string whereExpressionn, int offset, int count) {
+            throw new NotImplementedException();
+        }
+
+        public override void CreateCustomerAsync(Customer customer) {
+            throw new NotImplementedException();
+        }
+
+        public override void DeleteCustomerAsync(string customerUsername) {
             throw new NotImplementedException();
         }
     }

@@ -38,6 +38,12 @@ using NUnit.Framework;
 
 namespace SIPSorcery.Sys
 {
+    public class Persistence {
+        public const string PERSISTENCE_STORAGETYPE_KEY = "PersistenceStorageType";
+        public const string PERSISTENCE_STORAGECONNSTR_KEY = "PersistenceConnStr";
+    }
+
+
 	public enum StorageTypes
 	{
 		Unknown,

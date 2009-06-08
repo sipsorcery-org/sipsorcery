@@ -38,12 +38,9 @@ namespace SIPSorcery
 
     public class AssemblyState
     {
-        public static Color InfoTextColour = Color.FromArgb(0xff, 0xA0, 0xF9, 0x27);
-        public static Color WarnTextColour = Colors.Yellow;
-        public static Color ErrorTextColour = Colors.Red;
-        public static Color MonitorTextColour = Colors.Purple;
-
-        //public static SolidColorBrush TextBoxFocusedBackground = new SolidColorBrush(Color.FromArgb(0xff, 0x17, 0x1e, 0x17));
-        public static SolidColorBrush TextBoxFocusedBackground = new SolidColorBrush(Color.FromArgb(0xff, 0xff, 0xff, 0xff));
+        public static SolidColorBrush NormalTextBrush = (SolidColorBrush)Application.Current.Resources["NormalTextBrush"];
+        public static SolidColorBrush WarnTextBrush = (SolidColorBrush)Application.Current.Resources["WarningTextBrush"];
+        public static SolidColorBrush InfoTextBrush = (SolidColorBrush)Application.Current.Resources["InfoTextBrush"];
+        public static SolidColorBrush ErrorTextBrush = (SolidColorBrush)Application.Current.Resources["ErrorTextBrush"];
     }
 }

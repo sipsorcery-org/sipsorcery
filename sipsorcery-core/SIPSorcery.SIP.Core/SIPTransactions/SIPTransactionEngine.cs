@@ -16,8 +16,7 @@ namespace SIPSorcery.SIP
     {
         protected static ILog logger = AssemblyState.logger;
 
-        protected static readonly int m_t1 = SIPTimings.T1;                     // SIP Timer T1 in milliseconds.
-        protected static readonly int m_t6 = SIPTimings.T6;                     // SIP Timer T1 in milliseconds.
+        private static readonly int m_t6 = SIPTimings.T6;
         protected static readonly int m_maxRingTime = SIPTimings.MAX_RING_TIME; // Max time an INVITE will be left ringing for (typically 10 mins).    
 
         private Dictionary<string, SIPTransaction> m_transactions = new Dictionary<string, SIPTransaction>();
@@ -227,6 +226,8 @@ namespace SIPSorcery.SIP
                                     // INVITE requests that have been ringing too long.
                                     transaction.HasTimedOut = true;
                                     transaction.TimedOutAt = DateTime.Now;
+                                    transaction.DeliveryPending = false;
+                                    transaction.DeliveryFailed = true;
                                     transaction.FireTransactionTimedOut();
                                 }
                             }
@@ -239,16 +240,26 @@ namespace SIPSorcery.SIP
                                 {
                                     transaction.HasTimedOut = true;
                                     transaction.TimedOutAt = DateTime.Now;
+                                    transaction.DeliveryPending = false;
+                                    transaction.DeliveryFailed = true;
                                     transaction.FireTransactionTimedOut();
                                 }
                             }
                         }
+                        else if (transaction.HasTimedOut)
+                        {
+                            expiredTransactionIds.Add(transaction.TransactionId);
+                        }
                         else if (DateTime.Now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
                         {
                             if (transaction.TransactionState == SIPTransactionStatesEnum.Calling ||
-                               transaction.TransactionState == SIPTransactionStatesEnum.Trying || 
+                               transaction.TransactionState == SIPTransactionStatesEnum.Trying ||
                                transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
                             {
+                                //logger.Warn("Timed out transaction in SIPTransactionEngine, should have been timed out in the SIP Transport layer. " + transaction.TransactionRequest.Method + ".");
+                                transaction.DeliveryPending = false;
+                                transaction.DeliveryFailed = true;
+                                transaction.TimedOutAt = DateTime.Now;
                                 transaction.HasTimedOut = true;
                                 transaction.FireTransactionTimedOut();
                             }
@@ -262,14 +273,7 @@ namespace SIPSorcery.SIP
                         if (m_transactions.ContainsKey(transactionId))
                         {
                             SIPTransaction expiredTransaction = m_transactions[transactionId];
-
-                            //if (expiredTransaction.HasTimedOut)
-                            //{
-                            //    expiredTransaction.FireTransactionTimedOut();
-                            //}
-
                             expiredTransaction.FireTransactionRemoved();
-
                             RemoveTransaction(expiredTransaction);
                         }
                     }
@@ -404,7 +408,8 @@ namespace SIPSorcery.SIP
                 SIPURI dummyURI = SIPURI.ParseSIPURI("sip:dummy@mysipswitch.com");
                 SIPRequest inviteRequest = GetDummyINVITERequest(dummyURI);
 
-                UACInviteTransaction clientTransaction = new UACInviteTransaction(null, inviteRequest, null, null);
+                SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
+                UACInviteTransaction clientTransaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, dummySIPEndPoint, null);
                 clientEngine.AddTransaction(clientTransaction);
                 clientEngine.AddTransaction(clientTransaction);
             }
@@ -434,7 +439,7 @@ namespace SIPSorcery.SIP
                     serverTransport.SIPTransportRequestReceived += (localEndPoint, remoteEndPoint, sipRequest) =>
                     {
                         Console.WriteLine("Server Transport Request In: " + sipRequest.Method + ".");
-                        serverTransaction = serverTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localEndPoint);
+                        serverTransaction = serverTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localEndPoint, null);
                         SetTransactionTraceEvents(serverTransaction);
                         serverTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
                     };
@@ -444,7 +449,7 @@ namespace SIPSorcery.SIP
                     inviteRequest.LocalSIPEndPoint = clientTransport.GetDefaultTransportContact(SIPProtocolsEnum.udp);
 
                     // Send the invite to the server side.
-                    UACInviteTransaction clientTransaction = new UACInviteTransaction(clientTransport, inviteRequest, serverEndPoint, clientEndPoint);
+                    UACInviteTransaction clientTransaction = new UACInviteTransaction(clientTransport, inviteRequest, serverEndPoint, clientEndPoint, null);
                     SetTransactionTraceEvents(clientTransaction);
                     clientEngine.AddTransaction(clientTransaction);
                     clientTransaction.SendInviteRequest(serverEndPoint, inviteRequest);
@@ -489,7 +494,8 @@ namespace SIPSorcery.SIP
                 SIPRequest inviteRequest = SIPRequest.ParseSIPRequest(inviteRequestStr);
 
                 // Server has received the invite.
-                UASInviteTransaction serverTransaction = new UASInviteTransaction(null, inviteRequest, null, null);
+                SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
+                UASInviteTransaction serverTransaction = new UASInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, dummySIPEndPoint, null);
                 engine.AddTransaction(serverTransaction);
 
                 //SIPResponse errorResponse = SIPTransport.GetResponse(inviteRequest.Header, SIPResponseStatusCodesEnum.Decline, "Unit Test", null, null);

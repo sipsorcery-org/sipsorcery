@@ -135,7 +135,7 @@ namespace SIPSorcery.Servers
         /// </summary>
         /// <param name="sipResponse">The unmangled SIP response.</param>
         /// <returns>The mangled SIP response</returns>
-        public static void MangleSIPResponse(SIPMonitorServerTypesEnum server, SIPResponse sipResponse, IPEndPoint remoteEndPoint, string username, SIPMonitorLogDelegate logDelegate)
+        public static void MangleSIPResponse(SIPMonitorServerTypesEnum server, SIPResponse sipResponse, SIPEndPoint remoteEndPoint, string username, SIPMonitorLogDelegate logDelegate)
         {
             try
             {
@@ -145,10 +145,10 @@ namespace SIPSorcery.Servers
 
                     // Only mangle if the host is a private IP address and there is something to change. 
                     // For example the server could be on the same private subnet in which case it can't help.
-                    if (SIPTransport.IsPrivateAddress(contactHost) && contactHost != remoteEndPoint.Address.ToString())
+                    if (SIPTransport.IsPrivateAddress(contactHost) && contactHost != remoteEndPoint.SocketEndPoint.Address.ToString())
                     {
-                        string origContact = sipResponse.Header.Contact[0].ContactURI.Host;
-                        sipResponse.Header.Contact[0].ContactURI.Host = remoteEndPoint.ToString();
+                        SIPURI origContact = sipResponse.Header.Contact[0].ContactURI;
+                        sipResponse.Header.Contact[0].ContactURI = new SIPURI(origContact.Scheme, remoteEndPoint);
 
                         //logger.Debug("INVITE response Contact URI identified as containing private address, original " + origContact + " adjustied to " + remoteEndPoint.ToString() + ".");
                         //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorServerTypesEnum.ContactRegisterInProgress, "INVITE Response contact adjusted from " + origContact + " to " + remoteEndPoint.ToString() + ".", username));
@@ -158,7 +158,7 @@ namespace SIPSorcery.Servers
                 if (sipResponse.Body != null)
                 {
                     bool wasMangled = false;
-                    string mangledSDP = MangleSDP(sipResponse.Body, remoteEndPoint.Address.ToString(), out wasMangled);
+                    string mangledSDP = MangleSDP(sipResponse.Body, remoteEndPoint.SocketEndPoint.Address.ToString(), out wasMangled);
 
                     if (wasMangled)
                     {
@@ -167,7 +167,7 @@ namespace SIPSorcery.Servers
         
                         if (logDelegate != null)
                         {
-                            logDelegate(new SIPMonitorControlClientEvent(server, SIPMonitorEventTypesEnum.DialPlan, "SDP mangled for INVITE response from " + sipResponse.RemoteSIPEndPoint.ToString() + ", adjusted address " + remoteEndPoint.Address.ToString() + ".", username));
+                            logDelegate(new SIPMonitorControlClientEvent(server, SIPMonitorEventTypesEnum.DialPlan, "SDP mangled for INVITE response from " + sipResponse.RemoteSIPEndPoint.ToString() + ", adjusted address " + remoteEndPoint.SocketEndPoint.Address.ToString() + ".", username));
                         }
                     }
                 }

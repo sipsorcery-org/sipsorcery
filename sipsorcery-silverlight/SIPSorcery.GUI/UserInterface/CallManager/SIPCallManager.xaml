@@ -29,9 +29,15 @@
 							IsReadOnly="True"
 							MinWidth="80" />
 					 	<data:DataGridTextColumn 
-							Header="Remote" 
+							Header="Destination" 
 							Width="SizeToCells"
-							Binding="{Binding Path=SIPDialogue.RemoteTarget, Converter={StaticResource SIPURIStringConverter}}" 
+							Binding="{Binding Path=RemoteTarget}" 
+							IsReadOnly="True"
+							MinWidth="200"/>
+						<data:DataGridTextColumn 
+							Header="From" 
+							Width="SizeToCells"
+							Binding="{Binding Path=RemoteUserField}" 
 							IsReadOnly="True"
 							MinWidth="200"/>
 		 			</data:DataGrid.Columns>
@@ -65,25 +71,19 @@
 					<data:DataGridTextColumn 
 						Header="Destination" 
 						Width="SizeToCells"
-						Binding="{Binding Path=Destination, Converter={StaticResource SIPURIStringConverter}}" 
+						Binding="{Binding Path=DstURI}" 
 						IsReadOnly="True"
 						MinWidth="150" />
 					<data:DataGridTextColumn 
-						Header="Remote IP" 
+						Header="AnsweredTime" 
 						Width="SizeToCells"
-						Binding="{Binding Path=RemoteSocket}" 
-						IsReadOnly="True"
-						MinWidth="100" />
-					<data:DataGridTextColumn 
-						Header="Answered" 
-						Width="SizeToCells"
-						Binding="{Binding Path=AnswerTime, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding Path=AnsweredTime, Converter={StaticResource DateTimeConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100" />
 					<data:DataGridTextColumn 
 						Header="Answer Status" 
 						Width="SizeToCells"
-						Binding="{Binding Path=AnswerStatus}" 
+						Binding="{Binding Path=AnsweredStatus}" 
 						IsReadOnly="True"
 						MinWidth="80" />
 					<data:DataGridTextColumn 

@@ -85,6 +85,10 @@
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="UserInterface\CreateAccountControl.xaml">
+      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UserInterface\LoginControl.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
@@ -149,6 +153,9 @@
     <Compile Include="UserInterface\CallManager\SIPCallManager.xaml.cs">
       <DependentUpon>SIPCallManager.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UserInterface\CreateAccountControl.xaml.cs">
+      <DependentUpon>CreateAccountControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserInterface\LoginControl.xaml.cs">
       <DependentUpon>LoginControl.xaml</DependentUpon>
     </Compile>
@@ -206,7 +213,6 @@
     <None Include="Service References\SIPSorceryProvisioningClient\provisioning1.xsd" />
     <None Include="Service References\SIPSorceryProvisioningClient\provisioning2.xsd" />
     <None Include="Service References\SIPSorceryProvisioningClient\provisioning3.xsd" />
-    <None Include="Service References\SIPSorceryProvisioningClient\provisioning4.xsd" />
     <None Include="Service References\SIPSorceryProvisioningClient\Reference.svcmap">
       <Generator>WCF Proxy Generator</Generator>
       <LastGenOutput>Reference.cs</LastGenOutput>
@@ -231,6 +237,7 @@
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
     <Resource Include="Images\wizard-logo.png" />
+    <Resource Include="Images\small_logo.png" />
     <None Include="Service References\SIPSorceryProvisioningClient\provisioning.disco" />
     <Content Include="ServiceReferences.ClientConfig" />
   </ItemGroup>
@@ -241,6 +248,10 @@
     <ProjectReference Include="..\SIPSorcery.Messaging\SIPSorcery.Silverlight.Messaging.csproj">
       <Project>{9DE0DCC6-F4A7-4BCA-BD89-96F1D0C91151}</Project>
       <Name>SIPSorcery.Silverlight.Messaging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Silverlight.CRM\SIPSorcery.Silverlight.CRM.csproj">
+      <Project>{FDC64126-97E7-4076-910B-E842F730CF3E}</Project>
+      <Name>SIPSorcery.Silverlight.CRM</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Silverlight.SIP.App\SIPSorcery.Silverlight.SIP.App.csproj">
       <Project>{F1D7E6F6-4887-407C-BFCC-10ED5FA2C704}</Project>

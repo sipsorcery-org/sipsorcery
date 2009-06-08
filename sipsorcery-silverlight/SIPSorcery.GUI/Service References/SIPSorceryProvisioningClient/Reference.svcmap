@@ -22,14 +22,13 @@
     <MetadataSource Address="http://localhost:8080/provisioning" Protocol="http" SourceId="1" />
   </MetadataSources>
   <Metadata>
-    <MetadataFile FileName="provisioning.xsd" MetadataType="Schema" ID="74733819-ed26-40e0-b85f-2fbb06c0d3d9" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd2" />
-    <MetadataFile FileName="provisioning1.xsd" MetadataType="Schema" ID="504eb963-5928-4fe3-af9a-0c5874f768ff" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd3" />
-    <MetadataFile FileName="provisioning2.xsd" MetadataType="Schema" ID="b67e20d8-3be0-4fc3-a079-4515b52cdafb" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd0" />
-    <MetadataFile FileName="provisioning3.xsd" MetadataType="Schema" ID="cb4bacaa-2b4c-4fa2-aa86-50f24cb0f66a" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd1" />
-    <MetadataFile FileName="provisioning4.xsd" MetadataType="Schema" ID="b6a63657-7166-4b3b-a05c-12b4edd32bd4" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd4" />
-    <MetadataFile FileName="SIPProvisioningWebService1.wsdl" MetadataType="Wsdl" ID="9996f5b6-0919-4008-801f-385376a8ee88" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?wsdl" />
-    <MetadataFile FileName="provisioning.disco" MetadataType="Disco" ID="4cc8699f-4c03-447a-ad7c-2cab9b5f5e0b" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?disco" />
-    <MetadataFile FileName="provisioning.wsdl" MetadataType="Wsdl" ID="58732bc2-20f6-4fb8-8694-6f44d135fd7b" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?wsdl=wsdl0" />
+    <MetadataFile FileName="provisioning.wsdl" MetadataType="Wsdl" ID="1358abde-4bc3-483d-9308-48e0a1ed7af1" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?wsdl=wsdl0" />
+    <MetadataFile FileName="provisioning.xsd" MetadataType="Schema" ID="a6a10deb-7e0a-4732-b3c2-fd6b27800878" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd2" />
+    <MetadataFile FileName="SIPProvisioningWebService1.wsdl" MetadataType="Wsdl" ID="34155a5e-4f60-4ccf-bf08-c60bd4e728e4" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?wsdl" />
+    <MetadataFile FileName="provisioning1.xsd" MetadataType="Schema" ID="f3433fcd-676a-492f-a364-2221c3ed586a" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd0" />
+    <MetadataFile FileName="provisioning2.xsd" MetadataType="Schema" ID="17b1d7be-76fe-47f4-8bc6-5f62edb52435" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd3" />
+    <MetadataFile FileName="provisioning3.xsd" MetadataType="Schema" ID="63c53435-4dd6-489f-8248-5f703f780d3c" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?xsd=xsd1" />
+    <MetadataFile FileName="provisioning.disco" MetadataType="Disco" ID="7b90233a-5082-4fa3-ab8e-cf806142a07d" SourceId="1" SourceUrl="http://suzannes-pc:8080/provisioning?disco" />
   </Metadata>
   <Extensions>
     <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />

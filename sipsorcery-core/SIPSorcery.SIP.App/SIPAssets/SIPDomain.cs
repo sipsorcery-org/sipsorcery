@@ -65,32 +65,59 @@ using NUnit.Framework;
 
 namespace SIPSorcery.SIP.App
 {
-    [Table(Name = "sipdomains")]
+    /// <remarks>
+    /// The mechanism to load the SIP domain records differs for XML and SQL data stores. Because the domain and domain alias
+    /// are hierarchical the XML stores the records in a nested node structure. With SQL the nested structure is not possible 
+    /// and instead a flat table is used where the domain alias are stored as a delimited list in a single column field.
+    /// </remarks>
     [DataContractAttribute]
+    [Table(Name = "sipdomains")]
     public class SIPDomain : ISIPAsset
     {
+        private const char ALIAS_SEPERATOR_CHAR = ';';
         public const string XML_DOCUMENT_ELEMENT_NAME = "sipdomains";
         public const string XML_ELEMENT_NAME = "sipdomain";
 
         private static ILog logger = AssemblyState.logger;
         private static string m_newLine = AppState.NewLine;
 
-        [Column(Storage = "_id", Name = "id", DbType = "character varying(36)", IsPrimaryKey = true, CanBeNull = false)]
         [DataMember]
+        [Column(Storage = "_id", Name = "id", DbType = "character varying(36)", IsPrimaryKey = true, CanBeNull = false)]
         public string Id { get; set; }
 
-        [Column(Storage = "_domain", Name = "domain", DbType = "character varying(128)", IsPrimaryKey = true, CanBeNull = false)]
         [DataMember]
+        [Column(Storage = "_domain", Name = "domain", DbType = "character varying(128)", CanBeNull = false)]
         public string Domain {get; set;}
 
-        [Column(Storage = "_owner", Name = "owner", DbType = "character varying(32)", CanBeNull = false)]
         [DataMember]
+        [Column(Storage = "_owner", Name = "owner", DbType = "character varying(32)", CanBeNull = true)]
         public string Owner { get; set; }
                 
-        public List<string> Aliases;
-
         [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
         public DateTime? Inserted { get; set; }
+
+        [Column(Storage = "_aliaslist", Name = "aliaslist", DbType = "varchar(1024)", CanBeNull = true)]
+        public string AliasList
+        {
+            get
+            {
+                string aliasList = null;
+                Aliases.ForEach(a => aliasList += a + ALIAS_SEPERATOR_CHAR);
+                return aliasList;
+            }
+            set
+            {
+                Aliases = ParseAliases(value);
+            }
+        }
+
+        public List<string> Aliases = new List<string>();
+
+        public object OrderProperty
+        {
+            get { return Domain; }
+            set { }
+        }
 
         public SIPDomain()
         { }
@@ -106,40 +133,20 @@ namespace SIPSorcery.SIP.App
 
 #if !SILVERLIGHT
 
-        public SIPDomain(XmlNode sipDomainNode)
-        {
-            Domain = sipDomainNode.Attributes.GetNamedItem("name").Value;
-            Owner = (sipDomainNode.Attributes.GetNamedItem("owner") != null) ? sipDomainNode.Attributes.GetNamedItem("owner").Value : null;
-            Aliases = new List<string>();
-
-            XmlNodeList aliasNodes = sipDomainNode.SelectNodes("alias");
-            if (aliasNodes != null)
-            {
-                foreach (XmlNode aliasNode in aliasNodes)
-                {
-                    if (aliasNode.InnerText != null && !Aliases.Contains(aliasNode.InnerText.Trim().ToLower()))
-                    {
-                        Aliases.Add(aliasNode.InnerText.Trim().ToLower());
-                    }
-                }
-            }
-         }
-
         public SIPDomain(DataRow row) {
-            Aliases = new List<string>();
             Load(row);
         }
 
         public void Load(DataRow row) {
             Id = (row.Table.Columns.Contains("id") && row["id"] != DBNull.Value) ? row["id"] as string : Guid.NewGuid().ToString();
             Domain = row["domain"] as string;
-            Owner = row["owner"] as string;
+            Owner = (row.Table.Columns.Contains("owner") && row["owner"] != DBNull.Value) ? row["owner"] as string : null;
             if (row.Table.Columns.Contains("inserted") & row["inserted"] != DBNull.Value) {
-                Convert.ToDateTime(row["inserted"]);
+                Inserted = Convert.ToDateTime(row["inserted"]);
             }
-            if (row.Table.Columns.Contains("domainalias") & row["domainalias"] != DBNull.Value) {
-                Aliases.Add(row["domainalias"] as string);
-            }
+
+            string aliasList = (row.Table.Columns.Contains("aliaslist") & row["aliaslist"] != DBNull.Value) ? row["aliaslist"] as string : null;
+            Aliases = ParseAliases(aliasList);
         }
 
         public Dictionary<Guid, object> Load(XmlDocument dom) {
@@ -152,7 +159,7 @@ namespace SIPSorcery.SIP.App
                                     select new SIPDomain() {
                                         Id = Guid.NewGuid().ToString(),
                                         Domain = domain.Element("domain").Value,
-                                        Owner = domain.Element("owner").Value,
+                                        Owner = (domain.Element("owner") != null) ? domain.Element("owner").Value : null,
                                         Aliases =
                                             (from alias in domain.Element("sipdomainaliases").Descendants("domainalias")
                                              select alias.Value).ToList()
@@ -171,6 +178,11 @@ namespace SIPSorcery.SIP.App
         }
 
 #endif
+
+        public object GetOrderProperty()
+        {
+            return Domain;
+        }
 
         public string ToXML()
         {
@@ -195,6 +207,28 @@ namespace SIPSorcery.SIP.App
 
         public string GetXMLDocumentElementName() {
             return XML_DOCUMENT_ELEMENT_NAME;
+        }
+
+        private List<string> ParseAliases(string aliasString)
+        {
+            List<string> aliasList = new List<string>();
+
+            if (!aliasString.IsNullOrBlank())
+            {
+                string[] aliases = aliasString.Split(ALIAS_SEPERATOR_CHAR);
+                if (aliases != null && aliases.Length > 0)
+                {
+                    foreach (string alias in aliases)
+                    {
+                        if (!alias.IsNullOrBlank() && !aliasList.Contains(alias.ToLower()))
+                        {
+                            aliasList.Add(alias.ToLower());
+                        }
+                    }
+                }
+            }
+
+            return aliasList;
         }
     }
 }

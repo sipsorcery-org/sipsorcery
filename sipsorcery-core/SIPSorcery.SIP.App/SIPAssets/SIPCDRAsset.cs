@@ -30,9 +30,9 @@ namespace SIPSorcery.SIP.App {
             get { return m_sipCDR.CDRId.ToString(); }
             set { m_sipCDR.CDRId = new Guid(value); }
         }
- 
-        [Column(Storage = "_owner", Name = "owner", DbType = "character varying(32)", CanBeNull = true)]
+
         [DataMember]
+        [Column(Storage = "_owner", Name = "owner", DbType = "character varying(32)", CanBeNull = true)]
         public string Owner {
             get { return m_sipCDR.Owner; }
             set { m_sipCDR.Owner = value; }
@@ -61,6 +61,11 @@ namespace SIPSorcery.SIP.App {
             get { return m_sipCDR.Created; }
             set { m_sipCDR.Created = value; }
         }
+ 
+        public object OrderProperty {
+            get { return m_sipCDR.Created; }
+            set { m_sipCDR.Created = Convert.ToDateTime(value); }
+        }
 
         [Column(Storage = "_dst", Name = "dst", DbType = "character varying(128)", CanBeNull = false)]
         [DataMember]
@@ -86,21 +91,21 @@ namespace SIPSorcery.SIP.App {
         [Column(Storage = "_fromuser", Name = "fromuser", DbType = "character varying(128)", CanBeNull = true)]
         [DataMember]
         public string FromUser {
-            get { return m_sipCDR.From.FromURI.User; }
+            get { return (m_sipCDR.From != null) ? m_sipCDR.From.FromURI.User : null; }
             set { } // Set on FromHeader.
         }
 
         [Column(Storage = "_fromname", Name = "fromname", DbType = "character varying(128)", CanBeNull = true)]
         [DataMember]
         public string FromHost {
-            get { return m_sipCDR.From.FromName; }
+            get { return (m_sipCDR.From != null) ? m_sipCDR.From.FromName : null; }
             set { } // Set on FromHeader.
         }
 
         [Column(Storage = "_fromheader", Name = "fromheader", DbType = "character varying(1024)", CanBeNull = true)]
         [DataMember]
         public string FromHeader {
-            get { return m_sipCDR.From.ToString(); }
+            get { return ( m_sipCDR.From != null) ? m_sipCDR.From.ToString() : null; }
             set { m_sipCDR.From = (!value.IsNullOrBlank()) ? SIPFromHeader.ParseFromHeader(value) : null; }
         }
 
@@ -114,14 +119,14 @@ namespace SIPSorcery.SIP.App {
         [Column(Storage = "_localsocket", Name = "localsocket", DbType = "character varying(64)", CanBeNull = false)]
         [DataMember]
         public string LocalSocket {
-            get { return m_sipCDR.LocalSIPEndPoint.ToString(); }
+            get { return (m_sipCDR.LocalSIPEndPoint != null) ? m_sipCDR.LocalSIPEndPoint.ToString() : null; }
             set { m_sipCDR.LocalSIPEndPoint = (!value.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(value) : null; }
         }
 
         [Column(Storage = "_remotesocket", Name = "remotesocket", DbType = "character varying(64)", CanBeNull = false)]
         [DataMember]
         public string RemoteSocket {
-            get { return m_sipCDR.RemoteEndPoint.ToString(); }
+            get { return (m_sipCDR.RemoteEndPoint != null) ? m_sipCDR.RemoteEndPoint.ToString() : null; }
             set { m_sipCDR.RemoteEndPoint = (!value.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(value) : null; }
         }
 
@@ -252,6 +257,11 @@ namespace SIPSorcery.SIP.App {
 
 #endif
 
+        public object GetOrderProperty()
+        {
+            return m_sipCDR.Created;
+        }
+
         public string ToXML() {
             string cdrXML =
                 " <" + XML_ELEMENT_NAME + ">" + m_newLine +
@@ -271,7 +281,9 @@ namespace SIPSorcery.SIP.App {
             string cdrXML =
                 "  <id>" + m_sipCDR.CDRId.ToString() + "</id>" + m_newLine +
                 "  <owner>" + m_sipCDR.Owner + "</owner>" + m_newLine +
+                "  <adminmemberid>" + m_sipCDR.Owner + "</adminmemberid>" + m_newLine +
                 "  <direction>" + m_sipCDR.CallDirection + "</direction>" + m_newLine +
+                "  <inserted>" + Inserted.ToString("dd MMM yyyy HH:mm:ss") + "</inserted>" + m_newLine +
                 "  <created>" + m_sipCDR.Created.ToString("dd MMM yyyy HH:mm:ss") + "</created>" + m_newLine +
                 "  <dsturi>" + SafeXML.MakeSafeXML(m_sipCDR.Destination.ToString()) + "</dsturi>" + m_newLine +
                 "  <from>" + SafeXML.MakeSafeXML(m_sipCDR.From.ToString()) + "</from>" + m_newLine +
@@ -297,6 +309,11 @@ namespace SIPSorcery.SIP.App {
 
         public string GetXMLDocumentElementName() {
             return XML_DOCUMENT_ELEMENT_NAME;
+        }
+
+        public void Hungup(string hangupReason)
+        {
+            m_sipCDR.Hungup(hangupReason);
         }
     }
 }

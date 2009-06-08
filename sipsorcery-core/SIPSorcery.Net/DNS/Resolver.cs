@@ -55,14 +55,16 @@ namespace Heijden.DNS
 		/// </summary>
 		public const int DefaultPort = 53;
 
-        public const int DEFAULT_TIMEOUT = 2;       // Default timeout in seconds for DNS lookups.
+        public const int DEFAULT_TIMEOUT = 2;               // Default timeout in seconds for DNS lookups.
+        private const int SWITCH_ACTIVE_TIMEOUT_COUNT = 5;  // The timeout in seconds that if no response is received on the active DNS server it will be switched.
+        private const int FAILURE_RETRY = 60;               // The timeout in seconds to retry DNS lookups that failed.
 
         private static ILog logger = AppState.logger;
 
 		/// <summary>
 		/// Gets list of OPENDNS servers
 		/// </summary>
-		public static readonly IPEndPoint[] DefaultDnsServers = 
+		public static readonly List<IPEndPoint> DefaultDnsServers = new List<IPEndPoint>()
 		{ 
 			new IPEndPoint(IPAddress.Parse("208.67.222.222"), DefaultPort), 
 			new IPEndPoint(IPAddress.Parse("208.67.220.220"), DefaultPort) 
@@ -75,8 +77,11 @@ namespace Heijden.DNS
 		private TransportType m_TransportType;
 
 		private List<IPEndPoint> m_DnsServers;
+        private IPEndPoint m_activeDNSServer;   // The DNS server currently being used for lookups.
+        private Dictionary<IPEndPoint, int> m_receiveTimeouts = new Dictionary<IPEndPoint, int>();
 
 		private Dictionary<string, DNSResponse> m_ResponseCache;
+        private Dictionary<string, DNSResponse> m_lookupFailures;
 
 		/// <summary>
 		/// Constructor of Resolver using DNS servers specified.
@@ -85,6 +90,7 @@ namespace Heijden.DNS
 		public Resolver(IPEndPoint[] DnsServers)
 		{
 			m_ResponseCache = new Dictionary<string, DNSResponse>();
+            m_lookupFailures = new Dictionary<string, DNSResponse>();
 			m_DnsServers = new List<IPEndPoint>();
 			m_DnsServers.AddRange(DnsServers);
 
@@ -289,6 +295,22 @@ namespace Heijden.DNS
 
 			string strKey = question.QClass + "-" + question.QType + "-" + question.QName;
 
+            lock (m_lookupFailures)
+            {
+                if (m_lookupFailures.ContainsKey(strKey))
+                {
+                    if (DateTime.Now.Subtract(m_lookupFailures[strKey].TimeStamp).TotalSeconds < FAILURE_RETRY)
+                    {
+                        return m_lookupFailures[strKey];
+                    }
+                    else
+                    {
+                        m_lookupFailures.Remove(strKey);
+                        return null;
+                    }
+                }
+            }
+
 			DNSResponse response = null;
 
 			lock (m_ResponseCache)
@@ -319,13 +341,23 @@ namespace Heijden.DNS
 			if (response.Questions.Count == 0)
 				return;
 
+            Question question = response.Questions[0];
+
+            string strKey = question.QClass + "-" + question.QType + "-" + question.QName;
+
 			// Only cached non-error responses
 			if (response.header.RCODE != RCode.NOERROR)
-				return;
+			{
+                lock (m_lookupFailures)
+                {
+                    if (m_lookupFailures.ContainsKey(strKey))
+                    {
+                        m_lookupFailures.Remove(strKey);
+                    }
 
-			Question question = response.Questions[0];
-
-			string strKey = question.QClass + "-" + question.QType + "-" + question.QName;
+                    m_lookupFailures.Add(strKey, response);
+                }
+            }
 
 			lock (m_ResponseCache)
 			{
@@ -344,32 +376,36 @@ namespace Heijden.DNS
         /// <returns></returns>
 		private DNSResponse UdpRequest(DNSRequest request, List<IPEndPoint> dnsServers, int timeout)
 		{
-			// RFC1035 max. size of a UDP datagram is 512 bytes
+            // RFC1035 max. size of a UDP datagram is 512 bytes
 			byte[] responseMessage = new byte[512];
 
-			for (int intAttempts = 0; intAttempts < m_Retries; intAttempts++)
-			{
-                for (int intDnsServer = 0; intDnsServer < dnsServers.Count; intDnsServer++)
-				{
-                    logger.Debug("Sending UDP DNS request to " + dnsServers[intDnsServer] + ".");
+            IPEndPoint activeDNSServer = GetActiveDNSServer();
+
+			//for (int intAttempts = 0; intAttempts < m_Retries; intAttempts++)
+			//{
+            //    for (int intDnsServer = 0; intDnsServer < dnsServers.Count; intDnsServer++)
+			//	{
+            logger.Debug("Sending UDP DNS request to " + activeDNSServer + " for " + request.Questions[0].QType + " " + request.Questions[0].QName + ".");
 
 					Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 					socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, timeout * 1000);
 
 					try
 					{
-                        socket.SendTo(request.Data, dnsServers[intDnsServer]);
+                        socket.SendTo(request.Data, activeDNSServer);
 						int intReceived = socket.Receive(responseMessage);
+                        ResetTimeoutCount(activeDNSServer);
 						byte[] data = new byte[intReceived];
 						Array.Copy(responseMessage, data, intReceived);
-                        DNSResponse response = new DNSResponse(dnsServers[intDnsServer], data);
+                        DNSResponse response = new DNSResponse(activeDNSServer, data);
 						AddToCache(response);
 						return response;
 					}
 					catch (SocketException)
 					{
-						Verbose(string.Format(";; Connection to nameserver {0} failed", (intDnsServer + 1)));
-						continue; // next try
+                        IncrementTimeoutCount(activeDNSServer);
+                        Verbose(string.Format(";; Connection to nameserver {0} failed", activeDNSServer));
+						//continue; // next try
 					}
 					finally
 					{
@@ -378,8 +414,9 @@ namespace Heijden.DNS
 						// close the socket
 						socket.Close();
 					}
-				}
-			}
+			//	}
+			//}
+
 			DNSResponse responseTimeout = new DNSResponse();
 			responseTimeout.Error = "Timeout Error";
 			return responseTimeout;
@@ -498,6 +535,30 @@ namespace Heijden.DNS
 			responseTimeout.Error = "Timeout Error";
 			return responseTimeout;
 		}
+
+        /// <summary>
+        /// Do an QClass=IN Query on the previously cached results.
+        /// </summary>
+        /// <param name="name">Name to query</param>
+        /// <param name="qtype">Question type</param>
+        /// <returns>Response of the query</returns>
+        public DNSResponse QueryCache(string name, DNSQType qtype)
+        {
+            Question question = new Question(name, qtype, QClass.IN);
+            return SearchInCache(question);
+        }
+
+        /// <summary>
+        /// Do an QClass=IN Query on the previously cached results.
+        /// </summary>
+        /// <param name="name">Name to query</param>
+        /// <param name="qtype">Question type</param>
+        /// <returns>Response of the query</returns>
+        public DNSResponse QueryCache(string name, DNSQType qtype, QClass qclass)
+        {
+            Question question = new Question(name, qtype, qclass);
+            return SearchInCache(question);
+        }
 
 		/// <summary>
 		/// Do Query on specified DNS servers
@@ -752,5 +813,74 @@ namespace Heijden.DNS
 			}
 			return null;
 		}
+
+        private IPEndPoint GetActiveDNSServer()
+        {
+            if (m_DnsServers == null)
+            {
+                m_DnsServers = DefaultDnsServers;
+            }
+
+            if (m_DnsServers.Count == 1)
+            {
+                return m_DnsServers[0];
+            }
+            else
+            {
+                if (m_activeDNSServer == null)
+                {
+                    m_activeDNSServer = m_DnsServers[0];
+                }
+                else
+                {
+                    // Check that the active DNS server is getting responses.
+                    if (m_receiveTimeouts.ContainsKey(m_activeDNSServer) && m_receiveTimeouts[m_activeDNSServer] >= SWITCH_ACTIVE_TIMEOUT_COUNT)
+                    {
+                        // Switch active DNS server to alternative end point as too many consectutive receive failures on this one.
+                        foreach (IPEndPoint dnsServer in m_DnsServers)
+                        {
+                            if (dnsServer != m_activeDNSServer)
+                            {
+                                logger.Debug("Switching active DNS server from " + m_activeDNSServer + " to " + dnsServer + ".");
+                                m_activeDNSServer = dnsServer;
+                                ResetTimeoutCount(m_activeDNSServer);
+                            }
+                        }
+                    }
+                }
+
+                return m_activeDNSServer;
+            }
+        }
+
+        private void IncrementTimeoutCount(IPEndPoint dnsServer)
+        {
+            if (m_DnsServers != null && m_DnsServers.Count > 1)
+            {
+                if (!m_receiveTimeouts.ContainsKey(dnsServer))
+                {
+                    m_receiveTimeouts.Add(dnsServer, 1);
+                }
+                else
+                {
+                    m_receiveTimeouts[dnsServer] = m_receiveTimeouts[dnsServer] + 1;
+                }
+            }
+        }
+
+        private void ResetTimeoutCount(IPEndPoint dnsServer)
+        {
+            if (m_DnsServers != null && m_DnsServers.Count > 1)
+            {
+                if (!m_receiveTimeouts.ContainsKey(dnsServer))
+                {
+                    m_receiveTimeouts.Add(dnsServer, 0);
+                }
+                else
+                {
+                    m_receiveTimeouts[dnsServer] = 0;
+                }
+            }
+        }
 	} 
 }

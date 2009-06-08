@@ -41,6 +41,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Xml;
+using SIPSorcery.CRM;
 using SIPSorcery.Servers;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -58,9 +59,12 @@ namespace SIPSorcery.SIPMonitor
         private string m_silverlightPolicyFilePath = SIPMonitorState.SilverlightPolicyFilePath;
 
         private SIPMonitorMediator m_sipMonitorMediator;
+        private CustomerSessionManager m_customerSessionManager;
 
-        public SIPMonitorDaemon()
-        {}
+        public SIPMonitorDaemon(CustomerSessionManager customerSessionManager)
+        {
+            m_customerSessionManager = customerSessionManager;
+        }
 
         public void Start()
         {
@@ -90,7 +94,9 @@ namespace SIPSorcery.SIPMonitor
                     machineMonitorEndPoints.ToArray(),
                     m_monitorLoopbackListenerPort,
                     null,
-                    null);
+                    m_customerSessionManager.Authenticate,
+                    m_customerSessionManager.Authenticate,
+                    m_customerSessionManager.CustomerPersistor.Get);
                 m_sipMonitorMediator.StartMonitoring();
 
                 logger.Debug("The SIP Monitor Server was successfully started, loopback port " + m_monitorLoopbackListenerPort + ".");

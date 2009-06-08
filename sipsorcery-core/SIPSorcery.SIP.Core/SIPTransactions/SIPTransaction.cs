@@ -110,7 +110,6 @@ namespace SIPSorcery.SIP
     /// - Matching a request to a transaction can rely on the branchid EXCEPT for an
     ///   ACK for a 2xx final response which is a new transaction and has a new branch ID.
 	/// </note>
-    [DataContract]
 	public class SIPTransaction
 	{
         protected static ILog logger = AssemblyState.logger;
@@ -121,11 +120,11 @@ namespace SIPSorcery.SIP
         
         private static string m_crLF = SIPConstants.CRLF;
 
-        //public SIPValidationError TransactionCreationError = SIPValidationError.None;
-        public int Retransmits = 1;
+        public int Retransmits = 0;
+        public int AckRetransmits = 0;
         public DateTime InitialTransmit = DateTime.MinValue;
         public DateTime LastTransmit = DateTime.MinValue;
-        public bool DeliveryPending;
+        public bool DeliveryPending = true;
         public bool DeliveryFailed = false;                 // If the transport layer does not receive a response to the request in the alloted time the request will be marked as failed.
         public bool HasTimedOut { get; set; }
 
@@ -151,32 +150,32 @@ namespace SIPSorcery.SIP
         protected string m_callId;
         protected string m_localTag;
         protected string m_remoteTag;
+        protected SIPRequest m_ackRequest;                  // ACK request for INVITE transactions.
+        protected SIPEndPoint m_ackRequestIPEndPoint;       // Socket the ACK request was sent to.
 
-        private SIPTransactionStatesEnum m_transactionState = SIPTransactionStatesEnum.Calling;
-        public SIPTransactionStatesEnum TransactionState
-        {
-               get{ return m_transactionState; }
-        }
-
-        protected SIPRequest m_transactionRequest;          // This is the request which started the transaction and on which it is based.
-        public SIPRequest TransactionRequest        
-        {
-            get { return m_transactionRequest; }
-        }
-
-        protected SIPRequest m_ackRequest;               // ACK request for INVITE transactions.
-        protected SIPEndPoint m_ackRequestIPEndPoint;     // Socket the ACK request was sent to.
-
-        [DataMember]
         public SIPURI TransactionRequestURI
         {
             get { return m_transactionRequest.URI; }
         }
-
-        [DataMember]
         public SIPUserField TransactionRequestFrom
         {
             get { return m_transactionRequest.Header.From.FromUserField; }
+        }
+        public SIPEndPoint RemoteEndPoint;                  // The remote socket that caused the transaction to be created or the socket a newly created transaction request was sent to.             
+        public SIPEndPoint LocalSIPEndPoint;                // The local SIP endpoint the remote request was received on the if created by this stack the local SIP end point used to send the transaction.
+        public SIPEndPoint OutboundProxy;                   // If not null this value is where ALL transaction requests should be sent to.
+        public SIPCDR CDR;
+
+        private SIPTransactionStatesEnum m_transactionState = SIPTransactionStatesEnum.Calling;
+        public SIPTransactionStatesEnum TransactionState
+        {
+            get { return m_transactionState; }
+        }
+
+        protected SIPRequest m_transactionRequest;          // This is the request which started the transaction and on which it is based.
+        public SIPRequest TransactionRequest
+        {
+            get { return m_transactionRequest; }
         }
 
         protected SIPResponse m_transactionFinalResponse;   // This is the final response being sent by a UAS transaction or the one received by a UAC one.
@@ -184,14 +183,6 @@ namespace SIPSorcery.SIP
         {
             get { return m_transactionFinalResponse; }
         }
-
-        [DataMember]
-        public SIPEndPoint RemoteEndPoint;           // The remote socket that caused the transaction to be created or the socket a newly created transaction request was sent to.
-              
-        [DataMember]                                  
-        public SIPEndPoint LocalSIPEndPoint;        // The local SIP endpoint the remote request was received on the if created by this stack the local SIP end point used to send the transaction.
-
-        public SIPCDR CDR;
 
         // These are the events that will normally be required by upper level transaction users such as registration or call agents.
         protected event SIPTransactionRequestReceivedDelegate TransactionRequestReceived;
@@ -215,68 +206,43 @@ namespace SIPSorcery.SIP
         public Int64 TransactionsDestroyed = 0;
 
         private SIPTransport m_sipTransport;
-
-        /// <summary>
-        /// Returns a count of the INVITE transactions in progress.
-        /// </summary>
-        /*public int CountInvites
-        {
-            get
-            {
-                int count = 0;
-
-                lock (m_transactions)
-                {
-                    foreach (SIPTransaction transaction in m_transactions.Values)
-                    {
-                        if (transaction.TransactionType == SIPTransactionTypesEnum.Invite)
-                        {
-                            count++;
-                        }
-                    }
-                }
-
-                return count;
-            }
-        }*/
-
-        /// <summary>
-        /// Returns a count of the non-INVITE transactions in progress.
-        /// </summary>
-        /*public int CountNonInvites
-        {
-            get
-            {
-                int count = 0;
-
-                lock (m_transactions)
-                {
-                    foreach (SIPTransaction transaction in m_transactions.Values)
-                    {
-                        if (transaction.TransactionType != SIPTransactionTypesEnum.Invite)
-                        {
-                            count++;
-                        }
-                    }
-                }
-
-                return count;
-            }
-        }*/
         
         /// <summary>
         /// Creates a new SIP transaction and adds it to the list of in progress transactions.
         /// </summary>
-        /// <param name="sipRequest">The SIP Request on which the transaction is based.</param>
-        /// <param name="dstEndPoint"T>he socket the at the remote end of the transaction and which transaction messages will be sent to.</param>
-        /// <param name="proxyEndPoint">The socket that should be used as the sned from sosket for communications on this transaction. Typically this will
+        /// <param name="sipTransport">The SIP Transport layer that is to be used with the transaction.</param>
+        /// <param name="transactionRequest">The SIP Request on which the transaction is based.</param>
+        /// <param name="dstEndPoint">he socket the at the remote end of the transaction and which transaction messages will be sent to.</param>
+        /// <param name="localSIPEndPoint">The socket that should be used as the send from socket for communications on this transaction. Typically this will
         /// be the socket the initial request was received on.</param>
-        /// <param name="sipRole">Client if the transaction is being originated from a local request, i.e. acting as UAC. Server if the transaction
-        /// is being created from a request received from a remote agent, i.e. transaction engine is in a UAS role.</param>
-        protected SIPTransaction(SIPTransport sipTransport, SIPRequest transactionRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint)
+        protected SIPTransaction(
+            SIPTransport sipTransport, 
+            SIPRequest transactionRequest, 
+            SIPEndPoint dstEndPoint, 
+            SIPEndPoint localSIPEndPoint, 
+            SIPEndPoint outboundProxy)
         {
             try
             {
+                if (sipTransport == null)
+                {
+                    throw new ArgumentNullException("A SIPTransport object is required when creating a SIPTransaction.");
+                }
+                else if (transactionRequest == null)
+                {
+                    throw new ArgumentNullException("A SIPRequest object must be supplied when creating a SIPTransaction.");
+                }
+                else if (dstEndPoint == null)
+                {
+                    throw new ArgumentNullException("The remote SIP end point must be set when creating a SIPTransaction.");
+                }
+                else if (localSIPEndPoint == null) {
+                    throw new ArgumentNullException("The local SIP end point must be set when creating a SIPTransaction.");
+                }
+                else if (transactionRequest.Header.Vias.TopViaHeader == null) {
+                    throw new ArgumentNullException("The SIP request must have a Via header when creating a SIPTransaction.");
+                }
+
                 TransactionsCreated++;
 
                 m_sipTransport = sipTransport;
@@ -289,6 +255,7 @@ namespace SIPSorcery.SIP
                 m_sentBy = transactionRequest.Header.Vias.TopViaHeader.ContactAddress;
                 RemoteEndPoint = dstEndPoint;
                 LocalSIPEndPoint = localSIPEndPoint;
+                OutboundProxy = outboundProxy;
             }
             catch (Exception excp)
             {
@@ -421,7 +388,7 @@ namespace SIPSorcery.SIP
 
         public void SendRequest(SIPRequest sipRequest)
         {
-            SIPEndPoint dstEndPoint = m_sipTransport.GetRequestEndPoint(sipRequest, true);
+            SIPEndPoint dstEndPoint = m_sipTransport.GetRequestEndPoint(sipRequest, OutboundProxy, true);
 
             if (dstEndPoint != null)
             {
@@ -534,9 +501,9 @@ namespace SIPSorcery.SIP
             if (m_ackRequest != null)
             {
                 SendRequest(m_ackRequest);
-                Retransmits += 1;
+                AckRetransmits += 1;
                 LastTransmit = DateTime.Now;
-                RequestRetransmit();
+                //RequestRetransmit();
             }
             else
             {
@@ -689,7 +656,8 @@ namespace SIPSorcery.SIP
                 SIPRequest request = SIPRequest.ParseSIPRequest(sipRequestStr);
                 SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
                 SIPTransport sipTransport = new SIPTransport(MockSIPDNSManager.Resolve, transactionEngine);
-                SIPTransaction transaction = sipTransport.CreateUACTransaction(request, null, null);
+                SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
+                SIPTransaction transaction = sipTransport.CreateUACTransaction(request, dummySIPEndPoint, dummySIPEndPoint, null);
 
                 Assert.IsTrue(transaction.TransactionRequest.URI.ToString() == "sip:023434211@213.200.94.182;switchtag=902888", "Transaction request URI was incorrect.");
 			}

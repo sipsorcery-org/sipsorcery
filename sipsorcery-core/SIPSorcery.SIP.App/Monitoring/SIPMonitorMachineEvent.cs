@@ -70,7 +70,7 @@ namespace SIPSorcery.SIP.App
             ClientType = SIPMonitorClientTypesEnum.Machine;
         }
 
-        public SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum machineEventType, string owner, IPEndPoint remoteEndPoint, string message)
+        public SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum machineEventType, string owner, SIPEndPoint remoteEndPoint, string message)
         {
             m_serialisationPrefix = SERIALISATION_PREFIX;
             
@@ -95,8 +95,9 @@ namespace SIPSorcery.SIP.App
                 string[] eventFields = eventCSV.Split(new char[] { '|' });
 
                 machineEvent.MachineEventType = SIPMonitorMachineEventTypes.GetMonitorMachineTypeForId(Convert.ToInt32(eventFields[1]));
-                machineEvent.RemoteEndPoint = IPSocket.ParseSocketString(eventFields[2]);
-                machineEvent.Message = eventFields[3].Trim('#');
+                machineEvent.Username = eventFields[2];
+                machineEvent.RemoteEndPoint = SIPEndPoint.ParseSIPEndPoint(eventFields[3]);
+                machineEvent.Message = eventFields[4].Trim('#');
                
                 return machineEvent;
             }
@@ -117,6 +118,7 @@ namespace SIPSorcery.SIP.App
                 string csvEvent =
                     SERIALISATION_PREFIX + "|" +
                     machineEventTypeId + "|" +
+                    Username + "|" +
                     remoteSocket + "|" +
                     Message + END_MESSAGE_DELIMITER;
 
@@ -139,16 +141,17 @@ namespace SIPSorcery.SIP.App
                 if(RemoteEndPoint != null)
                 {
                     // This is the equivalent of applying a /20 mask to the IP address to obscure the bottom 12 bits of the address.
-                    byte[] addressBytes = RemoteEndPoint.Address.GetAddressBytes();
+                    byte[] addressBytes = RemoteEndPoint.SocketEndPoint.Address.GetAddressBytes();
                     addressBytes[3] = 0;
                     addressBytes[2] = (byte)(addressBytes[2] & 0xf0);
                     IPAddress anonymisedIPAddress = new IPAddress(addressBytes);
-                    remoteSocket = (RemoteEndPoint != null) ? anonymisedIPAddress.ToString() + ":" + RemoteEndPoint.Port : null;
+                    remoteSocket = (RemoteEndPoint != null) ? anonymisedIPAddress.ToString() + ":" + RemoteEndPoint.SocketEndPoint.Port : null;
                 }
 
                 string csvEvent =
                     SERIALISATION_PREFIX + "|" +
                     machineEventTypeId + "|" +
+                    "|" +
                     remoteSocket + "|" +
                     END_MESSAGE_DELIMITER;
 

@@ -59,69 +59,62 @@ using NUnit.Framework;
 
 namespace SIPSorcery.Servers
 {
-    public enum DialPlanRedirectModeEnum
-    {
-        None = 0,   // Redirect responses are ignored.
-        Add = 1,    // A redirect response will be treated as a standard SIP URI and will be added as an additional call leg to the currently executing Dial command.
-        Replace = 2,// A redirect response will be treated as a replacement call and will result in the current dialplan being terminated and re-executed with the new destination.
-    }
-
     /// <summary>
     /// Helper functions for use in dial plan scripts.
     /// </summary>
     public class DialPlanScriptHelper
     {
-        private const int DEFAULT_CREATECALL_RINGTIME = 60;     // Set ring time for calls being created by dial plan as 60s as there is nothing that can cancel the call.
-        private const int MAXCALLBACK_DELAY_SECONDS = 15;       // The maximum seconds a callback method can be delayed for.
+        private const int DEFAULT_CREATECALL_RINGTIME = 60;     
         private const int ENUM_LOOKUP_TIMEOUT = 5;              // Default timeout in seconds for ENUM lookups.
 
-        private string CRLF = SIPConstants.CRLF;
         private static int m_maxRingTime = SIPTimings.MAX_RING_TIME;
-        private static string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static SIPSchemesEnum m_defaultScheme = SIPSchemesEnum.sip;
 
         private static ILog logger = AppState.logger;
         private SIPMonitorLogDelegate m_dialPlanLogDelegate;
 
         private SIPTransport m_sipTransport;
-
-        private Guid m_executionId;
+        private DialPlanExecutingScript m_executingScript;
         private List<SIPProvider> m_sipProviders;
         private ExtendScriptLifetimeDelegate m_extendLifeDelegate;
 
         private DialogueBridgeCreatedDelegate m_createBridgeDelegate;
         private GetCanonicalDomainDelegate m_getCanonicalDomainDelegate;
         private SIPRequest m_sipRequest;                                // This is a copy of the SIP request from m_clientTransaction.
-        private UASInviteTransaction m_clientTransaction;
         private SwitchCallMulti m_currentCall;
         private SIPEndPoint m_outboundProxySocket;           // If this app forwards calls via na outbound proxy this value will be set.
-        private string m_customSIPHeaders;                  // Allows a dialplan user to add or customise SIP headers.
+        private string m_customSIPHeaders;                   // Allows a dialplan user to add or customise SIP headers.
         private string m_customFromName;
         private string m_customFromUser;
         private string m_customFromHost;
         private SIPCallDirection m_callDirection;
-
-        private ManualResetEvent m_waitForCallCompleted = new ManualResetEvent(false);
-        private CallResult m_completedResult;
-        
-        private string m_callFailureMessage;                // The error message from the first call leg on the final dial attempt used when the call fails to provide a reason.
+        private DialStringParser m_dialStringParser;
+              
+        // Deprecated, use LastFailureReason.
         public string LastFailureMessage
         {
-            get { return m_callFailureMessage; }
+            get { return LastFailureReason; }
         }
+
+        public string LastFailureReason;                    // The error message from the first call leg on the final dial attempt used when the call fails to provide a reason.
+        public SIPResponseStatusCodesEnum LastFailureStatus;
 
         private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;   // This event must be wired up to an external function in order to be able to lookup bindings that have been registered for a SIP account.
         private SIPCallManager m_callManager;
+
+        private DialPlanContext m_dialPlanContext;
+        public DialPlanContext DialPlanContext
+        {
+            get { return m_dialPlanContext; }
+        }
 
         private string m_username;
         public string Username
         {
             get { return m_username; }
         }
-
         private string m_adminMemberId;
-
         public bool Out
         {
             get { return m_callDirection == SIPCallDirection.Out; }
@@ -131,42 +124,21 @@ namespace SIPSorcery.Servers
             get { return m_callDirection == SIPCallDirection.In; }
         }
         public List<SIPTransaction> LastDialled;
-
-        private string m_initialTraceMessage;
-        public StringBuilder TraceLog;
-        private bool m_trace = false;
         public bool Trace
         {
-            get { return m_trace; }
-            set
-            {
-                if (value && !m_trace)
-                {
-                    // Start new trace log.
-                    TraceLog = new StringBuilder();
-                    TraceLog.AppendLine("DialPlan=> Dialplan trace commenced at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff") + ".");
-                    TraceLog.AppendLine(m_initialTraceMessage);
-                    m_trace = true;
-                }
-                else
-                {
-                    m_trace = false;
-                    TraceLog = null;
-                }
-            }
+            get { return m_dialPlanContext.SendTrace; }
+            set { m_dialPlanContext.SendTrace = value; }
         }
       
         public DialPlanScriptHelper(
             SIPTransport sipTransport,
-            Guid executionId,
+            DialPlanExecutingScript executingScript,
             SIPMonitorLogDelegate logDelegate, 
             DialogueBridgeCreatedDelegate createBridgeDelegate,
             UASInviteTransaction clientTransaction,
             SIPRequest sipRequest,
             SIPCallDirection callDirection,
-            string username,
-            string adminMemberId,
-            List<SIPProvider> sipProviders,
+            DialPlanContext dialPlanContext,
             ExtendScriptLifetimeDelegate extendLifeDelegate,
             GetCanonicalDomainDelegate getCanonicalDomain,
             SIPCallManager callManager,
@@ -176,15 +148,15 @@ namespace SIPSorcery.Servers
             )
         {
             m_sipTransport = sipTransport;
-            m_executionId = executionId;
+            m_executingScript = executingScript;
             m_dialPlanLogDelegate = logDelegate;
             m_createBridgeDelegate = createBridgeDelegate;
-            m_clientTransaction = clientTransaction;
             m_sipRequest = sipRequest;
             m_callDirection = callDirection;
-            m_username = username;
-            m_adminMemberId = adminMemberId;
-            m_sipProviders = sipProviders;
+            m_dialPlanContext = dialPlanContext;
+            m_username = dialPlanContext.Owner;
+            m_adminMemberId = dialPlanContext.AdminMemberId;
+            m_sipProviders = dialPlanContext.SIPProviders;
             m_extendLifeDelegate = extendLifeDelegate;
             m_getCanonicalDomainDelegate = getCanonicalDomain;
             m_callManager = callManager;
@@ -192,11 +164,26 @@ namespace SIPSorcery.Servers
             GetSIPAccountBindings_External = getSIPAccountBindings;
             m_outboundProxySocket = outboundProxySocket;
 
-            if (m_clientTransaction != null)
-            {
-                clientTransaction.TransactionTraceMessage += new SIPTransactionTraceMessageDelegate(TransactionTraceMessage);
-                m_initialTraceMessage = SIPMonitorEventTypesEnum.SIPTransaction + "=>" + "Request received " + m_clientTransaction.LocalSIPEndPoint +
-                    "<-" + m_clientTransaction.RemoteEndPoint + CRLF + m_clientTransaction.TransactionRequest.ToString();
+            m_dialPlanContext.TraceLog.AppendLine("DialPlan=> Dialplan trace commenced at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff") + ".");
+            m_dialPlanContext.CallCancelledByClient += ClientCallTerminated;
+            m_dialStringParser = new DialStringParser(m_sipTransport, m_username, m_sipProviders, GetSIPAccount_External, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate);
+        }
+
+        /// <remarks>
+        /// This method will be called on the thread that owns the dialplancontext object so it's critical that Thread abort 
+        /// is not called in it or from it.
+        /// </remarks>
+        /// <param name="cancelCause"></param>
+        private void ClientCallTerminated(CallCancelCause cancelCause) {
+            try {
+                if (m_currentCall != null) {
+                    m_currentCall.CancelAllCallLegs(cancelCause);
+                }
+
+                EndScript();
+            }
+            catch (Exception excp) {
+                logger.Error("Exception ClientCallTerminated. " + excp.Message);
             }
         }
 
@@ -205,7 +192,7 @@ namespace SIPSorcery.Servers
         /// </summary>
         /// <param name="data">The dial string containing the list of call legs to attempt to forward the call to.</param>
         /// <returns>A code that best represents how the dial command ended.</returns>
-        public CallResult Dial(string data)
+        public DialPlanAppResult Dial(string data)
         {
             return Dial(data, m_maxRingTime);
         }
@@ -216,9 +203,9 @@ namespace SIPSorcery.Servers
         /// <param name="data">The dial string containing the list of call legs to attempt to forward the call to.</param>
         /// <param name="ringTimeout">The period in seconds to perservere with the dial command attempt without a final response before giving up.</param>
         /// <returns>A code that best represents how the dial command ended.</returns>
-        public CallResult Dial(string data, int ringTimeout)
+        public DialPlanAppResult Dial(string data, int ringTimeout)
         {
-            return Dial(data, ringTimeout, 0, DialPlanRedirectModeEnum.None, m_clientTransaction);
+            return Dial(data, ringTimeout, 0);
         }
 
         /// <summary>
@@ -228,22 +215,9 @@ namespace SIPSorcery.Servers
         /// /// <param name="answeredCallLimit">If greater than 0 this specifies the period in seconds an answered call will be hungup after.</param>
         /// <param name="ringTimeout">The period in seconds to perservere with the dial command attempt without a final response before giving up.</param>
         /// <returns>A code that best represents how the dial command ended.</returns>
-        public CallResult Dial(string data, int ringTimeout, int answeredCallLimit)
+        public DialPlanAppResult Dial(string data, int ringTimeout, int answeredCallLimit)
         {
-            return Dial(data, ringTimeout, answeredCallLimit, DialPlanRedirectModeEnum.None, m_clientTransaction);
-        }
-
-        /// <summary>
-        /// Attempts to dial a series of forwards and bridges the first one that connects with the client call.
-        /// </summary>
-        /// <param name="data">The dial string containing the list of call legs to attempt to forward the call to.</param>
-        /// <param name="ringTimeout">The period in seconds to perservere with the dial command attempt without a final response before giving up.</param>
-        /// <param name="answeredCallLimit">If greater than 0 this specifies the period in seconds an answered call will be hungup after.</param>
-        /// <param name="redirectMode">Specifies how redirect responses will be handled.</param>
-        /// <returns>A code that best represents how the dial command ended.</returns>
-        public CallResult Dial(string data, int ringTimeout, int answeredCallLimit, DialPlanRedirectModeEnum redirectMode)
-        {
-            return Dial(data, ringTimeout, answeredCallLimit, redirectMode, m_clientTransaction);
+            return Dial(data, ringTimeout, answeredCallLimit, m_sipRequest);
         }
 
         /// <summary>
@@ -253,164 +227,22 @@ namespace SIPSorcery.Servers
         /// <param name="message"></param>
         public void Log(string message)
         {
-            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.DialPlan, message, Username));
+            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, message, Username));
         }
 
         /// <summary>
         /// See Callback method below.
         /// </summary>
-        //public CallResult Callback(string dest1, string dest2)
-        //{
-        //    return Callback(dest1, dest2, 0);
-        //}
-
-        /// <summary>
-        /// Establishes a new call with the client end tied to the proxy. Since the proxy will not be sending any audio the idea is that once
-        /// the call is up it should be re-INVITED off somewhere else pronto to avoid the callee sitting their listening to dead air.
-        /// </summary>
-        /// <param name="dest1">The dial string of the first call to place.</param>
-        /// <param name="dest2">The dial string of the second call to place.</param>
-        /// <param name="delaySeconds">Delay in seconds before placing the first call. Gives the user a chance to hangup their phone if they are calling themselves back.</param>
-        /// <returns>The result of the call.</returns>
-        /*public CallResult Callback(string dest1, string dest2, int delaySeconds)
+        public void Callback(string dest1, string dest2)
         {
-            try
-            {
-                if (delaySeconds > 0)
-                {
-                    delaySeconds = (delaySeconds > MAXCALLBACK_DELAY_SECONDS) ? MAXCALLBACK_DELAY_SECONDS : delaySeconds;
-                    ExtendScriptTimeout(delaySeconds);
-                    Thread.Sleep(delaySeconds * 1000);
-                }
+            Callback(dest1, dest2, 0);
+        }
 
-                #region Find the call leg destinations.
-
-                SIPDialStringParser resolver = new SIPDialStringParser(m_sipTransport, m_username, m_sipProviders, GetSIPAccountBindings, m_getCanonicalDomainDelegate);
-
-                SIPCallDescriptor call1Struct = SIPCallDescriptor.Empty;
-                string localDomain = resolver.GetLocalDomain(dest1);
-                if (localDomain != null)
-                {
-                    List<SIPCallDescriptor> localContacts = resolver.GetCallListForLocalUser(dest1, m_sipRequest.Header.From.ToString(), null);
-                    if (localContacts != null && localContacts.Count > 0)
-                    {
-                        call1Struct = localContacts[0];
-                    }
-                }
-                else
-                {
-                    call1Struct = resolver.GetCallStructForComamnd(m_sipRequest, dest1);
-                }
-
-                SIPCallDescriptor call2Struct = SIPCallDescriptor.Empty;
-                string localDomainLeg2 = resolver.GetLocalDomain(dest1);
-                if (localDomainLeg2 != null)
-                {
-                    List<SIPCallDescriptor> localContacts = resolver.GetCallListForLocalUser(dest2, m_sipRequest.Header.From.ToString(), null);
-                    if (localContacts != null && localContacts.Count > 0)
-                    {
-                        call2Struct = localContacts[0];
-                    }
-                }
-                else
-                {
-                    call2Struct = resolver.GetCallStructForComamnd(m_sipRequest, dest2);
-                }
-
-                #endregion
-
-                if (call1Struct == SIPCallDescriptor.Empty)
-                {
-                    Log("Call not proceeding as the first call leg of " + dest1 + " did not result in a valid destination.");
-                    return CallResult.Error;
-                }
-                else if (call2Struct == SIPCallDescriptor.Empty)
-                {
-                    Log("Call not proceeding as the second call leg of " + dest1 + " did not result in a valid destination.");
-                    return CallResult.Error;
-                }
-                else
-                {
-                    Log("Callback proceeding for " + call1Struct.Uri.ToString() + " and " + call2Struct.Uri.ToString() + ".");
-
-                    IPEndPoint contactEndPoint = m_sipTransport.GetTransportContact(null);
-
-                    ClientUserAgent uac1 = new ClientUserAgent(m_sipTransport, Username);
-                    uac1.CallFinalResponseReceived += new UserAgentFinalResponseDelegate(CallFinalResponseReceived);
-
-                    Log("Calling first call leg " + dest1 + ".");
-                    m_waitForCallCompleted.Reset();
-                    uac1.Call(call1Struct, m_sdpContentType, GetInviteRequestBody(contactEndPoint));
-
-                    ExtendScriptTimeout(DEFAULT_CREATECALL_RINGTIME);
-
-                    if (m_waitForCallCompleted.WaitOne(DEFAULT_CREATECALL_RINGTIME * 1000, false))
-                    {
-                        if (uac1.CallDialogue != null)
-                        {
-                            string call1SDPIPAddress = uac1.RemoteSDP.Media[0].ConnectionAddress;
-                            int call1SDPPort = uac1.RemoteSDP.Media[0].Port;
-                            Log("The first call leg to " + dest1 + " was successful, audio socket=" + call1SDPIPAddress + ":" + call1SDPPort + ".");
-
-                            ClientUserAgent uac2 = new ClientUserAgent(m_sipTransport, Username);
-                            uac2.CallFinalResponseReceived += new UserAgentFinalResponseDelegate(CallFinalResponseReceived);
-
-                            Log("Calling second call leg " + dest2 + ".");
-                            m_waitForCallCompleted.Reset();
-                            uac2.Call(call2Struct, m_sdpContentType, GetInviteRequestBody(contactEndPoint));
-
-                            ExtendScriptTimeout(DEFAULT_CREATECALL_RINGTIME);
-
-                            if (m_waitForCallCompleted.WaitOne(DEFAULT_CREATECALL_RINGTIME * 1000, false))
-                            {
-                                if (uac2.CallDialogue != null)
-                                {
-                                    string call2SDPIPAddress = uac2.RemoteSDP.Media[0].ConnectionAddress;
-                                    int call2SDPPort = uac2.RemoteSDP.Media[0].Port;
-                                    Log("The second call leg to " + dest2 + " was successful, audio socket=" + call2SDPIPAddress + ":" + call2SDPPort + ".");
-
-                                    uac1.Reinvite(call2SDPIPAddress, call2SDPPort);
-                                    uac2.Reinvite(call1SDPIPAddress, call1SDPPort);
-
-                                    SendRTPPacket(call2SDPIPAddress + ":" + call2SDPPort, call1SDPIPAddress + ":" + call1SDPPort);
-                                    SendRTPPacket(call1SDPIPAddress + ":" + call1SDPPort, call2SDPIPAddress + ":" + call2SDPPort);
-
-                                    m_createBridgeDelegate(uac1.CallDialogue, uac2.CallDialogue, Username);
-
-                                    return CallResult.Answered;
-                                }
-                                else
-                                {
-                                    Log("The second call leg to " + dest2 + " was not accepted.");
-                                    return CallResult.Error;
-                                }
-                            }
-                            else
-                            {
-                                Log("Second call leg " + dest2 + " failed to answer within " + DEFAULT_CREATECALL_RINGTIME + "s.");
-                                return CallResult.Error;
-                            }
-                        }
-                        else
-                        {
-                            Log("The first call leg to " + dest1 + " was not accepted.");
-                            return CallResult.Error;
-                        }
-                    }
-                    else
-                    {
-                        Log("First call leg " + dest1 + " failed to answer within " + DEFAULT_CREATECALL_RINGTIME + "s.");
-                        return CallResult.Error;
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception DialPlanScriptHelper Call. " + excp);
-                Log("Exception in Call. " + excp);
-                return CallResult.Error;
-            }
-        }*/
+        public void Callback(string dest1, string dest2, int delaySeconds)
+        {
+            CallbackApp callbackApp = new CallbackApp(m_sipTransport, m_callManager, m_dialStringParser, FireProxyLogEvent, m_username, m_adminMemberId, m_outboundProxySocket);
+            ThreadPool.QueueUserWorkItem(delegate { callbackApp.Callback(dest1, dest2, delaySeconds); });
+        }
 
         /// <summary>
         /// Sends a SIP response to the client call. If a final response is sent then the client call will hang up.
@@ -419,44 +251,8 @@ namespace SIPSorcery.Servers
         /// <param name="reason"></param>
         public void Respond(int statusCode, string reason)
         {
-            if (m_clientTransaction != null)
-            {
-                SIPReplyApp replyApp = new SIPReplyApp(FireProxyLogEvent, m_clientTransaction, m_username);
-                replyApp.Start(statusCode.ToString() + "," + reason);
-
-                if (statusCode >= 200)
-                {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.DialPlan, "A " + statusCode + " final response was sent to the client at " + m_clientTransaction.RemoteEndPoint + ", terminating script.", m_username));
-                    EndScript();
-                }
-                else
-                {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.DialPlan, "A " + statusCode + " informational response was sent to the client at " + m_clientTransaction.RemoteEndPoint + ".", m_username));
-                }
-            }
-            else
-            {
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.DialPlan, "The client transaction could not be matched for a Respond command, no repsonse sent.", m_username));
-            }
-
-        }
-
-        /// <summary>
-        /// Temporary replacement for a regular expression match while the Ruby engine is missing regex's.
-        /// </summary>
-        /// <param name="input"></param>
-        /// <param name="pattern"></param>
-        /// <returns></returns>
-        public bool RegexMatch(string input, string pattern)
-        {
-            if (input == null || input.Trim().Length == 0 || pattern == null || pattern.Trim().Length == 0)
-            {
-                return false;
-            }
-            else
-            {
-                return Regex.Match(input, pattern, RegexOptions.IgnoreCase).Success;
-            }
+            SIPReplyApp replyApp = new SIPReplyApp(FireProxyLogEvent, m_username, m_dialPlanContext.CallProgress, FailCallAndStopScript);
+            replyApp.Start(statusCode, reason);
         }
 
         /// <summary>
@@ -525,7 +321,7 @@ namespace SIPSorcery.Servers
         {
             if (username != Username && Username != "aaron")
             {
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.DialPlan, "You are not authorised to call IsAvailable for " + username + "@" + domain + ".", Username));
+                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "You are not authorised to call IsAvailable for " + username + "@" + domain + ".", Username));
                 return false;
             }
 
@@ -547,7 +343,7 @@ namespace SIPSorcery.Servers
             {
                 if (username != Username && Username != "aaron")
                 {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.DialPlan, "You are not authorised to call GetBindings for " + username + "@" + domain + ".", Username));
+                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "You are not authorised to call GetBindings for " + username + "@" + domain + ".", Username));
                     return null;
                 }
 
@@ -555,7 +351,7 @@ namespace SIPSorcery.Servers
 
                 //SIPRegistrarRecord registrarRecord = SIPRegistrations.Lookup(currentUser);
                 SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == username && s.SIPDomain == domain);
-                List<SIPRegistrarBinding> bindings = GetSIPAccountBindings_External(s => s.SIPAccountId == sipAccount.Id, 0, Int32.MaxValue);
+                List<SIPRegistrarBinding> bindings = GetSIPAccountBindings_External(s => s.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
 
                 if (bindings != null)
                 {
@@ -588,7 +384,7 @@ namespace SIPSorcery.Servers
 
             if (dialogue == null)
             {
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.DialPlan, "The dialogue for the ReplaceCall request could not be found, call failed.", m_username));
+                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The dialogue for the ReplaceCall request could not be found, call failed.", m_username));
                 return CallResult.Error;
             }
             else
@@ -701,126 +497,89 @@ namespace SIPSorcery.Servers
             }
         }
 
-        private CallResult Dial(string data, int ringTimeout, int answeredCallLimit, DialPlanRedirectModeEnum redirectMode, UASInviteTransaction clientTransaction)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="ringTimeout"></param>
+        /// <param name="answeredCallLimit"></param>
+        /// <param name="redirectMode"></param>
+        /// <param name="clientTransaction"></param>
+        /// <param name="keepScriptAlive">If false will let the dial plan engine know the script has finished and the call is answered. For applications
+        /// like Callback which need to have two calls answered it will be true.</param>
+        /// <returns></returns>
+        private DialPlanAppResult Dial(
+            string data, 
+            int ringTimeout, 
+            int answeredCallLimit, 
+            SIPRequest clientRequest)
         {
-            SIPRequest sipRequest = clientTransaction.TransactionRequest;
-            SIPDialStringParser callResolver = new SIPDialStringParser(m_sipTransport, m_username, m_sipProviders, GetSIPAccount_External, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate);
+            DialPlanAppResult result = DialPlanAppResult.TimedOut;
+            ManualResetEvent waitForCallCompleted = new ManualResetEvent(false);
+
+            m_currentCall = new SwitchCallMulti(m_sipTransport, FireProxyLogEvent, Username, m_adminMemberId, LastDialled, m_outboundProxySocket, clientRequest.Header.ContentType, clientRequest.Body);
+            m_currentCall.CallProgress += m_dialPlanContext.CallProgress;
+            m_currentCall.CallAnswered += AnswerCallAndStopScript;
+            m_currentCall.CallFailed += (s, r) => { LastFailureStatus = s; LastFailureReason = r; waitForCallCompleted.Set(); };
             LastDialled = new List<SIPTransaction>();
-            m_currentCall = new SwitchCallMulti(m_sipTransport, FireProxyLogEvent, m_createBridgeDelegate, clientTransaction, Username, m_adminMemberId, LastDialled, m_outboundProxySocket);
 
             try
             {
-                m_currentCall.CallComplete += new CallCompletedDelegate(switchCallMulti_CallCompleted);
-                m_completedResult = CallResult.Unknown;
-                m_waitForCallCompleted.Reset();
-
-                Queue<List<SIPCallDescriptor>> callsQueue = callResolver.ParseDialString(sipRequest, data, m_customSIPHeaders);
-
+                Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, m_customSIPHeaders);
                 if (m_customFromName != null || m_customFromUser != null || m_customFromHost != null)
                 {
                     UpdateCallQueueFromHeaders(callsQueue, m_customFromName, m_customFromUser, m_customFromHost);
                 }
-
                 m_currentCall.Start(callsQueue);
 
                 // Wait for an answer.
                 ringTimeout = (ringTimeout > m_maxRingTime) ? m_maxRingTime : ringTimeout;
                 ExtendScriptTimeout(ringTimeout + DEFAULT_CREATECALL_RINGTIME);
-                if (m_waitForCallCompleted.WaitOne(ringTimeout * 1000, false))
+                if (waitForCallCompleted.WaitOne(ringTimeout * 1000, false))
                 {
-                    // Call answered.
-                    ExtendScriptTimeout(0);
-
-                    if (m_completedResult == CallResult.ClientCancelled || m_completedResult == CallResult.Answered)
-                    {
-                        // Client has cancelled the call. Terminate the script at this point.
-                        EndScript();
-                    }
-
-                    return m_completedResult;
+                    // The only time this point will be reached is when all the SwitchCallMulti legs fail.
+                    // When the call is successfully answered the script thread will be terminated and this point will not be reached.
+                    result = DialPlanAppResult.Failed;
                 }
                 else
                 {
                     // Call timed out.
-                    m_currentCall.CancelAllCallLegs();
-                    return CallResult.TimedOut;
+                    m_currentCall.CancelAllCallLegs(CallCancelCause.TimedOut);
                 }
+
+                return result;
             }
             catch (ThreadAbortException)
             {
                 // This exception will be thrown under normal circumstances as the script will abort the thread if a call is answered.
-                return m_completedResult;
+                return result;
             }
             catch (Exception excp)
             {
                 logger.Error("Exception DialPlanScriptHelper Dial. " + excp);
-                return CallResult.Error;
-            }
-            finally
-            {
-                m_currentCall.CallComplete -= new CallCompletedDelegate(switchCallMulti_CallCompleted);
-                m_currentCall = null;
+                return DialPlanAppResult.Error;
             }
         }
 
-        private void switchCallMulti_CallCompleted(UASInviteTransaction clientTransaction, CallResult completedResult, string errorMessage)
-        {
-            m_completedResult = completedResult;
-            m_callFailureMessage = errorMessage;
-            m_waitForCallCompleted.Set();
-        }
-
-        private void CallFinalResponseReceived(SIPTransaction transaction)
-        {
-            m_waitForCallCompleted.Set();
-        }
-
-        private string GetInviteRequestBody(IPEndPoint localSIPEndPoint)
-        {
-            string body =
-               "v=0" + CRLF +
-                "o=- " + Crypto.GetRandomInt(1000, 5000).ToString() + " 2 IN IP4 " + localSIPEndPoint.Address.ToString() + CRLF +
-                "s=session" + CRLF +
-                "c=IN IP4 " + localSIPEndPoint.Address.ToString() + CRLF +
-                "t=0 0" + CRLF +
-                "m=audio " + Crypto.GetRandomInt(10000, 20000).ToString() + " RTP/AVP 0 18 101" + CRLF +
-                "a=rtpmap:0 PCMU/8000" + CRLF +
-                "a=rtpmap:18 G729/8000" + CRLF +
-                "a=rtpmap:101 telephone-event/8000" + CRLF +
-                "a=fmtp:101 0-16" + CRLF +
-                "a=recvonly";
-
-            return body;
-        }
-
-        private void SendRTPPacket(string sourceSocket, string destinationSocket)
-        {
-            try
-            {
-                //logger.Debug("Attempting to send RTP packet from " + sourceSocket + " to " + destinationSocket + ".");
-                Log("Attempting to send RTP packet from " + sourceSocket + " to " + destinationSocket + ".");
-
-                IPEndPoint sourceEP = IPSocket.GetIPEndPoint(sourceSocket);
-                IPEndPoint destEP = IPSocket.GetIPEndPoint(destinationSocket);
-
-                RTPPacket rtpPacket = new RTPPacket(80);
-                rtpPacket.Header.SequenceNumber = (UInt16)6500;
-                rtpPacket.Header.Timestamp = 100000;
-
-                UDPPacket udpPacket = new UDPPacket(sourceEP.Port, destEP.Port, rtpPacket.GetBytes());
-                IPv4Header ipHeader = new IPv4Header(ProtocolType.Udp, Crypto.GetRandomInt(6), sourceEP.Address, destEP.Address);
-                IPv4Packet ipPacket = new IPv4Packet(ipHeader, udpPacket.GetBytes());
-
-                byte[] data = ipPacket.GetBytes();
-
-                Socket rawSocket = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.IP);
-                rawSocket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.HeaderIncluded, 1);
-
-                rawSocket.SendTo(data, destEP);
+        private void FailCallAndStopScript(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase) {
+            try {
+                m_dialPlanContext.CallFailed(failureStatus, reasonPhrase);
+                EndScript();
             }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SendRTPPacket. " + excp.Message);
+            catch (ThreadAbortException) { }
+            catch (Exception excp) {
+                logger.Error("Exception FailCallAndStopScript. " + excp.Message);
+            }
+        }
+
+        private void AnswerCallAndStopScript(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue) {
+            try {
+                m_dialPlanContext.CallAnswered(answeredStatus, reasonPhrase, answeredContentType, answeredBody, answeredDialogue);
+                EndScript();
+            }
+            catch (ThreadAbortException) { }
+            catch (Exception excp) {
+                logger.Error("Exception AnswerCallAndStopScript. " + excp.Message);
             }
         }
 
@@ -946,7 +705,7 @@ namespace SIPSorcery.Servers
 
         private void ExtendScriptTimeout(int seconds)
         {
-            m_extendLifeDelegate(m_executionId, DateTime.Now.AddSeconds(seconds + DialPlanEngine.MAX_SCRIPTPROCESSING_SECONDS));
+            m_extendLifeDelegate(m_executingScript.Id, DateTime.Now.AddSeconds(seconds + DialPlanExecutingScript.MAX_SCRIPTPROCESSING_SECONDS));
         }
 
         private void UpdateCallQueueFromHeaders(Queue<List<SIPCallDescriptor>> callsQueue, string fromName, string fromUser, string fromHost)
@@ -985,22 +744,25 @@ namespace SIPSorcery.Servers
 
         private void EndScript()
         {
-            //m_extendLifeDelegate(m_executionId, DateTime.Now);
-            Thread.CurrentThread.Abort();
-        }
+            try {
 
-        private void TransactionTraceMessage(SIPTransaction sipTransaction, string message)
-        {
-            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.SIPTransaction, message, Username));
+                //m_extendLifeDelegate(m_executionId, DateTime.Now);
+                //Thread.CurrentThread.Abort();
+                m_executingScript.StopExecution();
+            }
+            catch (ThreadAbortException) { }
+            catch (Exception excp) {
+                logger.Error("Exception EndScript. " + excp.Message);
+            }
         }
 
         private void FireProxyLogEvent(SIPMonitorEvent monitorEvent)
         {
             try
             {
-                if (Trace && TraceLog != null)
+                if (m_dialPlanContext.TraceLog != null)
                 {
-                    TraceLog.AppendLine(monitorEvent.EventType + "=> " + monitorEvent.Message);
+                    m_dialPlanContext.TraceLog.AppendLine(monitorEvent.EventType + "=> " + monitorEvent.Message);
                 }
 
                 if (m_dialPlanLogDelegate != null)

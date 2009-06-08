@@ -79,7 +79,7 @@ namespace SIPSorcery.Servers
 		public Thread[] NotificationAgentThreads;
 		public bool SendNotifications = true;
 
-		private static ILog logger = log4net.LogManager.GetLogger("SIPServers");
+		private static ILog logger = AppState.GetLogger("SIPServers");
 
 		public SIPNotificationAgent(SIPTransport sipTransport, IPEndPoint proxyEndPoint, StorageTypes storageType, string dbConnStr)
 		{
@@ -190,7 +190,7 @@ namespace SIPSorcery.Servers
                                     SIPEndPoint localSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint();
 
                                     SIPRequest notifyRequest = GetNotifyRequest(localSIPEndPoint, m_proxyEndPoint, contactURI, name, mwiInidcation);
-                                    SIPNonInviteTransaction notifyTransaction = m_sipTransport.CreateNonInviteTransaction(notifyRequest, clientEndPoint, localSIPEndPoint);
+                                    SIPNonInviteTransaction notifyTransaction = m_sipTransport.CreateNonInviteTransaction(notifyRequest, clientEndPoint, localSIPEndPoint, null);
                                     notifyTransaction.SendReliableRequest();
                                 }
                                 catch (Exception mwiExcp)

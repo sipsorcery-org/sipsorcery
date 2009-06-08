@@ -36,7 +36,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Net;
-using System.Scripting;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -47,15 +46,10 @@ using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using IronPython.Compiler;
 using IronPython.Hosting;
+using IronRuby;
 using log4net;
 using Microsoft.Scripting;
 using Microsoft.Scripting.Hosting;
-using Ruby;
-using Ruby.Compiler;
-using Ruby.Hosting;
-//using IronRuby.Compiler;
-//using IronRuby.Hosting;
-//using IronRuby;
 
 #if UNITTEST
 using NUnit.Framework;
@@ -72,6 +66,7 @@ namespace SIPSorcery.Servers
             Ruby = 2,
         }
 
+        public const string CHANNEL_NAME_KEY = "cn";
         private const string PYTHON_SCRIPT_EXTENSION = ".py";
         private const string RUBY_SCRIPT_EXTENSION = ".rb";
         private const string JAVASCRIPT_SCRIPT_EXTENSION = ".js";
@@ -137,7 +132,7 @@ namespace SIPSorcery.Servers
                 {
                     logger.Debug("Stateless proxy script is Ruby.");
                     //ScriptRuntime scriptRuntime = IronRuby.Ruby.CreateRuntime();
-                    ScriptRuntime scriptRuntime = IronRuby.CreateRuntime();
+                    ScriptRuntime scriptRuntime = IronRuby.Ruby.CreateRuntime();
                     m_scriptScope = scriptRuntime.CreateScope("IronRuby");
                     m_rubyCompiledScript = m_scriptScope.Engine.CreateScriptSourceFromString(m_proxyScript).Compile();
                 }
@@ -226,8 +221,8 @@ namespace SIPSorcery.Servers
 		/// <param name="sipChannel"></param>
 		private void GotRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
 		{
-			try
-			{
+            try
+            {
                 DateTime startTime = DateTime.Now;
                 DateTime scriptStartTime = DateTime.Now;
 
@@ -236,19 +231,7 @@ namespace SIPSorcery.Servers
                 //string fromTag = (sipRequest.Header.From != null) ? sipRequest.Header.From.FromTag : null;
                 string route = (sipRequest.Header.Routes != null) ? sipRequest.Header.Routes.ToString() : null;
                 //string authHeader = (sipRequest.Header.AuthenticationHeader != null) ? sipRequest.Header.AuthenticationHeader.ToString() : null;
-                string proxyBranch = null;
-
-                if (sipRequest.Method == SIPMethodsEnum.REGISTER)
-                {
-                    proxyBranch = CallProperties.CreateBranchId();
-                }
-                else
-                {
-                    //proxyBranch = CallProperties.CreateBranchId(SIPConstants.SIP_BRANCH_MAGICCOOKIE, null, null, sipRequest.Header.CallId, sipRequest.URI.ToString(), sipRequest.Header.Via.TopViaHeader.ToString(), sipRequest.Header.CSeq, route, null, null);
-                    // Left the route out as my router fiddles with URIs to replace public and private IP's, unfortunately it doesn't do so consistently. In reality the CSeq and branchid are going to be enough to match on anyway.
-                    proxyBranch = CallProperties.CreateBranchId(SIPConstants.SIP_BRANCH_MAGICCOOKIE, null, null, sipRequest.Header.CallId, null, sipRequest.Header.Vias.TopViaHeader.ToString(), sipRequest.Header.CSeq, route, null, null);
-                }
-
+                string proxyBranch =  CallProperties.CreateBranchId(SIPConstants.SIP_BRANCH_MAGICCOOKIE, null, null, sipRequest.Header.CallId, null, null, sipRequest.Header.CSeq, route, null, null);
                 // Check whether the branch parameter already exists in the Via list.
                 foreach (SIPViaHeader viaHeader in sipRequest.Header.Vias.Via)
                 {
@@ -259,11 +242,11 @@ namespace SIPSorcery.Servers
                         return;
                     }
                 }
-                
+
                 // Used in the proxy monitor messages only, plays no part in request routing.
-				string fromUser = (sipRequest.Header.From != null) ? sipRequest.Header.From.FromURI.User : null;
-				string toUser = (sipRequest.Header.To != null) ? sipRequest.Header.To.ToURI.User : null;
-				string summaryStr = "req " + sipRequest.Method + " from=" + fromUser + ", to=" + toUser + ", " + remoteEndPoint.ToString();
+                string fromUser = (sipRequest.Header.From != null) ? sipRequest.Header.From.FromURI.User : null;
+                string toUser = (sipRequest.Header.To != null) ? sipRequest.Header.To.ToURI.User : null;
+                string summaryStr = "req " + sipRequest.Method + " from=" + fromUser + ", to=" + toUser + ", " + remoteEndPoint.ToString();
 
                 lock (this)
                 {
@@ -308,16 +291,20 @@ namespace SIPSorcery.Servers
                     double scriptTime = DateTime.Now.Subtract(scriptStartTime).TotalMilliseconds;
                     logger.Debug("GotRequest processing time=" + processingTime.ToString("0.##") + "ms, script time=" + scriptTime.ToString("0.##") + ".");
                 }
-			}
-			catch(Exception excp)
-			{
-				string reqExcpError = "Exception StatelessProxyCore GotRequest. " + excp.Message;
-				logger.Error(reqExcpError);
-                SIPMonitorEvent reqExcpEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatelessProxy, SIPMonitorEventTypesEnum.Error, reqExcpError, localSIPEndPoint.SocketEndPoint, remoteEndPoint.SocketEndPoint, null);
-				SendMonitorEvent(reqExcpEvent);
+            }
+            catch (SIPValidationException)
+            {
+                throw;
+            }
+            catch (Exception excp)
+            {
+                string reqExcpError = "Exception StatelessProxyCore GotRequest. " + excp.Message;
+                logger.Error(reqExcpError);
+                SIPMonitorEvent reqExcpEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatelessProxy, SIPMonitorEventTypesEnum.Error, reqExcpError, localSIPEndPoint, remoteEndPoint, null);
+                SendMonitorEvent(reqExcpEvent);
 
-				throw excp;
-			}
+                throw excp;
+            }
 		}	
 		
 		/// <summary>
@@ -342,6 +329,31 @@ namespace SIPSorcery.Servers
                 string toUser = (sipResponse.Header.To != null) ? sipResponse.Header.To.ToURI.User : null;
                 string summaryStr = "resp " + sipResponse.Header.CSeqMethod + " from=" + fromUser + ", to=" + toUser + ", " + remoteEndPoint.ToString();
 
+                SIPViaHeader topVia = sipResponse.Header.Vias.PopTopViaHeader();
+                SIPEndPoint outSocket = localSIPEndPoint;
+
+                // If the second Via header on the response was also set by this proxy it means the request was originally recieved and forwarded
+                // on different sockets. To get the response to travel the same path in reverse it must be forwarded from the proxy socket indicated
+                // by the second top Via.
+                if (sipResponse.Header.Vias.Length > 0) {
+                    SIPViaHeader nextTopVia = sipResponse.Header.Vias.TopViaHeader;
+                    SIPEndPoint nextTopViaSIPEndPoint = new SIPEndPoint(nextTopVia.Transport, IPSocket.ParseSocketString(nextTopVia.ContactAddress));
+                    if (m_sipTransport.IsLocalSIPEndPoint(nextTopViaSIPEndPoint)) {
+                        sipResponse.Header.Vias.PopTopViaHeader();
+                        outSocket = nextTopViaSIPEndPoint;
+                    }
+                }
+                
+                /*string channelName = topVia.ViaParameters.Get(CHANNEL_NAME_KEY);
+                if (!channelName.IsNullOrBlank())
+                {
+                    SIPChannel sendFromChannel = m_sipTransport.FindSIPChannel(channelName.Trim());
+                    if (sendFromChannel != null)
+                    {
+                        sipResponse.LocalSIPEndPoint = sendFromChannel.SIPChannelEndPoint;
+                    }
+                }*/
+
                 lock (this)
                 {
                     //m_scriptScope.SetVariable("topVia", proxyVia);
@@ -352,12 +364,13 @@ namespace SIPSorcery.Servers
                     {
                         m_pythonEngine.Globals["sys"] = m_proxyScriptHelper;
                         m_pythonEngine.Globals["localEndPoint"] = localSIPEndPoint;
-                        m_pythonEngine.Globals["channelName"] = m_sipTransport.FindSIPChannel(localSIPEndPoint).Name;
+                        m_pythonEngine.Globals["outSocket"] = outSocket;
                         m_pythonEngine.Globals["isreq"] = false;
                         m_pythonEngine.Globals["resp"] = sipResponse;
                         m_pythonEngine.Globals["remoteEndPoint"] = remoteEndPoint;
                         m_pythonEngine.Globals["summary"] = summaryStr;
                         m_pythonEngine.Globals["sipMethod"] = sipResponse.Header.CSeqMethod.ToString();
+                        m_pythonEngine.Globals["topVia"] = topVia;
 
                         m_pythonCompiledScript.Execute();
                     }
@@ -368,11 +381,12 @@ namespace SIPSorcery.Servers
                         m_scriptScope.SetVariable("sys", m_proxyScriptHelper);
                         m_scriptScope.SetVariable("isreq", false);
                         m_scriptScope.SetVariable("localEndPoint", localSIPEndPoint);
-                        m_scriptScope.SetVariable("channelName", m_sipTransport.FindSIPChannel(localSIPEndPoint).Name);
+                        m_pythonEngine.Globals["outSocket"] = outSocket;
                         m_scriptScope.SetVariable("resp", sipResponse);
                         m_scriptScope.SetVariable("remoteEndPoint", remoteEndPoint);
                         m_scriptScope.SetVariable("summary", summaryStr);
                         m_scriptScope.SetVariable("sipMethod", sipResponse.Header.CSeqMethod.ToString());
+                        m_scriptScope.SetVariable("topVia", topVia);
 
                         m_rubyCompiledScript.Execute(m_scriptScope);
                     }
@@ -389,7 +403,7 @@ namespace SIPSorcery.Servers
             {
                 string respExcpError = "Exception StatelessProxyCore GotResponse. " + excp.Message;
                 logger.Error(respExcpError);
-                SIPMonitorEvent respExcpEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatelessProxy, SIPMonitorEventTypesEnum.Error, respExcpError, localSIPEndPoint.SocketEndPoint, remoteEndPoint.SocketEndPoint, null);
+                SIPMonitorEvent respExcpEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatelessProxy, SIPMonitorEventTypesEnum.Error, respExcpError, localSIPEndPoint, remoteEndPoint, null);
                 SendMonitorEvent(respExcpEvent);
 
                 throw excp;
@@ -401,7 +415,7 @@ namespace SIPSorcery.Servers
             return SIPTransport.GetResponse(sipRequest, responseCode, null);
         }
 
-        private void SendMonitorEvent(SIPMonitorEventTypesEnum eventType, string message, IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, IPEndPoint dstEndPoint)
+        private void SendMonitorEvent(SIPMonitorEventTypesEnum eventType, string message, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, SIPEndPoint dstEndPoint)
         {
             SIPMonitorEvent proxyEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatelessProxy, eventType, message, localEndPoint, remoteEndPoint, dstEndPoint);
             SendMonitorEvent(proxyEvent);

@@ -24,17 +24,27 @@ create table customers
  Unique(customerusername)
 );
 
+create table customersessions
+(
+ id varchar(36) not null,
+ customerusername varchar(32) not null,
+ inserted timestamp not null default now(),
+ expired bool not null default False,
+ ipaddress varchar(15),
+ Primary Key(id),
+ Foreign Key(customerusername) references Customers(customerusername) on delete cascade
+);
+
 -- Maps to class SIPSorcery.SIP.App.SIPDomain.
 create table sipdomains
 (
 	id varchar(36) not null,
-	domain varchar(128) not null,
-	aliasfordomain varchar(36),				-- If not null indicates this entry is an alias for the domain with this id.
-	owner varchar(32) not null,				-- The username of the customer that owns the domain.
+	domain varchar(128) not null,			-- The domain name.
+	aliaslist varchar(1024),				-- If not null indicates a semi-colon delimited list of aliases for the domain.
+	owner varchar(32),						-- The username of the customer that owns the domain. If null it's a public domain.
 	inserted timestamp not null default now(),
 	Primary Key(id),
 	Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
-	Foreign Key(aliasfordomain) references sipdomains(id) on delete cascade on update cascade,
 	Unique(domain)
 );
 
@@ -126,11 +136,12 @@ create table sipproviderbindings
   adminmemberid varchar(32),
   registrationfailuremessage varchar(1024),
   nextregistrationtime timestamp not null default now(),
-  lastregistertime timestamp not null,
-  lastregisterattempt timestamp not null,
+  lastregistertime timestamp,
+  lastregisterattempt timestamp,
   isregistered bool not null default false,
   bindingexpiry int not null default 3600,
   bindinguri varchar(256) not null,
+  registrarsipsocket varchar(256),
   cseq int not null,
   Primary Key(id)
 );
@@ -147,16 +158,32 @@ create table sipdialplans
 	scripttypedescription varchar(12) not null default 'Ruby',		-- The type of script the dialplan has, supported values are: Asterisk, Ruby, Python and JScript.
 	inserted timestamp not null default now(),
 	lastupdate timestamp not null,
+	maxexecutioncount int not null,							-- The mamimum number of simultaneous executions of the dialplan that are permitted.
+	executioncount int not null,							-- The current number of dialplan executions in progress.
 	Primary Key(id),
-	Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade
+	Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade,
+	Unique(owner, dialplanname)
 );
 
--- Maps to class SIPSorcery.SIP.SIPDialogue.
+-- Maps to class SIPSorcery.SIP.SIPDialogueAsset.
 create table sipdialogues
 (
 	id varchar(36) not null,
 	owner varchar(32) not null,
 	adminmemberid varchar(32),
+	dialogueid varchar(256) not null,
+	localtag varchar(64) not null,
+	remotetag varchar(64) not null,
+	callid varchar(128) not null,
+	cseq int not null,
+	bridgeid varchar(36) not null,
+	remotetarget varchar(256) not null,
+	localuserfield varchar(512) not null,
+	remoteuserfield varchar(512) not null,
+	routeset varchar(512),
+	outboundproxy varchar(128),
+	cdrid varchar(36) not null,
+	calldurationlimit int,
 	Primary Key(id),
 	Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade
 );
@@ -175,7 +202,7 @@ create table cdr
  dsturi varchar(1024) not null,					/* The full destination URI. */
  fromuser varchar(128),							/* The user portion of the From header URI. */
  fromname varchar(128),							/* The name portion of the From header. */
- fromheader varchar(1024) not null,				/* The full From header. */
+ fromheader varchar(1024),						/* The full From header. */
  callid varchar(256) not null,					/* The Call-ID of the call. */
  localsocket varchar(64) not null,				/* The socket on the proxy used for the call. */
  remotesocket varchar(64) not null,				/* The remote socket used for the call. */
@@ -191,18 +218,6 @@ create table cdr
  hunguptime timestamp,							/* The time the call was hungup. */
  hungupreason varchar(64),						/* The SIP response Reason header on the BYE request if present. */
  Primary Key(id)
-);
-
-create table authenticatedsessions
-(
- id varchar(36) not null,
- customerusername varchar(32) not null,
- ipaddress varchar(15),
- starttime timestamp not null default now(),
- lastcontacttime timestamp not null,
- expired bool not null default false,
- Primary Key(id),
- Foreign Key(username) references Customers(customerusername) on delete cascade
 );
 
 -- create index customers_custid_index on customers(customerid);

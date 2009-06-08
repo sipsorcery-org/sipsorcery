@@ -53,11 +53,12 @@ using log4net;
 namespace SIPSorcery.Sys
 {
     public delegate void SIPAssetDelegate<T>(T asset);
+    public delegate void SIPAssetsModifiedDelegate();
     public delegate void SIPAssetReloadedDelegate();
     public delegate T SIPAssetGetByIdDelegate<T>(Guid id);
     public delegate T SIPAssetGetDelegate<T>(Expression<Func<T, bool>> where);
     public delegate int SIPAssetCountDelegate<T>(Expression<Func<T, bool>> where);
-    public delegate List<T> SIPAssetGetListDelegate<T>(Expression<Func<T, bool>> where, int offset, int limit);
+    public delegate List<T> SIPAssetGetListDelegate<T>(Expression<Func<T, bool>> where, string orderByField, int offset, int limit);
     public delegate T SIPAssetUpdateDelegate<T>(T asset);
     public delegate void SIPAssetDeleteDelegate<T>(T asset);
     public delegate void SIPAssetDeleteBatchDelegate<T>(Expression<Func<T, bool>> where);
@@ -68,6 +69,7 @@ namespace SIPSorcery.Sys
         public virtual event SIPAssetDelegate<T> Added;
         public virtual event SIPAssetDelegate<T> Updated;
         public virtual event SIPAssetDelegate<T> Deleted;
+        public virtual event SIPAssetsModifiedDelegate Modified;
 
         public virtual T Add(T asset) {
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
@@ -97,7 +99,7 @@ namespace SIPSorcery.Sys
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         }
 
-        public virtual List<T> Get(Expression<Func<T, bool>> where, int offset, int count) {
+        public virtual List<T> Get(Expression<Func<T, bool>> where,  string orderByField, int offset, int count) {
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         }
     }

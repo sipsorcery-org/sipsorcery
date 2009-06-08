@@ -70,6 +70,7 @@ namespace SIPSorcery.Sys
         public override event SIPAssetDelegate<T> Added;
         public override event SIPAssetDelegate<T> Updated;
         public override event SIPAssetDelegate<T> Deleted;
+        public override event SIPAssetsModifiedDelegate Modified;
 
         public SIPAssetXMLPersistor(string xmlFilePath) {
             m_xmlAssetFilePath = xmlFilePath;
@@ -101,8 +102,10 @@ namespace SIPSorcery.Sys
 
                 Guid id = new Guid(sipAsset.Id);
 
-                m_sipAssets.Add(id, sipAsset);
-                
+                lock (m_sipAssets) {
+                    m_sipAssets.Add(id, sipAsset);
+                }
+
                 WriteSIPAssetXML();
 
                 if (Added != null) {
@@ -128,7 +131,10 @@ namespace SIPSorcery.Sys
                 Guid id = new Guid(sipAsset.Id);
 
                 if (m_sipAssets.ContainsKey(id)) {
-                    m_sipAssets[id] = sipAsset;
+
+                    lock (m_sipAssets) {
+                        m_sipAssets[id] = sipAsset;
+                    }
 
                     WriteSIPAssetXML();
 
@@ -161,7 +167,10 @@ namespace SIPSorcery.Sys
                 T existingAsset = m_sipAssets[id];
 
                 if (existingAsset != null) {
-                    m_sipAssets.Remove(id);
+
+                    lock (m_sipAssets) {
+                        m_sipAssets.Remove(id);
+                    }
 
                     WriteSIPAssetXML();
 
@@ -242,7 +251,7 @@ namespace SIPSorcery.Sys
             }
         }
 
-        public override List<T> Get(Expression<Func<T, bool>> whereClause, int offset, int count)
+        public override List<T> Get(Expression<Func<T, bool>> whereClause, string orderByField, int offset, int count)
         {
             try
             {
@@ -256,28 +265,24 @@ namespace SIPSorcery.Sys
                      subList = m_sipAssets.Values.Where(a => whereClause.Compile()(a)).ToList<T>();
                  }
 
-                 /*if (subList != null)
+                 if (subList != null)
                  {
                      if (offset >= 0)
                      {
                          if (count == 0 || count == Int32.MaxValue)
                          {
-                             return subList.OrderBy(x => x.ProviderName).Skip(offset).ToList<T>();
+                             return subList.OrderBy(x => x.Id).Skip(offset).ToList<T>();
                          }
                          else
                          {
-                             return subList.OrderBy(x => x.ProviderName).Skip(offset).Take(count).ToList<T>();
+                             return subList.OrderBy(x => x.Id).Skip(offset).Take(count).ToList<T>();
                          }
                      }
                      else
                      {
-                         return subList.OrderBy(x => x.ProviderName).ToList<SIPProvider>();
+                         return subList.OrderBy(x => x.Id).ToList<T>(); ;
                      }
-                                 }
-                 else
-                 {
-                     return null;
-                 }*/
+                 }
 
                  return subList;
             }
@@ -295,6 +300,11 @@ namespace SIPSorcery.Sys
             m_sipAssets.Clear();
             foreach (KeyValuePair<Guid, object> keyValPair in assets) {
                 m_sipAssets.Add(keyValPair.Key, (T)keyValPair.Value);
+            }
+
+            if (Modified != null)
+            {
+                Modified();
             }
 
             if (m_xmlFileWatcher == null) {
@@ -365,8 +375,10 @@ namespace SIPSorcery.Sys
                 string docElementName = (new T()).GetXMLDocumentElementName();
                 sipAssetStream.WriteLine("<" + docElementName + ">");
 
-                foreach (T sipAsset in m_sipAssets.Values) {
-                    sipAssetStream.Write(((ISIPAsset)sipAsset).ToXML());
+                lock (m_sipAssets) {
+                    foreach (T sipAsset in m_sipAssets.Values) {
+                        sipAssetStream.Write(((ISIPAsset)sipAsset).ToXML());
+                    }
                 }
 
                 sipAssetStream.WriteLine("</" + docElementName + ">");
@@ -406,6 +418,8 @@ namespace SIPSorcery.Sys
                             logger.Error("Exception loading SIP asset record in LoadAssetsFromXMLRecordSet. " + excp.Message);
                         }
                     }
+
+                    logger.Debug(" " + assets.Count + " " + (new T()).GetType().ToString() + " assets loaded from XML record set.");
                 }
                 else {
                     logger.Warn("The XML supplied to LoadAssetsFromXMLRecordSet for asset type " + (new T()).GetType().ToString() + " did not contain any assets.");

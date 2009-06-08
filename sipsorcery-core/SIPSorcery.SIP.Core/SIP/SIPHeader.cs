@@ -2310,6 +2310,21 @@ namespace SIPSorcery.SIP
         public SIPHeader()
 		{}
 
+        public SIPHeader(string fromHeader, string toHeader, int cseq, string callId)
+        {
+            SIPFromHeader from = SIPFromHeader.ParseFromHeader(fromHeader);
+            SIPToHeader to = SIPToHeader.ParseToHeader(toHeader);
+            Initialise(null, from, to, cseq, callId);
+        }
+
+        public SIPHeader(string fromHeader, string toHeader, string contactHeader, int cseq, string callId)
+        {
+            SIPFromHeader from = SIPFromHeader.ParseFromHeader(fromHeader);
+            SIPToHeader to = SIPToHeader.ParseToHeader(toHeader);
+            List<SIPContactHeader> contact = SIPContactHeader.ParseContactHeader(contactHeader);
+            Initialise(contact, from, to, cseq, callId);
+        }
+
         public SIPHeader(SIPFromHeader from, SIPToHeader to, int cseq, string callId)
         {
             Initialise(null, from, to, cseq, callId);

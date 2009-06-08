@@ -49,9 +49,10 @@ namespace SIPSorcery.SIP
         public event SIPTransactionResponseReceivedDelegate NonInviteTransactionFinalResponseReceived;
         public event SIPTransactionTimedOutDelegate NonInviteTransactionTimedOut;
         public event SIPTransactionRequestReceivedDelegate NonInviteRequestReceived;
+        public event SIPTransactionRequestRetransmitDelegate NonInviteTransactionRequestRetransmit;
 
-        public SIPNonInviteTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint)
-            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint)
+        internal SIPNonInviteTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy)
+            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.NonInvite;
             TransactionRequestReceived += SIPNonInviteTransaction_TransactionRequestReceived;
@@ -59,6 +60,7 @@ namespace SIPSorcery.SIP
             TransactionFinalResponseReceived += SIPNonInviteTransaction_TransactionFinalResponseReceived;
             TransactionTimedOut += SIPNonInviteTransaction_TransactionTimedOut;
             TransactionRemoved += SIPNonInviteTransaction_TransactionRemoved;
+            TransactionRequestRetransmit += SIPNonInviteTransaction_TransactionRequestRetransmit;
         }
 
         private void SIPNonInviteTransaction_TransactionRemoved(SIPTransaction transaction)
@@ -99,6 +101,14 @@ namespace SIPSorcery.SIP
             if (NonInviteTransactionFinalResponseReceived != null)
             {
                 NonInviteTransactionFinalResponseReceived(localSIPEndPoint, remoteEndPoint, this, sipResponse);
+            }
+        }
+
+        private void SIPNonInviteTransaction_TransactionRequestRetransmit(SIPTransaction sipTransaction, SIPRequest sipRequest, int retransmitNumber)
+        {
+            if (NonInviteTransactionRequestRetransmit != null)
+            {
+                NonInviteTransactionRequestRetransmit(sipTransaction, sipRequest, retransmitNumber);
             }
         }
     }

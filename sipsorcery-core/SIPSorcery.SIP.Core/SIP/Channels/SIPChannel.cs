@@ -95,7 +95,7 @@ namespace SIPSorcery.SIP
 
         public abstract void Send(IPEndPoint destinationEndPoint, string message);
         public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer);
-        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, string serverCN);
+        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName);
         public abstract void Close();
     }
 }

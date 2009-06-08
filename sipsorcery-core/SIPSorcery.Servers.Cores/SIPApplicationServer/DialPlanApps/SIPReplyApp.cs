@@ -36,6 +36,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -47,121 +48,60 @@ using NUnit.Framework;
 
 namespace SIPSorcery.Servers
 {
-    public struct SIPReplyStruct
-    {
-        public static SIPReplyStruct Empty = new SIPReplyStruct(SIPResponseStatusCodesEnum.None, null);
-
-        public SIPResponseStatusCodesEnum ResponseStatusCode;
-        public string ResponseStatusMessage;
-
-        public SIPReplyStruct(SIPResponseStatusCodesEnum statusCode, string statusMessage)
-        {
-            ResponseStatusCode = statusCode;
-            ResponseStatusMessage = statusMessage;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return base.Equals(obj);
-        }
-
-        public static bool operator ==(SIPReplyStruct x, SIPReplyStruct y)
-        {
-            if (x.ResponseStatusCode == y.ResponseStatusCode &&
-                x.ResponseStatusMessage == y.ResponseStatusMessage)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public static bool operator !=(SIPReplyStruct x, SIPReplyStruct y)
-        {
-            return !(x == y);
-        }
-
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
-    }
-
     public class SIPReplyApp
     {
-        private static ILog logger = AppState.GetLogger("sipproxy");
+        private static ILog logger = AppState.GetLogger("dialplan");
 
-        private static string m_sipProxyUserAgent = "www.mysipswitch.com";
-
-        private event SIPMonitorLogDelegate m_statefulProxyLogEvent;
+        private event SIPMonitorLogDelegate Log_External;
 
         private string m_clientUsername = null;             // If the UAC is authenticated holds the username of the client.
-        private UASInviteTransaction m_clientTransaction;   // Proxy transaction established with a client making a call out through the switch.
-        public SIPTransaction ClientTransaction
-        {
-            get { return m_clientTransaction; }
-        }
 
-        public string Owner
-        {
-            get { return m_clientUsername; }
-        }
-
-        private SIPReplyStruct m_sipReplyStruct;            
+        private CallProgressDelegate CallProgress_External;
+        private CallFailedDelegate CallFailed_External;
 
         public SIPReplyApp(
             SIPMonitorLogDelegate statefulProxyLogEvent,
-            UASInviteTransaction clientTransaction,
-            string username)
-        {
-            m_statefulProxyLogEvent = statefulProxyLogEvent;
+            string username,
+            CallProgressDelegate callProgress,
+            CallFailedDelegate callFailed) {
 
-            m_clientTransaction = clientTransaction;
-            //m_clientTransaction.TransactionCancelled += new SIPTransactionCancelledDelegate(CallCancelled);
-
+            Log_External = statefulProxyLogEvent;
             m_clientUsername = username;
+            CallProgress_External = callProgress;
+            CallFailed_External = callFailed;
         }
 
-        public void Start(string commandData)
-        {
-            try
-            {
-                //logger.Debug("SIPReplyApp Start.");
-
+        public void Start(string commandData) {
+            try {
                 string[] replyFields = commandData.Split(',');
-
-                SIPResponseStatusCodesEnum statusCode = SIPResponseStatusCodes.GetStatusTypeForCode(Convert.ToInt32(replyFields[0]));
                 string statusMessage = (replyFields.Length > 1 && replyFields[1] != null) ? replyFields[1].Trim() : null;
-                if(statusMessage == null || statusMessage.Trim().Length == 0)
-                {
-                    statusMessage = statusCode.ToString();
+
+                Start(Convert.ToInt32(replyFields[0]), statusMessage);
+            }
+            catch (ThreadAbortException) { }
+            catch (Exception excp) {
+                logger.Error("Exception SIPReplyApp Start. " + excp.Message);
+            }
+        }
+
+        public void Start(int status, string reason) {
+            try {
+                SIPResponseStatusCodesEnum statusCode = SIPResponseStatusCodes.GetStatusTypeForCode(status);
+                if (!reason.IsNullOrBlank()) {
+                    reason = reason.Trim();
                 }
 
-                m_sipReplyStruct = new SIPReplyStruct(statusCode, statusMessage);
-
-                if (m_clientTransaction != null)
-                {
-                    SIPResponse replyResponse = SIPTransport.GetResponse(m_clientTransaction.TransactionRequest, statusCode, statusMessage);
-                    logger.Debug("SIPReplyApp sending response " + replyFields[0] + " " + statusMessage + ".");
-
-                    if (replyResponse.StatusCode <= 199)
-                    {
-                        m_clientTransaction.SendInformationalResponse(replyResponse);
-                    }
-                    else
-                    {
-                        m_clientTransaction.SendFinalResponse(replyResponse);
-                    }
+                if ((int)statusCode < 200) {
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SIPReplyApp sending info response of " + statusCode + " and " + reason + ".", m_clientUsername));
+                    CallProgress_External(statusCode, reason, null, null);
                 }
-                else
-                {
-                    logger.Warn("SIPReplyApp could not send response as client transaction was null.");
+                else {
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SIPReplyApp sending failure response of " + statusCode + " and " + reason + ".", m_clientUsername));
+                    CallFailed_External(statusCode, reason);
                 }
             }
-            catch (Exception excp)
-            {
+            catch (ThreadAbortException) { }
+            catch (Exception excp) {
                 logger.Error("Exception SIPReplyApp Start. " + excp.Message);
             }
         }

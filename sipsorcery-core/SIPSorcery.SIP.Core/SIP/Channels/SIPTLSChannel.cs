@@ -60,6 +60,7 @@ namespace SIPSorcery.SIP
         private TcpListener m_tlsServerListener;
         private bool m_closed = false;
         private Dictionary<IPEndPoint, SIPConnection> m_connectedSockets = new Dictionary<IPEndPoint, SIPConnection>();
+        private List<IPEndPoint> m_connectingSockets = new List<IPEndPoint>(); // List of connecting sockets to avoid SIP re-transmits initiating multiple connect attempts.
 
         private string m_certificatePath;
         private X509Certificate2 m_serverCertificate;
@@ -203,13 +204,20 @@ namespace SIPSorcery.SIP
                         if (serverCN.IsNullOrBlank()) {
                             throw new ApplicationException("The SIP TLS Channel must be provided with the name of the expected server certificate, please use alternative method.");
                         }
-                        
-                        logger.Debug("Attempting to establish TLS connection to " + dstEndPoint + ".");
-                        TcpClient tcpClient = new TcpClient();
-                        tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                        tcpClient.Client.Bind(m_localSIPEndPoint.SocketEndPoint);
 
-                        tcpClient.BeginConnect(dstEndPoint.Address, dstEndPoint.Port, EndConnect, new object[] { tcpClient, dstEndPoint, buffer, serverCN });
+                        if (!m_connectingSockets.Contains(dstEndPoint)) {
+
+                            logger.Debug("Attempting to establish TLS connection to " + dstEndPoint + ".");
+                            TcpClient tcpClient = new TcpClient();
+                            tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                            tcpClient.Client.Bind(m_localSIPEndPoint.SocketEndPoint);
+
+                            m_connectingSockets.Add(dstEndPoint);
+                            tcpClient.BeginConnect(dstEndPoint.Address, dstEndPoint.Port, EndConnect, new object[] { tcpClient, dstEndPoint, buffer, serverCN });
+                        }
+                        else {
+                            logger.Warn("Could not send SIP packet to TLS " + dstEndPoint + " and another connection was already in progress so dropping message.");
+                        }
                     }
                 }
             }
@@ -236,6 +244,8 @@ namespace SIPSorcery.SIP
                 IPEndPoint dstEndPoint = (IPEndPoint)stateObj[1];
                 byte[] buffer = (byte[])stateObj[2];
                 string serverCN = (string)stateObj[3];
+
+                m_connectedSockets.Remove(dstEndPoint);
 
                 SslStream sslStream = new SslStream(tcpClient.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
                 //DisplayCertificateInformation(sslStream);

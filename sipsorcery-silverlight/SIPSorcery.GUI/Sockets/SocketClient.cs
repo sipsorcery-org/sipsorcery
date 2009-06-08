@@ -41,6 +41,7 @@ namespace SIPSorcery.Sockets
         private byte[] m_socketBuffer = new byte[MAX_SOCKET_BUFFER_SIZE];
         //private string m_remoteSocket;
         private bool m_isConnected;
+        public bool m_closeRequested;
 
         public SocketClient(EndPoint serverEndPoint)
         {
@@ -80,17 +81,15 @@ namespace SIPSorcery.Sockets
                 }
                 else
                 {
-                    if (SocketConnectionChange != null)
-                    {
+                    if (SocketConnectionChange != null && m_closeRequested) {
                         SocketConnectionChange(new SocketConnectionStatus(ServiceConnectionStatesEnum.Error, "Connection to " + m_serverEndPoint + " failed."));
                     }
                 }
             }
             catch (Exception excp)
             {
-                if (SocketConnectionChange != null)
-                {
-                   SocketConnectionChange(new SocketConnectionStatus(ServiceConnectionStatesEnum.Error, "Exception connecting to " + m_serverEndPoint + ". " + excp.Message));
+                if (SocketConnectionChange != null && m_closeRequested) {
+                    SocketConnectionChange(new SocketConnectionStatus(ServiceConnectionStatesEnum.Error, "Exception connecting to " + m_serverEndPoint + ". " + excp.Message));
                 }
             }
         }
@@ -111,41 +110,39 @@ namespace SIPSorcery.Sockets
                 }
                 else
                 {
-                    SocketConnectionChange(new SocketConnectionStatus(ServiceConnectionStatesEnum.Error, "Connection has been closed."));
+                    if (SocketConnectionChange != null && !m_closeRequested) {
+                        SocketConnectionChange(new SocketConnectionStatus(ServiceConnectionStatesEnum.Error, "Connection has been closed."));
+                    }
                 }
             }
             catch(Exception excp) 
             {
-                SocketConnectionChange(new SocketConnectionStatus(ServiceConnectionStatesEnum.Error, "Exception on socket read. " + excp.Message));
+                if (SocketConnectionChange != null && !m_closeRequested) {
+                    SocketConnectionChange(new SocketConnectionStatus(ServiceConnectionStatesEnum.Error, "Exception on socket read. " + excp.Message));
+                }
             }
         }
 
-        public void Send(byte[] data)
-        {
-            try
-            {
-                if (data != null && data.Length > 0)
-                {
+        public void Send(byte[] data) {
+            try {
+                if (data != null && data.Length > 0) {
                     SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
                     sendArgs.SetBuffer(data, 0, data.Length);
                     m_socket.SendAsync(sendArgs);
                 }
             }
-            catch (Exception excp)
-            {
-                if (SocketConnectionChange != null)
-                {
+            catch (Exception excp) {
+                if (SocketConnectionChange != null && !m_closeRequested) {
                     SocketConnectionChange(new SocketConnectionStatus(ServiceConnectionStatesEnum.Error, "Exception sending to " + m_serverEndPoint + ". " + excp.Message));
                 }
             }
         }
 
-        public void Close()
-        {
-            try
-            {
-                if (m_socket != null && m_isConnected)
-                {
+        public void Close() {
+            try {
+                m_closeRequested = true;
+
+                if (m_socket != null && m_isConnected) {
                     m_socket.Close();
                 }
             }

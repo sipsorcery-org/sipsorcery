@@ -56,7 +56,6 @@ namespace SIPSorcery.SIP
     /// from the UAS. In practice it's been noted that is a UAS (initial UAS) sends an in-dialogue request with a CSeq less than the
     /// UAC's CSeq it can cause problems. To avoid this issue when generating requests the remote CSeq is always used.
     /// </remarks>
-    [DataContractAttribute]
     public class SIPDialogue
 	{
         protected static ILog logger = AssemblyState.logger;
@@ -64,35 +63,26 @@ namespace SIPSorcery.SIP
 		protected static string m_CRLF = SIPConstants.CRLF;
 		protected static string m_sipVersion = SIPConstants.SIP_VERSION_STRING;
 
-        private SIPTransport m_sipTransport;
+        public SIPTransport m_sipTransport;
 
-        [DataMember]
-        public Guid Id { get; set; }                        // Id for persistence, NOT used for SIP call purposes.
-
-        [DataMember]
+        public Guid Id { get; set; }                                // Id for persistence, NOT used for SIP call purposes.
         public string Owner { get; set; }                           // In cases where ownership needs to be set on the dialogue this value can be used. Does not have any effect on the operation of the dialogue and is for info only.
-
-        [DataMember]
-        public string AdminMemberId { get; set; }
-        
-        public string CallId { get; private set; }
-        public SIPRouteSet RouteSet { get; private set; }
-        public SIPUserField LocalUserField { get; private set; }     // To header for a UAS, From header for a UAC.
-        public string LocalTag { get; private set; }
-        public SIPUserField RemoteUserField { get; set; }            // To header for a UAC, From header for a UAS.    
-        public string RemoteTag { get; private set; }
-        public int CSeq { get; set; }                                // CSeq being used by the remote UA for sending requests.
-        
-        [DataMember]
+        public string AdminMemberId { get; set; }      
+        public string CallId { get; set; }
+        public SIPRouteSet RouteSet { get; set; }
+        public SIPUserField LocalUserField { get; set; }            // To header for a UAS, From header for a UAC.
+        public string LocalTag { get; set; }
+        public SIPUserField RemoteUserField { get; set; }           // To header for a UAC, From header for a UAS.    
+        public string RemoteTag { get; set; }
+        public int CSeq { get; set; }                               // CSeq being used by the remote UA for sending requests.
         public SIPURI RemoteTarget { get; set; }                    // This will be the Contact URI in the INVITE request or in the 2xx INVITE response and is where subsequent dialogue requests should be sent.
-        
-        public string DialogueId { get; private set; }
-        public SIPCDR CDR { get; private set; }                      // Call detail record for call the dialogue belongs to.
-
-        public string SDP { get; private set; }                      // The sessions description protocol payload. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
-        public Guid BridgeId { get; set; }                           // If this dialogue gets bridged by a higher level application server the id for the bridge can be stored here.                   
-
-        private SIPEndPoint m_localSIPEndPoint;     // The end point on this proxy that dialog requests should be sent on.
+        public string DialogueId { get; set; }
+        public Guid CDRId { get; set; }                             // Call detail record for call the dialogue belongs to.
+        public string SDP { get; private set; }                     // The sessions description protocol payload. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
+        public string RemoteSDP { get; private set; }               // The sessions description protocol payload from the remote end. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
+        public Guid BridgeId { get; set; }                          // If this dialogue gets bridged by a higher level application server the id for the bridge can be stored here.                   
+        public SIPEndPoint OutboundProxy { get; set; }
+        public int CallDurationLimit { get; set; }                  // If non-zero indicates the dialogue established should only be permitted to stay up for this many seconds.
 
         public SIPDialogueStateEnum DialogueState = SIPDialogueStateEnum.Unknown;
 
@@ -108,11 +98,12 @@ namespace SIPSorcery.SIP
             SIPURI remoteTarget,
             string localTag,
             string remoteTag,
-            SIPEndPoint localSIPEndPoint,
-            SIPCDR cdr,
+            SIPEndPoint outboundProxy,
+            Guid cdrId,
             string owner,
             string adminMemberId,
-            string sdp)
+            string sdp,
+            string remoteSDP)
 		{
             m_sipTransport = sipTransport;
 
@@ -127,12 +118,12 @@ namespace SIPSorcery.SIP
             RemoteTag = remoteTag;
             CSeq = cseq;
             RemoteTarget = remoteTarget;
-            CDR = cdr;
+            CDRId = cdrId;
             Owner = owner;
             AdminMemberId = adminMemberId;
             SDP = sdp;
-
-            m_localSIPEndPoint = localSIPEndPoint;
+            RemoteSDP = remoteSDP;
+            OutboundProxy = outboundProxy;
         }
 
         /// <summary>
@@ -158,13 +149,14 @@ namespace SIPSorcery.SIP
             RemoteTag = uasInviteTransaction.TransactionFinalResponse.Header.From.FromTag;
             CSeq = uasInviteTransaction.TransactionRequest.Header.CSeq;
             RemoteTarget = (uasInviteTransaction.TransactionRequest != null && uasInviteTransaction.TransactionRequest.Header.Contact != null && uasInviteTransaction.TransactionRequest.Header.Contact.Count > 0) ? uasInviteTransaction.TransactionRequest.Header.Contact[0].ContactURI : null;
-            CDR = uasInviteTransaction.CDR;
+            CDRId = uasInviteTransaction.CDR.CDRId;
             Owner = owner;
             AdminMemberId = adminMemberId;
-            SDP = uasInviteTransaction.TransactionRequest.Body;
-
+            SDP = uasInviteTransaction.TransactionFinalResponse.Body;
+            RemoteSDP = uasInviteTransaction.TransactionRequest.Body;
+            
             DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
-            m_localSIPEndPoint = uasInviteTransaction.LocalSIPEndPoint;
+            OutboundProxy = uasInviteTransaction.OutboundProxy;
         }
 
         /// <summary>
@@ -190,13 +182,14 @@ namespace SIPSorcery.SIP
             RemoteTag = uacInviteTransaction.TransactionFinalResponse.Header.To.ToTag;
             CSeq = uacInviteTransaction.TransactionRequest.Header.CSeq;
             RemoteTarget = (uacInviteTransaction.TransactionFinalResponse != null && uacInviteTransaction.TransactionFinalResponse.Header.Contact != null && uacInviteTransaction.TransactionFinalResponse.Header.Contact.Count > 0) ? uacInviteTransaction.TransactionFinalResponse.Header.Contact[0].ContactURI : null;
-            CDR = uacInviteTransaction.CDR;
+            CDRId = uacInviteTransaction.CDR.CDRId;
             Owner = owner;
             AdminMemberId = adminMemberId;
             SDP = uacInviteTransaction.TransactionRequest.Body;
+            RemoteSDP = uacInviteTransaction.TransactionFinalResponse.Body;
 
             DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
-            m_localSIPEndPoint = uacInviteTransaction.LocalSIPEndPoint;
+            OutboundProxy = uacInviteTransaction.OutboundProxy;
         }
 
         public static string GetDialogueId(string callId, string localTag, string remoteTag)
@@ -209,16 +202,39 @@ namespace SIPSorcery.SIP
             return Crypto.GetSHAHash(sipHeader.CallId + sipHeader.To.ToTag + sipHeader.From.FromTag);
         }
 
-        public SIPRequest GetByeRequest()
+        /*public SIPRequest GetByeRequestX()
         {
-            return GetByeRequest(this, m_localSIPEndPoint);
-        }
+            SIPEndPoint dstEndPoint = GetDestinationEndPoint();
+            SIPEndPoint localSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint(dstEndPoint);
+            if (localSIPEndPoint == null) {
+                throw new ApplicationException("Could not locate an appropriate SIP transport channel in SIPDialogue Hangup for protocol " + dstEndPoint.SIPProtocol + ".");
+            }
+            return GetByeRequest(this, localSIPEndPoint);
+        }*/
 
         public void Hangup()
         {
-            SIPRequest byeRequest = GetByeRequest(this, m_localSIPEndPoint);
-            SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, m_localSIPEndPoint);
+            SIPEndPoint dstEndPoint = GetDestinationEndPoint();
+            SIPEndPoint localSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint(dstEndPoint);
+            if (localSIPEndPoint == null) {
+                throw new ApplicationException("Could not locate an appropriate SIP transport channel in SIPDialogue Hangup for protocol " + dstEndPoint.SIPProtocol + ".");
+            }
+            SIPRequest byeRequest = GetByeRequest(this, localSIPEndPoint);
+            SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, dstEndPoint, localSIPEndPoint, OutboundProxy);
             byeTransaction.SendReliableRequest();
+        }
+
+        private SIPEndPoint GetDestinationEndPoint() {
+            SIPEndPoint dstEndPoint = OutboundProxy;
+            if (dstEndPoint == null) {
+                dstEndPoint = (RouteSet == null) ? m_sipTransport.GetURIEndPoint(RemoteTarget, true) : m_sipTransport.GetURIEndPoint(RouteSet.TopRoute.URI, true);
+            }
+
+            if (dstEndPoint == null) {
+                throw new ApplicationException("The destination SIP end point could not be resolved in SIPDialogue Hangup for a remote target of " + RemoteTarget + ".");
+            }
+
+            return dstEndPoint;
         }
 
         private SIPRequest GetByeRequest(SIPDialogue sipDialogue, SIPEndPoint localSIPEndPoint)

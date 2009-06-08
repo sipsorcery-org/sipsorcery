@@ -54,7 +54,7 @@ namespace SIPSorcery.SIPRegistrationAgent
         private const string LOGGER_NAME = "sipregagent";
 
         private const string SIPREGAGENT_CONFIGNODE_NAME = "sipregistrationagent";
-        private const string SIPSOCKETS_CONFIGNODE_NAME = "sipregagentsockets";
+        private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
         private const string MONITOR_LOOPBACK_PORT_KEY = "MonitorLoopbackPort";
         private const string OUTBOUND_PROXY_KEY = "OutboundProxy";
 

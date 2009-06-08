@@ -4,16 +4,18 @@
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	mc:Ignorable="d"
-	x:Class="SIPSorcery.LoginControl" IsTabStop="False" TabNavigation="Cycle" Height="200" Width="300">
+	x:Class="SIPSorcery.LoginControl" IsTabStop="False" TabNavigation="Cycle" Height="Auto" Width="300" VerticalAlignment="Stretch">
 
-	<StackPanel Height="200" x:Name="LayoutRoot" Width="300" Background="#FF000000">
-		<TextBlock Text="" TextWrapping="Wrap" Width="300" Foreground="#FFFFE500" x:Name="m_errorTextBox" TextAlignment="Center" FontSize="11" Height="Auto" HorizontalAlignment="Right"/>
-		<Canvas Height="95" Width="185" HorizontalAlignment="Center" Margin="5,0,0,0">
+	<StackPanel Height="Auto" x:Name="LayoutRoot" Width="300" Background="#FF000000" VerticalAlignment="Stretch">
+		<TextBlock Text="Existing account login" TextWrapping="Wrap" Width="300" Foreground="{StaticResource InfoTextBrush}" x:Name="m_errorTextBox" TextAlignment="Center" FontSize="11" Height="Auto" HorizontalAlignment="Right"/>
+		<Canvas Height="111" Width="247" HorizontalAlignment="Center" Margin="5,0,0,0" VerticalAlignment="Top">
 			<PasswordBox Height="20" Width="100" x:Name="m_passwordTextBox" TabIndex="2" TabNavigation="Local" FontSize="10" Canvas.Left="76" Canvas.Top="33" VerticalAlignment="Stretch" Padding="1,0,0,0" VerticalContentAlignment="Top" KeyUp="LoginTextBox_KeyUp"/>
 			<TextBox x:Name="m_usernameTextBox" Text="" TextWrapping="Wrap" Width="100" TabIndex="1" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Canvas.Left="76" Padding="1,0,0,0" VerticalContentAlignment="Top" KeyUp="LoginTextBox_KeyUp" Canvas.Top="8"/>
-			<Button Height="23" Content="Login" Width="69" x:Name="m_loginButton" Click="LoginButton_Click" TabIndex="3" TabNavigation="Local" Canvas.Left="107" Canvas.Top="66" Padding="0,0,0,0"/>
-			<TextBlock Height="20" Width="60" FontSize="11" Foreground="#FF93FF00" Text="Password" TextWrapping="Wrap" Canvas.Top="33"/>
-			<TextBlock Height="20" Width="60" FontSize="11" Foreground="#FF93FF00" Text="Username" TextWrapping="Wrap" d:LayoutOverrides="Height" Canvas.Top="8"/>
+			<Button Height="23" Content="Login" Width="46" x:Name="m_loginButton" Click="LoginButton_Click" TabIndex="3" TabNavigation="Local" Canvas.Left="193" Canvas.Top="20" Padding="0,0,0,0"/>
+			<TextBlock Height="20" Width="60" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Password" TextWrapping="Wrap" Canvas.Top="33"/>
+			<TextBlock Height="20" Width="60" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Username" TextWrapping="Wrap" d:LayoutOverrides="Height" Canvas.Top="8"/>
+			<TextBlock Height="16" Width="111.928" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Create New Account" TextWrapping="Wrap" Canvas.Top="66" TextDecorations="Underline" MouseLeftButtonUp="CreateNewAccount_MouseLeftButtonUp" Cursor="Hand"/>
+			<TextBlock Height="16" Width="109.672" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Forgotten Password" TextWrapping="Wrap" TextDecorations="Underline" Canvas.Top="95" MouseLeftButtonUp="ForgottenPassword_MouseLeftButtonUp" Visibility="Collapsed" Cursor="Hand"/>
 		</Canvas>
 	</StackPanel>
 </UserControl>

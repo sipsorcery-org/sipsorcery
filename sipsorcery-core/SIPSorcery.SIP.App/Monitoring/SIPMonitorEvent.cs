@@ -66,7 +66,7 @@ namespace SIPSorcery.SIP.App
 		NATKeepAlive = 3,
 		NotifierAgent = 4,
 		Monitor = 5,
-		StatefulProxy = 7,
+		//StatefulProxy = 7,
         RegisterAgent = 8,
         SIPTransactionLayer = 9,
         UserAgentClient = 10,
@@ -160,6 +160,7 @@ namespace SIPSorcery.SIP.App
         SIPRegistrationAgentBindingRemoval = 6,
         SIPDialogueCreated = 7,
         SIPDialogueRemoved = 8,
+        Logout = 9,
     }
 
     public class SIPMonitorMachineEventTypes
@@ -193,9 +194,9 @@ namespace SIPSorcery.SIP.App
         public SIPMonitorEventTypesEnum EventType;
         public SIPMonitorMachineEventTypesEnum MachineEventType;
 		public string Message;
-        public IPEndPoint ServerEndPoint;           // Socket the request was received on by the server.
-		public IPEndPoint RemoteEndPoint;
-		public IPEndPoint DestinationEndPoint;
+        public SIPEndPoint ServerEndPoint;           // Socket the request was received on by the server.
+		public SIPEndPoint RemoteEndPoint;
+		public SIPEndPoint DestinationEndPoint;
 		public DateTime Created;
         public string Username;
 

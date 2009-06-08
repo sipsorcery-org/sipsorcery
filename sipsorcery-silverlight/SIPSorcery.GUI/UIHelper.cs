@@ -20,7 +20,7 @@ namespace SIPSorcery
 {
     public delegate void SetTextDelegate(string message);
     public delegate void SetTextBlockDelegate(TextBlock textBlock, string message);
-    public delegate void SetColouredTextBlockDelegate(TextBlock textBlock, string message, Color colour);
+    public delegate void SetColouredTextBlockDelegate(TextBlock textBlock, string message, MessageLevelsEnum level);
     public delegate void AppendToActivityLogDelegate(ScrollViewer scrollViewer, TextBlock textBlock, MessageLevelsEnum level, string message);
     public delegate void SetTextBoxDelegate(TextBox textBox, string message);
     public delegate void SetPasswordBoxDelegate(PasswordBox passwordBox, string message);
@@ -39,9 +39,15 @@ namespace SIPSorcery
     public delegate void SetFillDelegate(Shape shape, Color colour);
     public delegate void RemoveBorderChildDelegate(Border border);
     public delegate void SetBorderChildDelegate(Border border, UIElement child);
+    public delegate void SetComboBoxSelectedIndexDelegate(ComboBox comboBox, int index);
 
     public class UIHelper
     {
+        private static SolidColorBrush m_normalTextBrush;
+        private static SolidColorBrush m_infoTextBrush;
+        private static SolidColorBrush m_errorTextBrush;
+        private static SolidColorBrush m_warnTextBrush;
+
         private static SilverlightHost m_silverlightHostControl = new SilverlightHost();
         private static Content m_browserContent = new Content();
 
@@ -123,24 +129,7 @@ namespace SIPSorcery
             {
                 Run activityRun = new Run();
                 activityRun.Text = text;
-
-                if (level == MessageLevelsEnum.Error)
-                {
-                    activityRun.Foreground = new SolidColorBrush(AssemblyState.ErrorTextColour);
-                }
-                else if (level == MessageLevelsEnum.Warn)
-                {
-                    activityRun.Foreground = new SolidColorBrush(AssemblyState.WarnTextColour);
-                }
-                else if (level == MessageLevelsEnum.Monitor)
-                {
-                    activityRun.Foreground = new SolidColorBrush(AssemblyState.MonitorTextColour);
-                }
-                else
-                {
-                    activityRun.Foreground = new SolidColorBrush(AssemblyState.InfoTextColour);
-                }
-
+                activityRun.Foreground = GetBrushForMessageLevel(level);
                 textBlock.Inlines.Add(activityRun);
                 textBlock.Inlines.Add(new LineBreak());
 
@@ -164,16 +153,16 @@ namespace SIPSorcery
             }
         }
 
-        public static void SetColouredText(TextBlock textBlock, string text, Color colour)
+        public static void SetColouredText(TextBlock textBlock, string text, MessageLevelsEnum level)
         {
             if (textBlock.Dispatcher.CheckAccess())
             {
-                textBlock.Foreground = new SolidColorBrush(colour);
+                textBlock.Foreground = GetBrushForMessageLevel(level);
                 textBlock.Text = text;
             }
             else
             {
-                textBlock.Dispatcher.BeginInvoke(new SetColouredTextBlockDelegate(SetColouredText), textBlock, text, colour);
+                textBlock.Dispatcher.BeginInvoke(new SetColouredTextBlockDelegate(SetColouredText), textBlock, text, level);
             }
         }
 
@@ -299,6 +288,41 @@ namespace SIPSorcery
             {
                 border.Dispatcher.BeginInvoke(new SetBorderChildDelegate(SetBorderChild), border, child);
             }
+        }
+
+        public static void SetComboBoxSelectedId(ComboBox comboBox, int index) {
+            if (comboBox.Dispatcher.CheckAccess()) {
+                comboBox.SelectedIndex = index;
+            }
+            else {
+                comboBox.Dispatcher.BeginInvoke(new SetComboBoxSelectedIndexDelegate(SetComboBoxSelectedId), comboBox, index);
+            }
+        }
+
+        private static SolidColorBrush GetBrushForMessageLevel(MessageLevelsEnum level) {
+           SolidColorBrush brush = null;
+
+           if (m_normalTextBrush == null) {
+               m_normalTextBrush = AssemblyState.NormalTextBrush;
+               m_infoTextBrush = AssemblyState.InfoTextBrush; 
+               m_errorTextBrush = AssemblyState.ErrorTextBrush;
+               m_warnTextBrush = AssemblyState.WarnTextBrush;
+           }
+
+            if (level == MessageLevelsEnum.Error) {
+                brush = m_errorTextBrush;
+            }
+            else if (level == MessageLevelsEnum.Warn) {
+                brush = m_warnTextBrush;
+            }
+            else if (level == MessageLevelsEnum.Monitor) {
+                brush = m_infoTextBrush;
+            }
+            else {
+                brush = m_normalTextBrush;
+            }
+
+            return brush;
         }
     }
 }

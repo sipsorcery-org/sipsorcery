@@ -4,9 +4,8 @@
     <xsd:schema targetNamespace="http://www.sipsorcery.com/Imports">
       <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd0" namespace="http://www.sipsorcery.com" />
       <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
-      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" />
-      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd3" namespace="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP" />
-      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd4" namespace="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
+      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/SIPSorcery.CRM" />
+      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd3" namespace="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" />
     </xsd:schema>
   </wsdl:types>
   <wsdl:message name="SIPProvisioningWebService_IsAlive_InputMessage">
@@ -14,6 +13,18 @@
   </wsdl:message>
   <wsdl:message name="SIPProvisioningWebService_IsAlive_OutputMessage">
     <wsdl:part name="parameters" element="tns:IsAliveResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_CreateCustomer_InputMessage">
+    <wsdl:part name="parameters" element="tns:CreateCustomer" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_CreateCustomer_OutputMessage">
+    <wsdl:part name="parameters" element="tns:CreateCustomerResponse" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_DeleteCustomer_InputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteCustomer" />
+  </wsdl:message>
+  <wsdl:message name="SIPProvisioningWebService_DeleteCustomer_OutputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteCustomerResponse" />
   </wsdl:message>
   <wsdl:message name="SIPProvisioningWebService_Login_InputMessage">
     <wsdl:part name="parameters" element="tns:Login" />
@@ -175,6 +186,14 @@
     <wsdl:operation name="IsAlive">
       <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/IsAlive" message="tns:SIPProvisioningWebService_IsAlive_InputMessage" />
       <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/IsAliveResponse" message="tns:SIPProvisioningWebService_IsAlive_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="CreateCustomer">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/CreateCustomer" message="tns:SIPProvisioningWebService_CreateCustomer_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/CreateCustomerResponse" message="tns:SIPProvisioningWebService_CreateCustomer_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteCustomer">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteCustomer" message="tns:SIPProvisioningWebService_DeleteCustomer_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteCustomerResponse" message="tns:SIPProvisioningWebService_DeleteCustomer_OutputMessage" />
     </wsdl:operation>
     <wsdl:operation name="Login">
       <wsdl:input wsaw:Action="http://www.sipsorcery.com/SIPProvisioningWebService/Login" message="tns:SIPProvisioningWebService_Login_InputMessage" />

@@ -42,12 +42,10 @@ using log4net;
 using System.Data;
 #endif
 
-namespace SIPSorcery.SIP
-{
-    public delegate void CDRUpdatedDelegate(SIPCDR cdr);                // Used to inform CDR handlers when a CDR has been udpated.
+namespace SIPSorcery.SIP {
+    public delegate void CDRReadyDelegate(SIPCDR cdr);                // Used to inform CDR handlers when a CDR has been udpated.
 
-    public enum SIPCallDirection
-    {
+    public enum SIPCallDirection {
         None = 0,
         In = 1,
         Out = 2,
@@ -57,13 +55,14 @@ namespace SIPSorcery.SIP
     /// Call detail record for a SIP call.
     /// </summary>
     [DataContract]
-    public class SIPCDR
-	{
+    public class SIPCDR {
         private static ILog logger = AppState.logger;
         private static string m_newLine = AppState.NewLine;
 
-        public static event CDRUpdatedDelegate CDRUpdated;
-        
+        public static event CDRReadyDelegate NewCDR = c => { };
+        public static event CDRReadyDelegate HungupCDR = c => { };
+        public static event CDRReadyDelegate CancelledCDR = c => { };
+
         [DataMember]
         public Guid CDRId { get; set; }
 
@@ -77,7 +76,7 @@ namespace SIPSorcery.SIP
         public DateTime Created { get; set; }
 
         [DataMember]
-        public SIPCallDirection CallDirection { get; set;}
+        public SIPCallDirection CallDirection { get; set; }
 
         [DataMember]
         public SIPURI Destination { get; set; }
@@ -127,8 +126,7 @@ namespace SIPSorcery.SIP
             SIPFromHeader from,
             string callId,
             SIPEndPoint localSIPEndPoint,
-            SIPEndPoint remoteEndPoint)
-        {
+            SIPEndPoint remoteEndPoint) {
             CDRId = Guid.NewGuid();
             Created = DateTime.Now;
             CallDirection = callDirection;
@@ -142,55 +140,70 @@ namespace SIPSorcery.SIP
             IsHungup = false;
         }
 
-        public void Progress(SIPResponseStatusCodesEnum progressStatus, string progressReason)
-        {
+        public void Progress(SIPResponseStatusCodesEnum progressStatus, string progressReason) {
             InProgress = true;
             ProgressTime = DateTime.Now;
             ProgressStatus = (int)progressStatus;
             ProgressReasonPhrase = progressReason;
-            FireCDRUpdated(this);
         }
 
-        public void Answered(SIPResponseStatusCodesEnum answerStatus, string answerReason)
-        {
-            IsAnswered = true;
-            AnswerTime = DateTime.Now;
-            AnswerStatus = (int)answerStatus;
-            AnswerReasonPhrase = answerReason;
-            FireCDRUpdated(this);
+        public void Answered(int answerStatusCode, SIPResponseStatusCodesEnum answerStatus, string answerReason) {
+            try {
+                IsAnswered = true;
+                AnswerTime = DateTime.Now;
+                AnswerStatus = (int)answerStatus;
+                AnswerReasonPhrase = answerReason;
+
+                NewCDR(this);
+            }
+            catch (Exception excp) {
+                logger.Error("Exception SIPCDR Answered. " + excp.Message);
+            }
         }
 
-        public void Hungup(string hangupReason)
-        {
-            IsHungup = true;
-            HangupTime = DateTime.Now;
-            HangupReason = hangupReason;
-            FireCDRUpdated(this);
-        }
-
-        public double GetProgressDuration()
-        {
-            return (ProgressTime != null && AnswerTime != null) ? AnswerTime.Value.Subtract(ProgressTime.Value).TotalSeconds : 0;
-        }
-
-        public double GetAnsweredDuration()
-        {
-            return (AnswerTime != null && HangupTime != null) ? HangupTime.Value.Subtract(AnswerTime.Value).TotalSeconds : 0;
-        }
-
-        private static void FireCDRUpdated(SIPCDR cdr)
+        public void Cancelled()
         {
             try
             {
-                if (CDRUpdated != null)
-                {
-                    CDRUpdated(cdr);
-                }
+                CancelledCDR(this);
             }
             catch (Exception excp)
             {
-                logger.Error("Exception FireCDRUpdated. " + excp.Message);
+                logger.Error("Exception SIPCDR Cancelled. " + excp.Message);
             }
         }
-	}
+
+        public void TimedOut()
+        {
+            try
+            {
+                NewCDR(this);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPCDR TimedOut. " + excp.Message);
+            }
+        }
+
+        public void Hungup(string hangupReason) {
+            try {
+                IsHungup = true;
+                HangupTime = DateTime.Now;
+                HangupReason = hangupReason;
+
+                HungupCDR(this);
+            }
+            catch (Exception excp) {
+                logger.Error("Exception SIPCDR Hungup. " + excp.Message);
+            }
+        }
+
+        public double GetProgressDuration() {
+            return (ProgressTime != null && AnswerTime != null) ? AnswerTime.Value.Subtract(ProgressTime.Value).TotalSeconds : 0;
+        }
+
+        public double GetAnsweredDuration() {
+            return (AnswerTime != null && HangupTime != null) ? HangupTime.Value.Subtract(AnswerTime.Value).TotalSeconds : 0;
+        }
+    }
 }

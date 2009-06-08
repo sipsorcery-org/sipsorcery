@@ -210,10 +210,11 @@ namespace SIPSorcery.SIPRegistrationAgent
 
         private void FireSIPMonitorEvent(SIPMonitorEvent sipMonitorEvent) {
             try {
-                if (sipMonitorEvent != null &&
-                    sipMonitorEvent.GetType() != typeof(SIPMonitorMachineEvent)) {
-                    
-                    logger.Debug("ra: " + sipMonitorEvent.Message);
+                if (sipMonitorEvent != null) {
+                    if (sipMonitorEvent.GetType() != typeof(SIPMonitorMachineEvent))
+                    {
+                        logger.Debug("ra: " + sipMonitorEvent.Message);
+                    }
                     
                     if (m_monitorEventWriter != null) {
                         m_monitorEventWriter.Send(sipMonitorEvent);

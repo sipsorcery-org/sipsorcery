@@ -99,18 +99,19 @@ namespace SIPSorcery.SIP
 
     public class SIPTransport
 	{
-        private const string THREAD_NAME = "siptransport";
+        private const string RECEIVE_THREAD_NAME = "siptransport-receive";
+        private const string RELIABLES_THREAD_NAME = "siptransport-reliables";
         private const string METRICS_THREAD_NAME = "siptransport-metrics";
-        private const int TIME_WAIT_FINALRESPONSE = 2000;           // Milliseconds to wait after transmitting the final request on a reliable transmission before timing out the request.
         private const int MAX_QUEUEWAIT_PERIOD = 2000;              // Maximum time to wait to check the message received queue if no events are received.
         private const int PENDINGREQUESTS_CHECK_PERIOD = 500;       // Time between checking the pending requests queue to resend reliable requests that have not been responded to.
         private const int MAX_INMESSAGE_QUEUECOUNT = 5000;          // The maximum number of messages that can be stored in the incoming message queue.
         private const int MAX_RELIABLETRANSMISSIONS_COUNT = 5000;   // The maximum number of messages that can be maintained for reliable transmissions.
-        private const int MAX_MEASUREMENTSQUEUE_SIZE = 100000;       // If metrics are being used the maximum size the queue will be allowed to reach after which no more measurements will be accepted.
-        private const int METRICS_SAMPLE_PERIOD = 60;                // Sample period in seconds for the metrics queue. 
-        
-        protected static readonly int m_t1 = SIPTimings.T1;         // SIP Timer T1 in milliseconds.
-        protected static readonly int m_t6 = SIPTimings.T6;         // this x T1 is how long a reliable request will have retransmits performed for.
+        private const int MAX_MEASUREMENTSQUEUE_SIZE = 100000;      // If metrics are being used the maximum size the queue will be allowed to reach after which no more measurements will be accepted.
+        private const int METRICS_SAMPLE_PERIOD = 60;               // Sample period in seconds for the metrics queue. 
+
+        private static readonly int m_t1 = SIPTimings.T1;         
+        private static readonly int m_t2 = SIPTimings.T2;         
+        private static readonly int m_t6 = SIPTimings.T6;         
         private static string m_looseRouteParameter = SIPConstants.SIP_LOOSEROUTER_PARAMETER;
 
         private static ILog logger = AssemblyState.logger;
@@ -128,7 +129,7 @@ namespace SIPSorcery.SIP
         private ManualResetEvent m_stopMetrics = new ManualResetEvent(false);
 		private bool m_closed = false;
 
-        private Dictionary<SIPEndPoint, SIPChannel> m_sipChannels = new Dictionary<SIPEndPoint, SIPChannel>();    // List of the physical channels that have been opened and are under management by this instance.
+        private Dictionary<string, SIPChannel> m_sipChannels = new Dictionary<string, SIPChannel>();    // List of the physical channels that have been opened and are under management by this instance.
         //private List<SIPEndPoint> m_sipLocalEndPoints = new List<SIPEndPoint>();
 
         private SIPTransactionEngine m_transactionEngine;
@@ -162,12 +163,22 @@ namespace SIPSorcery.SIP
 
         public SIPTransport(ResolveSIPEndPointDelegate sipResolver, SIPTransactionEngine transactionEngine)
         {
+            if (sipResolver == null)
+            {
+                throw new ArgumentNullException("The SIP end point resolver must be set when creating a SIPTransport object.");
+            }
+            
             ResolveSIPEndPoint_External = sipResolver;
             m_transactionEngine = transactionEngine;
         }
 
         public SIPTransport(ResolveSIPEndPointDelegate sipResolver, SIPTransactionEngine transactionEngine, bool queueIncoming, bool useMetrics)
         {
+            if (sipResolver == null)
+            {
+                throw new ArgumentNullException("The SIP end point resolver must be set when creating a SIPTransport object.");
+            }
+
             ResolveSIPEndPoint_External = sipResolver;
             m_transactionEngine = transactionEngine;
             m_queueIncoming = queueIncoming;
@@ -175,7 +186,12 @@ namespace SIPSorcery.SIP
         }
 
         public SIPTransport(ResolveSIPEndPointDelegate sipResolver, SIPTransactionEngine transactionEngine, SIPChannel sipChannel, bool queueIncoming, bool useMetrics)
-		{
+        {
+            if (sipResolver == null)
+            {
+                throw new ArgumentNullException("The SIP end point resolver must be set when creating a SIPTransport object.");
+            }
+
             ResolveSIPEndPoint_External = sipResolver;
             m_transactionEngine = transactionEngine;
             AddSIPChannel(sipChannel);
@@ -213,7 +229,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                m_sipChannels.Add(sipChannel.SIPChannelEndPoint, sipChannel);
+                m_sipChannels.Add(sipChannel.SIPChannelEndPoint.ToString(), sipChannel);
 
                 // Wire up the SIP transport to the SIP channel.
                 sipChannel.SIPMessageReceived += ReceiveMessage;
@@ -243,7 +259,7 @@ namespace SIPSorcery.SIP
                 
                 Thread inMessageThread = new Thread(new ThreadStart(ProcessInMessage));
                 //inMessageThread.Priority = ThreadPriority.AboveNormal;
-                inMessageThread.Name = THREAD_NAME;
+                inMessageThread.Name = RECEIVE_THREAD_NAME;
                 inMessageThread.Start();
             }
         }
@@ -265,7 +281,7 @@ namespace SIPSorcery.SIP
             m_reliablesThreadRunning = true;
 
             Thread reliableTransmissionsThread = new Thread(new ThreadStart(ProcessPendingReliableTransactions));
-            reliableTransmissionsThread.Name = "siptransport-reliable";
+            reliableTransmissionsThread.Name = RELIABLES_THREAD_NAME;
             reliableTransmissionsThread.Start();
         }
 
@@ -378,6 +394,25 @@ namespace SIPSorcery.SIP
             return null;
         }
 
+        public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP) {
+            bool isDestLoopback = IPAddress.IsLoopback(destinationEP.SocketEndPoint.Address);
+
+            foreach (SIPChannel sipChannel in m_sipChannels.Values) {
+                if (sipChannel.SIPChannelEndPoint.SIPProtocol == destinationEP.SIPProtocol) {
+                    if (isDestLoopback) {
+                        if (IPAddress.IsLoopback(sipChannel.SIPChannelEndPoint.SocketEndPoint.Address)) {
+                            return sipChannel.SIPChannelEndPoint;
+                        }
+                    }
+                    else {
+                        return sipChannel.SIPChannelEndPoint;
+                    }
+                }
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// This function performs processing on a request to handle any actions that need to be taken based on the Route header.
         /// </summary>
@@ -453,6 +488,11 @@ namespace SIPSorcery.SIP
         /// </summary>
         public void SendRaw(SIPEndPoint localSIPEndPoint, SIPEndPoint destinationEndPoint, byte[] buffer)
         {
+            if (m_sipChannels.Count == 0)
+            {
+                throw new ApplicationException("No channels are configured in the SIP transport layer. The data could not be sent.");
+            }
+
             SIPChannel sendSIPChannel = FindSIPChannel(localSIPEndPoint);
             if (sendSIPChannel != null)
             {
@@ -466,7 +506,12 @@ namespace SIPSorcery.SIP
 
         public void SendRequest(SIPRequest sipRequest)
         {
-            SIPEndPoint requestEndPoint = GetRequestEndPoint(sipRequest, true);
+            if (m_sipChannels.Count == 0)
+            {
+                throw new ApplicationException("No channels are configured in the SIP transport layer. The request could not be sent.");
+            }
+
+            SIPEndPoint requestEndPoint = GetRequestEndPoint(sipRequest, null, true);
 
             if (requestEndPoint != null)
             {
@@ -480,6 +525,11 @@ namespace SIPSorcery.SIP
 
         public void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
+            if (m_sipChannels.Count == 0)
+            {
+                throw new ApplicationException("No channels are configured in the SIP transport layer. The request could not be sent.");
+            }
+
             SIPChannel sipChannel = null;
 
             if (sipRequest.LocalSIPEndPoint != null)
@@ -504,6 +554,11 @@ namespace SIPSorcery.SIP
 
         private void SendRequest(SIPChannel sipChannel, SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
+            if (m_sipChannels.Count == 0)
+            {
+                throw new ApplicationException("No channels are configured in the SIP transport layer. The request could not be sent.");
+            }
+
             if (sipChannel.IsTLS) {
                 sipChannel.Send(dstEndPoint.SocketEndPoint, Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host);
             }
@@ -528,7 +583,11 @@ namespace SIPSorcery.SIP
         /// </summary>
         public void SendSIPReliable(SIPTransaction sipTransaction)
         {
-            if (m_reliableTransmissions.Count >= MAX_RELIABLETRANSMISSIONS_COUNT)
+            if (m_sipChannels.Count == 0)
+            {
+                throw new ApplicationException("No channels are configured in the SIP transport layer. The request could not be sent.");
+            }
+            else if (m_reliableTransmissions.Count >= MAX_RELIABLETRANSMISSIONS_COUNT)
             {
                 throw new ApplicationException("Cannot send reliable SIP message as the reliable transmissions queue is full.");
             }
@@ -551,9 +610,17 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                if (sipTransaction.RemoteEndPoint == null)
+                if (sipTransaction.OutboundProxy != null)
                 {
-                    SIPEndPoint resolvedEndPoint = GetRequestEndPoint(sipTransaction.TransactionRequest, true);
+                    SendRequest(sipTransaction.OutboundProxy, sipTransaction.TransactionRequest);
+                }
+                else if (sipTransaction.RemoteEndPoint != null)
+                {
+                    SendRequest(sipTransaction.RemoteEndPoint, sipTransaction.TransactionRequest);
+                }
+                else
+                {
+                    SIPEndPoint resolvedEndPoint = GetRequestEndPoint(sipTransaction.TransactionRequest, sipTransaction.OutboundProxy, true);
                     if (resolvedEndPoint != null)
                     {
                         sipTransaction.RemoteEndPoint = resolvedEndPoint;
@@ -563,10 +630,6 @@ namespace SIPSorcery.SIP
                     {
                         throw new ApplicationException("SIP Transport could not send request as end point could not be determined.\r\n" + sipTransaction.TransactionRequest.ToString());
                     }
-                }
-                else
-                {
-                    SendRequest(sipTransaction.RemoteEndPoint, sipTransaction.TransactionRequest);
                 }
             }
 
@@ -591,6 +654,11 @@ namespace SIPSorcery.SIP
 
         public void SendResponse(SIPResponse sipResponse)
         {
+            if (m_sipChannels.Count == 0)
+            {
+                throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
+            }
+
             //SIPChannel sipChannel = GetChannelForSocketId(sipResponse.SocketId);
             SIPViaHeader topViaHeader = sipResponse.Header.Vias.TopViaHeader;
             SIPChannel sipChannel = FindSIPChannel(sipResponse.LocalSIPEndPoint);
@@ -608,6 +676,11 @@ namespace SIPSorcery.SIP
 
         private void SendResponse(SIPChannel sipChannel, SIPResponse sipResponse)
         {
+            if (m_sipChannels.Count == 0)
+            {
+                throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
+            }
+
             SIPViaHeader topVia = sipResponse.Header.Vias.TopViaHeader;
             SIPEndPoint dstEndPoint = GetHostEndPoint(topVia.ReceivedFromAddress, true);
             dstEndPoint.SIPProtocol = topVia.Transport;
@@ -616,6 +689,11 @@ namespace SIPSorcery.SIP
 
         private void SendResponse(SIPChannel sipChannel, SIPEndPoint dstEndPoint, SIPResponse sipResponse)
         {
+            if (m_sipChannels.Count == 0)
+            {
+                throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
+            }
+
             sipChannel.Send(dstEndPoint.SocketEndPoint, Encoding.UTF8.GetBytes(sipResponse.ToString()));
 
             if (m_useMetrics)
@@ -656,6 +734,8 @@ namespace SIPSorcery.SIP
 					//m_inMessageArrived.WaitOne(MAX_QUEUEWAIT_PERIOD, false);
                     m_inMessageArrived.WaitOne(MAX_QUEUEWAIT_PERIOD);
 				}
+
+                logger.Warn("SIPTransport process received messsages thread stopped.");
 			}
 			catch(Exception excp)
 			{
@@ -894,62 +974,53 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private void ProcessPendingReliableTransactions()
-        {
-            try
-            {
+        private void ProcessPendingReliableTransactions() {
+            try {
                 m_reliablesThreadRunning = true;
 
-                while (!m_closed)
-                {
-                    if (m_reliableTransmissions.Count == 0)
-                    {
+                while (!m_closed) {
+                    if (m_reliableTransmissions.Count == 0) {
                         // No request retransmissions in progress close down thread until next one required.
                         m_reliablesThreadRunning = false;
                         break;
                     }
 
-                    try
-                    {
-                        List<string> deliveredTransactions = new List<string>();
+                    try {
+                        List<string> completedTransactions = new List<string>();
 
-                        lock (m_reliableTransmissions)
-                        {
-                            foreach (SIPTransaction transaction in m_reliableTransmissions.Values)
-                            {
-                                if (!transaction.DeliveryPending)
-                                {
-                                    deliveredTransactions.Add(transaction.TransactionId);
+                        lock (m_reliableTransmissions) {
+                            foreach (SIPTransaction transaction in m_reliableTransmissions.Values) {
+                                if (!transaction.DeliveryPending) {
+                                    completedTransactions.Add(transaction.TransactionId);
                                 }
-                                else if(transaction.TransactionState == SIPTransactionStatesEnum.Terminated || 
+                                else if (transaction.TransactionState == SIPTransactionStatesEnum.Terminated ||
                                         transaction.TransactionState == SIPTransactionStatesEnum.Confirmed ||
-                                        transaction.TransactionState == SIPTransactionStatesEnum.Cancelled || 
-                                        transaction.HasTimedOut)
-                                {
-                                    deliveredTransactions.Add(transaction.TransactionId);
+                                        transaction.TransactionState == SIPTransactionStatesEnum.Cancelled ||
+                                        transaction.HasTimedOut) {
+                                    transaction.DeliveryPending = false;
+                                    completedTransactions.Add(transaction.TransactionId);
                                 }
-                                else
-                                {
-                                    if (DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds > (m_t6 * 2 + TIME_WAIT_FINALRESPONSE))
-                                    {
-                                        logger.Debug("Request timed out " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ".");
+                                else {
+                                    if (DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds >= m_t6) {
+                                        //logger.Debug("Request timed out " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ".");
 
-                                        // Transaction timeout event will be fired by the transaction class so do not fire here.
+                                        transaction.DeliveryPending = false;
                                         transaction.DeliveryFailed = true;
-                                        deliveredTransactions.Add(transaction.TransactionId);
+                                        transaction.TimedOutAt = DateTime.Now;
+                                        transaction.HasTimedOut = true;
+                                        transaction.FireTransactionTimedOut();
+                                        completedTransactions.Add(transaction.TransactionId);
                                     }
-                                    else
-                                    {
+                                    else {
                                         double nextTransmitMilliseconds = Math.Pow(2, transaction.Retransmits - 1) * m_t1;
+                                        nextTransmitMilliseconds = (nextTransmitMilliseconds > m_t2) ? m_t2 : nextTransmitMilliseconds;
                                         //logger.Debug("Time since retransmit " + transaction .RequestTransmits + " for " + transaction.InitialRequest.Method + " " + transaction.InitialRequest.URI.ToString() + " " + DateTime.Now.Subtract(transaction.LastRequestTransmit).TotalMilliseconds + ".");
 
-                                        if (DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds >= nextTransmitMilliseconds)
-                                        {
+                                        if (DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds >= nextTransmitMilliseconds) {
                                             transaction.Retransmits = transaction.Retransmits + 1;
                                             transaction.LastTransmit = DateTime.Now;
 
-                                            if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionState == SIPTransactionStatesEnum.Completed)
-                                            {
+                                            if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionState == SIPTransactionStatesEnum.Completed) {
                                                 //logger.Debug("Retransmit " + transaction.Retransmits + "(" + transaction.TransactionId + ") for INVITE reponse " + transaction.TransactionRequest.URI.ToString() + ", last=" + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + "ms, first=" + DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds + "ms.");
 
                                                 // This is an INVITE transaction that wants to send a reliable response, once the ACK is received it will change the transaction state to confirmed.
@@ -957,10 +1028,14 @@ namespace SIPSorcery.SIP
                                                 SendResponse(transaction.TransactionFinalResponse);
                                                 transaction.ResponseRetransmit();
                                             }
-                                            else
-                                            {
+                                            else {
                                                 //logger.Debug("Retransmit " + transaction.Retransmits + " for request " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ", last=" + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + "ms, first=" + DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds + "ms.");
-                                                SendRequest(transaction.RemoteEndPoint, transaction.TransactionRequest);
+                                                if (transaction.OutboundProxy != null) {
+                                                    SendRequest(transaction.OutboundProxy, transaction.TransactionRequest);
+                                                }
+                                                else {
+                                                    SendRequest(transaction.RemoteEndPoint, transaction.TransactionRequest);
+                                                }
                                                 transaction.RequestRetransmit();
                                             }
                                         }
@@ -969,32 +1044,28 @@ namespace SIPSorcery.SIP
                             }
 
                             // Remove timed out or complete transactions from reliable transmissions list.
-                            if (deliveredTransactions.Count > 0)
-                            {
-                                foreach (string transactionId in deliveredTransactions)
-                                {
-                                    if (m_reliableTransmissions.ContainsKey(transactionId))
-                                    {
+                            if (completedTransactions.Count > 0) {
+                                foreach (string transactionId in completedTransactions) {
+                                    if (m_reliableTransmissions.ContainsKey(transactionId)) {
                                         m_reliableTransmissions.Remove(transactionId);
                                     }
                                 }
                             }
                         }
                     }
-                    catch (Exception excp)
-                    {
+                    catch (Exception excp) {
                         logger.Error("Exception SIPTransport ProcessPendingRequests checking pendings. " + excp.Message);
                     }
 
                     Thread.Sleep(PENDINGREQUESTS_CHECK_PERIOD);
                 }
+
+                //logger.Warn("SIPTransport process reliable transmissions thread stopped.");
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception SIPTransport ProcessPendingRequests. " + excp.Message);
             }
-            finally
-            {
+            finally {
                 m_reliablesThreadRunning = false;
             }
         }
@@ -1324,12 +1395,6 @@ namespace SIPSorcery.SIP
             try
             {
                 SIPResponse response = new SIPResponse(responseCode, reasonPhrase, localSIPEndPoint);
-
-                if (reasonPhrase != null)
-                {
-                    response.ReasonPhrase = reasonPhrase;
-                }
-
                 SIPSchemesEnum sipScheme = (localSIPEndPoint.SIPProtocol == SIPProtocolsEnum.tls) ? SIPSchemesEnum.sips : SIPSchemesEnum.sip;
                 SIPFromHeader from = new SIPFromHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
                 SIPToHeader to = new SIPToHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
@@ -1370,12 +1435,14 @@ namespace SIPSorcery.SIP
         /// <param name="localEndPoint">The local socket endpoint of the SIPChannel to find.</param>
         /// <returns>A matching SIPChannel if found otherwise null.</returns>
         public SIPChannel FindSIPChannel(SIPEndPoint localSIPEndPoint) {
+            //bool isEqual = (localSIPEndPoint == m_sipChannels.Keys.First<SIPEndPoint>());
+            //logger.Debug("Searching for SIP channel for endpoint " + localSIPEndPoint.ToString() + ". First channel in transport list is " + m_sipChannels.Keys.First().ToString() + ". " + m_sipChannels.Keys.Contains(localSIPEndPoint) + ", " + isEqual);
             if (localSIPEndPoint == null) {
                 return null;
             }
             else {
-                if (m_sipChannels.ContainsKey(localSIPEndPoint)) {
-                    return m_sipChannels[localSIPEndPoint];
+                if (m_sipChannels.ContainsKey(localSIPEndPoint.ToString())) {
+                    return m_sipChannels[localSIPEndPoint.ToString()];
                 }
                 else {
                     logger.Warn("No SIP channel could be found for local SIP end point " + localSIPEndPoint.ToString() + ".");
@@ -1414,6 +1481,12 @@ namespace SIPSorcery.SIP
         /// <param name="protocol"></param>
         /// <returns></returns>
         private SIPChannel GetDefaultChannel(SIPProtocolsEnum protocol) {
+            // Channels that are not on a loopback address take priority.
+            foreach (SIPChannel sipChannel in m_sipChannels.Values) {
+                if (sipChannel.SIPChannelEndPoint.SIPProtocol == protocol && !IPAddress.IsLoopback(sipChannel.SIPChannelEndPoint.SocketEndPoint.Address)) {
+                    return sipChannel;
+                }
+            }
             foreach (SIPChannel sipChannel in m_sipChannels.Values) {
                 if (sipChannel.SIPChannelEndPoint.SIPProtocol == protocol) {
                     return sipChannel;
@@ -1425,7 +1498,7 @@ namespace SIPSorcery.SIP
         }
 
         public bool IsLocalSIPEndPoint(SIPEndPoint sipEndPoint) {
-            return m_sipChannels.ContainsKey(sipEndPoint);
+            return m_sipChannels.ContainsKey(sipEndPoint.ToString());
         }
 
         #region Logging and metrics..
@@ -1593,12 +1666,12 @@ namespace SIPSorcery.SIP
             return m_transactionEngine.GetTransaction(sipRequest);
         }
 
-        public SIPNonInviteTransaction CreateNonInviteTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint)
+        public SIPNonInviteTransaction CreateNonInviteTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy)
         {
             try
             {
                 CheckTransactionEngineExists();
-                SIPNonInviteTransaction nonInviteTransaction = new SIPNonInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint);
+                SIPNonInviteTransaction nonInviteTransaction = new SIPNonInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy);
                 m_transactionEngine.AddTransaction(nonInviteTransaction);
                 return nonInviteTransaction;
             }
@@ -1609,12 +1682,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public UACInviteTransaction CreateUACTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint)
+        public UACInviteTransaction CreateUACTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy)
         {
             try
             {
                 CheckTransactionEngineExists();
-                UACInviteTransaction uacInviteTransaction = new UACInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint);
+                UACInviteTransaction uacInviteTransaction = new UACInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy);
                 m_transactionEngine.AddTransaction(uacInviteTransaction);
                 return uacInviteTransaction;
             }
@@ -1625,12 +1698,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public UASInviteTransaction CreateUASTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint)
+        public UASInviteTransaction CreateUASTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy)
         {
             try
             {
                 CheckTransactionEngineExists();
-                UASInviteTransaction uasInviteTransaction = new UASInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint);
+                UASInviteTransaction uasInviteTransaction = new UASInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy);
                 m_transactionEngine.AddTransaction(uasInviteTransaction);
                 return uasInviteTransaction;
             }
@@ -1681,10 +1754,15 @@ namespace SIPSorcery.SIP
         /// Based on the information in the SIP request attempts to determine the end point the request should
         /// be sent to.
         /// </summary>
-        public SIPEndPoint GetRequestEndPoint(SIPRequest sipRequest, bool synchronous)
+        public SIPEndPoint GetRequestEndPoint(SIPRequest sipRequest, SIPEndPoint outboundProxy, bool synchronous)
         {
             SIPEndPoint requestEndPoint = null;
-            if (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0)
+
+            if (outboundProxy != null)
+            {
+                requestEndPoint = outboundProxy;
+            }
+            else if (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0)
             {
                 requestEndPoint = GetURIEndPoint(sipRequest.Header.Routes.TopRoute.URI, synchronous);
             }

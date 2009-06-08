@@ -58,9 +58,7 @@ namespace SIPSorcery.SIP.App
     public class SIPManagerWebService
     {
         private const string SERVER_STRING = "sip.sipsorcery.com";
-        
-        private static string m_CRLF = SIPConstants.CRLF;
-        
+         
         private ILog logger = log4net.LogManager.GetLogger("manager");
 
         public SIPMonitorLogDelegate SIPMonitorLogEvent;
@@ -159,7 +157,7 @@ namespace SIPSorcery.SIP.App
             {
                 if (owner != null && owner.Trim().Length > 0)
                 {
-                    return SIPRegistrarBindingPersistor.Get(b => b.Owner == owner, offset, count);
+                    return SIPRegistrarBindingPersistor.Get(b => b.Owner == owner, "lastupdate", offset, count);
                 }
                 else
                 {

@@ -111,11 +111,6 @@ namespace SIPSorcery
             Load();
         }
 
-        void m_persistor_GetDialPlansComplete(GetDialPlansCompletedEventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
         private void Load()
         {
             try

@@ -18,9 +18,9 @@ namespace SIPSorcery
 {
     public partial class SIPAccountDetailsControl : UserControl
     {
-        private static Color m_infoTextColour = AssemblyState.InfoTextColour;
-        private static Color m_warnTextColour = AssemblyState.WarnTextColour;
-        private static Color m_errorTextColour = AssemblyState.ErrorTextColour;
+        private static SolidColorBrush m_infoTextBrush = AssemblyState.InfoTextBrush;
+        private static SolidColorBrush m_errorTextBrush = AssemblyState.ErrorTextBrush;
+        private static SolidColorBrush m_warnTextBrush = AssemblyState.WarnTextBrush;
 
         private SIPAccountUpdateDelegate AddSIPAccount_External;
         private SIPAccountUpdateDelegate UpdateSIPAccount_External;
@@ -78,15 +78,15 @@ namespace SIPSorcery
         {
             if (status == MessageLevelsEnum.Error)
             {
-                UIHelper.SetColouredText(m_statusTextBlock, message, m_errorTextColour);
+                UIHelper.SetColouredText(m_statusTextBlock, message, MessageLevelsEnum.Error);
             }
             else if (status == MessageLevelsEnum.Warn)
             {
-                UIHelper.SetColouredText(m_statusTextBlock, message, m_warnTextColour);
+                UIHelper.SetColouredText(m_statusTextBlock, message, MessageLevelsEnum.Warn);
             }
             else
             {
-                UIHelper.SetColouredText(m_statusTextBlock, message, m_infoTextColour);
+                UIHelper.SetColouredText(m_statusTextBlock, message, MessageLevelsEnum.Info);
             }
         }
 

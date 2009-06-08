@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using SIPSorcery.CRM;
 using SIPSorcery.SIP.App;
 
 namespace SIPSorcery
@@ -7,7 +8,8 @@ namespace SIPSorcery
     public delegate void ActivityMessageDelegate(MessageLevelsEnum level, string message);
     public delegate void ActivityProgressDelegate(double? progress);
     public delegate void LoginDelegate(string username, string password);
-    public delegate void LogoutDelegate();
+    public delegate void CreateCustomerDelegate(Customer customer);
+    public delegate void LogoutDelegate(bool sendServerLogout);
     public delegate void KeyDownDelegate();
     public delegate void ClickedDelegate();
 

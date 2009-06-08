@@ -82,7 +82,20 @@ namespace SIPSorcery.SIP.App
             Created = DateTime.Now;
         }
 
-        public SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, IPEndPoint serverSocket, IPEndPoint fromSocket, IPEndPoint toSocket)
+        public SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, string username, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint) {
+            m_serialisationPrefix = SERIALISATION_PREFIX;
+            ClientType = SIPMonitorClientTypesEnum.ControlClient;
+
+            ServerType = serverType;
+            EventType = eventType;
+            Message = message;
+            Username = username;
+            Created = DateTime.Now;
+            ServerEndPoint = localEndPoint;
+            RemoteEndPoint = remoteEndPoint;
+        }
+
+        public SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, SIPEndPoint serverSocket, SIPEndPoint fromSocket, SIPEndPoint toSocket)
         {
             m_serialisationPrefix = SERIALISATION_PREFIX;
             ClientType = SIPMonitorClientTypesEnum.ControlClient;
@@ -96,7 +109,7 @@ namespace SIPSorcery.SIP.App
             Created = DateTime.Now;
         }
 
-        public SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, SIPRequest sipRequest, SIPResponse sipResponse, IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, SIPCallDirection callDirection)
+        public SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, SIPRequest sipRequest, SIPResponse sipResponse, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, SIPCallDirection callDirection)
         {
             m_serialisationPrefix = SERIALISATION_PREFIX;
             ClientType = SIPMonitorClientTypesEnum.ControlClient;
@@ -139,19 +152,19 @@ namespace SIPSorcery.SIP.App
                 string serverEndPointStr = eventFields[4];
                 if (serverEndPointStr != null && serverEndPointStr.Trim().Length > 0)
                 {
-                    monitorEvent.ServerEndPoint = IPSocket.ParseSocketString(serverEndPointStr);
+                    monitorEvent.ServerEndPoint = SIPEndPoint.ParseSIPEndPoint(serverEndPointStr);
                 }
 
                 string remoteEndPointStr = eventFields[5];
                 if (remoteEndPointStr != null && remoteEndPointStr.Trim().Length > 0)
                 {
-                    monitorEvent.RemoteEndPoint = IPSocket.ParseSocketString(remoteEndPointStr);
+                    monitorEvent.RemoteEndPoint = SIPEndPoint.ParseSIPEndPoint(remoteEndPointStr);
                 }
 
                 string dstEndPointStr = eventFields[6];
                 if (dstEndPointStr != null && dstEndPointStr.Trim().Length > 0)
                 {
-                    monitorEvent.DestinationEndPoint = IPSocket.ParseSocketString(dstEndPointStr);
+                    monitorEvent.DestinationEndPoint = SIPEndPoint.ParseSIPEndPoint(dstEndPointStr);
                 }
 
                 monitorEvent.Username = eventFields[7];
@@ -170,9 +183,9 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                string serverEndPointValue = (ServerEndPoint != null) ? IPSocket.GetSocketString(ServerEndPoint) : null;
-                string remoteEndPointValue = (RemoteEndPoint != null) ? IPSocket.GetSocketString(RemoteEndPoint) : null;
-                string dstEndPointValue = (DestinationEndPoint != null) ? IPSocket.GetSocketString(DestinationEndPoint) : null;
+                string serverEndPointValue = (ServerEndPoint != null) ? ServerEndPoint.ToString() : null;
+                string remoteEndPointValue = (RemoteEndPoint != null) ? RemoteEndPoint.ToString() : null;
+                string dstEndPointValue = (DestinationEndPoint != null) ? DestinationEndPoint.ToString() : null;
 
                 string csvEvent =
                     SERIALISATION_PREFIX + "|" +

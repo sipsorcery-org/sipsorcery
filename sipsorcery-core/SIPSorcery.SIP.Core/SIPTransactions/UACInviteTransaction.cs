@@ -54,9 +54,9 @@ namespace SIPSorcery.SIP
         public event SIPTransactionResponseReceivedDelegate UACInviteTransactionInformationResponseReceived;
         public event SIPTransactionResponseReceivedDelegate UACInviteTransactionFinalResponseReceived;
         public event SIPTransactionTimedOutDelegate UACInviteTransactionTimedOut;
-        
-        public UACInviteTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint)
-            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint)
+
+        internal UACInviteTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy)
+            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
 		{
             TransactionType = SIPTransactionTypesEnum.Invite;
             m_localTag = sipRequest.Header.From.FromTag;
@@ -97,6 +97,11 @@ namespace SIPSorcery.SIP
                 {
                     UACInviteTransactionTimedOut(sipTransaction);
                 }
+
+                if (CDR != null)
+                {
+                    CDR.TimedOut();
+                }
             }
             catch (Exception excp)
             {
@@ -109,14 +114,14 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (CDR != null)
-                {
-                    CDR.Progress(sipResponse.Status, sipResponse.ReasonPhrase);
-                }
-
                 if (UACInviteTransactionInformationResponseReceived != null)
                 {
                     UACInviteTransactionInformationResponseReceived(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
+                }
+
+                if (CDR != null)
+                {
+                    CDR.Progress(sipResponse.Status, sipResponse.ReasonPhrase);
                 }
             }
             catch (Exception excp)
@@ -129,11 +134,6 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (CDR != null)
-                {
-                    CDR.Answered(sipResponse.Status, sipResponse.ReasonPhrase);
-                }
-
                 // BranchId for 2xx responses needs to be a new one, non-2xx final responses use same one as original request.
                 SIPRequest ackRequest = null;
                 if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode < 299)
@@ -164,6 +164,11 @@ namespace SIPSorcery.SIP
                 if (UACInviteTransactionFinalResponseReceived != null)
                 {
                     UACInviteTransactionFinalResponseReceived(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
+                }
+
+                if (CDR != null)
+                {
+                    CDR.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase);
                 }
             }
             catch (Exception excp)
@@ -262,6 +267,11 @@ namespace SIPSorcery.SIP
         public void CancelCall()
         {
             base.Cancel();
+
+            if (CDR != null)
+            {
+                CDR.Cancelled();
+            }
         }
 	}
 }

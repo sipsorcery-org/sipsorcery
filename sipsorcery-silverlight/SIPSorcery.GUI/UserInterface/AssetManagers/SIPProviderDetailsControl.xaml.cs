@@ -11,6 +11,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery
 {
@@ -20,10 +21,6 @@ namespace SIPSorcery
         private static int m_defaultRegisterExpiry = SIPProvider.REGISTER_DEFAULT_EXPIRY;
         private static int m_minimumRegisterExpiry = SIPProvider.REGISTER_MINIMUM_EXPIRY;
         private static int m_maximumRegisterExpiry = SIPProvider.REGISTER_MAXIMUM_EXPIRY;
-
-        private static Color m_infoTextColour = AssemblyState.InfoTextColour;
-        private static Color m_warnTextColour = AssemblyState.WarnTextColour;
-        private static Color m_errorTextColour = AssemblyState.ErrorTextColour;
 
         private SIPProviderUpdateDelegate SIPProviderAdd_External;
         private SIPProviderUpdateDelegate SIPProviderUpdate_External;
@@ -72,15 +69,15 @@ namespace SIPSorcery
         {
             if (status == MessageLevelsEnum.Error)
             {
-                UIHelper.SetColouredText(m_statusTextBlock, message, m_errorTextColour);
+                UIHelper.SetColouredText(m_statusTextBlock, message, MessageLevelsEnum.Error);
             }
             else if (status == MessageLevelsEnum.Warn)
             {
-                UIHelper.SetColouredText(m_statusTextBlock, message, m_warnTextColour);
+                UIHelper.SetColouredText(m_statusTextBlock, message, MessageLevelsEnum.Warn);
             }
             else
             {
-                UIHelper.SetColouredText(m_statusTextBlock, message, m_infoTextColour);
+                UIHelper.SetColouredText(m_statusTextBlock, message, MessageLevelsEnum.Info);
             }
         }
 
@@ -144,14 +141,14 @@ namespace SIPSorcery
                 string providerName = m_providerName.Text.Trim();
                 string providerUsername = m_providerUsername.Text.Trim();
                 string providerPassword = m_providerPassword.Text.Trim();
-                SIPURI providerServer = (m_providerServer.Text != null && m_providerServer.Text.Trim().Length > 0) ? SIPURI.ParseSIPURIRelaxed(m_providerServer.Text) : null;
+                SIPURI providerServer = (!m_providerServer.Text.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(m_providerServer.Text.Trim()) : null;
                 bool registerEnabled = m_providerRegister.IsChecked.Value;
-                SIPURI registerContact = (m_providerRegisterContact.Text != null && m_providerRegisterContact.Text.Trim().Length >0) ? SIPURI.ParseSIPURI(m_providerRegisterContact.Text) : null;
-                string outboundProxy = m_providerOutboundProxy.Text;
-                string authUsername = m_providerAuthUsername.Text;
-                string providerFrom = m_providerFromHeader.Text;
-                string registerRealm = m_providerRegisterRealm.Text;
-                SIPURI registerServer = (m_providerRegisterServer.Text != null && m_providerRegisterServer.Text.Trim().Length > 0) ? SIPURI.ParseSIPURIRelaxed(m_providerRegisterServer.Text) : null;
+                SIPURI registerContact = (!m_providerRegisterContact.Text.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(m_providerRegisterContact.Text.Trim()) : null;
+                string outboundProxy = m_providerOutboundProxy.Text.Trim();
+                string authUsername = m_providerAuthUsername.Text.Trim();
+                string providerFrom = m_providerFromHeader.Text.Trim();
+                string registerRealm = m_providerRegisterRealm.Text.Trim();
+                SIPURI registerServer = (!m_providerRegisterServer.Text.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(m_providerRegisterServer.Text.Trim()) : null;
 
                 int registerExpiry = m_defaultRegisterExpiry;
                 Int32.TryParse(m_providerRegisterExpiry.Text, out registerExpiry);
@@ -176,7 +173,7 @@ namespace SIPSorcery
                     valid = false;
                     validationError = "A value for Server must be specified.";
                 }
-                else if (m_providerRegisterServer.Text != null && m_providerRegisterServer.Text.Trim().Length > 0 && registerServer == null)
+                else if (!m_providerRegisterServer.Text.IsNullOrBlank() && registerServer == null)
                 {
                     valid = false;
                     validationError = "The Register Server could not be understood.";
@@ -210,65 +207,54 @@ namespace SIPSorcery
                 WriteStatusMessage(MessageLevelsEnum.Error, "Add Exception. " + excp.Message);
             }
         }
-        
-        private void Update()
-        {
-            try
-            {
+
+        private void Update() {
+            try {
                 bool valid = false;
                 string validationError = "Unknown validation error.";
 
                 m_sipProvider.ProviderName = m_providerName.Text;
                 m_sipProvider.ProviderUsername = m_providerUsername.Text;
                 m_sipProvider.ProviderPassword = m_providerPassword.Text;
-                m_sipProvider.ProviderServer = (m_providerServer.Text != null && m_providerServer.Text.Trim().Length > 0) ? SIPURI.ParseSIPURIRelaxed(m_providerServer.Text).ToString() : null;
+                m_sipProvider.ProviderServer = (!m_providerServer.Text.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(m_providerServer.Text.Trim()).ToString() : null;
                 m_sipProvider.RegisterEnabled = m_providerRegister.IsChecked.Value;
-                m_sipProvider.RegisterContact = (m_providerRegisterContact.Text != null && m_providerRegisterContact.Text.Trim().Length > 0) ? SIPURI.ParseSIPURI(m_providerRegisterContact.Text).ToString() : null;
+                m_sipProvider.RegisterContact = (!m_providerRegisterContact.Text.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(m_providerRegisterContact.Text.Trim()).ToString() : null;
                 m_sipProvider.ProviderOutboundProxy = m_providerOutboundProxy.Text;
                 m_sipProvider.ProviderAuthUsername = m_providerAuthUsername.Text;
                 m_sipProvider.ProviderFrom = m_providerFromHeader.Text;
                 m_sipProvider.RegisterRealm = m_providerRegisterRealm.Text;
-                m_sipProvider.RegisterServer = (m_providerRegisterServer.Text != null && m_providerRegisterServer.Text.Trim().Length > 0) ? SIPURI.ParseSIPURIRelaxed(m_providerRegisterServer.Text).ToString() : null;
+                m_sipProvider.RegisterServer = (!m_providerRegisterServer.Text.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(m_providerRegisterServer.Text.Trim()).ToString() : null;
 
                 int registerExpiry = m_defaultRegisterExpiry;
-                if (Int32.TryParse(m_providerRegisterExpiry.Text, out registerExpiry))
-                {
+                if (Int32.TryParse(m_providerRegisterExpiry.Text, out registerExpiry)) {
                     m_sipProvider.RegisterExpiry = registerExpiry;
                 }
 
                 m_sipProvider.CustomHeaders = null;
-                if (m_providerCustomHeaders.Items.Count > 0)
-                {
-                    foreach (string customHeader in m_providerCustomHeaders.Items)
-                    {
+                if (m_providerCustomHeaders.Items.Count > 0) {
+                    foreach (string customHeader in m_providerCustomHeaders.Items) {
                         m_sipProvider.CustomHeaders += (m_sipProvider.CustomHeaders != null && m_sipProvider.CustomHeaders.Trim().Length > 0) ? m_customHeadersSeparator.ToString() : null;
                         m_sipProvider.CustomHeaders += customHeader;
                     }
                 }
 
-                if (m_sipProvider.ProviderName == null || m_sipProvider.ProviderName.Trim().Length == 0)
-                {
+                if (m_sipProvider.ProviderName == null || m_sipProvider.ProviderName.Trim().Length == 0) {
                     validationError = "A value for Provider Name must be specified.";
                 }
-                else if (m_sipProvider.ProviderServer == null)
-                {
+                else if (m_sipProvider.ProviderServer == null) {
                     validationError = "A value for Server must be specified.";
                 }
-                else if (m_sipProvider.RegisterExpiry < m_minimumRegisterExpiry || m_sipProvider.RegisterExpiry > m_maximumRegisterExpiry)
-                {
+                else if (m_sipProvider.RegisterExpiry < m_minimumRegisterExpiry || m_sipProvider.RegisterExpiry > m_maximumRegisterExpiry) {
                     validationError = "The registration expiry must be between " + m_minimumRegisterExpiry + " and " + m_maximumRegisterExpiry + " seconds.";
                 }
-                else if (m_sipProvider.RegisterEnabled && m_sipProvider.RegisterContact == null)
-                {
+                else if (m_sipProvider.RegisterEnabled && m_sipProvider.RegisterContact == null) {
                     validationError = "A valid contact must be supplied to enable a provider registration.";
                 }
-                else
-                {
+                else {
                     valid = true;
                 }
 
-                if (valid)
-                {
+                if (valid) {
                     if (m_sipProvider.RegisterEnabled && m_sipProvider.RegisterAdminEnabled) {
                         m_sipProvider.RegisterDisabledReason = null;
                     }
@@ -276,13 +262,11 @@ namespace SIPSorcery
                     WriteStatusMessage(MessageLevelsEnum.Info, "Updating SIP Provider please wait...");
                     SIPProviderUpdate_External(m_sipProvider);
                 }
-                else
-                {
+                else {
                     WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
                 }
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 WriteStatusMessage(MessageLevelsEnum.Error, "Update Exception. " + excp.Message);
             }
         }

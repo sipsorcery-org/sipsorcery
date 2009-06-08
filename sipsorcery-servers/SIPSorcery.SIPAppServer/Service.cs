@@ -52,10 +52,11 @@ namespace SIPSorcery.SIPAppServer
 
         private SIPAppServerDaemon m_daemon;
 				
-		public Service()
+		public Service(SIPAppServerDaemon daemon)
 		{
 			this.CanShutdown = true;
 			this.CanStop = true;
+            m_daemon = daemon;
 		}
 
 		protected override void Dispose( bool disposing )
@@ -67,8 +68,6 @@ namespace SIPSorcery.SIPAppServer
 		{
 			try
 			{
-                m_daemon = new SIPAppServerDaemon();
-					
 				Thread daemonThread = new Thread(new ThreadStart(m_daemon.Start));
 				daemonThread.Start();
 			}

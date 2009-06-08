@@ -11,11 +11,13 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
+using SIPSorcery.CRM;
 using SIPSorcery.SIP.App;
 using SIPSorcery.SIPSorceryProvisioningClient;
 
 namespace SIPSorcery.Persistence
 {
+    public delegate void MethodInvokerDelegate();
     public delegate void IsAliveCompleteDelegate(IsAliveCompletedEventArgs e);
     public delegate void LoginCompleteDelegate(LoginCompletedEventArgs e);
     public delegate void LogoutCompleteDelegate(AsyncCompletedEventArgs e);
@@ -43,6 +45,8 @@ namespace SIPSorcery.Persistence
     public delegate void GetCallsCompleteDelegate(GetCallsCompletedEventArgs e);
     public delegate void GetCDRsCountCompleteDelegate(GetCDRsCountCompletedEventArgs e);
     public delegate void GetCDRsCompleteDelegate(GetCDRsCompletedEventArgs e);
+    public delegate void CreateCustomerCompleteDelegate(AsyncCompletedEventArgs e);
+    public delegate void DeleteCustomerCompleteDelegate(AsyncCompletedEventArgs e);
     
     public enum SIPPersistorTypesEnum
     {
@@ -99,6 +103,10 @@ namespace SIPSorcery.Persistence
         public abstract event GetCallsCompleteDelegate GetCallsComplete;
         public abstract event GetCDRsCountCompleteDelegate GetCDRsCountComplete;
         public abstract event GetCDRsCompleteDelegate GetCDRsComplete;
+        public abstract event CreateCustomerCompleteDelegate CreateCustomerComplete;
+        public abstract event DeleteCustomerCompleteDelegate DeleteCustomerComplete;
+
+        public abstract event MethodInvokerDelegate SessionExpired;
 
         public abstract void IsAliveAsync();
         public abstract void LoginAsync(string username, string password);
@@ -127,5 +135,7 @@ namespace SIPSorcery.Persistence
         public abstract void GetCallsAsync(string whereExpressionn, int offset, int count);
         public abstract void GetCDRsCountAsync(string whereExpression);
         public abstract void GetCDRsAsync(string whereExpressionn, int offset, int count);
+        public abstract void CreateCustomerAsync(Customer customer);
+        public abstract void DeleteCustomerAsync(string customerUsername);
     }
 }

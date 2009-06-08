@@ -106,7 +106,6 @@
     <Compile Include="WCFServices\SilverlightPolicyServer.cs" />
     <Compile Include="WCFServices\SIPManagerWebService.cs" />
     <Compile Include="WCFServices\SIPProvisioningWebService.cs" />
-    <Compile Include="WCFServices\SIPSorceryServiceDelegates.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery.CRM\SIPSorcery.CRM.csproj">

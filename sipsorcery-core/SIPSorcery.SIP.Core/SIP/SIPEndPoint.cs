@@ -174,10 +174,7 @@ namespace SIPSorcery.SIP
             else if ((object)endPoint1 == null || (object)endPoint2 == null) {
                 return false;
             }
-            else if (endPoint1.SIPProtocol != endPoint2.SIPProtocol) {
-                return false;
-            }
-            else if (endPoint1.SocketEndPoint.ToString() != endPoint2.SocketEndPoint.ToString()) {
+            else if (endPoint1.ToString() != endPoint2.ToString()) {
                 return false;
             }
 

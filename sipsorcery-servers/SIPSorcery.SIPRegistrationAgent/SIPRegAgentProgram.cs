@@ -18,15 +18,15 @@ namespace SIPSorcery.SIPRegistrationAgent {
 
         private static ManualResetEvent m_regAgentUp = new ManualResetEvent(false);
 
-        private static StorageTypes m_sipRegSgentStorageType;
+        private static StorageTypes m_sipRegAgentStorageType;
         private static string m_sipRegAgentStorageConnStr;
 
         static void Main(string[] args) {
             try {
-                m_sipRegSgentStorageType = (ConfigurationManager.AppSettings[SIPREGAGENT_STORAGETYPE_KEY] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[SIPREGAGENT_STORAGETYPE_KEY]) : StorageTypes.Unknown;
+                m_sipRegAgentStorageType = (ConfigurationManager.AppSettings[SIPREGAGENT_STORAGETYPE_KEY] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[SIPREGAGENT_STORAGETYPE_KEY]) : StorageTypes.Unknown;
                 m_sipRegAgentStorageConnStr = ConfigurationManager.AppSettings[SIPREGAGENT_STORAGECONNSTR_KEY];
 
-                if (m_sipRegSgentStorageType == StorageTypes.Unknown || m_sipRegAgentStorageConnStr.IsNullOrBlank()) {
+                if (m_sipRegAgentStorageType == StorageTypes.Unknown || m_sipRegAgentStorageConnStr.IsNullOrBlank()) {
                     throw new ApplicationException("The SIP Registration Agent cannot start with no persistence settings.");
                 }
 
@@ -65,7 +65,7 @@ namespace SIPSorcery.SIPRegistrationAgent {
 
             Console.WriteLine("Synchronising SIP Provider bindings.");
             
-            List<SIPProvider> sipProviders = sipProvidersPersistor.Get(null, 0, Int32.MaxValue);
+            List<SIPProvider> sipProviders = sipProvidersPersistor.Get(null, null, 0, Int32.MaxValue);
             foreach (SIPProvider sipProvider in sipProviders) {
                 if (sipProvider.RegisterEnabled && sipProvider.RegisterAdminEnabled) {
                     SIPProviderBinding binding = sipProviderBindingsPersistor.Get(b => b.ProviderId == sipProvider.Id);

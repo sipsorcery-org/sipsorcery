@@ -146,6 +146,9 @@ namespace SIPSorcery.SIPRegistrar {
             try {
                 logger.Debug("SIP Registrar daemon stopping...");
 
+                logger.Debug("Shutting down Registrar Bindings Manager.");
+                m_registrarBindingsManager.Stop();
+
                 logger.Debug("Shutting down SIP Transport.");
                 m_sipTransport.Shutdown();
 
@@ -158,12 +161,15 @@ namespace SIPSorcery.SIPRegistrar {
 
         private void FireSIPMonitorEvent(SIPMonitorEvent sipMonitorEvent) {
             try {
-                if (sipMonitorEvent != null &&
-                    sipMonitorEvent.GetType() != typeof(SIPMonitorMachineEvent)) {
+                if (sipMonitorEvent != null)
+                {
+                    if (sipMonitorEvent.GetType() != typeof(SIPMonitorMachineEvent))
+                    {
+                        logger.Debug("re: " + sipMonitorEvent.Message);
+                    }
 
-                    logger.Debug("re: " + sipMonitorEvent.Message);
-
-                    if (m_monitorEventWriter != null) {
+                    if (m_monitorEventWriter != null)
+                    {
                         m_monitorEventWriter.Send(sipMonitorEvent);
                     }
                 }

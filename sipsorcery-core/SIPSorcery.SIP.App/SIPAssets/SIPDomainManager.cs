@@ -41,6 +41,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
+using System.Linq.Dynamic;
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
@@ -63,28 +65,29 @@ namespace SIPSorcery.SIP.App
     /// <summary>
     /// This class maintains a list of domains that are being maintained by this process.
     /// </summary>
-    public class SIPDomainManager 
+    public class SIPDomainManager
     {
         private ILog logger = AppState.logger;
 
         private Dictionary<string, SIPDomain> m_domains = new Dictionary<string, SIPDomain>();  // Records the domains that are being maintained.
-        
         private SIPAssetPersistor<SIPDomain> m_sipDomainPersistor;
-        public SIPAssetPersistor<SIPDomain> SIPDomainPersistor { get { return m_sipDomainPersistor; } private set { } }
 
-        public SIPDomainManager()
-        { }
+        //public SIPDomainManager()
+        //{ }
 
         public SIPDomainManager(StorageTypes storageType, string storageConnectionStr)
         {
             m_sipDomainPersistor = SIPAssetPersistorFactory.CreateSIPDomainPersistor(storageType, storageConnectionStr);
-
+            m_sipDomainPersistor.Added += new SIPAssetDelegate<SIPDomain>(d => { LoadSIPDomains(); });
+            m_sipDomainPersistor.Deleted += new SIPAssetDelegate<SIPDomain>(d => { LoadSIPDomains(); });
+            m_sipDomainPersistor.Updated += new SIPAssetDelegate<SIPDomain>(d => { LoadSIPDomains(); });
+            m_sipDomainPersistor.Modified += new SIPAssetsModifiedDelegate(() => { LoadSIPDomains(); });
             LoadSIPDomains();
         }
 
         private void LoadSIPDomains()
         {
-            List<SIPDomain> sipDomains = m_sipDomainPersistor.Get(null, 0, Int32.MaxValue);
+            List<SIPDomain> sipDomains = m_sipDomainPersistor.Get(null, null, 0, Int32.MaxValue);
             m_domains.Clear();
             foreach (SIPDomain sipDomain in sipDomains)
             {
@@ -100,12 +103,16 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                if (m_domains.ContainsKey(sipDomain.Domain.ToLower()))
+                if (!m_domains.ContainsKey(sipDomain.Domain.ToLower()))
                 {
-                    m_domains.Remove(sipDomain.Domain.ToLower());
+                    logger.Debug(" SIPDomainManager added domain: " + sipDomain.Domain + ".");
+                    sipDomain.Aliases.ForEach(a => Console.WriteLine(" added domain alias " + a + "."));
+                    m_domains.Add(sipDomain.Domain.ToLower(), sipDomain);
                 }
-
-                m_domains.Add(sipDomain.Domain.ToLower(), sipDomain);
+                else
+                {
+                    logger.Warn("SIPDomainManager ignoring duplicate domain entry for " + sipDomain.Domain.ToLower() + ".");
+                }
             }
         }
 
@@ -169,7 +176,44 @@ namespace SIPSorcery.SIP.App
 
         public List<SIPDomain> Get(Expression<Func<SIPDomain, bool>> whereClause, int offset, int count)
         {
-            return m_sipDomainPersistor.Get(whereClause, offset, count);
+            try
+            {
+                List<SIPDomain> subList = null;
+                if (whereClause == null)
+                {
+                    subList = m_domains.Values.ToList<SIPDomain>();
+                }
+                else
+                {
+                    subList = m_domains.Values.Where(a => whereClause.Compile()(a)).ToList<SIPDomain>();
+                }
+
+                if (subList != null)
+                {
+                    if (offset >= 0)
+                    {
+                        if (count == 0 || count == Int32.MaxValue)
+                        {
+                            return subList.OrderBy(x => x.Domain).Skip(offset).ToList<SIPDomain>();
+                        }
+                        else
+                        {
+                            return subList.OrderBy(x => x.Domain).Skip(offset).Take(count).ToList<SIPDomain>();
+                        }
+                    }
+                    else
+                    {
+                        return subList.OrderBy(x => x.Domain).ToList<SIPDomain>(); ;
+                    }
+                }
+
+                return subList;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPDomainManager Get. " + excp.Message);
+                return null;
+            }
         }
     }
 }

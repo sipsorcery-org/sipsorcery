@@ -57,6 +57,7 @@ namespace SIPSorcery.SIP
         private TcpListener m_tcpServerListener;
         private bool m_closed = false;
         private Dictionary<IPEndPoint, SIPConnection> m_connectedSockets = new Dictionary<IPEndPoint, SIPConnection>();
+        private List<IPEndPoint> m_connectingSockets = new List<IPEndPoint>();  // List of sockets that are in the process of being connected to. Need to avoid SIP re-transmits initiating multiple connect attempts.
 
         public SIPTCPChannel(IPEndPoint endPoint) {
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tcp, endPoint);
@@ -187,12 +188,19 @@ namespace SIPSorcery.SIP
 
                     if(!sent)
                     {
-                        logger.Debug("Attempting to establish TCP connection to " + dstEndPoint + ".");
-                        TcpClient tcpClient = new TcpClient();
-                        tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                        tcpClient.Client.Bind(m_localSIPEndPoint.SocketEndPoint);
-                       
-                        tcpClient.BeginConnect(dstEndPoint.Address, dstEndPoint.Port, EndConnect, new object[] { tcpClient, dstEndPoint, buffer });
+                        if (!m_connectingSockets.Contains(dstEndPoint)) {
+                            logger.Debug("Attempting to establish TCP connection to " + dstEndPoint + ".");
+
+                            TcpClient tcpClient = new TcpClient();
+                            tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                            tcpClient.Client.Bind(m_localSIPEndPoint.SocketEndPoint);
+
+                            m_connectingSockets.Add(dstEndPoint);
+                            tcpClient.BeginConnect(dstEndPoint.Address, dstEndPoint.Port, EndConnect, new object[] { tcpClient, dstEndPoint, buffer });
+                        }
+                        else {
+                            logger.Warn("Could not send SIP packet to TCP " + dstEndPoint + " and another connection was already in progress so dropping message.");
+                        }
                     }
                 }
             }
@@ -231,6 +239,8 @@ namespace SIPSorcery.SIP
                 IPEndPoint dstEndPoint = (IPEndPoint)stateObj[1];
                 byte[] buffer = (byte[])stateObj[2];
 
+                m_connectingSockets.Remove(dstEndPoint);
+
                 tcpClient.EndConnect(ar);
 
                 if (tcpClient != null && tcpClient.Connected)
@@ -253,7 +263,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.Error("Exception SIPTCPChannel EndConnect. " + excp);
-                throw;
+                //throw;
             }
         }
 

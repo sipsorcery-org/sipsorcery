@@ -257,6 +257,12 @@ namespace SIPSorcery.SIP.App
 
         public DateTime? LastNATKeepAliveSendTime;
 
+        public object OrderProperty
+        {
+            get { return LastUpdate; }
+            set { }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public SIPRegistrarBinding() { }
@@ -330,6 +336,11 @@ namespace SIPSorcery.SIP.App
         }
 
 #endif
+
+        public object GetOrderProperty()
+        {
+            return LastUpdate;
+        }
 
         /// <summary>
         /// Refreshes a binding when the remote network information of the remote or proxy end point has changed.

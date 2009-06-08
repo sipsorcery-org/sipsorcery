@@ -51,8 +51,7 @@ namespace SIPSorcery.SIP
         Caller = 2,     // Indicated the connection was initiated locally to a remote server socket.
     }
 
-    public class SIPConnection
-    {
+    public class SIPConnection {
         private ILog logger = AssemblyState.logger;
 
         public static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_LENGTH;
@@ -72,8 +71,7 @@ namespace SIPSorcery.SIP
         public event SIPMessageReceivedDelegate SIPMessageReceived;
         public event SIPConnectionDisconnectedDelegate SIPSocketDisconnected = (ep) => { };
 
-        public SIPConnection(SIPChannel channel, Stream sipStream, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
-        {
+        public SIPConnection(SIPChannel channel, Stream sipStream, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType) {
             m_owningChannel = channel;
             SIPStream = sipStream;
             RemoteEndPoint = remoteEndPoint;
@@ -82,70 +80,57 @@ namespace SIPSorcery.SIP
             SocketBuffer = new byte[MaxSIPTCPMessageSize];
         }
 
-        public void ReceiveCallback(IAsyncResult ar)
-        {
-            try
-            {
+        public void ReceiveCallback(IAsyncResult ar) {
+            try {
                 int bytesRead = SIPStream.EndRead(ar);
 
-                logger.Debug(bytesRead + " " + ConnectionProtocol + " bytes read from " + RemoteEndPoint + ".");
+                //logger.Debug(bytesRead + " " + ConnectionProtocol + " bytes read from " + RemoteEndPoint + ".");
 
-                if (bytesRead > 0)
-                {
+                if (bytesRead > 0) {
                     m_bufferEndIndex += bytesRead;
                     int endMessageIndex = ByteBufferInfo.GetStringPosition(SocketBuffer, m_sipMessageDelimiter, null);
-                    if (endMessageIndex != -1)
-                    {
+                    if (endMessageIndex != -1) {
                         //logger.Debug("SIP message delimiter found in buffer. SIP Message:\n" + Encoding.UTF8.GetString(SocketBuffer, 0, endMessageIndex));
 
                         int contentLength = 0;
 
                         string[] headers = SIPHeader.SplitHeaders(Encoding.UTF8.GetString(SocketBuffer, 0, endMessageIndex));
-                        foreach (string header in headers)
-                        {
+                        foreach (string header in headers) {
                             // If the first character of a line is whitespace it's a contiuation of the previous header and not the Content-Length header which won't be spread over multiple lines.
-                            if (header.StartsWith(" "))
-                            {
+                            if (header.StartsWith(" ")) {
                                 continue;
                             }
-                            else
-                            {
+                            else {
                                 string[] headerParts = header.Trim().Split(delimiterChars, 2);
 
-                                if (headerParts == null || headerParts.Length < 2)
-                                {
+                                if (headerParts == null || headerParts.Length < 2) {
                                     // Invalid SIP header, ignoring.
                                     continue;
                                 }
 
                                 string headerName = headerParts[0].Trim().ToLower();
                                 if (headerName == SIPHeaders.SIP_COMPACTHEADER_CONTENTLENGTH.ToLower() ||
-                                    headerName == SIPHeaders.SIP_HEADER_CONTENTLENGTH.ToLower())
-                                {
+                                    headerName == SIPHeaders.SIP_HEADER_CONTENTLENGTH.ToLower()) {
                                     string headerValue = headerParts[1].Trim();
-                                    if (!Int32.TryParse(headerValue, out contentLength))
-                                    {
+                                    if (!Int32.TryParse(headerValue, out contentLength)) {
                                         logger.Warn("The content length could not be parsed from " + headerValue + " in the SIPConnection. buffer now invalid and being purged.");
                                     }
                                 }
                             }
                         }
 
-                        if (SocketBuffer.Length >= endMessageIndex + m_sipMessageDelimiter.Length + contentLength)
-                        {
+                        if (SocketBuffer.Length >= endMessageIndex + m_sipMessageDelimiter.Length + contentLength) {
                             byte[] sipMsgBuffer = new byte[endMessageIndex + m_sipMessageDelimiter.Length + contentLength];
                             Buffer.BlockCopy(SocketBuffer, 0, sipMsgBuffer, 0, endMessageIndex + m_sipMessageDelimiter.Length + contentLength);
                             endMessageIndex = endMessageIndex - sipMsgBuffer.Length + m_sipMessageDelimiter.Length + contentLength;
 
                             //logger.Debug("SIP TCP message detected length=" + sipMsgBuffer.Length + ", buffer end index=" + endMessageIndex + ".");
 
-                            if (SIPMessageReceived != null)
-                            {
+                            if (SIPMessageReceived != null) {
                                 SIPMessageReceived(m_owningChannel, new SIPEndPoint(SIPProtocolsEnum.tcp, RemoteEndPoint), sipMsgBuffer);
                             }
                         }
-                        else
-                        {
+                        else {
                             logger.Warn("The Body of a SIP " + ConnectionProtocol + " message has not yet been received.");
                         }
                     }
@@ -153,15 +138,13 @@ namespace SIPSorcery.SIP
                     SocketBuffer = new byte[MaxSIPTCPMessageSize];
                     SIPStream.BeginRead(SocketBuffer, 0, MaxSIPTCPMessageSize, new AsyncCallback(ReceiveCallback), null);
                 }
-                else
-                {
-                    logger.Debug("SIP " + ConnectionProtocol + " socket to " + RemoteEndPoint + " was disconnected, closing.");
+                else {
+                    //logger.Debug("SIP " + ConnectionProtocol + " socket to " + RemoteEndPoint + " was disconnected, closing.");
                     SIPStream.Close();
                     SIPSocketDisconnected(RemoteEndPoint);
                 }
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception ReceiveCallback. " + excp);
                 SIPSocketDisconnected(RemoteEndPoint);
             }

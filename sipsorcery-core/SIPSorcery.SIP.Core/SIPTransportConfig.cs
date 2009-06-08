@@ -43,13 +43,16 @@ namespace SIPSorcery.SIP
 {
     public static class SIPTransportConfig
     {
+        private const string CERTIFICATE_PATH_PARAMETER = "certificatepath";
+        private const string SIP_PROTOCOL_PARAMETER = "protocol";
+
         private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static int m_defaultSIPTLSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;
         private static List<IPAddress> m_localIPAddresses = LocalIPConfig.GetLocalIPv4Addresses();
 
         private static ILog logger = AppState.logger;
 
-        private static string m_allIPAddresses = LocalIPConfig.ALL_LOCAL_IPADDRESSES_KEY;
+        private static readonly string m_allIPAddresses = LocalIPConfig.ALL_LOCAL_IPADDRESSES_KEY;
 
         public static List<SIPChannel> ParseSIPChannelsNode(XmlNode sipChannelsNode)
         {
@@ -62,43 +65,52 @@ namespace SIPSorcery.SIP
                 string localSocket = sipSocketNode.InnerText;
 
                 SIPProtocolsEnum protocol = SIPProtocolsEnum.udp;
-                if (sipSocketNode.Attributes.GetNamedItem("protocol") != null)
+                if (sipSocketNode.Attributes.GetNamedItem(SIP_PROTOCOL_PARAMETER) != null)
                 {
-                    protocol = SIPProtocolsType.GetProtocolType(sipSocketNode.Attributes.GetNamedItem("protocol").Value);
+                    protocol = SIPProtocolsType.GetProtocolType(sipSocketNode.Attributes.GetNamedItem(SIP_PROTOCOL_PARAMETER).Value);
                 }
                 
                 List<SIPEndPoint> nodeSIPEndPoints = GetSIPEndPoints(localSocket, protocol);
 
                 foreach (SIPEndPoint sipEndPoint in nodeSIPEndPoints)
                 {
-                    if (protocol == SIPProtocolsEnum.udp)
+                    try
                     {
-                        logger.Debug(" attempting to create SIP UDP channel for " + sipEndPoint.SocketEndPoint + ".");
-                        SIPUDPChannel udpChannel = new SIPUDPChannel(sipEndPoint.SocketEndPoint);
-                        sipChannels.Add(udpChannel);
-                    }
-                    else if (protocol == SIPProtocolsEnum.tcp)
-                    {
-                        logger.Debug(" attempting to create SIP TCP channel for " + sipEndPoint.SocketEndPoint + ".");
-                        
-                        SIPTCPChannel tcpChannel = new SIPTCPChannel(sipEndPoint.SocketEndPoint);
-                        sipChannels.Add(tcpChannel);
-                    }
-                    else if (protocol == SIPProtocolsEnum.tls)
-                    {
-                        if (sipSocketNode.Attributes.GetNamedItem("certificatepath") == null) {
-                            logger.Warn("Could not create SIPTLSChannel from XML configuration node as no certificatepath attribute was present.");
+                        if (protocol == SIPProtocolsEnum.udp)
+                        {
+                            logger.Debug(" attempting to create SIP UDP channel for " + sipEndPoint.SocketEndPoint + ".");
+                            SIPUDPChannel udpChannel = new SIPUDPChannel(sipEndPoint.SocketEndPoint);
+                            sipChannels.Add(udpChannel);
                         }
-                        else {
-                            string certificatePath = (sipSocketNode.Attributes.GetNamedItem("certificatepath") != null) ? sipSocketNode.Attributes.GetNamedItem("certificatepath").Value : null;
-                            logger.Debug(" attempting to create SIP TLS channel for " + sipEndPoint.SocketEndPoint + " and " + certificatePath + ".");
-                            SIPTLSChannel tlsChannel = new SIPTLSChannel(certificatePath, sipEndPoint.SocketEndPoint);
-                            sipChannels.Add(tlsChannel);
-                        } 
+                        else if (protocol == SIPProtocolsEnum.tcp)
+                        {
+                            logger.Debug(" attempting to create SIP TCP channel for " + sipEndPoint.SocketEndPoint + ".");
+
+                            SIPTCPChannel tcpChannel = new SIPTCPChannel(sipEndPoint.SocketEndPoint);
+                            sipChannels.Add(tcpChannel);
+                        }
+                        else if (protocol == SIPProtocolsEnum.tls)
+                        {
+                            if (sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_PATH_PARAMETER) == null)
+                            {
+                                logger.Warn("Could not create SIPTLSChannel from XML configuration node as no " + CERTIFICATE_PATH_PARAMETER + " attribute was present.");
+                            }
+                            else
+                            {
+                                string certificatePath = (sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_PATH_PARAMETER) != null) ? sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_PATH_PARAMETER).Value : null;
+                                logger.Debug(" attempting to create SIP TLS channel for " + sipEndPoint.SocketEndPoint + " and " + certificatePath + ".");
+                                SIPTLSChannel tlsChannel = new SIPTLSChannel(certificatePath, sipEndPoint.SocketEndPoint);
+                                sipChannels.Add(tlsChannel);
+                            }
+                        }
+                        else
+                        {
+                            logger.Warn("Could not create a SIP channel for protocol " + protocol + ".");
+                        }
                     }
-                    else
+                    catch (Exception excp)
                     {
-                        logger.Warn("Could not create a SIP channel for protocol " + protocol + ".");
+                        logger.Warn("Exception SIPTransportConfig Adding SIP Channel for " + sipEndPoint.ToString() + ". " + excp.Message);
                     }
                 }
             }

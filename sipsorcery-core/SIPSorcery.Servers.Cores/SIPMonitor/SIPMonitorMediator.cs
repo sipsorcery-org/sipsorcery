@@ -58,8 +58,6 @@ using NUnit.Framework;
 
 namespace SIPSorcery.Servers
 {	   
-    public delegate string AuthenticateUserDelegate(string username, string password);
-
     /// <summary>
     /// Hosts client connections to the public sockets on the SIP Monitor Server and then mediates
     /// the events sent to each and commands received from those clients capable of sending commands.
@@ -77,7 +75,11 @@ namespace SIPSorcery.Servers
 
 		private static ILog logger = AppState.logger;
 
-        private AuthenticateUserDelegate AuthenticateUser_External = (u, p) => { return "unauthenticated"; };
+        private static readonly string m_topLevelAdminId = Customer.TOPLEVEL_ADMIN_ID;
+
+        private AuthenticateCustomerDelegate AuthenticateUser_External = (u, p, i) => { return null; };
+        private AuthenticateTokenDelegate AuthenticateSession_External = (s) => { return null; };
+        private SIPAssetGetDelegate<Customer> GetCustomer_External;
 
         private string m_fileLogDirectory;
         private bool m_listenForEvents = true;
@@ -105,13 +107,17 @@ namespace SIPSorcery.Servers
             IPEndPoint[] machineEndPoints, 
             int eventListenerPort, 
             string fileLogDirectory,
-            AuthenticateUserDelegate authenticate)
+            AuthenticateCustomerDelegate authenticateUser,
+            AuthenticateTokenDelegate authenticateSession,
+            SIPAssetGetDelegate<Customer> getCustomer)
 		{
             m_controlClientEndPoints = controlClientEndPoints;
             m_machineEndPoints = machineEndPoints;
             m_eventListenerPort = eventListenerPort;
             m_fileLogDirectory = fileLogDirectory;
-            AuthenticateUser_External = authenticate ?? AuthenticateUser_External;
+            AuthenticateUser_External = authenticateUser ?? AuthenticateUser_External;
+            AuthenticateSession_External = authenticateSession ?? AuthenticateSession_External;
+            GetCustomer_External = getCustomer;
 		}
 
         public void StartMonitoring()
@@ -222,10 +228,10 @@ namespace SIPSorcery.Servers
                 while (m_listenForClients)
                 {
                     Socket machineClientSocket = monitorServer.AcceptSocket();
-                    SIPMonitorMachineClient machineClient = new SIPMonitorMachineClient(machineClientSocket);
-                    m_machineClients.Add(machineClient);
 
                     logger.Debug("SIPMonitorMediator new machine connection from " + machineClientSocket.RemoteEndPoint + ".");
+
+                    ThreadPool.QueueUserWorkItem(delegate { StartMachineClient(machineClientSocket); });
                 }
 
                 //monitorServer.Stop();   
@@ -359,60 +365,81 @@ namespace SIPSorcery.Servers
             }
 		}
 
-        private void ProcessMachineEvent(SIPMonitorMachineEvent machineEvent)
-        {
-            try
-            {
+        private void ProcessMachineEvent(SIPMonitorMachineEvent machineEvent) {
+            try {
                 List<SIPMonitorMachineClient> removals = new List<SIPMonitorMachineClient>();
-              
-                for (int index = 0; index < m_machineClients.Count; index++)
-                {
+
+                for (int index = 0; index < m_machineClients.Count; index++) {
                     SIPMonitorMachineClient machineClient = m_machineClients[index];
-                    if (machineClient != null && machineClient.ClientSocket != null && machineClient.ClientSocket.Connected)
-                    {
-                        try
-                        {
-                            if (machineClient.Owner != null && machineClient.Owner == machineEvent.Username)
-                            {
+                    if (machineClient != null && machineClient.ClientSocket != null && machineClient.ClientSocket.Connected) {
+                        try {
+                            if (machineClient.Owner != null && machineClient.Owner == machineEvent.Username) {
                                 machineClient.ClientSocket.Send(Encoding.ASCII.GetBytes(machineEvent.ToCSV()));
                             }
                             else
                             {
                                 // For anonymous connections only the type of event and the network address of the remote socket are sent.
-                                machineClient.ClientSocket.Send(Encoding.ASCII.GetBytes(machineEvent.ToAnonymousCSV()));
+                                //machineClient.ClientSocket.Send(Encoding.ASCII.GetBytes(machineEvent.ToAnonymousCSV()));
                             }
                         }
-                        catch (SocketException sockeExcp)
-                        {
+                        catch (SocketException sockeExcp) {
                             logger.Debug("Socket exception sending to machine client at " + machineClient.RemoteEndPoint + ". " + sockeExcp.Message);
                             removals.Add(machineClient);
                         }
-                        catch (Exception excp)
-                        {
+                        catch (Exception excp) {
                             logger.Error("Exception ProcessMachineEvent Sending. " + excp.Message);
                         }
                     }
-                    else
-                    {
+                    else {
                         removals.Add(machineClient);
                     }
                 }
 
-                foreach (SIPMonitorMachineClient machineClient in removals)
-                {
+                foreach (SIPMonitorMachineClient machineClient in removals) {
                     logger.Debug("Removing machine client " + machineClient.RemoteEndPoint + ".");
                     m_machineClients.Remove(machineClient);
 
-                    try
-                    {
+                    try {
                         machineClient.ClientSocket.Close();
                     }
                     catch { }
                 }
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception SIPMonitorMediator ProcessMachineEvent. " + excp.Message);
+            }
+        }
+
+        private void StartMachineClient(Socket machineSocket) {
+
+            try {
+                IPEndPoint machineEndPoint = (IPEndPoint)machineSocket.RemoteEndPoint;
+
+                if (m_controlClients.Count >= MAX_MACHINE_CONNECTION_COUNT) {
+                    logger.Debug("Machine client connection dropped from " + machineEndPoint + " as maximum connections exceeded.");
+                    machineSocket.Close();
+                }
+                else {
+                    byte[] buffer = new byte[64];
+                    int bytesRead = machineSocket.Receive(buffer);
+
+                    string token = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                    CustomerSession session = AuthenticateSession_External(token);
+
+                    if (session != null) {
+                        logger.Debug("Adding machine client for " + session.CustomerUsername + " on " + machineEndPoint + ".");
+                        SIPMonitorMachineClient machineClient = new SIPMonitorMachineClient(machineSocket);
+                        machineClient.Owner = session.CustomerUsername;
+                        m_machineClients.Add(machineClient);
+                    }
+                    else {
+                        logger.Debug("Invalid token supplied by mahcine client at " + machineEndPoint + " closing socket.");
+                        machineSocket.Close();
+                    }
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception StartMachineClient. " + excp.Message);
             }
         }
 
@@ -441,13 +468,13 @@ namespace SIPSorcery.Servers
 				}
 				else
 				{
-                    string authenticatedUsername = AuthenticateClient(clientSocket);
-                    if (authenticatedUsername != null)
+                    Customer authenticatedCustomer = AuthenticateClient(clientSocket);
+                    if (authenticatedCustomer != null)
                     {
                         byte[] buffer = new byte[1024];
                         int bytesRead = 1;
 
-                        monitorFilter = GetClientFilter(clientSocket, authenticatedUsername);
+                        monitorFilter = GetClientFilter(clientSocket, authenticatedCustomer);
                         if (monitorFilter == null)
                         {
                             // No filter so close connection
@@ -456,7 +483,7 @@ namespace SIPSorcery.Servers
 
                         clientSocket.Send(Encoding.ASCII.GetBytes("filter=" + monitorFilter.GetFilterDescription() + "\r\n"));
 
-                        controlClient = new SIPMonitorControlClient(clientSocket, monitorFilter, authenticatedUsername);
+                        controlClient = new SIPMonitorControlClient(clientSocket, monitorFilter, authenticatedCustomer.CustomerUsername);
                         m_controlClients.Add(controlClient);
 
                         while (bytesRead > 0 && m_listenForClients)
@@ -471,7 +498,9 @@ namespace SIPSorcery.Servers
                             else if (option == "s")
                             {
                                 controlClient.Filter = null;
-                                monitorFilter = GetClientFilter(clientSocket, authenticatedUsername);
+                                // Update the customer record in case persmissions have changed since the original filter was set.
+                                authenticatedCustomer = GetCustomer_External(c => c.CustomerUsername == authenticatedCustomer.CustomerUsername);
+                                monitorFilter = GetClientFilter(clientSocket, authenticatedCustomer);
 
                                 if (monitorFilter == null)
                                 {
@@ -521,7 +550,7 @@ namespace SIPSorcery.Servers
             }
 		}
 
-        private SIPMonitorFilter GetClientFilter(Socket clientSocket, string username)
+        private SIPMonitorFilter GetClientFilter(Socket clientSocket, Customer customer)
         {
             SIPMonitorFilter monitorFilter = null;
             string filter = null;
@@ -551,27 +580,29 @@ namespace SIPSorcery.Servers
                 try
                 {
                     filter = filter.Trim();
+                    logger.Debug("Setting filter username for username=" + customer.CustomerUsername + ", adminid=" + customer.AdminId + ", request filter=" + filter + ".");
                     monitorFilter = new SIPMonitorFilter(filter);
-
-                    logger.Debug("Setting filter username for  username=" + username + ".");
 
                     // If the filter request is for a full SIP trace the user field must not be used since it's
                     // tricky to decide which user a SIP message belongs to prior to authentication. If a full SIP
                     // trace is requested instead of a user filter a regex will be set that matches the username in
                     // the From or To header. If a full SIP trace is not specified then the user filer will be set.
-
-                    /*if (monitorFilter.EventFilterDescr == "full")
+                    if (customer.AdminId != m_topLevelAdminId)
                     {
-                        SIPMonitorFilter userFilter = new SIPMonitorFilter("event full and regex :" + username + "@");
-                        userFilter.SIPRequestFilter = monitorFilter.SIPRequestFilter;
-                        monitorFilter = userFilter;
+                        // If this user is not the top level admin there are tight restrictions on what filter can be set.
+                        if (monitorFilter.EventFilterDescr == "full")
+                        {
+                            SIPMonitorFilter userFilter = new SIPMonitorFilter("event full and regex :" + customer.CustomerUsername + "@");
+                            userFilter.SIPRequestFilter = monitorFilter.SIPRequestFilter;
+                            monitorFilter = userFilter;
+                        }
+                        else
+                        {
+                            SIPMonitorFilter userFilter = new SIPMonitorFilter("user " + customer.CustomerUsername);
+                            userFilter.EventFilterDescr = monitorFilter.EventFilterDescr;
+                            monitorFilter = userFilter;
+                        }
                     }
-                    else
-                    {
-                        SIPMonitorFilter userFilter = new SIPMonitorFilter("user " + username);
-                        userFilter.EventFilterDescr = monitorFilter.EventFilterDescr;
-                        monitorFilter = userFilter;
-                    }*/
 
                     //monitorFilter.Username = (customerSession.Customer.SIPConsoleFilter != null) ? customerSession.Customer.SIPConsoleFilter : customerSession.Customer.CustomerUsername;
 
@@ -584,7 +615,7 @@ namespace SIPSorcery.Servers
                         {
                             string fileName = m_fileLogDirectory + monitorFilter.FileLogname;
                             logger.Error("Monitor client log filename=" + fileName + ", duration=" + monitorFilter.FileLogDuration + ".");
-                            m_controlClients.Add(new SIPMonitorControlClient(fileName, monitorFilter, username));
+                            m_controlClients.Add(new SIPMonitorControlClient(fileName, monitorFilter, customer.CustomerUsername));
                         }
                         else
                         {
@@ -606,7 +637,7 @@ namespace SIPSorcery.Servers
             return null;
         }
 
-        private string AuthenticateClient(Socket clientSocket)
+        private Customer AuthenticateClient(Socket clientSocket)
         {
             byte[] buffer = new byte[1024];
             int bytesRead = 1;
@@ -643,10 +674,12 @@ namespace SIPSorcery.Servers
                     }
                 }
 
-                if (AuthenticateUser_External(username, password) != null)
+                CustomerSession customerSession = AuthenticateUser_External(username, password, ((IPEndPoint)clientSocket.RemoteEndPoint).Address.ToString());
+                if (customerSession != null)
                 {
-                    clientSocket.Send(Encoding.ASCII.GetBytes("welcome " + username + "\r\n"));
-                    return username;
+                    Customer customer = GetCustomer_External(c => c.CustomerUsername == username);
+                    clientSocket.Send(Encoding.ASCII.GetBytes("welcome " + customer.CustomerUsername + "\r\n"));
+                    return customer;
                 }
                 else
                 {

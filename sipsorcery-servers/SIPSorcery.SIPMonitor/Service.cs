@@ -51,10 +51,12 @@ namespace SIPSorcery.SIPMonitor
 
         private SIPMonitorDaemon m_daemon;
 				
-		public Service()
+		public Service(SIPMonitorDaemon daemon)
 		{
 			this.CanShutdown = true;
 			this.CanStop = true;
+
+            m_daemon = daemon;
 		}
 
 		protected override void Dispose( bool disposing )
@@ -66,7 +68,6 @@ namespace SIPSorcery.SIPMonitor
 		{
 			try
 			{
-                m_daemon = new SIPMonitorDaemon();
 				Thread daemonThread = new Thread(m_daemon.Start);
 				daemonThread.Start();
 			}

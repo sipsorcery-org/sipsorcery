@@ -53,7 +53,7 @@ namespace SIPSorcery.SIPProxy
         private const string LOGGER_NAME = "sipproxy";
 
         private const string SIPPROXY_CONFIGNODE_NAME = "sipproxy";
-        private const string SIPSOCKETS_CONFIGNODE_NAME = "sipproxysockets";
+        private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
         private const string PROXY_SCRIPTPATH_KEY = "ProxyScriptPath";
         private const string PROXY_LOOPBACK_PORT_KEY = "MonitorLoopbackPort";
         private const string PROXY_NATKEEPALIVESOCKET_KEY = "NATKeepAliveSocket";
@@ -70,20 +70,7 @@ namespace SIPSorcery.SIPProxy
         {
             try
             {
-                #region Configure logging.
-
-                try
-                {
-                    
-                    log4net.Config.XmlConfigurator.Configure();
-                    logger = log4net.LogManager.GetLogger(LOGGER_NAME);
-                }
-                catch (Exception logExcp)
-                {
-                    Console.WriteLine("Exception SIPProxyState Configure Logging. " + logExcp.Message);
-                }
-
-                #endregion
+                logger = AppState.GetLogger(LOGGER_NAME);
 
                 if (ConfigurationManager.GetSection(SIPPROXY_CONFIGNODE_NAME) != null) {
                     m_sipProxyNode = (XmlNode)ConfigurationManager.GetSection(SIPPROXY_CONFIGNODE_NAME);

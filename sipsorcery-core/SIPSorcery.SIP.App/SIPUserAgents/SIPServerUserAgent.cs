@@ -56,22 +56,12 @@ namespace SIPSorcery.SIP.App
     {
         private static ILog logger = AssemblyState.logger;
 
-        private static string m_serverAgent = SIPConstants.SIP_USERAGENT_STRING;
-        private static string m_transportParam = SIPHeaderAncillary.SIP_HEADERANC_TRANSPORT;
-        private static char m_customHeadersSeparator = SIPProvider.CUSTOM_HEADERS_SEPARATOR;
-
         private SIPMonitorLogDelegate Log_External = SIPMonitorEvent.DefaultSIPMonitorLogger;
         private SIPAuthoriseRequestDelegate SIPAuthoriseRequest_External;
 
-        private SIPTransport m_sipTransport;
-        private SIPEndPoint m_localSIPEndPoint;
-   
+        private SIPTransport m_sipTransport;  
         private UASInviteTransaction m_uasTransaction;
-        private bool m_callCancelled;                               // It's possible for the call to be cancelled before the INVITE has been sent. This could occur if a DNS lookup on the server takes a while.
-        private bool m_hungupOnCancel;                              // Set to true if a call has been cancelled AND and then an Ok response was received AND a BYE has been sent to hang it up. This variable is used to stop another BYE transaction being generated.
-        private int m_clientAuthAttempts;                           // Used to determine if credentials for a server leg call fail.
-        private SIPNonInviteTransaction m_cancelTransaction;        // If the server call is cancelled this transaction contains the CANCEL in case it needs to be resent.
-        private IPEndPoint m_systemOutboundProxy;                   // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
+        private SIPEndPoint m_outboundProxy;                   // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
         private SIPDialogue m_sipDialogue;
         private string m_authorisedSIPUsername;
         private string m_authorisedSIPDomain;
@@ -101,12 +91,12 @@ namespace SIPSorcery.SIP.App
 
         public SIPServerUserAgent(
             SIPTransport sipTransport,
-            IPEndPoint systemOutboundProxy,
+            SIPEndPoint outboundProxy,
             SIPAuthoriseRequestDelegate sipAuthoriseRequest,
             SIPMonitorLogDelegate logDelegate)
         {
             m_sipTransport = sipTransport;
-            m_systemOutboundProxy = systemOutboundProxy;
+            m_outboundProxy = outboundProxy;
             SIPAuthoriseRequest_External = sipAuthoriseRequest;
             Log_External = logDelegate ?? Log_External; 
         }
@@ -115,7 +105,7 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                m_uasTransaction = m_sipTransport.CreateUASTransaction(inviteRequest, remoteEndPoint, localSIPEndPoint);
+                m_uasTransaction = m_sipTransport.CreateUASTransaction(inviteRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
                 m_uasTransaction.TransactionTraceMessage += TransactionTraceMessage;
                 m_uasTransaction.UASInviteTransactionTimedOut += ClientTimedOut;
                 m_uasTransaction.UASInviteTransactionCancelled += UASTransactionCancelled;
@@ -127,7 +117,8 @@ namespace SIPSorcery.SIP.App
             catch (Exception excp)
             {
                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentServer, SIPMonitorEventTypesEnum.DialPlan, "Exception SIPServerUserAgent CallReceived. " + excp.Message, null));
-                throw;
+                // Don't throw here as method will typically be invoked on a separate thread and throwing an exception will crash the app.
+                //throw;
             }
         }
 
@@ -222,7 +213,7 @@ namespace SIPSorcery.SIP.App
         public void Hungup(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Call hangup request from server at " + remoteEndPoint + ".", null));
-            SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint);
+            SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
             byeTransaction.TransactionTraceMessage += TransactionTraceMessage;
             SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
             byeTransaction.SendFinalResponse(byeResponse);

@@ -105,6 +105,8 @@ namespace SIPSorcery.Servers
 
 		private static ILog logger = AppState.GetLogger("sipregistrar");
 
+        private string m_sipExpiresParameterKey = SIPContactHeader.EXPIRES_PARAMETER_KEY;
+
         private SIPTransport m_sipTransport;
         private SIPRegistrarBindingsManager m_registrarBindingsManager;
         private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
@@ -144,7 +146,7 @@ namespace SIPSorcery.Servers
                 }
                 else
                 {
-                    SIPNonInviteTransaction registrarTransaction = m_sipTransport.CreateNonInviteTransaction(registerRequest, remoteEndPoint, localSIPEndPoint);
+                    SIPNonInviteTransaction registrarTransaction = m_sipTransport.CreateNonInviteTransaction(registerRequest, remoteEndPoint, localSIPEndPoint, null);
 
                     DateTime registerStartTime = DateTime.Now;
                     RegisterResultEnum result = Register(registrarTransaction);
@@ -281,47 +283,48 @@ namespace SIPSorcery.Servers
                         {
                             //logger.Debug("Recording registration record for " + addressOfRecord.ToString() + ".");
 
-                            SIPEndPoint uacRecvdEndPoint = registerTransaction.RemoteEndPoint;
+                            SIPEndPoint uacRemoteEndPoint = registerTransaction.RemoteEndPoint;
                             SIPEndPoint proxySIPEndPoint = null;
                             SIPEndPoint registrarEndPoint = registerTransaction.LocalSIPEndPoint;
 
-                            if (sipRequest.Header.Vias.Length > 1) // Can't be a downstream proxy if there is only one Via.
-                            {
-                                // The "proxy" Via parameter must be written onto the top Via header received by the Proxy. So the Via header
-                                // with the "proxy" parameter also holds the IP socket of the user agent. If the "proxy" is showing up on a different
-                                // Via header the Proxy is configured incorrectly. Fix it and don't change the line below.
-                                string proxySocket = sipRequest.Header.Vias.Via[1].ViaParameters.Get(PROXY_VIA_PARAMETER_NAME);
-
-                                if (proxySocket != null)
-                                {
-                                    proxySIPEndPoint = new SIPEndPoint(sipRequest.Header.Vias.Via[0].Transport, IPSocket.ParseSocketString(proxySocket));
-                                    uacRecvdEndPoint = new SIPEndPoint(sipRequest.Header.Vias.Via[1].Transport, IPSocket.ParseSocketString(sipRequest.Header.Vias.Via[1].ReceivedFromAddress));  // The second top Via header which will be the SIP element prior to the SIP Proxy.
+                            // Identify whether a Proxy is in front of the Registrar.
+                            foreach(SIPViaHeader viaHeader in sipRequest.Header.Vias.Via)  {
+                                if (viaHeader.ViaParameters.Has(PROXY_VIA_PARAMETER_NAME)) {
+                                    // The "proxy" Via parameter must be written onto the top Via header received by the Proxy. So the Via header
+                                    // with the "proxy" parameter also holds the IP socket of the user agent. If the "proxy" is showing up on a different
+                                    // Via header the Proxy is configured incorrectly. Fix it and don't change the line below.
+                                    proxySIPEndPoint = SIPEndPoint.ParseSIPEndPoint(viaHeader.ViaParameters.Get(PROXY_VIA_PARAMETER_NAME));
+                                    uacRemoteEndPoint = new SIPEndPoint(viaHeader.Transport, IPSocket.ParseSocketString(viaHeader.ReceivedFromAddress));
                                 }
                             }
 
+                            int contactHeaderExpiry = -1;
+                            if (sipRequest.Header.Contact[0].ContactParameters.Has(m_sipExpiresParameterKey)) {
+                                Int32.TryParse(sipRequest.Header.Contact[0].ContactParameters.Get(m_sipExpiresParameterKey), out contactHeaderExpiry);
+                            }
                             SIPResponseStatusCodesEnum updateResult = SIPResponseStatusCodesEnum.Ok;
                             string updateMessage = null;
 
                             int bindingExpiry = m_registrarBindingsManager.UpdateBinding(
                                 sipAccount,
                                 proxySIPEndPoint,
-                                uacRecvdEndPoint,
+                                uacRemoteEndPoint,
                                 registrarEndPoint,
                                 sipRequest.Header.Contact[0].ContactURI,
                                 sipRequest.Header.CallId,
                                 sipRequest.Header.CSeq,
+                                contactHeaderExpiry,
                                 sipRequest.Header.Expires,
                                 sipRequest.Header.UserAgent,
                                 out updateResult,
                                 out updateMessage);
 
-                            //if (bindingsUpdated)
-                            //{
-                            //    m_registrationsStore.AddDirtyRegistration(registration);
-                            //}
-
                             if (updateResult == SIPResponseStatusCodesEnum.Ok)
                             {
+                                string proxySocketStr = (proxySIPEndPoint != null) ? " (proxy=" + proxySIPEndPoint.ToString() + ")" : null;
+                                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Registration successful for " + addressOfRecord.ToString() + " from " + uacRemoteEndPoint + proxySocketStr + ", expiry " + bindingExpiry + "s.", addressOfRecord.User));
+                                FireProxyLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, addressOfRecord.User, uacRemoteEndPoint, sipAccount.Id));
+
                                 // The standard states that the Ok response should contain the list of current bindings but that breaks a lot of UAs. As a 
                                 // compromise the list is returned with the Contact that UAC sent as the first one in the list.
                                 bool contactListSupported = m_registrarBindingsManager.GetUserAgentContactListSupport(sipRequest.Header.UserAgent);
@@ -336,17 +339,6 @@ namespace SIPSorcery.Servers
 
                                 SIPResponse okResponse = GetOkResponse(sipRequest);
                                 registerTransaction.SendFinalResponse(okResponse);
-
-                                //if (registration.HasCurrentBinding())
-                                //{
-                                string proxySocketStr = (proxySIPEndPoint != null) ? " (proxy=" + proxySIPEndPoint.ToString() + ")" : null;
-                                    int expiry = sipRequest.Header.Contact[0].Expires;
-                                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Registration successful for " + addressOfRecord.ToString() + " from " + uacRecvdEndPoint + proxySocketStr + ", expiry " + expiry + "s.", addressOfRecord.User));
-                                //}
-                                //else
-                                //{
-                                //    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Registration successful for " + addressOfRecord.ToString() + " from " + uacRecvdEndPoint + ", no current bindings.", addressOfRecord.User));
-                                //}
                             }
                             else
                             {

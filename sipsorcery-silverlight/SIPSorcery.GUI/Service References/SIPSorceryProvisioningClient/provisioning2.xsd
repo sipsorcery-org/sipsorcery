@@ -1,393 +1,202 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xs:schema xmlns:tns="http://www.sipsorcery.com" elementFormDefault="qualified" targetNamespace="http://www.sipsorcery.com" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:import schemaLocation="http://suzannes-pc:8080/provisioning?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" />
-  <xs:element name="IsAlive">
-    <xs:complexType>
-      <xs:sequence />
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="IsAliveResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="IsAliveResult" type="xs:boolean" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="Login">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="username" nillable="true" type="xs:string" />
-        <xs:element minOccurs="0" name="password" nillable="true" type="xs:string" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="LoginResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="LoginResult" nillable="true" type="xs:string" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="Logout">
-    <xs:complexType>
-      <xs:sequence />
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="LogoutResponse">
-    <xs:complexType>
-      <xs:sequence />
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPDomains">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="filterExpression" nillable="true" type="xs:string" />
-        <xs:element minOccurs="0" name="offset" type="xs:int" />
-        <xs:element minOccurs="0" name="count" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPDomainsResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q1="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="GetSIPDomainsResult" nillable="true" type="q1:ArrayOfSIPDomain" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPAccountsCount">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPAccountsCountResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="GetSIPAccountsCountResult" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPAccounts">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-        <xs:element minOccurs="0" name="offset" type="xs:int" />
-        <xs:element minOccurs="0" name="count" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPAccountsResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q2="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="GetSIPAccountsResult" nillable="true" type="q2:ArrayOfSIPAccount" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="AddSIPAccount">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q3="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="sipAccount" nillable="true" type="q3:SIPAccount" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="AddSIPAccountResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q4="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="AddSIPAccountResult" nillable="true" type="q4:SIPAccount" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="UpdateSIPAccount">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q5="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="sipAccount" nillable="true" type="q5:SIPAccount" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="UpdateSIPAccountResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q6="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="UpdateSIPAccountResult" nillable="true" type="q6:SIPAccount" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="DeleteSIPAccount">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q7="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="sipAccount" nillable="true" type="q7:SIPAccount" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="DeleteSIPAccountResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q8="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="DeleteSIPAccountResult" nillable="true" type="q8:SIPAccount" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPRegistrarBindingsCount">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPRegistrarBindingsCountResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="GetSIPRegistrarBindingsCountResult" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPRegistrarBindings">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-        <xs:element minOccurs="0" name="offset" type="xs:int" />
-        <xs:element minOccurs="0" name="count" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPRegistrarBindingsResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q9="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="GetSIPRegistrarBindingsResult" nillable="true" type="q9:ArrayOfSIPRegistrarBinding" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPProvidersCount">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPProvidersCountResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="GetSIPProvidersCountResult" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPProviders">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-        <xs:element minOccurs="0" name="offset" type="xs:int" />
-        <xs:element minOccurs="0" name="count" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPProvidersResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q10="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="GetSIPProvidersResult" nillable="true" type="q10:ArrayOfSIPProvider" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="AddSIPProvider">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q11="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="sipProvider" nillable="true" type="q11:SIPProvider" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="AddSIPProviderResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q12="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="AddSIPProviderResult" nillable="true" type="q12:SIPProvider" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="UpdateSIPProvider">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q13="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="sipProvider" nillable="true" type="q13:SIPProvider" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="UpdateSIPProviderResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q14="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="UpdateSIPProviderResult" nillable="true" type="q14:SIPProvider" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="DeleteSIPProvider">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q15="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="sipProvider" nillable="true" type="q15:SIPProvider" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="DeleteSIPProviderResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q16="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="DeleteSIPProviderResult" nillable="true" type="q16:SIPProvider" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPProviderBindingsCount">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPProviderBindingsCountResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="GetSIPProviderBindingsCountResult" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPProviderBindings">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-        <xs:element minOccurs="0" name="offset" type="xs:int" />
-        <xs:element minOccurs="0" name="count" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetSIPProviderBindingsResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q17="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="GetSIPProviderBindingsResult" nillable="true" type="q17:ArrayOfSIPProviderBinding" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetDialPlansCount">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetDialPlansCountResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="GetDialPlansCountResult" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetDialPlans">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-        <xs:element minOccurs="0" name="offset" type="xs:int" />
-        <xs:element minOccurs="0" name="count" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetDialPlansResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q18="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="GetDialPlansResult" nillable="true" type="q18:ArrayOfSIPDialPlan" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="AddDialPlan">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q19="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="dialPlan" nillable="true" type="q19:SIPDialPlan" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="AddDialPlanResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q20="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="AddDialPlanResult" nillable="true" type="q20:SIPDialPlan" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="UpdateDialPlan">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q21="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="dialPlan" nillable="true" type="q21:SIPDialPlan" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="UpdateDialPlanResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q22="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="UpdateDialPlanResult" nillable="true" type="q22:SIPDialPlan" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="DeleteDialPlan">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q23="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="dialPlan" nillable="true" type="q23:SIPDialPlan" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="DeleteDialPlanResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q24="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="DeleteDialPlanResult" nillable="true" type="q24:SIPDialPlan" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetCallsCount">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetCallsCountResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="GetCallsCountResult" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetCalls">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-        <xs:element minOccurs="0" name="offset" type="xs:int" />
-        <xs:element minOccurs="0" name="count" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetCallsResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q25="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="GetCallsResult" nillable="true" type="q25:ArrayOfSIPDialogueAsset" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetCDRsCount">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetCDRsCountResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="GetCDRsCountResult" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetCDRs">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" name="whereExpression" nillable="true" type="xs:string" />
-        <xs:element minOccurs="0" name="offset" type="xs:int" />
-        <xs:element minOccurs="0" name="count" type="xs:int" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetCDRsResponse">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element xmlns:q26="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" minOccurs="0" name="GetCDRsResult" nillable="true" type="q26:ArrayOfSIPCDRAsset" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
+<xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="ArrayOfSIPDomain">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="SIPDomain" nillable="true" type="tns:SIPDomain" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfSIPDomain" nillable="true" type="tns:ArrayOfSIPDomain" />
+  <xs:complexType name="SIPDomain">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Domain" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Id" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Owner" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SIPDomain" nillable="true" type="tns:SIPDomain" />
+  <xs:complexType name="ArrayOfSIPAccount">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="SIPAccount" nillable="true" type="tns:SIPAccount" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfSIPAccount" nillable="true" type="tns:ArrayOfSIPAccount" />
+  <xs:complexType name="SIPAccount">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="AdminDisabledReason" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="IPAddressACL" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Id" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="InDialPlanName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Inserted" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="IsAdminDisabled" type="xs:boolean" />
+      <xs:element minOccurs="0" name="IsIncomingOnly" type="xs:boolean" />
+      <xs:element minOccurs="0" name="IsUserDisabled" type="xs:boolean" />
+      <xs:element minOccurs="0" name="NetworkId" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="OutDialPlanName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Owner" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="SIPDomain" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="SIPPassword" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="SIPUsername" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="SendNATKeepAlives" type="xs:boolean" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SIPAccount" nillable="true" type="tns:SIPAccount" />
+  <xs:complexType name="ArrayOfSIPRegistrarBinding">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="SIPRegistrarBinding" nillable="true" type="tns:SIPRegistrarBinding" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfSIPRegistrarBinding" nillable="true" type="tns:ArrayOfSIPRegistrarBinding" />
+  <xs:complexType name="SIPRegistrarBinding">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="ContactURI" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Expiry" type="xs:int" />
+      <xs:element minOccurs="0" name="Id" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="LastUpdate" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="MangledContactURI" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Owner" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ProxySIPSocket" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Q" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RegistrarSIPSocket" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RemoteSIPSocket" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="SIPAccountName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="UserAgent" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SIPRegistrarBinding" nillable="true" type="tns:SIPRegistrarBinding" />
+  <xs:complexType name="ArrayOfSIPProvider">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="SIPProvider" nillable="true" type="tns:SIPProvider" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfSIPProvider" nillable="true" type="tns:ArrayOfSIPProvider" />
+  <xs:complexType name="SIPProvider">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="CustomHeaders" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Id" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Inserted" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="LastUpdate" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Owner" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ProviderAuthUsername" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ProviderFrom" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ProviderName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ProviderOutboundProxy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ProviderPassword" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ProviderServer" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ProviderUsername" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RegisterAdminEnabled" type="xs:boolean" />
+      <xs:element minOccurs="0" name="RegisterContact" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RegisterDisabledReason" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RegisterEnabled" type="xs:boolean" />
+      <xs:element minOccurs="0" name="RegisterExpiry" type="xs:int" />
+      <xs:element minOccurs="0" name="RegisterRealm" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RegisterServer" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SIPProvider" nillable="true" type="tns:SIPProvider" />
+  <xs:complexType name="ArrayOfSIPProviderBinding">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="SIPProviderBinding" nillable="true" type="tns:SIPProviderBinding" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfSIPProviderBinding" nillable="true" type="tns:ArrayOfSIPProviderBinding" />
+  <xs:complexType name="SIPProviderBinding">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="BindingExpiry" type="xs:int" />
+      <xs:element minOccurs="0" name="BindingURI" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Id" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="IsRegistered" type="xs:boolean" />
+      <xs:element minOccurs="0" name="LastRegisterAttempt" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="LastRegisterTime" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="NextRegistrationTime" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Owner" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ProviderId" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ProviderName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RegistrarSIPSocket" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RegistrationFailureMessage" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SIPProviderBinding" nillable="true" type="tns:SIPProviderBinding" />
+  <xs:complexType name="ArrayOfSIPDialPlan">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="SIPDialPlan" nillable="true" type="tns:SIPDialPlan" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfSIPDialPlan" nillable="true" type="tns:ArrayOfSIPDialPlan" />
+  <xs:complexType name="SIPDialPlan">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="DialPlanName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="DialPlanScript" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Id" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Inserted" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="LastUpdate" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Owner" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ScriptTypeDescription" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="TraceEmailAddress" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SIPDialPlan" nillable="true" type="tns:SIPDialPlan" />
+  <xs:complexType name="ArrayOfSIPDialogueAsset">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="SIPDialogueAsset" nillable="true" type="tns:SIPDialogueAsset" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfSIPDialogueAsset" nillable="true" type="tns:ArrayOfSIPDialogueAsset" />
+  <xs:complexType name="SIPDialogueAsset">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="AdminMemberId" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="BridgeId" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CDRId" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CSeq" type="xs:int" />
+      <xs:element minOccurs="0" name="CallDurationLimit" type="xs:int" />
+      <xs:element minOccurs="0" name="CallId" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="DialogueId" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Id" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="LocalTag" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="OrderProperty" nillable="true" type="xs:anyType" />
+      <xs:element minOccurs="0" name="OutboundProxy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Owner" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RemoteTag" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RemoteTarget" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RemoteUserField" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SIPDialogueAsset" nillable="true" type="tns:SIPDialogueAsset" />
+  <xs:complexType name="ArrayOfSIPCDRAsset">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="SIPCDRAsset" nillable="true" type="tns:SIPCDRAsset" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfSIPCDRAsset" nillable="true" type="tns:ArrayOfSIPCDRAsset" />
+  <xs:complexType name="SIPCDRAsset">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="AdminMemberId" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="AnsweredReason" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="AnsweredStatus" type="xs:int" />
+      <xs:element minOccurs="0" name="AnsweredTime" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="BridgeId" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CallDirection" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CallId" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Created" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Dst" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="DstHost" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="DstURI" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Duration" type="xs:int" />
+      <xs:element minOccurs="0" name="FromHeader" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="FromHost" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="FromUser" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="HungupReason" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="HungupTime" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Id" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="InPorgressReason" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="InProgressStatus" type="xs:int" />
+      <xs:element minOccurs="0" name="InProgressTime" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Inserted" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="LocalSocket" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="OrderProperty" nillable="true" type="xs:anyType" />
+      <xs:element minOccurs="0" name="Owner" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RemoteSocket" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RingDuration" type="xs:int" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SIPCDRAsset" nillable="true" type="tns:SIPCDRAsset" />
 </xs:schema>

@@ -67,9 +67,7 @@ namespace SIPSorcery.SIPAppServer {
 
         private static ILog logger = SIPAppServerState.logger;
 
-        private SIPTransport m_sipTransport;
-
-        private XmlNode m_sipAppServerConfigNode = SIPAppServerState.SIPAppServerConfigNode;
+        private XmlNode m_sipAppServerSocketsNode = SIPAppServerState.SIPAppServerSocketsNode;
 
         private static bool m_sipProxyEnabled = true; //SIPAppServerState.SIPProxyEnabled;
         private static bool m_sipMonitorEnabled = true; //SIPAppServerState.SIPProxyEnabled;
@@ -77,24 +75,14 @@ namespace SIPSorcery.SIPAppServer {
         private static bool m_sipRegAgentEnabled = true; //SIPAppServerState.RegistrationAgentEnabled;
         private static bool m_sipAppServerEnabled = true; //SIPAppServerState.AppServerEnabled;
         private static bool m_webServiceEnabled = true; //SIPAppServerState.WebServiceEnabled;
-
-        private static int m_monitorEventListenerPort = SIPAppServerState.MonitorEventListenerPort;
-        private static StorageTypes m_proxyDBStorageType = SIPAppServerState.ProxyDBStorageType;
-        private static string m_proxyConnStr = SIPAppServerState.ProxyDBConnStr;
-        private static StorageTypes m_proxyLogDBStorageType = SIPAppServerState.ProxyLogStorageType;
-        private static string m_proxyLogDBConnStr = SIPAppServerState.ProxyLogDBConnStr;
-        private static int m_registrarContactsPerUser = SIPAppServerState.RegistrarContactsPerUser;
-        private static string m_registrarSocket = SIPAppServerState.RegistrarSocket;
-        private static string m_registrationAgentSocket = SIPAppServerState.RegistrationAgentSocket;
-        private static string m_registrationAgentProxySocket = SIPAppServerState.RegistrationAgentProxySocket;
-        private int m_natKeepAliveSendInterval = SIPAppServerState.NATKeepAliveSendInterval;
+        
+        private static int m_monitorEventLoopbackPort = SIPAppServerState.MonitorLoopbackPort;
         private string m_traceDirectory = SIPAppServerState.TraceDirectory;
         private string m_currentDirectory = SIPAppServerState.CurrentDirectory;
         private string m_rubyScriptCommonPath = SIPAppServerState.RubyScriptCommonPath;
-        private string m_outboundProxySocket = SIPAppServerState.OutboundProxySocket;
-        private string m_silverlightPolicyFilePath = SIPAppServerState.SilverlightPolicyFilePath;
+        private SIPEndPoint m_outboundProxy = SIPAppServerState.OutboundProxy;
 
-        private SIPSwitchPersistor m_sipSwitchPersistor;
+        private SIPSorceryPersistor m_sipSorceryPersistor;
         private SIPMonitorEventWriter m_monitorEventWriter;
         private SIPAppServerCore m_appServerCore;
         private SIPProxyDaemon m_sipProxyDaemon;
@@ -102,15 +90,20 @@ namespace SIPSorcery.SIPAppServer {
         private SIPRegAgentDaemon m_sipRegAgentDaemon;
         private SIPRegistrarDaemon m_sipRegistrarDaemon;
 
-        private CustomerSessionManager m_customerSessionManager;
-        private SIPAssetPersistor<Customer> m_customerPersistor;
+        private SIPTransport m_sipTransport;
         private DialPlanEngine m_dialPlanEngine;
-        private Dictionary<string, DateTime> m_authenticatedSessions = new Dictionary<string, DateTime>();  // Authentication mechanism for web services.
         private ServiceHost m_accessPolicyHost;
         private ServiceHost m_sipProvisioningHost;
+        private CustomerSessionManager m_customerSessionManager;
 
-        public SIPAppServerDaemon() 
-        { }
+        private StorageTypes m_storageType;
+        private string m_connectionString;
+
+        public SIPAppServerDaemon(StorageTypes storageType, string connectionString) 
+        {
+            m_storageType = storageType;
+            m_connectionString = connectionString;
+        }
 
         public void Start() {
             try {
@@ -118,10 +111,8 @@ namespace SIPSorcery.SIPAppServer {
                 logger.Debug("os=" + System.Environment.OSVersion + ".");
                 logger.Debug("current directory=" + m_currentDirectory + ".");
 
-                // The storagelayer will be utilised by any SIP server agent that requires a database (which is all of them except the monitor).
-                if (m_sipAppServerEnabled || m_sipRegistrarEnabled || m_sipRegAgentEnabled) {
-                    m_sipSwitchPersistor = new SIPSwitchPersistor(m_proxyDBStorageType, m_proxyConnStr);
-                }
+                m_sipSorceryPersistor = new SIPSorceryPersistor(m_storageType, m_connectionString);
+                m_customerSessionManager = new CustomerSessionManager(m_storageType, m_connectionString);
 
                 if (m_sipProxyEnabled) {
                     m_sipProxyDaemon = new SIPProxyDaemon();
@@ -129,29 +120,29 @@ namespace SIPSorcery.SIPAppServer {
                 }
 
                 if (m_sipMonitorEnabled) {
-                    m_sipMonitorDaemon = new SIPMonitorDaemon();
+                    m_sipMonitorDaemon = new SIPMonitorDaemon(m_customerSessionManager);
                     m_sipMonitorDaemon.Start();
                 }
 
                 if (m_sipRegistrarEnabled) {
                     m_sipRegistrarDaemon = new SIPRegistrarDaemon(
-                        m_sipSwitchPersistor.SIPDomainManager.GetDomain,
-                        m_sipSwitchPersistor.SIPAccountsPersistor.Get,
-                        m_sipSwitchPersistor.SIPRegistrarBindingPersistor);
+                        m_sipSorceryPersistor.SIPDomainManager.GetDomain,
+                        m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                        m_sipSorceryPersistor.SIPRegistrarBindingPersistor);
                     m_sipRegistrarDaemon.Start();
                 }
 
                 if (m_sipRegAgentEnabled) {
                     m_sipRegAgentDaemon = new SIPRegAgentDaemon(
-                        m_sipSwitchPersistor.SIPProvidersPersistor.Get,
-                        m_sipSwitchPersistor.SIPProvidersPersistor.Update,
-                        m_sipSwitchPersistor.SIPProviderBindingsPersistor);
+                        m_sipSorceryPersistor.SIPProvidersPersistor.Get,
+                        m_sipSorceryPersistor.SIPProvidersPersistor.Update,
+                        m_sipSorceryPersistor.SIPProviderBindingsPersistor);
 
                     // The Registration Agent wants to know about any changes to SIP Provider entries in order to update any SIP 
                     // Provider bindings it is maintaining or needs to add or remove.
-                    m_sipSwitchPersistor.SIPProvidersPersistor.Added += m_sipRegAgentDaemon.SIPProviderAdded;
-                    m_sipSwitchPersistor.SIPProvidersPersistor.Updated += m_sipRegAgentDaemon.SIPProviderUpdated;
-                    m_sipSwitchPersistor.SIPProvidersPersistor.Deleted += m_sipRegAgentDaemon.SIPProviderDeleted;
+                    m_sipSorceryPersistor.SIPProvidersPersistor.Added += m_sipRegAgentDaemon.SIPProviderAdded;
+                    m_sipSorceryPersistor.SIPProvidersPersistor.Updated += m_sipRegAgentDaemon.SIPProviderUpdated;
+                    m_sipSorceryPersistor.SIPProvidersPersistor.Deleted += m_sipRegAgentDaemon.SIPProviderDeleted;
 
                     m_sipRegAgentDaemon.Start();
                 }
@@ -161,36 +152,27 @@ namespace SIPSorcery.SIPAppServer {
                 if (m_sipAppServerEnabled) {
                     logger.Debug("Initiating SIP Application Server Agent.");
 
-                    XmlNode appServerSocketsNode = m_sipAppServerConfigNode.SelectSingleNode("sipsockets");
-
-                    if (appServerSocketsNode == null || appServerSocketsNode.ChildNodes.Count == 0) {
+                    if (m_sipAppServerSocketsNode == null || m_sipAppServerSocketsNode.ChildNodes.Count == 0)
+                    {
                         //throw new ApplicationException("Empty IP Address for proxy cannot start.");
                         logger.Warn("No IP addresses specified for App Server it will be disabled.");
                     }
                     else {
                         // Send events from this process to the monitoring socket.
-                        if (m_monitorEventListenerPort != 0) {
-                            m_monitorEventWriter = new SIPMonitorEventWriter(m_monitorEventListenerPort);
+                        if (m_monitorEventLoopbackPort != 0) {
+                            m_monitorEventWriter = new SIPMonitorEventWriter(m_monitorEventLoopbackPort);
                         }
-
-                        m_customerPersistor = CustomerPersistorFactory.CreateCustomerPersistor(m_proxyDBStorageType, m_proxyConnStr);
-                        m_customerSessionManager = new CustomerSessionManager(m_customerPersistor);
                         
-                        if (m_sipSwitchPersistor != null && m_sipSwitchPersistor.SIPCDRPersistor != null) {
-                            SIPCDR.CDRUpdated += (cdr) => {
-                                if (m_sipSwitchPersistor.SIPCDRPersistor.Get(cdr.CDRId) != null) {
-                                    m_sipSwitchPersistor.SIPCDRPersistor.Update(new SIPCDRAsset(cdr));
-                                }
-                                else {
-                                    m_sipSwitchPersistor.SIPCDRPersistor.Add(new SIPCDRAsset(cdr));
-                                }
-                            };
+                        if (m_sipSorceryPersistor != null && m_sipSorceryPersistor.SIPCDRPersistor != null) {
+                            SIPCDR.NewCDR += WriteCDR;
+                            SIPCDR.HungupCDR += WriteCDR;
+                            SIPCDR.CancelledCDR += WriteCDR;
                         }
 
                         #region Initialise the SIPTransport layer.
 
                         m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), true, false);
-                        m_sipTransport.AddSIPChannel(SIPTransportConfig.ParseSIPChannelsNode(appServerSocketsNode));
+                        m_sipTransport.AddSIPChannel(SIPTransportConfig.ParseSIPChannelsNode(m_sipAppServerSocketsNode));
 
                         m_sipTransport.SIPRequestInTraceEvent += LogSIPRequestIn;
                         m_sipTransport.SIPRequestOutTraceEvent += LogSIPRequestOut;
@@ -204,49 +186,42 @@ namespace SIPSorcery.SIPAppServer {
 
                         SIPRequestAuthoriser sipRequestAuthoriser = new SIPRequestAuthoriser(
                             FireSIPMonitorEvent,
-                            m_sipSwitchPersistor.SIPDomainManager.GetDomain,
-                            m_sipSwitchPersistor.GetSIPAccount);
-
-                        #region Initialise the Dial Plan Engine.
-
-                        SIPEndPoint outboundProxyEndPoint = null;
-                        IPEndPoint outboundProxySocket = (m_outboundProxySocket != null) ? IPSocket.ParseSocketString(m_outboundProxySocket) : null;
-                        if (outboundProxySocket != null) {
-                            logger.Debug(" SIP Application Server Proxy Socket is: " + outboundProxySocket + ".");
-                            outboundProxyEndPoint = new SIPEndPoint(outboundProxySocket);
-                        }
+                            m_sipSorceryPersistor.SIPDomainManager.GetDomain,
+                            m_sipSorceryPersistor.GetSIPAccount);
 
                         m_dialPlanEngine = new DialPlanEngine(
                             m_sipTransport,
-                            m_sipSwitchPersistor.SIPDomainManager.GetDomain,
+                            m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                             FireSIPMonitorEvent,
-                            m_sipSwitchPersistor.SIPAccountsPersistor.Get,
-                            m_sipSwitchPersistor.SIPRegistrarBindingPersistor.Get,
-                            outboundProxyEndPoint,
-                            m_traceDirectory,
+                            DialPlanExecutionTransition,
+                            m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                            m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
+                            m_outboundProxy,
                             m_rubyScriptCommonPath);
 
-                        #endregion
-
                         SIPCallManager callManager = new SIPCallManager(
-                            m_sipTransport,
-                            FireSIPMonitorEvent,
-                            m_sipSwitchPersistor.SIPDialoguePersistor,
-                            m_dialPlanEngine,
-                            m_sipSwitchPersistor.LoadDialPlan,
-                            m_sipSwitchPersistor.GetSIPAccount,
-                            m_sipSwitchPersistor.SIPRegistrarBindingPersistor.Get,
-                            m_sipSwitchPersistor.SIPProvidersPersistor.Get,
-                            m_sipSwitchPersistor.SIPDomainManager.GetDomain);
+                             m_sipTransport,
+                             m_outboundProxy,
+                             FireSIPMonitorEvent,
+                             m_sipSorceryPersistor.SIPDialoguePersistor,
+                             m_sipSorceryPersistor.SIPCDRPersistor,
+                             m_dialPlanEngine,
+                             m_sipSorceryPersistor.LoadDialPlan,
+                             m_sipSorceryPersistor.GetSIPAccount,
+                             m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
+                             m_sipSorceryPersistor.SIPProvidersPersistor.Get,
+                             m_sipSorceryPersistor.SIPDomainManager.GetDomain,
+                             m_traceDirectory);
 
                         m_appServerCore = new SIPAppServerCore(
                             m_sipTransport,
-                            (m_registrarSocket != null) ? SIPEndPoint.ParseSIPEndPoint(m_registrarSocket) : null,
-                            (m_registrationAgentSocket != null) ? SIPEndPoint.ParseSIPEndPoint(m_registrationAgentSocket) : null,
-                            m_sipSwitchPersistor.SIPDomainManager.GetDomain,
+                            null,
+                            null,
+                            m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                             FireSIPMonitorEvent,
                             callManager,
-                            sipRequestAuthoriser);
+                            sipRequestAuthoriser,
+                            m_outboundProxy);
                     }
                 }
                 else {
@@ -257,23 +232,24 @@ namespace SIPSorcery.SIPAppServer {
 
                 try {
                     if (m_webServiceEnabled) {
-                        if (m_sipSwitchPersistor == null) {
+                        if (m_sipSorceryPersistor == null) {
                             logger.Warn("Web services could not be started as Persistor object was null.");
                         }
                         else {
                             SIPProvisioningWebService provisioningWebService = new SIPProvisioningWebService() {
-                                SIPAccountPersistor = m_sipSwitchPersistor.SIPAccountsPersistor,
-                                DialPlanPersistor = m_sipSwitchPersistor.SIPDialPlanPersistor,
-                                SIPProviderPersistor = m_sipSwitchPersistor.SIPProvidersPersistor,
-                                SIPProviderBindingsPersistor = m_sipSwitchPersistor.SIPProviderBindingsPersistor,
-                                SIPDomainPersistor = m_sipSwitchPersistor.SIPDomainManager.SIPDomainPersistor,
-                                SIPRegistrarBindingsPersistor = m_sipSwitchPersistor.SIPRegistrarBindingPersistor,
-                                SIPDialoguePersistor = m_sipSwitchPersistor.SIPDialoguePersistor,
-                                SIPCDRPersistor = m_sipSwitchPersistor.SIPCDRPersistor,
+                                SIPAccountPersistor = m_sipSorceryPersistor.SIPAccountsPersistor,
+                                DialPlanPersistor = m_sipSorceryPersistor.SIPDialPlanPersistor,
+                                SIPProviderPersistor = m_sipSorceryPersistor.SIPProvidersPersistor,
+                                SIPProviderBindingsPersistor = m_sipSorceryPersistor.SIPProviderBindingsPersistor,
+                                SIPDomainManager = m_sipSorceryPersistor.SIPDomainManager,
+                                SIPRegistrarBindingsPersistor = m_sipSorceryPersistor.SIPRegistrarBindingPersistor,
+                                SIPDialoguePersistor = m_sipSorceryPersistor.SIPDialoguePersistor,
+                                SIPCDRPersistor = m_sipSorceryPersistor.SIPCDRPersistor,
                                 AuthenticateToken_External = m_customerSessionManager.Authenticate,
                                 AuthenticateWebService_External = m_customerSessionManager.Authenticate,
                                 ExpireToken_External = m_customerSessionManager.ExpireToken,
-                                CRMCustomerPersistor = m_customerPersistor
+                                CRMCustomerPersistor = m_customerSessionManager.CustomerPersistor,
+                                LogDelegate_External = FireSIPMonitorEvent
                             };
 
                             m_sipProvisioningHost = new ServiceHost(provisioningWebService);
@@ -299,6 +275,36 @@ namespace SIPSorcery.SIPAppServer {
             catch (Exception excp) {
                 logger.Error("Exception SIPAppServerDaemon Start. " + excp.Message);
                 throw excp;
+            }
+        }
+
+        public void WriteCDR(SIPCDR cdr) {
+            SIPCDRAsset cdrAsset = new SIPCDRAsset(cdr);
+            if (m_sipSorceryPersistor.SIPCDRPersistor.Count(c => c.Id == cdrAsset.Id) == 1) {
+                m_sipSorceryPersistor.SIPCDRPersistor.Update(cdrAsset);
+            }
+            else {
+                m_sipSorceryPersistor.SIPCDRPersistor.Add(cdrAsset);
+            }
+        }
+
+        private void DialPlanExecutionTransition(Guid dialPlanId, DialPlanExecutionStateEnum executionState) {
+            try {
+                SIPDialPlan dialPlan = m_sipSorceryPersistor.SIPDialPlanPersistor.Get(dialPlanId);
+
+                if (dialPlan != null) {
+                    if (executionState == DialPlanExecutionStateEnum.Starting) {
+                        dialPlan.ExecutionCount = dialPlan.ExecutionCount + 1;
+                    }
+                    else {
+                        dialPlan.ExecutionCount = dialPlan.ExecutionCount - 1;
+                    }
+
+                    m_sipSorceryPersistor.SIPDialPlanPersistor.Update(dialPlan);
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception DialPlanExecutionTransition. " + excp.Message);
             }
         }
 
@@ -337,7 +343,7 @@ namespace SIPSorcery.SIPAppServer {
                     m_sipRegAgentDaemon.Stop();
                 }
 
-                // Shutdown the SIPTransport layers.
+                // Shutdown the SIPTransport layer.
                 m_sipTransport.Shutdown();
 
                 logger.Debug("SIP Application Server stopped.");
@@ -375,6 +381,26 @@ namespace SIPSorcery.SIPAppServer {
         }
 
         private void LogSIPRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest) {
+            string message = "App Svr Received: " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, sipRequest.Header.From.FromURI.User, localSIPEndPoint, endPoint));
+        }
+
+        private void LogSIPRequestOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest) {
+            string message = "App Svr Sent: " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, sipRequest.Header.From.FromURI.User, localSIPEndPoint, endPoint));
+        }
+
+        private void LogSIPResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse) {
+            string message = "App Svr Received: " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, sipResponse.Header.From.FromURI.User, localSIPEndPoint, endPoint));
+        }
+
+        private void LogSIPResponseOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse) {
+            string message = "App Svr Sent: " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, sipResponse.Header.From.FromURI.User, localSIPEndPoint, endPoint));
+        }
+
+       /* private void LogSIPRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest) {
             string message = "App Svr Request Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
             LogSIPMessage(message);
         }
@@ -392,7 +418,7 @@ namespace SIPSorcery.SIPAppServer {
         private void LogSIPResponseOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse) {
             string message = "App Svr Response Sent: " + localSIPEndPoint + "->" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
             LogSIPMessage(message);
-        }
+        }*/
 
         private void LogSIPBadRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, string sipMessage, SIPValidationFieldsEnum errorField) {
             string message = "App Svr Bad Request Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + ", " + errorField;
@@ -406,13 +432,13 @@ namespace SIPSorcery.SIPAppServer {
             LogSIPBadMessage(message, fullMessage);
         }
 
-        private void LogSIPMessage(string message) {
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, null));
-        }
+        //private void LogSIPMessage(string message) {
+        //    FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, null));
+        //}
 
         private void LogSIPBadMessage(string message, string fullTraceMessage) {
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.BadSIPMessage, message, null));
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.FullSIPTrace, fullTraceMessage, null));
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.BadSIPMessage, message, null));
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, fullTraceMessage, null));
         }
 
         private void UnrecognisedMessageReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint fromEndPoint, byte[] buffer) {
@@ -428,7 +454,7 @@ namespace SIPSorcery.SIPAppServer {
                 }
             }
 
-            SIPMonitorEvent unrecgMsgEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.UnrecognisedMessage, "Unrecognised packet received from " + fromEndPoint.ToString() + " on " + localSIPEndPoint.ToString() + ", bytes=" + bufferLength + " " + msg + ".", null);
+            SIPMonitorEvent unrecgMsgEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.UnrecognisedMessage, "Unrecognised packet received from " + fromEndPoint.ToString() + " on " + localSIPEndPoint.ToString() + ", bytes=" + bufferLength + " " + msg + ".", null);
             FireSIPMonitorEvent(unrecgMsgEvent);
         }
 

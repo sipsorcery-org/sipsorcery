@@ -82,24 +82,31 @@ namespace SIPSorcery.SIP.App
 
                     if (sipAccount != null)
                     {
-                        string requestNonce = reqAuthHeader.SIPDigest.Nonce;
-                        string uri = reqAuthHeader.SIPDigest.URI;
-                        string response = reqAuthHeader.SIPDigest.Response;
-
-                        SIPAuthorisationDigest checkAuthReq = reqAuthHeader.SIPDigest;
-                        checkAuthReq.SetCredentials(user, sipAccount.SIPPassword, uri, sipRequest.Method.ToString());
-                        string digest = checkAuthReq.Digest;
-
-                        if (digest == response)
-                        {
-                            // Successfully authenticated
-                            return new SIPRequestAuthorisationResult(true, sipAccount.SIPUsername, sipAccount.SIPDomain);
+                        if (sipAccount.IsDisabled) {
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Authoriser, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " is disabled for." , sipAccount.Owner));
+                            return new SIPRequestAuthorisationResult(SIPResponseStatusCodesEnum.Forbidden, null);
                         }
-                        else
+                        else 
                         {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.DialPlan, "Authentication token check failed for realm=" + realm + ", username=" + user + ", uri=" + uri + ", nonce=" + requestNonce + ", method=" + sipRequest.Method + ".", user));
-                            SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, realm, Crypto.GetRandomInt().ToString());
-                            return new SIPRequestAuthorisationResult(SIPResponseStatusCodesEnum.Unauthorised, authHeader);
+                            string requestNonce = reqAuthHeader.SIPDigest.Nonce;
+                            string uri = reqAuthHeader.SIPDigest.URI;
+                            string response = reqAuthHeader.SIPDigest.Response;
+
+                            SIPAuthorisationDigest checkAuthReq = reqAuthHeader.SIPDigest;
+                            checkAuthReq.SetCredentials(user, sipAccount.SIPPassword, uri, sipRequest.Method.ToString());
+                            string digest = checkAuthReq.Digest;
+
+                            if (digest == response)
+                            {
+                                // Successfully authenticated
+                                return new SIPRequestAuthorisationResult(true, sipAccount.SIPUsername, sipAccount.SIPDomain);
+                            }
+                            else
+                            {
+                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Authoriser, SIPMonitorEventTypesEnum.DialPlan, "Authentication token check failed for realm=" + realm + ", username=" + user + ", uri=" + uri + ", nonce=" + requestNonce + ", method=" + sipRequest.Method + ".", user));
+                                SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, realm, Crypto.GetRandomInt().ToString());
+                                return new SIPRequestAuthorisationResult(SIPResponseStatusCodesEnum.Unauthorised, authHeader);
+                            }
                         }
                     }
                     else

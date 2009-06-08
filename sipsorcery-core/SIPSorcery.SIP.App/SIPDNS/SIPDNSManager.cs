@@ -93,6 +93,8 @@ namespace SIPSorcery.SIP.App
 
         public static SIPEndPoint Resolve(SIPURI sipURI, bool synchronous)
         {
+            //logger.Debug("SIPDNSManager attempting to resolve " + sipURI.ToString() + ".");
+
             SIPDNSLookupResult lookupResult = ResolveSIPService(sipURI, synchronous);
             if (lookupResult.LookupError != null)
             {
@@ -117,8 +119,6 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                SIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS lookup requested for " + sipURI.ToString() + ".", null));
-
                 string host = sipURI.Host;
                 int port = (sipURI.Scheme == SIPSchemesEnum.sip) ? m_defaultSIPPort : m_defaultSIPSPort;
                 bool explicitPort = false;
@@ -142,6 +142,7 @@ namespace SIPSorcery.SIP.App
                 else if (explicitPort)
                 {
                     // Target is a hostname with an explicit port, DNS lookup for A or AAAA record.
+                    SIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS explicit port lookup requested for " + sipURI.ToString() + ".", null));
                     SIPDNSLookupResult sipLookupResult = new SIPDNSLookupResult(sipURI);
                     DNSARecordLookup(host, port, ref sipLookupResult);
                     return sipLookupResult;
@@ -149,6 +150,7 @@ namespace SIPSorcery.SIP.App
                 else
                 {
                     // Target is a hostname with no explicit port, use the whole NAPTR->SRV->A lookup procedure.
+                    SIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS full lookup requested for " + sipURI.ToString() + ".", null));
                     SIPDNSLookupResult sipLookupResult = new SIPDNSLookupResult(sipURI);
                     DNSNAPTRRecordLookup(host, ref sipLookupResult);
                     DNSSRVRecordLookup(sipURI.Scheme, sipURI.Protocol, host, ref sipLookupResult);

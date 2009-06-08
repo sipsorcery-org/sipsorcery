@@ -294,6 +294,11 @@ namespace SIPSorcery.SIP
 
                 public override void Close()
                 { }
+
+                public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCN)
+                {
+                    throw new ApplicationException("This Send method is not available in the MockSIPChannel, please use an alternative overload.");
+                }
             }
             
             private List<LocalSIPSocket> m_sipSockets = new List<LocalSIPSocket>();

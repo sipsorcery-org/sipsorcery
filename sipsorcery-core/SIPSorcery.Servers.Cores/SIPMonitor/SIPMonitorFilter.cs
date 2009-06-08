@@ -70,7 +70,8 @@ namespace SIPSorcery.Servers
 		public const string SERVERTYPE_FILTER_KEY = "server";
         public const string REGEX_FILTER_KEY = "regex";
 
-		public const string EVENTTYPE_FULL_VALUE = "full";
+		public const string EVENTTYPE_FULL_VALUE = "full";                  // Full SIP messages except ones to and from loopback IP's.
+        public const string EVENTTYPE_FULLINTERNAL_VALUE = "fullinternal";  // Full SIP messages including ones between any internal server agents on the loopback IP address.
 		public const string EVENTTYPE_SYSTEM_VALUE = "system";
         public const string EVENTTYPE_TROUBLE_VALUE = "trouble";
     	public const string SIPREQUEST_INVITE_VALUE = "invite";
@@ -173,7 +174,7 @@ namespace SIPSorcery.Servers
 			}
 		}
 
-        public bool ShowEvent(SIPMonitorEventTypesEnum eventType)
+        public bool ShowEvent(SIPMonitorEventTypesEnum eventType, SIPEndPoint serverEndPoint)
 		{
 			if(EventTypeId != 0)
 			{
@@ -188,51 +189,49 @@ namespace SIPSorcery.Servers
 			}
 			else
 			{
-                if (EventFilterDescr == EVENTTYPE_FULL_VALUE && (eventType == SIPMonitorEventTypesEnum.FullSIPTrace || eventType == SIPMonitorEventTypesEnum.BadSIPMessage))
-				{
-					return true;
-				}
-				else if(EventFilterDescr == EVENTTYPE_SYSTEM_VALUE)
-				{
-					// Assume EVENTTYPE_ALL_VALUE.
+                if (EventFilterDescr == EVENTTYPE_FULLINTERNAL_VALUE && (eventType == SIPMonitorEventTypesEnum.FullSIPTrace || eventType == SIPMonitorEventTypesEnum.BadSIPMessage)) {
+                    return true;
+                }
+                else if (EventFilterDescr == EVENTTYPE_FULL_VALUE && (eventType == SIPMonitorEventTypesEnum.FullSIPTrace || eventType == SIPMonitorEventTypesEnum.BadSIPMessage)) {
+                    if (serverEndPoint != null && serverEndPoint.SocketEndPoint.Address.ToString() == "127.0.0.1") {
+                        return false;
+                    }
+                    else {
+                        return true;
+                    }
+                }
+                else if (EventFilterDescr == EVENTTYPE_SYSTEM_VALUE) {
+                    // Assume EVENTTYPE_ALL_VALUE.
                     if (eventType == SIPMonitorEventTypesEnum.Monitor ||
                         eventType == SIPMonitorEventTypesEnum.HealthCheck ||
                         eventType == SIPMonitorEventTypesEnum.ParseSIPMessage ||
-                        eventType == SIPMonitorEventTypesEnum.SIPMessageArrivalStats)
-					{
-						return true;
-					}
-					else
-					{
-						return false;
-					}
-				}
-                else if (EventFilterDescr == EVENTTYPE_TROUBLE_VALUE)
-                {
-                    // Assume EVENTTYPE_ALL_VALUE.
-                    if (eventType == SIPMonitorEventTypesEnum.Error ||
-                        eventType == SIPMonitorEventTypesEnum.Warn ||
-                        eventType == SIPMonitorEventTypesEnum.BadSIPMessage)
-                    {
+                        eventType == SIPMonitorEventTypesEnum.SIPMessageArrivalStats) {
                         return true;
                     }
-                    else
-                    {
+                    else {
                         return false;
                     }
                 }
-				else
-				{
-					// Assume EVENTTYPE_ALL_VALUE if nothing has been specified by the user, however do not display the full SIP trace messages.
-                    if (EventFilterDescr == WILDCARD && eventType != SIPMonitorEventTypesEnum.FullSIPTrace && eventType != SIPMonitorEventTypesEnum.UserSpecificSIPTrace)
-					{
-						return true;
-					}
-					else
-					{
-						return false;
-					}
-				}
+                else if (EventFilterDescr == EVENTTYPE_TROUBLE_VALUE) {
+                    // Assume EVENTTYPE_ALL_VALUE.
+                    if (eventType == SIPMonitorEventTypesEnum.Error ||
+                        eventType == SIPMonitorEventTypesEnum.Warn ||
+                        eventType == SIPMonitorEventTypesEnum.BadSIPMessage) {
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
+                }
+                else {
+                    // Assume EVENTTYPE_ALL_VALUE if nothing has been specified by the user, however do not display the full SIP trace messages.
+                    if (EventFilterDescr == WILDCARD && eventType != SIPMonitorEventTypesEnum.FullSIPTrace && eventType != SIPMonitorEventTypesEnum.UserSpecificSIPTrace) {
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
+                }
 			}
 		}
 
@@ -359,52 +358,41 @@ namespace SIPSorcery.Servers
         /// <returns></returns>
         public bool ShowSIPMonitorEvent(SIPMonitorEvent proxyEvent)
         {
-            string serverAddress = (proxyEvent.ServerEndPoint != null) ? proxyEvent.ServerEndPoint.Address.ToString() : null;
-            string remoteIPAddress = (proxyEvent.RemoteEndPoint != null) ? proxyEvent.RemoteEndPoint.Address.ToString() : null;
-            string dstIPAddress = (proxyEvent.DestinationEndPoint != null) ? proxyEvent.DestinationEndPoint.Address.ToString() : null;
+            string serverAddress = (proxyEvent.ServerEndPoint != null) ? proxyEvent.ServerEndPoint.SocketEndPoint.Address.ToString() : null;
+            string remoteIPAddress = (proxyEvent.RemoteEndPoint != null) ? proxyEvent.RemoteEndPoint.SocketEndPoint.Address.ToString() : null;
+            string dstIPAddress = (proxyEvent.DestinationEndPoint != null) ? proxyEvent.DestinationEndPoint.SocketEndPoint.Address.ToString() : null;
             SIPMethodsEnum sipMethod = SIPMethodsEnum.NONE;
 
-            // If filtering is required on the SIP method then the message needs to be parsed.
             if (SIPRequestFilter != WILDCARD && proxyEvent.Message != null && proxyEvent.EventType == SIPMonitorEventTypesEnum.FullSIPTrace)
             {
-                /*SIPMessage sipMessage = SIPMessage.ParseSIPMessage(proxyEvent.Message, null, null);
-                if (sipMessage != null)
+                if(ShowEvent(proxyEvent.EventType, proxyEvent.ServerEndPoint))
                 {
-                    if (sipMessage.SIPMessageType == SIPMessageTypesEnum.Request)
+                    if (SIPRequestFilter == SIPREQUEST_INVITE_VALUE)
                     {
-                        proxyEvent.SIPRequestForEvent = BlueFace.VoIP.Net.SIP.SIPRequest.ParseSIPRequest(sipMessage);
-                        sipMethod = proxyEvent.SIPRequestForEvent.Method;
-                    }
-                    else
-                    {
-                        proxyEvent.SIPResponseForEvent = SIPResponse.ParseSIPResponse(sipMessage);
-                        sipMethod = proxyEvent.SIPResponseForEvent.Header.CSeqMethod;
-                    }
-                }*/
-
-                if (SIPRequestFilter == SIPREQUEST_INVITE_VALUE)
-                {
-                    // Do a regex to pick out ACK's, BYE's , CANCEL's and INVITES.
-                    if (Regex.Match(proxyEvent.Message, "(ACK|BYE|CANCEL|INVITE).+?sip:", RegexOptions.IgnoreCase).Success ||
-                        Regex.Match(proxyEvent.Message, @"CSeq.+?(ACK|BYE|CANCEL|INVITE)(\r|\n)", RegexOptions.IgnoreCase).Success)
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        string reqPattern = SIPRequestFilter + ".+?sip(\r|\n)";
-                        string respPattern = "CSeq.+?" + SIPRequestFilter;
-
-                        if (Regex.Match(proxyEvent.Message, reqPattern, RegexOptions.IgnoreCase).Success ||
-                       Regex.Match(proxyEvent.Message, respPattern, RegexOptions.IgnoreCase).Success)
+                        // Do a regex to pick out ACK's, BYE's , CANCEL's and INVITES.
+                        if (Regex.Match(proxyEvent.Message, "(ACK|BYE|CANCEL|INVITE) +?sips?:", RegexOptions.IgnoreCase).Success ||
+                            Regex.Match(proxyEvent.Message, @"CSeq: \d+ (ACK|BYE|CANCEL|INVITE)(\r|\n)", RegexOptions.IgnoreCase).Success)
                         {
-                            return true;
+                            return ShowRegex(proxyEvent.Message);
+                        }
+                        else
+                        {
+                            string reqPattern = SIPRequestFilter + " +?sips?:";
+                            string respPattern = @"CSeq: \d+ " + SIPRequestFilter;
+
+                            if (Regex.Match(proxyEvent.Message, reqPattern, RegexOptions.IgnoreCase).Success ||
+                                Regex.Match(proxyEvent.Message, respPattern, RegexOptions.IgnoreCase).Success)
+                            {
+                                return ShowRegex(proxyEvent.Message);
+                            }
                         }
                     }
+
+                    return false;
                 }
             }
 
-            if (ShowEvent(proxyEvent.EventType) && ShowServer(proxyEvent.ServerType))
+            if (ShowEvent(proxyEvent.EventType, proxyEvent.ServerEndPoint) && ShowServer(proxyEvent.ServerType))
             {
                 if (IPAddress != WILDCARD)
                 {

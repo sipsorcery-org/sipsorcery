@@ -109,6 +109,10 @@
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="UserInterface\CreateAccountControl.xaml">
+      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UserInterface\LoginControl.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
@@ -170,6 +174,9 @@
     <Compile Include="UserInterface\CityLightsDisplay.xaml.cs">
       <DependentUpon>CityLightsDisplay.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UserInterface\CreateAccountControl.xaml.cs">
+      <DependentUpon>CreateAccountControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserInterface\LoginControl.xaml.cs">
       <DependentUpon>LoginControl.xaml</DependentUpon>
     </Compile>
@@ -187,6 +194,7 @@
     </Compile>
     <None Include="Properties\AppManifest.xml" />
     <None Include="Service References\SIPSorceryProvisioningClient\provisioning.xsd" />
+    <Resource Include="Images\small_logo.png" />
     <Resource Include="Images\wizard-1.png" />
     <Resource Include="Images\wizard-2.png" />
   </ItemGroup>

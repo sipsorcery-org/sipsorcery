@@ -67,6 +67,7 @@
     <Compile Include="ApplicationException.cs" />
     <Compile Include="AppState.cs" />
     <Compile Include="Crypto\Md5.cs" />
+    <Compile Include="DummyDBLinqAttributes.cs" />
     <Compile Include="ILog.cs" />
     <Compile Include="Net\DNS\DNSManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

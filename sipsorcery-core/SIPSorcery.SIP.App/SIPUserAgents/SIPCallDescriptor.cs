@@ -38,14 +38,28 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
 {
-    public struct SIPCallDescriptor
+    public enum SIPCallRedirectModesEnum
     {
+        None = 0,
+        Add = 1,
+        Replace = 2,
+    }
+
+    public class SIPCallDescriptor
+    {
+        public const string DELAY_CALL_OPTION_KEY = "dt";       // Dial string option to delay the start of a call leg.
+        public const string REDIRECT_MODE_OPTION_KEY = "rm";    // Dial string option to set the redirect mode of a call leg. Redirect mode refers to how 3xx responses to a call are handled.
+        public const string CALL_DURATION_OPTION_KEY = "at";    // Dial string option used to set the maximum duration of a call in seconds.
+
         private readonly static string m_defaultFromURI = SIPConstants.SIP_DEFAULT_FROMURI;
         
-        public static SIPCallDescriptor Empty = new SIPCallDescriptor(null, null, null, null, null, null, null, null, SIPCallDirection.None, null, null);
+        //public static SIPCallDescriptor Empty = new SIPCallDescriptor(null, null, null, null, null, null, null, null, SIPCallDirection.None, null, null);
 
         public string Username;                 // The username that will be used in the From header and to authenticate the call unless overridden by AuthUsername.
         public string AuthUsername;             // The username that will be used from authentication. Optional setting only needed if the From header user needs to be different from the digest username.
@@ -55,11 +69,27 @@ namespace SIPSorcery.SIP.App
         public string To;                       // A string representing the To header to be set for the call.  
         public string RouteSet;                 // A route set for the forwarded call request. If there is only a single route or IP socket it will be treated like an Outbound Proxy (i.e. no Route header will be added).
         public string CustomHeaders;            // An optional list of custom SIP headers that will be added to the INVITE request.
-        public SIPCallDirection CallDirection;  // Inidcates whether the call is incoming out outgoing relative to this server. An outgoing call is one that is placed by a user the server authenticates.
+        public SIPCallDirection CallDirection;  // Indicates whether the call is incoming out outgoing relative to this server. An outgoing call is one that is placed by a user the server authenticates.
         public string ContentType;
         public string Content;
+        public int DelaySeconds;                        // An amount in seconds to delay the intiation of this call when used as part of a dial string.
+        public SIPCallRedirectModesEnum RedirectMode;   // Determines how the call will handle 3xx redirect responses.
+        public int CallDurationLimit;                   // If non-zero sets a limit on the duration of any call created with this descriptor.
 
-        public SIPCallDescriptor(string username, string password, string uri, string from, string to, string routeSet, string customHeaders, string authUsername, SIPCallDirection callDirection, string contentType, string content)
+        public ManualResetEvent DelayMRE;       // If the call needs to be delayed DelaySeconds this MRE will be used.
+
+        public SIPCallDescriptor(
+            string username, 
+            string password, 
+            string uri, 
+            string from, 
+            string to, 
+            string routeSet, 
+            string customHeaders, 
+            string authUsername, 
+            SIPCallDirection callDirection, 
+            string contentType, 
+            string content)
         {
             Username = username;            
             Password = password;            
@@ -74,6 +104,44 @@ namespace SIPSorcery.SIP.App
             Content = content;
         }
 
+        public void ParseCallOptions(string options)
+        {
+            if (!options.IsNullOrBlank())
+            {
+                options = options.Trim('[', ']');
+
+                // Parse delay time option.
+                Match delayCallMatch = Regex.Match(options, DELAY_CALL_OPTION_KEY + @"=(?<delaytime>\d+)");
+                if (delayCallMatch.Success)
+                {
+                    Int32.TryParse(delayCallMatch.Result("${delaytime}"), out DelaySeconds);
+                }
+
+                // Parse redirect mode option.
+                Match redirectModeMatch = Regex.Match(options, REDIRECT_MODE_OPTION_KEY + @"=(?<redirectmode>\w)");
+                if (redirectModeMatch.Success)
+                {
+                    string redirectMode = redirectModeMatch.Result("${redirectmode}");
+                    if (redirectMode == "a" || redirectMode == "A")
+                    {
+                        RedirectMode = SIPCallRedirectModesEnum.Add;
+                    }
+                    else if (redirectMode == "r" || redirectMode == "R")
+                    {
+                        RedirectMode = SIPCallRedirectModesEnum.Replace;
+                    }
+                }
+
+                // Parse call duration limit option.
+                Match callDurationMatch = Regex.Match(options, CALL_DURATION_OPTION_KEY + @"=(?<callduration>\d+)");
+                if (callDurationMatch.Success)
+                {
+                    Int32.TryParse(callDurationMatch.Result("${callduration}"), out CallDurationLimit);
+                }
+            }
+        }
+
+        /*
         public override bool Equals(object obj)
         {
             return base.Equals(obj);
@@ -91,7 +159,8 @@ namespace SIPSorcery.SIP.App
                 x.AuthUsername == y.AuthUsername && 
                 x.CallDirection == y.CallDirection &&
                 x.ContentType == y.ContentType &&
-                x.Content == y.Content)
+                x.Content == y.Content &&
+                x.DelaySeconds == y.DelaySeconds)
             {
                 return true;
             }
@@ -110,5 +179,6 @@ namespace SIPSorcery.SIP.App
         {
             return base.GetHashCode();
         }
+         */
     }
 }

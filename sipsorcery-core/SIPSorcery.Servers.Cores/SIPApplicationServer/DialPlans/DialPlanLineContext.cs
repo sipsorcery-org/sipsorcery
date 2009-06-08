@@ -17,8 +17,16 @@ namespace SIPSorcery.Servers
 
         private List<DialPlanCommand> m_commands = new List<DialPlanCommand>();
 
-        public DialPlanLineContext(SIPDialPlan dialPlan, List<SIPProvider> sipProviders) 
-             : base(dialPlan, sipProviders)
+        public DialPlanLineContext(
+            SIPMonitorLogDelegate monitorLogDelegate,
+            SIPTransport sipTransport,
+            DialogueBridgeCreatedDelegate createBridge,
+            SIPEndPoint outboundProxy,
+            UASInviteTransaction clientTransaction,
+            SIPDialPlan dialPlan,
+            List<SIPProvider> sipProviders,
+            string traceDirectory)
+            : base(monitorLogDelegate, sipTransport, createBridge, outboundProxy, clientTransaction, dialPlan, sipProviders, traceDirectory)
          {
              ContextType = DialPlanContextsEnum.Line;
              string[] dialPlanEntries = dialPlan.DialPlanScript.Split(new char[] { '\n' });

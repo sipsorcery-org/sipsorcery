@@ -67,7 +67,10 @@ namespace SIPSorcery.SIP.App
     {
         public const string XML_DOCUMENT_ELEMENT_NAME = "sipdialplans";
         public const string XML_ELEMENT_NAME = "sipdialplan";
-        public const string DEFAULT_DIALPLAN_NAME = "default";     // The default name a dialplan will be assigned if the owner's first dialplan and the name is not set.
+        public const string DEFAULT_DIALPLAN_NAME = "default";      // The default name a dialplan will be assigned if the owner's first dialplan and the name is not set.
+        public const int DEFAULT_MAXIMUM_EXECUTION_COUNT = 3;       // The default value for the maximum allowed simultaneous executions of a dial plan.
+
+        private static string m_newLine = AppState.NewLine;
 
         private ILog logger = AppState.logger;
 
@@ -172,6 +175,27 @@ namespace SIPSorcery.SIP.App
             set { m_inserted = value; }
         }
 
+        [Column(Storage = "_maxexecutioncount", Name = "maxexecutioncount", DbType = "integer", CanBeNull = false)]
+        public int MaxExecutionCount
+        {
+            get { return DEFAULT_MAXIMUM_EXECUTION_COUNT; }
+            set { }  // By design can't be modified through the UI at this point.
+        }
+
+        private int m_executionCount;
+        [Column(Storage = "_executioncount", Name = "executioncount", DbType = "integer", CanBeNull = false)]
+        public int ExecutionCount
+        {
+            get { return m_executionCount; }
+            set { m_executionCount = value; }
+        }
+
+        public object OrderProperty
+        {
+            get { return DialPlanName; }
+            set { }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public SIPDialPlan() { }
@@ -198,10 +222,13 @@ namespace SIPSorcery.SIP.App
             try {
                 m_id = (dialPlanRow.Table.Columns.Contains("id") && dialPlanRow["id"] != null) ? dialPlanRow["id"] as string : Guid.NewGuid().ToString();
                 m_owner = dialPlanRow["owner"] as string;
+                AdminMemberId = (dialPlanRow.Table.Columns.Contains("adminmemberid") && dialPlanRow["adminmemberid"] != null) ? dialPlanRow["adminmemberid"] as string : null;
                 m_dialPlanName = (dialPlanRow["dialplanname"] != null && dialPlanRow["dialplanname"].ToString().Trim().Length > 0) ? dialPlanRow["dialplanname"].ToString().Trim() : null;
                 m_traceEmailAddress = (dialPlanRow.Table.Columns.Contains("traceemailaddress") && dialPlanRow["traceemailaddress"] != null) ? dialPlanRow["traceemailaddress"] as string : null;
                 m_dialPlanScript = (dialPlanRow["dialplanscript"] as string).Trim();
                 m_scriptTypeDescription = (dialPlanRow.Table.Columns.Contains("scripttype") && dialPlanRow["scripttype"] != null) ? SIPDialPlanScriptTypes.GetSIPDialPlanScriptType(dialPlanRow["scripttype"] as string).ToString() : SIPDialPlanScriptTypesEnum.Ruby.ToString();
+                //MaxExecutionCount = DEFAULT_MAXIMUM_EXECUTION_COUNT; //(dialPlanRow.Table.Columns.Contains("maxexecutioncount") && dialPlanRow["maxexecutioncount"] != null) ? Convert.ToInt32(dialPlanRow["maxexecutioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
+                m_executionCount = (dialPlanRow.Table.Columns.Contains("executioncount") && dialPlanRow["executioncount"] != null) ? Convert.ToInt32(dialPlanRow["executioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
             }
             catch (Exception excp) {
                 logger.Error("Exception DialPlan Load. " + excp);
@@ -214,12 +241,18 @@ namespace SIPSorcery.SIP.App
         }
 
 #endif
+
+        public object GetOrderProperty()
+        {
+            return DialPlanName;
+        }
+
         public string ToXML()
         {
             string dialPlanXML =
-                "  <dialplan>\r\n" +
+                "  <" + XML_ELEMENT_NAME + ">" + m_newLine +
                ToXMLNoParent() +
-                "  </dialplan>\r\n";
+                "  </" + XML_ELEMENT_NAME + ">" + m_newLine;
 
             return dialPlanXML;
         }
@@ -227,12 +260,15 @@ namespace SIPSorcery.SIP.App
         public string ToXMLNoParent()
         {
             string dialPlanXML =
-                "    <id>" + m_id + "</id>\r\n" +
-                "    <owner>" + m_owner + "</owner>\r\n" +
-                "    <dialplanname>" + m_dialPlanName + "</dialplanname>\r\n" +
-                "    <traceemailaddress>" + m_traceEmailAddress + "</traceemailaddress>\r\n" +
-                "    <dialplanscript><![CDATA[" + m_dialPlanScript + "]]></dialplanscript>\r\n" +
-                "    <scripttype>" + m_scriptTypeDescription + "</scripttype>\r\n";
+                "    <id>" + m_id + "</id>" + m_newLine +
+                "    <owner>" + m_owner + "</owner>" + m_newLine +
+                "    <adminmemberid>" + AdminMemberId + "</adminmemberid>" + m_newLine +
+                "    <dialplanname>" + m_dialPlanName + "</dialplanname>" + m_newLine +
+                "    <traceemailaddress>" + m_traceEmailAddress + "</traceemailaddress>" + m_newLine +
+                "    <dialplanscript><![CDATA[" + m_dialPlanScript + "]]></dialplanscript>" + m_newLine +
+                "    <scripttype>" + m_scriptTypeDescription + "</scripttype>" + m_newLine +
+                "    <maxexecutioncount>" + MaxExecutionCount + "</maxexecutioncount>" + m_newLine +
+                "    <executioncount>" + m_executionCount + "</executioncount>" + m_newLine;
 
             return dialPlanXML;
         }

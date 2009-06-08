@@ -64,25 +64,30 @@ namespace SIPSorcery.SIP.App
         public AuthenticateCustomerDelegate AuthenticateWebService_External;
         public AuthenticateTokenDelegate AuthenticateToken_External;
         public ExpireTokenDelegate ExpireToken_External;
+        public SIPMonitorLogDelegate LogDelegate_External; 
 
         public SIPAssetPersistor<SIPAccount> SIPAccountPersistor;
         public SIPAssetPersistor<SIPDialPlan> DialPlanPersistor;
         public SIPAssetPersistor<SIPProvider> SIPProviderPersistor;
         public SIPAssetPersistor<SIPProviderBinding> SIPProviderBindingsPersistor;
-        public SIPAssetPersistor<SIPDomain> SIPDomainPersistor;
         public SIPAssetPersistor<SIPRegistrarBinding> SIPRegistrarBindingsPersistor;
         public SIPAssetPersistor<SIPDialogueAsset> SIPDialoguePersistor;
         public SIPAssetPersistor<SIPCDRAsset> SIPCDRPersistor;
         public SIPAssetPersistor<Customer> CRMCustomerPersistor;
+        public SIPDomainManager SIPDomainManager;
 
         public SIPProvisioningWebService()
         {}
 
-        private CustomerSession AuthoriseRequest()
+        private string GetAuthId() {
+            return OperationContext.Current.IncomingMessageHeaders.GetHeader<string>(AUTH_TOKEN_KEY, "");
+        }
+
+        private Customer AuthoriseRequest()
         {
             try
             {
-                string authId = OperationContext.Current.IncomingMessageHeaders.GetHeader<string>(AUTH_TOKEN_KEY, "");
+                string authId = GetAuthId();
                 //logger.Debug("Authorising request for sessionid=" + authId + ".");
 
                 if (authId != null)
@@ -95,7 +100,8 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        return customerSession;
+                        Customer customer = CRMCustomerPersistor.Get(c => c.CustomerUsername == customerSession.CustomerUsername);
+                        return customer;
                     }
                 }
                 else
@@ -154,6 +160,71 @@ namespace SIPSorcery.SIP.App
         }
 
         [OperationContract]
+        public void CreateCustomer(Customer customer) {
+            try {
+                // Check whether the username is already taken.
+                Customer existingCustomer = CRMCustomerPersistor.Get(c => c.CustomerUsername.ToLower() == customer.CustomerUsername.ToLower());
+                if (existingCustomer != null) {
+                    throw new ApplicationException("The requested username is already in use please try a different one.");
+                }
+
+                CRMCustomerPersistor.Add(customer);
+                logger.Debug("New customer record added for " + customer.CustomerUsername + ".");
+
+                // Create a default dialplan.
+                SIPDialPlan defaultDialPlan = new SIPDialPlan(customer.CustomerUsername, "default", null, "sys.Log(\"hello world\")\n", SIPDialPlanScriptTypesEnum.Ruby);
+                DialPlanPersistor.Add(defaultDialPlan);
+                logger.Debug("Default dialplan added for " + customer.CustomerUsername + ".");
+
+                // Get default domain name.
+                string defaultDomain = SIPDomainManager.GetDomain("local");
+
+                // Create SIP account.
+                if (SIPAccountPersistor.Get(s => s.SIPUsername == customer.CustomerUsername && s.SIPDomain == defaultDomain) == null) {
+                    SIPAccount sipAccount = new SIPAccount(customer.CustomerUsername, defaultDomain, customer.CustomerUsername, customer.CustomerPassword, "default");
+                    SIPAccountPersistor.Add(sipAccount);
+                    logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");
+                }
+                else {
+                    int attempts = 0;
+                    while (attempts < 10) {
+                        string testUsername = customer.CustomerUsername + Crypto.GetRandomString(4);
+                        if (SIPAccountPersistor.Get(s => s.SIPUsername == testUsername && s.SIPDomain == defaultDomain) == null) {
+                            SIPAccount sipAccount = new SIPAccount(customer.CustomerUsername, defaultDomain, testUsername, customer.CustomerPassword, "default");
+                            SIPAccountPersistor.Add(sipAccount);
+                            logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");
+                            break;
+                        }
+                        else {
+                            attempts++;
+                        }
+                    }
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception CreateNewCustomer. " + excp.Message);
+                throw;
+            }
+        }
+
+        [OperationContract]
+        public void DeleteCustomer(string customerUsername) {
+            try {
+                Customer customer = AuthoriseRequest();
+                if (customer != null && customer.CustomerUsername == customerUsername) {
+                    CRMCustomerPersistor.Delete(customer);
+                    logger.Debug("Customer account " + customer.CustomerUsername + " successfully deleted.");
+                }
+                else {
+                    logger.Warn("Unauthorised attempt to delete customer " + customerUsername + ".");
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception DeleteCustomer. " + excp.Message);
+            }
+        }
+
+        [OperationContract]
         public string Login(string username, string password)
         {
             logger.Debug("SIPProvisioningWebService Login called for " + username + ".");
@@ -164,10 +235,19 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                CustomerSession customerSession = AuthenticateWebService_External(username, password);
+                string ipAddress = null;
+                OperationContext context = OperationContext.Current; 
+                MessageProperties properties = context.IncomingMessageProperties; 
+                RemoteEndpointMessageProperty endpoint = properties[RemoteEndpointMessageProperty.Name] as RemoteEndpointMessageProperty; 
+                if (endpoint != null) 
+                { 
+                    ipAddress = endpoint.Address; 
+                }
+
+                CustomerSession customerSession = AuthenticateWebService_External(username, password, ipAddress);
                 if (customerSession != null)
                 {
-                    return customerSession.SessionId.ToString();
+                    return customerSession.Id;
                 }
                 else
                 {
@@ -181,15 +261,18 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                CustomerSession customerSession = AuthoriseRequest();
-                Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+                Customer customer = AuthoriseRequest();
+                
                 logger.Debug("SIPProvisioningWebService Logout called for " + customer.CustomerUsername + ".");
-                ExpireToken_External(customerSession.SessionId.ToString());
+                ExpireToken_External(GetAuthId());
+
+                // Fire a machine log event to disconnect the silverlight tcp socket.
+                LogDelegate_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.Logout, customer.CustomerUsername, null, null));
             }
             catch (UnauthorizedAccessException)
             {
-                // This exception will occur if the SIP Server agent is restarted and the client sends a previosly valid token.
-                logger.Debug("An unauthorised exception was thrown in logout.");
+                // This exception will occur if the SIP Server agent is restarted and the client sends a previously valid token.
+                //logger.Debug("An unauthorised exception was thrown in logout.");
             }
             catch (Exception excp)
             {
@@ -200,25 +283,23 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public List<SIPDomain> GetSIPDomains(string filterExpression, int offset, int count)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
 
             if (customer == null) {
                 throw new ArgumentNullException("customer", "The customer cannot be empty when building authorised where expression.");
             }
             else {
-                string authoriseExpression = "owner =\"" + customer.CustomerUsername + "\"";
-                logger.Debug("SIPProvisioningWebService GetSIPDomains called for " + customer.CustomerUsername + " and where: " + authoriseExpression + ".");
-
-                return SIPDomainPersistor.Get(DynamicExpression.ParseLambda<SIPDomain, bool>(authoriseExpression), offset, count);
+                string authoriseExpression = "owner =\"" + customer.CustomerUsername + "\" or owner = null";
+                //logger.Debug("SIPProvisioningWebService GetSIPDomains called for " + customer.CustomerUsername + " and where: " + authoriseExpression + ".");
+                return SIPDomainManager.Get(DynamicExpression.ParseLambda<SIPDomain, bool>(authoriseExpression), offset, count);
             }
         }
 
         [OperationContract]
         public int GetSIPAccountsCount(string whereExpression)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
+
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             //logger.Debug("SIPProvisioningWebService GetSIPAccountsCount called for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
@@ -228,19 +309,18 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public List<SIPAccount> GetSIPAccounts(string whereExpression, int offset, int count)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
+
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             //logger.Debug("SIPProvisioningWebService GetSIPAccountscalled for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
-            return SIPAccountPersistor.Get(DynamicExpression.ParseLambda<SIPAccount, bool>(authoriseExpression), offset, count);
+            return SIPAccountPersistor.Get(DynamicExpression.ParseLambda<SIPAccount, bool>(authoriseExpression), "sipusername", offset, count);
         }
         
         [OperationContract]
         public SIPAccount AddSIPAccount(SIPAccount sipAccount)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
             sipAccount.Owner = customer.CustomerUsername;
 
             return SIPAccountPersistor.Add(sipAccount);
@@ -249,13 +329,12 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public SIPAccount UpdateSIPAccount(SIPAccount sipAccount)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
 
             if (sipAccount.Owner != customer.CustomerUsername)
             {
                 logger.Debug("Unauthorised attempt to update SIP account by user=" + customer.CustomerUsername + ", on account owned by=" + sipAccount.Owner + ".");
-                throw new UnauthorizedAccessException("You are not authorised to update the SIP Account.");
+                throw new ApplicationException("You are not authorised to update the SIP Account.");
             }
 
             return SIPAccountPersistor.Update(sipAccount);
@@ -264,12 +343,11 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public SIPAccount DeleteSIPAccount(SIPAccount sipAccount)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
 
             if (sipAccount.Owner != customer.CustomerUsername)
             {
-                throw new UnauthorizedAccessException("You are not authorised to delete the SIP Account.");
+                throw new ApplicationException("You are not authorised to delete the SIP Account.");
             }
 
             SIPAccountPersistor.Delete(sipAccount);
@@ -281,8 +359,7 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public int GetSIPRegistrarBindingsCount(string whereExpression)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             //logger.Debug("SIPProvisioningWebService GetSIPRegistrarBindingsCount for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
@@ -292,19 +369,17 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public List<SIPRegistrarBinding> GetSIPRegistrarBindings(string whereExpression, int offset, int count)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             //logger.Debug("SIPProvisioningWebService GetSIPRegistrarBindings for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
-            return SIPRegistrarBindingsPersistor.Get(DynamicExpression.ParseLambda<SIPRegistrarBinding, bool>(authoriseExpression), offset, count);
+            return SIPRegistrarBindingsPersistor.Get(DynamicExpression.ParseLambda<SIPRegistrarBinding, bool>(authoriseExpression), "lastupdate", offset, count);
         }
 
         [OperationContract]
         public int GetSIPProvidersCount(string whereExpression)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             //logger.Debug("SIPProvisioningWebService GetSIPProvidersCount for " + customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
@@ -314,19 +389,17 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public List<SIPProvider> GetSIPProviders(string whereExpression, int offset, int count)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             
             //logger.Debug("SIPProvisioningWebService GetSIPProviders for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
-            return SIPProviderPersistor.Get(DynamicExpression.ParseLambda<SIPProvider, bool>(authoriseExpression), offset, count);
+            return SIPProviderPersistor.Get(DynamicExpression.ParseLambda<SIPProvider, bool>(authoriseExpression), "providername", offset, count);
         }
 
         [OperationContract]
         public SIPProvider AddSIPProvider(SIPProvider sipProvider)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
             sipProvider.Owner = customer.CustomerUsername;
 
             //logger.Debug("AddSIPProvider, owner=" + sipProvider.Owner + ", providername=" + sipProvider.ProviderName + ".");
@@ -336,12 +409,11 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public SIPProvider UpdateSIPProvider(SIPProvider sipProvider)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
 
             if (sipProvider.Owner != customer.CustomerUsername)
             {
-                throw new UnauthorizedAccessException("You are not authorised to update the SIP Provider.");
+                throw new ApplicationException("You are not authorised to update the SIP Provider.");
             }
 
             //logger.Debug("UpdateSIPProvider, owner=" + sipProvider.Owner + ", providername=" + sipProvider.ProviderName + ".");
@@ -354,12 +426,11 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public SIPProvider DeleteSIPProvider(SIPProvider sipProvider)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
 
             if (sipProvider.Owner != customer.CustomerUsername)
             {
-                throw new UnauthorizedAccessException("You are not authorised to delete the SIP Provider.");
+                throw new ApplicationException("You are not authorised to delete the SIP Provider.");
             }
 
             //logger.Debug("DeleteSIPProvider, owner=" + sipProvider.Owner + ", providername=" + sipProvider.ProviderName + ".");
@@ -370,9 +441,8 @@ namespace SIPSorcery.SIP.App
         }
 
         [OperationContract]
-        public int GetSIPProviderBindingsCount(string whereExpression) {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+        public int GetSIPProviderBindingsCount(string whereExpression){
+            Customer customer = AuthoriseRequest();
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
  
             return SIPProviderBindingsPersistor.Count(DynamicExpression.ParseLambda<SIPProviderBinding, bool>(authoriseExpression));
@@ -380,18 +450,16 @@ namespace SIPSorcery.SIP.App
 
         [OperationContract]
         public List<SIPProviderBinding> GetSIPProviderBindings(string whereExpression, int offset, int count) {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
 
-            return SIPProviderBindingsPersistor.Get(DynamicExpression.ParseLambda<SIPProviderBinding, bool>(authoriseExpression), offset, count);
+            return SIPProviderBindingsPersistor.Get(DynamicExpression.ParseLambda<SIPProviderBinding, bool>(authoriseExpression), "lastregisterattempt", offset, count);
         }
 
         [OperationContract]
         public int GetDialPlansCount(string whereExpression)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             //logger.Debug("SIPProvisioningWebService GetDialPlansCount for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
@@ -401,19 +469,17 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public List<SIPDialPlan> GetDialPlans(string whereExpression, int offset, int count)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             //logger.Debug("SIPProvisioningWebService GetDialPlans for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
-            return DialPlanPersistor.Get(DynamicExpression.ParseLambda<SIPDialPlan, bool>(authoriseExpression), offset, count);
+            return DialPlanPersistor.Get(DynamicExpression.ParseLambda<SIPDialPlan, bool>(authoriseExpression), "dialplanname", offset, count);
         }
 
         [OperationContract]
         public SIPDialPlan AddDialPlan(SIPDialPlan dialPlan)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
 
             dialPlan.Owner = customer.CustomerUsername;
 
@@ -423,12 +489,11 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public SIPDialPlan UpdateDialPlan(SIPDialPlan dialPlan)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
 
             if (dialPlan.Owner != customer.CustomerUsername)
             {
-                throw new UnauthorizedAccessException("You are not authorised to update the Dial Plan.");
+                throw new ApplicationException("You are not authorised to update the Dial Plan.");
             }
 
             return DialPlanPersistor.Update(dialPlan);
@@ -437,12 +502,11 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public SIPDialPlan DeleteDialPlan(SIPDialPlan dialPlan)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
 
             if (dialPlan.Owner != customer.CustomerUsername)
             {
-                throw new UnauthorizedAccessException("You are not authorised to delete the Dial Plan.");
+                throw new ApplicationException("You are not authorised to delete the Dial Plan.");
             }
 
             DialPlanPersistor.Delete(dialPlan);
@@ -454,8 +518,7 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public int GetCallsCount(string whereExpression)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
 
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             //logger.Debug("SIPProvisioningWebService GetCallsCount for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
@@ -466,20 +529,18 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public List<SIPDialogueAsset> GetCalls(string whereExpression, int offset, int count)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
 
-            string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
+            string authorisedExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             //logger.Debug("SIPProvisioningWebService GetCalls for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
-            return SIPDialoguePersistor.Get(DynamicExpression.ParseLambda<SIPDialogueAsset, bool>(authoriseExpression), offset, count);
+            return SIPDialoguePersistor.Get(DynamicExpression.ParseLambda<SIPDialogueAsset, bool>(authorisedExpression), null, offset, count);
         }
 
         [OperationContract]
         public int GetCDRsCount(string whereExpression)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
 
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             //logger.Debug("SIPProvisioningWebService GetCDRsCount for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
@@ -490,13 +551,12 @@ namespace SIPSorcery.SIP.App
         [OperationContract]
         public List<SIPCDRAsset> GetCDRs(string whereExpression, int offset, int count)
         {
-            CustomerSession customerSession = AuthoriseRequest();
-            Customer customer = CRMCustomerPersistor.Get(customerSession.CustomerId);
+            Customer customer = AuthoriseRequest();
 
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             //logger.Debug("SIPProvisioningWebService GetCDRs for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
-            return SIPCDRPersistor.Get(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression), offset, count);
+            return SIPCDRPersistor.Get(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression), "created", offset, count);
         }
     }
 }

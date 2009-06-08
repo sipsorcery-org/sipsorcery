@@ -71,8 +71,9 @@ namespace SIPSorcery.Sys
 
         public override T Add(T asset) {
             try {
-                m_dbLinqTable.InsertOnSubmit(asset);
-                m_dbLinqDataContext.SubmitChanges();
+                //m_dbLinqTable.InsertOnSubmit(asset);
+                //m_dbLinqDataContext.SubmitChanges();
+                m_dbLinqDataContext.ExecuteDynamicInsert(asset);
 
                 if (Added != null) {
                     Added(asset);
@@ -81,7 +82,7 @@ namespace SIPSorcery.Sys
                 return asset;
             }
             catch (Exception excp) {
-                logger.Error("Exception DBLinqAssetPersistor Add. " + excp.Message);
+                logger.Error("Exception DBLinqAssetPersistor Add (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
@@ -89,6 +90,8 @@ namespace SIPSorcery.Sys
         public override T Update(T asset) {
             try {
                 m_dbLinqDataContext.ExecuteDynamicUpdate(asset);
+                //m_dbLinqTable.InsertOnSubmit(asset);
+                //m_dbLinqDataContext.SubmitChanges();
 
                 if (Updated != null) {
                     Updated(asset);
@@ -97,22 +100,23 @@ namespace SIPSorcery.Sys
                 return asset;
             }
             catch (Exception excp) {
-                logger.Error("Exception DBLinqAssetPersistor Update. " + excp.Message);
+                logger.Error("Exception DBLinqAssetPersistor Update (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
         public override void Delete(T asset) {
             try {
-                m_dbLinqTable.DeleteOnSubmit(asset);
-                m_dbLinqDataContext.SubmitChanges();
+                //m_dbLinqTable.DeleteOnSubmit(asset);
+                //m_dbLinqDataContext.SubmitChanges();
+                m_dbLinqDataContext.ExecuteDynamicDelete(asset);
 
                 if (Deleted != null) {
                     Deleted(asset);
                 }
             }
             catch (Exception excp) {
-                logger.Error("Exception DBLinqAssetPersistor Delete. " + excp.Message);
+                logger.Error("Exception DBLinqAssetPersistor Delete (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
@@ -130,7 +134,7 @@ namespace SIPSorcery.Sys
                 }
             }
             catch (Exception excp) {
-                logger.Error("Exception DBLinqAssetPersistor Delete (batch). " + excp.Message);
+                logger.Error("Exception DBLinqAssetPersistor Delete (batch) (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
@@ -144,7 +148,7 @@ namespace SIPSorcery.Sys
                         select asset).FirstOrDefault();
             }
             catch (Exception excp) {
-                logger.Error("Exception DBLinqAssetPersistor Get (id). " + excp.Message);
+                logger.Error("Exception DBLinqAssetPersistor Get (id) (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
@@ -159,7 +163,7 @@ namespace SIPSorcery.Sys
                 }
             }
             catch (Exception excp) {
-                logger.Error("Exception DBLinqAssetPersistor Count. " + excp.Message);
+                logger.Error("Exception DBLinqAssetPersistor Count (for " + typeof(T).Name + "). " + excp.Message);
                 throw excp;
             }
         }
@@ -170,32 +174,82 @@ namespace SIPSorcery.Sys
                     throw new ArgumentException("The where clause must be specified for a non-list Get.");
                 }
                 else {
-                    return (from asset in m_dbLinqTable.Where(whereClause)
-                            select asset).FirstOrDefault();
+                    IQueryable<T> getList = from asset in m_dbLinqTable.Where(whereClause) select asset;
+                    return getList.FirstOrDefault();
                 }
             }
             catch (Exception excp) {
-                logger.Error("Exception DBLinqAssetPersistor Get (where). " + excp.Message);
+                logger.Error("Exception DBLinqAssetPersistor Get (where for " + typeof(T).Name + "). " + excp.Message);
                 return default(T);
             }
         }
 
-        public override List<T> Get(Expression<Func<T, bool>> whereClause, int offset, int count)
+        public override List<T> Get(Expression<Func<T, bool>> whereClause, string orderByField, int offset, int count)
         {
             try
             {
+                var query = from asset in m_dbLinqTable select asset;
+                
+                if (whereClause != null)
+                {
+                    query = query.Where(whereClause);
+                }
+
+                if (!orderByField.IsNullOrBlank())
+                {
+                    query = query.OrderBy(orderByField);
+                }
+                else
+                {
+                    query = query.OrderBy(x => x.Id);
+                }
+
+                if (offset != 0)
+                {
+                    query = query.Skip(offset);
+                }
+
+                if (count < Int32.MaxValue)
+                {
+                    query = query.Take(count);
+                }
+
+                /*List<T> subList = null;
+
                 if (whereClause == null) {
-                    return (from asset in m_dbLinqTable
-                            select asset).ToList();
+                    subList = (
+                        from asset in m_dbLinqTable
+                        select asset
+                        ).ToList();
                 }
                 else {
-                    return (from asset in m_dbLinqTable.Where(whereClause)
-                            select asset).ToList();
+                    subList = (
+                        from asset in m_dbLinqTable.Where(whereClause)
+                        select asset
+                        ).ToList();
                 }
+
+                if (subList != null) {
+                    if (offset >= 0) {
+                        if (count == 0 || count == Int32.MaxValue) {
+                            return subList.OrderBy(x => x.Id).Skip(offset).ToList<T>();
+                        }
+                        else {
+                            return subList.OrderBy(x => x.Id).Skip(offset).Take(count).ToList<T>();
+                        }
+                    }
+                    else {
+                        return subList.OrderBy(x => x.Id).ToList<T>(); ;
+                    }
+                }
+
+                return subList;*/
+
+                return query.ToList();
             }
             catch (Exception excp)
             {
-                logger.Error("Exception DBLinqAssetPersistor Get. " + excp.Message);
+                logger.Error("Exception DBLinqAssetPersistor Get List (where for " + typeof(T).Name + "). " + excp.Message);
                 return null;
             }
         }

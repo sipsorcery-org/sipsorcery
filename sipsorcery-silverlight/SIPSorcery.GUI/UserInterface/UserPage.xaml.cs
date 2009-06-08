@@ -164,7 +164,7 @@ namespace SIPSorcery
         {
             if (connectionState.ConnectionStatus == ServiceConnectionStatesEnum.Error)
             {
-                LogActivityMessage(MessageLevelsEnum.Error, connectionState.Message);
+                LogActivityMessage(MessageLevelsEnum.Warn, connectionState.Message);
             }
         }
 
@@ -239,7 +239,20 @@ namespace SIPSorcery
             m_sipCallsManager.Close();
             m_monitorConsole.Close();
             SetSelectedTextBlock(null);
-            Logout_External();
+            Logout_External(true);
+        }
+
+        private void DeleteAccountLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+            try {
+                MessageBoxResult confirmDelete = MessageBox.Show("Press Ok to delete all your account details.", "Confirm Delete", MessageBoxButton.OKCancel);
+                if (confirmDelete == MessageBoxResult.OK) {
+                    m_persistor.DeleteCustomerComplete += (eargs) => { Logout_External(false); };
+                    m_persistor.DeleteCustomerAsync(m_owner);
+                }
+            }
+            catch (Exception excp) {
+                LogActivityMessage(MessageLevelsEnum.Error, "Exception deleting account. " + excp.Message);
+            }
         }
 
         /// <summary>
@@ -262,24 +275,8 @@ namespace SIPSorcery
             }
         }
 
-        private void LogActivityMessage(MessageLevelsEnum level, string message)
-        {
-            if (level == MessageLevelsEnum.Error)
-            {
-                UIHelper.AppendToActivityLog(m_activityLogScrollViewer, m_activityTextBlock, level, message);
-            }
-            else if (level == MessageLevelsEnum.Warn)
-            {
-                UIHelper.AppendToActivityLog(m_activityLogScrollViewer, m_activityTextBlock, level, message);
-            }
-            else if (level == MessageLevelsEnum.Monitor)
-            {
-                UIHelper.AppendToActivityLog(m_activityLogScrollViewer, m_activityTextBlock, level, message);
-            }
-            else
-            {
-                UIHelper.AppendToActivityLog(m_activityLogScrollViewer, m_activityTextBlock, level, message);
-            }
+        public void LogActivityMessage(MessageLevelsEnum level, string message) {
+            UIHelper.AppendToActivityLog(m_activityLogScrollViewer, m_activityTextBlock, level, message);
         }
 
         private void ShowActivityProgress(double? progress)

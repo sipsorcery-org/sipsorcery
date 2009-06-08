@@ -52,6 +52,7 @@ namespace SIPSorcery.CRM
     public class CustomerPersistorFactory
     {
         private const string CUSTOMERS_XML_FILENAME = "customers.xml";
+        private const string CUSTOMER_SESSIONS_XML_FILENAME = "customersessions.xml";
 
         public static SIPAssetPersistor<Customer> CreateCustomerPersistor(StorageTypes storageType, string storageDescription)
         {
@@ -71,6 +72,28 @@ namespace SIPSorcery.CRM
             }
             else {
                 throw new ApplicationException(storageType + " is not supported as a CreateCustomerPersistor option.");
+            }
+        }
+
+        public static SIPAssetPersistor<CustomerSession> CreateCustomerSessionPersistor(StorageTypes storageType, string storageDescription)
+        {
+            if (storageType == StorageTypes.XML)
+            {
+                return new SIPAssetXMLPersistor<CustomerSession>(storageDescription + CUSTOMER_SESSIONS_XML_FILENAME);
+            }
+            else if (storageType == StorageTypes.NHibernate)
+            {
+                throw new ApplicationException(storageType + " is not supported as a CreateCustomerSessionPersistor option.");
+            }
+            else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql)
+            {
+                DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageDescription);
+                //dbLinqContext.Log = Console.Out;
+                return new DBLinqAssetPersistor<CustomerSession>(dbLinqContext);
+            }
+            else
+            {
+                throw new ApplicationException(storageType + " is not supported as a CreateCustomerSessionPersistor option.");
             }
         }
     }

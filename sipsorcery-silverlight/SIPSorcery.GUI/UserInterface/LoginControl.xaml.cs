@@ -14,6 +14,9 @@ namespace SIPSorcery
 	{
         public LoginDelegate Login_External;
 
+        public event ClickedDelegate CreateNewAccountClicked;
+        public event ClickedDelegate ForgottenPasswordClicked;
+
 		public LoginControl()
 		{
 			InitializeComponent();
@@ -75,6 +78,18 @@ namespace SIPSorcery
             if (e.Key == Key.Enter)
             {
                 Login();
+            }
+        }
+
+        private void CreateNewAccount_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+            if (CreateNewAccountClicked != null) {
+                CreateNewAccountClicked();
+            }
+        }
+
+        private void ForgottenPassword_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+            if (ForgottenPasswordClicked != null) {
+                ForgottenPasswordClicked();
             }
         }
 	}

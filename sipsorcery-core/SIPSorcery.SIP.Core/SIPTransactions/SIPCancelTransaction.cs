@@ -49,8 +49,8 @@ namespace SIPSorcery.SIP
 
         private UASInviteTransaction m_originalTransaction;
 
-        public SIPCancelTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, UASInviteTransaction originalTransaction)
-            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint)
+        internal SIPCancelTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, UASInviteTransaction originalTransaction)
+            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, originalTransaction.OutboundProxy)
         {
             m_originalTransaction = originalTransaction;
             TransactionType = SIPTransactionTypesEnum.NonInvite;

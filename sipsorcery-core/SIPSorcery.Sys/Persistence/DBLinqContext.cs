@@ -49,14 +49,22 @@ namespace SIPSorcery.Sys {
     public class DBLinqContext {
 
         public static DataContext CreateDBLinqDataContext(StorageTypes storageType, string connectionString) {
+            DataContext dataContext = null;
+            
             switch (storageType) {
                 case StorageTypes.DBLinqMySQL:
-                    return new DataContext(new MySqlConnection(connectionString), new DbLinq.MySql.MySqlVendor());
+                    dataContext = new DataContext(new MySqlConnection(connectionString), new DbLinq.MySql.MySqlVendor());
+                    break;
                 case StorageTypes.DBLinqPostgresql:
-                    return new DataContext(new NpgsqlConnection(connectionString), new DbLinq.PostgreSql.PgsqlVendor());
+                    dataContext = new DataContext(new NpgsqlConnection(connectionString), new DbLinq.PostgreSql.PgsqlVendor());
+                    break;
                 default:
                     throw new NotSupportedException("Database type " + storageType + " is not supported by CreateDBLinqDataContext.");
             }
+
+            //dataContext.Log = Console.Out;
+            dataContext.ObjectTrackingEnabled = false;
+            return dataContext;
         }
     }
 }

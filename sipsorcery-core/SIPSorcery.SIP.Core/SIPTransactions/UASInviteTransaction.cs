@@ -65,12 +65,13 @@ namespace SIPSorcery.SIP
             get { return m_authorisationResult; }
         }
 
-        public UASInviteTransaction(
+        internal UASInviteTransaction(
             SIPTransport sipTransport,
             SIPRequest sipRequest,
             SIPEndPoint dstEndPoint,
-            SIPEndPoint localSIPEndPoint)
-            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint)
+            SIPEndPoint localSIPEndPoint,
+            SIPEndPoint outboundProxy)
+            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
 		{
             TransactionType = SIPTransactionTypesEnum.Invite;
             m_remoteTag = sipRequest.Header.From.FromTag;
@@ -114,6 +115,11 @@ namespace SIPSorcery.SIP
             if (UASInviteTransactionTimedOut != null)
             {
                 UASInviteTransactionTimedOut(this);
+            }
+
+            if (CDR != null)
+            {
+                CDR.TimedOut();
             }
         }
 
@@ -204,7 +210,7 @@ namespace SIPSorcery.SIP
 
             if (CDR != null)
             {
-                CDR.Answered(sipResponse.Status, sipResponse.ReasonPhrase);
+                CDR.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase);
             }
         }
 
@@ -225,6 +231,11 @@ namespace SIPSorcery.SIP
             else
             {
                 logger.Warn("A request was made to cancel transaction " + TransactionId + " that was not in the trying or proceeding states, state=" + TransactionState + ".");
+            }
+
+            if (CDR != null)
+            {
+                CDR.Cancelled();
             }
         }
 

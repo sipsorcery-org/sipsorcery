@@ -74,7 +74,7 @@ namespace SIPSorcery
             m_sipProvidersPanel.SetTitle("SIP Providers");
             m_sipProvidersPanel.MenuEnableFilter(false);
             m_sipProvidersPanel.MenuEnableDelete(false);
-            m_sipProvidersPanel.Add += new MenuButtonClickedDelegate(SIPProvidersPanel_Add);
+            m_sipProvidersPanel.Add += SIPProvidersPanel_Add;
             m_sipProvidersPanel.GetAssetList = GetSIPProviders;
 
             m_sipProviderRegistrationsPanel.SetTitle("SIP Provider Registrations");
@@ -101,11 +101,12 @@ namespace SIPSorcery
 
         private void Load()
         {
-            if (!m_sipProvidersCountComplete)
-            {
-                m_persistor.GetSIPProvidersCountAsync(m_sipProvidersWhere);
-            }
-            else if (!m_sipProvidersLoadComplete)
+            //if (!m_sipProvidersCountComplete)
+            //{
+            //    m_persistor.GetSIPProvidersCountAsync(m_sipProvidersWhere);
+            //}
+            //else 
+            if (!m_sipProvidersLoadComplete)
             {
                 LogActivityMessage_External(MessageLevelsEnum.Info, "Loading SIP Providers...");
                 m_sipProvidersPanel.RefreshAsync();

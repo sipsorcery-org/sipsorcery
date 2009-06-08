@@ -99,7 +99,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\Microsoft.Scripting.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Scripting.Core, Version=1.0.0.3000, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Scripting.Core, Version=0.9.5.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\Microsoft.Scripting.Core.dll</HintPath>
     </Reference>
@@ -154,6 +154,7 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="SIPApplicationServer\DialPlanApps\CallbackApp.cs" />
     <Compile Include="SIPApplicationServer\DialPlans\DialPlanContext.cs" />
     <Compile Include="SIPApplicationServer\DialPlans\DialPlanLineContext.cs" />
     <Compile Include="SIPApplicationServer\DialPlans\DialPlanScriptContext.cs" />
@@ -182,7 +183,7 @@
     <Compile Include="SIPApplicationServer\DialPlanApps\SkeletonApp.cs" />
     <Compile Include="SIPApplicationServer\DialPlanApps\RTSPApp.cs" />
     <Compile Include="SIPApplicationServer\DialPlanApps\SwitchCallMulti.cs" />
-    <Compile Include="SIPApplicationServer\DialPlanApps\SIPDialStringParser.cs" />
+    <Compile Include="SIPApplicationServer\DialPlans\DialStringParser.cs" />
     <Compile Include="SIPApplicationServer\DialPlans\DialPlanEngine.cs">
       <SubType>Code</SubType>
     </Compile>

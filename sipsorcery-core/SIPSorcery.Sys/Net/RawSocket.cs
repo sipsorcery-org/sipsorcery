@@ -251,6 +251,7 @@ namespace SIPSorcery.Sys
             }
 
             [Test]
+            [Ignore("Will only work on WinXP or where raw socket privileges have been explicitly granted.")]
             public void PreconstructedIPPacketSendUnitTest()
             {
                 Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -286,6 +287,7 @@ namespace SIPSorcery.Sys
             }
 
             [Test]
+            [Ignore("Will only work on WinXP or where raw socket privileges have been explicitly granted.")]
             public void IPEmptyPacketSendUnitTest()
             {
                 Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);

@@ -80,12 +80,12 @@ namespace SIPSorcery.Servers
 			{
                 if (monitorEvent != null && m_sendEvents)
 				{
-                    string monitorEventStr = null;
+                    string monitorEventStr = monitorEvent.ToCSV();
 
-                    if (monitorEvent.Message != null && monitorEvent.Message.Length > 0)
-                    {
-                        monitorEventStr = monitorEvent.ToCSV();
-                    }
+                    //if (monitorEvent.Message != null && monitorEvent.Message.Length > 0)
+                    //{
+                    //    monitorEventStr = monitorEvent.ToCSV();
+                    //}
 
                     if (monitorEventStr != null)
                     {
@@ -99,7 +99,7 @@ namespace SIPSorcery.Servers
 			}
 		}
 
-        public void Send(SIPMonitorMachineEvent machineEvent)
+        /*public void Send(SIPMonitorMachineEvent machineEvent)
         {
             try
             {
@@ -107,10 +107,10 @@ namespace SIPSorcery.Servers
                 {
                     string machineEventStr = null;
 
-                    if (machineEvent.Message != null && machineEvent.Message.Length > 0)
-                    {
+                    //if (machineEvent.Message != null && machineEvent.Message.Length > 0)
+                    //{
                         machineEventStr = machineEvent.ToCSV();
-                    }
+                    //}
 
                     if (machineEventStr != null)
                     {
@@ -122,7 +122,7 @@ namespace SIPSorcery.Servers
             {
                 logger.Error("Exception SIPMonitorEventPusher Send (SIPMonitorMachineEvent). " + excp.Message);
             }
-        }
+        }*/
 
         public void Close()
         {

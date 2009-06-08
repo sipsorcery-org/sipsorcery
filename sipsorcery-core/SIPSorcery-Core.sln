@@ -2,9 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0B7CB4A2-B101-473E-B5A8-3B746A232647}"
-	ProjectSection(SolutionItems) = preProject
-		readme.txt = readme.txt
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.CRM", "SIPSorcery.CRM\SIPSorcery.CRM.csproj", "{F951789F-1ABB-42E8-BB51-F028DC4824EF}"
 EndProject
@@ -51,8 +48,5 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{CEA8E4DD-9CE4-4878-B075-34522417ACD0} = {0B7CB4A2-B101-473E-B5A8-3B746A232647}
 	EndGlobalSection
 EndGlobal

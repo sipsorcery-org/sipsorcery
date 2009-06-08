@@ -143,7 +143,7 @@ namespace SIPSorcery.SIP.App
             get { return (m_providerServer != null) ? m_providerServer.ToString() : null; }
             set
             {
-                m_providerServer = (!value.IsNullOrBlank()) ? SIPURI.ParseSIPURI(value) : null;
+                m_providerServer = (!value.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(value) : null;
                 NotifyPropertyChanged("ProviderServer");
             }
         }
@@ -208,7 +208,7 @@ namespace SIPSorcery.SIP.App
             get { return (m_registerContact != null) ? m_registerContact.ToString() : null; }
             set
             {
-                m_registerContact = (!value.IsNullOrBlank()) ? SIPURI.ParseSIPURI(value) : null;
+                m_registerContact = (!value.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(value) : null;
                 NotifyPropertyChanged("RegisterContact");
             }
         }
@@ -234,7 +234,7 @@ namespace SIPSorcery.SIP.App
             get { return (m_registerServer != null) ? m_registerServer.ToString() : null; }
             set
             {
-                m_registerServer = (!value.IsNullOrBlank()) ? SIPURI.ParseSIPURI(value) : null ;
+                m_registerServer = (!value.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(value) : null ;
                 NotifyPropertyChanged("RegisterServer");
             }
         }
@@ -317,6 +317,12 @@ namespace SIPSorcery.SIP.App
             set { m_inserted = value; }
         }
 
+        public object OrderProperty
+        {
+            get { return m_providerName; }
+            set { }
+        }
+
         /// <summary>
         /// Normally the registrar server will just be the main Provider server however in some cases they will be different.
         /// </summary>
@@ -375,7 +381,7 @@ namespace SIPSorcery.SIP.App
             //    m_registerContact.Parameters.Set(CONTACT_ID_KEY, Crypto.GetRandomString(6));
             //}
 
-            if (m_registerContact == null)
+            if (m_registerContact == null && m_registerEnabled)
             {
                 m_registerEnabled = false;
                 m_registerDisabledReason = "No Contact URI was specified for the registration.";
@@ -389,8 +395,7 @@ namespace SIPSorcery.SIP.App
             Load(bindingRow);
         }
 
-        public void Load(DataRow providerRow)
-        {
+        public void Load(DataRow providerRow) {
             m_id = (providerRow.Table.Columns.Contains("id") && providerRow["id"] != DBNull.Value && providerRow["id"] != null) ? providerRow["id"] as string : Guid.NewGuid().ToString();
             m_owner = providerRow["owner"] as string;
             m_providerName = providerRow["providername"] as string;
@@ -410,15 +415,12 @@ namespace SIPSorcery.SIP.App
             m_registerDisabledReason = (providerRow.Table.Columns.Contains("registerdisabledreason") && providerRow["registerdisabledreason"] != DBNull.Value && providerRow["registerdisabledreason"] != null) ? providerRow["registerdisabledreason"] as string : null;
             m_lastUpdate = (providerRow.Table.Columns.Contains("lastupdate") && providerRow["lastupdate"] != DBNull.Value && providerRow["lastupdate"] != null) ? Convert.ToDateTime(providerRow["lastupdate"]) : DateTime.Now;
             m_inserted = (providerRow.Table.Columns.Contains("inserted") && providerRow["inserted"] != DBNull.Value && providerRow["inserted"] != null) ? Convert.ToDateTime(providerRow["inserted"]) : DateTime.Now;
- 
-            if (m_registerContact == null && m_registerEnabled)
-            {
+
+            if (m_registerContact == null && m_registerEnabled) {
                 m_registerEnabled = false;
                 m_registerDisabledReason = "No Contact URI was specified for the registration.";
                 logger.Warn("Registrations for provider " + m_providerName + " owned by " + m_owner + " have been disabled due to an empty or invalid Contact URI.");
             }
-
-            logger.Debug(" loaded SIPProvider for " + Owner + " and " + ProviderName + ".");
         }
 
         public Dictionary<Guid, object> Load(XmlDocument dom) {
@@ -426,6 +428,12 @@ namespace SIPSorcery.SIP.App
         }
 
 #endif
+
+        public object GetOrderProperty()
+        {
+            return m_providerName;
+        }
+
         public string ToXML()
         {
             string providerXML =

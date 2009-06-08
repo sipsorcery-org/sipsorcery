@@ -25,7 +25,7 @@ namespace Heijden.DNS
 	{
 		public Header header;
 
-		private List<Question> questions;
+		public List<Question> Questions;
 
 		public DNSRequest()
 		{
@@ -33,12 +33,12 @@ namespace Heijden.DNS
 			header.OPCODE = OPCode.QUERY;
 			header.QDCOUNT = 0;
 
-			questions = new List<Question>();
+			Questions = new List<Question>();
 		}
 
 		public void AddQuestion(Question question)
 		{
-			questions.Add(question);
+			Questions.Add(question);
 		}
 
 		public byte[] Data
@@ -46,9 +46,9 @@ namespace Heijden.DNS
 			get
 			{
 				List<byte> data = new List<byte>();
-				header.QDCOUNT = (ushort)questions.Count;
+				header.QDCOUNT = (ushort)Questions.Count;
 				data.AddRange(header.Data);
-				foreach (Question q in questions)
+				foreach (Question q in Questions)
 					data.AddRange(q.Data);
 				return data.ToArray();
 			}
