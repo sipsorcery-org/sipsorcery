@@ -134,9 +134,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="ExampleXMLConfig\customers.xml" />
+    <Content Include="ExampleXMLConfig\sipdialplans.xml" />
+    <Content Include="ExampleXMLConfig\sipdomains.xml" />
     <Content Include="readme.txt" />
-    <Content Include="ExampleXMLConfig\dialplans.xml" />
-    <Content Include="ExampleXMLConfig\domains.xml" />
     <Content Include="ExampleXMLConfig\sipaccounts.xml" />
     <Content Include="ExampleXMLConfig\sipproviders.xml" />
   </ItemGroup>

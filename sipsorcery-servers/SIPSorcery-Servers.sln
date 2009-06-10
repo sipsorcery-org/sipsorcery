@@ -16,8 +16,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		SQL\sipsorcery.sql = SQL\sipsorcery.sql
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.TestConsole", "SIPSorcery.TestConsole\SIPSorcery.TestConsole.csproj", "{AEFA9EF9-3517-41CA-87C3-C3DDA1530AB6}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,10 +42,6 @@ Global
 		{92B0EB84-6587-4D7A-803B-C9FA0230A4B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{92B0EB84-6587-4D7A-803B-C9FA0230A4B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{92B0EB84-6587-4D7A-803B-C9FA0230A4B3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AEFA9EF9-3517-41CA-87C3-C3DDA1530AB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AEFA9EF9-3517-41CA-87C3-C3DDA1530AB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AEFA9EF9-3517-41CA-87C3-C3DDA1530AB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AEFA9EF9-3517-41CA-87C3-C3DDA1530AB6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
