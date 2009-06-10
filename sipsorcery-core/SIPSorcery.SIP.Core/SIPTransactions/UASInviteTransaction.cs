@@ -216,7 +216,7 @@ namespace SIPSorcery.SIP
 
         public void CancelCall()
         {
-            if (TransactionState == SIPTransactionStatesEnum.Trying || TransactionState == SIPTransactionStatesEnum.Proceeding)
+            if (TransactionState == SIPTransactionStatesEnum.Calling || TransactionState == SIPTransactionStatesEnum.Trying || TransactionState == SIPTransactionStatesEnum.Proceeding)
             {
                 base.Cancel();
 
@@ -230,7 +230,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                logger.Warn("A request was made to cancel transaction " + TransactionId + " that was not in the trying or proceeding states, state=" + TransactionState + ".");
+                logger.Warn("A request was made to cancel transaction " + TransactionId + " that was not in the calling, trying or proceeding states, state=" + TransactionState + ".");
             }
 
             if (CDR != null)

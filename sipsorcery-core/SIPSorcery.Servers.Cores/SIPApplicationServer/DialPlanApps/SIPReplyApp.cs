@@ -50,60 +50,23 @@ namespace SIPSorcery.Servers
 {
     public class SIPReplyApp
     {
-        private static ILog logger = AppState.GetLogger("dialplan");
+         public SIPReplyApp() { }
 
-        private event SIPMonitorLogDelegate Log_External;
+         public SIPResponse Start(string commandData) {
+            string[] replyFields = commandData.Split(',');
+            string statusMessage = (replyFields.Length > 1 && replyFields[1] != null) ? replyFields[1].Trim() : null;
 
-        private string m_clientUsername = null;             // If the UAC is authenticated holds the username of the client.
-
-        private CallProgressDelegate CallProgress_External;
-        private CallFailedDelegate CallFailed_External;
-
-        public SIPReplyApp(
-            SIPMonitorLogDelegate statefulProxyLogEvent,
-            string username,
-            CallProgressDelegate callProgress,
-            CallFailedDelegate callFailed) {
-
-            Log_External = statefulProxyLogEvent;
-            m_clientUsername = username;
-            CallProgress_External = callProgress;
-            CallFailed_External = callFailed;
+            return Start(Convert.ToInt32(replyFields[0]), statusMessage);
         }
 
-        public void Start(string commandData) {
-            try {
-                string[] replyFields = commandData.Split(',');
-                string statusMessage = (replyFields.Length > 1 && replyFields[1] != null) ? replyFields[1].Trim() : null;
+        public SIPResponse Start(int status, string reason) {
+            SIPResponseStatusCodesEnum statusCode = SIPResponseStatusCodes.GetStatusTypeForCode(status);
+            if (!reason.IsNullOrBlank()) {
+                reason = reason.Trim();
+            }
 
-                Start(Convert.ToInt32(replyFields[0]), statusMessage);
-            }
-            catch (ThreadAbortException) { }
-            catch (Exception excp) {
-                logger.Error("Exception SIPReplyApp Start. " + excp.Message);
-            }
-        }
-
-        public void Start(int status, string reason) {
-            try {
-                SIPResponseStatusCodesEnum statusCode = SIPResponseStatusCodes.GetStatusTypeForCode(status);
-                if (!reason.IsNullOrBlank()) {
-                    reason = reason.Trim();
-                }
-
-                if ((int)statusCode < 200) {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SIPReplyApp sending info response of " + statusCode + " and " + reason + ".", m_clientUsername));
-                    CallProgress_External(statusCode, reason, null, null);
-                }
-                else {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SIPReplyApp sending failure response of " + statusCode + " and " + reason + ".", m_clientUsername));
-                    CallFailed_External(statusCode, reason);
-                }
-            }
-            catch (ThreadAbortException) { }
-            catch (Exception excp) {
-                logger.Error("Exception SIPReplyApp Start. " + excp.Message);
-            }
+            SIPResponse sipResponse = new SIPResponse(statusCode, reason, null);
+            return sipResponse;
         }
     }
 }

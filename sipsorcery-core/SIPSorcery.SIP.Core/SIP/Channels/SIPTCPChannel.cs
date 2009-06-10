@@ -50,6 +50,8 @@ namespace SIPSorcery.SIP
 {  
     public class SIPTCPChannel : SIPChannel
 	{
+        private const string THREAD_NAME = "sipchanneltcp-";
+
         private const int MAX_TCP_CONNECTIONS = 1000;   // Maximum number of connections for the TCP listener.
 
         private ILog logger = AssemblyState.logger;
@@ -79,6 +81,7 @@ namespace SIPSorcery.SIP
                 m_tcpServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
                 Thread listenThread = new Thread(new ThreadStart(AcceptConnections));
+                listenThread.Name = THREAD_NAME + Name;
                 listenThread.Start();
 
                 logger.Debug("SIP TCP Channel listener created " + m_localSIPEndPoint.SocketEndPoint + ".");

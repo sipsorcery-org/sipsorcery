@@ -171,13 +171,7 @@
     <Compile Include="SIPRegistrar\SIPUserAgentConfiguration.cs" />
     <Compile Include="SIPApplicationServer\DialPlans\DialPlanScriptHelper.cs" />
     <Compile Include="SIPRegistrar\SIPRegistrarCore.cs" />
-    <Compile Include="SIPNotificationAgent.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="SIPPacketMangler.cs" />
-    <Compile Include="SIPServerConstants.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="SIPApplicationServer\SIPCallManager.cs" />
     <Compile Include="SIPApplicationServer\DialPlanApps\SIPReplyApp.cs" />
     <Compile Include="SIPApplicationServer\DialPlanApps\SkeletonApp.cs" />

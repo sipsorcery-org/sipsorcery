@@ -49,6 +49,8 @@ namespace SIPSorcery.SIP
 {
 	public class SIPUDPChannel : SIPChannel
 	{
+        private const string THREAD_NAME = "sipchanneludp-";
+
         private ILog logger = AssemblyState.logger;
 
 		// Channel sockets.
@@ -73,6 +75,7 @@ namespace SIPSorcery.SIP
                 m_sipConn = new UdpClient(m_localSIPEndPoint.SocketEndPoint);
 
                 Thread listenThread = new Thread(new ThreadStart(Listen));
+                listenThread.Name = THREAD_NAME + Name;
                 listenThread.Start();
 
                 logger.Debug("SIPUDPChannel listener created " + m_localSIPEndPoint.SocketEndPoint + ".");

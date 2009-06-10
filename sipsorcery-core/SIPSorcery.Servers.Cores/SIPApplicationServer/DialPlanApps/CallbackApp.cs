@@ -172,7 +172,7 @@ namespace SIPSorcery.Servers
                 ringTimeout = (ringTimeout > m_maxRingTime) ? m_maxRingTime : ringTimeout;
                 if (waitForCallCompleted.WaitOne(ringTimeout * 1000, false)) {
                     // Call timed out.
-                    call.CancelAllCallLegs(CallCancelCause.TimedOut);
+                    call.CancelNotRequiredCallLegs(CallCancelCause.TimedOut);
                 }
 
                 return answeredDialogue;

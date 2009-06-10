@@ -52,6 +52,8 @@ namespace SIPSorcery.Servers
 {
     public class SwitchCallMulti
     {
+        private const string THEAD_NAME = "switchcall-";
+
         public const int MAX_CALLS_PER_LEG = 10;
         public const int MAX_DELAY_SECONDS = 120;
         private const string ALLFORWARDS_FAILED_REASONPHRASE = "All forwards failed";
@@ -168,6 +170,7 @@ namespace SIPSorcery.Servers
         {
             try
             {
+                Thread.CurrentThread.Name = THEAD_NAME + DateTime.Now.ToString("HHmmss") + "-" + Crypto.GetRandomString(3);
                 SIPCallDescriptor callDescriptor = (SIPCallDescriptor)state;
                 StartNewCallSync(callDescriptor);
             }
@@ -292,15 +295,8 @@ namespace SIPSorcery.Servers
                             CallAnswered(answeredResponse.Status, answeredResponse.ReasonPhrase, answeredResponse.Header.ContentType, answeredResponse.Body, answeredUAC.SIPDialogue);
                         }
 
-                        // Signal any delayed calls that they are no longer required.
-                        lock (m_delayedCalls) {
-                            foreach (SIPCallDescriptor callDescriptor in m_delayedCalls) {
-                                callDescriptor.DelayMRE.Set();
-                            }
-                        }
-
                         // Cancel/hangup and other calls on this leg that are still around.
-                        CancelCurrentForwards();
+                        CancelNotRequiredCallLegs(CallCancelCause.NormalClearing);
                     }
                     else
                     {
@@ -320,7 +316,7 @@ namespace SIPSorcery.Servers
                         // A redirect response was received. Create a new call leg(s) using the SIP URIs in the contact header of the response.
                         FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response to " + redirectURI.ToString() + " accepted.", m_username));
                         SIPCallDescriptor redirectCallDescriptor = new SIPCallDescriptor(null, null, redirectURI.ToString(), null, null, null, null, null, SIPCallDirection.Out, null, null);
-                        StartNewCallSync(redirectCallDescriptor);
+                        StartNewCallAsync(redirectCallDescriptor);
                     }
                     else if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.Replace) {
                         // In the Replace redirect mode the existing dialplan execution needs to be cancelled and the single redirect call be used to replace it.
@@ -344,32 +340,28 @@ namespace SIPSorcery.Servers
             }
         }
 
-        public void CancelAllCallLegs(CallCancelCause cancelCause) {
+        public void CancelNotRequiredCallLegs(CallCancelCause cancelCause) {
             try {
                 m_commandCancelled = true;
                 FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Cancelling all call legs for SwitchCallMulti app.", m_username));
+                
                 // Cancel all forwarded call legs.
-                CancelCurrentForwards();
-                CallLegCompleted();
-            }
-            catch (Exception excp) {
-                logger.Error("Exception SwitchCallMulti CancelAllCallLegs. " + excp);
-            }
-        }
-
-        private void CancelCurrentForwards()
-        {
-            try {
-                // Cancel/hangup remaining calls.
                 int attempts = 0;
                 while (m_switchCalls.Count > 0 && attempts < MAX_CALLS_PER_LEG) {
                     SIPClientUserAgent uac = m_switchCalls[0];
                     uac.Cancel();
                     attempts++;
                 }
+
+                // Signal any delayed calls that they are no longer required.
+                foreach (SIPCallDescriptor callDescriptor in m_delayedCalls) {
+                    callDescriptor.DelayMRE.Set();
+                }
+
+                CallLegCompleted();
             }
             catch (Exception excp) {
-                logger.Error("Exception CancelCurrentForwards. " + excp.Message);
+                logger.Error("Exception SwitchCallMulti CancelAllCallLegs. " + excp);
             }
         }
 
@@ -378,36 +370,38 @@ namespace SIPSorcery.Servers
         /// </summary>
         private void CallLegCompleted() {
             try {
-                if (m_switchCalls.Count > 0 || m_delayedCalls.Count > 0) {
-                    // There are still calls on this leg in progress.
+                if (!m_callAnswered && !m_commandCancelled) {
+                    if (m_switchCalls.Count > 0 || m_delayedCalls.Count > 0) {
+                        // There are still calls on this leg in progress.
 
-                    // If there are no current calls then start the next delayed one.
-                    if (m_switchCalls.Count == 0) {
-                        SIPCallDescriptor nextCall = null;
-                        lock (m_delayedCalls) {
-                            foreach (SIPCallDescriptor call in m_delayedCalls) {
-                                if (nextCall == null || nextCall.DelaySeconds > call.DelaySeconds) {
-                                    nextCall = call;
+                        // If there are no current calls then start the next delayed one.
+                        if (m_switchCalls.Count == 0) {
+                            SIPCallDescriptor nextCall = null;
+                            lock (m_delayedCalls) {
+                                foreach (SIPCallDescriptor call in m_delayedCalls) {
+                                    if (nextCall == null || nextCall.DelaySeconds > call.DelaySeconds) {
+                                        nextCall = call;
+                                    }
                                 }
                             }
-                        }
 
-                        if (nextCall != null) {
-                            nextCall.DelayMRE.Set();
+                            if (nextCall != null) {
+                                nextCall.DelayMRE.Set();
+                            }
                         }
                     }
-                }
-                else if (m_priorityCallsQueue.Count != 0 && !m_callAnswered) {
-                    List<SIPCallDescriptor> nextPrioritycalls = m_priorityCallsQueue.Dequeue();
-                    Start(nextPrioritycalls);
-                }
-                else if(CallFailed != null) {
-                    // No more call legs to attempt, or call has already been answered or cancelled.
-                    if (m_lastFailureStatus != SIPResponseStatusCodesEnum.None) {
-                        CallFailed(m_lastFailureStatus, m_lastFailureReason);
+                    else if (m_priorityCallsQueue.Count != 0 && !m_callAnswered) {
+                        List<SIPCallDescriptor> nextPrioritycalls = m_priorityCallsQueue.Dequeue();
+                        Start(nextPrioritycalls);
                     }
-                    else {
-                        CallFailed(SIPResponseStatusCodesEnum.TemporarilyNotAvailable, "All forwards failed.");
+                    else if (CallFailed != null) {
+                        // No more call legs to attempt, or call has already been answered or cancelled.
+                        if (m_lastFailureStatus != SIPResponseStatusCodesEnum.None) {
+                            CallFailed(m_lastFailureStatus, m_lastFailureReason);
+                        }
+                        else {
+                            CallFailed(SIPResponseStatusCodesEnum.TemporarilyNotAvailable, "All forwards failed.");
+                        }
                     }
                 }
             }

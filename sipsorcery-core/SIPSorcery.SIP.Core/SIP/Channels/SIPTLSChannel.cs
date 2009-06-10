@@ -53,6 +53,8 @@ namespace SIPSorcery.SIP
 {
     public class SIPTLSChannel : SIPChannel
 	{
+        private const string THREAD_NAME = "sipchanneltls-";
+
         private const int MAX_TLS_CONNECTIONS = 1000;   // Maximum number of connections for the TCP listener.
 
         private ILog logger = AssemblyState.logger;
@@ -100,6 +102,7 @@ namespace SIPSorcery.SIP
                     logger.Debug("Server Certificate loaded, Subject=" + m_serverCertificate.Subject + ", valid=" + verifyCert + ".");
 
                     Thread listenThread = new Thread(new ThreadStart(AcceptConnections));
+                    listenThread.Name = THREAD_NAME + Name;
                     listenThread.Start();
 
                     logger.Debug("SIP TLS Channel listener created " + m_localSIPEndPoint.SocketEndPoint + ".");

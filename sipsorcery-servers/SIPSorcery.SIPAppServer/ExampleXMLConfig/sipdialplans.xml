@@ -1,0 +1,16 @@
+<sipdialplans>
+  <sipdialplan>
+    <id>9abeac8e-7ac0-495a-95d6-0b5eb6ab2282</id>
+    <owner>username</owner>
+    <adminmemberid></adminmemberid>
+    <dialplanname>default</dialplanname>
+    <traceemailaddress></traceemailaddress>
+    <dialplanscript><![CDATA[sys.Log("call to #{req.URI.ToString()} from #{req.Header.From.ToString()}")
+sys.Dial("blueface")
+#sys.Respond(404, "No thanks")
+#sys.Callback("300@blueface", "username@local")]]></dialplanscript>
+    <scripttype>Ruby</scripttype>
+    <maxexecutioncount>3</maxexecutioncount>
+    <executioncount>0</executioncount>
+  </sipdialplan>
+</sipdialplans>

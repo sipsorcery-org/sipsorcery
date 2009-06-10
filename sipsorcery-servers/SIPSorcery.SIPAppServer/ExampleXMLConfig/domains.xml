@@ -1,7 +1,0 @@
-<domains>
- <domain>
-  <value>10.0.0.100</value>
-  <alias>10.0.0.100:5060</alias>
-   <alias>local</alias>
- </domain>
-</domains>

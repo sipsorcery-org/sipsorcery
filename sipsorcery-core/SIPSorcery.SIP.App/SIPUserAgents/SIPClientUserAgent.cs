@@ -38,6 +38,7 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using SIPSorcery.Sys;
 using SIPSorcery.SIP;
 using Heijden.DNS;
@@ -51,6 +52,7 @@ namespace SIPSorcery.SIP.App
 {   
     public class SIPClientUserAgent
     {
+        private const string THREAD_NAME = "uacresponse-";
         private const int DNS_LOOKUP_TIMEOUT = 5000;
         private const char OUTBOUNDPROXY_AS_ROUTESET_CHAR = '<';    // If this character exists in the call descriptor OutboundProxy setting it gets treated as a Route set.
 
@@ -117,12 +119,6 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        //public void CallAsync(object state)
-        //{
-        //    SIPCallDescriptor sipCallDescriptor = (SIPCallDescriptor)state;
-        //    Call(sipCallDescriptor);
-        //}
-
         public void Call(SIPCallDescriptor sipCallDescriptor)
         {
             try
@@ -184,7 +180,7 @@ namespace SIPSorcery.SIP.App
                         m_serverTransaction = m_sipTransport.CreateUACTransaction(switchServerInvite, m_serverEndPoint, m_localSIPEndPoint, m_outboundProxy);
                         m_serverTransaction.CDR.Owner = Owner;
                         m_serverTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
-                        m_serverTransaction.UACInviteTransactionFinalResponseReceived += ServerFinalResponseReceived;
+                        m_serverTransaction.UACInviteTransactionFinalResponseReceived += ServerFinalResponseReceivedAsync;
                         m_serverTransaction.UACInviteTransactionTimedOut += ServerTimedOut;
                         m_serverTransaction.TransactionTraceMessage += TransactionTraceMessage;
 
@@ -267,10 +263,20 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+        private void ServerFinalResponseReceivedAsync(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        {
+            ThreadPool.QueueUserWorkItem(delegate { ServerFinalResponseReceived(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse); });
+        }
+
         private void ServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
+                if (Thread.CurrentThread.Name.IsNullOrBlank())
+                {
+                    Thread.CurrentThread.Name = THREAD_NAME + DateTime.Now.ToString("HHmmss") + "-" + Crypto.GetRandomString(3);
+                }
+
                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
                 //m_sipTrace += "Received " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + " " + localEndPoint + "<-" + remoteEndPoint + "\r\n" + sipResponse.ToString();
 

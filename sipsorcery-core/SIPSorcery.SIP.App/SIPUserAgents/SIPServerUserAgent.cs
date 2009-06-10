@@ -38,6 +38,7 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using SIPSorcery.Sys;
 using SIPSorcery.SIP;
 using Heijden.DNS;
@@ -54,6 +55,8 @@ namespace SIPSorcery.SIP.App
 
     public class SIPServerUserAgent
     {
+        private const string THREAD_NAME = "uas-";
+
         private static ILog logger = AssemblyState.logger;
 
         private SIPMonitorLogDelegate Log_External = SIPMonitorEvent.DefaultSIPMonitorLogger;
@@ -101,10 +104,20 @@ namespace SIPSorcery.SIP.App
             Log_External = logDelegate ?? Log_External; 
         }
 
+        public void InviteRequestReceivedAsync(SIPRequest inviteRequest, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint)
+        {
+            ThreadPool.QueueUserWorkItem(delegate { InviteRequestReceived(inviteRequest, localSIPEndPoint, remoteEndPoint); });
+        }
+
         public void InviteRequestReceived(SIPRequest inviteRequest, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint)
         {
             try
             {
+                if (Thread.CurrentThread.Name.IsNullOrBlank())
+                {
+                    Thread.CurrentThread.Name = THREAD_NAME + DateTime.Now.ToString("HHmmss") + "-" + Crypto.GetRandomString(3);
+                }
+                
                 m_uasTransaction = m_sipTransport.CreateUASTransaction(inviteRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
                 m_uasTransaction.TransactionTraceMessage += TransactionTraceMessage;
                 m_uasTransaction.UASInviteTransactionTimedOut += ClientTimedOut;

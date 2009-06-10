@@ -76,7 +76,6 @@ namespace SIPSorcery.Servers
         private SIPTransport m_sipTransport;
         private DialPlanExecutingScript m_executingScript;
         private List<SIPProvider> m_sipProviders;
-        private ExtendScriptLifetimeDelegate m_extendLifeDelegate;
 
         private DialogueBridgeCreatedDelegate m_createBridgeDelegate;
         private GetCanonicalDomainDelegate m_getCanonicalDomainDelegate;
@@ -95,9 +94,16 @@ namespace SIPSorcery.Servers
         {
             get { return LastFailureReason; }
         }
-
-        public string LastFailureReason;                    // The error message from the first call leg on the final dial attempt used when the call fails to provide a reason.
-        public SIPResponseStatusCodesEnum LastFailureStatus;
+        
+        // The error message from the first call leg on the final dial attempt used when the call fails to provide a reason.
+        public string LastFailureReason {
+            get { return m_executingScript.LastFailureReason; }
+            set { m_executingScript.LastFailureReason = value; }
+        }
+        public SIPResponseStatusCodesEnum LastFailureStatus {
+            get { return m_executingScript.LastFailureStatus; }
+            set { m_executingScript.LastFailureStatus = value; }
+        }
 
         private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;   // This event must be wired up to an external function in order to be able to lookup bindings that have been registered for a SIP account.
@@ -139,7 +145,6 @@ namespace SIPSorcery.Servers
             SIPRequest sipRequest,
             SIPCallDirection callDirection,
             DialPlanContext dialPlanContext,
-            ExtendScriptLifetimeDelegate extendLifeDelegate,
             GetCanonicalDomainDelegate getCanonicalDomain,
             SIPCallManager callManager,
             SIPAssetGetDelegate<SIPAccount> getSIPAccount,
@@ -157,7 +162,6 @@ namespace SIPSorcery.Servers
             m_username = dialPlanContext.Owner;
             m_adminMemberId = dialPlanContext.AdminMemberId;
             m_sipProviders = dialPlanContext.SIPProviders;
-            m_extendLifeDelegate = extendLifeDelegate;
             m_getCanonicalDomainDelegate = getCanonicalDomain;
             m_callManager = callManager;
             GetSIPAccount_External = getSIPAccount;
@@ -176,11 +180,13 @@ namespace SIPSorcery.Servers
         /// <param name="cancelCause"></param>
         private void ClientCallTerminated(CallCancelCause cancelCause) {
             try {
+                Log("Dialplan call was terminated by client side due to " + cancelCause + ".");
+
                 if (m_currentCall != null) {
-                    m_currentCall.CancelAllCallLegs(cancelCause);
+                    m_currentCall.CancelNotRequiredCallLegs(cancelCause);
                 }
 
-                EndScript();
+                m_executingScript.StopExecution();
             }
             catch (Exception excp) {
                 logger.Error("Exception ClientCallTerminated. " + excp.Message);
@@ -221,6 +227,86 @@ namespace SIPSorcery.Servers
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="ringTimeout"></param>
+        /// <param name="answeredCallLimit"></param>
+        /// <param name="redirectMode"></param>
+        /// <param name="clientTransaction"></param>
+        /// <param name="keepScriptAlive">If false will let the dial plan engine know the script has finished and the call is answered. For applications
+        /// like Callback which need to have two calls answered it will be true.</param>
+        /// <returns></returns>
+        private DialPlanAppResult Dial(
+            string data,
+            int ringTimeout,
+            int answeredCallLimit,
+            SIPRequest clientRequest) {
+            DialPlanAppResult result = DialPlanAppResult.Unknown;
+            ManualResetEvent waitForCallCompleted = new ManualResetEvent(false);
+
+            SIPResponseStatusCodesEnum answeredStatus = SIPResponseStatusCodesEnum.None;
+            string answeredReason = null;
+            string answeredContentType = null;
+            string answeredBody = null;
+            SIPDialogue answeredDialogue = null;
+
+            m_currentCall = new SwitchCallMulti(m_sipTransport, FireProxyLogEvent, Username, m_adminMemberId, LastDialled, m_outboundProxySocket, clientRequest.Header.ContentType, clientRequest.Body);
+            m_currentCall.CallProgress += m_dialPlanContext.CallProgress;
+            m_currentCall.CallFailed += (status, reason) => {
+                LastFailureStatus = status;
+                LastFailureReason = reason;
+                result = DialPlanAppResult.Failed;
+                waitForCallCompleted.Set();
+            };
+            m_currentCall.CallAnswered += (status, reason, contentType, body, dialogue) => {
+                answeredStatus = status;
+                answeredReason = reason;
+                answeredContentType = contentType;
+                answeredBody = body;
+                answeredDialogue = dialogue;
+                result = DialPlanAppResult.Answered;
+                waitForCallCompleted.Set();
+            };
+
+            LastDialled = new List<SIPTransaction>();
+
+            try {
+                Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, m_customSIPHeaders);
+                if (m_customFromName != null || m_customFromUser != null || m_customFromHost != null) {
+                    UpdateCallQueueFromHeaders(callsQueue, m_customFromName, m_customFromUser, m_customFromHost);
+                }
+                m_currentCall.Start(callsQueue);
+
+                // Wait for an answer.
+                ringTimeout = (ringTimeout > m_maxRingTime) ? m_maxRingTime : ringTimeout;
+                ExtendScriptTimeout(ringTimeout + DEFAULT_CREATECALL_RINGTIME);
+                if (waitForCallCompleted.WaitOne(ringTimeout * 1000, false)) {
+                    if (result == DialPlanAppResult.Answered) {
+                        m_dialPlanContext.CallAnswered(answeredStatus, answeredReason, answeredContentType, answeredBody, answeredDialogue);
+                        // Dial plan script stops once there is an answered call to bridge to.
+                        m_executingScript.StopExecution();
+                    }
+                }
+                else {
+                    // Call timed out.
+                    m_currentCall.CancelNotRequiredCallLegs(CallCancelCause.TimedOut);
+                    result = DialPlanAppResult.TimedOut;
+                }
+
+                return result;
+            }
+            catch (ThreadAbortException) {
+                // This exception will be thrown under normal circumstances as the script will abort the thread if a call is answered.
+                return result;
+            }
+            catch (Exception excp) {
+                logger.Error("Exception DialPlanScriptHelper Dial. " + excp);
+                return DialPlanAppResult.Error;
+            }
+        }
+
+        /// <summary>
         /// Logs a message with the proxy. Typically this records the message in the database and also prints it out
         /// on the proxy monitor telnet console.
         /// </summary>
@@ -249,10 +335,21 @@ namespace SIPSorcery.Servers
         /// </summary>
         /// <param name="statusCode"></param>
         /// <param name="reason"></param>
-        public void Respond(int statusCode, string reason)
-        {
-            SIPReplyApp replyApp = new SIPReplyApp(FireProxyLogEvent, m_username, m_dialPlanContext.CallProgress, FailCallAndStopScript);
-            replyApp.Start(statusCode, reason);
+        public void Respond(int statusCode, string reason) {
+            try {
+                SIPReplyApp replyApp = new SIPReplyApp();
+                SIPResponse sipResponse = replyApp.Start(statusCode, reason);
+                if ((int)sipResponse.Status >= 300) {
+                    m_dialPlanContext.CallFailed(sipResponse.Status, sipResponse.ReasonPhrase);
+                    m_executingScript.StopExecution();
+                }
+                else if ((int)sipResponse.Status < 200) {
+                    m_dialPlanContext.CallProgress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
+                }
+            }
+            catch (Exception excp) {
+                Log("Exception Respond. " + excp.Message);
+            }
         }
 
         /// <summary>
@@ -319,14 +416,28 @@ namespace SIPSorcery.Servers
         /// </summary>
         public bool IsAvailable(string username, string domain)
         {
-            if (username != Username && Username != "aaron")
-            {
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "You are not authorised to call IsAvailable for " + username + "@" + domain + ".", Username));
+            try {
+                string canonicalDomain = m_getCanonicalDomainDelegate(domain);
+                if (canonicalDomain.IsNullOrBlank()) {
+                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The " + domain + " is not a serviced domain.", Username));
+                    return false;
+                }
+                else {
+                    SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == username && s.SIPDomain == domain);
+                    if (sipAccount == null) {
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in IsAvailable for " + username + "@" + domain + ".", Username));
+                        return false;
+                    }
+                    else {
+                        SIPRegistrarBinding[] bindings = GetBindings(username, domain);
+                        return (bindings != null && bindings.Length > 0);
+                    }
+                }
+            }
+            catch (Exception excp) {
+                Log("Exception IsAvailable. " + excp.Message);
                 return false;
             }
-
-            SIPRegistrarBinding[] bindings = GetBindings(username, domain);
-            return (bindings != null && bindings.Length > 0);
         }
 
         public SIPRegistrarBinding[] GetBindings()
@@ -341,30 +452,36 @@ namespace SIPSorcery.Servers
         {
             try
             {
-                if (username != Username && Username != "aaron")
-                {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "You are not authorised to call GetBindings for " + username + "@" + domain + ".", Username));
+                string canonicalDomain = m_getCanonicalDomainDelegate(domain);
+                if (canonicalDomain.IsNullOrBlank()) {
+                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The " + domain + " is not a serviced domain.", Username));
                     return null;
                 }
+                else {
+                    SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == username && s.SIPDomain == domain);
+                    if (sipAccount == null) {
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in GetBindings for " + username + "@" + domain + ".", Username));
+                        return null;
+                    }
+                    else if (sipAccount.Owner != m_username) {
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "You are not authorised to call GetBindings for " + username + "@" + domain + ".", Username));
+                        return null;
+                    }
+                    else {
+                        List<SIPRegistrarBinding> bindings = GetSIPAccountBindings_External(s => s.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
 
-                SIPParameterlessURI currentUser = new SIPParameterlessURI(m_defaultScheme, domain, username);
-
-                //SIPRegistrarRecord registrarRecord = SIPRegistrations.Lookup(currentUser);
-                SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == username && s.SIPDomain == domain);
-                List<SIPRegistrarBinding> bindings = GetSIPAccountBindings_External(s => s.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
-
-                if (bindings != null)
-                {
-                    return bindings.ToArray();
-                }
-                else
-                {
-                    return null;
+                        if (bindings != null) {
+                            return bindings.ToArray();
+                        }
+                        else {
+                            return null;
+                        }
+                    }
                 }
             }
             catch (Exception excp)
             {
-                logger.Error("Exception GetBindings. " + excp);
+                Log("Exception GetBindings. " + excp);
                 return null;
             }
         }
@@ -498,92 +615,6 @@ namespace SIPSorcery.Servers
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="ringTimeout"></param>
-        /// <param name="answeredCallLimit"></param>
-        /// <param name="redirectMode"></param>
-        /// <param name="clientTransaction"></param>
-        /// <param name="keepScriptAlive">If false will let the dial plan engine know the script has finished and the call is answered. For applications
-        /// like Callback which need to have two calls answered it will be true.</param>
-        /// <returns></returns>
-        private DialPlanAppResult Dial(
-            string data, 
-            int ringTimeout, 
-            int answeredCallLimit, 
-            SIPRequest clientRequest)
-        {
-            DialPlanAppResult result = DialPlanAppResult.TimedOut;
-            ManualResetEvent waitForCallCompleted = new ManualResetEvent(false);
-
-            m_currentCall = new SwitchCallMulti(m_sipTransport, FireProxyLogEvent, Username, m_adminMemberId, LastDialled, m_outboundProxySocket, clientRequest.Header.ContentType, clientRequest.Body);
-            m_currentCall.CallProgress += m_dialPlanContext.CallProgress;
-            m_currentCall.CallAnswered += AnswerCallAndStopScript;
-            m_currentCall.CallFailed += (s, r) => { LastFailureStatus = s; LastFailureReason = r; waitForCallCompleted.Set(); };
-            LastDialled = new List<SIPTransaction>();
-
-            try
-            {
-                Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, m_customSIPHeaders);
-                if (m_customFromName != null || m_customFromUser != null || m_customFromHost != null)
-                {
-                    UpdateCallQueueFromHeaders(callsQueue, m_customFromName, m_customFromUser, m_customFromHost);
-                }
-                m_currentCall.Start(callsQueue);
-
-                // Wait for an answer.
-                ringTimeout = (ringTimeout > m_maxRingTime) ? m_maxRingTime : ringTimeout;
-                ExtendScriptTimeout(ringTimeout + DEFAULT_CREATECALL_RINGTIME);
-                if (waitForCallCompleted.WaitOne(ringTimeout * 1000, false))
-                {
-                    // The only time this point will be reached is when all the SwitchCallMulti legs fail.
-                    // When the call is successfully answered the script thread will be terminated and this point will not be reached.
-                    result = DialPlanAppResult.Failed;
-                }
-                else
-                {
-                    // Call timed out.
-                    m_currentCall.CancelAllCallLegs(CallCancelCause.TimedOut);
-                }
-
-                return result;
-            }
-            catch (ThreadAbortException)
-            {
-                // This exception will be thrown under normal circumstances as the script will abort the thread if a call is answered.
-                return result;
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception DialPlanScriptHelper Dial. " + excp);
-                return DialPlanAppResult.Error;
-            }
-        }
-
-        private void FailCallAndStopScript(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase) {
-            try {
-                m_dialPlanContext.CallFailed(failureStatus, reasonPhrase);
-                EndScript();
-            }
-            catch (ThreadAbortException) { }
-            catch (Exception excp) {
-                logger.Error("Exception FailCallAndStopScript. " + excp.Message);
-            }
-        }
-
-        private void AnswerCallAndStopScript(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue) {
-            try {
-                m_dialPlanContext.CallAnswered(answeredStatus, reasonPhrase, answeredContentType, answeredBody, answeredDialogue);
-                EndScript();
-            }
-            catch (ThreadAbortException) { }
-            catch (Exception excp) {
-                logger.Error("Exception AnswerCallAndStopScript. " + excp.Message);
-            }
-        }
-
-        /// <summary>
         /// Applies a set of NAPTR rules obtained from an ENUM lookup to attempt to get a SIP URI.
         /// This functionality should be moved closer to the DNS classes once it becomes more mature and universal.
         /// See RFC 2915.
@@ -703,9 +734,8 @@ namespace SIPSorcery.Servers
             }
         }
 
-        private void ExtendScriptTimeout(int seconds)
-        {
-            m_extendLifeDelegate(m_executingScript.Id, DateTime.Now.AddSeconds(seconds + DialPlanExecutingScript.MAX_SCRIPTPROCESSING_SECONDS));
+        private void ExtendScriptTimeout(int seconds) {
+            m_executingScript.EndTime = DateTime.Now.AddSeconds(seconds + DialPlanExecutingScript.MAX_SCRIPTPROCESSING_SECONDS);
         }
 
         private void UpdateCallQueueFromHeaders(Queue<List<SIPCallDescriptor>> callsQueue, string fromName, string fromUser, string fromHost)
@@ -739,20 +769,6 @@ namespace SIPSorcery.Servers
                         }
                     }
                 }
-            }
-        }
-
-        private void EndScript()
-        {
-            try {
-
-                //m_extendLifeDelegate(m_executionId, DateTime.Now);
-                //Thread.CurrentThread.Abort();
-                m_executingScript.StopExecution();
-            }
-            catch (ThreadAbortException) { }
-            catch (Exception excp) {
-                logger.Error("Exception EndScript. " + excp.Message);
             }
         }
 

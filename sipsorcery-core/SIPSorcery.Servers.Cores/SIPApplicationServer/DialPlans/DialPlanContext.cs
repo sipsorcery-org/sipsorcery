@@ -256,18 +256,34 @@ namespace SIPSorcery.Servers
         /// </summary>
         /// <param name="sipTransaction"></param>
         private void ClientTransactionTimedOut(SIPTransaction sipTransaction) {
-            m_isAnswered = true;
-            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call timed out in a " + sipTransaction.TransactionState + " state after " + DateTime.Now.Subtract(sipTransaction.Created).TotalSeconds.ToString("0.##") + "s.", Owner));
-            if (CallCancelledByClient != null) {
-                CallCancelledByClient(CallCancelCause.TimedOut);
+            if (!m_isAnswered)
+            {
+                m_isAnswered = true;
+                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call timed out in a " + sipTransaction.TransactionState + " state after " + DateTime.Now.Subtract(sipTransaction.Created).TotalSeconds.ToString("0.##") + "s.", Owner));
+                if (CallCancelledByClient != null)
+                {
+                    CallCancelledByClient(CallCancelCause.TimedOut);
+                }
+            }
+            else
+            {
+                logger.Warn("DialPlanContext ClientTransactionTimedOut fired on already answered call.");
             }
         }
 
         private void ClientCallCancelled(SIPTransaction clientTransaction) {
-            m_isAnswered = true;
-            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call cancelled halting dial plan.", Owner));
-            if (CallCancelledByClient != null) {
-                CallCancelledByClient(CallCancelCause.ClientCancelled);
+            if (!m_isAnswered)
+            {
+                m_isAnswered = true;
+                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call cancelled halting dial plan.", Owner));
+                if (CallCancelledByClient != null)
+                {
+                    CallCancelledByClient(CallCancelCause.ClientCancelled);
+                }
+            }
+            else
+            {
+                logger.Warn("DialPlanContext ClientCallCancelled fired on already answered call.");
             }
         }
 

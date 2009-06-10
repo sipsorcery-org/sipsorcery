@@ -57,7 +57,7 @@ namespace SIPSorcery.Servers
         public const string SIPPROXY_USERAGENT = "www.sipsorcery.com";
         public const string DEFAULT_DOMAIN = "sip.sipsorcery.com";
                
-        private static ILog logger = AppState.GetLogger("sipproxy");
+        private static ILog logger = AppState.GetLogger("appsvr");
 
         private readonly string m_proxyViaParameterName = RegistrarCore.PROXY_VIA_PARAMETER_NAME;
 
@@ -336,16 +336,18 @@ namespace SIPSorcery.Servers
                     if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host) != null)
                     {
                         // Call identified as outgoing call for application server serviced domain.
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New outgoing call to " + sipRequest.URI.ToString() + ".", null));
                         SIPServerUserAgent uasOutgoingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, m_sipRequestAuthoriser.AuthoriseSIPRequest, FireProxyLogEvent);
                         uasOutgoingCall.NewCall += m_callManager.ProcessNewCall;
-                        ThreadPool.QueueUserWorkItem(delegate { uasOutgoingCall.InviteRequestReceived(sipRequest, localSIPEndPoint, remoteEndPoint); });
+                        uasOutgoingCall.InviteRequestReceived(sipRequest, localSIPEndPoint, remoteEndPoint);
                     }
                     else if (GetCanonicalDomain_External(sipRequest.URI.Host) != null)
                     {
                         // Call identified as incoming call for application server serviced domain.
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New incoming call to " + sipRequest.URI.ToString() + ".", null));
                         SIPServerUserAgent uasIncomingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, null, FireProxyLogEvent);
                         uasIncomingCall.NewCall += m_callManager.ProcessNewCall;
-                        ThreadPool.QueueUserWorkItem(delegate { uasIncomingCall.InviteRequestReceived(sipRequest, localSIPEndPoint, remoteEndPoint); });
+                        uasIncomingCall.InviteRequestReceivedAsync(sipRequest, localSIPEndPoint, remoteEndPoint);
                     }
                     else
                     {

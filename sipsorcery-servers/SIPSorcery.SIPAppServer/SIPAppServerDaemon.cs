@@ -191,9 +191,9 @@ namespace SIPSorcery.SIPAppServer {
 
                         m_dialPlanEngine = new DialPlanEngine(
                             m_sipTransport,
+                            DialPlanExecutionTransition,
                             m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                             FireSIPMonitorEvent,
-                            DialPlanExecutionTransition,
                             m_sipSorceryPersistor.SIPAccountsPersistor.Get,
                             m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
                             m_outboundProxy,
@@ -279,18 +279,18 @@ namespace SIPSorcery.SIPAppServer {
         }
 
         public void WriteCDR(SIPCDR cdr) {
-            SIPCDRAsset cdrAsset = new SIPCDRAsset(cdr);
+            /*SIPCDRAsset cdrAsset = new SIPCDRAsset(cdr);
             if (m_sipSorceryPersistor.SIPCDRPersistor.Count(c => c.Id == cdrAsset.Id) == 1) {
                 m_sipSorceryPersistor.SIPCDRPersistor.Update(cdrAsset);
             }
             else {
                 m_sipSorceryPersistor.SIPCDRPersistor.Add(cdrAsset);
-            }
+            }*/
         }
 
         private void DialPlanExecutionTransition(Guid dialPlanId, DialPlanExecutionStateEnum executionState) {
             try {
-                SIPDialPlan dialPlan = m_sipSorceryPersistor.SIPDialPlanPersistor.Get(dialPlanId);
+               SIPDialPlan dialPlan = m_sipSorceryPersistor.SIPDialPlanPersistor.Get(dialPlanId);
 
                 if (dialPlan != null) {
                     if (executionState == DialPlanExecutionStateEnum.Starting) {
@@ -313,7 +313,7 @@ namespace SIPSorcery.SIPAppServer {
                 logger.Debug("SIP Application Server stopping...");
 
                 DNSManager.Stop();
-                DialPlanEngine.StopScriptMonitoring = true;
+                m_dialPlanEngine.StopScriptMonitoring = true;
 
                 if (m_accessPolicyHost != null) {
                     m_accessPolicyHost.Close();
