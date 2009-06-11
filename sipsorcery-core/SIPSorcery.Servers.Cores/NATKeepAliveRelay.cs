@@ -146,7 +146,7 @@ namespace SIPSorcery.Servers
                 int sendToPort = 3455;
                 string sendFromAddress = "192.168.1.2";
                 int sendFromPort = 3244;
-                NATKeepAliveMessage keepAliveMsg = new NATKeepAliveMessage(new IPEndPoint(IPAddress.Parse(sendToAddress), sendToPort), new IPEndPoint(IPAddress.Parse(sendFromAddress), sendFromPort), SIPProtocolsEnum.TCP);
+                NATKeepAliveMessage keepAliveMsg = new NATKeepAliveMessage(SIPEndPoint.ParseSIPEndPoint(sendToAddress + ":" + sendToPort), new IPEndPoint(IPAddress.Parse(sendFromAddress), sendFromPort));
 
                 byte[] buffer = keepAliveMsg.ToBuffer();
                 Assert.IsTrue(buffer != null && buffer.Length == 20, "The byte buffer produced for the NATKeepAliveMessage is invalid.");
@@ -154,9 +154,8 @@ namespace SIPSorcery.Servers
                 NATKeepAliveMessage rtnMsg = NATKeepAliveMessage.ParseNATKeepAliveMessage(buffer);
                 Assert.IsNotNull(rtnMsg, "The NATKeepAliveMessage could not be parsed from the buffer.");
 
-                Assert.IsTrue(rtnMsg.SendToSocket.ToString() == keepAliveMsg.SendToSocket.ToString(), "The sent and returned sendto sockets were different.");
-                Assert.IsTrue(rtnMsg.SendFromSocket.ToString() == keepAliveMsg.SendFromSocket.ToString(), "The sent and returned sendfrom sockets were different.");
-                Assert.IsTrue(rtnMsg.Protocol == SIPProtocolsEnum.TCP, "The sent and returned protocols were different.");
+                Assert.IsTrue(rtnMsg.RemoteEndPoint.ToString() == keepAliveMsg.RemoteEndPoint.ToString(), "The sent and returned sendto sockets were different.");
+                Assert.IsTrue(rtnMsg.LocalSIPEndPoint.ToString() == keepAliveMsg.LocalSIPEndPoint.ToString(), "The sent and returned sendfrom sockets were different.");
             }
         }
 

@@ -66,6 +66,7 @@ namespace SIPSorcery.Servers
     {
         private const int DEFAULT_CREATECALL_RINGTIME = 60;     
         private const int ENUM_LOOKUP_TIMEOUT = 5;              // Default timeout in seconds for ENUM lookups.
+        private const string DEFAULT_LOCAL_DOMAIN = "local";
 
         private static int m_maxRingTime = SIPTimings.MAX_RING_TIME;
         private static SIPSchemesEnum m_defaultScheme = SIPSchemesEnum.sip;
@@ -408,7 +409,7 @@ namespace SIPSorcery.Servers
 
         public bool IsAvailable()
         {
-            return IsAvailable(Username, SIPAppServerCore.DEFAULT_DOMAIN);
+            return IsAvailable(Username, DEFAULT_LOCAL_DOMAIN);
         }
 
         /// <summary>
@@ -442,7 +443,7 @@ namespace SIPSorcery.Servers
 
         public SIPRegistrarBinding[] GetBindings()
         {
-            return GetBindings(Username, SIPAppServerCore.DEFAULT_DOMAIN);
+            return GetBindings(Username, DEFAULT_LOCAL_DOMAIN);
         }
 
         /// <summary>

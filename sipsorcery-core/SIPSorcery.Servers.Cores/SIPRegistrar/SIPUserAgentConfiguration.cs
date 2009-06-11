@@ -140,9 +140,9 @@ namespace SIPSorcery.Servers
                 XmlDocument regExpiryDom = new XmlDocument();
                 regExpiryDom.LoadXml(registrarExpiryNode);
 
-                UserAgentMaxExpiryNodes = regExpiryDom.DocumentElement;
+                Dictionary<string, SIPUserAgentConfiguration> uaExpiries = SIPUserAgentConfiguration.ParseSIPUserAgentConfigurations(regExpiryDom.DocumentElement);
 
-                int fringExpiry = GetExpiry(3600, "fring");
+                int fringExpiry = uaExpiries["fring"].MaxAllowedExpiryTime;
 
                 Assert.IsTrue(fringExpiry == 3600, "The expiry value for the fring ua was incorrect.");
 
@@ -165,36 +165,11 @@ namespace SIPSorcery.Servers
                 XmlDocument regExpiryDom = new XmlDocument();
                 regExpiryDom.LoadXml(registrarExpiryNode);
 
-                UserAgentMaxExpiryNodes = regExpiryDom.DocumentElement;
+                Dictionary<string, SIPUserAgentConfiguration> uaExpiries = SIPUserAgentConfiguration.ParseSIPUserAgentConfigurations(regExpiryDom.DocumentElement);
 
-                int ciscoExpiry = GetExpiry(500, "Cisco-CP7960G/8.0");
+                int ciscoExpiry = uaExpiries["Cisco-CP7960G/8.0"].MaxAllowedExpiryTime;
 
                 Assert.IsTrue(ciscoExpiry == 300, "The expiry value for the Cisco ua was incorrect, " + ciscoExpiry + ".");
-
-                Console.WriteLine("---------------------------------");
-            }
-
-
-            [Test]
-            public void GetDefaultExpiryUnitTest()
-            {
-                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                string registrarExpiryNode =
-                    "<registrarexpirys>" +
-                    " <useragents>" +
-                    "  <useragent expiry='3600'>fring</useragent>" +
-                    "  <useragent expiry='113'>*</useragent>" +
-                    " </useragents>" +
-                    "</registrarexpirys>";
-                XmlDocument regExpiryDom = new XmlDocument();
-                regExpiryDom.LoadXml(registrarExpiryNode);
-
-                UserAgentMaxExpiryNodes = regExpiryDom.DocumentElement;
-
-                int fringExpiry = GetExpiry(DEFAULT_EXPIRY_SECONDS, "cisco");
-
-                Assert.IsTrue(fringExpiry == DEFAULT_EXPIRY_SECONDS, "The expiry value for the unknown ua was incorrect.");
 
                 Console.WriteLine("---------------------------------");
             }

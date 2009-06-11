@@ -33,6 +33,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq.Dynamic;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -528,7 +529,7 @@ namespace SIPSorcery.Servers
         #if UNITTEST
 
 		[TestFixture]
-		public class SIPCallResolverUnitTest
+		public class DialStringParserUnitTest
 		{			
 			[TestFixtureSetUp]
 			public void Init()
@@ -556,15 +557,15 @@ namespace SIPSorcery.Servers
                 SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:1234@localhost"));
                 SIPHeader inviteHeader = new SIPHeader(SIPFromHeader.ParseFromHeader("<sip:joe@localhost>"), SIPToHeader.ParseToHeader("<sip:jane@localhost>"), 23, CallProperties.CreateNewCallId());
                 SIPViaHeader viaHeader = new SIPViaHeader("127.0.0.1", 5060, CallProperties.CreateBranchId());
-                inviteHeader.Via.PushViaHeader(viaHeader);
+                inviteHeader.Vias.PushViaHeader(viaHeader);
                 inviteRequest.Header = inviteHeader;
 
                 List<SIPProvider> providers = new List<SIPProvider>();
-                SIPProvider provider = new SIPProvider("test", "blueface", "test", "password", "sip.blueface.ie", null, null, null, null, 3600, null, null, null, false, false);
+                SIPProvider provider = new SIPProvider("test", "blueface", "test", "password", SIPURI.ParseSIPURIRelaxed("sip.blueface.ie"), null, null, null, null, 3600, null, null, null, false, false);
                 providers.Add(provider);
 
-                SIPCallResolver callResolver = new SIPCallResolver("test", providers, (user, domain) => { return null; }, new SIPDomains());
-                Queue<List<SIPCallDescriptor>> callQueue = callResolver.BuildCallList(inviteRequest, "blueface");
+                DialStringParser dialStringParser = new DialStringParser(null, "test", providers, null, null, null);
+                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "blueface", null);
 
                 Assert.IsNotNull(callQueue, "The call list should have contained a call.");
                 Assert.IsTrue(callQueue.Count == 1, "The call queue list should have contained one leg.");
@@ -587,15 +588,15 @@ namespace SIPSorcery.Servers
                 SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:1234@localhost"));
                 SIPHeader inviteHeader = new SIPHeader(SIPFromHeader.ParseFromHeader("<sip:joe@localhost>"), SIPToHeader.ParseToHeader("<sip:jane@localhost>"), 23, CallProperties.CreateNewCallId());
                 SIPViaHeader viaHeader = new SIPViaHeader("127.0.0.1", 5060, CallProperties.CreateBranchId());
-                inviteHeader.Via.PushViaHeader(viaHeader);
+                inviteHeader.Vias.PushViaHeader(viaHeader);
                 inviteRequest.Header = inviteHeader;
 
                 List<SIPProvider> providers = new List<SIPProvider>();
-                SIPProvider provider = new SIPProvider("test", "blueface", "test", "password", "sip.blueface.ie", null, null, null, null, 3600, null, null, null, false, false);
+                SIPProvider provider = new SIPProvider("test", "blueface", "test", "password", SIPURI.ParseSIPURIRelaxed("sip.blueface.ie"), null, null, null, null, 3600, null, null, null, false, false);
                 providers.Add(provider);
 
-                SIPCallResolver callResolver = new SIPCallResolver("test", providers, (user, domain) => { return null; }, new SIPDomains());
-                Queue<List<SIPCallDescriptor>> callQueue = callResolver.BuildCallList(inviteRequest, "303@blueface");
+                DialStringParser dialStringParser = new DialStringParser(null, "test", providers, null, null, null);
+                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "303@blueface", null);
 
                 Assert.IsNotNull(callQueue, "The call list should have contained a call.");
                 Assert.IsTrue(callQueue.Count == 1, "The call queue list should have contained one leg.");
@@ -618,15 +619,15 @@ namespace SIPSorcery.Servers
                 SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:1234@localhost"));
                 SIPHeader inviteHeader = new SIPHeader(SIPFromHeader.ParseFromHeader("<sip:joe@localhost>"), SIPToHeader.ParseToHeader("<sip:jane@localhost>"), 23, CallProperties.CreateNewCallId());
                 SIPViaHeader viaHeader = new SIPViaHeader("127.0.0.1", 5060, CallProperties.CreateBranchId());
-                inviteHeader.Via.PushViaHeader(viaHeader);
+                inviteHeader.Vias.PushViaHeader(viaHeader);
                 inviteRequest.Header = inviteHeader;
 
                 List<SIPProvider> providers = new List<SIPProvider>();
-                SIPProvider provider = new SIPProvider("test", "blueface", "test", "password", "sip.blueface.ie", null, null, null, null, 3600, null, null, null, false, false);
+                SIPProvider provider = new SIPProvider("test", "blueface", "test", "password", SIPURI.ParseSIPURIRelaxed("sip.blueface.ie"), null, null, null, null, 3600, null, null, null, false, false);
                 providers.Add(provider);
 
-                SIPCallResolver callResolver = new SIPCallResolver("test", providers, (user, domain) => { return null; }, new SIPDomains());
-                Queue<List<SIPCallDescriptor>> callQueue = callResolver.BuildCallList(inviteRequest, "303@noprovider");
+                DialStringParser dialStringParser = new DialStringParser(null, "test", providers, null, null, null);
+                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "303@noprovider", null);
 
                 Assert.IsNotNull(callQueue, "The call list should be returned.");
                 Assert.IsTrue(callQueue.Count == 1, "The call queue list should not have contained one leg.");
@@ -634,7 +635,7 @@ namespace SIPSorcery.Servers
 
                 Assert.IsNotNull(firstLeg, "The first call leg should exist.");
                 Assert.IsTrue(firstLeg.Count == 1, "The first call leg should have had one switch call.");
-                Assert.IsTrue(firstLeg[0].Username == SIPCallResolver.m_anonymousUsername, "The username for the first call leg was not correct.");
+                Assert.IsTrue(firstLeg[0].Username == DialStringParser.m_anonymousUsername, "The username for the first call leg was not correct.");
                 Assert.IsTrue(firstLeg[0].Uri.ToString() == "sip:303@noprovider", "The destination URI for the first call leg was not correct.");
 
                 Console.WriteLine("---------------------------------");
@@ -648,15 +649,15 @@ namespace SIPSorcery.Servers
                 SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:1234@localhost"));
                 SIPHeader inviteHeader = new SIPHeader(SIPFromHeader.ParseFromHeader("<sip:joe@localhost>"), SIPToHeader.ParseToHeader("<sip:jane@localhost>"), 23, CallProperties.CreateNewCallId());
                 SIPViaHeader viaHeader = new SIPViaHeader("127.0.0.1", 5060, CallProperties.CreateBranchId());
-                inviteHeader.Via.PushViaHeader(viaHeader);
+                inviteHeader.Vias.PushViaHeader(viaHeader);
                 inviteRequest.Header = inviteHeader;
 
                 List<SIPProvider> providers = new List<SIPProvider>();
-                SIPProvider provider = new SIPProvider("test", "blueface", "test", "password", "sip.blueface.ie", null, null, null, null, 3600, null, null, null, false, false);
+                SIPProvider provider = new SIPProvider("test", "blueface", "test", "password", SIPURI.ParseSIPURIRelaxed("sip.blueface.ie"), null, null, null, null, 3600, null, null, null, false, false);
                 providers.Add(provider);
 
-                SIPCallResolver callResolver = new SIPCallResolver("test", providers, (user, domain) => { return null; }, new SIPDomains());
-                Queue<List<SIPCallDescriptor>> callQueue = callResolver.BuildCallList(inviteRequest, "blueface, true");
+                DialStringParser dialStringParser = new DialStringParser(null, "test", providers, null, null, null);
+                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "blueface, true", null);
 
                 Assert.IsNotNull(callQueue, "The call list should have contained a call.");
                 Assert.IsTrue(callQueue.Count == 1, "The call queue list should have contained one leg.");
@@ -672,30 +673,12 @@ namespace SIPSorcery.Servers
             }
 
             [Test]
-            public void IsLocalProviderUnitTest()
-            {
-                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                SIPDomains sipDomains = new SIPDomains();
-                sipDomains.AddDomain("local");
-                SIPCallResolver callResolver = new SIPCallResolver("test", null, (user, domain) => { return null; }, sipDomains);
-                bool isLocal = callResolver.IsLocal("aaron@local");
-
-                Assert.IsTrue(isLocal, "The call leg should have been recognised as local.");
-
-                Console.WriteLine("---------------------------------"); 
-            }
-
-            [Test]
             public void LookupSIPAccountUnitTest()
             {
                 Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-                SIPDomains sipDomains = new SIPDomains();
-                sipDomains.AddDomain("local");
-                SIPCallResolver callResolver = new SIPCallResolver("test", null, (user, domain) => { Console.WriteLine("lookup: " + user + "@" + domain + "."); return null; }, sipDomains);
-
-                List<SIPCallDescriptor> callList = callResolver.GetCallListForLocalUser("aaron@local", null);
+                DialStringParser dialStringParser = new DialStringParser(null, "test", null, (where) => { return null; }, null, null);
+                Queue<List<SIPCallDescriptor>> callList = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, null, "aaron@local", null);
 
                 Assert.IsTrue(callList.Count == 0, "No local contacts should have been returned.");
 
@@ -710,17 +693,17 @@ namespace SIPSorcery.Servers
                 SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:1234@localhost"));
                 SIPHeader inviteHeader = new SIPHeader(SIPFromHeader.ParseFromHeader("<sip:joe@localhost>"), SIPToHeader.ParseToHeader("<sip:jane@localhost>"), 23, CallProperties.CreateNewCallId());
                 SIPViaHeader viaHeader = new SIPViaHeader("127.0.0.1", 5060, CallProperties.CreateBranchId());
-                inviteHeader.Via.PushViaHeader(viaHeader);
+                inviteHeader.Vias.PushViaHeader(viaHeader);
                 inviteRequest.Header = inviteHeader;
 
                 List<SIPProvider> providers = new List<SIPProvider>();
-                SIPProvider provider = new SIPProvider("test", "provider1", "user", "password", "sip.blueface.ie", null, null, null, null, 3600, null, null, null, false, false);
-                SIPProvider provider2 = new SIPProvider("test", "provider2", "user", "password", "sip.blueface.ie", null, null, null, null, 3600, null, null, null, false, false);
+                SIPProvider provider = new SIPProvider("test", "provider1", "user", "password", SIPURI.ParseSIPURIRelaxed("sip.blueface.ie"), null, null, null, null, 3600, null, null, null, false, false);
+                SIPProvider provider2 = new SIPProvider("test", "provider2", "user", "password", SIPURI.ParseSIPURIRelaxed("sip.blueface.ie"), null, null, null, null, 3600, null, null, null, false, false);
                 providers.Add(provider);
                 providers.Add(provider2);
 
-                SIPCallResolver callResolver = new SIPCallResolver("test", providers, (user, domain) => { return null; }, new SIPDomains());
-                Queue<List<SIPCallDescriptor>> callQueue = callResolver.BuildCallList(inviteRequest, "provider1&provider2");
+                DialStringParser dialStringParser = new DialStringParser(null, "test", providers, null, null, null);
+                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "provider1&provider2", null);
 
                 Assert.IsNotNull(callQueue, "The call list should have contained a call.");
                 Assert.IsTrue(callQueue.Count == 1, "The call queue list should have contained one leg.");
@@ -741,17 +724,17 @@ namespace SIPSorcery.Servers
                 SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:1234@localhost"));
                 SIPHeader inviteHeader = new SIPHeader(SIPFromHeader.ParseFromHeader("<sip:joe@localhost>"), SIPToHeader.ParseToHeader("<sip:jane@localhost>"), 23, CallProperties.CreateNewCallId());
                 SIPViaHeader viaHeader = new SIPViaHeader("127.0.0.1", 5060, CallProperties.CreateBranchId());
-                inviteHeader.Via.PushViaHeader(viaHeader);
+                inviteHeader.Vias.PushViaHeader(viaHeader);
                 inviteRequest.Header = inviteHeader;
 
                 List<SIPProvider> providers = new List<SIPProvider>();
-                SIPProvider provider = new SIPProvider("test", "provider1", "user", "password", "sip.blueface.ie", null, null, null, null, 3600, null, null, null, false, false);
-                SIPProvider provider2 = new SIPProvider("test", "provider2", "user", "password", "sip.blueface.ie", null, null, null, null, 3600, null, null, null, false, false);
+                SIPProvider provider = new SIPProvider("test", "provider1", "user", "password", SIPURI.ParseSIPURIRelaxed("sip.blueface.ie"), null, null, null, null, 3600, null, null, null, false, false);
+                SIPProvider provider2 = new SIPProvider("test", "provider2", "user", "password", SIPURI.ParseSIPURIRelaxed("sip.blueface.ie"), null, null, null, null, 3600, null, null, null, false, false);
                 providers.Add(provider);
                 providers.Add(provider2);
 
-                SIPCallResolver callResolver = new SIPCallResolver("test", providers, (user, domain) => { return null; }, new SIPDomains());
-                Queue<List<SIPCallDescriptor>> callQueue = callResolver.BuildCallList(inviteRequest, "local&1234@provider2");
+                DialStringParser dialStringParser = new DialStringParser(null, "test", providers, null, null, null);
+                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "local&1234@provider2", null);
 
                 Assert.IsNotNull(callQueue, "The call list should have contained a call.");
                 Assert.IsTrue(callQueue.Count == 1, "The call queue list should have contained one leg.");

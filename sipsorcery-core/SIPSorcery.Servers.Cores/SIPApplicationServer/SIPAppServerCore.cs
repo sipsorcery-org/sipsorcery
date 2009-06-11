@@ -53,30 +53,19 @@ using NUnit.Framework;
 namespace SIPSorcery.Servers
 {
     public class SIPAppServerCore
-	{
-        public const string SIPPROXY_USERAGENT = "www.sipsorcery.com";
-        public const string DEFAULT_DOMAIN = "sip.sipsorcery.com";
-               
+	{              
         private static ILog logger = AppState.GetLogger("appsvr");
-
-        private readonly string m_proxyViaParameterName = RegistrarCore.PROXY_VIA_PARAMETER_NAME;
 
         private SIPMonitorLogDelegate SIPMonitorLogEvent_External;              // Function to log messages from this core.
         private GetCanonicalDomainDelegate GetCanonicalDomain_External; 
 
         private SIPTransport m_sipTransport;
-        private SIPEndPoint m_registrarSocket;
-        private SIPEndPoint m_regAgentSocket;
         private SIPEndPoint m_outboundProxy;
         private SIPCallManager m_callManager;
         private SIPRequestAuthoriser m_sipRequestAuthoriser;
 
-        private SIPEndPoint m_localSEPForRegistrar; // Local socket used to forward REGISTER requests to the SIP Registrar servicing this application server (not 3rd party registrations).
-
         public SIPAppServerCore(
 			SIPTransport sipTransport, 
-            SIPEndPoint registrarSocket,
-            SIPEndPoint regAgentSocket,
             GetCanonicalDomainDelegate getCanonicalDomain,
             SIPMonitorLogDelegate proxyLog,
             SIPCallManager callManager,
@@ -92,17 +81,10 @@ namespace SIPSorcery.Servers
                 m_sipTransport.SIPTransportRequestReceived += GotRequest; 
                 m_sipTransport.SIPTransportResponseReceived += GotResponse;
 
-                m_registrarSocket = registrarSocket;
-                m_regAgentSocket = regAgentSocket;
                 m_outboundProxy = outboundProxy;
 
                 GetCanonicalDomain_External = getCanonicalDomain;
                 SIPMonitorLogEvent_External = proxyLog;
-
-                if (m_registrarSocket != null)
-                {
-                    m_localSEPForRegistrar = m_sipTransport.GetDefaultSIPEndPoint(m_registrarSocket.SIPProtocol);
-                }
 			}
 			catch(Exception excp)
 			{
@@ -237,61 +219,6 @@ namespace SIPSorcery.Servers
 
                     #endregion
                 }
-                else if (sipRequest.Method == SIPMethodsEnum.REGISTER)
-                {
-                    #region REGISTER request handling.
-
-                    if (m_regAgentSocket != null && remoteEndPoint.ToString() == m_regAgentSocket.ToString())
-                    {
-                        // This is a REGISTER request for the registration agent that should be forwarded out to the 3rd party provider.
-
-                        // The registration agent has indicated where it wants the REGISTER request sent to by adding a Route header.
-                        // Remove the header in case it confuses the SIP Registrar the REGISTER is being sent to.
-                        SIPRoute registrarRoute = sipRequest.Header.Routes.PopRoute();
-                        sipRequest.Header.Routes = null;
-
-                        SIPEndPoint regAgentEndPoint = m_sipTransport.GetDefaultSIPEndPoint(registrarRoute.URI.Protocol);
-                        if (regAgentEndPoint != null)
-                        {
-                            SIPViaHeader originalHeader = sipRequest.Header.Vias.PopTopViaHeader();
-                            sipRequest.Header.Vias.PushViaHeader(new SIPViaHeader(regAgentEndPoint, originalHeader.Branch));
-                            //sipRequest.Header.Via.PushViaHeader(new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId()));
-
-                            sipRequest.LocalSIPEndPoint = regAgentEndPoint;
-                            m_sipTransport.SendRequest(new SIPEndPoint(registrarRoute.URI), sipRequest);
-                        }
-                        else
-                        {
-                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "The application server cannot forward Registration Agent requests as no " + registrarRoute.URI.Protocol + " channel has been configured.", null));
-                        }
-                    }
-                    else if (m_registrarSocket != null)
-                    {
-                        if (m_localSEPForRegistrar != null)
-                        {
-                            // If the SIP Registrar is in the same process add a Via Header on for the received end point.
-                            // This will allow the proxy and registrar to be seperated easily if the need arises.
-                            sipRequest.Header.Vias.TopViaHeader.ViaParameters.Set(m_proxyViaParameterName, localSIPEndPoint.ToString());
-                            sipRequest.Header.Vias.PushViaHeader(new SIPViaHeader(m_localSEPForRegistrar, CallProperties.CreateBranchId()));
-                            sipRequest.LocalSIPEndPoint = m_localSEPForRegistrar;
-                            m_sipTransport.SendRequest(m_registrarSocket, sipRequest);
-                        }
-                        else
-                        {
-                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "The application server cannot forward REGISTER requests as no UDP channel has been configured.", null));
-                            SIPResponse notAllowedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.InternalServerError, "Registrar is not reachable");
-                            m_sipTransport.SendResponse(notAllowedResponse);
-                        }
-                    }
-                    else
-                    {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Warn, "MethodNotAllowed response for " + sipRequest.Method + " from " + fromUser + " socket " + remoteEndPoint.ToString() + ".", null));
-                        SIPResponse notAllowedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                        m_sipTransport.SendResponse(notAllowedResponse);
-                    }
-
-                    #endregion
-                }
                 else if (sipRequest.Method == SIPMethodsEnum.CANCEL)
                 {
                     #region CANCEL request handling.
@@ -380,70 +307,6 @@ namespace SIPSorcery.Servers
         public void GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
         {
             FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "App Server received a SIP response from " + remoteEndPoint + " that did not match an existing transaction.\n" + sipResponse.ToString(), null));
-
-            /*try
-            {
-                // The 3 fields below are used in the proxy monitor messages only, plays no part in response processing.
-                //string fromUser = (sipResponse.Header.From != null) ? sipResponse.Header.From.FromURI.User : null;
-                //string toUser = (sipResponse.Header.To != null) ? sipResponse.Header.To.ToURI.User : null;
-                //string summaryStr = "resp " + sipResponse.Header.CSeqMethod + " " + sipResponse.StatusCode + " " + sipResponse.Status + ", from=" + fromUser + ", to=" + toUser + ", fromsock=" + IPSocket.GetSocketString(remoteEndPoint);
-
-                SIPViaHeader proxyVia = sipResponse.Header.Vias.PopTopViaHeader();
-
-                if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REGISTER)
-                {
-                    if (m_registrarSocket != null && remoteEndPoint.ToString() == m_registrarSocket.ToString())
-                    {
-                        // This is a response from the SIP Registrar. The top Via header should contain a proxy parameter indicating which
-                        // local SIP end point the original REGISTER request arrived on.
-
-                        // Remove proxy parameter from via.
-                        SIPViaHeader uacVia = sipResponse.Header.Vias.TopViaHeader;
-                        string proxyEndPointStr = uacVia.ViaParameters.Get(m_proxyViaParameterName);
-                        sipResponse.Header.Vias.TopViaHeader.ViaParameters.Remove(m_proxyViaParameterName);  // Don't forward this via parameter back to the UA.
-
-                        if (proxyEndPointStr != null)
-                        {
-                            SIPURI proxyURI = SIPURI.ParseSIPURI(proxyEndPointStr);
-                            if (proxyURI != null)
-                            {
-                                sipResponse.LocalSIPEndPoint = new SIPEndPoint(proxyURI);
-                            }
-                        }
-
-                        m_sipTransport.SendResponse(sipResponse);
-                    }
-                    else if (m_regAgentSocket != null)
-                    {
-                        // A REGISTER response that has not come from the SIP Registrar socket is for the Registration Agent. In that case we need to add back on
-                        // the Via header that was removed when the original REGISTER request was passed through from the Agent.
-                        sipResponse.Header.Vias.PushViaHeader(new SIPViaHeader(m_regAgentSocket, proxyVia.Branch));
-
-                        // The registration agent will always communicate with the default UDP transport.
-                        sipResponse.LocalSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp);
-                        m_sipTransport.SendResponse(sipResponse);
-                    }
-                    else
-                    {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Warn, "A REGISTER was received from " + remoteEndPoint + " that did not match the Registrar or Registration Agent.", null));
-                    }
-                }
-                else if (m_sipTransport.IsLocalSIPEndPoint(new SIPEndPoint(proxyVia.Transport, IPSocket.ParseSocketString(proxyVia.ContactAddress))))
-                //else if(proxyVia.Host == m_sipTransport.GetTransportContact(null).Address.ToString() && proxyVia.Port == m_sipTransport.GetTransportContact(null).Port)
-                {
-                    m_sipTransport.SendResponse(sipResponse);
-                }
-                else
-                {
-                    // Response not for this proxy, ignoring.
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.Warn, "Dropping SIP response from " + remoteEndPoint + ", because the top Via header was not for this proxy, top header was " + proxyVia.ToString() + ".", null));
-                }
-            }
-            catch (Exception excp)
-            {
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.Error, "Exception StatefulProxyCore GotResponse (" + remoteEndPoint + "). " + excp.Message + "\n" + sipResponse.ToString(), null));
-                throw excp;
-            }*/
         }
 
         private void FireProxyLogEvent(SIPMonitorEvent monitorEvent)
@@ -470,16 +333,13 @@ namespace SIPSorcery.Servers
 		{           
             [TestFixtureSetUp]
 			public void Init()
-			{
-			}
-	
-			[TestFixtureTearDown]
-			public void Dispose()
-			{			
-				
-			}
+			{ }
 
-			[Test]
+            [TestFixtureTearDown]
+            public void Dispose()
+            { }
+                
+            [Test]
 			public void SampleTest()
 			{
 				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -490,8 +350,8 @@ namespace SIPSorcery.Servers
             public void CreateStatefulProxyTest()
             {
                 SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
-                SIPTransport sipTransport = new SIPTransport(transactionEngine, new IPEndPoint(IPAddress.Loopback, 3000), false, false);
-                StatefulProxyCore statefulProxyCore = new StatefulProxyCore(sipTransport, null, null, false, null);
+                SIPTransport sipTransport = new SIPTransport(SIPDNSManager.Resolve, transactionEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 3000)), false, false);
+                SIPAppServerCore appServerCore = new SIPAppServerCore(sipTransport, null, null, null, null, null);
                 sipTransport.Shutdown();
             }
 
@@ -499,23 +359,21 @@ namespace SIPSorcery.Servers
             public void B2BOptionsStatefulProxyTest()
             {
                 SIPTransactionEngine transactionEngine1 = new SIPTransactionEngine();
-                SIPTransport sipTransport1 = new SIPTransport(transactionEngine1, true, false);
-                sipTransport1.AddSIPChannel(new IPEndPoint(IPAddress.Loopback, 3000));
-                StatefulProxyCore statefulProxyCore1 = new StatefulProxyCore(sipTransport1, null, null, false, null);
+                SIPTransport sipTransport1 = new SIPTransport(SIPDNSManager.Resolve, transactionEngine1, true, false);
+                sipTransport1.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 3000)));
+                SIPAppServerCore appServerCore1 = new SIPAppServerCore(sipTransport1, null, statefulProxyCore1_StatefulProxyLogEvent, null, null, null);
 
                 SIPTransactionEngine transactionEngine2 = new SIPTransactionEngine();
-                SIPTransport sipTransport2 = new SIPTransport(transactionEngine2, true, false);
-                sipTransport2.AddSIPChannel(new IPEndPoint(IPAddress.Loopback, 3001));
-                StatefulProxyCore statefulProxyCore2 = new StatefulProxyCore(sipTransport2, null, null, false, null);
+                SIPTransport sipTransport2 = new SIPTransport(SIPDNSManager.Resolve, transactionEngine2, true, false);
+                sipTransport2.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 3001)));
+                SIPAppServerCore appServerCore2 = new SIPAppServerCore(sipTransport2, null, statefulProxyCore2_StatefulProxyLogEvent, null, null, null);
 
-                sipTransport1.SIPRequestOutTraceEvent += new SIPTransportSIPRequestOutTraceDelegate(sipTransport1_SIPRequestOutTraceEvent);
-                sipTransport1.SIPResponseInTraceEvent += new SIPTransportSIPResponseInTraceDelegate(sipTransport1_SIPResponseInTraceEvent);
-                sipTransport2.SIPRequestInTraceEvent += new SIPTransportSIPRequestInTraceDelegate(sipTransport2_SIPRequestInTraceEvent);
-                statefulProxyCore1.StatefulProxyLogEvent += new SIPMonitorLogDelegate(statefulProxyCore1_StatefulProxyLogEvent);
-                statefulProxyCore2.StatefulProxyLogEvent += new SIPMonitorLogDelegate(statefulProxyCore2_StatefulProxyLogEvent);
+                sipTransport1.SIPRequestOutTraceEvent += sipTransport1_SIPRequestOutTraceEvent;
+                sipTransport1.SIPResponseInTraceEvent += sipTransport1_SIPResponseInTraceEvent;
+                sipTransport2.SIPRequestInTraceEvent += sipTransport2_SIPRequestInTraceEvent;
 
-                SIPRequest optionsRequest = GetOptionsRequest(SIPURI.ParseSIPURI("sip:127.0.0.1:3001"), 1, sipTransport1.GetDefaultTransportContact(SIPProtocolsEnum.UDP));
-                sipTransport1.SendRequest(optionsRequest, SIPProtocolsEnum.UDP);
+                SIPRequest optionsRequest = GetOptionsRequest(SIPURI.ParseSIPURI("sip:127.0.0.1:3001"), 1, sipTransport1.GetDefaultTransportContact(SIPProtocolsEnum.udp).SocketEndPoint);
+                sipTransport1.SendRequest(optionsRequest);
 
                 Thread.Sleep(200);
 
@@ -529,27 +387,24 @@ namespace SIPSorcery.Servers
             public void B2BInviteStatefulProxyTest()
             {
                 SIPTransactionEngine transactionEngine1 = new SIPTransactionEngine();
-                SIPTransport sipTransport1 = new SIPTransport(transactionEngine1, true, false);
+                SIPTransport sipTransport1 = new SIPTransport(SIPDNSManager.Resolve, transactionEngine1, true, false);
                 IPEndPoint sipTransport1EndPoint = new IPEndPoint(IPAddress.Loopback, 3000);
-                sipTransport1.AddSIPChannel(sipTransport1EndPoint);
-                StatefulProxyCore statefulProxyCore1 = new StatefulProxyCore(sipTransport1, null, null, false, null);
+                sipTransport1.AddSIPChannel(new SIPUDPChannel(sipTransport1EndPoint));
+                SIPAppServerCore statefulProxyCore1 = new SIPAppServerCore(sipTransport1, null, statefulProxyCore1_StatefulProxyLogEvent, null, null, null);
 
                 SIPTransactionEngine transactionEngine2 = new SIPTransactionEngine();
-                SIPTransport sipTransport2 = new SIPTransport(transactionEngine2, true, false);
+                SIPTransport sipTransport2 = new SIPTransport(SIPDNSManager.Resolve, transactionEngine2, true, false);
                 IPEndPoint sipTransport2EndPoint = new IPEndPoint(IPAddress.Loopback, 3001);
-                sipTransport2.AddSIPChannel(sipTransport2EndPoint);
-                StatefulProxyCore statefulProxyCore2 = new StatefulProxyCore(sipTransport2, null, null, false, null);
-                statefulProxyCore2.GetCanonicalDomain += new GetCanonicalDomainDelegate(statefulProxyCore2_GetCanonicalDomain);
+                sipTransport2.AddSIPChannel(new SIPUDPChannel(sipTransport2EndPoint));
+                SIPAppServerCore statefulProxyCore2 = new SIPAppServerCore(sipTransport2, statefulProxyCore2_GetCanonicalDomain, statefulProxyCore2_StatefulProxyLogEvent, null, null, null);
 
-                sipTransport1.SIPRequestOutTraceEvent += new SIPTransportSIPRequestOutTraceDelegate(sipTransport1_SIPRequestOutTraceEvent);
-                sipTransport1.SIPResponseInTraceEvent += new SIPTransportSIPResponseInTraceDelegate(sipTransport1_SIPResponseInTraceEvent);
-                sipTransport2.SIPRequestInTraceEvent += new SIPTransportSIPRequestInTraceDelegate(sipTransport2_SIPRequestInTraceEvent);
-                sipTransport2.SIPResponseOutTraceEvent += new SIPTransportSIPResponseOutTraceDelegate(sipTransport2_SIPResponseOutTraceEvent);
-                statefulProxyCore1.StatefulProxyLogEvent += new SIPMonitorLogDelegate(statefulProxyCore1_StatefulProxyLogEvent);
-                statefulProxyCore2.StatefulProxyLogEvent += new SIPMonitorLogDelegate(statefulProxyCore2_StatefulProxyLogEvent);
+                sipTransport1.SIPRequestOutTraceEvent += sipTransport1_SIPRequestOutTraceEvent;
+                sipTransport1.SIPResponseInTraceEvent += sipTransport1_SIPResponseInTraceEvent;
+                sipTransport2.SIPRequestInTraceEvent += sipTransport2_SIPRequestInTraceEvent;
+                sipTransport2.SIPResponseOutTraceEvent += sipTransport2_SIPResponseOutTraceEvent;
 
                 SIPRequest inviteRequest = GetInviteRequest(sipTransport1EndPoint, null, sipTransport2EndPoint);
-                sipTransport1.SendRequest(inviteRequest, SIPProtocolsEnum.UDP);
+                sipTransport1.SendRequest(inviteRequest);
 
                 Thread.Sleep(200);
 
@@ -563,28 +418,25 @@ namespace SIPSorcery.Servers
             public void B2BInviteTransactionStatefulProxyTest()
             {
                 SIPTransactionEngine transactionEngine1 = new SIPTransactionEngine();
-                SIPTransport sipTransport1 = new SIPTransport(transactionEngine1, true, false);
+                SIPTransport sipTransport1 = new SIPTransport(SIPDNSManager.Resolve, transactionEngine1, true, false);
                 IPEndPoint sipTransport1EndPoint = new IPEndPoint(IPAddress.Loopback, 3000);
-                sipTransport1.AddSIPChannel(sipTransport1EndPoint);
-                StatefulProxyCore statefulProxyCore1 = new StatefulProxyCore(sipTransport1, null, null, false, null);
+                sipTransport1.AddSIPChannel(new SIPUDPChannel(sipTransport1EndPoint));
+                SIPAppServerCore statefulProxyCore1 = new SIPAppServerCore(sipTransport1, null, statefulProxyCore1_StatefulProxyLogEvent, null, null, null);
 
                 SIPTransactionEngine transactionEngine2 = new SIPTransactionEngine();
-                SIPTransport sipTransport2 = new SIPTransport(transactionEngine2, true, false);
+                SIPTransport sipTransport2 = new SIPTransport(SIPDNSManager.Resolve, transactionEngine2, true, false);
                 IPEndPoint sipTransport2EndPoint = new IPEndPoint(IPAddress.Loopback, 3001);
-                sipTransport2.AddSIPChannel(sipTransport2EndPoint);
-                StatefulProxyCore statefulProxyCore2 = new StatefulProxyCore(sipTransport2, null, null, false, null);
-                statefulProxyCore2.GetCanonicalDomain += new GetCanonicalDomainDelegate(statefulProxyCore2_GetCanonicalDomain);
+                sipTransport2.AddSIPChannel(new SIPUDPChannel(sipTransport2EndPoint));
+                SIPAppServerCore statefulProxyCore2 = new SIPAppServerCore(sipTransport2, statefulProxyCore2_GetCanonicalDomain, statefulProxyCore2_StatefulProxyLogEvent, null, null, null);
 
-                sipTransport1.SIPRequestOutTraceEvent += new SIPTransportSIPRequestOutTraceDelegate(sipTransport1_SIPRequestOutTraceEvent);
-                sipTransport1.SIPResponseInTraceEvent += new SIPTransportSIPResponseInTraceDelegate(sipTransport1_SIPResponseInTraceEvent);
-                sipTransport2.SIPRequestInTraceEvent += new SIPTransportSIPRequestInTraceDelegate(sipTransport2_SIPRequestInTraceEvent);
-                sipTransport2.SIPResponseOutTraceEvent += new SIPTransportSIPResponseOutTraceDelegate(sipTransport2_SIPResponseOutTraceEvent);
-                statefulProxyCore1.StatefulProxyLogEvent += new SIPMonitorLogDelegate(statefulProxyCore1_StatefulProxyLogEvent);
-                statefulProxyCore2.StatefulProxyLogEvent += new SIPMonitorLogDelegate(statefulProxyCore2_StatefulProxyLogEvent);
+                sipTransport1.SIPRequestOutTraceEvent += sipTransport1_SIPRequestOutTraceEvent;
+                sipTransport1.SIPResponseInTraceEvent += sipTransport1_SIPResponseInTraceEvent;
+                sipTransport2.SIPRequestInTraceEvent += sipTransport2_SIPRequestInTraceEvent;
+                sipTransport2.SIPResponseOutTraceEvent += sipTransport2_SIPResponseOutTraceEvent;
 
                 SIPRequest inviteRequest = GetInviteRequest(sipTransport1EndPoint, null, sipTransport2EndPoint);
-                UACInviteTransaction uacInvite = sipTransport1.CreateUACTransaction(inviteRequest, sipTransport2EndPoint, sipTransport1EndPoint, SIPProtocolsEnum.UDP);
-                uacInvite.SendInviteRequest(sipTransport2EndPoint, inviteRequest);
+                UACInviteTransaction uacInvite = sipTransport1.CreateUACTransaction(inviteRequest, new SIPEndPoint(SIPProtocolsEnum.udp, sipTransport2EndPoint), new SIPEndPoint(SIPProtocolsEnum.udp, sipTransport1EndPoint), null);
+                uacInvite.SendInviteRequest(new SIPEndPoint(SIPProtocolsEnum.udp, sipTransport2EndPoint), inviteRequest);
 
                 Thread.Sleep(200);
 
@@ -599,30 +451,34 @@ namespace SIPSorcery.Servers
             public void B2BInviteTransactionUserFoundStatefulProxyTest()
             {
                 SIPTransactionEngine transactionEngine1 = new SIPTransactionEngine();
-                SIPTransport sipTransport1 = new SIPTransport(transactionEngine1, true, false);
+                SIPTransport sipTransport1 = new SIPTransport(SIPDNSManager.Resolve, transactionEngine1, true, false);
                 IPEndPoint sipTransport1EndPoint = new IPEndPoint(IPAddress.Loopback, 3000);
-                sipTransport1.AddSIPChannel(sipTransport1EndPoint);
-                StatefulProxyCore statefulProxyCore1 = new StatefulProxyCore(sipTransport1, null, null, false, null);
+                sipTransport1.AddSIPChannel(new SIPUDPChannel(sipTransport1EndPoint));
+                SIPAppServerCore statefulProxyCore1 = new SIPAppServerCore(sipTransport1, null, statefulProxyCore1_StatefulProxyLogEvent, null, null, null);
 
                 SIPTransactionEngine transactionEngine2 = new SIPTransactionEngine();
-                SIPTransport sipTransport2 = new SIPTransport(transactionEngine2, true, false);
+                SIPTransport sipTransport2 = new SIPTransport(SIPDNSManager.Resolve, transactionEngine2, true, false);
                 IPEndPoint sipTransport2EndPoint = new IPEndPoint(IPAddress.Loopback, 3001);
-                sipTransport2.AddSIPChannel(sipTransport2EndPoint);
-                StatefulProxyCore statefulProxyCore2 = new StatefulProxyCore(sipTransport2, null, null, false, null);
-                statefulProxyCore2.GetCanonicalDomain += new GetCanonicalDomainDelegate(statefulProxyCore2_GetCanonicalDomain);
-                statefulProxyCore2.GetExtensionOwner += new GetExtensionOwnerDelegate(statefulProxyCore2_GetExtensionOwner);
+                sipTransport2.AddSIPChannel(new SIPUDPChannel(sipTransport2EndPoint));
+                SIPAppServerCore statefulProxyCore2 = new SIPAppServerCore(
+                    sipTransport2, 
+                    statefulProxyCore2_GetCanonicalDomain, 
+                    statefulProxyCore2_StatefulProxyLogEvent, 
+                    null, 
+                    null, 
+                    null);
+ 
+                //statefulProxyCore2.GetExtensionOwner += new GetExtensionOwnerDelegate(statefulProxyCore2_GetExtensionOwner);
 
-                sipTransport1.SIPRequestOutTraceEvent += new SIPTransportSIPRequestOutTraceDelegate(sipTransport1_SIPRequestOutTraceEvent);
-                sipTransport1.SIPResponseInTraceEvent += new SIPTransportSIPResponseInTraceDelegate(sipTransport1_SIPResponseInTraceEvent);
-                sipTransport2.SIPRequestInTraceEvent += new SIPTransportSIPRequestInTraceDelegate(sipTransport2_SIPRequestInTraceEvent);
-                sipTransport2.SIPResponseOutTraceEvent += new SIPTransportSIPResponseOutTraceDelegate(sipTransport2_SIPResponseOutTraceEvent);
-                statefulProxyCore1.StatefulProxyLogEvent += new SIPMonitorLogDelegate(statefulProxyCore1_StatefulProxyLogEvent);
-                statefulProxyCore2.StatefulProxyLogEvent += new SIPMonitorLogDelegate(statefulProxyCore2_StatefulProxyLogEvent);
-                statefulProxyCore2.LoadDialPlan += new LoadDialPlanDelegate(statefulProxyCore2_LoadDialPlan);
+                sipTransport1.SIPRequestOutTraceEvent += sipTransport1_SIPRequestOutTraceEvent;
+                sipTransport1.SIPResponseInTraceEvent += sipTransport1_SIPResponseInTraceEvent;
+                sipTransport2.SIPRequestInTraceEvent += sipTransport2_SIPRequestInTraceEvent;
+                sipTransport2.SIPResponseOutTraceEvent += sipTransport2_SIPResponseOutTraceEvent;
+                //statefulProxyCore2.LoadDialPlan += new LoadDialPlanDelegate(statefulProxyCore2_LoadDialPlan);
 
                 SIPRequest inviteRequest = GetInviteRequest(sipTransport1EndPoint, null, sipTransport2EndPoint);
-                UACInviteTransaction uacInvite = sipTransport1.CreateUACTransaction(inviteRequest, sipTransport2EndPoint, sipTransport1EndPoint, SIPProtocolsEnum.UDP);
-                uacInvite.SendInviteRequest(sipTransport2EndPoint, inviteRequest);
+                UACInviteTransaction uacInvite = sipTransport1.CreateUACTransaction(inviteRequest, new SIPEndPoint(SIPProtocolsEnum.udp, sipTransport2EndPoint), new SIPEndPoint(SIPProtocolsEnum.udp, sipTransport1EndPoint), null);
+                uacInvite.SendInviteRequest(new SIPEndPoint(SIPProtocolsEnum.udp, sipTransport2EndPoint), inviteRequest);
 
                 Thread.Sleep(1000);
 
@@ -634,7 +490,7 @@ namespace SIPSorcery.Servers
 
             SIPDialPlan statefulProxyCore2_LoadDialPlan(string sipAccountUsername, string sipAccountDomain)
             {
-                return new SIPDialPlan(null, null, null, null, null, null, null);
+                return new SIPDialPlan(null, null, null, null, SIPDialPlanScriptTypesEnum.Ruby);
             }
 
             string statefulProxyCore2_GetExtensionOwner(string user, string domain)
@@ -649,32 +505,32 @@ namespace SIPSorcery.Servers
 
             void statefulProxyCore2_StatefulProxyLogEvent(SIPMonitorEvent logEvent)
             {
-                Console.WriteLine("StateFulProxy2-" + logEvent.EventType + ": " + logEvent.Message);
+                Console.WriteLine("AppServerCore2-" + logEvent.EventType + ": " + logEvent.Message);
             }
 
             void statefulProxyCore1_StatefulProxyLogEvent(SIPMonitorEvent logEvent)
             {
-                Console.WriteLine("StateFulProxy1-" + logEvent.EventType + ": " + logEvent.Message);
+                Console.WriteLine("AppServerCore1-" + logEvent.EventType + ": " + logEvent.Message);
             }
 
-            void sipTransport2_SIPResponseOutTraceEvent(SIPProtocolsEnum protocol, IPEndPoint localEndPoint, IPEndPoint toEndPoint, SIPResponse sipResponse)
+            void sipTransport2_SIPResponseOutTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint toEndPoint, SIPResponse sipResponse)
             {
-                Console.WriteLine("Response Sent (" + protocol + "): " + localEndPoint + "<-" + toEndPoint + "\r\n" + sipResponse.ToString());
+                Console.WriteLine("Response Sent: " + localEndPoint.ToString() + "<-" + toEndPoint.ToString() + "\r\n" + sipResponse.ToString());
             }
 
-            void sipTransport1_SIPResponseInTraceEvent(SIPProtocolsEnum protocol, IPEndPoint localEndPoint, IPEndPoint fromEndPoint, SIPResponse sipResponse)
+            void sipTransport1_SIPResponseInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, SIPResponse sipResponse)
             {
-                Console.WriteLine("Response Received (" + protocol + "): " + localEndPoint + "<-" + fromEndPoint + "\r\n" + sipResponse.ToString());
+                Console.WriteLine("Response Received: " + localEndPoint.ToString() + "<-" + fromEndPoint.ToString() + "\r\n" + sipResponse.ToString());
             }
 
-            void sipTransport1_SIPRequestOutTraceEvent(SIPProtocolsEnum protocol, IPEndPoint localEndPoint, IPEndPoint toEndPoint, SIPRequest sipRequest)
+            void sipTransport1_SIPRequestOutTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint toEndPoint, SIPRequest sipRequest)
             {
-                Console.WriteLine("Request Sent (" + protocol + "): " + localEndPoint + "<-" + toEndPoint + "\r\n" + sipRequest.ToString());
+                Console.WriteLine("Request Sent: " + localEndPoint.ToString() + "<-" + toEndPoint.ToString() + "\r\n" + sipRequest.ToString());
             }
 
-            void sipTransport2_SIPRequestInTraceEvent(SIPProtocolsEnum protocol, IPEndPoint localEndPoint, IPEndPoint fromEndPoint, SIPRequest sipRequest)
+            void sipTransport2_SIPRequestInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, SIPRequest sipRequest)
             {
-                Console.WriteLine("Request Received (" + protocol + "): " + localEndPoint + "<-" + fromEndPoint + "\r\n" + sipRequest.ToString());
+                Console.WriteLine("Request Received: " + localEndPoint.ToString() + "<-" + fromEndPoint.ToString() + "\r\n" + sipRequest.ToString());
             }
 
             private SIPRequest GetOptionsRequest(SIPURI serverURI, int cseq, IPEndPoint contact)
@@ -692,7 +548,7 @@ namespace SIPSorcery.Servers
                 header.MaxForwards = 0;
 
                 SIPViaHeader viaHeader = new SIPViaHeader(contact.Address.ToString(), contact.Port, branchId);
-                header.Via.PushViaHeader(viaHeader);
+                header.Vias.PushViaHeader(viaHeader);
 
                 optionsRequest.Header = header;
 
@@ -710,8 +566,8 @@ namespace SIPSorcery.Servers
                 inviteHeader.UserAgent = "unit test";
                 inviteRequest.Header = inviteHeader;
 
-                SIPViaHeader viaHeader = new SIPViaHeader(localContact.Address.ToString(), localContact.Port,CallProperties.CreateBranchId(), SIPProtocolsEnum.UDP);
-                inviteRequest.Header.Via.PushViaHeader(viaHeader);
+                SIPViaHeader viaHeader = new SIPViaHeader(localContact.Address.ToString(), localContact.Port,CallProperties.CreateBranchId(), SIPProtocolsEnum.udp);
+                inviteRequest.Header.Vias.PushViaHeader(viaHeader);
 
                 //inviteRequest.Body = inviteBody;
                 //inviteRequest.Header.ContentLength = inviteBody.Length;
@@ -719,7 +575,6 @@ namespace SIPSorcery.Servers
 
                 return inviteRequest;
             }
-
         }
 
         #endif

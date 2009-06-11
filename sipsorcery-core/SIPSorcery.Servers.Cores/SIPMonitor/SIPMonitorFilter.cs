@@ -46,6 +46,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.Sys;
 using log4net;
 
 #if UNITTEST
@@ -276,7 +277,7 @@ namespace SIPSorcery.Servers
             }
             else
             {
-                return ipAddress.StartsWith(IPAddress);
+                return ipAddress.Contains(IPAddress);
             }
 		}
 
@@ -446,7 +447,7 @@ namespace SIPSorcery.Servers
 			{
 				Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-				ProxyMonitorFilter filter = new ProxyMonitorFilter("user test and event full");
+				SIPMonitorFilter filter = new SIPMonitorFilter("user test and event full");
                 Console.WriteLine(filter.GetFilterDescription());
 
 				Assert.IsTrue(filter != null, "The filter was not correctly instantiated.");
@@ -459,7 +460,7 @@ namespace SIPSorcery.Servers
             {
                 Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-                ProxyMonitorFilter filter = new ProxyMonitorFilter("user test and event full and request invite ");
+                SIPMonitorFilter filter = new SIPMonitorFilter("user test and event full and request invite ");
                 Console.WriteLine(filter.GetFilterDescription());
 
                 Assert.IsTrue(filter != null, "The filter was not correctly instantiated.");
@@ -479,7 +480,7 @@ namespace SIPSorcery.Servers
                     "User-Agent: X-Lite release 1006e stamp 34025" + m_CRLF +
                     "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY, MESSAGE, SUBSCRIBE, INFO" + m_CRLF + m_CRLF;
 
-                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorServerTypesEnum.FullSIPTrace, registerRequest, "test");
+                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, registerRequest, "test");
                 bool showEventResult = filter.ShowSIPMonitorEvent(monitorEvent);
 
                 Assert.IsFalse(showEventResult, "The filter should not have shown this event.");
@@ -490,7 +491,7 @@ namespace SIPSorcery.Servers
             {
                 Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-                ProxyMonitorFilter filter = new ProxyMonitorFilter("user test and event full and request invite ");
+                SIPMonitorFilter filter = new SIPMonitorFilter("user test and event full and request invite ");
                 Console.WriteLine(filter.GetFilterDescription());
 
                 Assert.IsTrue(filter != null, "The filter was not correctly instantiated.");
@@ -510,7 +511,7 @@ namespace SIPSorcery.Servers
                     "User-Agent: X-Lite release 1006e stamp 34025" + m_CRLF +
                     "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY, MESSAGE, SUBSCRIBE, INFO" + m_CRLF + m_CRLF;
 
-                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorServerTypesEnum.FullSIPTrace, registerRequest, "test");
+                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, registerRequest, "test");
                 bool showEventResult = filter.ShowSIPMonitorEvent(monitorEvent);
 
                 Assert.IsTrue(showEventResult, "The filter should have shown this event.");
@@ -521,13 +522,30 @@ namespace SIPSorcery.Servers
             {
                 Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-                ProxyMonitorFilter filter = new ProxyMonitorFilter("ipaddress 127.0.0.1 and event full");
+                SIPMonitorFilter filter = new SIPMonitorFilter("ipaddress 10.0.0.1 and event full");
+                Console.WriteLine(filter.GetFilterDescription());
+
+                Assert.IsTrue(filter != null, "The filter was not correctly instantiated.");
+                Assert.AreEqual(filter.IPAddress, "10.0.0.1", "The filter ip address was not correctly set.");
+
+                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, "blah blah", String.Empty, null, SIPEndPoint.ParseSIPEndPoint("10.0.0.1"));
+                bool showEventResult = filter.ShowSIPMonitorEvent(monitorEvent);
+
+                Assert.IsTrue(showEventResult, "The filter should have shown this event.");
+            }
+
+            [Test]
+            public void ShowInternalIPAddressUnitTest()
+            {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                SIPMonitorFilter filter = new SIPMonitorFilter("ipaddress 127.0.0.1 and event fullinternal");
                 Console.WriteLine(filter.GetFilterDescription());
 
                 Assert.IsTrue(filter != null, "The filter was not correctly instantiated.");
                 Assert.AreEqual(filter.IPAddress, "127.0.0.1", "The filter ip address was not correctly set.");
 
-                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorServerTypesEnum.FullSIPTrace, "blah blah", null, IPSocket.GetIPEndPoint("127.0.0.1"), null);
+                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, "blah blah", String.Empty, null, SIPEndPoint.ParseSIPEndPoint("127.0.0.1"));
                 bool showEventResult = filter.ShowSIPMonitorEvent(monitorEvent);
 
                 Assert.IsTrue(showEventResult, "The filter should have shown this event.");
@@ -538,13 +556,13 @@ namespace SIPSorcery.Servers
             {
                 Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-                ProxyMonitorFilter filter = new ProxyMonitorFilter("ipaddress 127.0.0.1 and event full");
+                SIPMonitorFilter filter = new SIPMonitorFilter("ipaddress 127.0.0.1 and event full");
                 Console.WriteLine(filter.GetFilterDescription());
 
                 Assert.IsTrue(filter != null, "The filter was not correctly instantiated.");
                 Assert.AreEqual(filter.IPAddress, "127.0.0.1", "The filter ip address was not correctly set.");
 
-                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorServerTypesEnum.FullSIPTrace, "blah blah", null, IPSocket.GetIPEndPoint("127.0.0.2"), null);
+                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, "blah blah", String.Empty, SIPEndPoint.ParseSIPEndPoint("127.0.0.2"), null);
                 bool showEventResult = filter.ShowSIPMonitorEvent(monitorEvent);
 
                 Assert.IsFalse(showEventResult, "The filter should not have shown this event.");
@@ -555,7 +573,7 @@ namespace SIPSorcery.Servers
             {
                 Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-                ProxyMonitorFilter filter = new ProxyMonitorFilter("event full and regex :test@");
+                SIPMonitorFilter filter = new SIPMonitorFilter("event full and regex :test@");
                 Console.WriteLine(filter.GetFilterDescription());
 
                 Assert.IsTrue(filter != null, "The filter was not correctly instantiated.");
@@ -575,7 +593,7 @@ namespace SIPSorcery.Servers
                     "User-Agent: X-Lite release 1006e stamp 34025" + m_CRLF +
                     "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY, MESSAGE, SUBSCRIBE, INFO" + m_CRLF + m_CRLF;
 
-                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorServerTypesEnum.FullSIPTrace, inviteRequest, null);
+                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, inviteRequest, null);
                 bool showEventResult = filter.ShowSIPMonitorEvent(monitorEvent);
 
                 Assert.IsTrue(showEventResult, "The filter should have shown this event.");
@@ -586,7 +604,7 @@ namespace SIPSorcery.Servers
             {
                 Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-                ProxyMonitorFilter filter = new ProxyMonitorFilter("user testandtest   and  event full");
+                SIPMonitorFilter filter = new SIPMonitorFilter("user testandtest   and  event full");
                 Console.WriteLine(filter.GetFilterDescription());
 
                 Assert.IsTrue(filter != null, "The filter was not correctly instantiated.");

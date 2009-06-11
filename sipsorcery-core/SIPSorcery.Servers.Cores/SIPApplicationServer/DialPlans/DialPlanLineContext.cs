@@ -15,7 +15,7 @@ namespace SIPSorcery.Servers
         public const string DIALPLAN_LINESTART_KEY = "exten";
         public const char REGEX_DELIMITER_CHAR = '/';  
 
-        private List<DialPlanCommand> m_commands = new List<DialPlanCommand>();
+        internal List<DialPlanCommand> m_commands = new List<DialPlanCommand>();
 
         public DialPlanLineContext(
             SIPMonitorLogDelegate monitorLogDelegate,

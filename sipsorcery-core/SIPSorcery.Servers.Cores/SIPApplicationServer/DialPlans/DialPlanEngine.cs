@@ -837,20 +837,21 @@ namespace SIPSorcery.Servers
 					exten => 101,1,Switch(""username"", ""password"", ""303@sip.blueface.ie"")
 				";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
 
-                Console.WriteLine("dst=" + dialPlan.m_commands[0].Destination + ", data=" + dialPlan.m_commands[0].Data + ".");
-                Console.WriteLine("dst=" + dialPlan.m_commands[1].Destination + ", data=" + dialPlan.m_commands[1].Data + ".");
+                Console.WriteLine("dst=" + dialPlanContext.m_commands[0].Destination + ", data=" + dialPlanContext.m_commands[0].Data + ".");
+                Console.WriteLine("dst=" + dialPlanContext.m_commands[1].Destination + ", data=" + dialPlanContext.m_commands[1].Data + ".");
 
-				Assert.IsTrue(dialPlan.m_commands.Count == 2, "The dial plan was not correctly parsed.");
-                Assert.IsTrue(dialPlan.m_commands[0].Operation == SIPDialPlanOpsEnum.Equals, "Command 1 oeration not correct.");
-                Assert.IsTrue(dialPlan.m_commands[1].Operation == SIPDialPlanOpsEnum.Equals, "Command 2 oeration not correct.");
-                Assert.IsTrue(dialPlan.m_commands[0].Destination == "100", "Command 1 destination not correct.");
-                Assert.IsTrue(dialPlan.m_commands[1].Destination == "101", "Command 2 destination not correct.");
-                Assert.IsTrue(dialPlan.m_commands[0].Command == "Switch", "Command 1 command not correct.");
-                Assert.IsTrue(dialPlan.m_commands[1].Command == "Switch", "Command 2 command not correct.");
-                Assert.IsTrue(dialPlan.m_commands[0].Data == "\"anonymous.invalid\", \"password\", \"612@freeworlddialup.com\"", "Command 1 data not correct.");
-                Assert.IsTrue(dialPlan.m_commands[1].Data == "\"username\", \"password\", \"303@sip.blueface.ie\"", "Command 2 data not correct.");
+                Assert.IsTrue(dialPlanContext.m_commands.Count == 2, "The dial plan was not correctly parsed.");
+                Assert.IsTrue(dialPlanContext.m_commands[0].Operation == DialPlanOpsEnum.Equals, "Command 1 oeration not correct.");
+                Assert.IsTrue(dialPlanContext.m_commands[1].Operation == DialPlanOpsEnum.Equals, "Command 2 oeration not correct.");
+                Assert.IsTrue(dialPlanContext.m_commands[0].Destination == "100", "Command 1 destination not correct.");
+                Assert.IsTrue(dialPlanContext.m_commands[1].Destination == "101", "Command 2 destination not correct.");
+                Assert.IsTrue(dialPlanContext.m_commands[0].Command == "Switch", "Command 1 command not correct.");
+                Assert.IsTrue(dialPlanContext.m_commands[1].Command == "Switch", "Command 2 command not correct.");
+                Assert.IsTrue(dialPlanContext.m_commands[0].Data == "\"anonymous.invalid\", \"password\", \"612@freeworlddialup.com\"", "Command 1 data not correct.");
+                Assert.IsTrue(dialPlanContext.m_commands[1].Data == "\"username\", \"password\", \"303@sip.blueface.ie\"", "Command 2 data not correct.");
 
 				Console.WriteLine("---------------------------------"); 
 			}	
@@ -865,14 +866,15 @@ namespace SIPSorcery.Servers
 					exten => 101,1,Switch(""username"", ""password"", ""303@sip.blueface.ie)
 				";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
 
-				Console.WriteLine("dst=" + dialPlan.m_commands[0].Destination + ", data=" + dialPlan.m_commands[0].Data + ".");
-				Console.WriteLine("dst=" + dialPlan.m_commands[1].Destination + ", data=" + dialPlan.m_commands[1].Data + ".");
+                Console.WriteLine("dst=" + dialPlanContext.m_commands[0].Destination + ", data=" + dialPlanContext.m_commands[0].Data + ".");
+                Console.WriteLine("dst=" + dialPlanContext.m_commands[1].Destination + ", data=" + dialPlanContext.m_commands[1].Data + ".");
 
-				Assert.IsTrue(dialPlan.m_commands.Count == 2, "The dial plan was not correctly parsed.");
-                Assert.IsTrue(dialPlan.m_commands[0].Command == "Switch", "The dial plan command was not correct.");
-                Assert.IsTrue(dialPlan.m_commands[0].Data == "anonymous.invalid, password, 612@freeworlddialup.com", "The dial plan data was not correct.");
+                Assert.IsTrue(dialPlanContext.m_commands.Count == 2, "The dial plan was not correctly parsed.");
+                Assert.IsTrue(dialPlanContext.m_commands[0].Command == "Switch", "The dial plan command was not correct.");
+                Assert.IsTrue(dialPlanContext.m_commands[0].Data == "anonymous.invalid, password, 612@freeworlddialup.com", "The dial plan data was not correct.");
 
 				Console.WriteLine("---------------------------------"); 
 			}	
@@ -888,12 +890,13 @@ namespace SIPSorcery.Servers
 					exten = 103,1,Switch(""username"", ""password"", ""303@sip.blueface.ie)
 				";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
 
-				Assert.IsTrue(dialPlan.m_commands.Count == 3, "The dial plan was not correctly parsed.");
-                Assert.IsTrue(dialPlan.m_commands[0].Operation == SIPDialPlanOpsEnum.Equals, "Command 1 operation was incorrect.");
-                Assert.IsTrue(dialPlan.m_commands[1].Operation == SIPDialPlanOpsEnum.Regex, "Command 2 operation was incorrect.");
-                Assert.IsTrue(dialPlan.m_commands[2].Operation == SIPDialPlanOpsEnum.Equals, "Command 3 operation was incorrect.");
+                Assert.IsTrue(dialPlanContext.m_commands.Count == 3, "The dial plan was not correctly parsed.");
+                Assert.IsTrue(dialPlanContext.m_commands[0].Operation == DialPlanOpsEnum.Equals, "Command 1 operation was incorrect.");
+                Assert.IsTrue(dialPlanContext.m_commands[1].Operation == DialPlanOpsEnum.Regex, "Command 2 operation was incorrect.");
+                Assert.IsTrue(dialPlanContext.m_commands[2].Operation == DialPlanOpsEnum.Equals, "Command 3 operation was incorrect.");
 
 				Console.WriteLine("---------------------------------"); 
 			}
@@ -909,11 +912,12 @@ namespace SIPSorcery.Servers
 					exten => _3000,1,Switch(anon, password, 3@sip.blueface.ie)
 				";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:3200@sip.mysipswitch.com"));
-                SIPDialPlanCommand commandMatch = dialPlan.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
 
-                Assert.IsTrue(dialPlan.m_commands.Count == 3, "The dial plan was not correctly parsed.");
+                Assert.IsTrue(dialPlanContext.m_commands.Count == 3, "The dial plan was not correctly parsed.");
                 Assert.IsNull(commandMatch, "The dial plan produced a match when it should not have.");
 
                 Console.WriteLine("---------------------------------");
@@ -930,11 +934,12 @@ namespace SIPSorcery.Servers
 					exten => _3000,1,Switch(anon, password, 3@sip.blueface.ie)
 				";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:3200@sip.mysipswitch.com"));
-                SIPDialPlanCommand commandMatch = dialPlan.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
 
-                Assert.IsTrue(dialPlan.m_commands.Count == 3, "The dial plan was not correctly parsed.");
+                Assert.IsTrue(dialPlanContext.m_commands.Count == 3, "The dial plan was not correctly parsed.");
                 Assert.IsTrue(commandMatch.Data == "anon, password, 2@sip.blueface.ie", "The dial plan command match was not correct.");
 
                 Console.WriteLine("---------------------------------");
@@ -951,11 +956,12 @@ namespace SIPSorcery.Servers
 					exten => _3Z00,1,Switch(anon, password, 3@sip.blueface.ie)
 				";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:3100@sip.mysipswitch.com"));
-                SIPDialPlanCommand commandMatch = dialPlan.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
 
-                Assert.IsTrue(dialPlan.m_commands.Count == 3, "The dial plan was not correctly parsed.");
+                Assert.IsTrue(dialPlanContext.m_commands.Count == 3, "The dial plan was not correctly parsed.");
                 Assert.IsTrue(commandMatch.Data == "anon, password, 3@sip.blueface.ie", "The dial plan command match was not correct.");
 
                 Console.WriteLine("---------------------------------");
@@ -968,9 +974,10 @@ namespace SIPSorcery.Servers
 
                 string testDialPlan = "exten => _3X.,1,Switch(anon, password, 1@sip.blueface.ie)";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:300@sip.mysipswitch.com"));
-                SIPDialPlanCommand commandMatch = dialPlan.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 
@@ -984,9 +991,10 @@ namespace SIPSorcery.Servers
 
                 string testDialPlan = "exten => _3Z.,1,Switch(anon, password, 1@sip.blueface.ie)";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:310@sip.mysipswitch.com"));
-                SIPDialPlanCommand commandMatch = dialPlan.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 
@@ -1000,9 +1008,10 @@ namespace SIPSorcery.Servers
 
                 string testDialPlan = "exten => _3N.,1,Switch(anon, password, 1@sip.blueface.ie)";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:320@sip.mysipswitch.com"));
-                SIPDialPlanCommand commandMatch = dialPlan.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 
@@ -1016,9 +1025,10 @@ namespace SIPSorcery.Servers
 
                 string testDialPlan = "exten => _3[2-57-9].,1,Switch(anon, password, 1@sip.blueface.ie)";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:380@sip.mysipswitch.com"));
-                SIPDialPlanCommand commandMatch = dialPlan.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 
@@ -1032,9 +1042,10 @@ namespace SIPSorcery.Servers
 
                 string testDialPlan = "exten => _3[2-57-9].,1,Switch(anon, password, 1@sip.blueface.ie)";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:360@sip.mysipswitch.com"));
-                SIPDialPlanCommand commandMatch = dialPlan.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
 
                 Assert.IsNull(commandMatch, "The dial plan should not have returned a match.");
 
@@ -1048,9 +1059,10 @@ namespace SIPSorcery.Servers
 
                 string testDialPlan = "exten => _3[2-57-9]X[1-3],1,Switch(anon, password, 1@sip.blueface.ie)";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:3802@sip.mysipswitch.com"));
-                SIPDialPlanCommand commandMatch = dialPlan.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 
@@ -1064,9 +1076,10 @@ namespace SIPSorcery.Servers
 
                 string testDialPlan = "exten => _3[2-57-9]X[1-3].,1,Switch(anon, password, 1@sip.blueface.ie)";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:3807@sip.mysipswitch.com"));
-                SIPDialPlanCommand commandMatch = dialPlan.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
 
                 Assert.IsNull(commandMatch, "The dial plan should not have returned a match.");
 
@@ -1085,7 +1098,7 @@ namespace SIPSorcery.Servers
                     "exten => _*1X.,1,Switch(user,pass,${EXTEN:2}@sip.blueface.ie)\n" +
                     "exten => _*2X.,1,Switch(anon,,${EXTEN:2}@fwd.pulver.com)\n";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
 
                 Assert.IsNotNull(dialPlan, "The default dial plan could not be loaded.");
 
@@ -1100,7 +1113,7 @@ namespace SIPSorcery.Servers
                 string testDialPlan =
                     "exten =~ /3d{4,6}/,1,Switch(anon,,${dst}@sip.blueface.ie, \"sip switch\" <sip:anon@sip.mysipswitch.com>, 194.213.29.100)";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
 
                 Assert.IsNotNull(dialPlan, "The dial plan could not be loaded.");
 
@@ -1115,9 +1128,10 @@ namespace SIPSorcery.Servers
                 string testDialPlan =
                     @"exten =~ /\d{3,6}/,1,Switch(anon,,${dst}@sip.blueface.ie, ""sip switch"" <sip:anon@sip.mysipswitch.com>, 194.213.29.100)";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:380@sip.mysipswitch.com"));
-                SIPDialPlanCommand commandMatch = dialPlan.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 
@@ -1132,9 +1146,10 @@ namespace SIPSorcery.Servers
                 string testDialPlan =
                     @"exten =~ /\D{3,6}/,1,Switch(anon,,${dst}@sip.blueface.ie, ""sip switch"" <sip:anon@sip.mysipswitch.com>, 194.213.29.100)";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:380@sip.mysipswitch.com"));
-                SIPDialPlanCommand commandMatch = dialPlan.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
 
                 Assert.IsNull(commandMatch, "The dial plan should not have returned a match.");
 
@@ -1149,9 +1164,10 @@ namespace SIPSorcery.Servers
                 string testDialPlan =
                     @"exten =~ \d{3},1,Switch(anon,,${dst}@sip.blueface.ie, ""sip switch"" <sip:anon@sip.mysipswitch.com>, 194.213.29.100)";
 
-                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, null, null, null);
+                SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:380@sip.mysipswitch.com"));
-                SIPDialPlanCommand commandMatch = dialPlan.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 
