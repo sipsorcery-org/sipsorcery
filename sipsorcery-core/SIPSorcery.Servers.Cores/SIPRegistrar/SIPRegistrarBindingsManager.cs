@@ -55,7 +55,6 @@ namespace SIPSorcery.Servers {
         private const int MAX_USERAGENT_LENGTH = 128;
         public const int MINIMUM_EXPIRY_SECONDS = 60;
         private const int DEFAULT_BINDINGS_PER_USER = 1;              // The default maixmim number of bindings that will be allowed for each unique SIP account.
-        private const int DEFAULT_EXPIRY_SECONDS = 180;
         private const int REMOVE_EXPIRED_BINDINGS_INTERVAL = 3000;    // The interval in seconds at which to check for and remove expired bindings.
 
         private string m_sipRegisterRemoveAll = SIPConstants.SIP_REGISTER_REMOVEALL;
@@ -67,7 +66,7 @@ namespace SIPSorcery.Servers {
         private SendNATKeepAliveDelegate SendNATKeepAlive_External;
 
         private SIPAssetPersistor<SIPRegistrarBinding> m_bindingsPersistor;
-        private Dictionary<string, SIPUserAgentConfiguration> m_userAgentConfigs;
+        private SIPUserAgentConfigurationManager m_userAgentConfigs;
         private int m_maxBindingsPerAccount;
         private bool m_stop;
            
@@ -76,7 +75,7 @@ namespace SIPSorcery.Servers {
             SIPAssetPersistor<SIPRegistrarBinding> bindingsPersistor,
             SendNATKeepAliveDelegate sendNATKeepAlive,
             int maxBindingsPerAccount,
-            Dictionary<string, SIPUserAgentConfiguration> userAgentConfigs)
+            SIPUserAgentConfigurationManager userAgentConfigs)
         {
             SIPMonitorEventLog_External = sipMonitorEventLog;
             m_bindingsPersistor = bindingsPersistor;
@@ -128,7 +127,7 @@ namespace SIPSorcery.Servers {
             out string responseMessage) {
             
             int bindingExpiry = 0;
-            int maxAllowedExpiry = GetUserAgentExpiry(userAgent);
+            int maxAllowedExpiry = m_userAgentConfigs.GetMaxAllowedExpiry(userAgent);
             responseMessage = null;
             string sipAccountAOR = sipAccount.SIPUsername + "@" + sipAccount.SIPDomain;
 
@@ -264,72 +263,6 @@ namespace SIPSorcery.Servers {
             catch (Exception excp) {
                 logger.Error("Exception SendNATKeepAlives. " + excp.Message);
             }*/
-        }
-
-        /// <summary>
-        /// Makes a decision on what the maximum allowed expiry is for a REGISTER request. Allows different expiry values to be accepted from different user agents.
-        /// This is useful as some user agents ignore the expiry value set by the server and setting a higher value for that user agent can stop the registrar
-        /// expiring it.
-        /// </summary>
-        /// <param name="userAgent">The useragent to get the maximum expiry for.</param>
-        /// <returns>The maximum expiry value that will be accepted.</returns>
-        private int GetUserAgentExpiry(string userAgent) {
-            int expiry = DEFAULT_EXPIRY_SECONDS;
-
-            try {
-                if (m_userAgentConfigs != null && m_userAgentConfigs.Count > 0) {
-                    bool userAgentMatchFound = false;
-                    if (userAgent != null && userAgent.Trim().Length > 0) {
-                        foreach (string userAgentPattern in m_userAgentConfigs.Keys) {
-                            if (Regex.Match(userAgent, userAgentPattern, RegexOptions.IgnoreCase).Success) {
-                                expiry = m_userAgentConfigs[userAgentPattern].MaxAllowedExpiryTime;
-                                userAgentMatchFound = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!userAgentMatchFound) {
-                        expiry = DEFAULT_EXPIRY_SECONDS;
-                    }
-                }
-
-                //logger.Debug("Expiry for " + userAgent + " is " + expiry + "s, request was " + requestedExpiry + ".");
-                return expiry;
-            }
-            catch (Exception excp) {
-                logger.Error("Exception GetUserAgentExpiry. " + excp);
-                return expiry;
-            }
-        }
-
-        /// <summary>
-        /// Makes a decision on whether the user agent supports a list of current contacts being returned in the Ok response as mandated by the SIP standard
-        /// or whether it is broken and will only work if the exact header from the request is returned.
-        /// </summary>
-        /// <param name="userAgent">The useragent to check whether contact lists are supported or not..</param>
-        /// <returns>True if the useragent supports the standard and lists false otherwise.</returns>
-        public bool GetUserAgentContactListSupport(string userAgent) {
-            bool listSupported = true;
-
-            try {
-                if (m_userAgentConfigs != null && m_userAgentConfigs.Count > 0) {
-                    if (!userAgent.IsNullOrBlank()) {
-                        foreach (string userAgentPattern in m_userAgentConfigs.Keys) {
-                            if (Regex.Match(userAgent, userAgentPattern, RegexOptions.IgnoreCase).Success) {
-                                listSupported = m_userAgentConfigs[userAgentPattern].ContactListSupported;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                return listSupported;
-            }
-            catch (Exception excp) {
-                logger.Error("Exception GetUserAgentContactListSupport. " + excp);
-                return true;
-            }
         }
 
         private void FireSIPMonitorLogEvent(SIPMonitorEvent monitorEvent) {

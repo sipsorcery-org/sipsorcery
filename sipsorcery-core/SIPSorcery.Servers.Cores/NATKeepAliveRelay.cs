@@ -64,24 +64,24 @@ namespace SIPSorcery.Servers
 
         public static NATKeepAliveMessage ParseNATKeepAliveMessage(byte[] buffer)
         {
-            if (buffer != null && buffer.Length == 16)
+            if (buffer != null && buffer.Length == 20)
             {
                 byte[] sendToAddrBuffer = new byte[4];
                 Buffer.BlockCopy(buffer, 0, sendToAddrBuffer, 0, 4);
                 IPAddress sendToAddress = new IPAddress(sendToAddrBuffer);
-
                 int sendToPort = BitConverter.ToInt32(buffer, 4);
 
-                byte[] sendFromAddrBuffer = new byte[4];
-                Buffer.BlockCopy(buffer, 8, sendFromAddrBuffer, 0, 4);
-                IPAddress sendFromAddress = new IPAddress(sendFromAddrBuffer);
+                int proxyProtocol = BitConverter.ToInt32(buffer, 8);
+                byte[] proxyFromAddrBuffer = new byte[4];
+                Buffer.BlockCopy(buffer, 12, proxyFromAddrBuffer, 0, 4);
+                int sendFromPort = BitConverter.ToInt32(buffer, 16);
+                SIPEndPoint proxySendFrom = new SIPEndPoint((SIPProtocolsEnum)proxyProtocol, new IPEndPoint(new IPAddress(proxyFromAddrBuffer), sendFromPort));
 
-                int sendFromPort = BitConverter.ToInt32(buffer, 12);
 
                 //SIPProtocolsEnum protocol = SIPProtocolsType.GetProtocolTypeFromId(BitConverter.ToInt32(buffer, 16));
                 //SIPProtocolsEnum protocol = SIPProtocolsEnum.udp;
 
-                NATKeepAliveMessage natKeepAliveMsg = new NATKeepAliveMessage(new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(sendToAddress, sendToPort)), new IPEndPoint(sendFromAddress, sendFromPort));
+                NATKeepAliveMessage natKeepAliveMsg = new NATKeepAliveMessage(proxySendFrom, new IPEndPoint(sendToAddress, sendToPort));
                 return natKeepAliveMsg;
             }
             else
@@ -95,13 +95,13 @@ namespace SIPSorcery.Servers
             if (RemoteEndPoint != null && LocalSIPEndPoint != null)
             {
                 //byte[] buffer = new byte[20];
-                byte[] buffer = new byte[16];
+                byte[] buffer = new byte[20];
 
                 Buffer.BlockCopy(RemoteEndPoint.Address.GetAddressBytes(), 0, buffer, 0, 4);
                 Buffer.BlockCopy(BitConverter.GetBytes(RemoteEndPoint.Port), 0, buffer, 4, 4);
-                Buffer.BlockCopy(LocalSIPEndPoint.SocketEndPoint.Address.GetAddressBytes(), 0, buffer, 8, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(LocalSIPEndPoint.SocketEndPoint.Port), 0, buffer, 12, 4);
-                //Buffer.BlockCopy(BitConverter.GetBytes((int)Protocol), 0, buffer, 16, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes((int)LocalSIPEndPoint.SIPProtocol), 0, buffer, 8, 4);
+                Buffer.BlockCopy(LocalSIPEndPoint.SocketEndPoint.Address.GetAddressBytes(), 0, buffer, 12, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(LocalSIPEndPoint.SocketEndPoint.Port), 0, buffer, 16, 4);
 
                 return buffer;
             }

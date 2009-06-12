@@ -215,8 +215,6 @@ namespace SIPSorcery.SIPAppServer {
 
                         m_appServerCore = new SIPAppServerCore(
                             m_sipTransport,
-                            null,
-                            null,
                             m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                             FireSIPMonitorEvent,
                             callManager,

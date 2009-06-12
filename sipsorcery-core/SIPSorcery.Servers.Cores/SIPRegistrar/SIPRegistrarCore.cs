@@ -116,6 +116,7 @@ namespace SIPSorcery.Servers
         private bool m_mangleUACContact = false;            // Whether or not to adjust contact URIs that contain private hosts to the value of the bottom via received socket.
         private bool m_strictRealmHandling = false;         // If true the registrar will only accept registration requests for domains it is configured for, otherwise any realm is accepted.
         private event SIPMonitorLogDelegate m_registrarLogEvent;
+        private SIPUserAgentConfigurationManager m_userAgentConfigs;
 
         public RegistrarCore(
             SIPTransport sipTransport,
@@ -124,7 +125,8 @@ namespace SIPSorcery.Servers
             GetCanonicalDomainDelegate getCanonicalDomain,
             bool mangleUACContact,
             bool strictRealmHandling,
-            SIPMonitorLogDelegate proxyLogDelegate)
+            SIPMonitorLogDelegate proxyLogDelegate,
+            SIPUserAgentConfigurationManager userAgentConfigs)
         {
             m_sipTransport = sipTransport;
             m_registrarBindingsManager = registrarBindingsManager;
@@ -133,6 +135,7 @@ namespace SIPSorcery.Servers
             m_mangleUACContact = mangleUACContact;
             m_strictRealmHandling = strictRealmHandling;
             m_registrarLogEvent = proxyLogDelegate;
+            m_userAgentConfigs = userAgentConfigs;
         }
 
 		public void AddRegisterRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest registerRequest)
@@ -327,7 +330,7 @@ namespace SIPSorcery.Servers
 
                                 // The standard states that the Ok response should contain the list of current bindings but that breaks a lot of UAs. As a 
                                 // compromise the list is returned with the Contact that UAC sent as the first one in the list.
-                                bool contactListSupported = m_registrarBindingsManager.GetUserAgentContactListSupport(sipRequest.Header.UserAgent);
+                                bool contactListSupported = m_userAgentConfigs.GetUserAgentContactListSupport(sipRequest.Header.UserAgent);
                                 if (contactListSupported)
                                 {
                                     sipRequest.Header.Contact = m_registrarBindingsManager.GetContactHeader(new Guid(sipAccount.Id));

@@ -91,7 +91,7 @@ create table sipregistrarbindings
   lastupdate timestamp not null default now(),
   expirytime timestamp,
   Primary Key(id),
-  Foreign Key(sipaccountid) references sipaccounts(id),
+  Foreign Key(sipaccountid) references sipaccounts(id) on delete cascade on update cascade,
   Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade
 );
 

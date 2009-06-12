@@ -106,18 +106,15 @@ namespace SIPSorcery.SIPRegistrar {
                     sendNATKeepAlive = SendNATKeepAlive;
                 }
 
-                Dictionary<string, SIPUserAgentConfiguration> userAgentExpirys = null;
-                if (m_userAgentsConfigNode != null) {
-                    userAgentExpirys = SIPUserAgentConfiguration.ParseSIPUserAgentConfigurations(m_userAgentsConfigNode);
+                SIPUserAgentConfigurationManager userAgentConfigManager = new SIPUserAgentConfigurationManager(m_userAgentsConfigNode);
+                if (m_userAgentsConfigNode == null) {
+                    logger.Warn("The UserAgent config's node was missing.");
                 }
-                else {
-                    logger.Debug("UserAgent config's for the registrar were not loaded as the SIP Registrar config node was missing.");
-                }
-                m_registrarBindingsManager = new SIPRegistrarBindingsManager(FireSIPMonitorEvent, m_registrarBindingsPersistor, SendNATKeepAlive, m_maximumAccountBindings, userAgentExpirys);
+                m_registrarBindingsManager = new SIPRegistrarBindingsManager(FireSIPMonitorEvent, m_registrarBindingsPersistor, SendNATKeepAlive, m_maximumAccountBindings, userAgentConfigManager);
                 m_registrarBindingsManager.Start();
 
-                m_registrarCore = new RegistrarCore(m_sipTransport, m_registrarBindingsManager, GetSIPAccount_External, GetCanonicalDomain_External, true, true, FireSIPMonitorEvent);
-                m_sipTransport.SIPTransportRequestReceived += new SIPTransportRequestDelegate(m_registrarCore.AddRegisterRequest);
+                m_registrarCore = new RegistrarCore(m_sipTransport, m_registrarBindingsManager, GetSIPAccount_External, GetCanonicalDomain_External, true, true, FireSIPMonitorEvent, userAgentConfigManager);
+                m_sipTransport.SIPTransportRequestReceived += m_registrarCore.AddRegisterRequest;
 
                 logger.Debug("SIP Registrar successfully started.");
             }
