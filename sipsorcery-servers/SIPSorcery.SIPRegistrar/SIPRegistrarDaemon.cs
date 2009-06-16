@@ -100,10 +100,8 @@ namespace SIPSorcery.SIPRegistrar {
                 m_sipTransport.AddSIPChannel(sipChannels);
 
                 // Create and configure the SIP Registrar core.
-                SendNATKeepAliveDelegate sendNATKeepAlive = null;
                 if (m_natKeepAliveRelaySocket != null) {
                     m_natKeepAliveSender = new UdpClient();
-                    sendNATKeepAlive = SendNATKeepAlive;
                 }
 
                 SIPUserAgentConfigurationManager userAgentConfigManager = new SIPUserAgentConfigurationManager(m_userAgentsConfigNode);

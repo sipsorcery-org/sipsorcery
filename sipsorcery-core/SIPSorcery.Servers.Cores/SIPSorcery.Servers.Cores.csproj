@@ -156,6 +156,7 @@
     </Compile>
     <Compile Include="SIPApplicationServer\DialPlanApps\CallbackApp.cs" />
     <Compile Include="SIPApplicationServer\DialPlans\DialPlanContext.cs" />
+    <Compile Include="SIPApplicationServer\DialPlans\DialPlanExecutingScript.cs" />
     <Compile Include="SIPApplicationServer\DialPlans\DialPlanLineContext.cs" />
     <Compile Include="SIPApplicationServer\DialPlans\DialPlanScriptContext.cs" />
     <Compile Include="SIPApplicationServer\DialPlans\DialPlanCommand.cs" />

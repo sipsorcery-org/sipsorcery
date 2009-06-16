@@ -236,7 +236,7 @@ namespace SIPSorcery.SIP
                 sipConnection.SIPStream.EndWrite(ar);
             }
             catch (Exception excp) {
-                logger.Error("Exception EndSend. " + excp);
+                logger.Error("Exception EndSend. " + excp.Message);
             }
         }
 
@@ -274,7 +274,7 @@ namespace SIPSorcery.SIP
                 }
             }
             catch (Exception excp) {
-                logger.Error("Exception SIPTLSChannel EndConnect. " + excp);
+                logger.Error("Exception SIPTLSChannel EndConnect. " + excp.Message);
             }
         }
 
@@ -284,7 +284,7 @@ namespace SIPSorcery.SIP
                 m_connectedSockets.Remove(remoteEndPoint);
             }
             catch (Exception excp) {
-                logger.Error("Exception SIPTLSClientDisconnected. " + excp);
+                logger.Error("Exception SIPTLSClientDisconnected. " + excp.Message);
             }
         }
 

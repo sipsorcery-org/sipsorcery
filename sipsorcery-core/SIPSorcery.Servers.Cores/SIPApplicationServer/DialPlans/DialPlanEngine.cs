@@ -1,5 +1,5 @@
 // ============================================================================
-// FileName: SIPDialPlanEngine.cs
+// FileName: DialPlanEngine.cs
 //
 // Description:
 // Converts an Asterisk like SIP dial plan into a useable form for the Proxy server.
@@ -61,83 +61,6 @@ using NUnit.Framework;
 
 namespace SIPSorcery.Servers
 {
-    public delegate void DialPlanExecutionTransitionDelegate(Guid dialPlanId, DialPlanExecutionStateEnum executionState);
-
-    public class DialPlanExecutingScript {
-        //public const int MAX_SCRIPTPROCESSING_SECONDS = 10;           // The maximum amount of time a script will be able to execute for without completing or executing a Dial command.
-        public const int MAX_SCRIPTPROCESSING_SECONDS = 3600;           // The maximum amount of time a script will be able to execute for without completing or executing a Dial command.
-      
-        private static int ScriptCounter;
-
-        private static ILog logger = AppState.GetLogger("dialplanengine");
-
-        public Guid Id;
-        public Thread DialPlanScriptThread;
-        public ScriptScope DialPlanScriptScope;
-        public bool InUse;
-        public bool Complete;
-        public DialPlanContext ExecutingDialPlanContext;
-        public string Owner;
-        public DateTime StartTime;
-        public DateTime EndTime;
-        public SIPMonitorLogDelegate LogDelegate;
-        public int ScriptNumber;
-        public string ExecutionError;               // Set if there was an exeception attempting to execute the script.
-        public SIPResponseStatusCodesEnum LastFailureStatus;
-        public string LastFailureReason;
-
-        public DialPlanExecutingScript(ScriptScope scriptScope, SIPMonitorLogDelegate logDelegate) {
-            ScriptNumber = ++ScriptCounter % Int32.MaxValue;
-            Id = Guid.NewGuid();
-            DialPlanScriptScope = scriptScope;
-            LogDelegate = logDelegate;
-        }
-
-        public void Initialise(DialPlanContext dialPlanContext) {
-            ExecutingDialPlanContext = dialPlanContext;
-            Owner = ExecutingDialPlanContext.Owner;
-            StartTime = DateTime.Now;
-            EndTime = StartTime.AddSeconds(MAX_SCRIPTPROCESSING_SECONDS);
-            InUse = true;
-            Complete = false;
-            ExecutionError = null;
-            LastFailureStatus = SIPResponseStatusCodesEnum.None;
-            LastFailureReason = null;
-            //DialPlanScriptScope.ClearVariables();
-        }
-
-        /// <remarks>
-        /// I have not found a way to externally halt a DLR script from executing the approach used here is to
-        /// put the thread the script is executing on to sleep adnd let the monitor thread abort it. The thread
-        /// should only ever be asleep for approx 500ms (or whatever check period the monitor thread is running with).
-        /// </remarks>
-        public void StopExecution() {
-            try {
-                Complete = true;
-                DialPlanScriptThread.Suspend();
-            }
-            catch (Exception excp) {
-                logger.Error("Exception DialPlanExecutingScript StopExecution. " + excp.Message);
-            }
-        }
-
-        public void Clear() {
-            //logger.Debug("Clearing DialPlanExecutingScript.");
-            ExecutingDialPlanContext = null;
-            Owner = null;
-            InUse = false;
-            Complete = true;
-            ExecutionError = null;
-            LastFailureStatus = SIPResponseStatusCodesEnum.None;
-            LastFailureReason = null;
-        }
-    }
-
-    public enum DialPlanExecutionStateEnum {
-        Starting = 1,
-        Stopped = 2,
-    }
-
 	/// <summary>
 	/// Dial plan is in the form:
 	/// 
@@ -151,7 +74,6 @@ namespace SIPSorcery.Servers
         public const string SCRIPT_REQUESTOBJECT_NAME = "req";        // Access using $req from the Ruby script.
         public const string SCRIPT_HELPEROBJECT_NAME = "sys";         // Access using $sys from the Ruby script.
         public const int ABSOLUTEMAX_SCRIPTPROCESSING_SECONDS = 300;  // The absolute maximum amount of seconds a script thread will be allowed to execute for.
-        //public const int ABSOLUTEMAX_SCRIPTPROCESSING_SECONDS = 3600;  // The absolute maximum amount of seconds a script thread will be allowed to execute for.
         public const int MAX_ALLOWED_SCRIPTSCOPES = 20;               // The maximum allowed number of scopes one if which is required for each simultaneously executing script.
         private const string RUBY_COMMON_COPY_EXTEN = ".tmp";
         private const int RUBY_COMMON_RELOAD_INTERVAL = 2;
@@ -169,45 +91,25 @@ namespace SIPSorcery.Servers
 
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxySocket;                           // If this app forwards calls via an outbound proxy this value will be set.
-        private SIPMonitorLogDelegate LogDelegate_External;                 // Delegate from proxy core to fire when log messages should be bubbled up to the core.
+        private SIPMonitorLogDelegate LogDelegate_External;                  // Delegate from proxy core to fire when log messages should be bubbled up to the core.
         private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;
         private GetCanonicalDomainDelegate GetCanonicalDomainDelegate_External;
-        private DialPlanExecutionTransitionDelegate DialPlanExecutionTransition_External;
+        private SIPAssetPersistor<SIPDialPlan> m_dialPlanPersistor;
 
         private DateTime m_rubyCommonLastReload = DateTime.Now;
         private string m_rubyScriptCommonPath;
         private string m_rubyScriptCommon;
 
-        /*public static void TerminateScript(Guid scriptThreadId)
-        {
-            try
-            {
-                lock (m_scriptScopes)
-                {
-                    if (m_scriptScopes.ContainsKey(scriptThreadId))
-                    {
-                        DialPlanExecutingScript executingScript = m_scriptScopes[scriptThreadId];
-                        executingScript.StopExecution();
-                    }
-                }
-            }
-            catch (ThreadAbortException) { }
-            catch (Exception excp)
-            {
-                logger.Error("Exception DialPlanEngine TerminateScript. " + excp.Message);
-            }
-        }*/
-
         /// <param name="coreLogDelegate">A function delegate that passes log/diagnostics events back to the SIP Proxy Core.</param>
         /// <param name="createBridgeDelegate">A function delegate that is called in the event that the dial plan command results in a call being answered and a bridge needing to be created.</param>
 		public DialPlanEngine(
             SIPTransport sipTransport, 
-            DialPlanExecutionTransitionDelegate dialPlanTransition,
             GetCanonicalDomainDelegate getCanonicalDomain,
             SIPMonitorLogDelegate logDelegate,
             SIPAssetGetDelegate<SIPAccount> getSIPAccount,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getBindings,
+            SIPAssetPersistor<SIPDialPlan> dialPlanPersistor,
             SIPEndPoint outboundProxySocket,
             string rubyScriptCommonPath)
 		{
@@ -216,11 +118,11 @@ namespace SIPSorcery.Servers
             }
 
             m_sipTransport = sipTransport;
-            DialPlanExecutionTransition_External = dialPlanTransition;
             GetCanonicalDomainDelegate_External = getCanonicalDomain;
             LogDelegate_External = logDelegate;
             GetSIPAccount_External = getSIPAccount;
             GetSIPAccountBindings_External = getBindings;
+            m_dialPlanPersistor = dialPlanPersistor;
             m_outboundProxySocket = outboundProxySocket;
             m_rubyScriptCommonPath = rubyScriptCommonPath;
 
@@ -409,7 +311,7 @@ namespace SIPSorcery.Servers
                         rubyScope.SetVariable(SCRIPT_HELPEROBJECT_NAME, planHelper);
 
                         if (new Guid(dialPlanContext.SIPDialPlan.Id) != Guid.Empty) {
-                            DialPlanExecutionTransition_External(new Guid(dialPlanContext.SIPDialPlan.Id), DialPlanExecutionStateEnum.Starting);
+                            IncrementDialPlanExecutionCount(dialPlanContext.SIPDialPlan);
                         }
 
                         //dialPlanExecutionScript.DialPlanScriptThread = new Thread(new ParameterizedThreadStart(ExecuteScript));
@@ -653,6 +555,30 @@ namespace SIPSorcery.Servers
                 }
         }
 
+        private void IncrementDialPlanExecutionCount(SIPDialPlan dialPlan) {
+            try {
+                if (dialPlan != null) {
+                    dialPlan.ExecutionCount = dialPlan.ExecutionCount + 1;
+                    m_dialPlanPersistor.Update(dialPlan);
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception IncrementDialPlanExecutionCount. " + excp.Message);
+            }
+        }
+
+        private void DecrementDialPlanExecutionCount(SIPDialPlan dialPlan) {
+            try {
+                if (dialPlan != null) {
+                    dialPlan.ExecutionCount = dialPlan.ExecutionCount - 1;
+                    m_dialPlanPersistor.Update(dialPlan);
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception DecrementDialPlanExecutionCount. " + excp.Message);
+            }
+        }
+
         private void MonitorScripts()
         {
             try
@@ -702,7 +628,7 @@ namespace SIPSorcery.Servers
                                     killScript.Clear();
 
                                     if (new Guid(dialPlanContext.SIPDialPlan.Id) != Guid.Empty) {
-                                        DialPlanExecutionTransition_External(new Guid(dialPlanContext.SIPDialPlan.Id), DialPlanExecutionStateEnum.Stopped);
+                                        DecrementDialPlanExecutionCount(dialPlanContext.SIPDialPlan);
                                     }
 
                                     try {
@@ -711,6 +637,7 @@ namespace SIPSorcery.Servers
                                             killScript.DialPlanScriptThread.Abort();
                                         }
                                     }
+                                    catch (ThreadAbortException) { }
                                     catch (Exception killExcp) {
                                         logger.Error("Exception MonitorScripts aborting thread. " + killExcp.Message);
                                     }

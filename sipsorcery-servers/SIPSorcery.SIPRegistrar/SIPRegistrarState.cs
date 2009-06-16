@@ -53,7 +53,8 @@ namespace SIPSorcery.SIPRegistrar
     {
         private const string LOGGER_NAME = "siprergistrar";
 
-        private const string SIPREGISTRAR_CONFIGNODE_NAME = "sipregistrar";
+        public const string SIPREGISTRAR_CONFIGNODE_NAME = "sipregistrar";
+
         private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
         private const string USERAGENTS_CONFIGNODE_NAME = "useragentconfigs";
         private const string MONITOR_LOOPBACK_PORT_KEY = "MonitorLoopbackPort";

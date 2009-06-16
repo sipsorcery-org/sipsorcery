@@ -57,23 +57,29 @@ namespace SIPSorcery.Sys
         private static ILog logger = AppState.logger;
         private static string m_newLine = AppState.NewLine;
 
-        private DataContext m_dbLinqDataContext;
-        private Table<T> m_dbLinqTable;
+        //private DataContext m_dbLinqDataContext;
+        //private Table<T> m_dbLinqTable;
+        private StorageTypes m_storageType;
+        private string m_dbConnStr;
 
         public override event SIPAssetDelegate<T> Added;
         public override event SIPAssetDelegate<T> Updated;
         public override event SIPAssetDelegate<T> Deleted;
 
-        public DBLinqAssetPersistor(DataContext dbLinqDataContext) {
-            m_dbLinqDataContext = dbLinqDataContext;
-            m_dbLinqTable = m_dbLinqDataContext.GetTable<T>();
+        public DBLinqAssetPersistor(StorageTypes storageType, string connectionString) {
+            m_storageType = storageType;
+            m_dbConnStr = connectionString;
+            //m_dbLinqDataContext = dbLinqDataContext;
+            //m_dbLinqTable = m_dbLinqDataContext.GetTable<T>();
         }
 
         public override T Add(T asset) {
             try {
                 //m_dbLinqTable.InsertOnSubmit(asset);
                 //m_dbLinqDataContext.SubmitChanges();
-                m_dbLinqDataContext.ExecuteDynamicInsert(asset);
+                //m_dbLinqDataContext.ExecuteDynamicInsert(asset);
+                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
+                dataContext.ExecuteDynamicInsert(asset);
 
                 if (Added != null) {
                     Added(asset);
@@ -89,9 +95,11 @@ namespace SIPSorcery.Sys
 
         public override T Update(T asset) {
             try {
-                m_dbLinqDataContext.ExecuteDynamicUpdate(asset);
+                //m_dbLinqDataContext.ExecuteDynamicUpdate(asset);
                 //m_dbLinqTable.InsertOnSubmit(asset);
                 //m_dbLinqDataContext.SubmitChanges();
+                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
+                dataContext.ExecuteDynamicUpdate(asset);
 
                 if (Updated != null) {
                     Updated(asset);
@@ -109,7 +117,9 @@ namespace SIPSorcery.Sys
             try {
                 //m_dbLinqTable.DeleteOnSubmit(asset);
                 //m_dbLinqDataContext.SubmitChanges();
-                m_dbLinqDataContext.ExecuteDynamicDelete(asset);
+                //m_dbLinqDataContext.ExecuteDynamicDelete(asset);
+                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
+                dataContext.ExecuteDynamicDelete(asset);
 
                 if (Deleted != null) {
                     Deleted(asset);
@@ -123,13 +133,16 @@ namespace SIPSorcery.Sys
 
         public override void Delete(Expression<Func<T, bool>> whereClause) {
             try {
-                var batch = from asset in m_dbLinqTable.Where(whereClause)
+                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
+                Table<T> table = dataContext.GetTable<T>();
+
+                var batch = from asset in table.Where(whereClause)
                             select asset;
 
                 if (batch.Count() > 0) {
                     T[] batchArray = batch.ToArray();
                     for (int index = 0; index < batchArray.Length; index++) {
-                        Delete(batchArray[index]);
+                        dataContext.ExecuteDynamicDelete(batchArray[index]);
                     }
                 }
             }
@@ -141,9 +154,12 @@ namespace SIPSorcery.Sys
 
         public override T Get(Guid id) {
             try {
+                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
+                Table<T> table = dataContext.GetTable<T>();
+
                 string idString = id.ToString();
 
-                return (from asset in m_dbLinqTable
+                return (from asset in table
                         where asset.Id == idString
                         select asset).FirstOrDefault();
             }
@@ -155,11 +171,14 @@ namespace SIPSorcery.Sys
 
         public override int Count(Expression<Func<T, bool>> whereClause) {
             try {
+                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
+                Table<T> table = dataContext.GetTable<T>();
+
                 if (whereClause == null) {
-                    return m_dbLinqTable.Count();
+                    return table.Count();
                 }
                 else {
-                    return m_dbLinqTable.Count(whereClause);
+                    return table.Count(whereClause);
                 }
             }
             catch (Exception excp) {
@@ -170,11 +189,14 @@ namespace SIPSorcery.Sys
 
         public override T Get(Expression<Func<T, bool>> whereClause) {
             try {
+                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
+                Table<T> table = dataContext.GetTable<T>();
+
                 if (whereClause == null) {
                     throw new ArgumentException("The where clause must be specified for a non-list Get.");
                 }
                 else {
-                    IQueryable<T> getList = from asset in m_dbLinqTable.Where(whereClause) select asset;
+                    IQueryable<T> getList = from asset in table.Where(whereClause) select asset;
                     return getList.FirstOrDefault();
                 }
             }
@@ -188,7 +210,10 @@ namespace SIPSorcery.Sys
         {
             try
             {
-                var query = from asset in m_dbLinqTable select asset;
+                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
+                Table<T> table = dataContext.GetTable<T>();
+
+                var query = from asset in table select asset;
                 
                 if (whereClause != null)
                 {

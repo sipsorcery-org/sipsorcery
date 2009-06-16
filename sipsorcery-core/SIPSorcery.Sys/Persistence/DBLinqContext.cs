@@ -40,6 +40,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using DbLinq.Data.Linq;
+using DbLinq.Data.Linq.Mapping;
 using DbLinq.Vendor;
 using MySql.Data.MySqlClient;
 using Npgsql;
@@ -48,15 +49,19 @@ namespace SIPSorcery.Sys {
 
     public class DBLinqContext {
 
+        private static System.Data.Linq.Mapping.MappingSource m_mappingSource = new AttributeMappingSource();
+
         public static DataContext CreateDBLinqDataContext(StorageTypes storageType, string connectionString) {
             DataContext dataContext = null;
             
             switch (storageType) {
                 case StorageTypes.DBLinqMySQL:
-                    dataContext = new DataContext(new MySqlConnection(connectionString), new DbLinq.MySql.MySqlVendor());
+                    IDbConnection mySqlConn = new MySqlConnection(connectionString);
+                    dataContext = new DataContext(mySqlConn, m_mappingSource, new DbLinq.MySql.MySqlVendor());
                     break;
                 case StorageTypes.DBLinqPostgresql:
-                    dataContext = new DataContext(new NpgsqlConnection(connectionString), new DbLinq.PostgreSql.PgsqlVendor());
+                    IDbConnection npgsqlConn = new NpgsqlConnection(connectionString);
+                    dataContext = new DataContext(npgsqlConn, m_mappingSource, new DbLinq.PostgreSql.PgsqlVendor());
                     break;
                 default:
                     throw new NotSupportedException("Database type " + storageType + " is not supported by CreateDBLinqDataContext.");

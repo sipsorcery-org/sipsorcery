@@ -54,30 +54,52 @@ using log4net;
 namespace SIPSorcery.SIP.App
 {
     [ServiceContract(Namespace = "http://www.sipsorcery.com")]
-    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
-    public class SIPProvisioningWebService 
+    //[ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
+    public class SIPProvisioningWebService
     {
         public const string AUTH_TOKEN_KEY = "authid";
 
-        private ILog logger = log4net.LogManager.GetLogger("provisioning");
+        private ILog logger = AppState.GetLogger("provisioning");
 
-        public AuthenticateCustomerDelegate AuthenticateWebService_External;
-        public AuthenticateTokenDelegate AuthenticateToken_External;
-        public ExpireTokenDelegate ExpireToken_External;
-        public SIPMonitorLogDelegate LogDelegate_External; 
-
-        public SIPAssetPersistor<SIPAccount> SIPAccountPersistor;
-        public SIPAssetPersistor<SIPDialPlan> DialPlanPersistor;
-        public SIPAssetPersistor<SIPProvider> SIPProviderPersistor;
-        public SIPAssetPersistor<SIPProviderBinding> SIPProviderBindingsPersistor;
-        public SIPAssetPersistor<SIPRegistrarBinding> SIPRegistrarBindingsPersistor;
-        public SIPAssetPersistor<SIPDialogueAsset> SIPDialoguePersistor;
-        public SIPAssetPersistor<SIPCDRAsset> SIPCDRPersistor;
-        public SIPAssetPersistor<Customer> CRMCustomerPersistor;
-        public SIPDomainManager SIPDomainManager;
+        private SIPAssetPersistor<SIPAccount> SIPAccountPersistor;
+        private SIPAssetPersistor<SIPDialPlan> DialPlanPersistor;
+        private SIPAssetPersistor<SIPProvider> SIPProviderPersistor;
+        private SIPAssetPersistor<SIPProviderBinding> SIPProviderBindingsPersistor;
+        private SIPAssetPersistor<SIPRegistrarBinding> SIPRegistrarBindingsPersistor;
+        private SIPAssetPersistor<SIPDialogueAsset> SIPDialoguePersistor;
+        private SIPAssetPersistor<SIPCDRAsset> SIPCDRPersistor;
+        private SIPAssetPersistor<Customer> CRMCustomerPersistor;
+        private CustomerSessionManager CRMSessionManager;
+        private SIPDomainManager SIPDomainManager;
+        private SIPMonitorLogDelegate LogDelegate_External = (e) => { }; 
 
         public SIPProvisioningWebService()
         {}
+
+        public SIPProvisioningWebService(
+            SIPAssetPersistor<SIPAccount> sipAccountPersistor,
+            SIPAssetPersistor<SIPDialPlan> sipDialPlanPersistor,
+            SIPAssetPersistor<SIPProvider> sipProviderPersistor,
+            SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor,
+            SIPAssetPersistor<SIPRegistrarBinding> sipRegistrarBindingsPersistor,
+            SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor,
+            SIPAssetPersistor<SIPCDRAsset> sipCDRPersistor,
+            CustomerSessionManager crmSessionManager,
+            SIPDomainManager sipDomainManager,
+            SIPMonitorLogDelegate log) {
+
+            SIPAccountPersistor = sipAccountPersistor;
+            DialPlanPersistor = sipDialPlanPersistor;
+            SIPProviderPersistor = sipProviderPersistor;
+            SIPProviderBindingsPersistor = sipProviderBindingsPersistor;
+            SIPRegistrarBindingsPersistor = sipRegistrarBindingsPersistor;
+            SIPDialoguePersistor = sipDialoguePersistor;
+            SIPCDRPersistor = sipCDRPersistor;
+            CRMCustomerPersistor = crmSessionManager.CustomerPersistor;
+            CRMSessionManager = crmSessionManager;
+            SIPDomainManager = sipDomainManager;
+            LogDelegate_External = log;
+        }
 
         private string GetAuthId() {
             return OperationContext.Current.IncomingMessageHeaders.GetHeader<string>(AUTH_TOKEN_KEY, "");
@@ -92,7 +114,7 @@ namespace SIPSorcery.SIP.App
 
                 if (authId != null)
                 {
-                    CustomerSession customerSession = AuthenticateToken_External(authId);
+                    CustomerSession customerSession = CRMSessionManager.Authenticate(authId);
                     if (customerSession == null)
                     {
                         logger.Warn("SIPProvisioningWebService AuthoriseRequest failed for " + authId + ".");
@@ -153,9 +175,10 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        [OperationContract]
+       [OperationContract]
         public bool IsAlive()
         {
+            logger.Debug("IsAlive called from " + OperationContext.Current.Channel.RemoteAddress + ".");
             return true;
         }
 
@@ -244,7 +267,7 @@ namespace SIPSorcery.SIP.App
                     ipAddress = endpoint.Address; 
                 }
 
-                CustomerSession customerSession = AuthenticateWebService_External(username, password, ipAddress);
+                CustomerSession customerSession = CRMSessionManager.Authenticate(username, password, ipAddress);
                 if (customerSession != null)
                 {
                     return customerSession.Id;
@@ -264,7 +287,7 @@ namespace SIPSorcery.SIP.App
                 Customer customer = AuthoriseRequest();
                 
                 logger.Debug("SIPProvisioningWebService Logout called for " + customer.CustomerUsername + ".");
-                ExpireToken_External(GetAuthId());
+                CRMSessionManager.ExpireToken(GetAuthId());
 
                 // Fire a machine log event to disconnect the silverlight tcp socket.
                 LogDelegate_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.Logout, customer.CustomerUsername, null, null));

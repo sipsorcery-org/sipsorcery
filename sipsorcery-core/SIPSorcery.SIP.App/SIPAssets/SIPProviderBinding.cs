@@ -63,7 +63,8 @@ namespace SIPSorcery.SIP.App
     {
         public const string XML_DOCUMENT_ELEMENT_NAME = "sipproviderbindings";
         public const string XML_ELEMENT_NAME = "sipproviderbinding";
-        public const string REGAGENT_CONTACT_ID_KEY = "sipsorceryid";
+        //public const string REGAGENT_CONTACT_ID_KEY = "sipsorceryid";
+        public const string REGAGENT_CONTACT_ID_KEY = "rinstance";
 
         private static string m_newLine = AppState.NewLine;
         private static ILog logger = AppState.logger;

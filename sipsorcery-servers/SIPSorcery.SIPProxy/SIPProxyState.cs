@@ -52,7 +52,8 @@ namespace SIPSorcery.SIPProxy
     {
         private const string LOGGER_NAME = "sipproxy";
 
-        private const string SIPPROXY_CONFIGNODE_NAME = "sipproxy";
+        public const string SIPPROXY_CONFIGNODE_NAME = "sipproxy";
+
         private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
         private const string PROXY_SCRIPTPATH_KEY = "ProxyScriptPath";
         private const string PROXY_LOOPBACK_PORT_KEY = "MonitorLoopbackPort";

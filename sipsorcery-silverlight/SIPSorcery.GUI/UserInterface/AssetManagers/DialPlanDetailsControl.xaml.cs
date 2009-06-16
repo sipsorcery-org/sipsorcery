@@ -133,6 +133,7 @@ namespace SIPSorcery
                 m_dialPlan.DialPlanScript = dialPlanText;
                 m_dialPlan.TraceEmailAddress = m_dialPlanTraceEmailAddress.Text;
                 m_dialPlan.DialPlanName = m_dialPlanName.Text;
+                m_dialPlan.ScriptTypeDescription = (m_dialPlanTypeExtension.IsChecked.Value) ? SIPDialPlanScriptTypesEnum.Asterisk.ToString() : SIPDialPlanScriptTypesEnum.Ruby.ToString();
 
                 DialPlanUpdate_External(m_dialPlan);
             }

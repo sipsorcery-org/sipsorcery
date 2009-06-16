@@ -60,9 +60,9 @@ namespace SIPSorcery.SIP.App
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPAssetPersistor option.");
             }
             else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql) {
-                DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
+                //DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
                 //dbLinqContext.Log = Console.Out;
-                return new DBLinqAssetPersistor<SIPAccount>(dbLinqContext);
+                return new DBLinqAssetPersistor<SIPAccount>(storageType, storageConnectionStr);
             }
             else {
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPAssetPersistor option.");
@@ -78,9 +78,9 @@ namespace SIPSorcery.SIP.App
                 throw new ApplicationException(storageType + " is not supported as a CreateDialPlanPersistor option.");
             }
             else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql) {
-                DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
+                //DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
                 //dbLinqContext.Log = Console.Out;
-                return new DBLinqAssetPersistor<SIPDialPlan>(dbLinqContext);
+                return new DBLinqAssetPersistor<SIPDialPlan>(storageType, storageConnectionStr);
             }
             else {
                 throw new ApplicationException(storageType + " is not supported as a CreateDialPlanPersistor option.");
@@ -96,9 +96,9 @@ namespace SIPSorcery.SIP.App
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPProviderPersistor option.");
             }
             else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql) {
-                DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
+                //DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
                 //dbLinqContext.Log = Console.Out;
-                return new DBLinqAssetPersistor<SIPProvider>(dbLinqContext);
+                return new DBLinqAssetPersistor<SIPProvider>(storageType, storageConnectionStr);
             }
             else {
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPProviderPersistor option.");
@@ -114,9 +114,9 @@ namespace SIPSorcery.SIP.App
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPProviderBindingPersistor option.");
             }
             else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql) {
-                DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
+                //DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
                 //dbLinqContext.Log = Console.Out;
-                return new DBLinqAssetPersistor<SIPProviderBinding>(dbLinqContext);
+                return new DBLinqAssetPersistor<SIPProviderBinding>(storageType, storageConnectionStr);
             }
             else {
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPProviderBindingPersistor option.");
@@ -132,9 +132,9 @@ namespace SIPSorcery.SIP.App
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPDomainPersistor option.");
             }
             else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql) {
-                DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
+                //DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
                 //dbLinqContext.Log = Console.Out;
-                return new DBLinqAssetPersistor<SIPDomain>(dbLinqContext);
+                return new DBLinqAssetPersistor<SIPDomain>(storageType, storageConnectionStr);
             }
             else {
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPDomainPersistor option.");
@@ -150,9 +150,9 @@ namespace SIPSorcery.SIP.App
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPRegistrarBindingPersistor option.");
             }
             else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql) {
-                DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
+                //DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
                 //dbLinqContext.Log = Console.Out;
-                return new DBLinqAssetPersistor<SIPRegistrarBinding>(dbLinqContext);
+                return new DBLinqAssetPersistor<SIPRegistrarBinding>(storageType, storageConnectionStr);
             }
             else {
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPRegistrarBindingPersistor option.");
@@ -168,9 +168,9 @@ namespace SIPSorcery.SIP.App
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPDialoguePersistor option.");
             }
             else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql) {
-                DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
+                //DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
                 //dbLinqContext.Log = Console.Out;
-                return new DBLinqAssetPersistor<SIPDialogueAsset>(dbLinqContext);
+                return new DBLinqAssetPersistor<SIPDialogueAsset>(storageType, storageConnectionStr);
             }
             else {
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPDialoguePersistor option.");
@@ -186,9 +186,9 @@ namespace SIPSorcery.SIP.App
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPCDRPersistor option.");
             }
             else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql) {
-                DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
+                //DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageConnectionStr);
                 //dbLinqContext.Log = Console.Out;
-                return new DBLinqAssetPersistor<SIPCDRAsset>(dbLinqContext);
+                return new DBLinqAssetPersistor<SIPCDRAsset>(storageType, storageConnectionStr);
             }
             else {
                 throw new ApplicationException(storageType + " is not supported as a CreateSIPCDRPersistor option.");

@@ -140,7 +140,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTCPClientDisconnected. " + excp);
+                logger.Error("Exception SIPTCPClientDisconnected. " + excp.Message);
             }
         }
 
@@ -225,7 +225,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception EndSend. " + excp);
+                logger.Error("Exception EndSend. " + excp.Message);
             }
         }
 
@@ -265,7 +265,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTCPChannel EndConnect. " + excp);
+                logger.Error("Exception SIPTCPChannel EndConnect. " + excp.Message);
                 //throw;
             }
         }

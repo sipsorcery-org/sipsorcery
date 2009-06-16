@@ -49,10 +49,10 @@ using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.SIPAppServer
-{
-    public class SIPSorceryPersistor
-    {
+namespace SIPSorcery.SIPAppServer {
+
+    public class SIPSorceryPersistor {
+
         public const string XML_DOMAINS_FILENAME = "sipdomains.xml";
         public const string XML_SIPACCOUNTS_FILENAME = "sipaccounts.xml";
         public const string XML_SIPPROVIDERS_FILENAME = "sipproviders.xml";
@@ -61,16 +61,17 @@ namespace SIPSorcery.SIPAppServer
         public const string XML_PROVIDER_BINDINGS_FILENAME = "sipproviderbindings.xml";
         public const string XML_SIPDIALOGUES_FILENAME = "sipdialogues.xml";
         public const string XML_SIPCDRS_FILENAME = "sipcdrs.xml";
-        private const int RELOAD_SPACING_SECONDS = 3;                           // Minimum interval the XML file change events will be allowed.
+
+        private const string WRITE_CDRS_THREAD_NAME = "sipappsvr-writecdrs";
 
         private ILog logger = AppState.logger;
-       
+
         private SIPAssetPersistor<SIPAccount> m_sipAccountsPersistor;
         public SIPAssetPersistor<SIPAccount> SIPAccountsPersistor { get { return m_sipAccountsPersistor; } }
 
         private SIPAssetPersistor<SIPDialPlan> m_dialPlanPersistor;
-        public SIPAssetPersistor<SIPDialPlan> SIPDialPlanPersistor { get { return m_dialPlanPersistor; } } 
-        
+        public SIPAssetPersistor<SIPDialPlan> SIPDialPlanPersistor { get { return m_dialPlanPersistor; } }
+
         private SIPAssetPersistor<SIPProvider> m_sipProvidersPersistor;
         public SIPAssetPersistor<SIPProvider> SIPProvidersPersistor { get { return m_sipProvidersPersistor; } }
 
@@ -89,9 +90,8 @@ namespace SIPSorcery.SIPAppServer
         private SIPAssetPersistor<SIPCDRAsset> m_sipCDRPersistor;
         public SIPAssetPersistor<SIPCDRAsset> SIPCDRPersistor { get { return m_sipCDRPersistor; } }
 
-        public event SIPAssetDelegate<SIPProvider> SIPProviderAdded;
-        public event SIPAssetDelegate<SIPProvider> SIPProviderUpdated;
-        public event SIPAssetDelegate<SIPProvider> SIPProviderDeleted;
+        public bool StopCDRWrites;
+        private Queue<SIPCDR> m_pendingCDRs = new Queue<SIPCDR>();
 
         public SIPSorceryPersistor(StorageTypes storageType, string storageConnectionStr) {
 
@@ -124,23 +124,8 @@ namespace SIPSorcery.SIPAppServer
                 throw new NotImplementedException(storageType + " is not implemented for the Application Server persistor.");
             }
 
-            m_sipProvidersPersistor.Added += new SIPAssetDelegate<SIPProvider>(sipProvider => { if (SIPProviderAdded != null) SIPProviderAdded(sipProvider); });
-            m_sipProvidersPersistor.Updated += new SIPAssetDelegate<SIPProvider>(sipProvider => { if (SIPProviderUpdated != null) SIPProviderUpdated(sipProvider); });
-            m_sipProvidersPersistor.Deleted += new SIPAssetDelegate<SIPProvider>(sipProvider => { if (SIPProviderDeleted != null) SIPProviderDeleted(sipProvider); });
-        }
-
-        public bool DoesSIPAccountExist(string user, string canonicalDomain)
-        {
-            return (m_sipAccountsPersistor.Get(s => s.SIPUsername == user && s.SIPDomain == canonicalDomain) != null);
-        }
-
-        public List<SIPRegistrarBinding> GetSIPAccountBindings(string user, string canonicalDomain) {
-            SIPAccount sipAccount = m_sipAccountsPersistor.Get(s => s.SIPUsername == user && s.SIPDomain == canonicalDomain);
-            if (sipAccount != null) {
-                return m_sipRegistrarBindingPersistor.Get(b => b.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
-            }
-            else {
-                return null;
+            if (m_sipCDRPersistor != null) {
+                ThreadPool.QueueUserWorkItem(delegate { WriteCDRs(); });
             }
         }
 
@@ -158,107 +143,49 @@ namespace SIPSorcery.SIPAppServer
             return dialPlan;
         }
 
-        public SIPAccount AddSIPAccount(SIPAccount sipAccount)
-        {
-            return m_sipAccountsPersistor.Add(sipAccount);
-        }
-
-        public SIPAccount GetSIPAccount(string username, string domain)
-        {
+        public SIPAccount GetSIPAccount(string username, string domain) {
             return m_sipAccountsPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == domain);
         }
 
-        public SIPAccount UpdateSIPAccount(SIPAccount sipAccount)
-        {
-            return m_sipAccountsPersistor.Update(sipAccount);
-        }
-
-        public void DeleteSIPAccount(SIPAccount sipAccount)
-        {
-            m_sipAccountsPersistor.Delete(sipAccount);
-        }
-
-        public List<SIPProvider> GetSIPProvidersForUser(string owner)
-        {
-            return m_sipProvidersPersistor.Get(p => p.Owner == owner, null, 5, 10);
-        }
-
-        public SIPProvider AddSIPProvider(SIPProvider sipProvider) {
-            sipProvider = m_sipProvidersPersistor.Add(sipProvider);
-
-            if (SIPProviderAdded != null) {
-                SIPProviderAdded(sipProvider);
+        public void QueueCDR(SIPCDR cdr) {
+            try {
+                if (m_sipCDRPersistor != null && !StopCDRWrites && !m_pendingCDRs.Contains(cdr)) {
+                    m_pendingCDRs.Enqueue(cdr);
+                }
             }
-
-            return m_sipProvidersPersistor.Add(sipProvider);
-        }
-
-        public SIPProvider UpdateSIPProvider(SIPProvider sipProvider) {
-            sipProvider = m_sipProvidersPersistor.Update(sipProvider);
-
-            if (SIPProviderUpdated != null) {
-                SIPProviderUpdated(sipProvider);
-            }
-
-            return sipProvider;
-        }
-
-        public void DeleteSIPProvider(SIPProvider sipProvider) {
-            m_sipProvidersPersistor.Delete(sipProvider);
-
-            if (SIPProviderDeleted != null) {
-                SIPProviderDeleted(sipProvider);
+            catch (Exception excp) {
+                logger.Error("Exception QueueCDR. " + excp.Message);
             }
         }
 
-        /// <summary>
-        /// Called when an external process wishes to let the hosting agent know a dialplan has been updated and that
-        /// the agent should reload the specified dialplan before its next use. 
-        /// Typically a call to this method will be as a result of a dialplan update being carried out by a web server 
-        /// and then wanting to let the SIP Server Agent know. The method is redundant when an XML persistence layer 
-        /// and single server deployment model is in use since the Agent will already know about the update.
-        /// </summary>
-        /// <param name="owner">The owner of the dialplan that has been updated.</param>
-        /// <param name="dialplanName">The name assigned to the dialplan by the owner.</param>
-        public void DialPlanExternalUpdate(string owner, string dialplanName)
-        {
+        private void WriteCDRs() {
+            try {
+                Thread.CurrentThread.Name = WRITE_CDRS_THREAD_NAME;
 
-        }
+                while (!StopCDRWrites || m_pendingCDRs.Count > 0) {
+                    try {
+                        if (m_pendingCDRs.Count > 0) {
 
-        /// <summary>
-        /// Called when an external process wishes to let the hosting agent know a SIPProvider has been deleted. 
-        /// Typically a call to this method will be the result of a dialplan update being carried out by a web server 
-        /// and then wanting to let the SIP Server Agent know. The method is redundant when an XML persistence layer 
-        /// and single server deployment model is in use since the Agent will already know about the update.
-        /// </summary>
-        /// <param name="sipProviderId">The id of the SIPProvider that has been deleted.</param>
-        public void SIPProviderExternalDeleted(Guid sipProviderId)
-        {
-             SIPProviderDeleted(m_sipProvidersPersistor.Get(sipProviderId));
-        }
-
-        /// <summary>
-        /// Called when an external process wishes to let the hosting agent know a SIPProvider has been addeded. 
-        /// Typically a call to this method will be the result of a dialplan update being carried out by a web server 
-        /// and then wanting to let the SIP Server Agent know. The method is redundant when an XML persistence layer 
-        /// and single server deployment model is in use since the Agent will already know about the update.
-        /// </summary>
-        /// <param name="sipProviderId">The id of the SIPProvider that has been added.</param>
-        public void SIPProviderExternalAdded(Guid sipProviderId)
-        {
-            SIPProviderAdded(m_sipProvidersPersistor.Get(sipProviderId));
-        }
-
-        /// <summary>
-        /// Called when an external process wishes to let the hosting agent know a SIPProvider has been updated. 
-        /// Typically a call to this method will be the result of a dialplan update being carried out by a web server 
-        /// and then wanting to let the SIP Server Agent know. The method is redundant when an XML persistence layer 
-        /// and single server deployment model is in use since the Agent will already know about the update.
-        /// </summary>
-        /// <param name="sipProviderId">The id of the SIPProvider that has been updated.</param>
-        public void SIPProviderExternalUpdated(Guid sipProviderId)
-        {
-            SIPProviderUpdated(m_sipProvidersPersistor.Get(sipProviderId));
+                            SIPCDRAsset cdrAsset = new SIPCDRAsset(m_pendingCDRs.Dequeue());
+                            if (m_sipCDRPersistor.Count(c => c.Id == cdrAsset.Id) == 1) {
+                                m_sipCDRPersistor.Update(cdrAsset);
+                            }
+                            else {
+                                m_sipCDRPersistor.Add(cdrAsset);
+                            }
+                        }
+                        else {
+                            Thread.Sleep(1000);
+                        }
+                    }
+                    catch (Exception writeExcp) {
+                        logger.Error("Exception WriteCDRs writing CDR. " + writeExcp.Message);
+                    }
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception WriteCDRs. " + excp.Message);
+            }
         }
     }
 }

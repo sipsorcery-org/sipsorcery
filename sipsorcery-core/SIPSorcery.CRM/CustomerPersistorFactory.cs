@@ -66,9 +66,9 @@ namespace SIPSorcery.CRM
                 throw new ApplicationException(storageType + " is not supported as a CreateCustomerPersistor option.");
             }
             else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql) {
-                DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageDescription);
+                //DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageDescription);
                 //dbLinqContext.Log = Console.Out;
-                return new DBLinqAssetPersistor<Customer>(dbLinqContext);
+                return new DBLinqAssetPersistor<Customer>(storageType, storageDescription);
             }
             else {
                 throw new ApplicationException(storageType + " is not supported as a CreateCustomerPersistor option.");
@@ -87,9 +87,9 @@ namespace SIPSorcery.CRM
             }
             else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql)
             {
-                DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageDescription);
+                //DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageDescription);
                 //dbLinqContext.Log = Console.Out;
-                return new DBLinqAssetPersistor<CustomerSession>(dbLinqContext);
+                return new DBLinqAssetPersistor<CustomerSession>(storageType, storageDescription);
             }
             else
             {

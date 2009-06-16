@@ -244,7 +244,7 @@ namespace SIPSorcery
 
         private void DeleteAccountLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) {
             try {
-                MessageBoxResult confirmDelete = MessageBox.Show("Press Ok to delete all your account details.", "Confirm Delete", MessageBoxButton.OKCancel);
+                MessageBoxResult confirmDelete = MessageBox.Show("Important! If you have active SIP Provider bindings you need to deactivate them BEFORE deleting your account.\nPress Ok to delete all your account details.", "Confirm Delete", MessageBoxButton.OKCancel);
                 if (confirmDelete == MessageBoxResult.OK) {
                     m_persistor.DeleteCustomerComplete += (eargs) => { Logout_External(false); };
                     m_persistor.DeleteCustomerAsync(m_owner);

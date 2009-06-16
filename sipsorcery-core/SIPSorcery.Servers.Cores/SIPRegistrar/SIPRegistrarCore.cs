@@ -106,13 +106,14 @@ namespace SIPSorcery.Servers
 		private static ILog logger = AppState.GetLogger("sipregistrar");
 
         private string m_sipExpiresParameterKey = SIPContactHeader.EXPIRES_PARAMETER_KEY;
+        private int m_minimumBindingExpiry = SIPRegistrarBindingsManager.MINIMUM_EXPIRY_SECONDS;
 
         private SIPTransport m_sipTransport;
         private SIPRegistrarBindingsManager m_registrarBindingsManager;
         private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
 
-        private string m_serverAgent;                    
+        private string m_serverAgent = SIPConstants.SIP_SERVER_STRING;                    
         private bool m_mangleUACContact = false;            // Whether or not to adjust contact URIs that contain private hosts to the value of the bottom via received socket.
         private bool m_strictRealmHandling = false;         // If true the registrar will only accept registration requests for domains it is configured for, otherwise any realm is accepted.
         private event SIPMonitorLogDelegate m_registrarLogEvent;
@@ -345,9 +346,15 @@ namespace SIPSorcery.Servers
                             }
                             else
                             {
-                                SIPResponse errorResponse = GetErrorResponse(sipRequest, updateResult, updateMessage);
-                                registerTransaction.SendFinalResponse(errorResponse);
+                                // The binding update failed even though the REGISTER request was authorised. This is probably due to a 
+                                // temporary problem connecting to the bdingins data store. Send ok but set the binding expiry to the minimum so
+                                // that the UA will try again as soon qas possible.
                                 FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Error, "Registration request successful but binding update failed for " + addressOfRecord.ToString() + " from " + registerTransaction.RemoteEndPoint + ".", addressOfRecord.User));
+                                //SIPResponse errorResponse = GetErrorResponse(sipRequest, updateResult, updateMessage);
+                                //registerTransaction.SendFinalResponse(errorResponse);
+                                sipRequest.Header.Contact[0].Expires = m_minimumBindingExpiry;
+                                SIPResponse okResponse = GetOkResponse(sipRequest);
+                                registerTransaction.SendFinalResponse(okResponse);
                             }
                         }
 

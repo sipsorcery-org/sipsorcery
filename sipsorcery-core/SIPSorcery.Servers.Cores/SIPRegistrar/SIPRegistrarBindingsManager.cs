@@ -50,12 +50,14 @@ namespace SIPSorcery.Servers {
 
     public class SIPRegistrarBindingsManager {
 
+        private const string EXPIRE_BINDINGS_THREAD_NAME = "sipregistrar-expirebindings";
         private const int CHECK_REGEXPIRY_DURATION = 1000;            // Period at which to check for expired bindings.
         public const int NATKEEPALIVE_DEFAULTSEND_INTERVAL = 15;
         private const int MAX_USERAGENT_LENGTH = 128;
         public const int MINIMUM_EXPIRY_SECONDS = 60;
         private const int DEFAULT_BINDINGS_PER_USER = 1;              // The default maixmim number of bindings that will be allowed for each unique SIP account.
         private const int REMOVE_EXPIRED_BINDINGS_INTERVAL = 3000;    // The interval in seconds at which to check for and remove expired bindings.
+        private const int BINDING_EXPIRY_GRACE_PERIOD = 10;
 
         private string m_sipRegisterRemoveAll = SIPConstants.SIP_REGISTER_REMOVEALL;
         private string m_sipExpiresParameterKey = SIPContactHeader.EXPIRES_PARAMETER_KEY;
@@ -94,13 +96,25 @@ namespace SIPSorcery.Servers {
 
         private void ExpireBindings(object state) {
             try {
+                Thread.CurrentThread.Name = EXPIRE_BINDINGS_THREAD_NAME;
+
                 while (!m_stop) {
-                    m_bindingsPersistor.Delete(b => b.ExpiryTime < DateTime.Now);
+                    try {
+                        DateTime expiryTime = DateTime.Now.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD);
+                        m_bindingsPersistor.Delete(b => b.ExpiryTime < expiryTime);
+                    }
+                    catch (Exception expireExcp) {
+                        logger.Error("Exception ExpireBindings Delete. " + expireExcp.Message);
+                    }
+
                     Thread.Sleep(REMOVE_EXPIRED_BINDINGS_INTERVAL);
                 }
             }
             catch (Exception excp) {
                 logger.Error("Exception ExpireBindings. " + excp.Message);
+            }
+            finally {
+                logger.Warn("Thread " + EXPIRE_BINDINGS_THREAD_NAME + " stopped!");
             }
         }
 

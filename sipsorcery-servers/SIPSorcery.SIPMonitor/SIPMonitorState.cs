@@ -52,7 +52,8 @@ namespace SIPSorcery.SIPMonitor
     {
         private const string LOGGER_NAME = "sipmonitor";
 
-        private const string SIPMONITOR_CONFIGNODE_NAME = "sipmonitor";
+        public const string SIPMONITOR_CONFIGNODE_NAME = "sipmonitor";
+
         private const string SIPMONITOR_CLIENT_SOCKETS_NODE_NAME = "sipmonitorclientsockets";
         private const string SIPMONITOR_MACHINE_SOCKETS_NODE_NAME = "sipmonitormachinesockets";
         private const string SIPMONITOR_LOOPBACK_EVENTPORT_KEY = "MonitorLoopbackPort";

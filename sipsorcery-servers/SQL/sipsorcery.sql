@@ -115,7 +115,7 @@ create table sipproviders
 	registerrealm varchar(256),
 	registerenabled bool not null default false,
 	registeradminenabled bool not null default true,		-- This allows an admin to disable the registration and override the user.
-	registerdisabledreason varchar(256),				-- If a registration has been disabled by the RegistrationAgent the reason will be specified here. Examples are 403 Forbidden responses.
+	registerdisabledreason varchar(256),					-- If a registration has been disabled by the RegistrationAgent the reason will be specified here. Examples are 403 Forbidden responses.
 	inserted timestamp not null default now(),
 	lastupdate timestamp not null,
 	Primary Key(id),
@@ -123,9 +123,6 @@ create table sipproviders
 	Unique(owner, providername)
 );
 
-/* No foregin key constraints in place for customerusername and providerid as when the parent SIP Provider is removed 
-   it's desireable that the Registration Agent expires any current bindings. Worst case is the binding will be removed 
-   when it expires and the Registration Agent identifies there is no owning SIP Provider. */
 -- Maps to class SIPSorcery.SIP.App.SIPProviderBinding.
 create table sipproviderbindings
 (
@@ -143,7 +140,9 @@ create table sipproviderbindings
   bindinguri varchar(256) not null,
   registrarsipsocket varchar(256),
   cseq int not null,
-  Primary Key(id)
+  Primary Key(id),
+  Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade,
+  Foreign Key(providerid) references sipproviders(id) on delete cascade on update cascade
 );
 
 -- Maps to class SIPSorcery.SIP.SIPDialPlan.

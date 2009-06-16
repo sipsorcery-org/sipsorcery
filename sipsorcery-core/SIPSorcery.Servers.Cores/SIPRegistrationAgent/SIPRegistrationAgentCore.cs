@@ -251,7 +251,7 @@ namespace SIPSorcery.Servers
                                             m_inTransitBindings.Add(new Guid(binding.Id), binding);
                                         }
 
-                                        SendInitialRegister(binding, binding.LocalSIPEndPoint, binding.RegistrarSIPEndPoint, binding.BindingExpiry);
+                                        SendInitialRegister(provider, binding, binding.LocalSIPEndPoint, binding.RegistrarSIPEndPoint, binding.BindingExpiry);
                                     }
                                 }
                                 catch (Exception regExcp) {
@@ -291,14 +291,14 @@ namespace SIPSorcery.Servers
             }
         }
 
-        private void SendInitialRegister(SIPProviderBinding binding, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, int expirySeconds)
+        private void SendInitialRegister(SIPProvider sipProvider, SIPProviderBinding binding, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, int expirySeconds)
         {
             try
             {
                 binding.CSeq++;
 
                 FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "Initiating registration for " + binding.Owner + " on " + binding.RegistrarServer.ToString() + ".", binding.Owner));
-                SIPRequest regRequest = GetRegistrationRequest(binding, localSIPEndPoint, expirySeconds, remoteEndPoint);
+                SIPRequest regRequest = GetRegistrationRequest(sipProvider, binding, localSIPEndPoint, expirySeconds, remoteEndPoint);
 
                 SIPNonInviteTransaction regTransaction = m_sipTransport.CreateNonInviteTransaction(regRequest, binding.RegistrarSIPEndPoint, localSIPEndPoint, m_outboundProxy);
                 regTransaction.NonInviteTransactionFinalResponseReceived += ServerResponseReceived;
@@ -460,42 +460,34 @@ namespace SIPSorcery.Servers
             }
         }
 
-        private void OkResponseReceived(SIPTransaction sipTransaction, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
-        {
-            try
-            {
+        private void OkResponseReceived(SIPTransaction sipTransaction, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) {
+            try {
                 Guid callIdGuid = new Guid(sipResponse.Header.CallId);
                 SIPProviderBinding binding = GetBinding(callIdGuid);
 
-                if (binding != null)
-                {
+                if (binding != null) {
                     // Updated contacts list.
                     // Find the contact in the list that matches the one being maintained by this agent in order to determine the expiry value.
                     int headerExpires = sipResponse.Header.Expires;
                     int contactExpires = -1;
-                    if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0)
-                    {
-                        foreach (SIPContactHeader contactHeader in sipResponse.Header.Contact)
-                        {
-                            if (contactHeader.ContactURI.Parameters.Get(m_regAgentContactId) == binding.BindingSIPURI.Parameters.Get(m_regAgentContactId))
-                            {
+                    if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0) {
+                        foreach (SIPContactHeader contactHeader in sipResponse.Header.Contact) {
+                            if (contactHeader.ContactURI.Parameters.Get(m_regAgentContactId) == binding.BindingSIPURI.Parameters.Get(m_regAgentContactId)) {
                                 contactExpires = contactHeader.Expires;
                                 break;
                             }
                         }
                     }
 
-                    if (contactExpires != -1)
-                    {
+                    if (contactExpires != -1) {
                         binding.BindingExpiry = contactExpires;
                     }
-                    else if (headerExpires != -1)
-                    {
+                    else if (headerExpires != -1) {
                         binding.BindingExpiry = headerExpires;
                     }
 
                     if (binding.BindingExpiry < REGISTER_MINIMUM_EXPIRY) {
-                        // Make sure we don't do a 3CX and sned registration floods.
+                        // Make sure we don't do a 3CX and send registration floods.
                         binding.BindingExpiry = REGISTER_MINIMUM_EXPIRY;
                     }
 
@@ -509,13 +501,12 @@ namespace SIPSorcery.Servers
                     RemoveCachedBinding(new Guid(binding.Id));
                 }
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception SIPRegistrationAgent OkResponseReceived. " + excp.Message);
             }
         }
 
-        private SIPRequest GetRegistrationRequest(SIPProviderBinding binding, SIPEndPoint localSIPEndPoint, int expiry, SIPEndPoint registrarEndPoint)
+        private SIPRequest GetRegistrationRequest(SIPProvider sipProvider, SIPProviderBinding binding, SIPEndPoint localSIPEndPoint, int expiry, SIPEndPoint registrarEndPoint)
 		{	
 			try
 			{
@@ -531,7 +522,7 @@ namespace SIPSorcery.Servers
                 SIPFromHeader fromHeader = new SIPFromHeader(null, regUserURI, CallProperties.CreateNewTag());
                 SIPToHeader toHeader = new SIPToHeader(null, regUserURI, null);
                 SIPContactHeader contactHeader = new SIPContactHeader(null, binding.BindingSIPURI);
-                contactHeader.Expires = binding.BindingExpiry;
+                //contactHeader.Expires = binding.BindingExpiry;
                 string callId = binding.Id;
                 int cseq = ++binding.CSeq;	
 				
@@ -548,7 +539,7 @@ namespace SIPSorcery.Servers
                 SIPRoute registrarRoute = new SIPRoute(new SIPURI(binding.RegistrarServer.Scheme, registrarEndPoint), true);
                 header.Routes.PushRoute(registrarRoute);
 
-                /*if (sipProvider.CustomHeaders != null && sipProvider.CustomHeaders.Trim().Length > 0)
+                if (sipProvider != null && sipProvider.CustomHeaders != null && sipProvider.CustomHeaders.Trim().Length > 0)
                 {
                     string[] customerHeadersList = sipProvider.CustomHeaders.Split(SIPProvider.CUSTOM_HEADERS_SEPARATOR);
 
@@ -583,7 +574,7 @@ namespace SIPSorcery.Servers
                             }
                         }
                     }
-                }*/
+                }
 
                 registerRequest.Header = header;
                 return registerRequest;
@@ -639,7 +630,7 @@ namespace SIPSorcery.Servers
                     SIPEndPoint localSIPEndPoint = (binding.LocalSIPEndPoint != null) ? binding.LocalSIPEndPoint : m_sipTransport.GetDefaultSIPEndPoint(registrarEndPoint.SIPProtocol);
                     binding.CSeq = ++binding.CSeq;
 
-                    SIPRequest regRequest = GetRegistrationRequest(binding, localSIPEndPoint, 0, registrarEndPoint);
+                    SIPRequest regRequest = GetRegistrationRequest(null, binding, localSIPEndPoint, 0, registrarEndPoint);
                     regRequest.LocalSIPEndPoint = binding.LocalSIPEndPoint;
                     regRequest.Header.Expires = 0;
                     SIPContactHeader contactHeader = new SIPContactHeader(null, binding.BindingSIPURI);
@@ -695,7 +686,7 @@ namespace SIPSorcery.Servers
 
                     binding.CSeq = binding.CSeq++;
 
-                    SIPRequest regRequest = GetRegistrationRequest(binding, binding.LocalSIPEndPoint, 0, binding.RegistrarSIPEndPoint);
+                    SIPRequest regRequest = GetRegistrationRequest(null, binding, binding.LocalSIPEndPoint, 0, binding.RegistrarSIPEndPoint);
                     regRequest.LocalSIPEndPoint = binding.LocalSIPEndPoint;
                     regRequest.Header.Expires = -1;                             // Stops the Expires header being sent.
                     regRequest.Header.Contact = new List<SIPContactHeader>();   // Stops the Contact header being sent.

@@ -18,8 +18,8 @@ namespace SIPSorcery.SIPAppServer
 
         private static ManualResetEvent m_proxyUp = new ManualResetEvent(false);
 
-        private static StorageTypes m_sipAppServerStorageType;
-        private static string m_sipAppServerStorageConnStr;
+        private static StorageTypes m_serverStorageType;
+        private static string m_serverStorageConnStr;
 
         [STAThread]
         static void Main(string[] args)
@@ -28,15 +28,15 @@ namespace SIPSorcery.SIPAppServer
 
             try
             {
-                m_sipAppServerStorageType = (ConfigurationManager.AppSettings[m_storageTypeKey] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[m_storageTypeKey]) : StorageTypes.Unknown;
-                m_sipAppServerStorageConnStr = ConfigurationManager.AppSettings[m_connStrKey];
+                m_serverStorageType = (ConfigurationManager.AppSettings[m_storageTypeKey] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[m_storageTypeKey]) : StorageTypes.Unknown;
+                m_serverStorageConnStr = ConfigurationManager.AppSettings[m_connStrKey];
 
-                if (m_sipAppServerStorageType == StorageTypes.Unknown || m_sipAppServerStorageConnStr.IsNullOrBlank())
+                if (m_serverStorageType == StorageTypes.Unknown || m_serverStorageConnStr.IsNullOrBlank())
                 {
                     throw new ApplicationException("The SIP Application Service cannot start with no persistence settings specified.");
                 }
 
-                SIPAppServerDaemon daemon = new SIPAppServerDaemon(m_sipAppServerStorageType, m_sipAppServerStorageConnStr);
+                SIPAppServerDaemon daemon = new SIPAppServerDaemon(m_serverStorageType, m_serverStorageConnStr);
 
                 if (args != null && args.Length == 1 && args[0].StartsWith("-c"))
                 {

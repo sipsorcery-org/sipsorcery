@@ -137,7 +137,6 @@
     <Content Include="ExampleXMLConfig\customers.xml" />
     <Content Include="ExampleXMLConfig\sipdialplans.xml" />
     <Content Include="ExampleXMLConfig\sipdomains.xml" />
-    <Content Include="readme.txt" />
     <Content Include="ExampleXMLConfig\sipaccounts.xml" />
     <Content Include="ExampleXMLConfig\sipproviders.xml" />
   </ItemGroup>

@@ -102,6 +102,8 @@
     <Compile Include="SIPUserAgents\SIPCallDescriptor.cs" />
     <Compile Include="SIPUserAgents\SIPClientUserAgent.cs" />
     <Compile Include="WCFServices\CrossDomainWebService.cs" />
+    <Compile Include="WCFServices\IProvisioningService.cs" />
+    <Compile Include="WCFServices\ProvisioningServiceInstanceProvider.cs" />
     <Compile Include="WCFServices\SilverlightFaultBehavior.cs" />
     <Compile Include="WCFServices\SilverlightPolicyServer.cs" />
     <Compile Include="WCFServices\SIPManagerWebService.cs" />
