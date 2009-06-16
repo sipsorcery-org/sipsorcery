@@ -190,7 +190,7 @@ namespace SIPSorcery.Servers
                                     m_bindingPersistor.Delete(binding);
                                     if (binding.RegistrarServer == null) {
                                         // Can't expire a binding if the settings are not known, just delete it and worst case it will be removed after the expiration period.
-                                        continue;
+                                        break;
                                     }
                                 }
 

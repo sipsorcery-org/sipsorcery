@@ -61,18 +61,21 @@ namespace SIPSorcery.SIPRegistrationAgent
         private SIPMonitorEventWriter m_monitorEventWriter;
         private SIPRegistrationAgentCore m_sipRegAgentCore;
         private SIPAssetPersistor<SIPProviderBinding> m_bindingPersistor;
-
-        private SIPAssetGetByIdDelegate<SIPProvider> GetSIPProviderById_External;
-        private SIPAssetUpdateDelegate<SIPProvider> UpdateSIPProvider_External;
+        private SIPAssetPersistor<SIPProvider> m_providerPersistor;
 
         public SIPRegAgentDaemon(
-            SIPAssetGetByIdDelegate<SIPProvider> getSIPProviderById,
-            SIPAssetUpdateDelegate<SIPProvider> updateSIPProvider,
+            SIPAssetPersistor<SIPProvider> providerPersistor,
             SIPAssetPersistor<SIPProviderBinding> bindingPersistor) {
 
-            GetSIPProviderById_External = getSIPProviderById;
-            UpdateSIPProvider_External = updateSIPProvider;
+            m_providerPersistor = providerPersistor;
             m_bindingPersistor = bindingPersistor;
+
+            // The Registration Agent wants to know about any changes to SIP Provider entries in order to update any SIP 
+            // Provider bindings it is maintaining or needs to add or remove.
+            SIPProviderBindingSynchroniser sipProviderBindingSynchroniser = new SIPProviderBindingSynchroniser(m_bindingPersistor);
+            m_providerPersistor.Added += sipProviderBindingSynchroniser.SIPProviderAdded;
+            m_providerPersistor.Updated += sipProviderBindingSynchroniser.SIPProviderUpdated;
+            m_providerPersistor.Deleted += sipProviderBindingSynchroniser.SIPProviderDeleted;
         }
 
         public void Start()
@@ -104,8 +107,8 @@ namespace SIPSorcery.SIPRegistrationAgent
                     FireSIPMonitorEvent,
                     m_sipTransport,
                     m_outboundProxy,
-                    GetSIPProviderById_External,
-                    UpdateSIPProvider_External,
+                    m_providerPersistor.Get,
+                    m_providerPersistor.Update,
                     m_bindingPersistor);
                 m_sipRegAgentCore.Start();
 
@@ -114,78 +117,6 @@ namespace SIPSorcery.SIPRegistrationAgent
             catch (Exception excp)
             {
                 logger.Error("Exception SIPRegAgentDaemon Start. " + excp.Message);
-            }
-        }
-
-        public void SIPProviderAdded(SIPProvider sipProvider) {
-            try {
-                logger.Debug("SIPRegAgentDaemon SIPProviderAdded for " + sipProvider.Owner + " and " + sipProvider.ProviderName + ".");
-
-                if (sipProvider.RegisterEnabled) {
-                    SIPProviderBinding binding = new SIPProviderBinding(sipProvider);
-                    m_bindingPersistor.Add(binding);
-                }
-            }
-            catch (Exception excp) {
-                logger.Error("Exception SIPRegAgentDaemon SIPProviderAdded. " + excp.Message);
-            }
-        }
-
-        public void SIPProviderUpdated(SIPProvider sipProvider) {
-            try {
-                logger.Debug("SIPRegAgentDaemon SIPProviderUpdated for " + sipProvider.Owner + " and " + sipProvider.ProviderName + ".");
-
-                SIPProviderBinding existingBinding = m_bindingPersistor.Get(b => b.ProviderId == sipProvider.Id);
-
-                if (sipProvider.RegisterEnabled) {
-                    if (existingBinding == null) {
-                        SIPProviderBinding newBinding = new SIPProviderBinding(sipProvider);
-                        m_bindingPersistor.Add(newBinding);
-                    }
-                    else {
-                        existingBinding.SetProviderFields(sipProvider);
-                        existingBinding.NextRegistrationTime = DateTime.Now;
-                        m_bindingPersistor.Update(existingBinding);
-                    }
-                }
-                else {
-                    if (existingBinding != null) {
-                        if (existingBinding.IsRegistered) {
-                            // Let the registration agent know the existing binding should be expired.
-                            existingBinding.BindingExpiry = 0;
-                            existingBinding.NextRegistrationTime = DateTime.Now;
-                            m_bindingPersistor.Update(existingBinding);
-                        }
-                        else {
-                            m_bindingPersistor.Delete(existingBinding);
-                        }
-                    }
-                }
-            }
-            catch (Exception excp) {
-                logger.Error("Exception SIPRegAgentDaemon SIPProviderUpdated. " + excp.Message);
-            }
-        }
-
-        public void SIPProviderDeleted(SIPProvider sipProvider) {
-            try {
-                logger.Debug("SIPRegAgentDaemon SIPProviderDeleted for " + sipProvider.Owner + " and " + sipProvider.ProviderName + ".");
-
-                SIPProviderBinding existingBinding = m_bindingPersistor.Get(b => b.ProviderId == sipProvider.Id);
-                if (existingBinding != null) {
-                    if (existingBinding.IsRegistered) {
-                        // Let the registration agent know the existing binding should be expired.
-                        existingBinding.BindingExpiry = 0;
-                        existingBinding.NextRegistrationTime = DateTime.Now;
-                        m_bindingPersistor.Update(existingBinding);
-                    }
-                    else {
-                        m_bindingPersistor.Delete(existingBinding);
-                    }
-                }
-            }
-            catch (Exception excp) {
-                logger.Error("Exception SIPRegAgentDaemon SIPProviderDeleted. " + excp.Message);
             }
         }
 

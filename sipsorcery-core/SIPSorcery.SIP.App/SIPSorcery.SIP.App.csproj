@@ -93,6 +93,7 @@
     <Compile Include="SIPAssets\SIPDomain.cs" />
     <Compile Include="SIPAssets\SIPDomainManager.cs" />
     <Compile Include="SIPAssets\SIPProvider.cs" />
+    <Compile Include="SIPAssets\SIPProviderBindingSynchroniser.cs" />
     <Compile Include="SIPAssets\SIPRegistrarBinding.cs" />
     <Compile Include="SIPAppFunctionDelegates.cs" />
     <Compile Include="SIPDNS\SIPDNSLookupResult.cs" />

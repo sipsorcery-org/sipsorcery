@@ -71,8 +71,8 @@ namespace SIPSorcery
 
             m_sipMonitorHost = Application.Current.Host.Source.DnsSafeHost;
             m_sipMonitorHost = (m_sipMonitorHost == null || m_sipMonitorHost.Trim().Length == 0) ? DEFAULT_PROVISIONING_HOST : m_sipMonitorHost;
-            m_provisioningServiceURL = "http://" + m_sipMonitorHost + ":" + DEFAULT_PROVISIONING_WEBSERVICE_PORT + "/provisioning";
-            //m_provisioningServiceURL = "http://sipsorcery.com/provisioning.svc";
+            //m_provisioningServiceURL = "http://" + m_sipMonitorHost + ":" + DEFAULT_PROVISIONING_WEBSERVICE_PORT + "/provisioning";
+            m_provisioningServiceURL = "http://sipsorcery.com/provisioning.svc";
 
             ThreadPool.QueueUserWorkItem(new WaitCallback(Initialise), null);
 

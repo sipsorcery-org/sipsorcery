@@ -14,31 +14,6 @@ using log4net;
 
 namespace SIPSorcery.SIP.App {
 
-    /*
-    <service name="Sample.HelloWCF" behaviorConfiguration="MyInstanceProviderBehavior">
-
-    ...
-
-    <behaviors>
-        <serviceBehaviors>
-            <behavior name="MyInstanceProviderBehavior">
-                <MyInstanceProvider/>
-            </behavior>
-        </serviceBehaviors>
-    </behaviors>
-
-    ...
-
-    <extensions>
-        <behaviorExtensions>
-            <add name="MyInstanceProvider"
-                 type="CustomBehaviorSample.InstanceProviderExtensionElement, Behavior, 
-
-    Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/>
-        </behaviorExtensions>
-    </extensions>
-    */
-
     public class InstanceProviderExtensionElement : BehaviorExtensionElement {
 
         private static ILog logger = AppState.GetLogger("provisioningsvc");
@@ -59,11 +34,21 @@ namespace SIPSorcery.SIP.App {
                     throw new ApplicationException("The Provisioning Web Service cannot start with no persistence settings specified.");
                 }
 
+                // The Registration Agent wants to know about any changes to SIP Provider entries in order to update any SIP 
+                // Provider bindings it is maintaining or needs to add or remove.
+                SIPAssetPersistor<SIPProvider> sipProviderPersistor = SIPAssetPersistorFactory.CreateSIPProviderPersistor(m_serverStorageType, m_serverStorageConnStr);
+                SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor = SIPAssetPersistorFactory.CreateSIPProviderBindingPersistor(m_serverStorageType, m_serverStorageConnStr);
+                SIPProviderBindingSynchroniser sipProviderBindingSynchroniser = new SIPProviderBindingSynchroniser(sipProviderBindingsPersistor);
+
+                sipProviderPersistor.Added += sipProviderBindingSynchroniser.SIPProviderAdded;
+                sipProviderPersistor.Updated += sipProviderBindingSynchroniser.SIPProviderUpdated;
+                sipProviderPersistor.Deleted += sipProviderBindingSynchroniser.SIPProviderDeleted;
+
                 return new ProvisioningServiceInstanceProvider(
                     SIPAssetPersistorFactory.CreateSIPAccountPersistor(m_serverStorageType, m_serverStorageConnStr),
                     SIPAssetPersistorFactory.CreateDialPlanPersistor(m_serverStorageType, m_serverStorageConnStr),
-                    SIPAssetPersistorFactory.CreateSIPProviderPersistor(m_serverStorageType, m_serverStorageConnStr),
-                    SIPAssetPersistorFactory.CreateSIPProviderBindingPersistor(m_serverStorageType, m_serverStorageConnStr),
+                    sipProviderPersistor,
+                    sipProviderBindingsPersistor,
                     SIPAssetPersistorFactory.CreateSIPRegistrarBindingPersistor(m_serverStorageType, m_serverStorageConnStr),
                     SIPAssetPersistorFactory.CreateSIPDialoguePersistor(m_serverStorageType, m_serverStorageConnStr),
                     SIPAssetPersistorFactory.CreateSIPCDRPersistor(m_serverStorageType, m_serverStorageConnStr),

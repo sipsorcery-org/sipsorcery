@@ -134,15 +134,8 @@ namespace SIPSorcery.SIPAppServer {
 
                 if (m_sipRegAgentEnabled) {
                     m_sipRegAgentDaemon = new SIPRegAgentDaemon(
-                        m_sipSorceryPersistor.SIPProvidersPersistor.Get,
-                        m_sipSorceryPersistor.SIPProvidersPersistor.Update,
+                        m_sipSorceryPersistor.SIPProvidersPersistor,
                         m_sipSorceryPersistor.SIPProviderBindingsPersistor);
-
-                    // The Registration Agent wants to know about any changes to SIP Provider entries in order to update any SIP 
-                    // Provider bindings it is maintaining or needs to add or remove.
-                    m_sipSorceryPersistor.SIPProvidersPersistor.Added += m_sipRegAgentDaemon.SIPProviderAdded;
-                    m_sipSorceryPersistor.SIPProvidersPersistor.Updated += m_sipRegAgentDaemon.SIPProviderUpdated;
-                    m_sipSorceryPersistor.SIPProvidersPersistor.Deleted += m_sipRegAgentDaemon.SIPProviderDeleted;
 
                     m_sipRegAgentDaemon.Start();
                 }

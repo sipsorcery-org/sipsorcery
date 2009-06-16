@@ -34,7 +34,7 @@ namespace SIPSorcery.SIPRegistrationAgent {
                 SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor = SIPAssetPersistorFactory.CreateSIPProviderBindingPersistor(StorageTypes.XML, m_sipRegAgentStorageConnStr + XML_PROVIDER_BINDINGS_FILENAME);
                 SynchroniseBindings(sipProvidersPersistor, sipProviderBindingsPersistor);
 
-                SIPRegAgentDaemon daemon = new SIPRegAgentDaemon(sipProvidersPersistor.Get, sipProvidersPersistor.Update, sipProviderBindingsPersistor);
+                SIPRegAgentDaemon daemon = new SIPRegAgentDaemon(sipProvidersPersistor, sipProviderBindingsPersistor);
 
                 if (args != null && args.Length == 1 && args[0].StartsWith("-c")) {
                     Console.WriteLine("SIP Registration Agent starting");
