@@ -74,7 +74,6 @@ namespace SIPSorcery.SIPAppServer {
         private static bool m_sipMonitorEnabled = (ConfigurationManager.GetSection(SIPMonitorState.SIPMONITOR_CONFIGNODE_NAME) != null);
         private static bool m_sipRegistrarEnabled = (ConfigurationManager.GetSection(SIPRegistrarState.SIPREGISTRAR_CONFIGNODE_NAME) != null);
         private static bool m_sipRegAgentEnabled = (ConfigurationManager.GetSection(SIPRegAgentState.SIPREGAGENT_CONFIGNODE_NAME) != null);
-        private static bool m_webServiceEnabled = true; //SIPAppServerState.WebServiceEnabled;
         
         private static int m_monitorEventLoopbackPort = SIPAppServerState.MonitorLoopbackPort;
         private string m_traceDirectory = SIPAppServerState.TraceDirectory;
@@ -94,6 +93,7 @@ namespace SIPSorcery.SIPAppServer {
         private DialPlanEngine m_dialPlanEngine;
         private ServiceHost m_accessPolicyHost;
         private ServiceHost m_sipProvisioningHost;
+        private ServiceHost m_dialPlanSvcHost;
         private CustomerSessionManager m_customerSessionManager;
 
         private StorageTypes m_storageType;
@@ -184,7 +184,7 @@ namespace SIPSorcery.SIPAppServer {
                         m_sipTransport,
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                         FireSIPMonitorEvent,
-                        m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                        m_sipSorceryPersistor.SIPAccountsPersistor,
                         m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
                         m_sipSorceryPersistor.SIPDialPlanPersistor,
                         m_outboundProxy,
@@ -202,6 +202,7 @@ namespace SIPSorcery.SIPAppServer {
                          m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
                          m_sipSorceryPersistor.SIPProvidersPersistor.Get,
                          m_sipSorceryPersistor.SIPDomainManager.GetDomain,
+                         m_customerSessionManager.CustomerPersistor,
                          m_traceDirectory);
 
                     m_appServerCore = new SIPAppServerCore(
@@ -216,35 +217,33 @@ namespace SIPSorcery.SIPAppServer {
                 #endregion
 
                 try {
-                    if (m_webServiceEnabled) {
-                        if (m_sipSorceryPersistor == null) {
-                            logger.Warn("Web services could not be started as Persistor object was null.");
-                        }
-                        else {
-                            ProvisioningServiceInstanceProvider instanceProvider = new ProvisioningServiceInstanceProvider(
-                                m_sipSorceryPersistor.SIPAccountsPersistor,
-                                m_sipSorceryPersistor.SIPDialPlanPersistor,
-                                m_sipSorceryPersistor.SIPProvidersPersistor,
-                                m_sipSorceryPersistor.SIPProviderBindingsPersistor,
-                                m_sipSorceryPersistor.SIPRegistrarBindingPersistor,
-                                m_sipSorceryPersistor.SIPDialoguePersistor,
-                                m_sipSorceryPersistor.SIPCDRPersistor,
-                                m_customerSessionManager,
-                                m_sipSorceryPersistor.SIPDomainManager,
-                                FireSIPMonitorEvent);
-
-                            m_sipProvisioningHost = new ServiceHost(typeof(SIPProvisioningWebService));
-                            m_sipProvisioningHost.Description.Behaviors.Add(instanceProvider);
-                            m_sipProvisioningHost.Open();
-               
-                            m_accessPolicyHost = new ServiceHost(typeof(CrossDomainService));
-                            m_accessPolicyHost.Open();
-
-                            logger.Debug("Web services successfully started on " + m_sipProvisioningHost.BaseAddresses[0].AbsoluteUri + ".");
-                        }
+                    if (m_sipSorceryPersistor == null) {
+                        logger.Warn("Web services could not be started as Persistor object was null.");
                     }
                     else {
-                        logger.Debug("The web services were disabled.");
+                        ProvisioningServiceInstanceProvider instanceProvider = new ProvisioningServiceInstanceProvider(
+                            m_sipSorceryPersistor.SIPAccountsPersistor,
+                            m_sipSorceryPersistor.SIPDialPlanPersistor,
+                            m_sipSorceryPersistor.SIPProvidersPersistor,
+                            m_sipSorceryPersistor.SIPProviderBindingsPersistor,
+                            m_sipSorceryPersistor.SIPRegistrarBindingPersistor,
+                            m_sipSorceryPersistor.SIPDialoguePersistor,
+                            m_sipSorceryPersistor.SIPCDRPersistor,
+                            m_customerSessionManager,
+                            m_sipSorceryPersistor.SIPDomainManager,
+                            FireSIPMonitorEvent);
+
+                        m_sipProvisioningHost = new ServiceHost(typeof(SIPProvisioningWebService));
+                        m_sipProvisioningHost.Description.Behaviors.Add(instanceProvider);
+                        m_sipProvisioningHost.Open();
+
+                        m_accessPolicyHost = new ServiceHost(typeof(CrossDomainService));
+                        m_accessPolicyHost.Open();
+
+                        m_dialPlanSvcHost = new ServiceHost(typeof(DialPlanServices));
+                        m_dialPlanSvcHost.Open();
+
+                        logger.Debug("Web services successfully started on " + m_sipProvisioningHost.BaseAddresses[0].AbsoluteUri + ".");
                     }
                 }
                 catch (Exception excp) {
@@ -273,6 +272,10 @@ namespace SIPSorcery.SIPAppServer {
 
                 if (m_sipProvisioningHost != null) {
                     m_sipProvisioningHost.Close();
+                }
+
+                if (m_dialPlanSvcHost != null) {
+                    m_dialPlanSvcHost.Close();
                 }
 
                 if (m_monitorEventWriter != null) {
@@ -323,8 +326,7 @@ namespace SIPSorcery.SIPAppServer {
                         sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.Timing &&
                         sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.ContactRegisterInProgress &&
                         sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.Monitor &&
-                        sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.UnrecognisedMessage &&
-                        sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.NATKeepAliveRelay)) {
+                        sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.UnrecognisedMessage)) {
                         logger.Debug("as: " + sipMonitorEvent.Message);
                     }
                 }

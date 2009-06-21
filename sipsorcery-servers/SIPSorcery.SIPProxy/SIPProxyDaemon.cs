@@ -57,6 +57,7 @@ namespace SIPSorcery.SIPProxy
         private XmlNode m_sipProxySocketsNode = SIPProxyState.SIPProxySocketsNode;
         private int m_monitorPort = SIPProxyState.MonitorLoopbackPort;
         private string m_proxyRuntimeScriptPath = SIPProxyState.ProxyScriptPath;
+        private IPEndPoint m_natKeepAliveSocket = SIPProxyState.NATKeepAliveSocket;
 
         private SIPTransport m_sipTransport;
         private StatelessProxyCore m_statelessProxyCore;
@@ -104,6 +105,10 @@ namespace SIPSorcery.SIPProxy
                 m_sipTransport.SIPRequestOutTraceEvent += LogSIPRequestOut;
                 m_sipTransport.SIPResponseInTraceEvent += LogSIPResponseIn;
                 m_sipTransport.SIPResponseOutTraceEvent += LogSIPResponseOut;
+
+                if (m_natKeepAliveSocket != null) {
+                    m_natKeepAliveRelay = new NATKeepAliveRelay(m_sipTransport, m_natKeepAliveSocket, FireSIPMonitorEvent);
+                }
 
                 logger.Debug("SIP Proxy daemon successfully started.");
             }

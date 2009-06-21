@@ -60,7 +60,7 @@ namespace SIPSorcery.SIPAppServer
         private const string TRACE_DIRECTORY_KEY = "TraceDirectory";
         private const string RUBY_SCRIPT_COMMON_PATH_KEY = "RubyScriptCommonPath";
         private const string OUTBOUND_PROXY_KEY = "OutboundProxy";
-        private const string WEB_SERVICE_ENABLED_KEY = "WebServiceEnabled";
+        private const string NAT_KEEPALIVE_RELAY_SOCKET_KEY = "NATKeepAliveRelaySocket";
 
 		public static ILog logger = null;
 
@@ -71,7 +71,7 @@ namespace SIPSorcery.SIPAppServer
         public static readonly string TraceDirectory;
         public static readonly string RubyScriptCommonPath;
         public static readonly SIPEndPoint OutboundProxy;
-        public static readonly bool WebServiceEnabled;
+        public static readonly IPEndPoint NATKeepAliveRelaySocket;
 
 		static SIPAppServerState()
 		{
@@ -102,7 +102,6 @@ namespace SIPSorcery.SIPAppServer
                 {
                     OutboundProxy = SIPEndPoint.ParseSIPEndPoint(AppState.GetConfigNodeValue(m_sipAppServerConfigNode, OUTBOUND_PROXY_KEY));
                 }
-                Boolean.TryParse(AppState.GetConfigNodeValue(m_sipAppServerConfigNode, WEB_SERVICE_ENABLED_KEY), out WebServiceEnabled);
 			}
 			catch(Exception excp)
 			{

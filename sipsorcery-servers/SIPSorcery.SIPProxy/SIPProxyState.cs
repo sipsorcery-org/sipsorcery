@@ -38,6 +38,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Xml;
 using log4net;
@@ -65,7 +66,7 @@ namespace SIPSorcery.SIPProxy
         public static readonly XmlNode SIPProxySocketsNode;       
         public static readonly string ProxyScriptPath;
         public static readonly int MonitorLoopbackPort;
-        public static readonly string NATKeepAliveSocket;
+        public static readonly IPEndPoint NATKeepAliveSocket;
 
         static SIPProxyState()
         {
@@ -86,7 +87,9 @@ namespace SIPSorcery.SIPProxy
                 }
 
                 ProxyScriptPath =  AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_SCRIPTPATH_KEY);
-                NATKeepAliveSocket = AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_NATKEEPALIVESOCKET_KEY);
+                if (!AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_NATKEEPALIVESOCKET_KEY).IsNullOrBlank()) {
+                    NATKeepAliveSocket = IPSocket.ParseSocketString(AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_NATKEEPALIVESOCKET_KEY));
+                }
                 Int32.TryParse(AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_LOOPBACK_PORT_KEY), out MonitorLoopbackPort);
             }
             catch (Exception excp)

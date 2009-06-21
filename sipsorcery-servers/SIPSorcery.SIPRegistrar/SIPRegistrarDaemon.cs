@@ -158,7 +158,8 @@ namespace SIPSorcery.SIPRegistrar {
             try {
                 if (sipMonitorEvent != null)
                 {
-                    if (sipMonitorEvent.GetType() != typeof(SIPMonitorMachineEvent))
+                    if (sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.NATKeepAlive &&
+                        sipMonitorEvent.GetType() != typeof(SIPMonitorMachineEvent))
                     {
                         logger.Debug("re: " + sipMonitorEvent.Message);
                     }

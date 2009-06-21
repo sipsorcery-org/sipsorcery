@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -9,12 +10,13 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIPRegistrationAgent {
 
-    class SIPRegAgentProgram {
+    public class SIPRegAgentProgram {
 
-        private const string SIPREGAGENT_STORAGETYPE_KEY = "SIPRegAgentStorageType";
-        private const string SIPREGAGENT_STORAGECONNSTR_KEY = "SIPRegAgentConnStr";
         public const string XML_SIPPROVIDERS_FILENAME = "sipproviders.xml";
         public const string XML_PROVIDER_BINDINGS_FILENAME = "sipproviderbindings.xml";
+
+        private static readonly string m_storageTypeKey = Persistence.PERSISTENCE_STORAGETYPE_KEY;
+        private static readonly string m_connStrKey = Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
 
         private static ManualResetEvent m_regAgentUp = new ManualResetEvent(false);
 
@@ -23,17 +25,35 @@ namespace SIPSorcery.SIPRegistrationAgent {
 
         static void Main(string[] args) {
             try {
-                m_sipRegAgentStorageType = (ConfigurationManager.AppSettings[SIPREGAGENT_STORAGETYPE_KEY] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[SIPREGAGENT_STORAGETYPE_KEY]) : StorageTypes.Unknown;
-                m_sipRegAgentStorageConnStr = ConfigurationManager.AppSettings[SIPREGAGENT_STORAGECONNSTR_KEY];
+                m_sipRegAgentStorageType = (ConfigurationManager.AppSettings[m_storageTypeKey] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[m_storageTypeKey]) : StorageTypes.Unknown;
+                m_sipRegAgentStorageConnStr = ConfigurationManager.AppSettings[m_connStrKey];
 
                 if (m_sipRegAgentStorageType == StorageTypes.Unknown || m_sipRegAgentStorageConnStr.IsNullOrBlank()) {
                     throw new ApplicationException("The SIP Registration Agent cannot start with no persistence settings.");
                 }
 
-                SIPAssetPersistor<SIPProvider> sipProvidersPersistor = SIPAssetPersistorFactory.CreateSIPProviderPersistor(StorageTypes.XML, m_sipRegAgentStorageConnStr + XML_SIPPROVIDERS_FILENAME );
-                SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor = SIPAssetPersistorFactory.CreateSIPProviderBindingPersistor(StorageTypes.XML, m_sipRegAgentStorageConnStr + XML_PROVIDER_BINDINGS_FILENAME);
-                SynchroniseBindings(sipProvidersPersistor, sipProviderBindingsPersistor);
+                SIPAssetPersistor<SIPProvider> sipProvidersPersistor = null;
+                SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor = null;
 
+                if (m_sipRegAgentStorageType == StorageTypes.XML) {
+
+                    if (!Directory.Exists(m_sipRegAgentStorageConnStr)) {
+                        throw new ApplicationException("Directory " + m_sipRegAgentStorageType + " does not exist for XML persistor.");
+                    }
+
+                    sipProvidersPersistor = SIPAssetPersistorFactory.CreateSIPProviderPersistor(StorageTypes.XML, m_sipRegAgentStorageConnStr + XML_SIPPROVIDERS_FILENAME);
+                    sipProviderBindingsPersistor = SIPAssetPersistorFactory.CreateSIPProviderBindingPersistor(StorageTypes.XML, m_sipRegAgentStorageConnStr + XML_PROVIDER_BINDINGS_FILENAME);
+                }
+                else if (m_sipRegAgentStorageType == StorageTypes.DBLinqMySQL || m_sipRegAgentStorageType == StorageTypes.DBLinqPostgresql) {
+                    sipProvidersPersistor = SIPAssetPersistorFactory.CreateSIPProviderPersistor(m_sipRegAgentStorageType, m_sipRegAgentStorageConnStr);
+                    sipProviderBindingsPersistor = SIPAssetPersistorFactory.CreateSIPProviderBindingPersistor(m_sipRegAgentStorageType, m_sipRegAgentStorageConnStr);
+                }
+                else {
+                    throw new NotImplementedException(m_sipRegAgentStorageType + " is not implemented for the SIP Registrar persistor.");
+                }
+                
+                SynchroniseBindings(sipProvidersPersistor, sipProviderBindingsPersistor);
+                
                 SIPRegAgentDaemon daemon = new SIPRegAgentDaemon(sipProvidersPersistor, sipProviderBindingsPersistor);
 
                 if (args != null && args.Length == 1 && args[0].StartsWith("-c")) {
