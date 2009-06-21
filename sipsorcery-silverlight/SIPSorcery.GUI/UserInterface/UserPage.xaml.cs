@@ -2,6 +2,7 @@
 using System.Text;
 using System.Threading;
 using System.Windows;
+using System.Windows.Browser;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Ink;
@@ -17,6 +18,9 @@ namespace SIPSorcery
 {
 	public partial class UserPage : UserControl
 	{
+        private const string DEFAULT_HELP_URL = "https://www.sipsorcery.com/help.html";
+        private const string DEFAULT_HELP_OPTIONS = "width=600,height=500,scrollbars=1";
+
         public LogoutDelegate Logout_External;
 
 		private SIPSorceryPersistor m_persistor;        // External services that can be used to retrieve and persist the SIP related assets this client deals with.
@@ -252,6 +256,15 @@ namespace SIPSorcery
             }
             catch (Exception excp) {
                 LogActivityMessage(MessageLevelsEnum.Error, "Exception deleting account. " + excp.Message);
+            }
+        }
+
+        private void HelpLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+            try {
+                HtmlPage.Window.Navigate(new Uri(DEFAULT_HELP_URL), "SIPSorceryHelp", DEFAULT_HELP_OPTIONS);
+            }
+            catch (Exception excp) {
+                LogActivityMessage(MessageLevelsEnum.Error, "Exception displaying help. " + excp.Message);
             }
         }
 

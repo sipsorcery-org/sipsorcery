@@ -50,13 +50,15 @@ namespace SIPSorcery.Persistence {
 
         public override event MethodInvokerDelegate SessionExpired = () => { };
 
-        private SIPProvisioningWebServiceClient m_provisioningServiceProxy;
+        private ProvisioningServiceClient m_provisioningServiceProxy;
 
         public SIPSorceryWebServicePersistor(string serverURL, string authid) {
             //BasicHttpBinding binding = new BasicHttpBinding();
-            BasicHttpCustomHeaderBinding binding = new BasicHttpCustomHeaderBinding(new SecurityHeader(authid));
+            BasicHttpSecurityMode securitymode = (serverURL.StartsWith("https")) ? BasicHttpSecurityMode.Transport : BasicHttpSecurityMode.None;
+            BasicHttpCustomHeaderBinding binding = new BasicHttpCustomHeaderBinding(new SecurityHeader(authid), securitymode);
+            
             EndpointAddress address = new EndpointAddress(serverURL);
-            m_provisioningServiceProxy = new SIPProvisioningWebServiceClient(binding, address);
+            m_provisioningServiceProxy = new ProvisioningServiceClient(binding, address);
 
             // Provisioning web service delegates.
             m_provisioningServiceProxy.IsAliveCompleted += IsAliveCompleted;

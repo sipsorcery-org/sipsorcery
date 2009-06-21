@@ -15,15 +15,16 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
     
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "3.0.0.0")]
-    [System.ServiceModel.ServiceContractAttribute(Namespace="http://www.sipsorcery.com", ConfigurationName="SIPSorceryProvisioningClient.SIPProvisioningWebService")]
-    public interface SIPProvisioningWebService {
+    [System.ServiceModel.ServiceContractAttribute(Namespace="http://www.sipsorcery.com/provisioning", ConfigurationName="SIPSorceryProvisioningClient.IProvisioningService")]
+    public interface IProvisioningService {
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/IsAlive", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/IsAliveResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/IsAlive", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/IsAliveResponse")]
         System.IAsyncResult BeginIsAlive(System.AsyncCallback callback, object asyncState);
         
         bool EndIsAlive(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/CreateCustomer", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/CreateCustomerResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/CreateCustomer", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/CreateCustomerRespons" +
+            "e")]
         [System.ServiceModel.ServiceKnownTypeAttribute(typeof(System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain>))]
         [System.ServiceModel.ServiceKnownTypeAttribute(typeof(SIPSorcery.SIP.App.SIPDomain))]
         [System.ServiceModel.ServiceKnownTypeAttribute(typeof(System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount>))]
@@ -44,148 +45,168 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         
         void EndCreateCustomer(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteCustomer", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteCustomerResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteCustomer", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteCustomerRespons" +
+            "e")]
         System.IAsyncResult BeginDeleteCustomer(string customerUsername, System.AsyncCallback callback, object asyncState);
         
         void EndDeleteCustomer(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/Login", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/LoginResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/Login", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/LoginResponse")]
         System.IAsyncResult BeginLogin(string username, string password, System.AsyncCallback callback, object asyncState);
         
         string EndLogin(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/Logout", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/LogoutResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/Logout", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/LogoutResponse")]
         System.IAsyncResult BeginLogout(System.AsyncCallback callback, object asyncState);
         
         void EndLogout(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPDomains", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPDomainsResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPDomains", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPDomainsResponse" +
+            "")]
         System.IAsyncResult BeginGetSIPDomains(string filterExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
         
         System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain> EndGetSIPDomains(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPAccountsCount", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPAccountsCountResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPAccountsCount", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPAccountsCountRe" +
+            "sponse")]
         System.IAsyncResult BeginGetSIPAccountsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
         
         int EndGetSIPAccountsCount(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPAccounts", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPAccountsResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPAccounts", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPAccountsRespons" +
+            "e")]
         System.IAsyncResult BeginGetSIPAccounts(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
         
         System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount> EndGetSIPAccounts(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/AddSIPAccount", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/AddSIPAccountResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AddSIPAccount", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/AddSIPAccountResponse" +
+            "")]
         System.IAsyncResult BeginAddSIPAccount(SIPSorcery.SIP.App.SIPAccount sipAccount, System.AsyncCallback callback, object asyncState);
         
         SIPSorcery.SIP.App.SIPAccount EndAddSIPAccount(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/UpdateSIPAccount", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/UpdateSIPAccountResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateSIPAccount", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateSIPAccountRespo" +
+            "nse")]
         System.IAsyncResult BeginUpdateSIPAccount(SIPSorcery.SIP.App.SIPAccount sipAccount, System.AsyncCallback callback, object asyncState);
         
         SIPSorcery.SIP.App.SIPAccount EndUpdateSIPAccount(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteSIPAccount", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteSIPAccountResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteSIPAccount", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteSIPAccountRespo" +
+            "nse")]
         System.IAsyncResult BeginDeleteSIPAccount(SIPSorcery.SIP.App.SIPAccount sipAccount, System.AsyncCallback callback, object asyncState);
         
         SIPSorcery.SIP.App.SIPAccount EndDeleteSIPAccount(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPRegistrarBindingsCount", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPRegistrarBindingsCountR" +
-            "esponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPRegistrarBindin" +
+            "gsCount", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPRegistrarBindin" +
+            "gsCountResponse")]
         System.IAsyncResult BeginGetSIPRegistrarBindingsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
         
         int EndGetSIPRegistrarBindingsCount(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPRegistrarBindings", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPRegistrarBindingsRespon" +
-            "se")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPRegistrarBindin" +
+            "gs", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPRegistrarBindin" +
+            "gsResponse")]
         System.IAsyncResult BeginGetSIPRegistrarBindings(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
         
         System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding> EndGetSIPRegistrarBindings(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProvidersCount", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProvidersCountResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProvidersCount", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProvidersCountR" +
+            "esponse")]
         System.IAsyncResult BeginGetSIPProvidersCount(string whereExpression, System.AsyncCallback callback, object asyncState);
         
         int EndGetSIPProvidersCount(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProviders", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProvidersResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProviders", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProvidersRespon" +
+            "se")]
         System.IAsyncResult BeginGetSIPProviders(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
         
         System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider> EndGetSIPProviders(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/AddSIPProvider", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/AddSIPProviderResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AddSIPProvider", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/AddSIPProviderRespons" +
+            "e")]
         System.IAsyncResult BeginAddSIPProvider(SIPSorcery.SIP.App.SIPProvider sipProvider, System.AsyncCallback callback, object asyncState);
         
         SIPSorcery.SIP.App.SIPProvider EndAddSIPProvider(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/UpdateSIPProvider", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/UpdateSIPProviderResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateSIPProvider", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateSIPProviderResp" +
+            "onse")]
         System.IAsyncResult BeginUpdateSIPProvider(SIPSorcery.SIP.App.SIPProvider sipProvider, System.AsyncCallback callback, object asyncState);
         
         SIPSorcery.SIP.App.SIPProvider EndUpdateSIPProvider(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteSIPProvider", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteSIPProviderResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteSIPProvider", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteSIPProviderResp" +
+            "onse")]
         System.IAsyncResult BeginDeleteSIPProvider(SIPSorcery.SIP.App.SIPProvider sipProvider, System.AsyncCallback callback, object asyncState);
         
         SIPSorcery.SIP.App.SIPProvider EndDeleteSIPProvider(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProviderBindingsCount", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProviderBindingsCountRe" +
-            "sponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProviderBinding" +
+            "sCount", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProviderBinding" +
+            "sCountResponse")]
         System.IAsyncResult BeginGetSIPProviderBindingsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
         
         int EndGetSIPProviderBindingsCount(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProviderBindings", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetSIPProviderBindingsRespons" +
-            "e")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProviderBinding" +
+            "s", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProviderBinding" +
+            "sResponse")]
         System.IAsyncResult BeginGetSIPProviderBindings(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
         
         System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding> EndGetSIPProviderBindings(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetDialPlansCount", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetDialPlansCountResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetDialPlansCount", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetDialPlansCountResp" +
+            "onse")]
         System.IAsyncResult BeginGetDialPlansCount(string whereExpression, System.AsyncCallback callback, object asyncState);
         
         int EndGetDialPlansCount(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetDialPlans", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetDialPlansResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetDialPlans", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetDialPlansResponse")]
         System.IAsyncResult BeginGetDialPlans(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
         
         System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan> EndGetDialPlans(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/AddDialPlan", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/AddDialPlanResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AddDialPlan", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/AddDialPlanResponse")]
         System.IAsyncResult BeginAddDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState);
         
         SIPSorcery.SIP.App.SIPDialPlan EndAddDialPlan(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/UpdateDialPlan", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/UpdateDialPlanResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateDialPlan", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateDialPlanRespons" +
+            "e")]
         System.IAsyncResult BeginUpdateDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState);
         
         SIPSorcery.SIP.App.SIPDialPlan EndUpdateDialPlan(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteDialPlan", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/DeleteDialPlanResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteDialPlan", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteDialPlanRespons" +
+            "e")]
         System.IAsyncResult BeginDeleteDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState);
         
         SIPSorcery.SIP.App.SIPDialPlan EndDeleteDialPlan(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetCallsCount", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetCallsCountResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsCount", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsCountResponse" +
+            "")]
         System.IAsyncResult BeginGetCallsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
         
         int EndGetCallsCount(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetCalls", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetCallsResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCalls", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsResponse")]
         System.IAsyncResult BeginGetCalls(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
         
         System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> EndGetCalls(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetCDRsCount", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetCDRsCountResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRsCount", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRsCountResponse")]
         System.IAsyncResult BeginGetCDRsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
         
         int EndGetCDRsCount(System.IAsyncResult result);
         
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/SIPProvisioningWebService/GetCDRs", ReplyAction="http://www.sipsorcery.com/SIPProvisioningWebService/GetCDRsResponse")]
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRs", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRsResponse")]
         System.IAsyncResult BeginGetCDRs(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
         
         System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> EndGetCDRs(System.IAsyncResult result);
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "3.0.0.0")]
-    public interface SIPProvisioningWebServiceChannel : SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService, System.ServiceModel.IClientChannel {
+    public interface IProvisioningServiceChannel : SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService, System.ServiceModel.IClientChannel {
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
@@ -684,7 +705,7 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "3.0.0.0")]
-    public partial class SIPProvisioningWebServiceClient : System.ServiceModel.ClientBase<SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService>, SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService {
+    public partial class ProvisioningServiceClient : System.ServiceModel.ClientBase<SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService>, SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService {
         
         private BeginOperationDelegate onBeginIsAliveDelegate;
         
@@ -872,22 +893,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         
         private System.Threading.SendOrPostCallback onCloseCompletedDelegate;
         
-        public SIPProvisioningWebServiceClient() {
+        public ProvisioningServiceClient() {
         }
         
-        public SIPProvisioningWebServiceClient(string endpointConfigurationName) : 
+        public ProvisioningServiceClient(string endpointConfigurationName) : 
                 base(endpointConfigurationName) {
         }
         
-        public SIPProvisioningWebServiceClient(string endpointConfigurationName, string remoteAddress) : 
+        public ProvisioningServiceClient(string endpointConfigurationName, string remoteAddress) : 
                 base(endpointConfigurationName, remoteAddress) {
         }
         
-        public SIPProvisioningWebServiceClient(string endpointConfigurationName, System.ServiceModel.EndpointAddress remoteAddress) : 
+        public ProvisioningServiceClient(string endpointConfigurationName, System.ServiceModel.EndpointAddress remoteAddress) : 
                 base(endpointConfigurationName, remoteAddress) {
         }
         
-        public SIPProvisioningWebServiceClient(System.ServiceModel.Channels.Binding binding, System.ServiceModel.EndpointAddress remoteAddress) : 
+        public ProvisioningServiceClient(System.ServiceModel.Channels.Binding binding, System.ServiceModel.EndpointAddress remoteAddress) : 
                 base(binding, remoteAddress) {
         }
         
@@ -954,21 +975,21 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> CloseCompleted;
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginIsAlive(System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginIsAlive(System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginIsAlive(callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        bool SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndIsAlive(System.IAsyncResult result) {
+        bool SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndIsAlive(System.IAsyncResult result) {
             return base.Channel.EndIsAlive(result);
         }
         
         private System.IAsyncResult OnBeginIsAlive(object[] inValues, System.AsyncCallback callback, object asyncState) {
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginIsAlive(callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginIsAlive(callback, asyncState);
         }
         
         private object[] OnEndIsAlive(System.IAsyncResult result) {
-            bool retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndIsAlive(result);
+            bool retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndIsAlive(result);
             return new object[] {
                     retVal};
         }
@@ -998,22 +1019,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginCreateCustomer(SIPSorcery.CRM.Customer customer, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginCreateCustomer(SIPSorcery.CRM.Customer customer, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginCreateCustomer(customer, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        void SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndCreateCustomer(System.IAsyncResult result) {
+        void SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndCreateCustomer(System.IAsyncResult result) {
             base.Channel.EndCreateCustomer(result);
         }
         
         private System.IAsyncResult OnBeginCreateCustomer(object[] inValues, System.AsyncCallback callback, object asyncState) {
             SIPSorcery.CRM.Customer customer = ((SIPSorcery.CRM.Customer)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginCreateCustomer(customer, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginCreateCustomer(customer, callback, asyncState);
         }
         
         private object[] OnEndCreateCustomer(System.IAsyncResult result) {
-            ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndCreateCustomer(result);
+            ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndCreateCustomer(result);
             return null;
         }
         
@@ -1043,22 +1064,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginDeleteCustomer(string customerUsername, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginDeleteCustomer(string customerUsername, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginDeleteCustomer(customerUsername, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        void SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndDeleteCustomer(System.IAsyncResult result) {
+        void SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndDeleteCustomer(System.IAsyncResult result) {
             base.Channel.EndDeleteCustomer(result);
         }
         
         private System.IAsyncResult OnBeginDeleteCustomer(object[] inValues, System.AsyncCallback callback, object asyncState) {
             string customerUsername = ((string)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginDeleteCustomer(customerUsername, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginDeleteCustomer(customerUsername, callback, asyncState);
         }
         
         private object[] OnEndDeleteCustomer(System.IAsyncResult result) {
-            ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndDeleteCustomer(result);
+            ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndDeleteCustomer(result);
             return null;
         }
         
@@ -1088,23 +1109,23 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginLogin(string username, string password, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginLogin(string username, string password, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginLogin(username, password, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        string SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndLogin(System.IAsyncResult result) {
+        string SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndLogin(System.IAsyncResult result) {
             return base.Channel.EndLogin(result);
         }
         
         private System.IAsyncResult OnBeginLogin(object[] inValues, System.AsyncCallback callback, object asyncState) {
             string username = ((string)(inValues[0]));
             string password = ((string)(inValues[1]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginLogin(username, password, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginLogin(username, password, callback, asyncState);
         }
         
         private object[] OnEndLogin(System.IAsyncResult result) {
-            string retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndLogin(result);
+            string retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndLogin(result);
             return new object[] {
                     retVal};
         }
@@ -1136,21 +1157,21 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginLogout(System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginLogout(System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginLogout(callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        void SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndLogout(System.IAsyncResult result) {
+        void SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndLogout(System.IAsyncResult result) {
             base.Channel.EndLogout(result);
         }
         
         private System.IAsyncResult OnBeginLogout(object[] inValues, System.AsyncCallback callback, object asyncState) {
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginLogout(callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginLogout(callback, asyncState);
         }
         
         private object[] OnEndLogout(System.IAsyncResult result) {
-            ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndLogout(result);
+            ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndLogout(result);
             return null;
         }
         
@@ -1179,12 +1200,12 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetSIPDomains(string filterExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetSIPDomains(string filterExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetSIPDomains(filterExpression, offset, count, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain> SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetSIPDomains(System.IAsyncResult result) {
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetSIPDomains(System.IAsyncResult result) {
             return base.Channel.EndGetSIPDomains(result);
         }
         
@@ -1192,11 +1213,11 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             string filterExpression = ((string)(inValues[0]));
             int offset = ((int)(inValues[1]));
             int count = ((int)(inValues[2]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetSIPDomains(filterExpression, offset, count, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetSIPDomains(filterExpression, offset, count, callback, asyncState);
         }
         
         private object[] OnEndGetSIPDomains(System.IAsyncResult result) {
-            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetSIPDomains(result);
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetSIPDomains(result);
             return new object[] {
                     retVal};
         }
@@ -1229,22 +1250,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetSIPAccountsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetSIPAccountsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetSIPAccountsCount(whereExpression, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        int SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetSIPAccountsCount(System.IAsyncResult result) {
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetSIPAccountsCount(System.IAsyncResult result) {
             return base.Channel.EndGetSIPAccountsCount(result);
         }
         
         private System.IAsyncResult OnBeginGetSIPAccountsCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
             string whereExpression = ((string)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetSIPAccountsCount(whereExpression, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetSIPAccountsCount(whereExpression, callback, asyncState);
         }
         
         private object[] OnEndGetSIPAccountsCount(System.IAsyncResult result) {
-            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetSIPAccountsCount(result);
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetSIPAccountsCount(result);
             return new object[] {
                     retVal};
         }
@@ -1275,12 +1296,12 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetSIPAccounts(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetSIPAccounts(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetSIPAccounts(whereExpression, offset, count, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount> SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetSIPAccounts(System.IAsyncResult result) {
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetSIPAccounts(System.IAsyncResult result) {
             return base.Channel.EndGetSIPAccounts(result);
         }
         
@@ -1288,11 +1309,11 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             string whereExpression = ((string)(inValues[0]));
             int offset = ((int)(inValues[1]));
             int count = ((int)(inValues[2]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetSIPAccounts(whereExpression, offset, count, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetSIPAccounts(whereExpression, offset, count, callback, asyncState);
         }
         
         private object[] OnEndGetSIPAccounts(System.IAsyncResult result) {
-            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetSIPAccounts(result);
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetSIPAccounts(result);
             return new object[] {
                     retVal};
         }
@@ -1325,22 +1346,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginAddSIPAccount(SIPSorcery.SIP.App.SIPAccount sipAccount, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginAddSIPAccount(SIPSorcery.SIP.App.SIPAccount sipAccount, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginAddSIPAccount(sipAccount, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        SIPSorcery.SIP.App.SIPAccount SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndAddSIPAccount(System.IAsyncResult result) {
+        SIPSorcery.SIP.App.SIPAccount SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndAddSIPAccount(System.IAsyncResult result) {
             return base.Channel.EndAddSIPAccount(result);
         }
         
         private System.IAsyncResult OnBeginAddSIPAccount(object[] inValues, System.AsyncCallback callback, object asyncState) {
             SIPSorcery.SIP.App.SIPAccount sipAccount = ((SIPSorcery.SIP.App.SIPAccount)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginAddSIPAccount(sipAccount, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginAddSIPAccount(sipAccount, callback, asyncState);
         }
         
         private object[] OnEndAddSIPAccount(System.IAsyncResult result) {
-            SIPSorcery.SIP.App.SIPAccount retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndAddSIPAccount(result);
+            SIPSorcery.SIP.App.SIPAccount retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndAddSIPAccount(result);
             return new object[] {
                     retVal};
         }
@@ -1371,22 +1392,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginUpdateSIPAccount(SIPSorcery.SIP.App.SIPAccount sipAccount, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginUpdateSIPAccount(SIPSorcery.SIP.App.SIPAccount sipAccount, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginUpdateSIPAccount(sipAccount, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        SIPSorcery.SIP.App.SIPAccount SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndUpdateSIPAccount(System.IAsyncResult result) {
+        SIPSorcery.SIP.App.SIPAccount SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndUpdateSIPAccount(System.IAsyncResult result) {
             return base.Channel.EndUpdateSIPAccount(result);
         }
         
         private System.IAsyncResult OnBeginUpdateSIPAccount(object[] inValues, System.AsyncCallback callback, object asyncState) {
             SIPSorcery.SIP.App.SIPAccount sipAccount = ((SIPSorcery.SIP.App.SIPAccount)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginUpdateSIPAccount(sipAccount, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginUpdateSIPAccount(sipAccount, callback, asyncState);
         }
         
         private object[] OnEndUpdateSIPAccount(System.IAsyncResult result) {
-            SIPSorcery.SIP.App.SIPAccount retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndUpdateSIPAccount(result);
+            SIPSorcery.SIP.App.SIPAccount retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndUpdateSIPAccount(result);
             return new object[] {
                     retVal};
         }
@@ -1417,22 +1438,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginDeleteSIPAccount(SIPSorcery.SIP.App.SIPAccount sipAccount, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginDeleteSIPAccount(SIPSorcery.SIP.App.SIPAccount sipAccount, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginDeleteSIPAccount(sipAccount, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        SIPSorcery.SIP.App.SIPAccount SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndDeleteSIPAccount(System.IAsyncResult result) {
+        SIPSorcery.SIP.App.SIPAccount SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndDeleteSIPAccount(System.IAsyncResult result) {
             return base.Channel.EndDeleteSIPAccount(result);
         }
         
         private System.IAsyncResult OnBeginDeleteSIPAccount(object[] inValues, System.AsyncCallback callback, object asyncState) {
             SIPSorcery.SIP.App.SIPAccount sipAccount = ((SIPSorcery.SIP.App.SIPAccount)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginDeleteSIPAccount(sipAccount, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginDeleteSIPAccount(sipAccount, callback, asyncState);
         }
         
         private object[] OnEndDeleteSIPAccount(System.IAsyncResult result) {
-            SIPSorcery.SIP.App.SIPAccount retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndDeleteSIPAccount(result);
+            SIPSorcery.SIP.App.SIPAccount retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndDeleteSIPAccount(result);
             return new object[] {
                     retVal};
         }
@@ -1463,22 +1484,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetSIPRegistrarBindingsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetSIPRegistrarBindingsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetSIPRegistrarBindingsCount(whereExpression, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        int SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetSIPRegistrarBindingsCount(System.IAsyncResult result) {
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetSIPRegistrarBindingsCount(System.IAsyncResult result) {
             return base.Channel.EndGetSIPRegistrarBindingsCount(result);
         }
         
         private System.IAsyncResult OnBeginGetSIPRegistrarBindingsCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
             string whereExpression = ((string)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetSIPRegistrarBindingsCount(whereExpression, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetSIPRegistrarBindingsCount(whereExpression, callback, asyncState);
         }
         
         private object[] OnEndGetSIPRegistrarBindingsCount(System.IAsyncResult result) {
-            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetSIPRegistrarBindingsCount(result);
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetSIPRegistrarBindingsCount(result);
             return new object[] {
                     retVal};
         }
@@ -1509,12 +1530,12 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetSIPRegistrarBindings(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetSIPRegistrarBindings(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetSIPRegistrarBindings(whereExpression, offset, count, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding> SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetSIPRegistrarBindings(System.IAsyncResult result) {
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetSIPRegistrarBindings(System.IAsyncResult result) {
             return base.Channel.EndGetSIPRegistrarBindings(result);
         }
         
@@ -1522,11 +1543,11 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             string whereExpression = ((string)(inValues[0]));
             int offset = ((int)(inValues[1]));
             int count = ((int)(inValues[2]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetSIPRegistrarBindings(whereExpression, offset, count, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetSIPRegistrarBindings(whereExpression, offset, count, callback, asyncState);
         }
         
         private object[] OnEndGetSIPRegistrarBindings(System.IAsyncResult result) {
-            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetSIPRegistrarBindings(result);
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetSIPRegistrarBindings(result);
             return new object[] {
                     retVal};
         }
@@ -1559,22 +1580,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetSIPProvidersCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetSIPProvidersCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetSIPProvidersCount(whereExpression, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        int SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetSIPProvidersCount(System.IAsyncResult result) {
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetSIPProvidersCount(System.IAsyncResult result) {
             return base.Channel.EndGetSIPProvidersCount(result);
         }
         
         private System.IAsyncResult OnBeginGetSIPProvidersCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
             string whereExpression = ((string)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetSIPProvidersCount(whereExpression, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetSIPProvidersCount(whereExpression, callback, asyncState);
         }
         
         private object[] OnEndGetSIPProvidersCount(System.IAsyncResult result) {
-            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetSIPProvidersCount(result);
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetSIPProvidersCount(result);
             return new object[] {
                     retVal};
         }
@@ -1605,12 +1626,12 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetSIPProviders(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetSIPProviders(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetSIPProviders(whereExpression, offset, count, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider> SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetSIPProviders(System.IAsyncResult result) {
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetSIPProviders(System.IAsyncResult result) {
             return base.Channel.EndGetSIPProviders(result);
         }
         
@@ -1618,11 +1639,11 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             string whereExpression = ((string)(inValues[0]));
             int offset = ((int)(inValues[1]));
             int count = ((int)(inValues[2]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetSIPProviders(whereExpression, offset, count, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetSIPProviders(whereExpression, offset, count, callback, asyncState);
         }
         
         private object[] OnEndGetSIPProviders(System.IAsyncResult result) {
-            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetSIPProviders(result);
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetSIPProviders(result);
             return new object[] {
                     retVal};
         }
@@ -1655,22 +1676,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginAddSIPProvider(SIPSorcery.SIP.App.SIPProvider sipProvider, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginAddSIPProvider(SIPSorcery.SIP.App.SIPProvider sipProvider, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginAddSIPProvider(sipProvider, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        SIPSorcery.SIP.App.SIPProvider SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndAddSIPProvider(System.IAsyncResult result) {
+        SIPSorcery.SIP.App.SIPProvider SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndAddSIPProvider(System.IAsyncResult result) {
             return base.Channel.EndAddSIPProvider(result);
         }
         
         private System.IAsyncResult OnBeginAddSIPProvider(object[] inValues, System.AsyncCallback callback, object asyncState) {
             SIPSorcery.SIP.App.SIPProvider sipProvider = ((SIPSorcery.SIP.App.SIPProvider)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginAddSIPProvider(sipProvider, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginAddSIPProvider(sipProvider, callback, asyncState);
         }
         
         private object[] OnEndAddSIPProvider(System.IAsyncResult result) {
-            SIPSorcery.SIP.App.SIPProvider retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndAddSIPProvider(result);
+            SIPSorcery.SIP.App.SIPProvider retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndAddSIPProvider(result);
             return new object[] {
                     retVal};
         }
@@ -1701,22 +1722,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginUpdateSIPProvider(SIPSorcery.SIP.App.SIPProvider sipProvider, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginUpdateSIPProvider(SIPSorcery.SIP.App.SIPProvider sipProvider, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginUpdateSIPProvider(sipProvider, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        SIPSorcery.SIP.App.SIPProvider SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndUpdateSIPProvider(System.IAsyncResult result) {
+        SIPSorcery.SIP.App.SIPProvider SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndUpdateSIPProvider(System.IAsyncResult result) {
             return base.Channel.EndUpdateSIPProvider(result);
         }
         
         private System.IAsyncResult OnBeginUpdateSIPProvider(object[] inValues, System.AsyncCallback callback, object asyncState) {
             SIPSorcery.SIP.App.SIPProvider sipProvider = ((SIPSorcery.SIP.App.SIPProvider)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginUpdateSIPProvider(sipProvider, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginUpdateSIPProvider(sipProvider, callback, asyncState);
         }
         
         private object[] OnEndUpdateSIPProvider(System.IAsyncResult result) {
-            SIPSorcery.SIP.App.SIPProvider retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndUpdateSIPProvider(result);
+            SIPSorcery.SIP.App.SIPProvider retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndUpdateSIPProvider(result);
             return new object[] {
                     retVal};
         }
@@ -1747,22 +1768,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginDeleteSIPProvider(SIPSorcery.SIP.App.SIPProvider sipProvider, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginDeleteSIPProvider(SIPSorcery.SIP.App.SIPProvider sipProvider, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginDeleteSIPProvider(sipProvider, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        SIPSorcery.SIP.App.SIPProvider SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndDeleteSIPProvider(System.IAsyncResult result) {
+        SIPSorcery.SIP.App.SIPProvider SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndDeleteSIPProvider(System.IAsyncResult result) {
             return base.Channel.EndDeleteSIPProvider(result);
         }
         
         private System.IAsyncResult OnBeginDeleteSIPProvider(object[] inValues, System.AsyncCallback callback, object asyncState) {
             SIPSorcery.SIP.App.SIPProvider sipProvider = ((SIPSorcery.SIP.App.SIPProvider)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginDeleteSIPProvider(sipProvider, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginDeleteSIPProvider(sipProvider, callback, asyncState);
         }
         
         private object[] OnEndDeleteSIPProvider(System.IAsyncResult result) {
-            SIPSorcery.SIP.App.SIPProvider retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndDeleteSIPProvider(result);
+            SIPSorcery.SIP.App.SIPProvider retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndDeleteSIPProvider(result);
             return new object[] {
                     retVal};
         }
@@ -1793,22 +1814,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetSIPProviderBindingsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetSIPProviderBindingsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetSIPProviderBindingsCount(whereExpression, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        int SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetSIPProviderBindingsCount(System.IAsyncResult result) {
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetSIPProviderBindingsCount(System.IAsyncResult result) {
             return base.Channel.EndGetSIPProviderBindingsCount(result);
         }
         
         private System.IAsyncResult OnBeginGetSIPProviderBindingsCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
             string whereExpression = ((string)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetSIPProviderBindingsCount(whereExpression, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetSIPProviderBindingsCount(whereExpression, callback, asyncState);
         }
         
         private object[] OnEndGetSIPProviderBindingsCount(System.IAsyncResult result) {
-            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetSIPProviderBindingsCount(result);
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetSIPProviderBindingsCount(result);
             return new object[] {
                     retVal};
         }
@@ -1839,12 +1860,12 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetSIPProviderBindings(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetSIPProviderBindings(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetSIPProviderBindings(whereExpression, offset, count, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding> SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetSIPProviderBindings(System.IAsyncResult result) {
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetSIPProviderBindings(System.IAsyncResult result) {
             return base.Channel.EndGetSIPProviderBindings(result);
         }
         
@@ -1852,11 +1873,11 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             string whereExpression = ((string)(inValues[0]));
             int offset = ((int)(inValues[1]));
             int count = ((int)(inValues[2]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetSIPProviderBindings(whereExpression, offset, count, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetSIPProviderBindings(whereExpression, offset, count, callback, asyncState);
         }
         
         private object[] OnEndGetSIPProviderBindings(System.IAsyncResult result) {
-            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetSIPProviderBindings(result);
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetSIPProviderBindings(result);
             return new object[] {
                     retVal};
         }
@@ -1889,22 +1910,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetDialPlansCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetDialPlansCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetDialPlansCount(whereExpression, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        int SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetDialPlansCount(System.IAsyncResult result) {
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetDialPlansCount(System.IAsyncResult result) {
             return base.Channel.EndGetDialPlansCount(result);
         }
         
         private System.IAsyncResult OnBeginGetDialPlansCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
             string whereExpression = ((string)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetDialPlansCount(whereExpression, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetDialPlansCount(whereExpression, callback, asyncState);
         }
         
         private object[] OnEndGetDialPlansCount(System.IAsyncResult result) {
-            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetDialPlansCount(result);
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetDialPlansCount(result);
             return new object[] {
                     retVal};
         }
@@ -1935,12 +1956,12 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetDialPlans(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetDialPlans(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetDialPlans(whereExpression, offset, count, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan> SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetDialPlans(System.IAsyncResult result) {
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetDialPlans(System.IAsyncResult result) {
             return base.Channel.EndGetDialPlans(result);
         }
         
@@ -1948,11 +1969,11 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             string whereExpression = ((string)(inValues[0]));
             int offset = ((int)(inValues[1]));
             int count = ((int)(inValues[2]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetDialPlans(whereExpression, offset, count, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetDialPlans(whereExpression, offset, count, callback, asyncState);
         }
         
         private object[] OnEndGetDialPlans(System.IAsyncResult result) {
-            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetDialPlans(result);
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetDialPlans(result);
             return new object[] {
                     retVal};
         }
@@ -1985,22 +2006,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginAddDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginAddDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginAddDialPlan(dialPlan, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        SIPSorcery.SIP.App.SIPDialPlan SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndAddDialPlan(System.IAsyncResult result) {
+        SIPSorcery.SIP.App.SIPDialPlan SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndAddDialPlan(System.IAsyncResult result) {
             return base.Channel.EndAddDialPlan(result);
         }
         
         private System.IAsyncResult OnBeginAddDialPlan(object[] inValues, System.AsyncCallback callback, object asyncState) {
             SIPSorcery.SIP.App.SIPDialPlan dialPlan = ((SIPSorcery.SIP.App.SIPDialPlan)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginAddDialPlan(dialPlan, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginAddDialPlan(dialPlan, callback, asyncState);
         }
         
         private object[] OnEndAddDialPlan(System.IAsyncResult result) {
-            SIPSorcery.SIP.App.SIPDialPlan retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndAddDialPlan(result);
+            SIPSorcery.SIP.App.SIPDialPlan retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndAddDialPlan(result);
             return new object[] {
                     retVal};
         }
@@ -2031,22 +2052,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginUpdateDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginUpdateDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginUpdateDialPlan(dialPlan, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        SIPSorcery.SIP.App.SIPDialPlan SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndUpdateDialPlan(System.IAsyncResult result) {
+        SIPSorcery.SIP.App.SIPDialPlan SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndUpdateDialPlan(System.IAsyncResult result) {
             return base.Channel.EndUpdateDialPlan(result);
         }
         
         private System.IAsyncResult OnBeginUpdateDialPlan(object[] inValues, System.AsyncCallback callback, object asyncState) {
             SIPSorcery.SIP.App.SIPDialPlan dialPlan = ((SIPSorcery.SIP.App.SIPDialPlan)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginUpdateDialPlan(dialPlan, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginUpdateDialPlan(dialPlan, callback, asyncState);
         }
         
         private object[] OnEndUpdateDialPlan(System.IAsyncResult result) {
-            SIPSorcery.SIP.App.SIPDialPlan retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndUpdateDialPlan(result);
+            SIPSorcery.SIP.App.SIPDialPlan retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndUpdateDialPlan(result);
             return new object[] {
                     retVal};
         }
@@ -2077,22 +2098,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginDeleteDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginDeleteDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginDeleteDialPlan(dialPlan, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        SIPSorcery.SIP.App.SIPDialPlan SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndDeleteDialPlan(System.IAsyncResult result) {
+        SIPSorcery.SIP.App.SIPDialPlan SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndDeleteDialPlan(System.IAsyncResult result) {
             return base.Channel.EndDeleteDialPlan(result);
         }
         
         private System.IAsyncResult OnBeginDeleteDialPlan(object[] inValues, System.AsyncCallback callback, object asyncState) {
             SIPSorcery.SIP.App.SIPDialPlan dialPlan = ((SIPSorcery.SIP.App.SIPDialPlan)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginDeleteDialPlan(dialPlan, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginDeleteDialPlan(dialPlan, callback, asyncState);
         }
         
         private object[] OnEndDeleteDialPlan(System.IAsyncResult result) {
-            SIPSorcery.SIP.App.SIPDialPlan retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndDeleteDialPlan(result);
+            SIPSorcery.SIP.App.SIPDialPlan retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndDeleteDialPlan(result);
             return new object[] {
                     retVal};
         }
@@ -2123,22 +2144,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetCallsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetCallsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetCallsCount(whereExpression, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        int SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetCallsCount(System.IAsyncResult result) {
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetCallsCount(System.IAsyncResult result) {
             return base.Channel.EndGetCallsCount(result);
         }
         
         private System.IAsyncResult OnBeginGetCallsCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
             string whereExpression = ((string)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetCallsCount(whereExpression, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetCallsCount(whereExpression, callback, asyncState);
         }
         
         private object[] OnEndGetCallsCount(System.IAsyncResult result) {
-            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetCallsCount(result);
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetCallsCount(result);
             return new object[] {
                     retVal};
         }
@@ -2169,12 +2190,12 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetCalls(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetCalls(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetCalls(whereExpression, offset, count, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetCalls(System.IAsyncResult result) {
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetCalls(System.IAsyncResult result) {
             return base.Channel.EndGetCalls(result);
         }
         
@@ -2182,11 +2203,11 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             string whereExpression = ((string)(inValues[0]));
             int offset = ((int)(inValues[1]));
             int count = ((int)(inValues[2]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetCalls(whereExpression, offset, count, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetCalls(whereExpression, offset, count, callback, asyncState);
         }
         
         private object[] OnEndGetCalls(System.IAsyncResult result) {
-            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetCalls(result);
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetCalls(result);
             return new object[] {
                     retVal};
         }
@@ -2219,22 +2240,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetCDRsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetCDRsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetCDRsCount(whereExpression, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        int SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetCDRsCount(System.IAsyncResult result) {
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetCDRsCount(System.IAsyncResult result) {
             return base.Channel.EndGetCDRsCount(result);
         }
         
         private System.IAsyncResult OnBeginGetCDRsCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
             string whereExpression = ((string)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetCDRsCount(whereExpression, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetCDRsCount(whereExpression, callback, asyncState);
         }
         
         private object[] OnEndGetCDRsCount(System.IAsyncResult result) {
-            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetCDRsCount(result);
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetCDRsCount(result);
             return new object[] {
                     retVal};
         }
@@ -2265,12 +2286,12 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.BeginGetCDRs(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetCDRs(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
             return base.Channel.BeginGetCDRs(whereExpression, offset, count, callback, asyncState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService.EndGetCDRs(System.IAsyncResult result) {
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetCDRs(System.IAsyncResult result) {
             return base.Channel.EndGetCDRs(result);
         }
         
@@ -2278,11 +2299,11 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             string whereExpression = ((string)(inValues[0]));
             int offset = ((int)(inValues[1]));
             int count = ((int)(inValues[2]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).BeginGetCDRs(whereExpression, offset, count, callback, asyncState);
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetCDRs(whereExpression, offset, count, callback, asyncState);
         }
         
         private object[] OnEndGetCDRs(System.IAsyncResult result) {
-            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService)(this)).EndGetCDRs(result);
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetCDRs(result);
             return new object[] {
                     retVal};
         }
@@ -2380,13 +2401,13 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             base.InvokeAsync(this.onBeginCloseDelegate, null, this.onEndCloseDelegate, this.onCloseCompletedDelegate, userState);
         }
         
-        protected override SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService CreateChannel() {
-            return new SIPProvisioningWebServiceClientChannel(this);
+        protected override SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService CreateChannel() {
+            return new ProvisioningServiceClientChannel(this);
         }
         
-        private class SIPProvisioningWebServiceClientChannel : ChannelBase<SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService>, SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService {
+        private class ProvisioningServiceClientChannel : ChannelBase<SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService>, SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService {
             
-            public SIPProvisioningWebServiceClientChannel(System.ServiceModel.ClientBase<SIPSorcery.SIPSorceryProvisioningClient.SIPProvisioningWebService> client) : 
+            public ProvisioningServiceClientChannel(System.ServiceModel.ClientBase<SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService> client) : 
                     base(client) {
             }
             

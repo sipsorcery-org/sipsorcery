@@ -23,16 +23,15 @@ namespace SIPSorcery
         private const int REINITIALISE_WAIT_PERIOD = 10000;
         private const int DEFAULT_WEB_PORT = 80;
         private const int DEFAULT_PROVISIONING_WEBSERVICE_PORT = 8080;
-        private const string DEFAULT_PROVISIONING_HOST = "localhost";
+        private const string DEFAULT_MONITOR_HOST = "www.sipsorcery.com";
+        private const string DEFAULT_PROVISIONING_URL = "https://www.sipsorcery.com/provisioning.svc";
+        private const string LOCALHOST_MONITOR_HOST = "localhost";
+        private const string LOCALHOST_PROVISIONING_URL = "http://localhost:8080/provisioning";
 
         private string m_dummyOwner = SIPSorceryGUITestPersistor.DUMMY_OWNER;
 
-        private string m_provisioningServiceURL = null;
-        //private string m_provisioningServiceURL = "http://localhost:8080/provisioning";
-        //private string m_provisioningServiceURL = "http://sipsorcery.com:8080/provisioning";
-        private string m_sipMonitorHost = null;
-        //private string m_sipMonitorHost = "localhost";
-        //private string m_sipMonitorHost = "sipsorcery.com";
+        private string m_provisioningServiceURL = DEFAULT_PROVISIONING_URL;
+        private string m_sipMonitorHost = DEFAULT_MONITOR_HOST;
         private int m_sipControlMonitorPort = 4502;
         private int m_sipMachineMonitorPort = 4503;
         private DnsEndPoint m_machineMonitorEndPoint;
@@ -69,10 +68,11 @@ namespace SIPSorcery
             //    hostPort = DEFAULT_PROVISIONING_WEBSERVICE_PORT;
             //}
 
-            m_sipMonitorHost = Application.Current.Host.Source.DnsSafeHost;
-            m_sipMonitorHost = (m_sipMonitorHost == null || m_sipMonitorHost.Trim().Length == 0) ? DEFAULT_PROVISIONING_HOST : m_sipMonitorHost;
-            //m_provisioningServiceURL = "http://" + m_sipMonitorHost + ":" + DEFAULT_PROVISIONING_WEBSERVICE_PORT + "/provisioning";
-            m_provisioningServiceURL = "http://sipsorcery.com/provisioning.svc";
+            string server = Application.Current.Host.Source.DnsSafeHost;
+            if(server == LOCALHOST_MONITOR_HOST) {
+                m_sipMonitorHost = LOCALHOST_MONITOR_HOST;
+                m_provisioningServiceURL = LOCALHOST_PROVISIONING_URL;
+            }
 
             ThreadPool.QueueUserWorkItem(new WaitCallback(Initialise), null);
 

@@ -6,7 +6,7 @@
                     maxReceivedMessageSize="65536">
                     <security mode="None" />
                 </binding>
-                <binding name="BasicHttpBinding_SIPProvisioningWebService" maxBufferSize="2147483647"
+                <binding name="BasicHttpBinding_IProvisioningService" maxBufferSize="2147483647"
                     maxReceivedMessageSize="2147483647">
                     <security mode="None" />
                 </binding>
@@ -33,9 +33,9 @@
                 contract="SIPSyrup.Provisioning.Services.ProvisioningServiceSoap"
                 name="ProvisioningServiceSoap" />
             <endpoint address="http://suzannes-pc:8080/provisioning" binding="basicHttpBinding"
-                bindingConfiguration="BasicHttpBinding_SIPProvisioningWebService"
-                contract="SIPSorceryProvisioningClient.SIPProvisioningWebService"
-                name="BasicHttpBinding_SIPProvisioningWebService" />
+                bindingConfiguration="BasicHttpBinding_IProvisioningService"
+                contract="SIPSorceryProvisioningClient.IProvisioningService"
+                name="BasicHttpBinding_IProvisioningService" />
         </client>
     </system.serviceModel>
 </configuration>

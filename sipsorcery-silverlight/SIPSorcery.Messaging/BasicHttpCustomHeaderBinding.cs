@@ -7,10 +7,12 @@ namespace SIPSorcery.Silverlight.Messaging
     {
         private CustomHeaderBindingElement channelBindingElement;
 
-        public BasicHttpCustomHeaderBinding(IClientCustomHeader customHeader) 
+        public BasicHttpCustomHeaderBinding(IClientCustomHeader customHeader, BasicHttpSecurityMode securityMode)
+            : base(securityMode)
         {
             channelBindingElement = new CustomHeaderBindingElement();
             channelBindingElement.CustomHeader = customHeader;
+            
         }
 
         public override BindingElementCollection CreateBindingElements()

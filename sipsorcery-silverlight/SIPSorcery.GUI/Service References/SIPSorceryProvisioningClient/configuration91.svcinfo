@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<SavedWcfConfigurationInformation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="9.1" CheckSum="efON9T8pafWwo3MFs2FoPDpkONY=">
+<SavedWcfConfigurationInformation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="9.1" CheckSum="hIV5jGw4bDINOR+2qWEYNjQri0E=">
   <bindingConfigurations>
-    <bindingConfiguration bindingType="basicHttpBinding" name="BasicHttpBinding_SIPProvisioningWebService">
+    <bindingConfiguration bindingType="basicHttpBinding" name="BasicHttpBinding_IProvisioningService">
       <properties>
         <property path="/name" isComplexType="false" isExplicitlyDefined="true" clrType="System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue>BasicHttpBinding_SIPProvisioningWebService</serializedValue>
+          <serializedValue>BasicHttpBinding_IProvisioningService</serializedValue>
         </property>
         <property path="/closeTimeout" isComplexType="false" isExplicitlyDefined="true" clrType="System.TimeSpan, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue />
@@ -100,7 +100,7 @@
     </bindingConfiguration>
   </bindingConfigurations>
   <endpoints>
-    <endpoint name="BasicHttpBinding_SIPProvisioningWebService" contract="SIPSorceryProvisioningClient.SIPProvisioningWebService" bindingType="basicHttpBinding" address="http://suzannes-pc:8080/provisioning" bindingConfiguration="BasicHttpBinding_SIPProvisioningWebService">
+    <endpoint name="BasicHttpBinding_IProvisioningService" contract="SIPSorceryProvisioningClient.IProvisioningService" bindingType="basicHttpBinding" address="http://suzannes-pc:8080/provisioning" bindingConfiguration="BasicHttpBinding_IProvisioningService">
       <properties>
         <property path="/address" isComplexType="false" isExplicitlyDefined="true" clrType="System.Uri, System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue>http://suzannes-pc:8080/provisioning</serializedValue>
@@ -112,10 +112,10 @@
           <serializedValue>basicHttpBinding</serializedValue>
         </property>
         <property path="/bindingConfiguration" isComplexType="false" isExplicitlyDefined="true" clrType="System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue>BasicHttpBinding_SIPProvisioningWebService</serializedValue>
+          <serializedValue>BasicHttpBinding_IProvisioningService</serializedValue>
         </property>
         <property path="/contract" isComplexType="false" isExplicitlyDefined="true" clrType="System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue>SIPSorceryProvisioningClient.SIPProvisioningWebService</serializedValue>
+          <serializedValue>SIPSorceryProvisioningClient.IProvisioningService</serializedValue>
         </property>
         <property path="/headers" isComplexType="true" isExplicitlyDefined="false" clrType="System.ServiceModel.Configuration.AddressHeaderCollectionElement, System.ServiceModel, Version=3.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue>System.ServiceModel.Configuration.AddressHeaderCollectionElement</serializedValue>
@@ -175,7 +175,7 @@
           <serializedValue>False</serializedValue>
         </property>
         <property path="/name" isComplexType="false" isExplicitlyDefined="true" clrType="System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue>BasicHttpBinding_SIPProvisioningWebService</serializedValue>
+          <serializedValue>BasicHttpBinding_IProvisioningService</serializedValue>
         </property>
       </properties>
     </endpoint>
