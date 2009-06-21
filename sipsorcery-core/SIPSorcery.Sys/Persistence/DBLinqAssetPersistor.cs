@@ -42,6 +42,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Dynamic;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -57,8 +58,6 @@ namespace SIPSorcery.Sys
         private static ILog logger = AppState.logger;
         private static string m_newLine = AppState.NewLine;
 
-        //private DataContext m_dbLinqDataContext;
-        //private Table<T> m_dbLinqTable;
         private StorageTypes m_storageType;
         private string m_dbConnStr;
 
@@ -78,8 +77,9 @@ namespace SIPSorcery.Sys
                 //m_dbLinqTable.InsertOnSubmit(asset);
                 //m_dbLinqDataContext.SubmitChanges();
                 //m_dbLinqDataContext.ExecuteDynamicInsert(asset);
-                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
-                dataContext.ExecuteDynamicInsert(asset);
+                using (DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr)) {
+                    dataContext.ExecuteDynamicInsert(asset);
+                }
 
                 if (Added != null) {
                     Added(asset);
@@ -98,8 +98,9 @@ namespace SIPSorcery.Sys
                 //m_dbLinqDataContext.ExecuteDynamicUpdate(asset);
                 //m_dbLinqTable.InsertOnSubmit(asset);
                 //m_dbLinqDataContext.SubmitChanges();
-                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
-                dataContext.ExecuteDynamicUpdate(asset);
+                using (DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr)) {
+                    dataContext.ExecuteDynamicUpdate(asset);
+                }
 
                 if (Updated != null) {
                     Updated(asset);
@@ -113,13 +114,36 @@ namespace SIPSorcery.Sys
             }
         }
 
+        public override void UpdateProperty(Guid id, string propertyName, object value) {
+            try {
+                // Find modified poperty.
+                PropertyInfo property = typeof(T).GetProperty(propertyName);
+                if (property == null) {
+                    throw new ApplicationException("Property " + propertyName + " for " + typeof(T).Name + " could not be found, UpdateProperty failed.");
+                }
+                else {
+                    using (DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr)) {
+                        T emptyT = new T();
+                        emptyT.Id = id.ToString();
+                        property.SetValue(emptyT, value, null);
+                        dataContext.ExecuteDynamicUpdate(emptyT, new List<MemberInfo>() { property });
+                    }
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception DBLinqAssetPersistor Update (for " + typeof(T).Name + "). " + excp.Message);
+                throw;
+            }
+        }
+
         public override void Delete(T asset) {
             try {
                 //m_dbLinqTable.DeleteOnSubmit(asset);
                 //m_dbLinqDataContext.SubmitChanges();
                 //m_dbLinqDataContext.ExecuteDynamicDelete(asset);
-                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
-                dataContext.ExecuteDynamicDelete(asset);
+                using (DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr)) {
+                    dataContext.ExecuteDynamicDelete(asset);
+                }
 
                 if (Deleted != null) {
                     Deleted(asset);
@@ -133,16 +157,16 @@ namespace SIPSorcery.Sys
 
         public override void Delete(Expression<Func<T, bool>> whereClause) {
             try {
-                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
-                Table<T> table = dataContext.GetTable<T>();
+                using (DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr)) {
+                    Table<T> table = dataContext.GetTable<T>();
 
-                var batch = from asset in table.Where(whereClause)
-                            select asset;
+                    var batch = from asset in table.Where(whereClause) select asset;
 
-                if (batch.Count() > 0) {
-                    T[] batchArray = batch.ToArray();
-                    for (int index = 0; index < batchArray.Length; index++) {
-                        dataContext.ExecuteDynamicDelete(batchArray[index]);
+                    if (batch.Count() > 0) {
+                        T[] batchArray = batch.ToArray();
+                        for (int index = 0; index < batchArray.Length; index++) {
+                            dataContext.ExecuteDynamicDelete(batchArray[index]);
+                        }
                     }
                 }
             }
@@ -154,14 +178,15 @@ namespace SIPSorcery.Sys
 
         public override T Get(Guid id) {
             try {
-                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
-                Table<T> table = dataContext.GetTable<T>();
+                using (DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr)) {
+                    Table<T> table = dataContext.GetTable<T>();
 
-                string idString = id.ToString();
+                    string idString = id.ToString();
 
-                return (from asset in table
-                        where asset.Id == idString
-                        select asset).FirstOrDefault();
+                    return (from asset in table
+                            where asset.Id == idString
+                            select asset).FirstOrDefault();
+                }
             }
             catch (Exception excp) {
                 logger.Error("Exception DBLinqAssetPersistor Get (id) (for " + typeof(T).Name + "). " + excp.Message);
@@ -169,16 +194,41 @@ namespace SIPSorcery.Sys
             }
         }
 
-        public override int Count(Expression<Func<T, bool>> whereClause) {
+        public override object GetProperty(Guid id, string propertyName) {
             try {
-                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
-                Table<T> table = dataContext.GetTable<T>();
-
-                if (whereClause == null) {
-                    return table.Count();
+                PropertyInfo property = typeof(T).GetProperty(propertyName);
+                if (property == null) {
+                    throw new ApplicationException("Property " + propertyName + " for " + typeof(T).Name + " could not be found, GetProperty failed.");
                 }
                 else {
-                    return table.Count(whereClause);
+                    using (DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr)) {
+                        Table<T> table = dataContext.GetTable<T>();
+                        string idString = id.ToString();
+                        IEnumerator result = (from asset in table where asset.Id == idString select asset).Select("new (" + propertyName + ")").GetEnumerator();
+                        result.MoveNext();
+                        var resultObj = result.Current;
+                        PropertyInfo resultProperty = resultObj.GetType().GetProperty(propertyName);
+                        return resultProperty.GetValue(resultObj, null);
+                    }
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception DBLinqAssetPersistor GetProperty (for " + typeof(T).Name + "). " + excp.Message);
+                throw;
+            }
+        }
+
+        public override int Count(Expression<Func<T, bool>> whereClause) {
+            try {
+                using (DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr)) {
+                    Table<T> table = dataContext.GetTable<T>();
+
+                    if (whereClause == null) {
+                        return table.Count();
+                    }
+                    else {
+                        return table.Count(whereClause);
+                    }
                 }
             }
             catch (Exception excp) {
@@ -189,15 +239,16 @@ namespace SIPSorcery.Sys
 
         public override T Get(Expression<Func<T, bool>> whereClause) {
             try {
-                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
-                Table<T> table = dataContext.GetTable<T>();
+                using (DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr)) {
+                    Table<T> table = dataContext.GetTable<T>();
 
-                if (whereClause == null) {
-                    throw new ArgumentException("The where clause must be specified for a non-list Get.");
-                }
-                else {
-                    IQueryable<T> getList = from asset in table.Where(whereClause) select asset;
-                    return getList.FirstOrDefault();
+                    if (whereClause == null) {
+                        throw new ArgumentException("The where clause must be specified for a non-list Get.");
+                    }
+                    else {
+                        IQueryable<T> getList = from asset in table.Where(whereClause) select asset;
+                        return getList.FirstOrDefault();
+                    }
                 }
             }
             catch (Exception excp) {
@@ -210,67 +261,32 @@ namespace SIPSorcery.Sys
         {
             try
             {
-                DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr);
-                Table<T> table = dataContext.GetTable<T>();
+                using (DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr)) {
+                    Table<T> table = dataContext.GetTable<T>();
 
-                var query = from asset in table select asset;
-                
-                if (whereClause != null)
-                {
-                    query = query.Where(whereClause);
-                }
+                    var query = from asset in table select asset;
 
-                if (!orderByField.IsNullOrBlank())
-                {
-                    query = query.OrderBy(orderByField);
-                }
-                else
-                {
-                    query = query.OrderBy(x => x.Id);
-                }
+                    if (whereClause != null) {
+                        query = query.Where(whereClause);
+                    }
 
-                if (offset != 0)
-                {
-                    query = query.Skip(offset);
-                }
-
-                if (count < Int32.MaxValue)
-                {
-                    query = query.Take(count);
-                }
-
-                /*List<T> subList = null;
-
-                if (whereClause == null) {
-                    subList = (
-                        from asset in m_dbLinqTable
-                        select asset
-                        ).ToList();
-                }
-                else {
-                    subList = (
-                        from asset in m_dbLinqTable.Where(whereClause)
-                        select asset
-                        ).ToList();
-                }
-
-                if (subList != null) {
-                    if (offset >= 0) {
-                        if (count == 0 || count == Int32.MaxValue) {
-                            return subList.OrderBy(x => x.Id).Skip(offset).ToList<T>();
-                        }
-                        else {
-                            return subList.OrderBy(x => x.Id).Skip(offset).Take(count).ToList<T>();
-                        }
+                    if (!orderByField.IsNullOrBlank()) {
+                        query = query.OrderBy(orderByField);
                     }
                     else {
-                        return subList.OrderBy(x => x.Id).ToList<T>(); ;
+                        query = query.OrderBy(x => x.Id);
                     }
+
+                    if (offset != 0) {
+                        query = query.Skip(offset);
+                    }
+
+                    if (count < Int32.MaxValue) {
+                        query = query.Take(count);
+                    }
+
+                    return query.ToList();
                 }
-
-                return subList;*/
-
-                return query.ToList();
             }
             catch (Exception excp)
             {

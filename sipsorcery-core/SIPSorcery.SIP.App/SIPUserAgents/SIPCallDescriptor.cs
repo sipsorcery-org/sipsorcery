@@ -37,10 +37,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.Sys;
+using log4net;
 
 namespace SIPSorcery.SIP.App
 {
@@ -58,6 +60,9 @@ namespace SIPSorcery.SIP.App
         public const string CALL_DURATION_OPTION_KEY = "at";    // Dial string option used to set the maximum duration of a call in seconds.
 
         private readonly static string m_defaultFromURI = SIPConstants.SIP_DEFAULT_FROMURI;
+        private static char m_customHeadersSeparator = SIPProvider.CUSTOM_HEADERS_SEPARATOR;
+
+        private static ILog logger = AppState.logger;
         
         //public static SIPCallDescriptor Empty = new SIPCallDescriptor(null, null, null, null, null, null, null, null, SIPCallDirection.None, null, null);
 
@@ -68,13 +73,14 @@ namespace SIPSorcery.SIP.App
         public string From;                     // A string representing the From header to be set for the call.
         public string To;                       // A string representing the To header to be set for the call.  
         public string RouteSet;                 // A route set for the forwarded call request. If there is only a single route or IP socket it will be treated like an Outbound Proxy (i.e. no Route header will be added).
-        public string CustomHeaders;            // An optional list of custom SIP headers that will be added to the INVITE request.
+        public StringDictionary CustomHeaders;  // An optional list of custom SIP headers that will be added to the INVITE request.
         public SIPCallDirection CallDirection;  // Indicates whether the call is incoming out outgoing relative to this server. An outgoing call is one that is placed by a user the server authenticates.
         public string ContentType;
         public string Content;
         public int DelaySeconds;                        // An amount in seconds to delay the intiation of this call when used as part of a dial string.
         public SIPCallRedirectModesEnum RedirectMode;   // Determines how the call will handle 3xx redirect responses.
         public int CallDurationLimit;                   // If non-zero sets a limit on the duration of any call created with this descriptor.
+        public bool MangleResponseSDP;                  // If true indicates the response SDP should be mangled if it contains a private IP address.
 
         public ManualResetEvent DelayMRE;       // If the call needs to be delayed DelaySeconds this MRE will be used.
 
@@ -85,23 +91,25 @@ namespace SIPSorcery.SIP.App
             string from, 
             string to, 
             string routeSet, 
-            string customHeaders, 
+            StringDictionary customHeaders, 
             string authUsername, 
             SIPCallDirection callDirection, 
             string contentType, 
-            string content)
+            string content,
+            bool mangleResponseSDP)
         {
             Username = username;            
             Password = password;            
             Uri = uri;
             From = from ?? m_defaultFromURI;
             To = to ?? uri;                        
-            RouteSet = routeSet;                
-            CustomHeaders = customHeaders;
+            RouteSet = routeSet;
+            CustomHeaders = customHeaders;   
             AuthUsername = authUsername;
             CallDirection = callDirection;
             ContentType = contentType;
             Content = content;
+            MangleResponseSDP = mangleResponseSDP;
         }
 
         public void ParseCallOptions(string options)
@@ -139,6 +147,44 @@ namespace SIPSorcery.SIP.App
                     Int32.TryParse(callDurationMatch.Result("${callduration}"), out CallDurationLimit);
                 }
             }
+        }
+
+        public static StringDictionary ParseCustomHeaders(string customHeaders) {
+
+            StringDictionary customHeaderList = new StringDictionary();
+            
+            try {
+                if (!customHeaders.IsNullOrBlank()) {
+                    string[] customerHeadersList = customHeaders.Split(m_customHeadersSeparator);
+
+                    if (customerHeadersList != null && customerHeadersList.Length > 0) {
+                        foreach (string customHeader in customerHeadersList) {
+                            if (customHeader.IndexOf(':') == -1) {
+                                logger.Warn("ParseCustomHeaders skipping custom header due to missing colon, " + customHeader + ".");
+                                continue;
+                            }
+                            else {
+                                int colonIndex = customHeader.IndexOf(':');
+                                string headerName = customHeader.Substring(0, colonIndex).Trim();
+                                string headerValue = (customHeader.Length > colonIndex) ? customHeader.Substring(colonIndex + 1).Trim() : String.Empty;
+
+                                if (headerName != null && Regex.Match(headerName.Trim(), "^(Via|From|To|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success) {
+                                    logger.Warn("ParseCustomHeaders skipping custom header due to an non-permitted string in header name, " + customHeader + ".");
+                                    continue;
+                                }
+                                else {
+                                    customHeaderList.Add(headerName, headerValue);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception ParseCustomHeaders (" + customHeaders + "). " + excp.Message);
+            }
+
+            return customHeaderList;
         }
 
         /*

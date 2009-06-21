@@ -69,6 +69,8 @@ namespace SIPSorcery.SIP.App
         public const string XML_ELEMENT_NAME = "sipdialplan";
         public const string DEFAULT_DIALPLAN_NAME = "default";      // The default name a dialplan will be assigned if the owner's first dialplan and the name is not set.
         public const int DEFAULT_MAXIMUM_EXECUTION_COUNT = 3;       // The default value for the maximum allowed simultaneous executions of a dial plan.
+        public const string ALL_APPS_AUTHORISED = "*";              // Used in the priviled application authorisation field when the dialplan is authorised for all applications.
+        public const string PROPERTY_EXECUTIONCOUNT_NAME = "ExecutionCount";
 
         private static string m_newLine = AppState.NewLine;
 
@@ -190,6 +192,16 @@ namespace SIPSorcery.SIP.App
             set { m_executionCount = value; }
         }
 
+        private string m_authorisedApps;     // A semi-colon delimited list of privileged apps that this dialplan is authorised to use.
+        [Column(Storage = "_authorisedapps", Name = "authorisedapps", DbType = "character varying(2048)", CanBeNull = true)]
+        public string AuthorisedApps {
+            get { return m_authorisedApps; }
+            set {
+                m_authorisedApps = value;
+                NotifyPropertyChanged("AuthorisedApps");
+            }
+        }
+
         public object OrderProperty
         {
             get { return DialPlanName; }
@@ -227,8 +239,9 @@ namespace SIPSorcery.SIP.App
                 m_traceEmailAddress = (dialPlanRow.Table.Columns.Contains("traceemailaddress") && dialPlanRow["traceemailaddress"] != null) ? dialPlanRow["traceemailaddress"] as string : null;
                 m_dialPlanScript = (dialPlanRow["dialplanscript"] as string).Trim();
                 m_scriptTypeDescription = (dialPlanRow.Table.Columns.Contains("scripttype") && dialPlanRow["scripttype"] != null) ? SIPDialPlanScriptTypes.GetSIPDialPlanScriptType(dialPlanRow["scripttype"] as string).ToString() : SIPDialPlanScriptTypesEnum.Ruby.ToString();
-                //MaxExecutionCount = DEFAULT_MAXIMUM_EXECUTION_COUNT; //(dialPlanRow.Table.Columns.Contains("maxexecutioncount") && dialPlanRow["maxexecutioncount"] != null) ? Convert.ToInt32(dialPlanRow["maxexecutioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
+                MaxExecutionCount = (dialPlanRow.Table.Columns.Contains("maxexecutioncount") && dialPlanRow["maxexecutioncount"] != null) ? Convert.ToInt32(dialPlanRow["maxexecutioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
                 m_executionCount = (dialPlanRow.Table.Columns.Contains("executioncount") && dialPlanRow["executioncount"] != null) ? Convert.ToInt32(dialPlanRow["executioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
+                m_authorisedApps = (dialPlanRow.Table.Columns.Contains("authorisedapps") && dialPlanRow["authorisedapps"] != null) ? dialPlanRow["authorisedapps"] as string : null;
             }
             catch (Exception excp) {
                 logger.Error("Exception DialPlan Load. " + excp);
@@ -268,7 +281,8 @@ namespace SIPSorcery.SIP.App
                 "    <dialplanscript><![CDATA[" + m_dialPlanScript + "]]></dialplanscript>" + m_newLine +
                 "    <scripttype>" + m_scriptTypeDescription + "</scripttype>" + m_newLine +
                 "    <maxexecutioncount>" + MaxExecutionCount + "</maxexecutioncount>" + m_newLine +
-                "    <executioncount>" + m_executionCount + "</executioncount>" + m_newLine;
+                "    <executioncount>" + m_executionCount + "</executioncount>" + m_newLine +
+                "    <authorisedapps>" + m_authorisedApps + "</authorisedapps>";
 
             return dialPlanXML;
         }

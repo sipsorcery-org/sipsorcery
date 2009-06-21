@@ -50,13 +50,34 @@ namespace SIPSorcery.Servers {
 
     public class SIPRegistrarBindingsManager {
 
+        private struct NATKeepAliveJob {
+
+            public string BindingId;
+            public SIPEndPoint ProxyEndPoint;   // The proxy socket the NAT keep-alive packet should be sent from;
+            public SIPEndPoint RemoteEndPoint;  // Where the NAT keep-alive packet should be sent by the proxy.
+            public DateTime? NextSendTime;      
+            public DateTime EndTime;
+            public string Owner;
+
+            public NATKeepAliveJob(string bindingId, SIPEndPoint proxyEndPoint, SIPEndPoint remoteEndPoint, DateTime endTime, string owner) {
+                BindingId = bindingId;
+                ProxyEndPoint = proxyEndPoint;
+                RemoteEndPoint = remoteEndPoint;
+                NextSendTime = null;
+                EndTime = endTime;
+                Owner = owner;
+            }
+        }
+
         private const string EXPIRE_BINDINGS_THREAD_NAME = "sipregistrar-expirebindings";
+        private const string SEND_KEEPALIVES_THREAD_NAME = "sipregistrar-natkeepalives";
         private const int CHECK_REGEXPIRY_DURATION = 1000;            // Period at which to check for expired bindings.
         public const int NATKEEPALIVE_DEFAULTSEND_INTERVAL = 15;
         private const int MAX_USERAGENT_LENGTH = 128;
         public const int MINIMUM_EXPIRY_SECONDS = 60;
         private const int DEFAULT_BINDINGS_PER_USER = 1;              // The default maixmim number of bindings that will be allowed for each unique SIP account.
         private const int REMOVE_EXPIRED_BINDINGS_INTERVAL = 3000;    // The interval in seconds at which to check for and remove expired bindings.
+        private const int SEND_NATKEEPALIVES_INTERVAL = 1000;
         private const int BINDING_EXPIRY_GRACE_PERIOD = 10;
 
         private string m_sipRegisterRemoveAll = SIPConstants.SIP_REGISTER_REMOVEALL;
@@ -69,6 +90,7 @@ namespace SIPSorcery.Servers {
 
         private SIPAssetPersistor<SIPRegistrarBinding> m_bindingsPersistor;
         private SIPUserAgentConfigurationManager m_userAgentConfigs;
+        private Dictionary<string, NATKeepAliveJob> m_natKeepAliveJobs = new Dictionary<string, NATKeepAliveJob>();
         private int m_maxBindingsPerAccount;
         private bool m_stop;
            
@@ -87,21 +109,29 @@ namespace SIPSorcery.Servers {
         }
 
         public void Start() {
-            ThreadPool.QueueUserWorkItem(ExpireBindings);
+            ThreadPool.QueueUserWorkItem(delegate { ExpireBindings(); });
+            ThreadPool.QueueUserWorkItem(delegate { SendNATKeepAlives(); });
         }
 
         public void Stop() {
             m_stop = true;
         }
 
-        private void ExpireBindings(object state) {
+        private void ExpireBindings() {
             try {
                 Thread.CurrentThread.Name = EXPIRE_BINDINGS_THREAD_NAME;
 
                 while (!m_stop) {
                     try {
-                        DateTime expiryTime = DateTime.Now.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD);
-                        m_bindingsPersistor.Delete(b => b.ExpiryTime < expiryTime);
+                        DateTime expiryTime = DateTime.Now.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
+                        //m_bindingsPersistor.Delete(b => b.ExpiryTime < expiryTime);
+                        List<SIPRegistrarBinding> expiredBindings = m_bindingsPersistor.Get(b => b.ExpiryTime < expiryTime, null, 0, Int32.MaxValue);
+                        if (expiredBindings != null && expiredBindings.Count > 0) {
+                            foreach (SIPRegistrarBinding binding in expiredBindings) {
+                                FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingExpired, "Deleting expired binding for " + binding.SIPAccountName + " and " + binding.MangledContactURI + ", last register " + binding.LastUpdate.ToString("HH:mm:ss") + ".", binding.Owner));
+                                m_bindingsPersistor.Delete(binding);
+                            }
+                        }
                     }
                     catch (Exception expireExcp) {
                         logger.Error("Exception ExpireBindings Delete. " + expireExcp.Message);
@@ -162,6 +192,11 @@ namespace SIPSorcery.Servers {
                             bindings[index].RemovalReason = SIPBindingRemovalReason.ClientExpiredAll;
                             bindings[index].Expiry = 0;
                             m_bindingsPersistor.Update(bindings[index]);
+
+                            // Remove the NAT keep-alive job if present.
+                            if (m_natKeepAliveJobs.ContainsKey(bindings[index].Id)) {
+                                m_natKeepAliveJobs.Remove(bindings[index].Id);
+                            }
                         }
 
                         responseStatus = SIPResponseStatusCodesEnum.Ok;
@@ -188,31 +223,53 @@ namespace SIPSorcery.Servers {
                             FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingExpired, "Binding expired by client for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ".", sipAccount.SIPUsername));
                             m_bindingsPersistor.Delete(binding);
                             bindingExpiry = 0;
+
+                            // Remove the NAT keep-alive job if present.
+                            if(m_natKeepAliveJobs.ContainsKey(binding.Id)) {
+                                m_natKeepAliveJobs.Remove(binding.Id);
+                            }
                         }
                         else {
-                            FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Registrar, "Binding update request for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ", expiry requested " + requestedExpiry + "s granted " + bindingExpiry + "s.", sipAccount.SIPUsername));
+                            FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Registrar, "Binding update request for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ", expiry requested " + requestedExpiry + "s granted " + bindingExpiry + "s.", sipAccount.Owner));
                             binding.RefreshBinding(bindingExpiry, remoteSIPEndPoint, proxySIPEndPoint, registrarSIPEndPoint);
                             m_bindingsPersistor.Update(binding);
+
+                            // Add a NAT keep-alive job if required.
+                            if (sipAccount.SendNATKeepAlives && proxySIPEndPoint != null) {
+                                if(m_natKeepAliveJobs.ContainsKey(binding.Id)) {
+                                    m_natKeepAliveJobs.Remove(binding.Id);
+                                }
+                                m_natKeepAliveJobs.Add(binding.Id, new NATKeepAliveJob(binding.Id, proxySIPEndPoint, remoteSIPEndPoint, DateTime.Now.AddSeconds(bindingExpiry), sipAccount.Owner)); 
+                            }
                         }
                     }
                     else {
                         if (requestedExpiry > 0) {
-                            FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingInProgress, "New binding request for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ", expiry requested " + requestedExpiry + "s granted " + bindingExpiry + "s.", sipAccount.SIPUsername));
+                            FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingInProgress, "New binding request for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ", expiry requested " + requestedExpiry + "s granted " + bindingExpiry + "s.", sipAccount.Owner));
 
                             if (m_bindingsPersistor.Count(b => b.SIPAccountId == sipAccount.Id) >= m_maxBindingsPerAccount) {
                                 // Need to remove the oldest binding to stay within limit.
                                 SIPRegistrarBinding oldestBinding = m_bindingsPersistor.Get(b => b.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue).OrderBy(x => x.LastUpdate).Last();
-                                FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingInProgress, "Binding limit exceeded for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + " removing oldest binding to stay within limit of " + m_maxBindingsPerAccount + ".", sipAccount.SIPUsername));
+                                FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingInProgress, "Binding limit exceeded for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + " removing oldest binding to stay within limit of " + m_maxBindingsPerAccount + ".", sipAccount.Owner));
                                 m_bindingsPersistor.Delete(oldestBinding);
+
+                                if (m_natKeepAliveJobs.ContainsKey(binding.Id)) {
+                                    m_natKeepAliveJobs.Remove(binding.Id);
+                                }
                             }
 
                             SIPRegistrarBinding newBinding = new SIPRegistrarBinding(sipAccount, bindingURI, callId, cseq, userAgent, remoteSIPEndPoint, proxySIPEndPoint, registrarSIPEndPoint, bindingExpiry);
                             m_bindingsPersistor.Add(newBinding);
 
+                            // Add a NAT keep-alive job if required.
+                            if (sipAccount.SendNATKeepAlives && proxySIPEndPoint != null) {
+                                m_natKeepAliveJobs.Add(newBinding.Id, new NATKeepAliveJob(newBinding.Id, proxySIPEndPoint, remoteSIPEndPoint, DateTime.Now.AddSeconds(bindingExpiry), sipAccount.Owner)); 
+                            }
+
                             FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, sipAccount.SIPUsername, remoteSIPEndPoint, null));
                         }
                         else {
-                            FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingFailed, "New binding received for " + sipAccountAOR + " with expired contact," + bindingURI.ToString() + " no update.", sipAccount.SIPUsername));
+                            FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingFailed, "New binding received for " + sipAccountAOR + " with expired contact," + bindingURI.ToString() + " no update.", sipAccount.Owner));
                             bindingExpiry = 0;
                         }
                     }
@@ -256,8 +313,34 @@ namespace SIPSorcery.Servers {
         }
 
         private void SendNATKeepAlives() {
-            /*try {
-                lock (regRecord.Bindings) {
+            try {
+                Thread.CurrentThread.Name = SEND_KEEPALIVES_THREAD_NAME;
+
+                while (!m_stop) {
+                    try {
+                        List<NATKeepAliveJob> m_jobsList = m_natKeepAliveJobs.Values.ToList();
+
+                        for (int index = 0; index < m_natKeepAliveJobs.Count; index++) {
+                            if (m_jobsList[index].EndTime < DateTime.Now) {
+                                m_natKeepAliveJobs.Remove(m_jobsList[index].BindingId);
+                            }
+                            else if (m_jobsList[index].NextSendTime == null || m_jobsList[index].NextSendTime < DateTime.Now) {
+                                NATKeepAliveJob job = m_jobsList[index];
+                                SendNATKeepAlive_External(new NATKeepAliveMessage(job.ProxyEndPoint, job.RemoteEndPoint.SocketEndPoint));
+                                job.NextSendTime = DateTime.Now.AddSeconds(NATKEEPALIVE_DEFAULTSEND_INTERVAL);
+                                m_natKeepAliveJobs[job.BindingId] = job;
+                                FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.NATKeepAlive, SIPMonitorEventTypesEnum.NATKeepAlive, "Requesting NAT keep-alive from proxy socket " + job.ProxyEndPoint.ToString() + " to " + job.RemoteEndPoint + ".", job.Owner));
+                            }
+                        }
+                    }
+                    catch (Exception sendExcp) {
+                        logger.Error("Exception SendNATKeepAlives Send. " + sendExcp.Message);
+                    }
+
+                    Thread.Sleep(SEND_NATKEEPALIVES_INTERVAL);
+                }
+
+                /*lock (regRecord.Bindings) {
                     if (regRecord.Bindings.Count > 0) {
                         foreach (SIPRegistrarBinding binding in regRecord.GetBindings()) {
                             if (regRecord.NATSendKeepAlives && SendNATKeepAlive_External != null && binding.MangledContactURI != null) {
@@ -272,11 +355,11 @@ namespace SIPSorcery.Servers {
                             }
                         }
                     }
-                }
+                }*/
             }
             catch (Exception excp) {
                 logger.Error("Exception SendNATKeepAlives. " + excp.Message);
-            }*/
+            }
         }
 
         private void FireSIPMonitorLogEvent(SIPMonitorEvent monitorEvent) {

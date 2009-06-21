@@ -39,6 +39,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorcery.SIP;
 using Heijden.DNS;
@@ -60,7 +61,6 @@ namespace SIPSorcery.SIP.App
 
         private static string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
         //private static string m_transportParam = SIPHeaderAncillary.SIP_HEADERANC_TRANSPORT;
-        private static char m_customHeadersSeparator = SIPProvider.CUSTOM_HEADERS_SEPARATOR;
 
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_localSIPEndPoint;
@@ -235,7 +235,7 @@ namespace SIPSorcery.SIP.App
                         Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Call " + m_serverTransaction.TransactionRequest.URI.ToString() + " has already responded to CANCEL, probably overlap in messages not re-sending.", Owner));
                     }
                 }
-                else if (m_serverTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding || m_serverTransaction.TransactionState == SIPTransactionStatesEnum.Trying)
+                else //if (m_serverTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding || m_serverTransaction.TransactionState == SIPTransactionStatesEnum.Trying)
                 {
                     //logger.Debug("Cancelling forwarded call leg, sending CANCEL to " + ForwardedTransaction.TransactionRequest.URI.ToString() + " (transid: " + ForwardedTransaction.TransactionId + ").");
                     Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Cancelling forwarded call leg, sending CANCEL to " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
@@ -248,12 +248,12 @@ namespace SIPSorcery.SIP.App
                     m_cancelTransaction.TransactionTraceMessage += TransactionTraceMessage;
                     m_cancelTransaction.SendRequest(m_serverEndPoint, cancelRequest);
                 }
-                else
-                {
+                //else
+                //{
                     // No reponse has been received from the server so no CANCEL request neccessary, stop any retransmits of the INVITE.
-                    m_serverTransaction.CancelCall();
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Cancelling forwarded call leg " + m_sipCallDescriptor.Uri.ToString() + ", no response from server has been received so no CANCEL request required.", Owner));
-                }
+                //    m_serverTransaction.CancelCall();
+                //    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Cancelling forwarded call leg " + m_sipCallDescriptor.Uri.ToString() + ", no response from server has been received so no CANCEL request required.", Owner));
+                //}
 
                 FireCallFailed(this, "Call cancelled by user.");
             }
@@ -376,8 +376,26 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    //m_callInProgress = false; // the call is now established
-                    //logger.Debug("Final response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + ForwardedTransaction.TransactionRequest.URI.ToString() + ".");
+                    if (!sipResponse.Body.IsNullOrBlank()) {
+                        //m_callInProgress = false; // the call is now established
+                        //logger.Debug("Final response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + ForwardedTransaction.TransactionRequest.URI.ToString() + ".");
+                        // Determine of response SDP should be mangled.
+                        IPEndPoint sdpEndPoint = SDP.GetSDPRTPEndPoint(sipResponse.Body);
+                        IPAddress remoteUASAddress = null;
+                        bool wasSDPMangled = false;
+                        if (m_sipCallDescriptor.MangleResponseSDP && sdpEndPoint != null && !sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) {
+                            remoteUASAddress = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom).SocketEndPoint.Address;
+                            sipResponse.Body = SIPPacketMangler.MangleSDP(sipResponse.Body, remoteUASAddress.ToString(), out wasSDPMangled);
+                        }
+
+                        if (wasSDPMangled) {
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on response was mangled from " + sdpEndPoint.Address.ToString() + " to " + remoteUASAddress.ToString() + ".", Owner));
+                        }
+                        else {
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on response had address of " + sdpEndPoint.Address.ToString() + ".", Owner));
+                        }
+                    }
+
                     m_sipDialogue = new SIPDialogue(m_sipTransport, m_serverTransaction, Owner, AdminMemberId);
                     m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
                     FireCallAnswered(this, sipResponse);
@@ -450,50 +468,22 @@ namespace SIPSorcery.SIP.App
             inviteRequest.Header.ContentLength = (sipCallDescriptor.Content != null) ? sipCallDescriptor.Content.Length : 0;
             inviteRequest.Header.ContentType = sipCallDescriptor.ContentType;
 
-            try
-            {
-                if (sipCallDescriptor.CustomHeaders != null && sipCallDescriptor.CustomHeaders.Trim().Length > 0)
-                {
-                    string[] customerHeadersList = sipCallDescriptor.CustomHeaders.Split(m_customHeadersSeparator);
+            try {
+                if (sipCallDescriptor.CustomHeaders != null && sipCallDescriptor.CustomHeaders.Count > 0) {
+                    foreach (DictionaryEntry customHeader in sipCallDescriptor.CustomHeaders) {
+                        string headerName = customHeader.Key as string;
+                        string headerValue = customHeader.Value as string;
 
-                    if (customerHeadersList != null && customerHeadersList.Length > 0)
-                    {
-                        foreach (string customHeader in customerHeadersList)
-                        {
-                            if (customHeader.IndexOf(':') == -1)
-                            {
-                                logger.Warn("Skipping custom header due to missing colon, " + customHeader + ".");
-                                continue;
-                            }
-                            else
-                            {
-                                string headerName = customHeader.Substring(0, customHeader.IndexOf(':'));
-                                if (headerName != null && Regex.Match(headerName.Trim(), "^(Via|From|To|Contact|CSeq|Call-ID|Max-Forwards|Content)$", RegexOptions.IgnoreCase).Success)
-                                {
-                                    logger.Warn("Skipping custom header due to an non-permitted string in header name, " + customHeader + ".");
-                                    continue;
-                                }
-                                else
-                                {
-                                    if (headerName == SIPHeaders.SIP_HEADER_USERAGENT)
-                                    {
-                                        if (customHeader.Length > customHeader.IndexOf(':'))
-                                        {
-                                            inviteRequest.Header.UserAgent = customHeader.Substring(customHeader.IndexOf(':') + 1);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        inviteRequest.Header.UnknownHeaders.Add(customHeader.Trim());
-                                    }
-                                }
-                            }
+                        if (headerName == SIPHeaders.SIP_HEADER_USERAGENT) {
+                            inviteRequest.Header.UserAgent = headerValue;
+                        }
+                        else {
+                            inviteRequest.Header.UnknownHeaders.Add(headerName + ": " + headerValue);
                         }
                     }
                 }
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception Parsing CustomHeader for GetInviteRequest. " + excp.Message + sipCallDescriptor.CustomHeaders);
             }
 

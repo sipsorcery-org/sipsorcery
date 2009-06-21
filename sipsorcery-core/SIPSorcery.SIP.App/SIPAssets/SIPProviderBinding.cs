@@ -304,7 +304,9 @@ namespace SIPSorcery.SIP.App
         }
 
         public void SetProviderFields(SIPProvider sipProvider) {
-            if (!sipProvider.RegisterEnabled) {
+            // There will be cases where register enabled is switched off on a provider and a binding wants the fields set to send
+            // a zero expiry register.
+            /*if (!sipProvider.RegisterEnabled) {
                 throw new ApplicationException("Cannot create a new SIProviderBinding from a SIPProvider with RegisterEnabled set to false.");
             }
             else if (sipProvider.Registrar == null) {
@@ -312,7 +314,7 @@ namespace SIPSorcery.SIP.App
             }
             else if (sipProvider.RegisterContact == null) {
                 throw new ApplicationException("Cannot create a new SIProviderBinding from a SIPProvider with an emtpy RegisterContact.");
-            }
+            }*/
 
             m_providerId = sipProvider.Id;
             m_owner = sipProvider.Owner;
@@ -322,7 +324,13 @@ namespace SIPSorcery.SIP.App
             ProviderPassword = sipProvider.ProviderPassword;
             RegistrarServer = sipProvider.Registrar.CopyOf();
             RegistrarRealm = (!sipProvider.RegisterRealm.IsNullOrBlank()) ? sipProvider.RegisterRealm : RegistrarServer.Host;
-            BindingExpiry = sipProvider.RegisterExpiry;
+
+            if (sipProvider.RegisterEnabled) {
+                BindingExpiry = sipProvider.RegisterExpiry;
+            }
+            else {
+                BindingExpiry = 0;
+            }
 
             string bindingId = null;
             if (m_bindingURI != null && m_bindingURI.Parameters.Has(REGAGENT_CONTACT_ID_KEY)) {

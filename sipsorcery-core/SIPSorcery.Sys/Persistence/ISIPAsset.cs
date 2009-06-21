@@ -8,7 +8,6 @@ namespace SIPSorcery.Sys {
     
     public interface ISIPAsset {
         string Id { get; set; }
-        //object OrderProperty { get; set;  }
 
 #if !SILVERLIGHT
         void Load(System.Data.DataRow row);
@@ -19,6 +18,5 @@ namespace SIPSorcery.Sys {
         string ToXMLNoParent();
         string GetXMLElementName();
         string GetXMLDocumentElementName();
-        //object GetOrderProperty();
     }
 }

@@ -53,9 +53,8 @@ using log4net;
 
 namespace SIPSorcery.SIP.App
 {
-    [ServiceContract(Namespace = "http://www.sipsorcery.com")]
-    //[ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
-    public class SIPProvisioningWebService
+    //[ServiceContract(Namespace = "http://www.sipsorcery.com")]
+    public class SIPProvisioningWebService : IProvisioningService
     {
         public const string AUTH_TOKEN_KEY = "authid";
 
@@ -175,14 +174,14 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-       [OperationContract]
+       //[OperationContract]
         public bool IsAlive()
         {
             logger.Debug("IsAlive called from " + OperationContext.Current.Channel.RemoteAddress + ".");
             return true;
         }
 
-        [OperationContract]
+        //[OperationContract]
         public void CreateCustomer(Customer customer) {
             try {
                 // Check whether the username is already taken.
@@ -230,7 +229,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        [OperationContract]
+        //[OperationContract]
         public void DeleteCustomer(string customerUsername) {
             try {
                 Customer customer = AuthoriseRequest();
@@ -247,7 +246,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        [OperationContract]
+        //[OperationContract]
         public string Login(string username, string password)
         {
             logger.Debug("SIPProvisioningWebService Login called for " + username + ".");
@@ -279,7 +278,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        [OperationContract]
+        //[OperationContract]
         public void Logout()
         {
             try
@@ -303,7 +302,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        [OperationContract]
+        //[OperationContract]
         public List<SIPDomain> GetSIPDomains(string filterExpression, int offset, int count)
         {
             Customer customer = AuthoriseRequest();
@@ -318,7 +317,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        [OperationContract]
+        //[OperationContract]
         public int GetSIPAccountsCount(string whereExpression)
         {
             Customer customer = AuthoriseRequest();
@@ -329,7 +328,7 @@ namespace SIPSorcery.SIP.App
             return SIPAccountPersistor.Count(DynamicExpression.ParseLambda<SIPAccount, bool>(authoriseExpression));
         }
 
-        [OperationContract]
+        //[OperationContract]
         public List<SIPAccount> GetSIPAccounts(string whereExpression, int offset, int count)
         {
             Customer customer = AuthoriseRequest();
@@ -340,7 +339,7 @@ namespace SIPSorcery.SIP.App
             return SIPAccountPersistor.Get(DynamicExpression.ParseLambda<SIPAccount, bool>(authoriseExpression), "sipusername", offset, count);
         }
         
-        [OperationContract]
+        //[OperationContract]
         public SIPAccount AddSIPAccount(SIPAccount sipAccount)
         {
             Customer customer = AuthoriseRequest();
@@ -349,7 +348,7 @@ namespace SIPSorcery.SIP.App
             return SIPAccountPersistor.Add(sipAccount);
         }
 
-        [OperationContract]
+        //[OperationContract]
         public SIPAccount UpdateSIPAccount(SIPAccount sipAccount)
         {
             Customer customer = AuthoriseRequest();
@@ -363,7 +362,7 @@ namespace SIPSorcery.SIP.App
             return SIPAccountPersistor.Update(sipAccount);
         }
 
-        [OperationContract]
+        //[OperationContract]
         public SIPAccount DeleteSIPAccount(SIPAccount sipAccount)
         {
             Customer customer = AuthoriseRequest();
@@ -379,7 +378,7 @@ namespace SIPSorcery.SIP.App
             return sipAccount;
         }
 
-        [OperationContract]
+        //[OperationContract]
         public int GetSIPRegistrarBindingsCount(string whereExpression)
         {
             Customer customer = AuthoriseRequest();
@@ -389,7 +388,7 @@ namespace SIPSorcery.SIP.App
             return SIPRegistrarBindingsPersistor.Count(DynamicExpression.ParseLambda<SIPRegistrarBinding, bool>(authoriseExpression));
         }
 
-        [OperationContract]
+        //[OperationContract]
         public List<SIPRegistrarBinding> GetSIPRegistrarBindings(string whereExpression, int offset, int count)
         {
             Customer customer = AuthoriseRequest();
@@ -399,7 +398,7 @@ namespace SIPSorcery.SIP.App
             return SIPRegistrarBindingsPersistor.Get(DynamicExpression.ParseLambda<SIPRegistrarBinding, bool>(authoriseExpression), "lastupdate", offset, count);
         }
 
-        [OperationContract]
+        //[OperationContract]
         public int GetSIPProvidersCount(string whereExpression)
         {
             Customer customer = AuthoriseRequest();
@@ -409,7 +408,7 @@ namespace SIPSorcery.SIP.App
             return SIPProviderPersistor.Count(DynamicExpression.ParseLambda<SIPProvider, bool>(authoriseExpression));
         }
 
-        [OperationContract]
+        //[OperationContract]
         public List<SIPProvider> GetSIPProviders(string whereExpression, int offset, int count)
         {
             Customer customer = AuthoriseRequest();
@@ -419,7 +418,7 @@ namespace SIPSorcery.SIP.App
             return SIPProviderPersistor.Get(DynamicExpression.ParseLambda<SIPProvider, bool>(authoriseExpression), "providername", offset, count);
         }
 
-        [OperationContract]
+        //[OperationContract]
         public SIPProvider AddSIPProvider(SIPProvider sipProvider)
         {
             Customer customer = AuthoriseRequest();
@@ -429,7 +428,7 @@ namespace SIPSorcery.SIP.App
             return SIPProviderPersistor.Add(sipProvider);
         }
 
-        [OperationContract]
+        //[OperationContract]
         public SIPProvider UpdateSIPProvider(SIPProvider sipProvider)
         {
             Customer customer = AuthoriseRequest();
@@ -446,7 +445,7 @@ namespace SIPSorcery.SIP.App
             return updatedProvider;
         }
 
-        [OperationContract]
+        //[OperationContract]
         public SIPProvider DeleteSIPProvider(SIPProvider sipProvider)
         {
             Customer customer = AuthoriseRequest();
@@ -463,7 +462,7 @@ namespace SIPSorcery.SIP.App
             return sipProvider;
         }
 
-        [OperationContract]
+        //[OperationContract]
         public int GetSIPProviderBindingsCount(string whereExpression){
             Customer customer = AuthoriseRequest();
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
@@ -471,7 +470,7 @@ namespace SIPSorcery.SIP.App
             return SIPProviderBindingsPersistor.Count(DynamicExpression.ParseLambda<SIPProviderBinding, bool>(authoriseExpression));
         }
 
-        [OperationContract]
+        //[OperationContract]
         public List<SIPProviderBinding> GetSIPProviderBindings(string whereExpression, int offset, int count) {
             Customer customer = AuthoriseRequest();
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
@@ -479,7 +478,7 @@ namespace SIPSorcery.SIP.App
             return SIPProviderBindingsPersistor.Get(DynamicExpression.ParseLambda<SIPProviderBinding, bool>(authoriseExpression), "lastregisterattempt", offset, count);
         }
 
-        [OperationContract]
+        //[OperationContract]
         public int GetDialPlansCount(string whereExpression)
         {
             Customer customer = AuthoriseRequest();
@@ -489,7 +488,7 @@ namespace SIPSorcery.SIP.App
             return DialPlanPersistor.Count(DynamicExpression.ParseLambda<SIPDialPlan, bool>(authoriseExpression));
         }
 
-        [OperationContract]
+        //[OperationContract]
         public List<SIPDialPlan> GetDialPlans(string whereExpression, int offset, int count)
         {
             Customer customer = AuthoriseRequest();
@@ -499,7 +498,7 @@ namespace SIPSorcery.SIP.App
             return DialPlanPersistor.Get(DynamicExpression.ParseLambda<SIPDialPlan, bool>(authoriseExpression), "dialplanname", offset, count);
         }
 
-        [OperationContract]
+        //[OperationContract]
         public SIPDialPlan AddDialPlan(SIPDialPlan dialPlan)
         {
             Customer customer = AuthoriseRequest();
@@ -509,7 +508,7 @@ namespace SIPSorcery.SIP.App
             return DialPlanPersistor.Add(dialPlan);
         }
 
-        [OperationContract]
+        //[OperationContract]
         public SIPDialPlan UpdateDialPlan(SIPDialPlan dialPlan)
         {
             Customer customer = AuthoriseRequest();
@@ -522,7 +521,7 @@ namespace SIPSorcery.SIP.App
             return DialPlanPersistor.Update(dialPlan);
         }
 
-        [OperationContract]
+        //[OperationContract]
         public SIPDialPlan DeleteDialPlan(SIPDialPlan dialPlan)
         {
             Customer customer = AuthoriseRequest();
@@ -538,7 +537,7 @@ namespace SIPSorcery.SIP.App
             return dialPlan;
         }
 
-        [OperationContract]
+        //[OperationContract]
         public int GetCallsCount(string whereExpression)
         {
             Customer customer = AuthoriseRequest();
@@ -549,7 +548,7 @@ namespace SIPSorcery.SIP.App
             return SIPDialoguePersistor.Count(DynamicExpression.ParseLambda<SIPDialogueAsset, bool>(authoriseExpression));
         }
 
-        [OperationContract]
+        //[OperationContract]
         public List<SIPDialogueAsset> GetCalls(string whereExpression, int offset, int count)
         {
             Customer customer = AuthoriseRequest();
@@ -560,7 +559,7 @@ namespace SIPSorcery.SIP.App
             return SIPDialoguePersistor.Get(DynamicExpression.ParseLambda<SIPDialogueAsset, bool>(authorisedExpression), null, offset, count);
         }
 
-        [OperationContract]
+        //[OperationContract]
         public int GetCDRsCount(string whereExpression)
         {
             Customer customer = AuthoriseRequest();
@@ -571,7 +570,7 @@ namespace SIPSorcery.SIP.App
             return SIPCDRPersistor.Count(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression));
         }
 
-        [OperationContract]
+        //[OperationContract]
         public List<SIPCDRAsset> GetCDRs(string whereExpression, int offset, int count)
         {
             Customer customer = AuthoriseRequest();

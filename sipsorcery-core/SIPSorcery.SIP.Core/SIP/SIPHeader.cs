@@ -2305,6 +2305,10 @@ namespace SIPSorcery.SIP
 		public string Event;
 		public string SubscriptionState;
 
+        // Non-core custom SIP headers used to allow a SIP Proxy to communicate network info to internal server agents.
+        public string ProxyReceivedOn;
+        public string ProxyReceivedFrom;
+
         public List<string> UnknownHeaders = new List<string>();	// Holds any unrecognised headers.
 
         public SIPHeader()
@@ -2661,6 +2665,17 @@ namespace SIPSorcery.SIP
                             sipHeader.Reason = headerValue;
                         }
                         #endregion
+                        #region Proxy-ReceivedFrom.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM.ToLower()) {
+                            sipHeader.ProxyReceivedFrom = headerValue;
+                        }
+                        #endregion
+                        #region Proxy-ReceivedOn.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON.ToLower()) {
+                            sipHeader.ProxyReceivedOn = headerValue;
+                        }
+                        #endregion
+
                         else
                         {
                             sipHeader.UnknownHeaders.Add(headerLine);
@@ -2767,6 +2782,8 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append( (ReferredBy != null) ? SIPHeaders.SIP_HEADER_REFERREDBY + ": " + ReferredBy + m_CRLF : null);
                 headersBuilder.Append( (Require != null) ? SIPHeaders.SIP_HEADER_REQUIRE + ": " + Require + m_CRLF : null);
                 headersBuilder.Append( (Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);
+                headersBuilder.Append( (ProxyReceivedFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM + ": " + ProxyReceivedFrom + m_CRLF : null);
+                headersBuilder.Append((ProxyReceivedOn != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON + ": " + ProxyReceivedOn + m_CRLF : null);
 
 				// Unknown SIP headers
 				foreach(string unknownHeader in UnknownHeaders)

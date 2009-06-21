@@ -42,6 +42,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Dynamic;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -154,6 +155,30 @@ namespace SIPSorcery.Sys
             }
         }
 
+        public override void UpdateProperty(Guid id, string propertyName, object value) {
+            try {
+                // Find modified poperty.
+                PropertyInfo property = typeof(T).GetProperty(propertyName);
+                if (property == null) {
+                    throw new ApplicationException("Property " + propertyName + " for " + typeof(T).Name + " could not be found, UpdateProperty failed.");
+                }
+                else {
+                    if (m_sipAssets.ContainsKey(id)) {
+
+                        lock (m_sipAssets) {
+                            property.SetValue(m_sipAssets[id], value, null);
+                        }
+
+                        WriteSIPAssetXML();
+                    }
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception DBLinqAssetPersistor Update (for " + typeof(T).Name + "). " + excp.Message);
+                throw;
+            }
+        }
+
         public override void Delete(T sipAsset) {
             try {
                 if (sipAsset == null) {
@@ -222,6 +247,28 @@ namespace SIPSorcery.Sys
                 else {
                     logger.Debug("Could not locate a SIP Asset for id " + id.ToString() + ".");
                     return default(T);
+                }
+            }
+        }
+
+        public override object GetProperty(Guid id, string propertyName) {
+            if (m_sipAssets.Count == 0) {
+                return null;
+            }
+            else {
+                if (m_sipAssets.ContainsKey(id)) {
+                    // Find modified poperty.
+                    PropertyInfo property = typeof(T).GetProperty(propertyName);
+                    if (property == null) {
+                        throw new ApplicationException("Property " + propertyName + " for " + typeof(T).Name + " could not be found, GetProperty failed.");
+                    }
+                    else {
+                        return property.GetValue(m_sipAssets[id], null);
+                    }
+                }
+                else {
+                    logger.Debug("Could not locate a SIP Asset for id " + id.ToString() + ".");
+                    return null;
                 }
             }
         }

@@ -32,11 +32,14 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq.Dynamic;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -81,6 +84,7 @@ namespace SIPSorcery.Servers
 
         private string m_username;
         private List<SIPProvider> m_sipProviders;
+        private SIPMonitorLogDelegate Log_External;
         private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetRegistrarBindings_External;
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
@@ -92,7 +96,8 @@ namespace SIPSorcery.Servers
             List<SIPProvider> sipProviders,
             SIPAssetGetDelegate<SIPAccount> getSIPAccount,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getRegistrarBindings, 
-            GetCanonicalDomainDelegate getCanonicalDomainDelegate)
+            GetCanonicalDomainDelegate getCanonicalDomainDelegate,
+            SIPMonitorLogDelegate logDelegate)
         {
             m_sipTransport = sipTransport;
             m_username = username;
@@ -100,6 +105,7 @@ namespace SIPSorcery.Servers
             GetSIPAccount_External = getSIPAccount;
             GetRegistrarBindings_External = getRegistrarBindings;
             GetCanonicalDomain_External = getCanonicalDomainDelegate;
+            Log_External = logDelegate;
         }
 
         /// <summary>
@@ -107,9 +113,27 @@ namespace SIPSorcery.Servers
         /// summary for the different formats available. This method determines which format the dial string is in and passes off to the appropriate method to 
         /// build the call list.
         /// </summary>
+        /// <param name="dialPlanType">The type of dialplan that generated the Dial command.</param>
+        /// <param name="sipRequest">The SIP Request that originated this command. Can be null if the Dial application has been centrally generated.</param>
+        /// <param name="command">The Dial command string being parsed.</param>
+        /// <param name="customHeaders">If non-empty contains a list of custom SIP headers that will be added to the forwarded request.</param>
+        /// <param name="customContentType">If set indicates a custom content type header is required on the forwarded request and it
+        /// overrides any other value.</param>
+        /// <param name="customContent">If set indicates a custom body is required on the forwarded request and it
+        /// overrides any other value.</param>
+        /// <param name="callersNetworkId">If the call originated from a locally administered account this will hold the account's
+        /// networkid which is used to determine if two local accounts are on the same network and therefore should have their SDP
+        /// left alone.</param>
         /// <returns>A queue where each item is a list of calls. If there was only a single forward there would only be one item in the list which contained a 
         /// single call. For dial strings containing multiple forwards each queue item can be a list with multiple calls.</returns>
-        public Queue<List<SIPCallDescriptor>> ParseDialString(DialPlanContextsEnum dialPlanType, SIPRequest sipRequest, string command, string customHeaders)
+        public Queue<List<SIPCallDescriptor>> ParseDialString(
+            DialPlanContextsEnum dialPlanType,
+            SIPRequest sipRequest, 
+            string command, 
+            StringDictionary customHeaders,
+            string customContentType,
+            string customContent,
+            string callersNetworkId)
         {
             try
             {
@@ -133,7 +157,7 @@ namespace SIPSorcery.Servers
                     {
                         // Multi legged call (Script sys.Dial format).
                         //string providersString = (command.IndexOf(',') == -1) ? command : command.Substring(0, command.IndexOf(','));
-                        prioritisedCallList = ParseScriptDialString(sipRequest, command, customHeaders);
+                        prioritisedCallList = ParseScriptDialString(sipRequest, command, customHeaders, customContentType, customContent, callersNetworkId);
                     }
 
                     return prioritisedCallList;
@@ -154,10 +178,8 @@ namespace SIPSorcery.Servers
         ///  or
         /// sys.Dial("username,password,${dst}@provider")
         /// </summary>
-        private SIPCallDescriptor ParseAsteriskDialString(string data, SIPRequest sipRequest)
-        {
-            try
-            {
+        private SIPCallDescriptor ParseAsteriskDialString(string data, SIPRequest sipRequest) {
+            try {
                 string username = null;
                 string password = null;
                 string sendToSocket = null;
@@ -172,44 +194,37 @@ namespace SIPSorcery.Servers
                 password = dataFields[1].Trim().Trim(new char[] { '"', '\'' });
                 forwardURIStr = dataFields[2].Trim().Trim(new char[] { '"', '\'' });
 
-                if (dataFields.Length > 3 && dataFields[3] != null)
-                {
+                if (dataFields.Length > 3 && dataFields[3] != null) {
                     fromHeaderStr = dataFields[3].Trim();
                 }
 
-                if (dataFields.Length > 4 && dataFields[4] != null)
-                {
+                if (dataFields.Length > 4 && dataFields[4] != null) {
                     sendToSocket = dataFields[4].Trim().Trim(new char[] { '"', '\'' });
                 }
 
-                if (dataFields.Length > 5 && dataFields[5] != null)
-                {
+                if (dataFields.Length > 5 && dataFields[5] != null) {
                     Boolean.TryParse(dataFields[5].Trim(), out traceReqd);
                 }
 
                 forwardURI = SIPURI.ParseSIPURIRelaxed(DialPlanEngine.SubstituteRequestVars(sipRequest, forwardURIStr));
-                if (forwardURI != null)
-                {
-                    if (forwardURI.User == null)
-                    {
+                if (forwardURI != null) {
+                    if (forwardURI.User == null) {
                         forwardURI.User = sipRequest.URI.User;
                     }
 
                     SIPFromHeader callFromHeader = ParseFromHeaderOption(fromHeaderStr, sipRequest, username, forwardURI.Host);
                     string socket = (sendToSocket != null && sendToSocket.Trim().Length > 0) ? sendToSocket : null;
 
-                    SIPCallDescriptor switchCallStruct = new SIPCallDescriptor(username, password, forwardURI.ToString(), callFromHeader.ToString(), forwardURI.ToString(), socket, null, null, SIPCallDirection.Out, sipRequest.Header.ContentType, sipRequest.Body);
+                    SIPCallDescriptor switchCallStruct = new SIPCallDescriptor(username, password, forwardURI.ToString(), callFromHeader.ToString(), forwardURI.ToString(), socket, null, null, SIPCallDirection.Out, sipRequest.Header.ContentType, sipRequest.Body, true);
 
                     return switchCallStruct;
                 }
-                else
-                {
+                else {
                     logger.Warn("Could not parse SIP URI from " + forwardURIStr + " in ParseAsteriskDialString.");
                     return null;
                 }
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception ParseAsteriskDialString. " + excp.Message);
                 return null;
             }
@@ -222,73 +237,77 @@ namespace SIPSorcery.Servers
         /// Example: 
         /// Dial(123@provider1&provider2|123@sip.blueface.ie|provider4&456@provider5[,trace])
         /// </summary>
-        private Queue<List<SIPCallDescriptor>> ParseScriptDialString(SIPRequest sipRequest, string command, string customHeaders)
-        {
-            try
-            {
+        private Queue<List<SIPCallDescriptor>> ParseScriptDialString(
+            SIPRequest sipRequest, 
+            string command, 
+            StringDictionary customHeaders,
+            string customContentType,
+            string customContent,
+            string callersNetworkId) {
+            try {
                 Queue<List<SIPCallDescriptor>> callsQueue = new Queue<List<SIPCallDescriptor>>();
 
                 string[] followonLegs = command.Split(CALLLEG_FOLLOWON_SEPARATOR);
-                foreach (string followOnLeg in followonLegs)
-                {
+                foreach (string followOnLeg in followonLegs) {
                     List<SIPCallDescriptor> switchCalls = new List<SIPCallDescriptor>();
                     string[] callLegs = followOnLeg.Split(CALLLEG_SIMULTANEOUS_SEPARATOR);
 
-                    foreach (string callLeg in callLegs)
-                    {
-                        if (!callLeg.IsNullOrBlank())
-                        {
+                    foreach (string callLeg in callLegs) {
+                        if (!callLeg.IsNullOrBlank()) {
                             // Strip off the options string if present.
                             string options = null;
                             string callLegDestination = callLeg;
 
                             int optionsStartIndex = callLeg.IndexOf(CALLLEG_OPTIONS_START_CHAR);
                             int optionsEndIndex = callLeg.IndexOf(CALLLEG_OPTIONS_END_CHAR);
-                            if (optionsStartIndex != -1)
-                            {
+                            if (optionsStartIndex != -1) {
                                 callLegDestination = callLeg.Substring(0, optionsStartIndex);
                                 options = callLeg.Substring(optionsStartIndex, optionsEndIndex - optionsStartIndex);
                             }
 
                             // Determine whether the call forward is for a local domain or not.
                             SIPURI callLegSIPURI = SIPURI.ParseSIPURIRelaxed(DialPlanEngine.SubstituteRequestVars(sipRequest, callLegDestination));
-                            if (callLegSIPURI != null && callLegSIPURI.User == null)
-                            {
+                            if (callLegSIPURI != null && callLegSIPURI.User == null) {
                                 callLegSIPURI.User = sipRequest.URI.User;
                             }
 
-                            if (callLegSIPURI != null)
-                            {
+                            if (callLegSIPURI != null) {
                                 string localDomain = GetCanonicalDomain_External(callLegSIPURI.Host);
-                                if (localDomain != null)
-                                {
-                                    logger.Debug("Call leg is for local domain looking up bindings for " + callLegSIPURI.User + "@" + localDomain + " for call leg " + callLegDestination + ".");
+                                if (localDomain != null) {
+                                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg is for local domain looking up bindings for " + callLegSIPURI.User + "@" + localDomain + " for call leg " + callLegDestination + ".", m_username));
                                     SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == callLegSIPURI.User && s.SIPDomain == localDomain);
-                                    if (sipAccount != null)
-                                    {
-                                        switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, sipAccount, customHeaders));
+                                    if (sipAccount != null) {
+                                        switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, sipAccount, customHeaders, customContentType, customContent, callersNetworkId));
                                     }
-                                    else
-                                    {
-                                        logger.Debug("No sip account could be found for local call leg " + callLeg + ".");
+                                    else {
+                                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account could be found for local call leg " + callLeg + ".", m_username));
                                     }
                                 }
-                                else
-                                {
+                                else {
                                     // Construct a call forward for a remote destination.
-                                    SIPCallDescriptor sipCallDescriptor = GetForwardsForExternalLeg(sipRequest, callLegSIPURI);
+                                    SIPCallDescriptor sipCallDescriptor = GetForwardsForExternalLeg(sipRequest, callLegSIPURI, customContentType, customContent);
 
-                                    if (sipCallDescriptor != null)
-                                    {
-                                        sipCallDescriptor.CustomHeaders += customHeaders;
+                                    if (sipCallDescriptor != null) {
+                                        // Add and provided custom headers to those already present in the call descriptor and overwrite if an existing
+                                        // header is already present.
+                                        if (customHeaders != null && customHeaders.Count > 0) {
+                                            foreach (DictionaryEntry customHeader in customHeaders) {
+                                                if (sipCallDescriptor.CustomHeaders.ContainsKey(customHeader.Key as string)) {
+                                                    sipCallDescriptor.CustomHeaders[customHeader.Key as string] = customHeader.Value as string;
+                                                }
+                                                else {
+                                                    sipCallDescriptor.CustomHeaders.Add(customHeader.Key as string, customHeader.Value as string);
+                                                }
+                                            }
+                                        }
+
                                         sipCallDescriptor.ParseCallOptions(options);
                                         switchCalls.Add(sipCallDescriptor);
                                     }
                                 }
                             }
-                            else
-                            {
-                                logger.Warn("Could not parse a SIP URI from " + callLeg + " in ParseMultiDialString.");
+                            else {
+                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Could not parse a SIP URI from " + callLeg + " in ParseMultiDialString.", m_username));
                             }
                         }
                     }
@@ -298,8 +317,7 @@ namespace SIPSorcery.Servers
 
                 return callsQueue;
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception ParseScriptDialString. " + excp.Message);
                 throw excp;
             }
@@ -312,63 +330,85 @@ namespace SIPSorcery.Servers
         /// <param name="domain"></param>
         /// <param name="from">The From header that will be set on the forwarded call leg.</param>
         /// <returns></returns>
-        public List<SIPCallDescriptor> GetForwardsForLocalLeg(SIPRequest sipRequest, SIPAccount sipAccount, string customHeaders)
-        {
+        public List<SIPCallDescriptor> GetForwardsForLocalLeg(
+            SIPRequest sipRequest, 
+            SIPAccount sipAccount, 
+            StringDictionary customHeaders,
+            string customContentType,
+            string customContent,
+            string callersNetworkId) {
+
             List<SIPCallDescriptor> localUserSwitchCalls = new List<SIPCallDescriptor>();
 
-            try
-            {
-                if (sipAccount == null)
-                {
+            try {
+                if (sipAccount == null) {
                     throw new ApplicationException("Cannot lookup forwards for a null SIP account.");
                 }
-                
+
                 List<SIPRegistrarBinding> bindings = GetRegistrarBindings_External(b => b.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
 
-                if (bindings != null)
-                {
-                    logger.Debug(bindings.Count + " found for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + ".");
+                if (bindings != null) {
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, bindings.Count + " found for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + ".", m_username));
 
                     // Build list of registered contacts.
-                    for (int index = 0; index < bindings.Count; index++)
-                    {
+                    for (int index = 0; index < bindings.Count; index++) {
                         SIPRegistrarBinding binding = bindings[index];
                         SIPURI contactURI = binding.MangledContactSIPURI;
-                        SIPEndPoint contactEndPoint = m_sipTransport.GetURIEndPoint(contactURI, true);
 
-                        if (contactEndPoint != null)
-                        {
-                            logger.Debug("Creating switch call for local user " + contactURI.ToString() + " at " + contactEndPoint.ToString() + ".");
-                            SIPEndPoint outboundProxy = null;
+                        //logger.Debug("Creating switch call for local user " + contactURI.ToString() + ".");
+                        SIPEndPoint outboundProxy = null;
 
-                            // If the binding has a proxy socket defined that's NOT a socket on this agent then the call should be sent to the proxy for forwarding to the user agent.
-                            if (binding.ProxySIPEndPoint != null)
-                            {
-                                if (!m_sipTransport.IsLocalSIPEndPoint(new SIPEndPoint(contactURI)))
-                                {
-                                    outboundProxy = binding.ProxySIPEndPoint;
-                                }
+                        // If the binding has a proxy socket defined that's NOT a socket on this agent then the call should be sent to the proxy for forwarding to the user agent.
+                        if (binding.ProxySIPEndPoint != null) {
+                            if (!m_sipTransport.IsLocalSIPEndPoint(new SIPEndPoint(contactURI))) {
+                                outboundProxy = binding.ProxySIPEndPoint;
                             }
+                        }
 
-                            string outboundProxyStr = (outboundProxy != null) ? outboundProxy.ToString() : null;
-                            SIPCallDescriptor switchCall = new SIPCallDescriptor(null, null, contactURI.ToString(), sipRequest.Header.From.ToString(), contactURI.ToString(), outboundProxyStr, customHeaders, null, SIPCallDirection.In, sipRequest.Header.ContentType, sipRequest.Body);
-                            localUserSwitchCalls.Add(switchCall);
+                        string outboundProxyStr = (outboundProxy != null) ? outboundProxy.ToString() : null;
+
+                        // Determine the content based on a custom request, caller's network id and whether mangling is required.
+                        string contentType = null;
+                        string content = null;
+                        bool wasSDPMangled = false;
+
+                        if(!customContentType.IsNullOrBlank()) {
+                            contentType =  customContentType;
                         }
-                        else
-                        {
-                            logger.Debug("Could not resolve " + contactURI.ToString() + " for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + ".");
+                        else if(sipRequest != null) {
+                            contentType = sipRequest.Header.ContentType;
                         }
+                      
+                        if(!customContent.IsNullOrBlank()) {
+                            content = customContent;
+                        }
+                        else if (sipRequest != null) {
+                            content = MangleContent(sipRequest.Body, sipRequest.Header.ProxyReceivedFrom, callersNetworkId, sipAccount.NetworkId, sipAccount.SIPUsername + "@" + sipAccount.SIPDomain, out wasSDPMangled);
+                        }
+
+                        SIPCallDescriptor switchCall = new SIPCallDescriptor(
+                            null, 
+                            null, 
+                            contactURI.ToString(), 
+                            sipRequest.Header.From.ToString(),
+                            new SIPToHeader(null, SIPURI.ParseSIPURIRelaxed(sipAccount.SIPUsername + "@" + sipAccount.SIPDomain), null).ToString(), 
+                            outboundProxyStr, 
+                            customHeaders, 
+                            null, 
+                            SIPCallDirection.In, 
+                            contentType, 
+                            content, 
+                            wasSDPMangled);
+                        localUserSwitchCalls.Add(switchCall);
                     }
                 }
-                else
-                {
-                    logger.Debug("No current bindings found for local SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + ".");
+                else {
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No current bindings found for local SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + ".", m_username));
                 }
 
                 return localUserSwitchCalls;
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception GetForwardsForLocalLeg. " + excp);
                 return localUserSwitchCalls;
             }
@@ -380,43 +420,54 @@ namespace SIPSorcery.Servers
         /// <param name="sipRequest"></param>
         /// <param name="command"></param>
         /// <returns></returns>
-        private SIPCallDescriptor GetForwardsForExternalLeg(SIPRequest sipRequest, SIPURI callLegURI)
-        {
-            try
-            {
+        private SIPCallDescriptor GetForwardsForExternalLeg(
+            SIPRequest sipRequest, 
+            SIPURI callLegURI,
+            string customContentType,
+            string customContent) {
+
+            try {
                 SIPCallDescriptor SIPCallDescriptor = null;
 
-                logger.Debug("Attempting to locate a provider for call leg: " + callLegURI.ToString() + ".");
+                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Attempting to locate a provider for call leg: " + callLegURI.ToString() + ".", m_username));
                 bool providerFound = false;
 
-                if(m_sipProviders != null)
-                {
-                    foreach (SIPProvider provider in m_sipProviders)
-                    {
-                        if (callLegURI.Host.ToUpper() == provider.ProviderName.ToUpper())
-                        {
+                string contentType = null;
+                string content = null;
+                bool wasSDPMangled = false;
+
+                if (!customContentType.IsNullOrBlank()) {
+                    contentType = customContentType;
+                }
+                else if (sipRequest != null) {
+                    contentType = sipRequest.Header.ContentType;
+                }
+
+                if (!customContent.IsNullOrBlank()) {
+                    content = customContent;
+                }
+                else if (sipRequest != null) {
+                    content = MangleContent(sipRequest.Body, sipRequest.Header.ProxyReceivedFrom, null, null, callLegURI.ToString(), out wasSDPMangled);
+                }
+
+                if (m_sipProviders != null) {
+                    foreach (SIPProvider provider in m_sipProviders) {
+                        if (callLegURI.Host.ToUpper() == provider.ProviderName.ToUpper()) {
                             SIPURI providerURI = SIPURI.ParseSIPURI(provider.ProviderServer);
-                            if (providerURI != null)
-                            {
+                            if (providerURI != null) {
                                 providerURI.User = callLegURI.User;
 
-                                if (callLegURI.Parameters.Count > 0)
-                                {
-                                    foreach (string parameterName in callLegURI.Parameters.GetKeys())
-                                    {
-                                        if (!providerURI.Parameters.Has(parameterName))
-                                        {
+                                if (callLegURI.Parameters.Count > 0) {
+                                    foreach (string parameterName in callLegURI.Parameters.GetKeys()) {
+                                        if (!providerURI.Parameters.Has(parameterName)) {
                                             providerURI.Parameters.Set(parameterName, callLegURI.Parameters.Get(parameterName));
                                         }
                                     }
                                 }
 
-                                if (callLegURI.Headers.Count > 0)
-                                {
-                                    foreach (string headerName in callLegURI.Headers.GetKeys())
-                                    {
-                                        if (!providerURI.Headers.Has(headerName))
-                                        {
+                                if (callLegURI.Headers.Count > 0) {
+                                    foreach (string headerName in callLegURI.Headers.GetKeys()) {
+                                        if (!providerURI.Headers.Has(headerName)) {
                                             providerURI.Headers.Set(headerName, callLegURI.Headers.Get(headerName));
                                         }
                                     }
@@ -431,25 +482,24 @@ namespace SIPSorcery.Servers
                                     fromHeader.ToString(),
                                     providerURI.ToString(),
                                     (provider.ProviderOutboundProxy != null && provider.ProviderOutboundProxy.Trim().Length > 0) ? provider.ProviderOutboundProxy.Trim() : null,
-                                    provider.CustomHeaders,
+                                    SIPCallDescriptor.ParseCustomHeaders(provider.CustomHeaders),
                                     provider.ProviderAuthUsername,
                                     SIPCallDirection.Out,
-                                    sipRequest.Header.ContentType,
-                                    sipRequest.Body);
+                                    contentType,
+                                    content,
+                                    wasSDPMangled);
 
                                 providerFound = true;
                                 break;
                             }
-                            else
-                            {
-                                logger.Warn("Could not parse SIP URI from Provider Server " + provider.ProviderServer + " in GetForwardsForExternalLeg.");
+                            else {
+                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Could not parse SIP URI from Provider Server " + provider.ProviderServer + " in GetForwardsForExternalLeg.", m_username));
                             }
                         }
                     }
                 }
 
-                if (!providerFound)
-                {
+                if (!providerFound) {
                     // Treat as an anonymous SIP URI.
 
                     // Copy the From header so the tag can be removed before adding to the forwarded request.
@@ -466,33 +516,16 @@ namespace SIPSorcery.Servers
                         null,
                         null,
                         SIPCallDirection.Out,
-                        sipRequest.Header.ContentType,
-                        sipRequest.Body);
-
+                        contentType,
+                        content,
+                        wasSDPMangled);
                 }
 
                 return SIPCallDescriptor;
             }
-            catch (Exception excp)
-            {
-                logger.Error("Exception GetForwardsForExternalLeg. " + excp.Message);  
+            catch (Exception excp) {
+                logger.Error("Exception GetForwardsForExternalLeg. " + excp.Message);
                 return null;
-            }
-        }
-
-        private string GetLocalDomain(string provider)
-        {
-            if (provider == null || provider.Trim().Length == 0)
-            {
-                return null;
-            }
-            else if (provider.IndexOf(DESTINATION_PROVIDER_SEPARATOR) != -1)
-            {
-                return GetCanonicalDomain_External(provider.Split(DESTINATION_PROVIDER_SEPARATOR)[1]);
-            }
-            else
-            {
-                return GetCanonicalDomain_External(provider);
             }
         }
 
@@ -522,6 +555,46 @@ namespace SIPSorcery.Servers
             }
 
             return fromHeader;
+        }
+
+        private string MangleContent(string body, string proxyReceivedFromHeader, string callerNetworkId, string calleeNetworkId, string legDestination, out bool wasSDPMangled) {
+
+            wasSDPMangled = false;
+
+            try {
+                string content = null;
+                IPEndPoint sdpEndPoint = (!body.IsNullOrBlank()) ? SDP.GetSDPRTPEndPoint(body) : null;
+                //Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "MangleContent, SDP=" + sdpEndPoint.Address.ToString() + ", Proxy-ReceivedFrom=" + proxyReceivedFromHeader + ".", m_username));
+                IPAddress remoteUACAddress = null;
+                
+                if ((callerNetworkId == null || callerNetworkId != calleeNetworkId) && !body.IsNullOrBlank() && !proxyReceivedFromHeader.IsNullOrBlank()) {
+                    // Caller and callee are not on the same network id so an attempt will be made to mangle any private IP addresses found
+                    // in the SDP.
+                    //logger.Debug("Mangling SDP for call leg " + legDestination + ".");
+                    remoteUACAddress = SIPEndPoint.ParseSIPEndPoint(proxyReceivedFromHeader).SocketEndPoint.Address;
+                    content = SIPPacketMangler.MangleSDP(body, remoteUACAddress.ToString(), out wasSDPMangled);
+                }
+                else {
+                    //logger.Debug("Not mangling SDP for call leg " + legDestination + ".");
+                    content = body;
+                }
+
+                if (wasSDPMangled) {
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP for call to " + legDestination + " had address mangled from " + sdpEndPoint.Address.ToString() + " to " + remoteUACAddress.ToString() + ".", m_username));
+                }
+                else if (sdpEndPoint != null) {
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP for call to " + legDestination + " using address of " + sdpEndPoint.Address.ToString() + ".", m_username));
+                }
+                else {
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Could not determine the IP address for SDP request for call to " + legDestination + ".", m_username));
+                }
+
+                return content;
+            }
+            catch (Exception excp) {
+                logger.Error("Exception MangleContent. " + excp.Message);
+                return body;
+            }
         }
 
         #region Unit testing.

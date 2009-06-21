@@ -18,8 +18,9 @@ namespace SIPSorcery.Servers
             UASInviteTransaction clientTransaction,
             SIPDialPlan dialPlan,
             List<SIPProvider> sipProviders,
-            string traceDirectory)
-            : base(monitorLogDelegate, sipTransport, createBridge, outboundProxy, clientTransaction, dialPlan, sipProviders, traceDirectory)
+            string traceDirectory,
+            string callersNetworkId)
+            : base(monitorLogDelegate, sipTransport, createBridge, outboundProxy, clientTransaction, dialPlan, sipProviders, traceDirectory, callersNetworkId)
         {
             ContextType = DialPlanContextsEnum.Script;
         }

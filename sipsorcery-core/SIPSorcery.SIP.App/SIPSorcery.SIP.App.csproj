@@ -98,6 +98,7 @@
     <Compile Include="SIPAppFunctionDelegates.cs" />
     <Compile Include="SIPDNS\SIPDNSLookupResult.cs" />
     <Compile Include="SIPDNS\SIPDNSManager.cs" />
+    <Compile Include="SIPPacketMangler.cs" />
     <Compile Include="SIPRequestAuthoriser\SIPRequestAuthoriser.cs" />
     <Compile Include="SIPUserAgents\SIPServerUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPCallDescriptor.cs" />

@@ -163,14 +163,14 @@ namespace SIPSorcery.Servers
                         while (binding != null) {
                             // Get the SIPProvider for the binding.
                             SIPProvider provider = GetSIPProviderById_External(new Guid(binding.ProviderId));
-
-                            if (binding.BindingExpiry != 0 && (provider == null || !provider.RegisterEnabled || !provider.RegisterAdminEnabled)) {
-                                // The SIP Provider entry has been removed or disabled, delete the binding. It's CRITICAL that this check is done to
-                                // prevent bindings being maintained after a user has deleted the provider or turned off registrations for it.
-                                m_bindingPersistor.Delete(binding);
+                            if (provider == null || !provider.RegisterEnabled || !provider.RegisterAdminEnabled) {
+                                // The SIP Provider entry has been removed or disabled: send a zero expiry register and delete the binding.
+                                // It's CRITICAL that this check is done to prevent bindings being maintained after a user has deleted the 
+                                // provider or turned off registrations for it.
+                                binding.BindingExpiry = 0;
                             }
-                            //else if (binding.BindingExpiry != 0 && binding.LastRegisterAttempt > DateTime.Now.AddSeconds(REGISTER_MINIMUM_ATTEMPT * -1)) {
-                            else if (binding.BindingExpiry != 0 && binding.LastRegisterAttempt != null && binding.LastRegisterAttempt.Value > DateTime.Now.AddSeconds(REGISTER_MINIMUM_ATTEMPT * -1)) {
+
+                            if (binding.BindingExpiry > 0 && binding.LastRegisterAttempt != null && binding.LastRegisterAttempt.Value > DateTime.Now.AddSeconds(REGISTER_MINIMUM_ATTEMPT * -1)) {
                                 // Registration requests too frequent. The attempt will be delayed.
                                 double lastAttemptSecs = DateTime.Now.Subtract(binding.LastRegisterAttempt.Value).TotalSeconds;
                                 int delaySeconds = REGISTER_MINIMUM_ATTEMPT - (int)lastAttemptSecs;
@@ -182,94 +182,100 @@ namespace SIPSorcery.Servers
                             else {
                                 // If the binding expiry is 0 the agent is removing an existing binding in which case it should use the original settings
                                 // it sent the registration with.
-                                if (binding.BindingExpiry != 0) {
-                                    binding.SetProviderFields(provider);
-                                }
-                                else {
+                                if (binding.BindingExpiry == 0 && binding.RegistrarSIPEndPoint == null) {
                                     // This is an expired binding and now that it is loaded for the expiration attempt it can be deleted. It's still in the local cache for any authorisations required.
+                                    // Can't expire a binding if the settings are not known, just delete it and worst case it will be removed after the expiration period.
+                                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRemoval, "Deleting SIP Provider Binding for " + binding.Owner + " and " + binding.ProviderName + " for SIP Provider " + binding.ProviderName + ".", binding.Owner));
                                     m_bindingPersistor.Delete(binding);
-                                    if (binding.RegistrarServer == null) {
-                                        // Can't expire a binding if the settings are not known, just delete it and worst case it will be removed after the expiration period.
-                                        break;
-                                    }
                                 }
+                                else if (binding.BindingExpiry == 0) {
+                                    if (binding.IsRegistered) {
+                                        // Set the binding fields from the provider so the zero expiry register request can be sent.
+                                        binding.SetProviderFields(provider);
+                                        binding.LocalSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy.SIPProtocol) : m_sipTransport.GetDefaultSIPEndPoint(binding.RegistrarSIPEndPoint.SIPProtocol);
 
-                                try {
-                                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "Checking SIP Provider registration for " + binding.ProviderName + ".", binding.Owner));
-
-                                    SIPEndPoint registrarEndPoint = SIPDNSManager.Resolve(binding.RegistrarServer, false);
-
-                                    if (registrarEndPoint == null) {
-                                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "DNS Manager does not currently have an entry for " + binding.RegistrarServer.ToString() + ", delaying " + REGISTER_EMPTYDNS_RETRY_INTERVAL + "s.", binding.Owner));
-                                        binding.NextRegistrationTime = DateTime.Now.AddSeconds(REGISTER_EMPTYDNS_RETRY_INTERVAL);
-                                        if (binding.RegistrationFailureMessage == null) {
-                                            binding.RegistrationFailureMessage = DNS_FAILURE_MESSAGE_FORMAT + " 1.";
-                                        }
-                                        else {
-                                            if (Regex.Match(binding.RegistrationFailureMessage, DNS_FAILURE_MESSAGE_FORMAT).Success) {
-                                                int attempts = Convert.ToInt32(Regex.Match(binding.RegistrationFailureMessage, @"(?<attempts>\d)\.$").Result("${attempts}"));
-                                                if (attempts >= MAX_DNS_FAILURE_ATTEMPTS) {
-                                                    provider.RegisterEnabled = false;
-                                                    provider.RegisterDisabledReason = "Could not resolve registrar.";
-                                                    UpdateSIPProvider_External(provider);
-                                                    RemoveCachedBinding(new Guid(binding.Id));
-                                                    m_bindingPersistor.Delete(binding);
-                                                }
-                                                else {
-                                                    attempts++;
-                                                    binding.RegistrationFailureMessage = DNS_FAILURE_MESSAGE_FORMAT + " " + attempts + ".";
-                                                }
-                                            }
-                                            else {
-                                                binding.RegistrationFailureMessage = DNS_FAILURE_MESSAGE_FORMAT + " 1.";
-                                            }
-                                        }
-                                        m_bindingPersistor.Update(binding);
-                                    }
-                                    /*else if (dnsEntry.Error != null || dnsEntry.RecordsA == null || dnsEntry.RecordsA.Length == 0) {
-                                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.DNS, "Error resolving " + registrarServer + " please check. " + dnsEntry.Error, binding.Owner));
-
-                                        // For SIP Registrars that can't be found in DNS only retry at a longer interval.
-                                        binding.RegistrationFailureMessage = "Could not resolve " + registrarServer + ". " + dnsEntry.Error;
-                                        binding.NextRegistrationTime = DateTime.Now.AddSeconds(REGISTER_FAILEDDNS_RETRY_INTERVAL);
-                                        m_bindingPersistor.Update(binding);
-                                    }*/
-                                    else {
-                                        binding.RegistrarSIPEndPoint = registrarEndPoint;
-                                        binding.LastRegisterAttempt = DateTime.Now;
-                                        binding.NextRegistrationTime = DateTime.Now.AddSeconds(REGISTER_FAILURERETRY_INTERVAL);
-                                        binding.LocalSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy.SIPProtocol) : m_sipTransport.GetDefaultSIPEndPoint(binding.RegistrarServer.Protocol);
-                                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "Sending initial register for " + binding.Owner + " and " + binding.ProviderName + " to " + registrarEndPoint.ToString() + ".", binding.Owner));
-                                        if (binding.BindingExpiry != 0) {
-                                            m_bindingPersistor.Update(binding);
-                                        }
-
-                                        // Cache the binding details for responses to this request ONLY. When a new request is due the details must be populated
-                                        // from the SIPProvider directly to pick up any updates.
+                                        // Want to remove this binding, send a register with a 0 expiry.
+                                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "Sending zero expiry register for " + binding.Owner + " and " + binding.ProviderName + " to " + binding.RegistrarSIPEndPoint.ToString() + ".", binding.Owner));
                                         lock (m_inTransitBindings) {
                                             RemoveCachedBinding(new Guid(binding.Id));
                                             m_inTransitBindings.Add(new Guid(binding.Id), binding);
                                         }
-
                                         SendInitialRegister(provider, binding, binding.LocalSIPEndPoint, binding.RegistrarSIPEndPoint, binding.BindingExpiry);
                                     }
+
+                                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRemoval, "Deleting SIP Provider Binding for " + binding.Owner + " and " + binding.ProviderName + " for SIP Provider " + binding.ProviderName + ".", binding.Owner));
+                                    m_bindingPersistor.Delete(binding);
                                 }
-                                catch (Exception regExcp) {
-                                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.Error, "Exception attempting to register provider " + binding.ProviderName + ". " + regExcp.Message, binding.Owner));
+                                else {
+                                    // Set the binding fields from the provider in case any have changed since the binding was last stored.
+                                    binding.SetProviderFields(provider);
 
                                     try {
-                                        // If a register attempt generates an exception then disable it.
-                                        if (provider != null) {
-                                            provider.RegisterEnabled = false;
-                                            provider.RegisterDisabledReason = regExcp.Message;
-                                            UpdateSIPProvider_External(provider);
-                                        }
+                                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "Checking SIP Provider registration for " + binding.ProviderName + ".", binding.Owner));
+                                        SIPEndPoint registrarEndPoint = SIPDNSManager.Resolve(binding.RegistrarServer, false);
 
-                                        RemoveCachedBinding(new Guid(binding.Id));
-                                        m_bindingPersistor.Delete(binding);
+                                        if (registrarEndPoint == null) {
+                                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "DNS Manager does not currently have an entry for " + binding.RegistrarServer.ToString() + ", delaying " + REGISTER_EMPTYDNS_RETRY_INTERVAL + "s.", binding.Owner));
+                                            binding.NextRegistrationTime = DateTime.Now.AddSeconds(REGISTER_EMPTYDNS_RETRY_INTERVAL);
+                                            if (binding.RegistrationFailureMessage == null) {
+                                                binding.RegistrationFailureMessage = DNS_FAILURE_MESSAGE_FORMAT + " 1.";
+                                            }
+                                            else {
+                                                if (Regex.Match(binding.RegistrationFailureMessage, DNS_FAILURE_MESSAGE_FORMAT).Success) {
+                                                    int attempts = Convert.ToInt32(Regex.Match(binding.RegistrationFailureMessage, @"(?<attempts>\d)\.$").Result("${attempts}"));
+                                                    if (attempts >= MAX_DNS_FAILURE_ATTEMPTS) {
+                                                        provider.RegisterEnabled = false;
+                                                        provider.RegisterDisabledReason = "Could not resolve registrar.";
+                                                        UpdateSIPProvider_External(provider);
+                                                        RemoveCachedBinding(new Guid(binding.Id));
+                                                        m_bindingPersistor.Delete(binding);
+                                                    }
+                                                    else {
+                                                        attempts++;
+                                                        binding.RegistrationFailureMessage = DNS_FAILURE_MESSAGE_FORMAT + " " + attempts + ".";
+                                                    }
+                                                }
+                                                else {
+                                                    binding.RegistrationFailureMessage = DNS_FAILURE_MESSAGE_FORMAT + " 1.";
+                                                }
+                                            }
+                                            m_bindingPersistor.Update(binding);
+                                        }
+                                        else {
+                                            binding.RegistrarSIPEndPoint = registrarEndPoint;
+                                            binding.LastRegisterAttempt = DateTime.Now;
+                                            binding.NextRegistrationTime = DateTime.Now.AddSeconds(REGISTER_FAILURERETRY_INTERVAL);
+                                            binding.LocalSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy.SIPProtocol) : m_sipTransport.GetDefaultSIPEndPoint(binding.RegistrarServer.Protocol);
+                                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "Sending initial register for " + binding.Owner + " and " + binding.ProviderName + " to " + registrarEndPoint.ToString() + ".", binding.Owner));
+                                            m_bindingPersistor.Update(binding);
+
+                                            // Cache the binding details for responses to this request ONLY. When a new request is due the details must be populated
+                                            // from the SIPProvider directly to pick up any updates.
+                                            lock (m_inTransitBindings) {
+                                                RemoveCachedBinding(new Guid(binding.Id));
+                                                m_inTransitBindings.Add(new Guid(binding.Id), binding);
+                                            }
+
+                                            SendInitialRegister(provider, binding, binding.LocalSIPEndPoint, binding.RegistrarSIPEndPoint, binding.BindingExpiry);
+                                        }
                                     }
-                                    catch (Exception persistExcp) {
-                                        logger.Error("Exception SIPRegistrationAgent persisting after exception. " + persistExcp.Message);
+                                    catch (Exception regExcp) {
+                                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.Error, "Exception attempting to register provider " + binding.ProviderName + ". " + regExcp.Message, binding.Owner));
+
+                                        try {
+                                            // If a register attempt generates an exception then disable it.
+                                            if (provider != null) {
+                                                provider.RegisterEnabled = false;
+                                                provider.RegisterDisabledReason = regExcp.Message;
+                                                UpdateSIPProvider_External(provider);
+                                            }
+
+                                            RemoveCachedBinding(new Guid(binding.Id));
+                                            m_bindingPersistor.Delete(binding);
+                                        }
+                                        catch (Exception persistExcp) {
+                                            logger.Error("Exception SIPRegistrationAgent persisting after exception. " + persistExcp.Message);
+                                        }
                                     }
                                 }
                             }
@@ -278,7 +284,6 @@ namespace SIPSorcery.Servers
                         }
                     }
                     catch (Exception persistExcp) {
-                        // Need this now with nHibernate going belly up all the time.
                         logger.Error("Exception MonitorRegistrations GettingBinding. " + persistExcp.Message);
                     }
                     
@@ -539,7 +544,7 @@ namespace SIPSorcery.Servers
                 SIPRoute registrarRoute = new SIPRoute(new SIPURI(binding.RegistrarServer.Scheme, registrarEndPoint), true);
                 header.Routes.PushRoute(registrarRoute);
 
-                if (sipProvider != null && sipProvider.CustomHeaders != null && sipProvider.CustomHeaders.Trim().Length > 0)
+                if (sipProvider != null && !sipProvider.CustomHeaders.IsNullOrBlank())
                 {
                     string[] customerHeadersList = sipProvider.CustomHeaders.Split(SIPProvider.CUSTOM_HEADERS_SEPARATOR);
 

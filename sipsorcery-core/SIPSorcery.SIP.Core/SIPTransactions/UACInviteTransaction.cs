@@ -130,49 +130,46 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private void UACInviteTransaction_TransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
-        {
-            try
-            {
+        private void UACInviteTransaction_TransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) {
+            try {
                 // BranchId for 2xx responses needs to be a new one, non-2xx final responses use same one as original request.
                 SIPRequest ackRequest = null;
-                if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode < 299)
-                {
-                    if (sipResponse.Header.To != null)
-                    {
+                if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode < 299) {
+                    if (sipResponse.Header.To != null) {
                         m_remoteTag = sipResponse.Header.To.ToTag;
-                        //SIPTransaction.RemoveTransaction(TransactionId);
                     }
 
                     SIPURI ackURI = m_transactionRequest.URI;
-                    if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0)
-                    {
+                    if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0) {
                         ackURI = sipResponse.Header.Contact[0].ContactURI;
+                        if (!sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) {
+                            // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
+                            if (SIPTransport.IsPrivateAddress(ackURI.Host)) {
+                                SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom);
+                                ackURI.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();
+                            }
+                        }
                     }
 
                     // ACK for 2xx response needs to be a new transaction and gets routed based on SIP request fields.
                     ackRequest = GetNewTransactionACKRequest(sipResponse, ackURI, LocalSIPEndPoint);
                     base.SendRequest(ackRequest);
                 }
-                else
-                {
+                else {
                     // ACK for non 2xx response is part of the INVITE transaction and gets routed to the same endpoint as the INVITE.
                     ackRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI, LocalSIPEndPoint);
                     base.SendRequest(RemoteEndPoint, ackRequest);
                 }
-                
-                if (UACInviteTransactionFinalResponseReceived != null)
-                {
+
+                if (UACInviteTransactionFinalResponseReceived != null) {
                     UACInviteTransactionFinalResponseReceived(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
                 }
 
-                if (CDR != null)
-                {
+                if (CDR != null) {
                     CDR.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase);
                 }
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception UACInviteTransaction_TransactionFinalResponseReceived. " + excp.Message);
             }
         }

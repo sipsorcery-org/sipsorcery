@@ -66,8 +66,6 @@ namespace SIPSorcery.Servers
         private string m_username;                          // The call owner.
         private string m_adminMemberId;
         private SIPEndPoint m_outboundProxySocket;          // If this app forwards calls via an outbound proxy this value will be set.
-        private string m_contentType;
-        private string m_content;
         private SIPResponseStatusCodesEnum m_lastFailureStatus; // If the call fails the first leg that returns an error will be used as the reason on the error response.
         private string m_lastFailureReason;
 
@@ -112,9 +110,7 @@ namespace SIPSorcery.Servers
             string username,
             string adminMemberId,
             List<SIPTransaction> switchCallTransactions,
-            SIPEndPoint outboundProxy,
-            string contentType,
-            string content)
+            SIPEndPoint outboundProxy)
         {
             m_sipTransport = sipTransport;
             m_statefulProxyLogEvent = statefulProxyLogEvent;
@@ -122,8 +118,6 @@ namespace SIPSorcery.Servers
             m_adminMemberId = adminMemberId;
             m_switchCallTransactions = switchCallTransactions;
             m_outboundProxySocket = outboundProxy;
-            m_contentType = contentType;
-            m_content = content;
         }
 
         /// <summary>
@@ -213,9 +207,6 @@ namespace SIPSorcery.Servers
                     uacCall.CallAnswered += UACCallAnswered;
                     uacCall.CallFailed += UACCallFailed;
                     uacCall.CallRinging += UACCallProgress;
-
-                    callDescriptor.Content = m_content;
-                    callDescriptor.ContentType = m_contentType;
 
                     uacCall.Call(callDescriptor);
                 }
@@ -315,7 +306,7 @@ namespace SIPSorcery.Servers
                     else if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.Add) {
                         // A redirect response was received. Create a new call leg(s) using the SIP URIs in the contact header of the response.
                         FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response to " + redirectURI.ToString() + " accepted.", m_username));
-                        SIPCallDescriptor redirectCallDescriptor = new SIPCallDescriptor(null, null, redirectURI.ToString(), null, null, null, null, null, SIPCallDirection.Out, null, null);
+                        SIPCallDescriptor redirectCallDescriptor = new SIPCallDescriptor(null, null, redirectURI.ToString(), null, null, null, null, null, SIPCallDirection.Out, null, null, true);
                         StartNewCallAsync(redirectCallDescriptor);
                     }
                     else if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.Replace) {

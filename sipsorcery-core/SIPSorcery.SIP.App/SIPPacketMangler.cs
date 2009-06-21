@@ -40,41 +40,45 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.Servers
+namespace SIPSorcery.SIP.App
 {
     public class SIPPacketMangler
     {
-        private static ILog logger = AppState.GetLogger("sip.servers");
+        private static ILog logger = AppState.logger;
 
-        public static string MangleSDP(string sdpBody, string publicIPAddress, out bool wasMangled)
-        {
+        public static string MangleSDP(string sdpBody, string publicIPAddress, out bool wasMangled) {
             wasMangled = false;
 
-            try
-            {
-                if (sdpBody != null && publicIPAddress != null)
-                {
-                    string sdpAddress = Regex.Match(sdpBody, @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)", RegexOptions.Singleline).Result("${ipaddress}");
+            try {
+
+                if (sdpBody != null && publicIPAddress != null) {
+                    string sdpAddress = SDP.GetSDPRTPEndPoint(sdpBody).Address.ToString();
 
                     // Only mangle if there is something to change. For example the server could be on the same private subnet in which case it can't help.
-                    if (SIPTransport.IsPrivateAddress(sdpAddress) && publicIPAddress != sdpAddress)
-                    {
+                    if (SIPTransport.IsPrivateAddress(sdpAddress) && publicIPAddress != sdpAddress) {
+                        //logger.Debug("MangleSDP replacing private " + sdpAddress + " with " + publicIPAddress + ".");
                         string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)", "c=IN IP4 " + publicIPAddress, RegexOptions.Singleline);
                         wasMangled = true;
 
                         return mangledSDP;
                     }
+                   // else {
+                    //    logger.Debug("MangleSDP did not replace " + sdpAddress + " with " + publicIPAddress + ".");
+                    //}
+                }
+                else {
+                    logger.Warn("Mangle SDP was called with an empty body or public IP address.");
                 }
 
                 return sdpBody;
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception MangleSDP. " + excp.Message);
                 return sdpBody;
             }

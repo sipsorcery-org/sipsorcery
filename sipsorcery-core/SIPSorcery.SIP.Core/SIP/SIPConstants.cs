@@ -192,6 +192,10 @@ namespace SIPSorcery.SIP
 		// SIP Header Extensions for SIP Event Package RFC 3265.
 		public const string SIP_HEADER_EVENT = "Event";
 		public const string SIP_HEADER_SUBSCRIPTIONSTATE = "Subscription-State";
+
+        // Custom SIP headers to allow proxy to communicate network info to internal servers.
+        public const string SIP_HEADER_PROXY_RECEIVEDON = "Proxy-ReceivedOn";
+        public const string SIP_HEADER_PROXY_RECEIVEDFROM = "Proxy-ReceivedFrom";
 	}
 
 	public class SIPHeaderAncillary

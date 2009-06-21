@@ -148,7 +148,6 @@ namespace SIPSorcery.SIP
             RemoteUserField = uasInviteTransaction.TransactionFinalResponse.Header.From.FromUserField;
             RemoteTag = uasInviteTransaction.TransactionFinalResponse.Header.From.FromTag;
             CSeq = uasInviteTransaction.TransactionRequest.Header.CSeq;
-            RemoteTarget = (uasInviteTransaction.TransactionRequest != null && uasInviteTransaction.TransactionRequest.Header.Contact != null && uasInviteTransaction.TransactionRequest.Header.Contact.Count > 0) ? uasInviteTransaction.TransactionRequest.Header.Contact[0].ContactURI : null;
             CDRId = uasInviteTransaction.CDR.CDRId;
             Owner = owner;
             AdminMemberId = adminMemberId;
@@ -157,6 +156,18 @@ namespace SIPSorcery.SIP
             
             DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
             OutboundProxy = uasInviteTransaction.OutboundProxy;
+
+            RemoteTarget = new SIPURI(uasInviteTransaction.TransactionRequest.URI.Scheme, uasInviteTransaction.RemoteEndPoint);
+            if (uasInviteTransaction.TransactionRequest.Header.Contact != null && uasInviteTransaction.TransactionRequest.Header.Contact.Count > 0) {
+                RemoteTarget = uasInviteTransaction.TransactionRequest.Header.Contact[0].ContactURI;
+                if (!uasInviteTransaction.TransactionRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) {
+                    // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
+                    if (SIPTransport.IsPrivateAddress(RemoteTarget.Host)) {
+                        SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(uasInviteTransaction.TransactionRequest.Header.ProxyReceivedFrom);
+                        RemoteTarget.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -181,7 +192,6 @@ namespace SIPSorcery.SIP
             RemoteUserField = uacInviteTransaction.TransactionFinalResponse.Header.To.ToUserField;
             RemoteTag = uacInviteTransaction.TransactionFinalResponse.Header.To.ToTag;
             CSeq = uacInviteTransaction.TransactionRequest.Header.CSeq;
-            RemoteTarget = (uacInviteTransaction.TransactionFinalResponse != null && uacInviteTransaction.TransactionFinalResponse.Header.Contact != null && uacInviteTransaction.TransactionFinalResponse.Header.Contact.Count > 0) ? uacInviteTransaction.TransactionFinalResponse.Header.Contact[0].ContactURI : null;
             CDRId = uacInviteTransaction.CDR.CDRId;
             Owner = owner;
             AdminMemberId = adminMemberId;
@@ -190,6 +200,19 @@ namespace SIPSorcery.SIP
 
             DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
             OutboundProxy = uacInviteTransaction.OutboundProxy;
+
+            // Set the dialogue remote target and take care of mangling if an upstream proxy has indicated it's required.
+            RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, uacInviteTransaction.RemoteEndPoint);
+            if(uacInviteTransaction.TransactionFinalResponse.Header.Contact != null && uacInviteTransaction.TransactionFinalResponse.Header.Contact.Count > 0) {
+                RemoteTarget = uacInviteTransaction.TransactionFinalResponse.Header.Contact[0].ContactURI;
+                if (!uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) {
+                    // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
+                    if (SIPTransport.IsPrivateAddress(RemoteTarget.Host)) {
+                        SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedFrom);
+                        RemoteTarget.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();
+                    }
+                }
+            }
         }
 
         public static string GetDialogueId(string callId, string localTag, string remoteTag)

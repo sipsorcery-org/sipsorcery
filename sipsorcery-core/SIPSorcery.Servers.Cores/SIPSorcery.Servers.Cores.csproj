@@ -79,6 +79,7 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Accessibility" />
     <Reference Include="agsXMPP, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ff839b81f1debe86, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\agsXMPP.dll</HintPath>
@@ -121,6 +122,12 @@
     <Reference Include="System.Runtime.Serialization">
       <RequiredTargetFramework>3.0</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.ServiceModel">
+      <RequiredTargetFramework>3.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.ServiceModel.Web">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.Xml">
@@ -160,6 +167,8 @@
     <Compile Include="SIPApplicationServer\DialPlans\DialPlanLineContext.cs" />
     <Compile Include="SIPApplicationServer\DialPlans\DialPlanScriptContext.cs" />
     <Compile Include="SIPApplicationServer\DialPlans\DialPlanCommand.cs" />
+    <Compile Include="SIPApplicationServer\DialPlans\DialPlanServices.cs" />
+    <Compile Include="SIPApplicationServer\DialPlans\IDialPlanServices.cs" />
     <Compile Include="SIPMonitor\SIPMonitorMachineClient.cs" />
     <Compile Include="SIPMonitor\SIPMonitorControlClient.cs" />
     <Compile Include="SIPMonitor\SIPMonitorMediator.cs" />
@@ -172,7 +181,6 @@
     <Compile Include="SIPRegistrar\SIPUserAgentConfiguration.cs" />
     <Compile Include="SIPApplicationServer\DialPlans\DialPlanScriptHelper.cs" />
     <Compile Include="SIPRegistrar\SIPRegistrarCore.cs" />
-    <Compile Include="SIPPacketMangler.cs" />
     <Compile Include="SIPApplicationServer\SIPCallManager.cs" />
     <Compile Include="SIPApplicationServer\DialPlanApps\SIPReplyApp.cs" />
     <Compile Include="SIPApplicationServer\DialPlanApps\SkeletonApp.cs" />

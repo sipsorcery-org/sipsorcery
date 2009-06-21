@@ -37,12 +37,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Web;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -67,9 +69,15 @@ namespace SIPSorcery.Servers
         private const int DEFAULT_CREATECALL_RINGTIME = 60;     
         private const int ENUM_LOOKUP_TIMEOUT = 5;              // Default timeout in seconds for ENUM lookups.
         private const string DEFAULT_LOCAL_DOMAIN = "local";
+        private const int MAX_BYTES_WEB_GET = 1024;             // The maximum number of bytes that will be read from the response stream in the WebGet application.
+        private const string EMAIL_FROM_ADDRESS = "dialplan@sipsorcery.com";    // The from address that will be set for emails sent from the dialplan.
+        private const int ALLOWED_ADDRESSES_PER_EMAIL = 5;     // The maximum number of addresses that can be used in an email.
+        private const int ALLOWED_EMAILS_PER_EXECUTION = 3;     // The maximum number of emails that can be sent pre dialplan execution.
+        private const int MAX_EMAIL_SUBJECT_LENGTH = 256;
+        private const int MAX_EMAIL_BODY_LENGTH = 2048;
 
         private static int m_maxRingTime = SIPTimings.MAX_RING_TIME;
-        private static SIPSchemesEnum m_defaultScheme = SIPSchemesEnum.sip;
+        //private static SIPSchemesEnum m_defaultScheme = SIPSchemesEnum.sip;
 
         private static ILog logger = AppState.logger;
         private SIPMonitorLogDelegate m_dialPlanLogDelegate;
@@ -80,10 +88,12 @@ namespace SIPSorcery.Servers
 
         private DialogueBridgeCreatedDelegate m_createBridgeDelegate;
         private GetCanonicalDomainDelegate m_getCanonicalDomainDelegate;
-        private SIPRequest m_sipRequest;                                // This is a copy of the SIP request from m_clientTransaction.
+        private SIPRequest m_sipRequest;                                        // This is a copy of the SIP request from m_clientTransaction.
         private SwitchCallMulti m_currentCall;
-        private SIPEndPoint m_outboundProxySocket;           // If this app forwards calls via na outbound proxy this value will be set.
-        private string m_customSIPHeaders;                   // Allows a dialplan user to add or customise SIP headers.
+        private SIPEndPoint m_outboundProxySocket;                              // If this app forwards calls via na outbound proxy this value will be set.
+        private StringDictionary m_customSIPHeaders = new StringDictionary();   // Allows a dialplan user to add or customise SIP headers.
+        private string m_customContent;                                         // If set will be used by the Dial command as the INVITE body on forwarded requests.
+        private string m_customContentType;  
         private string m_customFromName;
         private string m_customFromUser;
         private string m_customFromHost;
@@ -105,9 +115,11 @@ namespace SIPSorcery.Servers
             get { return m_executingScript.LastFailureStatus; }
             set { m_executingScript.LastFailureStatus = value; }
         }
+        private int m_emailCount = 0;   // Keeps count of the emails that have been sent during this dialpan execution.
 
-        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
-        private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;   // This event must be wired up to an external function in order to be able to lookup bindings that have been registered for a SIP account.
+        private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
+        private SIPAssetPersistor<SIPDialPlan> m_sipDialPlanPersistor;
+        private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;   // This event must be wired up to an external function in order to be able to lookup bindings that have been registered for a SIP account.  
         private SIPCallManager m_callManager;
 
         private DialPlanContext m_dialPlanContext;
@@ -148,7 +160,8 @@ namespace SIPSorcery.Servers
             DialPlanContext dialPlanContext,
             GetCanonicalDomainDelegate getCanonicalDomain,
             SIPCallManager callManager,
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            SIPAssetPersistor<SIPAccount> sipAccountPersistor,
+            SIPAssetPersistor<SIPDialPlan> sipDialPlanPersistor,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPAccountBindings,
             SIPEndPoint outboundProxySocket
             )
@@ -165,13 +178,14 @@ namespace SIPSorcery.Servers
             m_sipProviders = dialPlanContext.SIPProviders;
             m_getCanonicalDomainDelegate = getCanonicalDomain;
             m_callManager = callManager;
-            GetSIPAccount_External = getSIPAccount;
+            m_sipAccountPersistor = sipAccountPersistor;
+            m_sipDialPlanPersistor = sipDialPlanPersistor;
             GetSIPAccountBindings_External = getSIPAccountBindings;
             m_outboundProxySocket = outboundProxySocket;
 
             m_dialPlanContext.TraceLog.AppendLine("DialPlan=> Dialplan trace commenced at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff") + ".");
             m_dialPlanContext.CallCancelledByClient += ClientCallTerminated;
-            m_dialStringParser = new DialStringParser(m_sipTransport, m_username, m_sipProviders, GetSIPAccount_External, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate);
+            m_dialStringParser = new DialStringParser(m_sipTransport, m_username, m_sipProviders, m_sipAccountPersistor.Get, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate);
         }
 
         /// <remarks>
@@ -252,7 +266,7 @@ namespace SIPSorcery.Servers
             string answeredBody = null;
             SIPDialogue answeredDialogue = null;
 
-            m_currentCall = new SwitchCallMulti(m_sipTransport, FireProxyLogEvent, Username, m_adminMemberId, LastDialled, m_outboundProxySocket, clientRequest.Header.ContentType, clientRequest.Body);
+            m_currentCall = new SwitchCallMulti(m_sipTransport, FireProxyLogEvent, Username, m_adminMemberId, LastDialled, m_outboundProxySocket);
             m_currentCall.CallProgress += m_dialPlanContext.CallProgress;
             m_currentCall.CallFailed += (status, reason) => {
                 LastFailureStatus = status;
@@ -273,7 +287,7 @@ namespace SIPSorcery.Servers
             LastDialled = new List<SIPTransaction>();
 
             try {
-                Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, m_customSIPHeaders);
+                Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, m_customSIPHeaders, m_customContentType, m_customContent, m_dialPlanContext.CallersNetworkId);
                 if (m_customFromName != null || m_customFromUser != null || m_customFromHost != null) {
                     UpdateCallQueueFromHeaders(callsQueue, m_customFromName, m_customFromUser, m_customFromHost);
                 }
@@ -295,10 +309,6 @@ namespace SIPSorcery.Servers
                     result = DialPlanAppResult.TimedOut;
                 }
 
-                return result;
-            }
-            catch (ThreadAbortException) {
-                // This exception will be thrown under normal circumstances as the script will abort the thread if a call is answered.
                 return result;
             }
             catch (Exception excp) {
@@ -407,13 +417,16 @@ namespace SIPSorcery.Servers
             }
         }
 
+        /// <summary>
+        /// Checks whether the dialplan owner's default SIP account is online (has any current bindings).
+        /// </summary>
         public bool IsAvailable()
         {
             return IsAvailable(Username, DEFAULT_LOCAL_DOMAIN);
         }
 
         /// <summary>
-        /// Checks whether the calling user has a registered contact. If so returns true otherwise false.
+        /// Checks whether the specified SIP account is online (has any current bindings).
         /// </summary>
         public bool IsAvailable(string username, string domain)
         {
@@ -424,7 +437,7 @@ namespace SIPSorcery.Servers
                     return false;
                 }
                 else {
-                    SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == username && s.SIPDomain == domain);
+                    SIPAccount sipAccount = m_sipAccountPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == domain);
                     if (sipAccount == null) {
                         FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in IsAvailable for " + username + "@" + domain + ".", Username));
                         return false;
@@ -441,13 +454,36 @@ namespace SIPSorcery.Servers
             }
         }
 
+        /// <summary>
+        /// Used to check for the existence of a SIP account in the default domain.
+        /// </summary>
+        /// <param name="username">The SIP account username to check for.</param>
+        /// <returns>Returns true if the SIP account exists, false otherwise.</returns>
+        public bool DoesSIPAccountExist(string username) {
+            return DoesSIPAccountExist(username, DEFAULT_LOCAL_DOMAIN);
+        }
+
+        /// <summary>
+        /// Used to check for the existence of a SIP account in the specified domain.
+        /// </summary>
+        /// <param name="username">The SIP account username to check for.</param>
+        /// <param name="domain">The SIP domain to check for the account in.</param>
+        /// <returns>Returns true if the SIP account exists, false otherwise.</returns>
+        public bool DoesSIPAccountExist(string username, string domain) {
+            return (m_sipAccountPersistor.Count(s => s.SIPUsername == username && s.SIPDomain == domain) > 0);
+        }
+
+        /// <summary>
+        /// Gets an array of the registered contacts for the dialplan owner's SIP account.
+        /// </summary>
         public SIPRegistrarBinding[] GetBindings()
         {
             return GetBindings(Username, DEFAULT_LOCAL_DOMAIN);
         }
 
         /// <summary>
-        /// Gets an array of the registered contacts for the dialplan owner's SIP account.
+        /// Gets an array of the registered contacts for the specified SIP account. Only the owner of the SIP account
+        /// will be allowed to retrieve a list of bindings for it.
         /// </summary>
         public SIPRegistrarBinding[] GetBindings(string username, string domain)
         {
@@ -459,7 +495,7 @@ namespace SIPSorcery.Servers
                     return null;
                 }
                 else {
-                    SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == username && s.SIPDomain == domain);
+                    SIPAccount sipAccount = m_sipAccountPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == domain);
                     if (sipAccount == null) {
                         FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in GetBindings for " + username + "@" + domain + ".", Username));
                         return null;
@@ -486,79 +522,76 @@ namespace SIPSorcery.Servers
                 return null;
             }
         }
+        
+        /// <summary>
+        /// Adds a name value pair to the custom SIP headers list. The custom headers will be added to any forwarded call requests.
+        /// </summary>
+        /// <param name="headerName">The name of the SIP header to add.</param>
+        /// <param name="headerValue">The value of the SIP header to add.</param>
+        public void SetCustomSIPHeader(string headerName, string headerValue)
+        {
+            if (headerName.IsNullOrBlank())
+            {
+                Log("The name of the header to set was empty, the header was not added.");
+            }
+            else if (Regex.Match(headerName.Trim(), @"^(Via|To|From|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success)
+            {
+                Log("The name of the header to set is not permitted, the header was not added.");
+            }
+            else
+            {
+                string trimmedName = headerName.Trim();
+                string trimmedValue = (headerValue != null) ? headerValue.Trim() : String.Empty;
+                if (m_customSIPHeaders.ContainsKey(trimmedName)) {
+                    m_customSIPHeaders[trimmedName] = trimmedValue;
+                }
+                else {
+                    m_customSIPHeaders.Add(trimmedName, trimmedValue);
+                }
+                Log("Custom SIP header " + trimmedName + " successfully added to list.");
+            }
+        }
 
         /// <summary>
-        /// Replaces the remote end of a call in response to an in-dialogue request from the remote end. As an example of use if a 
-        /// MESSAGE request is received on an established call then calling this function will lookup the dialogue the MESSAGE request belongs to.
-        /// If a match is found it will call the new destination and when the new call is answered or gets early media the remote end (the
-        /// end the MESSAGE request came from) will be hungup and the local end of the dialogue will be re-INVITED to the media on the new call.
+        /// If present removes a SIP header from the list of custom headers.
         /// </summary>
-        /// <param name="newDest"></param>
-        /// <returns></returns>
-        /*public CallResult ReplaceCall(string newDest)
-        {
-            // Lookup dialog for request.
-            SIPDialogue dialogue = m_callManager.GetDialogue(m_sipRequest.Header.CallId, m_sipRequest.Header.To.ToTag, m_sipRequest.Header.From.FromTag, m_sipRequest.ReceivedFrom);
+        /// <param name="headerName">The name of the SIP header to remove.</param>
+        public void RemoveCustomSIPHeader(string headerName) {
 
-            if (dialogue == null)
-            {
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The dialogue for the ReplaceCall request could not be found, call failed.", m_username));
-                return CallResult.Error;
+            if (!headerName.IsNullOrBlank() && m_customSIPHeaders.ContainsKey(headerName.Trim())) {
+                m_customSIPHeaders.Remove(headerName.Trim());
+                Log("Custom SIP header " + headerName.Trim() + " successfully removed.");
             }
-            else
-            {
-                //m_currentCall = new SwitchCallMulti( m_sipDomains);
-                //Queue<List<SIPCallDescriptorStruct>> callsQueue = m_currentCall.BuildCallList(m_sipRequest, newDest, m_sipProviders);
-
-                ReplaceCallApp replaceCallApp = new ReplaceCallApp(m_dialPlanLogDelegate, m_sipTransport, m_callManager, dialogue, m_username);
-
-                replaceCallApp.Start(null);
-                replaceCallApp.CallComplete += (clientTransaction, completedResult, errorMessage) => { m_completedResult = completedResult; m_waitForCallCompleted.Set(); };
-
-                ExtendScriptTimeout(m_maxRingTime + DEFAULT_CREATECALL_RINGTIME);
-                if (m_waitForCallCompleted.WaitOne(m_maxRingTime * 1000, false))
-                {
-                    // Call answered.
-                    ExtendScriptTimeout(0);
-
-                    if (m_completedResult == CallResult.ClientCancelled || m_completedResult == CallResult.Answered)
-                    {
-                        // Client has cancelled the call. Terminate the script at this point.
-                        EndScript();
-                    }
-
-                    return m_completedResult;
-                }
-                else
-                {
-                    // Call timed out.
-                    m_currentCall.DialPlanCancelCallLeg();
-                    return CallResult.TimedOut;
-                }
-            }
-        }*/
-
-        public void SetSIPHeaders(string customHeaders)
-        {
-            if (customHeaders == null || customHeaders.Trim().Length == 0)
-            {
-                return;
-            }
-            else if (Regex.Match(customHeaders.Trim(), @"(^|\|)(Via|To|From|Contact|CSeq|Call-ID|Max-Forwards|Content)\s*:").Success)
-            {
-                Log("Cannot set critical header " + customHeaders + ".");
-            }
-            else
-            {
-                m_customSIPHeaders = customHeaders.Trim();
+            else {
+                Log("Custom SIP header " + headerName.Trim() + " was not in the list.");
             }
         }
 
-        public void ClearSIPHeaders()
-        {
-            m_customSIPHeaders = null;
+        /// <summary>
+        /// Clears all the custom SIP header values from the list.
+        /// </summary>
+        public void ClearCustomSIPHeaders() {
+            m_customSIPHeaders.Clear();
         }
 
+        /// <summary>
+        /// Dumps the currently stored custom SIP headers to the console or monitoring screen to allow
+        /// users to troubleshoot.
+        /// </summary>
+        public void PrintCustomSIPHeaders() {
+            Log("Custom SIP Header List:");
+            foreach (DictionaryEntry customHeader in m_customSIPHeaders) {
+                Log(" " + customHeader.Key + ": " + customHeader.Value);
+            }
+        }
+
+        /// <summary>
+        /// Sets the value of part or all of the From header that will be set on forwarded calls. Leaving a part of the 
+        /// header as null will result in the corresponding value from the originating request being used.
+        /// </summary>
+        /// <param name="fromName">The custom From header display name to set.</param>
+        /// <param name="fromUser">The custom From header URI user value to set.</param>
+        /// <param name="fromHost">The custom From header URI host value to set.</param>
         public void SetFromHeader(string fromName, string fromUser, string fromHost)
         {
             m_customFromName = fromName;
@@ -566,6 +599,10 @@ namespace SIPSorcery.Servers
             m_customFromHost = fromHost;
         }
 
+        /// <summary>
+        /// Reset the custom From header values so that the corresponding values from the originating request will
+        /// be used.
+        /// </summary>
         public void ClearFromHeader()
         {
             m_customFromName = null;
@@ -573,6 +610,34 @@ namespace SIPSorcery.Servers
             m_customFromHost = null;
         }
 
+        /// <summary>
+        /// Sets the custom body that will override the incoming request body for forwarded INVITE requests.
+        /// </summary>
+        /// <param name="body">The custom body that will be sent in forwarded INVITE requests.</param>
+        public void SetCustomContent(string content) {
+            m_customContent = content;
+        }
+
+        /// <summary>
+        /// Sets the custom body that will override the incoming request body for forwarded INVITE requests.
+        /// </summary>
+        /// <param name="body">The custom body that will be sent in forwarded INVITE requests.</param>
+        public void SetCustomContent(string contentType, string content) {
+            m_customContentType = contentType;
+            m_customContent = content;
+        }
+
+        /// <summary>
+        /// Clears the custom body so that the incoming request body will again be used on forwarded requests.
+        /// </summary>
+        public void ClearCustomBody() {
+            m_customContentType = null;
+            m_customContent = null;
+        }
+
+        /// <summary>
+        /// Attempts to send a gTalk IM to the specified account.
+        /// </summary>
         public void GTalk(string username, string password, string sendToUser, string message)
         {
             try
@@ -613,6 +678,95 @@ namespace SIPSorcery.Servers
                 logger.Error("Exception GTalk. " + excp.Message);
                 Log("Exception GTalk. " + excp.Message);
             }
+        }
+
+        /// <summary>
+        /// Executes a HTTP GET request and if succesful returns up to the first 1024 bytes read from the
+        /// response to the caller.
+        /// </summary>
+        /// <param name="url">The URL of the server to call.</param>
+        /// <returns>The first 1024 bytes read from the response.</returns>
+        public string WebGet(string url) {
+            try {
+                if(!url.IsNullOrBlank()) {
+                    using(WebClient webClient = new WebClient()) {
+
+                        Log("WebGet attempting to read from " + url + ".");
+                        
+                            System.IO.Stream responseStream = webClient.OpenRead(url);
+                        if (responseStream != null) {
+                            byte[] buffer = new byte[MAX_BYTES_WEB_GET];
+                            int bytesRead = responseStream.Read(buffer, 0, MAX_BYTES_WEB_GET);
+                            responseStream.Close();
+                            return Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                        }
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception excp) {
+                logger.Error("Exception WebGet. " + excp.Message);
+                Log("Error in WebGet for " + url + ".");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Sends an email from the dialplan. There are a number of restrictions put in place and this is a privileged
+        /// application that users must be manually authorised for.
+        /// </summary>
+        /// <param name="to">The list of addressees to send the email to. Limited to a maximum of ALLOWED_ADDRESSES_PER_EMAIL.</param>
+        /// <param name="subject">The email subject. Limited to a maximum length of MAX_EMAIL_SUBJECT_LENGTH.</param>
+        /// <param name="body">The email body. Limited to a maximum length of MAX_EMAIL_BODY_LENGTH.</param>
+        public void Email(string to, string subject, string body) {
+            try {
+                if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "email")) {
+                    Log("You are not authorised to use the Email application, please contact admin@sipsorcery.com.");
+                }
+                else if (m_emailCount >= ALLOWED_EMAILS_PER_EXECUTION) {
+                    Log("The maximum number of emails have been sent for this dialplan execution, email not sent.");
+                }
+                else {
+                    if (to.IsNullOrBlank()) {
+                        Log("The To field was blank, email not be sent.");
+                    }
+                    else if (subject.IsNullOrBlank()) {
+                        Log("The Subject field was blank, email not be sent.");
+                    }
+                    else if (body.IsNullOrBlank()) {
+                        Log("The Body was empty, email not be sent.");
+                    }
+                    else {
+                        string[] addressees = to.Split(';');
+                        if (addressees.Length > ALLOWED_ADDRESSES_PER_EMAIL) {
+                            Log("The number of Email addressees is to high, only the first " + ALLOWED_ADDRESSES_PER_EMAIL + " will be used.");
+                            to = null;
+                            for (int index = 0; index < ALLOWED_ADDRESSES_PER_EMAIL; index++) {
+                                to += addressees[index] + ";";
+                            }
+                        }
+
+                        m_emailCount++;
+                        subject = (subject.Length >  MAX_EMAIL_SUBJECT_LENGTH) ? subject.Substring(0, MAX_EMAIL_SUBJECT_LENGTH) : subject;
+                        body = (body.Length > MAX_EMAIL_BODY_LENGTH) ? body.Substring(0, MAX_EMAIL_BODY_LENGTH) : body;
+                        SIPSorcery.Sys.Email.SendEmail(to, EMAIL_FROM_ADDRESS, subject, body);
+                        Log("Email sent to " + to + " with subject of \"" + subject + "\".");
+                    }
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception Email. " + excp.Message);
+                Log("Error sending Email to " + to + " with subject of \"" + subject + "\".");
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of currently active calls for the dial plan owner.
+        /// </summary>
+        /// <returns>The number of active calls or -1 if there is an error.</returns>
+        public int GetCurrentCallCount() {
+            return m_callManager.GetCurrentCallCount(m_username);
         }
 
         /// <summary>
@@ -770,6 +924,37 @@ namespace SIPSorcery.Servers
                         }
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Used to authorise calls to privileged dialplan applications. For example sending an email requires that the dialplan has the "email" in
+        /// its list of authorised apps.
+        /// </summary>
+        /// <param name="authorisedApps">A semi-colon delimited list of authorised applications for this dialplan.</param>
+        /// <param name="applicationName">The name of the dialplan application checking for authorisation.</param>
+        /// <returns>True if authorised, false otherwise.</returns>
+        private bool IsAppAuthorised(string authorisedApps, string applicationName) {
+            try {
+                if (authorisedApps.IsNullOrBlank() || applicationName.IsNullOrBlank()) {
+                    return false;
+                }
+                else if (authorisedApps == SIPDialPlan.ALL_APPS_AUTHORISED) {
+                    return true;
+                }
+                else {
+                    string[] authorisedAppsSplit = authorisedApps.Split(';');
+                    foreach (string app in authorisedAppsSplit) {
+                        if (!app.IsNullOrBlank() && app.Trim().ToLower() == applicationName.Trim().ToLower()) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception IsAppAuthorised. " + excp.Message);
+                return false;
             }
         }
 

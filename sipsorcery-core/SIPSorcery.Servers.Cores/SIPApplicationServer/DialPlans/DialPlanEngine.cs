@@ -78,6 +78,8 @@ namespace SIPSorcery.Servers
         private const string RUBY_COMMON_COPY_EXTEN = ".tmp";
         private const int RUBY_COMMON_RELOAD_INTERVAL = 2;
 
+        private static readonly string m_sipDialPlanExecutionCountPropertyName = SIPDialPlan.PROPERTY_EXECUTIONCOUNT_NAME;
+
 		private static ILog logger = AppState.GetLogger("dialplanengine");
 
         private ScriptEngine m_scriptEngine;
@@ -92,7 +94,7 @@ namespace SIPSorcery.Servers
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxySocket;                           // If this app forwards calls via an outbound proxy this value will be set.
         private SIPMonitorLogDelegate LogDelegate_External;                  // Delegate from proxy core to fire when log messages should be bubbled up to the core.
-        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
+        private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;
         private GetCanonicalDomainDelegate GetCanonicalDomainDelegate_External;
         private SIPAssetPersistor<SIPDialPlan> m_dialPlanPersistor;
@@ -107,7 +109,7 @@ namespace SIPSorcery.Servers
             SIPTransport sipTransport, 
             GetCanonicalDomainDelegate getCanonicalDomain,
             SIPMonitorLogDelegate logDelegate,
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            SIPAssetPersistor<SIPAccount> sipAssetPersistor,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getBindings,
             SIPAssetPersistor<SIPDialPlan> dialPlanPersistor,
             SIPEndPoint outboundProxySocket,
@@ -120,7 +122,7 @@ namespace SIPSorcery.Servers
             m_sipTransport = sipTransport;
             GetCanonicalDomainDelegate_External = getCanonicalDomain;
             LogDelegate_External = logDelegate;
-            GetSIPAccount_External = getSIPAccount;
+            m_sipAccountPersistor = sipAssetPersistor;
             GetSIPAccountBindings_External = getBindings;
             m_dialPlanPersistor = dialPlanPersistor;
             m_outboundProxySocket = outboundProxySocket;
@@ -151,7 +153,7 @@ namespace SIPSorcery.Servers
           UASInviteTransaction transaction,
           SIPCallDirection callDirection,
           DialogueBridgeCreatedDelegate createBridgeDelegate,
-            SIPCallManager callManager)
+          SIPCallManager callManager)
         {
             if (dialPlanContext.ContextType == DialPlanContextsEnum.Line)
             {
@@ -198,12 +200,12 @@ namespace SIPSorcery.Servers
                 {
                     if (matchedCommand.Data != null && matchedCommand.Data.Trim().Length > 0)
                     {
-                        DialStringParser dialStringParser = new DialStringParser(m_sipTransport, dialPlanContext.Owner, dialPlanContext.SIPProviders, GetSIPAccount_External, GetSIPAccountBindings_External, GetCanonicalDomainDelegate_External);
-                        SwitchCallMulti switchCallMulti = new SwitchCallMulti(m_sipTransport, FireProxyLogEvent, dialPlanContext.Owner, dialPlanContext.AdminMemberId, null, m_outboundProxySocket, sipRequest.Header.ContentType, sipRequest.Body);
+                        DialStringParser dialStringParser = new DialStringParser(m_sipTransport, dialPlanContext.Owner, dialPlanContext.SIPProviders, m_sipAccountPersistor.Get, GetSIPAccountBindings_External, GetCanonicalDomainDelegate_External, LogDelegate_External);
+                        SwitchCallMulti switchCallMulti = new SwitchCallMulti(m_sipTransport, FireProxyLogEvent, dialPlanContext.Owner, dialPlanContext.AdminMemberId, null, m_outboundProxySocket);
                         switchCallMulti.CallProgress += dialPlanContext.CallProgress;
                         switchCallMulti.CallFailed += dialPlanContext.CallFailed;
                         switchCallMulti.CallAnswered += dialPlanContext.CallAnswered;
-                        Queue<List<SIPCallDescriptor>> calls = dialStringParser.ParseDialString(DialPlanContextsEnum.Line, sipRequest, matchedCommand.Data, null);
+                        Queue<List<SIPCallDescriptor>> calls = dialStringParser.ParseDialString(DialPlanContextsEnum.Line, sipRequest, matchedCommand.Data, null, null, null, dialPlanContext.CallersNetworkId);
                         switchCallMulti.Start(calls);
                     }
                     else
@@ -302,7 +304,8 @@ namespace SIPSorcery.Servers
                             dialPlanContext,
                             GetCanonicalDomainDelegate_External,
                             callManager,
-                            GetSIPAccount_External,
+                            m_sipAccountPersistor,
+                            m_dialPlanPersistor,
                             GetSIPAccountBindings_External,
                             m_outboundProxySocket);
 
@@ -557,9 +560,9 @@ namespace SIPSorcery.Servers
 
         private void IncrementDialPlanExecutionCount(SIPDialPlan dialPlan) {
             try {
-                if (dialPlan != null) {
-                    dialPlan.ExecutionCount = dialPlan.ExecutionCount + 1;
-                    m_dialPlanPersistor.Update(dialPlan);
+                if (dialPlan != null && !dialPlan.Id.IsNullOrBlank() && new Guid(dialPlan.Id) != Guid.Empty) {
+                    int executionCount = Convert.ToInt32(m_dialPlanPersistor.GetProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName));
+                    m_dialPlanPersistor.UpdateProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName, executionCount + 1);
                 }
             }
             catch (Exception excp) {
@@ -569,9 +572,9 @@ namespace SIPSorcery.Servers
 
         private void DecrementDialPlanExecutionCount(SIPDialPlan dialPlan) {
             try {
-                if (dialPlan != null) {
-                    dialPlan.ExecutionCount = dialPlan.ExecutionCount - 1;
-                    m_dialPlanPersistor.Update(dialPlan);
+                if (dialPlan != null && !dialPlan.Id.IsNullOrBlank() && new Guid(dialPlan.Id) != Guid.Empty) {
+                    int executionCount = Convert.ToInt32(m_dialPlanPersistor.GetProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName));
+                    m_dialPlanPersistor.UpdateProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName, executionCount - 1);
                 }
             }
             catch (Exception excp) {
@@ -637,9 +640,9 @@ namespace SIPSorcery.Servers
                                             killScript.DialPlanScriptThread.Abort();
                                         }
                                     }
-                                    catch (ThreadAbortException) { }
+                                    catch (ThreadStateException) { } // This exception is thrown when aborting a thread in a suspended state and is expected behaviour.
                                     catch (Exception killExcp) {
-                                        logger.Error("Exception MonitorScripts aborting thread. " + killExcp.Message);
+                                        logger.Error("Exception MonitorScripts aborting thread (" + killExcp.GetType().ToString() + "). " + killExcp.Message);
                                     }
                                 }
                             }

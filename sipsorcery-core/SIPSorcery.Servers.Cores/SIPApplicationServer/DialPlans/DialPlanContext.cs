@@ -102,6 +102,7 @@ namespace SIPSorcery.Servers
         {
             get { return m_clientTransaction.TransactionRequest; }
         }
+        public string CallersNetworkId;             // If the caller was a locally administered SIP account this will hold it's network id. Used so calls between two accounts on the same local network can be identified.
 
         private bool m_isAnswered;
         public bool IsAnswered {
@@ -118,7 +119,8 @@ namespace SIPSorcery.Servers
             UASInviteTransaction clientTransaction,
             SIPDialPlan dialPlan,
             List<SIPProvider> sipProviders,
-            string traceDirectory) {
+            string traceDirectory,
+            string callersNetworkId) {
 
             Log_External = monitorLogDelegate;
             CreateBridge_External = createBridge;
@@ -128,6 +130,7 @@ namespace SIPSorcery.Servers
             m_dialPlan = dialPlan;
             m_sipProviders = sipProviders;
             m_traceDirectory = traceDirectory;
+            CallersNetworkId = callersNetworkId;
 
             if (m_clientTransaction != null) {
                 clientTransaction.TransactionTraceMessage += TransactionTraceMessage;
@@ -174,12 +177,6 @@ namespace SIPSorcery.Servers
             }
         }
 
-        //public void CallFailed(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase) {
-        //    if (!m_isAnswered) {
-        //        ThreadPool.QueueUserWorkItem(delegate { CallFailedSync(failureStatus, reasonPhrase); });
-        //    }
-        //}
-
         public void CallFailed(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase) {
             try {
                 if (!m_isAnswered) {
@@ -202,12 +199,6 @@ namespace SIPSorcery.Servers
                 logger.Error("Exception DialPlanContext CallFailed. " + excp.Message);
             }
         }
-
-       // public void CallAnswered(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue) {
-       //     if (!m_isAnswered) {
-       //         ThreadPool.QueueUserWorkItem(delegate { CallAnsweredSync(answeredStatus, reasonPhrase, answeredContentType, answeredBody, answeredDialogue); });
-        //    }
-       // }
 
         public void CallAnswered(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue) {
             try {
