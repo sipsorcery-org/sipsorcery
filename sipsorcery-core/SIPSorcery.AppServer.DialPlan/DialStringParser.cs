@@ -49,7 +49,7 @@ using log4net;
 using NUnit.Framework;
 #endif
 
-namespace SIPSorcery.Servers
+namespace SIPSorcery.AppServer.DialPlan
 {
     /// <remarks>
     /// This class builds a list of calls from a dial plan Dial string. The dial string is an evolving thing and depending on the type of 

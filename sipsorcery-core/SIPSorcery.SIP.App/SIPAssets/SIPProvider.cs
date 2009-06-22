@@ -317,12 +317,6 @@ namespace SIPSorcery.SIP.App
             set { m_inserted = value; }
         }
 
-        public object OrderProperty
-        {
-            get { return m_providerName; }
-            set { }
-        }
-
         /// <summary>
         /// Normally the registrar server will just be the main Provider server however in some cases they will be different.
         /// </summary>
@@ -428,11 +422,6 @@ namespace SIPSorcery.SIP.App
         }
 
 #endif
-
-        public object GetOrderProperty()
-        {
-            return m_providerName;
-        }
 
         public string ToXML()
         {

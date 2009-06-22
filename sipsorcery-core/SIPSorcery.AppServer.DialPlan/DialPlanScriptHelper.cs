@@ -38,6 +38,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Configuration;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -59,7 +60,7 @@ using agsXMPP.protocol.client;
 using NUnit.Framework;
 #endif
 
-namespace SIPSorcery.Servers
+namespace SIPSorcery.AppServer.DialPlan
 {
     /// <summary>
     /// Helper functions for use in dial plan scripts.
@@ -75,9 +76,15 @@ namespace SIPSorcery.Servers
         private const int ALLOWED_EMAILS_PER_EXECUTION = 3;     // The maximum number of emails that can be sent pre dialplan execution.
         private const int MAX_EMAIL_SUBJECT_LENGTH = 256;
         private const int MAX_EMAIL_BODY_LENGTH = 2048;
+        private const string USERDATA_DBTYPE_KEY = "UserDataDBType";
+        private const string USERDATA_DBCONNSTR_KEY = "UserDataDBConnStr";
+        private const int MAX_DATA_ENTRIES_PER_USER = 100;
 
         private static int m_maxRingTime = SIPTimings.MAX_RING_TIME;
         //private static SIPSchemesEnum m_defaultScheme = SIPSchemesEnum.sip;
+
+        private static readonly StorageTypes m_userDataDBType = StorageTypes.Unknown;
+        private static readonly string m_userDataDBConnStr;
 
         private static ILog logger = AppState.logger;
         private SIPMonitorLogDelegate m_dialPlanLogDelegate;
@@ -90,7 +97,7 @@ namespace SIPSorcery.Servers
         private GetCanonicalDomainDelegate m_getCanonicalDomainDelegate;
         private SIPRequest m_sipRequest;                                        // This is a copy of the SIP request from m_clientTransaction.
         private SwitchCallMulti m_currentCall;
-        private SIPEndPoint m_outboundProxySocket;                              // If this app forwards calls via na outbound proxy this value will be set.
+        private SIPEndPoint m_outboundProxySocket;                              // If this app forwards calls via an outbound proxy this value will be set.
         private StringDictionary m_customSIPHeaders = new StringDictionary();   // Allows a dialplan user to add or customise SIP headers.
         private string m_customContent;                                         // If set will be used by the Dial command as the INVITE body on forwarded requests.
         private string m_customContentType;  
@@ -120,7 +127,7 @@ namespace SIPSorcery.Servers
         private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
         private SIPAssetPersistor<SIPDialPlan> m_sipDialPlanPersistor;
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;   // This event must be wired up to an external function in order to be able to lookup bindings that have been registered for a SIP account.  
-        private SIPCallManager m_callManager;
+        private ISIPCallManager m_callManager;
 
         private DialPlanContext m_dialPlanContext;
         public DialPlanContext DialPlanContext
@@ -148,7 +155,17 @@ namespace SIPSorcery.Servers
             get { return m_dialPlanContext.SendTrace; }
             set { m_dialPlanContext.SendTrace = value; }
         }
-      
+
+        static DialPlanScriptHelper() {
+            try {
+                m_userDataDBType = (ConfigurationManager.AppSettings[USERDATA_DBTYPE_KEY] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[USERDATA_DBTYPE_KEY]) : StorageTypes.Unknown;
+                m_userDataDBConnStr = ConfigurationManager.AppSettings[USERDATA_DBCONNSTR_KEY];
+            }
+            catch (Exception excp) {
+                logger.Error("Exception DialPlanScriptHelper (static ctor). " + excp.Message);
+            }
+        }
+
         public DialPlanScriptHelper(
             SIPTransport sipTransport,
             DialPlanExecutingScript executingScript,
@@ -159,7 +176,7 @@ namespace SIPSorcery.Servers
             SIPCallDirection callDirection,
             DialPlanContext dialPlanContext,
             GetCanonicalDomainDelegate getCanonicalDomain,
-            SIPCallManager callManager,
+            ISIPCallManager callManager,
             SIPAssetPersistor<SIPAccount> sipAccountPersistor,
             SIPAssetPersistor<SIPDialPlan> sipDialPlanPersistor,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPAccountBindings,
@@ -767,6 +784,153 @@ namespace SIPSorcery.Servers
         /// <returns>The number of active calls or -1 if there is an error.</returns>
         public int GetCurrentCallCount() {
             return m_callManager.GetCurrentCallCount(m_username);
+        }
+
+        public void DBWrite(string key, string value) {
+            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank()) {
+                Log("DBWrite failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
+            }
+            else {
+                DBWrite(m_userDataDBType, m_userDataDBConnStr, key, value);
+            }
+        }
+
+        public void DBWrite(string dbType, string dbConnStr, string key, string value) {
+            StorageTypes storageType = GetStorageType(dbType);
+            if (storageType != StorageTypes.Unknown) {
+                DBWrite(storageType, dbConnStr, key, value);
+            }
+        }
+
+        private void DBWrite(StorageTypes storageType, string dbConnStr, string key, string value) {
+            try {
+                StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
+                
+                Dictionary<string, object> parameters = new Dictionary<string,object>();
+                parameters.Add("dataowner", m_username);
+                int ownerKeyCount = Convert.ToInt32(storageLayer.ExecuteScalar("select count(*) from dialplandata where dataowner = @dataowner", parameters));
+               
+                if (ownerKeyCount == MAX_DATA_ENTRIES_PER_USER) {
+                    Log("DBWrite failed, you have reached the maximum number of database entries allowed.");
+                }
+                else {
+                    parameters.Add("datakey", key);
+                    int count = Convert.ToInt32(storageLayer.ExecuteScalar("select count(*) from dialplandata where datakey = @datakey and dataowner = @dataowner", parameters));
+                    parameters.Add("datavalue", value);
+                    
+                    if (count == 0) {
+                        storageLayer.ExecuteNonQuery(storageType, dbConnStr, "insert into dialplandata (dataowner, datakey, datavalue) values (@dataowner, @datakey, @datavalue)", parameters);
+                    }
+                    else {
+                        storageLayer.ExecuteNonQuery(storageType, dbConnStr, "update dialplandata set datavalue = @datavalue where dataowner = @dataowner and datakey = @datakey", parameters);
+                    }
+                    Log("DBWrite sucessful for datakey \"" + key + "\".");
+                }
+            }
+            catch (Exception excp) {
+                Log("Exception DBWrite. " + excp.Message);
+            }
+        }
+
+        public void DBExecuteNonQuery(string dbType, string dbConnStr, string query) {
+            try {
+                if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "dbexecutenonquery")) {
+                    Log("You are not authorised to use the DBExecuteNonQuery application, please contact admin@sipsorcery.com.");
+                }
+                else {
+                     StorageTypes storageType = GetStorageType(dbType);
+                     if (storageType != StorageTypes.Unknown) {
+                         StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
+                         storageLayer.ExecuteNonQuery(storageType, dbConnStr, query);
+                         Log("DBExecuteNonQuery successful for " + query + ".");
+                     }
+                     else {
+                         Log("Exception DBExecuteNonQuery did not recognise database type " + dbType + ".");
+                     }
+                }
+            }
+            catch (Exception excp) {
+                Log("Exception DBExecuteNonQuery. " + excp.Message);
+            }
+        }
+
+        public string DBRead(string key) {
+            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank()) {
+                Log("DBRead failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
+                return null;
+            }
+            else {
+                DBRead(m_userDataDBType, m_userDataDBConnStr, key);
+                return null;
+            }
+        }
+
+        public string DBRead(string dbType, string dbConnStr, string key) {
+            StorageTypes storageType = GetStorageType(dbType);
+            if (storageType != StorageTypes.Unknown) {
+                return DBRead(storageType, dbConnStr, key);
+            }
+            return null;
+        }
+
+        private string DBRead(StorageTypes storageType, string dbConnStr, string key) {
+            try {
+                StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
+
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("dataowner", m_username);
+                parameters.Add("datakey", key);
+                string result = storageLayer.ExecuteScalar("select datavalue from dialplandata where dataowner = @dataowner and datakey = @datakey", parameters) as string;
+                Log("DBRead sucessful for datakey \"" + key + "\", value=" + result + ".");
+                return result;
+            }
+            catch (Exception excp) {
+                Log("Exception DBRead. " + excp.Message);
+                return null;
+            }
+        }
+
+        public string DBExecuteScalar(string dbType, string dbConnStr, string query) {
+            try {
+                if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "dbexecutescalar")) {
+                    Log("You are not authorised to use the DBExecuteScalar application, please contact admin@sipsorcery.com.");
+                    return null;
+                }
+                else {
+                    StorageTypes storageType = GetStorageType(dbType);
+                    if (storageType != StorageTypes.Unknown) {
+                        StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
+                        string result = storageLayer.ExecuteScalar(storageType, dbConnStr, query) as string;
+                        Log("DBExecuteScalar sucessful result=" + result + ".");
+                        return result;
+                    }
+                    else {
+                        Log("Exception DBExecuteScalar did not recognise database type " + dbType + ".");
+                        return null;
+                    }
+                }
+            }
+            catch (Exception excp) {
+                Log("Exception DBExecuteScalar. " + excp.Message);
+                return null;
+            }
+        }
+
+        private StorageTypes GetStorageType(string dbType) {
+            if (dbType.IsNullOrBlank()) {
+                Log("The database type was empty for DBWrite or DBRead.");
+                return StorageTypes.Unknown;
+            }
+            else if(Regex.Match(dbType, "mysql", RegexOptions.IgnoreCase).Success) {
+                return StorageTypes.MySQL;
+            }
+            else if (Regex.Match(dbType, "(pgsql|postgres)", RegexOptions.IgnoreCase).Success) {
+                return StorageTypes.Postgresql;
+            }
+            else {
+                Log("Database type " + dbType + " is not supported in DBWrite and DBRead.");
+                return StorageTypes.Unknown;
+            }
         }
 
         /// <summary>

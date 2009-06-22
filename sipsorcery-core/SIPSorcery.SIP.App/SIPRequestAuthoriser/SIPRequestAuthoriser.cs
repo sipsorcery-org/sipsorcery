@@ -35,6 +35,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -61,33 +62,45 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Attempts to authorise a SIP request.
         /// </summary>
-        public SIPRequestAuthorisationResult AuthoriseSIPRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
-        {
-            try
-            {
+        public SIPRequestAuthorisationResult AuthoriseSIPRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, string sipAccountACL) {
+            try {
                 SIPAuthenticationHeader reqAuthHeader = sipRequest.Header.AuthenticationHeader;
-                if (reqAuthHeader == null)
-                {
+                if (reqAuthHeader == null) {
+                    
+                    // Check for IP address authentication.
+                    if (!sipAccountACL.IsNullOrBlank()) {
+                        SIPEndPoint uaEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
+                        if (Regex.Match(uaEndPoint.SocketEndPoint.ToString(), sipAccountACL).Success) {
+                            return new SIPRequestAuthorisationResult(true, null, null);
+                        }
+                    }
+ 
                     string fromHeaderDomain = (sipRequest.Header.From != null) ? sipRequest.Header.From.FromURI.Host : null;
                     string realm = GetCanonicalDomain_External(fromHeaderDomain);
                     SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, realm, Crypto.GetRandomInt().ToString());
                     return new SIPRequestAuthorisationResult(SIPResponseStatusCodesEnum.Unauthorised, authHeader);
                 }
-                else
-                {
+                else {
                     // The definitive username and realm are those from the authorisation header NOT the From or any other header.
                     string user = reqAuthHeader.SIPDigest.Username;
                     string realm = reqAuthHeader.SIPDigest.Realm;
                     SIPAccount sipAccount = GetSIPAccount_External(user, GetCanonicalDomain_External(realm));
 
-                    if (sipAccount != null)
-                    {
+                    if (sipAccount != null) {
                         if (sipAccount.IsDisabled) {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Authoriser, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " is disabled for." , sipAccount.Owner));
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Authoriser, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " is disabled for.", sipAccount.Owner));
                             return new SIPRequestAuthorisationResult(SIPResponseStatusCodesEnum.Forbidden, null);
                         }
-                        else 
-                        {
+                        else {
+
+                            // Check for IP address authentication.
+                            if (!sipAccount.IPAddressACL.IsNullOrBlank()) {
+                                SIPEndPoint uaEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
+                                if (Regex.Match(uaEndPoint.SocketEndPoint.ToString(), sipAccount.IPAddressACL).Success) {
+                                    return new SIPRequestAuthorisationResult(true, sipAccount.SIPUsername, sipAccount.SIPDomain);
+                                }
+                            }
+
                             string requestNonce = reqAuthHeader.SIPDigest.Nonce;
                             string uri = reqAuthHeader.SIPDigest.URI;
                             string response = reqAuthHeader.SIPDigest.Response;
@@ -96,28 +109,24 @@ namespace SIPSorcery.SIP.App
                             checkAuthReq.SetCredentials(user, sipAccount.SIPPassword, uri, sipRequest.Method.ToString());
                             string digest = checkAuthReq.Digest;
 
-                            if (digest == response)
-                            {
+                            if (digest == response) {
                                 // Successfully authenticated
                                 return new SIPRequestAuthorisationResult(true, sipAccount.SIPUsername, sipAccount.SIPDomain);
                             }
-                            else
-                            {
+                            else {
                                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Authoriser, SIPMonitorEventTypesEnum.DialPlan, "Authentication token check failed for realm=" + realm + ", username=" + user + ", uri=" + uri + ", nonce=" + requestNonce + ", method=" + sipRequest.Method + ".", user));
                                 SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, realm, Crypto.GetRandomInt().ToString());
                                 return new SIPRequestAuthorisationResult(SIPResponseStatusCodesEnum.Unauthorised, authHeader);
                             }
                         }
                     }
-                    else
-                    {
+                    else {
                         Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Authoriser, SIPMonitorEventTypesEnum.DialPlan, "No configuration found for " + user + " returning 501 ServerError to " + remoteEndPoint + ".", user));
                         return new SIPRequestAuthorisationResult(SIPResponseStatusCodesEnum.Forbidden, null);
                     }
                 }
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Authoriser, SIPMonitorEventTypesEnum.Error, "Exception AuthoriseSIPRequest. " + excp.Message, null));
                 return new SIPRequestAuthorisationResult(SIPResponseStatusCodesEnum.InternalServerError, null);
             }

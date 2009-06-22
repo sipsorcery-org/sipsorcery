@@ -72,12 +72,6 @@ namespace SIPSorcery.CRM
         [Column(Storage = "_ipaddress", Name = "ipaddress", DbType = "character varying(15)", CanBeNull = false)]
         public string IPAddress;
 
-        public object OrderProperty
-        {
-            get { return Inserted; }
-            set { }
-        }
-
         public CustomerSession() { }
 
         public CustomerSession(Guid id, string customerUsername, string ipAddress)
@@ -109,11 +103,6 @@ namespace SIPSorcery.CRM
         public Dictionary<Guid, object> Load(XmlDocument dom)
         {
             return SIPAssetXMLPersistor<CustomerSession>.LoadAssetsFromXMLRecordSet(dom);
-        }
-
-        public object GetOrderProperty()
-        {
-            return Inserted;
         }
 
         public string ToXML()

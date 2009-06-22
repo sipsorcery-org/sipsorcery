@@ -276,12 +276,6 @@ namespace SIPSorcery.SIP.App
             get { return m_isUserDisabled || m_isAdminDisabled; }
         }
 
-        public object OrderProperty
-        {
-            get { return m_sipUsername; }
-            set { }
-        }
-
         public event PropertyChangedEventHandler PropertyChanged;
 
         public SIPAccount() { }
@@ -322,11 +316,6 @@ namespace SIPSorcery.SIP.App
         }
 
 #endif
-
-        public object GetOrderProperty()
-        {
-            return m_sipUsername;
-        }
 
         public SIPAccount(string owner, string sipDomain, string sipUsername, string sipPassword, string outDialPlanName)
         {

@@ -151,7 +151,7 @@ namespace SIPSorcery.SIP
                     // Process INVITE.
                     if (UASSIPRequestAuthenticate != null)
                     {
-                        m_authorisationResult = UASSIPRequestAuthenticate(localSIPEndPoint, remoteEndPoint, sipRequest);
+                        m_authorisationResult = UASSIPRequestAuthenticate(localSIPEndPoint, remoteEndPoint, sipRequest, null);
                         if (m_authorisationResult.Authorised)
                         {
                             if (NewCallReceived != null)

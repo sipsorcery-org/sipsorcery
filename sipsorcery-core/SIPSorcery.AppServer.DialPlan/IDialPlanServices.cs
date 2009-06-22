@@ -5,7 +5,7 @@ using System.ServiceModel;
 using System.ServiceModel.Web;
 using System.Text;
 
-namespace SIPSorcery.Servers {
+namespace SIPSorcery.AppServer.DialPlan {
 
     [ServiceContract(Namespace = "http://www.sipsorcery.com/dialplan")]
     public interface IDialPlanServices {

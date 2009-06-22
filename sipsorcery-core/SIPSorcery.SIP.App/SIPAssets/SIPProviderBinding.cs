@@ -219,12 +219,6 @@ namespace SIPSorcery.SIP.App
         public string ProviderPassword;
         public string RegistrarRealm;
 
-        public object OrderProperty
-        {
-            get { return ProviderName; }
-            set { }
-        }
-
         public event PropertyChangedEventHandler PropertyChanged;
 
         public SIPProviderBinding()
@@ -297,11 +291,6 @@ namespace SIPSorcery.SIP.App
         }
 
 #endif
-
-        public object GetOrderProperty()
-        {
-            return ProviderName;
-        }
 
         public void SetProviderFields(SIPProvider sipProvider) {
             // There will be cases where register enabled is switched off on a provider and a binding wants the fields set to send

@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{339648E6-3B61-4A27-B4A2-38A8216B1D7E}</ProjectGuid>
+    <ProjectGuid>{DC87DB52-5C99-4282-ABEA-F7EC81AC6D4C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SIPSorcery.SIP.App</RootNamespace>
-    <AssemblyName>SIPSorcery.SIP.App</AssemblyName>
+    <RootNamespace>SIPSorcery.AppServer.DialPlan</RootNamespace>
+    <AssemblyName>SIPSorcery.AppServer.DialPlan</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>..\Build\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -31,29 +31,38 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DbLinq, Version=0.18.0.0, Culture=neutral, PublicKeyToken=61e015a67077348b, processorArchitecture=MSIL">
+    <Reference Include="agsXMPP, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ff839b81f1debe86, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\DbLinq.dll</HintPath>
+      <HintPath>..\..\stable\agsXMPP.dll</HintPath>
+    </Reference>
+    <Reference Include="IronPython, Version=1.0.60816.1877, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\stable\IronPython.dll</HintPath>
+    </Reference>
+    <Reference Include="IronRuby, Version=0.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\stable\IronRuby.dll</HintPath>
     </Reference>
     <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Scripting, Version=0.9.5.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\stable\Microsoft.Scripting.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Scripting.Core, Version=0.9.5.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\stable\Microsoft.Scripting.Core.dll</HintPath>
+    </Reference>
     <Reference Include="nunit.framework, Version=2.2.2.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\stable\nunit.framework.dll</HintPath>
+      <HintPath>..\..\stable\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Data.Linq">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Runtime.Serialization">
-      <RequiredTargetFramework>3.0</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.ServiceModel">
       <RequiredTargetFramework>3.0</RequiredTargetFramework>
@@ -61,8 +70,6 @@
     <Reference Include="System.ServiceModel.Web">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Web.Services" />
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -71,55 +78,33 @@
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="ZedGraph, Version=5.0.1.41097, Culture=neutral, PublicKeyToken=02a83cbd123fcd60, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\ZedGraph.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="AssemblyState.cs" />
-    <Compile Include="Instrumentation\SIPTransportMetricsGraphAgent.cs" />
-    <Compile Include="Monitoring\SIPMonitorControlClientEvent.cs" />
-    <Compile Include="Monitoring\SIPMonitorEvent.cs" />
-    <Compile Include="Monitoring\SIPMonitorMachineEvent.cs" />
-    <Compile Include="SIPAssets\ISIPCallManager.cs" />
-    <Compile Include="SIPAssets\SIPAssetPersistorFactory.cs" />
-    <Compile Include="SIPAssets\SIPCDRAsset.cs" />
-    <Compile Include="SIPAssets\SIPDialogueAsset.cs" />
-    <Compile Include="SIPAssets\SIPProviderBinding.cs" />
-    <Compile Include="SIPAssets\SIPAccount.cs" />
-    <Compile Include="SIPAssets\SIPDialPlan.cs" />
-    <Compile Include="SIPAssets\SIPDialPlanScriptTypes.cs" />
-    <Compile Include="SIPAssets\SIPDomain.cs" />
-    <Compile Include="SIPAssets\SIPDomainManager.cs" />
-    <Compile Include="SIPAssets\SIPProvider.cs" />
-    <Compile Include="SIPAssets\SIPProviderBindingSynchroniser.cs" />
-    <Compile Include="SIPAssets\SIPRegistrarBinding.cs" />
-    <Compile Include="SIPAppFunctionDelegates.cs" />
-    <Compile Include="SIPDNS\SIPDNSLookupResult.cs" />
-    <Compile Include="SIPDNS\SIPDNSManager.cs" />
-    <Compile Include="SIPPacketMangler.cs" />
-    <Compile Include="SIPRequestAuthoriser\SIPRequestAuthoriser.cs" />
-    <Compile Include="SIPUserAgents\SIPServerUserAgent.cs" />
-    <Compile Include="SIPUserAgents\SIPCallDescriptor.cs" />
-    <Compile Include="SIPUserAgents\SIPClientUserAgent.cs" />
-    <Compile Include="WCFServices\CrossDomainWebService.cs" />
-    <Compile Include="WCFServices\IProvisioningService.cs" />
-    <Compile Include="WCFServices\ProvisioningServiceInstanceProvider.cs" />
-    <Compile Include="WCFServices\SilverlightFaultBehavior.cs" />
-    <Compile Include="WCFServices\SilverlightPolicyServer.cs" />
-    <Compile Include="WCFServices\SIPManagerWebService.cs" />
-    <Compile Include="WCFServices\SIPProvisioningWebService.cs" />
+    <Compile Include="DialPlanApps\CallbackApp.cs" />
+    <Compile Include="DialPlanApps\RTSPApp.cs" />
+    <Compile Include="DialPlanApps\SIPReplyApp.cs" />
+    <Compile Include="DialPlanApps\SkeletonApp.cs" />
+    <Compile Include="DialPlanApps\SwitchCallMulti.cs" />
+    <Compile Include="DialPlanCommand.cs" />
+    <Compile Include="DialPlanContext.cs" />
+    <Compile Include="DialPlanEngine.cs" />
+    <Compile Include="DialPlanExecutingScript.cs" />
+    <Compile Include="DialPlanLineContext.cs" />
+    <Compile Include="DialPlanScriptContext.cs" />
+    <Compile Include="DialPlanScriptHelper.cs" />
+    <Compile Include="DialPlanServices.cs" />
+    <Compile Include="DialStringParser.cs" />
+    <Compile Include="IDialPlanServices.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SIPSorcery.CRM\SIPSorcery.CRM.csproj">
-      <Project>{F951789F-1ABB-42E8-BB51-F028DC4824EF}</Project>
-      <Name>SIPSorcery.CRM</Name>
-    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">
       <Project>{55898587-8456-40D4-BB88-C9FC8BD6BA9C}</Project>
       <Name>SIPSorcery.Net</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
+      <Project>{339648E6-3B61-4A27-B4A2-38A8216B1D7E}</Project>
+      <Name>SIPSorcery.SIP.App</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
       <Project>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</Project>
@@ -129,9 +114,6 @@
       <Project>{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}</Project>
       <Name>SIPSorcery.Sys</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

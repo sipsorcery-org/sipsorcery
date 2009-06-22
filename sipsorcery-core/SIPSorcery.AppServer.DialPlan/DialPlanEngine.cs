@@ -59,7 +59,7 @@ using IronRuby;
 using NUnit.Framework;
 #endif
 
-namespace SIPSorcery.Servers
+namespace SIPSorcery.AppServer.DialPlan
 {
 	/// <summary>
 	/// Dial plan is in the form:
@@ -153,7 +153,7 @@ namespace SIPSorcery.Servers
           UASInviteTransaction transaction,
           SIPCallDirection callDirection,
           DialogueBridgeCreatedDelegate createBridgeDelegate,
-          SIPCallManager callManager)
+          ISIPCallManager callManager)
         {
             if (dialPlanContext.ContextType == DialPlanContextsEnum.Line)
             {
@@ -257,7 +257,7 @@ namespace SIPSorcery.Servers
             UASInviteTransaction transaction,
             SIPCallDirection callDirection,
             DialogueBridgeCreatedDelegate createBridgeDelegate,
-            SIPCallManager callManager)
+            ISIPCallManager callManager)
         {
             try
             {

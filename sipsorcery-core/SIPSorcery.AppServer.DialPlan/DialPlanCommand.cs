@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using SIPSorcery.SIP.App;
 
-namespace SIPSorcery.Servers
+namespace SIPSorcery.AppServer.DialPlan
 {
     public enum DialPlanOpsEnum
     {

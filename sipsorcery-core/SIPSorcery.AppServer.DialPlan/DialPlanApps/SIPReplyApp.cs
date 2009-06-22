@@ -46,7 +46,7 @@ using log4net;
 using NUnit.Framework;
 #endif
 
-namespace SIPSorcery.Servers
+namespace SIPSorcery.AppServer.DialPlan
 {
     public class SIPReplyApp
     {

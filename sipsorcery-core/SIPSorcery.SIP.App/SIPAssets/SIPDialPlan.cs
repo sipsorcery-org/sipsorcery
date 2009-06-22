@@ -202,12 +202,6 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public object OrderProperty
-        {
-            get { return DialPlanName; }
-            set { }
-        }
-
         public event PropertyChangedEventHandler PropertyChanged;
 
         public SIPDialPlan() { }
@@ -254,11 +248,6 @@ namespace SIPSorcery.SIP.App
         }
 
 #endif
-
-        public object GetOrderProperty()
-        {
-            return DialPlanName;
-        }
 
         public string ToXML()
         {

@@ -113,12 +113,6 @@ namespace SIPSorcery.SIP.App
 
         public List<string> Aliases = new List<string>();
 
-        public object OrderProperty
-        {
-            get { return Domain; }
-            set { }
-        }
-
         public SIPDomain()
         { }
 
@@ -178,11 +172,6 @@ namespace SIPSorcery.SIP.App
         }
 
 #endif
-
-        public object GetOrderProperty()
-        {
-            return Domain;
-        }
 
         public string ToXML()
         {

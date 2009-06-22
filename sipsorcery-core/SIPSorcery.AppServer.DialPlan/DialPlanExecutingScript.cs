@@ -45,7 +45,7 @@ using SIPSorcery.Sys;
 using log4net;
 using Microsoft.Scripting.Hosting;
 
-namespace SIPSorcery.Servers
+namespace SIPSorcery.AppServer.DialPlan
 {
     public class DialPlanExecutingScript
     {

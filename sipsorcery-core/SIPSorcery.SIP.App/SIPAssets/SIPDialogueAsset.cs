@@ -118,6 +118,7 @@ namespace SIPSorcery.SIP.App {
             set { SIPDialogue.CDRId = (!value.IsNullOrBlank()) ? new Guid(value) : Guid.Empty; }
         }
 
+        [DataMember]
         [Column(Storage = "_calldurationlimit", Name = "calldurationlimit", DbType = "integer", IsPrimaryKey = false, CanBeNull = false)]
         public int CallDurationLimit
         {
@@ -125,10 +126,11 @@ namespace SIPSorcery.SIP.App {
             set { SIPDialogue.CallDurationLimit = value; }
         }
 
-        public object OrderProperty
-        {
-            get { return Id; }
-            set { }
+        [DataMember]
+        [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
+        public DateTime Inserted {
+            get { return SIPDialogue.Inserted; }
+            set { SIPDialogue.Inserted = value; }
         }
 
         public SIPDialogueAsset() {
@@ -163,6 +165,7 @@ namespace SIPSorcery.SIP.App {
             SIPDialogue.OutboundProxy = (row["outboundproxy"] != null && row["outboundproxy"] != DBNull.Value && !(row["outboundproxy"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["outboundproxy"] as string) : null;
             SIPDialogue.CDRId = new Guid(row["cdrid"] as string);
             SIPDialogue.CallDurationLimit = (row["calldurationlimit"] != null && row["calldurationlimit"] != DBNull.Value) ? Convert.ToInt32(row["calldurationlimit"]) : 0;
+            SIPDialogue.Inserted = Convert.ToDateTime(row["inserted"]);
         }
 
         public Dictionary<Guid, object> Load(XmlDocument dom) {
@@ -170,11 +173,6 @@ namespace SIPSorcery.SIP.App {
         }
 
 #endif
-
-        public object GetOrderProperty()
-        {
-            return Id;
-        }
 
         public string ToXML() {
             string dialogueXML =
@@ -202,7 +200,8 @@ namespace SIPSorcery.SIP.App {
                  "  <outboundproxy>" + OutboundProxy + "</outboundproxy>" + m_newLine +
                  "  <routeset>" + SafeXML.MakeSafeXML(RouteSet) + "</routeset>" + m_newLine +
                  "  <cdrid>" + SIPDialogue.CDRId + "</cdrid>" + m_newLine +
-                 "  <calldurationlimit>" + SIPDialogue.CallDurationLimit + "</calldurationlimit>" + m_newLine;
+                 "  <calldurationlimit>" + SIPDialogue.CallDurationLimit + "</calldurationlimit>" + m_newLine +
+                 "  <inserted>" + SIPDialogue.Inserted.ToString("dd MMM yyyy HH:mm:ss") + "</inserted>" + m_newLine;
 
             return dialogueXML;
         }

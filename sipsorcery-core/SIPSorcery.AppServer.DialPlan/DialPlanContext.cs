@@ -9,7 +9,7 @@ using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.Servers
+namespace SIPSorcery.AppServer.DialPlan
 {
     public delegate void CallCancelledDelegate(CallCancelCause cancelCause);
     public delegate void CallProgressDelegate(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string progressContentType, string progressBody);

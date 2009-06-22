@@ -20,6 +20,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Odbc;
 using System.Data.OleDb;
@@ -29,6 +30,7 @@ using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
 using log4net;
+using MySql.Data.MySqlClient;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -49,6 +51,7 @@ namespace SIPSorcery.Sys
 		Unknown,
 		MSSQL,
 		Postgresql,
+        MySQL,
 		XML,
         NHibernate,
         DBLinqMySQL,
@@ -118,88 +121,97 @@ namespace SIPSorcery.Sys
 			ExecuteNonQuery(m_storageType, m_dbConnStr, query);
 		}
 
+        public void ExecuteNonQuery(string query, Dictionary<string, object> parameters) {
+            ExecuteNonQuery(m_storageType, m_dbConnStr, query, parameters);
+        }
+
 		public void ExecuteNonQuery(StorageTypes storageType, string dbConnString, string query)
 		{
             QuerySecurityCheck(query);
             
             try
 			{
-				if(storageType == StorageTypes.Postgresql)
-				{
-					NpgsqlConnection connPgsql = null;
-						
-					try
-					{
-						connPgsql = new NpgsqlConnection(dbConnString);
-						connPgsql.Open();
-						NpgsqlCommand command = new NpgsqlCommand(query, connPgsql);
-						command.ExecuteNonQuery();
-					}
-					catch(Exception npgsqlExcp)
-					{
-						throw new ApplicationException("Exception ExecuteNonQuery (Npgsql Connection Pooling). Original exception type " + npgsqlExcp.GetType() + ". "  + npgsqlExcp.Message);
-					}
-					finally
-					{
-						// If using the Npgsql pooling close the connection to place it back in the pool.
-						connPgsql.Close();
-					}
-				}
-				else
-				{
-					throw new ApplicationException("StorageType " + storageType + " not currently supported in ExecuteNonQuery");
-				}
+                using (IDbConnection dbConn = GetDbConnection(storageType, dbConnString)) {
+                    dbConn.Open();
+                    IDbCommand command = GetDbCommand(storageType, dbConn, query);
+                    command.ExecuteNonQuery();
+                }
 			}
 			catch(Exception excp)
 			{
-				//logger.Error("Exception ExecuteNonQuery. " + excp.Message);
+				logger.Error("Exception ExecuteNonQuery. " + excp.Message);
 				throw excp;
 			}	
-		}		
+		}
+
+        public void ExecuteNonQuery(StorageTypes storageType, string dbConnString, string query, Dictionary<string, object> parameters) {
+            try {
+                using (IDbConnection dbConn = GetDbConnection(storageType, dbConnString)) {
+                    dbConn.Open();
+                    IDbCommand command = GetDbCommand(storageType, dbConn, query);
+
+                    if (parameters != null && parameters.Count > 0) {
+                        foreach (KeyValuePair<string, object> parameter in parameters) {
+                            command.Parameters.Add(GetDbParameter(storageType, parameter.Key, parameter.Value));
+                        }
+                    }
+
+                    command.ExecuteNonQuery();
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception ExecuteNonQuery. " + excp.Message);
+                throw excp;
+            }
+        }		
 		
 		public object ExecuteScalar(string query)
 		{
 			return ExecuteScalar(m_storageType, m_dbConnStr, query);
 		}
-		
-		public object ExecuteScalar(StorageTypes storageType, string dbConnString, string query)
-		{
+
+        public object ExecuteScalar(string query, Dictionary<string, object> parameters) {
+            return ExecuteScalar(m_storageType, m_dbConnStr, query, parameters);
+        }
+
+        public object ExecuteScalar(StorageTypes storageType, string dbConnString, string query) {
             QuerySecurityCheck(query);
 
-			try
-			{               
-                if(storageType == StorageTypes.Postgresql)
-				{
-					NpgsqlConnection connPgsql = null;
-						
-					try
-					{
-						connPgsql = new NpgsqlConnection(dbConnString);
-						connPgsql.Open();
-						NpgsqlCommand command = new NpgsqlCommand(query, connPgsql);
-						return command.ExecuteScalar();
-					}
-					catch(Exception npgsqlExcp)
-					{
-						throw new ApplicationException("Exception ExecuteScalar (Npgsql Connection Pooling). Original exception type " + npgsqlExcp.GetType() + ". "  + npgsqlExcp.Message);
-					}
-					finally
-					{
-						// If using the Npgsql pooling close the connection to place it back in the pool.
-                        connPgsql.Close();
-					}
-				}
-				else
-				{
-					throw new ApplicationException("StorageType " + storageType + " not currently supported in ExecuteScalar");
-				}
-			}
-			catch(Exception excp)
-			{
-				//logger.Error("Exception ExecuteScalar. " + excp.Message);
-				throw excp;
-			}
-		}	
+            try {
+                using (IDbConnection dbConn = GetDbConnection(storageType, dbConnString)) {
+                    dbConn.Open();
+                    IDbCommand command = GetDbCommand(storageType, dbConn, query);
+                    return command.ExecuteScalar();
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception ExecuteScalar. " + excp.Message);
+                throw excp;
+            }
+        }
+
+        public object ExecuteScalar(StorageTypes storageType, string dbConnString, string query, Dictionary<string, object> parameters) {
+            QuerySecurityCheck(query);
+
+            try {
+                using (IDbConnection dbConn = GetDbConnection(storageType, dbConnString)) {
+                    dbConn.Open();
+                    IDbCommand command = GetDbCommand(storageType, dbConn, query);
+
+                    if (parameters != null && parameters.Count > 0) {
+                        foreach (KeyValuePair<string, object> parameter in parameters) {
+                            command.Parameters.Add(GetDbParameter(storageType, parameter.Key, parameter.Value));
+                        }
+                    }
+
+                    return command.ExecuteScalar();
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception ExecuteScalar. " + excp.Message);
+                throw excp;
+            }
+        }	
 		
 		public DataSet GetDataSet(string query)
 		{
@@ -209,44 +221,22 @@ namespace SIPSorcery.Sys
 		public DataSet GetDataSet(StorageTypes storageType, string dbConnString, string query)
 		{
             QuerySecurityCheck(query);
-            
-            try
-			{
-                if(storageType == StorageTypes.Postgresql)
-				{
-					NpgsqlConnection connPgsql = null;
-						
-					try
-					{
-						connPgsql = new NpgsqlConnection(dbConnString);
-						connPgsql.Open();
-						Npgsql.NpgsqlDataAdapter adapter = new NpgsqlDataAdapter(query, connPgsql);
 
-						DataSet resultSet = new DataSet();
-						adapter.Fill(resultSet);
+            try {
+                using (IDbConnection dbConn = GetDbConnection(storageType, dbConnString)) {
+                    dbConn.Open();
+                    IDataAdapter adapter = GetDataAdapter(storageType, dbConn, query);
 
-						return resultSet;
-					}
-					catch(Exception npgsqlExcp)
-					{
-						throw new ApplicationException("Exception GetDataSet (Npgsql Connection Pooling). Original exception type " + npgsqlExcp.GetType() + ". "  + npgsqlExcp.Message);
-					}
-					finally
-					{
-						// If using the Npgsql pooling close the connection to place it back in the pool.
-						connPgsql.Close();
-					}
-				}
-				else
-				{
-					throw new ApplicationException("StorageType " + storageType + " not currently supported in GetDataSet");
-				}
-			}
-			catch(Exception excp)
-			{
-				//logger.Error("Exception GetDataSet. " + excp.Message);
-				throw excp;
-			}
+                    DataSet resultSet = new DataSet();
+                    adapter.Fill(resultSet);
+
+                    return resultSet;
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception GetDataSet. " + excp.Message);
+                throw excp;
+            }
 		}
 
 		public int StoreLargeObject(Stream largeObjectStream)
@@ -459,8 +449,57 @@ namespace SIPSorcery.Sys
                 throw new ApplicationException("Couldn't convert a database boolean type in StorageLayer.");
             }
         }
-		
-		#region Unit tests.
+
+        private IDbConnection GetDbConnection(StorageTypes storageType, string dbConnStr) {
+            if (storageType == StorageTypes.Postgresql) {
+                return new NpgsqlConnection(dbConnStr);
+            }
+            else if (storageType == StorageTypes.MySQL) {
+                return new MySqlConnection(dbConnStr);
+            }
+            else {
+                throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbConnection.");
+            }
+        }
+
+        private IDbCommand GetDbCommand(StorageTypes storageType, IDbConnection dbConn, string cmdText) {
+            if (storageType == StorageTypes.Postgresql) {
+                return new NpgsqlCommand(cmdText, (NpgsqlConnection)dbConn);
+            }
+            else if (storageType == StorageTypes.MySQL) {
+                return new MySqlCommand(cmdText, (MySqlConnection)dbConn);
+            }
+            else {
+                throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbConnection.");
+            }
+        }
+
+        private IDataAdapter GetDataAdapter(StorageTypes storageType, IDbConnection dbConn, string cmdText) {
+            if (storageType == StorageTypes.Postgresql) {
+                return new NpgsqlDataAdapter(cmdText, (NpgsqlConnection)dbConn);
+            }
+            else if (storageType == StorageTypes.MySQL) {
+                return new MySqlDataAdapter(cmdText, (MySqlConnection)dbConn);
+            }
+            else {
+                throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbConnection.");
+            }
+        }
+
+        private IDataParameter GetDbParameter(StorageTypes storageType, string name, object value) {
+            if (storageType == StorageTypes.Postgresql) {
+                return new NpgsqlParameter(name, value);
+            }
+            else if (storageType == StorageTypes.MySQL) {
+                return new MySqlParameter(name, value);
+            }
+            else {
+                throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbParameter.");
+            }
+        }
+
+
+        #region Unit tests.
 		
 		#if UNITTEST
 

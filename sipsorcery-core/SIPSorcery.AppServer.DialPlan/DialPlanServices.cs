@@ -6,17 +6,17 @@ using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.Servers {
+namespace SIPSorcery.AppServer.DialPlan {
 
     public class DialPlanServices : IDialPlanServices {
 
         private static ILog logger = AppState.logger;
 
-        private SIPCallManager m_sipCallManager;
+        private ISIPCallManager m_sipCallManager;
 
         public DialPlanServices() { }
 
-        public DialPlanServices(SIPCallManager sipCallManager) {
+        public DialPlanServices(ISIPCallManager sipCallManager) {
             m_sipCallManager = sipCallManager;
         }
 

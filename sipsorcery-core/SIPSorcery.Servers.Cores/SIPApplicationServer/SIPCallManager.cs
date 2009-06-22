@@ -39,6 +39,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Net;
 using System.Text;
+using System.Threading;
+using SIPSorcery.AppServer.DialPlan;
 using SIPSorcery.CRM;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -46,14 +48,12 @@ using SIPSorcery.Sys;
 using log4net;
 
 namespace SIPSorcery.Servers
-{
-    public delegate void DialogueBridgeCreatedDelegate(SIPDialogue clientDialogue, SIPDialogue forwardedDialogue, string owner);
-    public delegate void DialogueBridgeClosedDelegate(string dialogueId, string owner);
-    
-    public class SIPCallManager
+{   
+    public class SIPCallManager : ISIPCallManager
     {
         private const int MAX_FORWARD_BINDINGS = 5;
         private const string WEB_CALLBACK_DIALPLAN_NAME = "webcallback";
+        private const string MONITOR_CALLLIMITS_THREAD_NAME = "sipcallmanager-monitorcalls";
 
         private static ILog logger = AppState.logger;
 
@@ -63,6 +63,7 @@ namespace SIPSorcery.Servers
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
         private string m_traceDirectory;
+        private bool m_stop;
         private SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
         private SIPAssetPersistor<SIPCDRAsset> m_sipCDRPersistor;
         private SIPAssetPersistor<Customer> m_customerPersistor;
@@ -105,6 +106,42 @@ namespace SIPSorcery.Servers
             GetCanonicalDomain_External = getCanonicalDomain;
             m_customerPersistor = customerPersistor;
             m_traceDirectory = traceDirectory;
+        }
+
+        public void Start() {
+            ThreadPool.QueueUserWorkItem(delegate { MonitorCalls(); });
+        }
+
+        public void Stop() {
+            logger.Debug("SIPCallManager stopping monitor calls thread.");
+            m_stop = true;
+        }
+
+        private void MonitorCalls() {
+            try {
+                Thread.CurrentThread.Name = MONITOR_CALLLIMITS_THREAD_NAME;
+
+                while (!m_stop) {
+                    try {
+                        List<SIPDialogueAsset> expiredCalls = m_sipDialoguePersistor.Get(d => d.Inserted.AddSeconds(d.CallDurationLimit) >= DateTime.Now, null, 0, Int32.MaxValue);
+                        if (expiredCalls != null && expiredCalls.Count > 0) {
+                            for (int index=0; index<expiredCalls.Count; index++) {
+                                SIPDialogueAsset expiredCall = expiredCalls[index];
+                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Hanging up expired call to " + expiredCall.RemoteTarget + " after " + expiredCall.CallDurationLimit + "s.", expiredCall.Owner));
+                                expiredCall.SIPDialogue.Hangup();
+                            }
+                        }
+                    }
+                    catch (Exception monitorExcp) {
+                        logger.Error("Exception MonitorCalls Monitoring. " + monitorExcp.Message);
+                    }
+                }
+
+                logger.Warn("SIPCallManger MonitorCalls thread stopping.");
+            }
+            catch (Exception excp) {
+                logger.Error("Exception MonitorCalls. " + excp.Message);
+            }
         }
 
         public void ProcessNewCall(SIPServerUserAgent uas)

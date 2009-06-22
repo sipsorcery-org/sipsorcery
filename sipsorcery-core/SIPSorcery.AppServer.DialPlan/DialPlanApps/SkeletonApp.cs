@@ -1,10 +1,10 @@
 //-----------------------------------------------------------------------------
-// Filename: RTSPApp.cs
+// Filename: SkeletonApp.cs
 //
-// Description: Call to an RTSP streaming server.
+// Description: The framework for creating a new dial plan application.
 // 
 // History:
-// 16 Nov 2007	    Aaron Clauson	    Created.
+// 18 Nov 2007	    Aaron Clauson	    Created.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -35,9 +35,7 @@ using System.Data;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
-using System.Reflection;
 using System.Text.RegularExpressions;
-using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -47,21 +45,17 @@ using log4net;
 using NUnit.Framework;
 #endif
 
-namespace SIPSorcery.Servers
+namespace SIPSorcery.AppServer.DialPlan
 {
-    public delegate void RTSPCallAnsweredDelegate(RTSPApp rtspCall);
-    
-    public struct RTSPAppStruct
+    public struct SkeletonStruct
     {
-        public static RTSPAppStruct Empty = new RTSPAppStruct(null, false);
+        public static SkeletonStruct Empty = new SkeletonStruct(null);
 
-        public string URL;
-        public bool TraceRequired;
+        public string Data;
 
-        public RTSPAppStruct(string url, bool traceRequired)
+        public SkeletonStruct(string data)
         {
-            URL = url;
-            TraceRequired = traceRequired;
+            Data = data;
         }
 
         public override bool Equals(object obj)
@@ -69,10 +63,9 @@ namespace SIPSorcery.Servers
             return base.Equals(obj);
         }
 
-        public static bool operator ==(RTSPAppStruct x, RTSPAppStruct y)
+        public static bool operator ==(SkeletonStruct x, SkeletonStruct y)
         {
-            if (x.URL == y.URL &&
-                x.TraceRequired == y.TraceRequired)
+            if (x.Data == y.Data)
             {
                 return true;
             }
@@ -82,7 +75,7 @@ namespace SIPSorcery.Servers
             }
         }
 
-        public static bool operator !=(RTSPAppStruct x, RTSPAppStruct y)
+        public static bool operator !=(SkeletonStruct x, SkeletonStruct y)
         {
             return !(x == y);
         }
@@ -93,15 +86,11 @@ namespace SIPSorcery.Servers
         }
     }
 
-    public class RTSPApp
+    public class SkeletonApp
     {
         private static ILog logger = AppState.GetLogger("sipproxy");
 
-        private static string m_sipProxyUserAgent = "www.mysipswitch.com";
-
         private event SIPMonitorLogDelegate m_statefulProxyLogEvent;
-
-        public readonly Guid RTSPCallId = Guid.NewGuid();
 
         private string m_clientUsername = null;             // If the UAC is authenticated holds the username of the client.
         private UASInviteTransaction m_clientTransaction;   // Proxy transaction established with a client making a call out through the switch.
@@ -109,24 +98,15 @@ namespace SIPSorcery.Servers
         {
             get { return m_clientTransaction; }
         }
-        //public SIPDialogue ClientDialogue
-        //{
-        //    get { return m_clientDialogue; }
-        //}
-        //private SIPDialogue m_clientDialogue;               // If the call gets established this holds the dialogue information for the call leg between the switch and the client.
-
-        private RTSPAppStruct m_rtspAppStruct;            // Describes the RTSP server leg of the call from the sipswitch.
-
-        //public event RTSPCallAnsweredDelegate CallAnswered;
-
+        
         public string Owner
         {
             get { return m_clientUsername; }
         }
 
-        private int m_rtpPort;
+        private SkeletonStruct m_skeletonStruct;            
 
-        public RTSPApp(
+        public SkeletonApp(
             SIPMonitorLogDelegate statefulProxyLogEvent,
             UASInviteTransaction clientTransaction,
             string username)
@@ -137,54 +117,20 @@ namespace SIPSorcery.Servers
             //m_clientTransaction.TransactionCancelled += new SIPTransactionCancelledDelegate(CallCancelled);
 
             m_clientUsername = username;
-
-            logger.Debug(m_clientTransaction.TransactionRequest.Body);
-            
-            m_rtpPort = Convert.ToInt32(Regex.Match(m_clientTransaction.TransactionRequest.Body, @"m=audio (?<port>\d+)", RegexOptions.Singleline).Result("${port}"));
-            logger.Debug("RTP port=" + m_rtpPort);
         }
 
         public void Start(string commandData)
         {
             try
             {
-                m_rtspAppStruct = new RTSPAppStruct(commandData, false);
-                
-                RTSPClient rtspClient = new RTSPClient();
-                string sdp = rtspClient.GetStreamDescription(m_rtspAppStruct.URL);
+                logger.Debug("SkeletonApp Start.");
 
-                SIPResponse sipResponse = GetOkResponse(m_clientTransaction.TransactionRequest, sdp);
-
-                m_clientTransaction.SendFinalResponse(sipResponse);
-
-                rtspClient.Start(m_rtspAppStruct.URL, m_clientTransaction.RemoteEndPoint.SocketEndPoint.Address, m_rtpPort);
+                m_skeletonStruct = new SkeletonStruct(commandData);
             }
             catch (Exception excp)
             {
-                logger.Error("Exception RTSPCall StartCall. " + excp.Message);
+                logger.Error("Exception SkeletonApp Start. " + excp.Message);
             }
         }
-
-        private SIPResponse GetOkResponse(SIPRequest sipRequest, string messageBody)
-        {
-            try
-            {
-                SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-
-
-                okResponse.Header.UserAgent = m_sipProxyUserAgent;
-                okResponse.Header.Contact = SIPContactHeader.ParseContactHeader(sipRequest.LocalSIPEndPoint.ToString());
-                okResponse.Body = messageBody;
-                okResponse.Header.ContentType = "application/sdp";
-                okResponse.Header.ContentLength = messageBody.Length;
-
-                return okResponse;
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception GetOkResponse. " + excp.Message);
-                throw excp;
-            }
-        } 
     }
 }

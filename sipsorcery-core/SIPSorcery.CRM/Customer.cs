@@ -111,12 +111,6 @@ namespace SIPSorcery.CRM
         [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
         public DateTime Inserted { get; set; }
 
-        public object OrderProperty
-        {
-            get { return CustomerUsername; }
-            set { }
-        }
-
         public Customer() { }
 
 #if !SILVERLIGHT
@@ -154,11 +148,6 @@ namespace SIPSorcery.CRM
         }
 
 #endif
-
-        public object GetOrderProperty()
-        {
-            return CustomerUsername;
-        }
 
         public string ToXML()
         {

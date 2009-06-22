@@ -57,7 +57,7 @@ namespace SIPSorcery.SIP.App
     {
         public const string DELAY_CALL_OPTION_KEY = "dt";       // Dial string option to delay the start of a call leg.
         public const string REDIRECT_MODE_OPTION_KEY = "rm";    // Dial string option to set the redirect mode of a call leg. Redirect mode refers to how 3xx responses to a call are handled.
-        public const string CALL_DURATION_OPTION_KEY = "at";    // Dial string option used to set the maximum duration of a call in seconds.
+        public const string CALL_DURATION_OPTION_KEY = "cd";    // Dial string option used to set the maximum duration of a call in seconds.
 
         private readonly static string m_defaultFromURI = SIPConstants.SIP_DEFAULT_FROMURI;
         private static char m_customHeadersSeparator = SIPProvider.CUSTOM_HEADERS_SEPARATOR;

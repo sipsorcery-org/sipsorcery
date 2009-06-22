@@ -83,6 +83,7 @@ namespace SIPSorcery.SIP
         public Guid BridgeId { get; set; }                          // If this dialogue gets bridged by a higher level application server the id for the bridge can be stored here.                   
         public SIPEndPoint OutboundProxy { get; set; }
         public int CallDurationLimit { get; set; }                  // If non-zero indicates the dialogue established should only be permitted to stay up for this many seconds.
+        public DateTime Inserted { get; set; }
 
         public SIPDialogueStateEnum DialogueState = SIPDialogueStateEnum.Unknown;
 
@@ -124,6 +125,7 @@ namespace SIPSorcery.SIP
             SDP = sdp;
             RemoteSDP = remoteSDP;
             OutboundProxy = outboundProxy;
+            Inserted = DateTime.Now;
         }
 
         /// <summary>
@@ -153,9 +155,10 @@ namespace SIPSorcery.SIP
             AdminMemberId = adminMemberId;
             SDP = uasInviteTransaction.TransactionFinalResponse.Body;
             RemoteSDP = uasInviteTransaction.TransactionRequest.Body;
-            
-            DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
             OutboundProxy = uasInviteTransaction.OutboundProxy;
+            Inserted = DateTime.Now;
+
+            DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
 
             RemoteTarget = new SIPURI(uasInviteTransaction.TransactionRequest.URI.Scheme, uasInviteTransaction.RemoteEndPoint);
             if (uasInviteTransaction.TransactionRequest.Header.Contact != null && uasInviteTransaction.TransactionRequest.Header.Contact.Count > 0) {
@@ -197,9 +200,10 @@ namespace SIPSorcery.SIP
             AdminMemberId = adminMemberId;
             SDP = uacInviteTransaction.TransactionRequest.Body;
             RemoteSDP = uacInviteTransaction.TransactionFinalResponse.Body;
+            OutboundProxy = uacInviteTransaction.OutboundProxy;
+            Inserted = DateTime.Now;
 
             DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
-            OutboundProxy = uacInviteTransaction.OutboundProxy;
 
             // Set the dialogue remote target and take care of mangling if an upstream proxy has indicated it's required.
             RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, uacInviteTransaction.RemoteEndPoint);
@@ -224,16 +228,6 @@ namespace SIPSorcery.SIP
         {
             return Crypto.GetSHAHash(sipHeader.CallId + sipHeader.To.ToTag + sipHeader.From.FromTag);
         }
-
-        /*public SIPRequest GetByeRequestX()
-        {
-            SIPEndPoint dstEndPoint = GetDestinationEndPoint();
-            SIPEndPoint localSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint(dstEndPoint);
-            if (localSIPEndPoint == null) {
-                throw new ApplicationException("Could not locate an appropriate SIP transport channel in SIPDialogue Hangup for protocol " + dstEndPoint.SIPProtocol + ".");
-            }
-            return GetByeRequest(this, localSIPEndPoint);
-        }*/
 
         public void Hangup()
         {

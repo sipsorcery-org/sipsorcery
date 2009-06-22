@@ -43,7 +43,7 @@ using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.Servers
+namespace SIPSorcery.AppServer.DialPlan
 {
     public class CallbackApp
     {
@@ -57,7 +57,7 @@ namespace SIPSorcery.Servers
         private SIPMonitorLogDelegate Log_External;
 
         private SIPTransport m_sipTransport;
-        private SIPCallManager m_callManager;
+        private ISIPCallManager m_callManager;
         private DialStringParser m_dialStringParser;
         private string m_username;
         private string m_adminMemberId;
@@ -65,7 +65,7 @@ namespace SIPSorcery.Servers
 
         public CallbackApp(
             SIPTransport sipTransport, 
-            SIPCallManager callManager,
+            ISIPCallManager callManager,
             DialStringParser dialStringParser, 
             SIPMonitorLogDelegate logDelegate, 
             string username,

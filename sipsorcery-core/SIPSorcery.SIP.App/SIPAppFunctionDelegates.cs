@@ -45,6 +45,8 @@ namespace SIPSorcery.SIP.App
     public delegate bool SIPMonitorAuthenticationDelegate(string username, string password);    // Delegate to authenticate connections to the SIP Monitor Server.
     public delegate SIPDialPlan GetDialPlanDelegate(string owner, string dialPlanName);
     public delegate SIPAccount GetSIPAccountDelegate(string username, string domain);
+    public delegate void DialogueBridgeCreatedDelegate(SIPDialogue clientDialogue, SIPDialogue forwardedDialogue, string owner);
+    public delegate void DialogueBridgeClosedDelegate(string dialogueId, string owner);
     //public delegate List<SIPRegistrarBinding> GetSIPAccountBindingsDelegate(string user, string domain);
     //public delegate List<SIPProvider> GetSIPProvidersDelegate(string whereExpression);
 

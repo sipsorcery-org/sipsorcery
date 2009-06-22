@@ -62,11 +62,6 @@ namespace SIPSorcery.SIP.App {
             set { m_sipCDR.Created = value; }
         }
  
-        public object OrderProperty {
-            get { return m_sipCDR.Created; }
-            set { m_sipCDR.Created = Convert.ToDateTime(value); }
-        }
-
         [Column(Storage = "_dst", Name = "dst", DbType = "character varying(128)", CanBeNull = false)]
         [DataMember]
         public string Dst {
@@ -256,11 +251,6 @@ namespace SIPSorcery.SIP.App {
         }
 
 #endif
-
-        public object GetOrderProperty()
-        {
-            return m_sipCDR.Created;
-        }
 
         public string ToXML() {
             string cdrXML =

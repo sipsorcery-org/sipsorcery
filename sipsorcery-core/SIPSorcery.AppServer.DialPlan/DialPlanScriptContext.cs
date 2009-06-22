@@ -6,7 +6,7 @@ using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using log4net;
 
-namespace SIPSorcery.Servers
+namespace SIPSorcery.AppServer.DialPlan
 {
     public class DialPlanScriptContext : DialPlanContext
     {
