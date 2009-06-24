@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using log4net;
 
 namespace SIPSorcery.SIPRegistrar {
 
@@ -19,6 +20,7 @@ namespace SIPSorcery.SIPRegistrar {
         private static readonly string m_storageTypeKey = Persistence.PERSISTENCE_STORAGETYPE_KEY;
         private static readonly string m_connStrKey = Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
 
+        private static ILog logger = AppState.logger;
         private static ManualResetEvent m_registrarUp = new ManualResetEvent(false);
 
         private static StorageTypes m_sipRegistrarStorageType;
@@ -56,7 +58,7 @@ namespace SIPSorcery.SIPRegistrar {
                     throw new NotImplementedException(m_sipRegistrarStorageType + " is not implemented for the SIP Registrar persistor.");
                 }
 
-                SIPRegistrarDaemon daemon = new SIPRegistrarDaemon(sipDomainManager.GetDomain, sipAccountsPersistor.Get, sipRegistrarBindingPersistor);
+                SIPRegistrarDaemon daemon = new SIPRegistrarDaemon(sipDomainManager.GetDomain, sipAccountsPersistor.Get, sipRegistrarBindingPersistor, SIPRequestAuthenticator.AuthenticateSIPRequest);
 
                 if (args != null && args.Length == 1 && args[0].StartsWith("-c")) {
                     Console.WriteLine("SIP Registrar starting");

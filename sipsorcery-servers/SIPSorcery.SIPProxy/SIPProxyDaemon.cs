@@ -40,6 +40,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Xml;
 using SIPSorcery.Net;
 using SIPSorcery.Servers;
@@ -52,18 +53,23 @@ namespace SIPSorcery.SIPProxy
 {
     public class SIPProxyDaemon
     {
+        private const string STUN_CLIENT_THREAD_NAME = "sipproxy-stunclient";
+
         private ILog logger = AppState.logger;
 
         private XmlNode m_sipProxySocketsNode = SIPProxyState.SIPProxySocketsNode;
         private int m_monitorPort = SIPProxyState.MonitorLoopbackPort;
         private string m_proxyRuntimeScriptPath = SIPProxyState.ProxyScriptPath;
         private IPEndPoint m_natKeepAliveSocket = SIPProxyState.NATKeepAliveSocket;
+        private string m_stunServerHostname = SIPProxyState.STUNServerHostname;
 
         private SIPTransport m_sipTransport;
         private StatelessProxyCore m_statelessProxyCore;
         private SIPMonitorEventWriter m_monitorEventWriter;
         private NATKeepAliveRelay m_natKeepAliveRelay;
         private STUNServer m_stunServer;
+        private bool m_stop;
+        private ManualResetEvent m_stunClientMRE = new ManualResetEvent(false);     // Used to set the interval on the STUN lookups and also allow the thread to be stopped.
 
         public SIPProxyDaemon()
         {}
@@ -100,6 +106,11 @@ namespace SIPSorcery.SIPProxy
                 // Create the SIP stateless proxy core.
                 m_statelessProxyCore = new StatelessProxyCore(FireSIPMonitorEvent, m_sipTransport, m_proxyRuntimeScriptPath);
 
+                // If a STUN server hostname has been specified start the STUN client thread.
+                if (!m_stunServerHostname.IsNullOrBlank()) {
+                    ThreadPool.QueueUserWorkItem(delegate { StartSTUNClient(); });
+                }
+
                 // Logging.
                 m_sipTransport.SIPRequestInTraceEvent += LogSIPRequestIn;
                 m_sipTransport.SIPRequestOutTraceEvent += LogSIPRequestOut;
@@ -121,7 +132,8 @@ namespace SIPSorcery.SIPProxy
         private void StartSTUNServer(IPEndPoint primaryEndPoint, IPEndPoint secondaryEndPoint, SIPTransport sipTransport)
         {
             STUNListener secondarySTUNListener = new STUNListener(secondaryEndPoint);   // This end point is only for secondary STUN messages.
-            m_stunServer = new STUNServer(primaryEndPoint, STUNSend, secondaryEndPoint, secondarySTUNListener.Send);
+            STUNSendMessageDelegate primarySend = (dst, buffer) => { m_sipTransport.SendRaw(m_sipTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp), new SIPEndPoint(dst), buffer); };
+            m_stunServer = new STUNServer(primaryEndPoint, primarySend, secondaryEndPoint, secondarySTUNListener.Send);
             sipTransport.STUNRequestReceived += m_stunServer.STUNPrimaryReceived;
             sipTransport.STUNRequestReceived += LogPrimarySTUNRequestReceived;
             secondarySTUNListener.MessageReceived += m_stunServer.STUNSecondaryReceived;
@@ -143,14 +155,32 @@ namespace SIPSorcery.SIPProxy
             }
         }
 
-        /// <summary>
-        /// Allows the STUN server to utilise the default UDP SIP socket.
-        /// </summary>
-        /// <param name="dstEndPoint"></param>
-        /// <param name="buffer"></param>
-        private void STUNSend(IPEndPoint dstEndPoint, byte[] buffer)
-        {
-            //m_sipProxyTransport.SendRaw(m_sipProxyTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp), new SIPEndPoint(dstEndPoint), buffer);
+        private void StartSTUNClient() {
+            try {
+                Thread.CurrentThread.Name = STUN_CLIENT_THREAD_NAME;
+
+                logger.Debug("SIPProxyDaemon STUN client started.");
+
+                while (!m_stop) {
+                    IPAddress publicIP = STUNClient.GetPublicIPAddress(m_stunServerHostname);
+                    if (publicIP != null) {
+                        logger.Debug("The STUN client was able to determine the public IP address as " + publicIP.ToString() + ".");
+                        m_statelessProxyCore.PublicIPAddress = publicIP;
+                    }
+                    else {
+                        logger.Debug("The STUN client could not determine the public IP address.");
+                        m_statelessProxyCore.PublicIPAddress = null;
+                    }
+
+                    m_stunClientMRE.Reset();
+                    m_stunClientMRE.WaitOne(60000);
+                }
+
+                logger.Warn("SIPProxyDaemon STUN client thread stopped.");
+            }
+            catch (Exception excp) {
+                logger.Error("Exception StartSTUNClient. " + excp.Message);
+            }
         }
 
         public void Stop()
@@ -158,6 +188,9 @@ namespace SIPSorcery.SIPProxy
             try
             {
                 logger.Debug("SIP Proxy daemon stopping...");
+
+                m_stop = true;
+                m_stunClientMRE.Set();
 
                 if (m_natKeepAliveRelay != null)
                 {

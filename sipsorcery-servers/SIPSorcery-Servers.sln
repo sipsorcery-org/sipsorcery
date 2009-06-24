@@ -12,8 +12,22 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPRegistrationAgent", "SIPSorcery.SIPRegistrationAgent\SIPSorcery.SIPRegistrationAgent.csproj", "{92B0EB84-6587-4D7A-803B-C9FA0230A4B3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3A407BCE-4A7A-4DB3-A64F-5F7D7B80BE97}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SQL", "SQL", "{031FFE96-4965-4D1E-AD80-1D051CF27AF8}"
 	ProjectSection(SolutionItems) = preProject
 		SQL\sipsorcery.sql = SQL\sipsorcery.sql
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{28496FF4-0738-4E19-A657-3B00F1075E6A}"
+	ProjectSection(SolutionItems) = preProject
+		SIPSorcery.Web\callmanager.svc = SIPSorcery.Web\callmanager.svc
+		SIPSorcery.Web\clientaccesspolicy.xml = SIPSorcery.Web\clientaccesspolicy.xml
+		SIPSorcery.Web\default.html = SIPSorcery.Web\default.html
+		SIPSorcery.Web\help.html = SIPSorcery.Web\help.html
+		SIPSorcery.Web\provisioning.asmx = SIPSorcery.Web\provisioning.asmx
+		SIPSorcery.Web\provisioning.svc = SIPSorcery.Web\provisioning.svc
+		SIPSorcery.Web\sipsorcery.html = SIPSorcery.Web\sipsorcery.html
+		SIPSorcery.Web\Web.config = SIPSorcery.Web\Web.config
 	EndProjectSection
 EndProject
 Global
@@ -45,5 +59,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{031FFE96-4965-4D1E-AD80-1D051CF27AF8} = {3A407BCE-4A7A-4DB3-A64F-5F7D7B80BE97}
+		{28496FF4-0738-4E19-A657-3B00F1075E6A} = {3A407BCE-4A7A-4DB3-A64F-5F7D7B80BE97}
 	EndGlobalSection
 EndGlobal

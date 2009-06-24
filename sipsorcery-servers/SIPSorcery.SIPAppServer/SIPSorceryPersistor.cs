@@ -129,24 +129,6 @@ namespace SIPSorcery.SIPAppServer {
             }
         }
 
-        public SIPDialPlan LoadDialPlan(string owner, string dialPlanName) {
-            if (owner.IsNullOrBlank() || dialPlanName.IsNullOrBlank()) {
-                return null;
-            }
-
-            SIPDialPlan dialPlan = m_dialPlanPersistor.Get(d => d.Owner == owner && d.DialPlanName == dialPlanName);
-
-            if (dialPlan == null) {
-                logger.Warn("SIPSorceryPersistor could not locate a dialplan for owner=" + owner + " and dialplan name=" + dialPlanName.Trim() + ".");
-            }
-
-            return dialPlan;
-        }
-
-        public SIPAccount GetSIPAccount(string username, string domain) {
-            return m_sipAccountsPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == domain);
-        }
-
         public void QueueCDR(SIPCDR cdr) {
             try {
                 if (m_sipCDRPersistor != null && !StopCDRWrites && !m_pendingCDRs.Contains(cdr)) {

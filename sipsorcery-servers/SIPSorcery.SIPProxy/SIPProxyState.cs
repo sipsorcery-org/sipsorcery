@@ -59,6 +59,7 @@ namespace SIPSorcery.SIPProxy
         private const string PROXY_SCRIPTPATH_KEY = "ProxyScriptPath";
         private const string PROXY_LOOPBACK_PORT_KEY = "MonitorLoopbackPort";
         private const string PROXY_NATKEEPALIVESOCKET_KEY = "NATKeepAliveSocket";
+        private const string PROXY_STUNSERVERHOSTNAME_KEY = "STUNServerHostname";
 
         public static ILog logger;
 
@@ -67,6 +68,7 @@ namespace SIPSorcery.SIPProxy
         public static readonly string ProxyScriptPath;
         public static readonly int MonitorLoopbackPort;
         public static readonly IPEndPoint NATKeepAliveSocket;
+        public static readonly string STUNServerHostname;
 
         static SIPProxyState()
         {
@@ -91,6 +93,7 @@ namespace SIPSorcery.SIPProxy
                     NATKeepAliveSocket = IPSocket.ParseSocketString(AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_NATKEEPALIVESOCKET_KEY));
                 }
                 Int32.TryParse(AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_LOOPBACK_PORT_KEY), out MonitorLoopbackPort);
+                STUNServerHostname = AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_STUNSERVERHOSTNAME_KEY);
             }
             catch (Exception excp)
             {

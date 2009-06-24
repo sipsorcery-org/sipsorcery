@@ -90,7 +90,7 @@ create table sipregistrarbindings
  proxysipsocket varchar(64),
  registrarsipsocket varchar(64) not null,
  lastupdate timestamp not null default now(),
- expirytime timestamp,
+ expirytime timestamp not null,
  Primary Key(id),
  Foreign Key(sipaccountid) references sipaccounts(id) on delete cascade on update cascade,
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade
@@ -134,8 +134,8 @@ create table sipproviderbindings
  adminmemberid varchar(32),
  registrationfailuremessage varchar(1024),
  nextregistrationtime timestamp not null default now(),
- lastregistertime timestamp,
- lastregisterattempt timestamp,
+ lastregistertime timestamp null default null,
+ lastregisterattempt timestamp null default null,
  isregistered bool not null default false,
  bindingexpiry int not null default 3600,
  bindinguri varchar(256) not null,
@@ -185,6 +185,8 @@ create table sipdialogues
  outboundproxy varchar(128),
  cdrid varchar(36) not null,
  calldurationlimit int,
+ inserted timestamp not null default now(),
+ hangupat timestamp null default null,
  Primary Key(id),
  Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade
 );
@@ -208,15 +210,15 @@ create table cdr
  localsocket varchar(64) not null,				-- The socket on the proxy used for the call.
  remotesocket varchar(64) not null,				-- The remote socket used for the call.
  bridgeid varchar(36),							-- If the call was involved in a bridge the id of it.
- inprogresstime timestamp,						-- The time of the last info response for the call.
+ inprogresstime timestamp null default null,	-- The time of the last info response for the call.
  inprogressstatus int,							-- The SIP response status code of the last info response for the call.
  inprogressreason varchar(64),					-- The SIP response reason phrase of the last info response for the call.
  ringduration int,								-- Number of seconds the call was ringing for.
- answeredtime timestamp,						-- The time the call was answered with a final response.
+ answeredtime timestamp null default null,		-- The time the call was answered with a final response.
  answeredstatus int,							-- The SIP response status code of the final response for the call.
  answeredreason varchar(64),					-- The SIP response reason phrase of the final response for the call.
  duration int,									-- Number of seconds the call was established for.
- hunguptime timestamp,							-- The time the call was hungup.
+ hunguptime timestamp null default null,	     -- The time the call was hungup.
  hungupreason varchar(64),						-- The SIP response Reason header on the BYE request if present.
  Primary Key(id)
 );

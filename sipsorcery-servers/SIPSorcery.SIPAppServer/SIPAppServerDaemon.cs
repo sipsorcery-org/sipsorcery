@@ -49,6 +49,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
+using SIPSorcery.AppServer.DialPlan;
 using SIPSorcery.CRM;
 using SIPSorcery.Net;
 using SIPSorcery.Servers;
@@ -84,6 +85,7 @@ namespace SIPSorcery.SIPAppServer {
         private SIPSorceryPersistor m_sipSorceryPersistor;
         private SIPMonitorEventWriter m_monitorEventWriter;
         private SIPAppServerCore m_appServerCore;
+        private SIPCallManager m_callManager;
         private SIPProxyDaemon m_sipProxyDaemon;
         private SIPMonitorDaemon m_sipMonitorDaemon;
         private SIPRegAgentDaemon m_sipRegAgentDaemon;
@@ -93,7 +95,7 @@ namespace SIPSorcery.SIPAppServer {
         private DialPlanEngine m_dialPlanEngine;
         private ServiceHost m_accessPolicyHost;
         private ServiceHost m_sipProvisioningHost;
-        private ServiceHost m_dialPlanSvcHost;
+        private ServiceHost m_callManagerSvcHost;
         private CustomerSessionManager m_customerSessionManager;
 
         private StorageTypes m_storageType;
@@ -128,7 +130,8 @@ namespace SIPSorcery.SIPAppServer {
                     m_sipRegistrarDaemon = new SIPRegistrarDaemon(
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                         m_sipSorceryPersistor.SIPAccountsPersistor.Get,
-                        m_sipSorceryPersistor.SIPRegistrarBindingPersistor);
+                        m_sipSorceryPersistor.SIPRegistrarBindingPersistor,
+                        SIPRequestAuthenticator.AuthenticateSIPRequest);
                     m_sipRegistrarDaemon.Start();
                 }
 
@@ -175,11 +178,6 @@ namespace SIPSorcery.SIPAppServer {
 
                     #endregion
 
-                    SIPRequestAuthoriser sipRequestAuthoriser = new SIPRequestAuthoriser(
-                        FireSIPMonitorEvent,
-                        m_sipSorceryPersistor.SIPDomainManager.GetDomain,
-                        m_sipSorceryPersistor.GetSIPAccount);
-
                     m_dialPlanEngine = new DialPlanEngine(
                         m_sipTransport,
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
@@ -190,27 +188,30 @@ namespace SIPSorcery.SIPAppServer {
                         m_outboundProxy,
                         m_rubyScriptCommonPath);
 
-                    SIPCallManager callManager = new SIPCallManager(
+                    m_callManager = new SIPCallManager(
                          m_sipTransport,
                          m_outboundProxy,
                          FireSIPMonitorEvent,
                          m_sipSorceryPersistor.SIPDialoguePersistor,
                          m_sipSorceryPersistor.SIPCDRPersistor,
                          m_dialPlanEngine,
-                         m_sipSorceryPersistor.LoadDialPlan,
-                         m_sipSorceryPersistor.GetSIPAccount,
+                         m_sipSorceryPersistor.SIPDialPlanPersistor.Get,
+                         m_sipSorceryPersistor.SIPAccountsPersistor.Get,
                          m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
                          m_sipSorceryPersistor.SIPProvidersPersistor.Get,
                          m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                          m_customerSessionManager.CustomerPersistor,
                          m_traceDirectory);
 
+                    m_callManager.Start();
+
                     m_appServerCore = new SIPAppServerCore(
                         m_sipTransport,
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
+                        m_sipSorceryPersistor.SIPAccountsPersistor.Get,
                         FireSIPMonitorEvent,
-                        callManager,
-                        sipRequestAuthoriser,
+                        m_callManager,
+                        SIPRequestAuthenticator.AuthenticateSIPRequest,
                         m_outboundProxy);
                 }
 
@@ -218,7 +219,7 @@ namespace SIPSorcery.SIPAppServer {
 
                 try {
                     if (m_sipSorceryPersistor == null) {
-                        logger.Warn("Web services could not be started as Persistor object was null.");
+                        logger.Warn("Provisioning hosted service could not be started as Persistor object was null.");
                     }
                     else {
                         ProvisioningServiceInstanceProvider instanceProvider = new ProvisioningServiceInstanceProvider(
@@ -237,17 +238,29 @@ namespace SIPSorcery.SIPAppServer {
                         m_sipProvisioningHost.Description.Behaviors.Add(instanceProvider);
                         m_sipProvisioningHost.Open();
 
-                        m_accessPolicyHost = new ServiceHost(typeof(CrossDomainService));
-                        m_accessPolicyHost.Open();
-
-                        m_dialPlanSvcHost = new ServiceHost(typeof(DialPlanServices));
-                        m_dialPlanSvcHost.Open();
-
-                        logger.Debug("Web services successfully started on " + m_sipProvisioningHost.BaseAddresses[0].AbsoluteUri + ".");
+                        logger.Debug("Provisioning hosted service successfully started on " + m_sipProvisioningHost.BaseAddresses[0].AbsoluteUri + ".");
                     }
                 }
                 catch (Exception excp) {
-                    logger.Error("Exception starting Hosted Services. " + excp.Message);
+                    logger.Warn("Exception starting Provisioning hosted service. " + excp.Message);
+                }
+
+                try {
+                    m_accessPolicyHost = new ServiceHost(typeof(CrossDomainService));
+                    m_accessPolicyHost.Open();
+                }
+                catch (Exception excp) {
+                    logger.Error("Exception starting CrossDomain hosted service. " + excp.Message);
+                }
+
+                try {
+                    CallManagerServiceInstanceProvider callManagerSvcInstanceProvider = new CallManagerServiceInstanceProvider(m_callManager);
+                    m_callManagerSvcHost = new ServiceHost(typeof(CallManagerServices));
+                    m_callManagerSvcHost.Description.Behaviors.Add(callManagerSvcInstanceProvider);
+                    m_callManagerSvcHost.Open();
+                }
+                catch (Exception excp) {
+                    logger.Error("Exception starting CallManager hosted service. " + excp.Message);
                 }
 
                 // Initialise random number to save delay on first SIP request.
@@ -274,8 +287,12 @@ namespace SIPSorcery.SIPAppServer {
                     m_sipProvisioningHost.Close();
                 }
 
-                if (m_dialPlanSvcHost != null) {
-                    m_dialPlanSvcHost.Close();
+                if (m_callManagerSvcHost != null) {
+                    m_callManagerSvcHost.Close();
+                }
+
+                if (m_callManager != null) {
+                    m_callManager.Stop();
                 }
 
                 if (m_monitorEventWriter != null) {
