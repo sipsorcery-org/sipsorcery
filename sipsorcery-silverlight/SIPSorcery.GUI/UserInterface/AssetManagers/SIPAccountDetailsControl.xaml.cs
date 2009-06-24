@@ -113,6 +113,8 @@ namespace SIPSorcery
                 m_sipAccountUpdateButton.IsEnabled = false;
                 m_sipAccountOutDialPlanStatus.Text = (m_sipAccount.OutDialPlanName != null) ? m_sipAccount.OutDialPlanName : "-";
                 m_sipAccountInDialPlanStatus.Text = (m_sipAccount.InDialPlanName != null) ? m_sipAccount.InDialPlanName : "-";
+                m_sipAccountNetworkId.IsEnabled = false;
+                m_sipAccountIPAddressACL.IsEnabled = false;
             }
             else
             {
@@ -144,6 +146,8 @@ namespace SIPSorcery
             m_sipAccountPassword.Text = sipAccount.SIPPassword;
             m_sipAccountDomain.Text = sipAccount.SIPDomain;
             m_keepAlivesCheckBox.IsChecked = sipAccount.SendNATKeepAlives;
+            m_sipAccountNetworkId.Text = (sipAccount.NetworkId != null) ? sipAccount.NetworkId : String.Empty;
+            m_sipAccountIPAddressACL.Text = (sipAccount.IPAddressACL != null) ? sipAccount.IPAddressACL : String.Empty;
         }
 
         private void SetDialPlanNames(object state)
@@ -234,6 +238,8 @@ namespace SIPSorcery
                 string domain = m_domainNames.SelectedItem as string;
                 string outDialPlan = m_outDialPlan.SelectedItem as string;
                 string inDialPlan = (m_inDialPlan.SelectedIndex != -1) ? m_inDialPlan.SelectedItem as string : null;
+                string networkId = m_sipAccountNetworkId.Text.Trim();
+                string ipAddressACL = m_sipAccountIPAddressACL.Text.Trim();
                 bool sendKeepAlives = m_keepAlivesCheckBox.IsChecked.Value;
                 bool isIncomingOnly = m_statusIncomingOnlyRadio.IsChecked.Value;
 
@@ -256,6 +262,8 @@ namespace SIPSorcery
                     sipAccount.InDialPlanName = inDialPlan;
                     sipAccount.SendNATKeepAlives = sendKeepAlives;
                     sipAccount.IsIncomingOnly = isIncomingOnly;
+                    sipAccount.NetworkId = networkId;
+                    sipAccount.IPAddressACL = ipAddressACL;
                     sipAccount.Inserted = DateTime.Now;
 
                     WriteStatusMessage(MessageLevelsEnum.Info, "Adding SIP Account please wait...");
@@ -286,6 +294,8 @@ namespace SIPSorcery
                 m_sipAccount.IsIncomingOnly = m_statusIncomingOnlyRadio.IsChecked.Value;
                 m_sipAccount.SendNATKeepAlives = m_keepAlivesCheckBox.IsChecked.Value;
                 m_sipAccount.IsUserDisabled = m_statusDisabledRadio.IsChecked.Value;
+                m_sipAccount.NetworkId = m_sipAccountNetworkId.Text.Trim();
+                m_sipAccount.IPAddressACL = m_sipAccountIPAddressACL.Text.Trim();
 
                 WriteStatusMessage(MessageLevelsEnum.Info, "Attempting to update SIP Account " + m_sipAccount.SIPUsername + "@" + m_sipAccount.SIPDomain + " please wait...");
                 UpdateSIPAccount_External(m_sipAccount);
