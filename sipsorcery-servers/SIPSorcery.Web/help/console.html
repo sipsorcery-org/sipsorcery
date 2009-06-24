@@ -1,0 +1,52 @@
+<html>
+<head>
+    <title>SIP Sorcery Help</title>
+    <style>
+     .sectionHeading 
+     {
+         color: #A0F927;
+         font-weight: 600;    
+     }
+    </style>
+ </head>
+ <body style="background-color: gray; font-family: Arial">
+       
+      <h2 class="sectionheading">
+        SIP Sorcery Help - Console
+     </h2>
+        <a href="../help.html">Back to Contents</a><br /><br />
+        For additional help or questions a community forum is available <a href="http://www.mysipswitch.com/forum/index.php">here</a>.
+     <h2 class="sectionheading">
+        Monitor Console
+         User Guide</h2>
+         
+     <p>
+     The Console can only be used where the Silverlight browser application is able to establish a direct TCP connection back to the
+     SIP Sorcery server on port 4502. This requirement will preclude most corporate networks. A quick way to tell if such a TCP conenction 
+     is possible is to look at the top left corner of the application, if the text reads "Ready (auto refresh enabled)" then console connections are
+     possible, if it reads only "Ready" then console connections are not possible.
+     </p>
+     
+     <p>
+     The Console feature uses a telnet connection to deliver log messages to the Silverlight browser application. Telnet transmits all information
+     in cleartext and is thus insecure. If you are in a risky environment, such as a public internet cafe, it would be advisable not to use the 
+     Console. The main Silverlight application operates over SSL and is secure.
+     </p>
+     
+     <p>To use the Console follow the steps below:
+      
+       <li>1. Click the connect button,</li>
+       <li>2. Once the username prompt appears type your username into the text box at the bottom of the screen and press enter,</li>
+       <li>3. Once the password prompt appears type your password into the text box at the bottom of the screen and press enter,</li>
+       <li>4. Once the password prompt appears type your password into the text box at the bottom of the screen and press enter,</li>
+       <li>5. once the filter prompt appears type <span style="font-family: Courier">event *</span> to get summary log messages or 
+        <span style="font-family: Courier">event full</span> to get a full SIP trace,</li>
+       <li>6. Press s at anytime to stop the logging and repeat step 5.</li>
+     
+      </p>
+     
+     <p>Since the Console feature is simply a telnet connection the equivalent function can also be obtained from any telnet client using:
+     <span style="font-family: Courier">telnet sipsorcery.com 4502</span>. 
+     </p>
+ </body>
+</HTML>

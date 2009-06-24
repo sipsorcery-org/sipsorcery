@@ -1,0 +1,58 @@
+<html>
+<head>
+    <title>SIP Sorcery Help</title>
+    <style>
+     .sectionHeading 
+     {
+         color: #A0F927;
+         font-weight: 600;    
+     }
+    </style>
+ </head>
+ <body style="background-color: gray; font-family: Arial">
+      
+      <h2 class="sectionheading">
+        SIP Sorcery Help - SIP Providers
+     </h2>
+        <a href="../help.html">Back to Contents</a><br /><br />
+        For additional help or questions a community forum is available <a href="http://www.mysipswitch.com/forum/index.php">here</a>.
+     <h2 class="sectionheading">
+        SIP Provider Manager
+     </h2>
+     <p>
+      The SIP Provider Manager is used to create, update and delete SIP Providers and any bindings (registrations) for them. It is also used to view 
+      SIP Provider current bindings. There are a number of properties that apply when creating or updating a SIP Provider and these are explained below:
+     </p>
+     <ul>
+      <li><b>Id</b>: A GUID used by the system to uniquely store each SIP Provider.</li>
+      <li><b>Owner</b>: The name of the username that created the SIP Provider.</li>
+      <li><b>Provider Name</b>: The descriptive name used to identify the SIP Provider and that is used by the dialplan when placing 
+        calls with this SIP Provider.</li>
+      <li><b>Username</b>: The username for the SIP Provider, it will be used when responding to authentication challenges for calls and registrations.</li>
+      <li><b>Password</b>: The password for the SIP Provider, it will be used when responding to authentication challenges for calls and registrations.</li>
+      <li><b>Server</b>: The hostname or IP address for the SIP Provider. Call and register requests will be sent to this server.</li>
+      <li><b>Register</b>: If checked then a SIP Provider binding entry will be created and an attempt will be made to register with the SIP Provider.
+        The status of the binding attempt will be shown in the SIP Provider Registrations table.</li>
+      <li><b>Register Contact</b>: If the Register box is checked a SIP URI must be specified for the Register Contact. The SIP URI will be sent to the
+        SIP Provider and informs it where incoming calls should be forwarded to. If it is desired that incoming calls for the Provider should be 
+        forwarded to the SIP Sorcery server then the Register Contact should be set as: username@sipsorcery.com where username is the SIP Account username
+        that will receive the call.</li>
+     </ul>
+     
+     Advanced Settings are additional settings that are not normally required but that can be used to refine the SIP Provider interaction.
+     
+     <ul>
+       <li><b>Outbound Proxy</b>: If set overrides the SIP Provider Server setting for call requests.</li>
+       <li><b>Auth Username</b>: If set overrides the SIP Provider Username setting when responding to authentication challenges.</li>
+       <li><b>From Header</b>: If set overrides the default header that is set for new calls to the SIP Provider. The default From Header for a 
+         SIP Provider is: username@server. Changing this setting has ramifications for authentication as most SIP Providers use the username
+         portion of the From Header to identify users. An example that allows modification of display name portion of the From Header 
+         and that leaves the username and server intact is: "Your Name" &lt;sip:username@server&gt;.</li>
+       <li><b>Register Expiry</b>: The number of seconds to request for the binding expiry when registering with the SIP Provider. Can be between 60 and 3600.</li> 
+       <li><b>Register Realm</b>: If set overrides the SIP Provider Server setting when responding to authentication challenges.</li>
+       <li><b>Register Server</b>: If set overrides the SIP Provider Server setting for registration requests.</li>
+       <li><b>Custom Headers</b>: An optional list of SIP headers that will be added to register and call requests made with the SIP Provider.
+        Values must be entered as valid SIP headers, an example is: P-src-ip: 127.0.0.1 or User-Agent: my user agent.</li>
+     </ul>
+ </body>
+</HTML>

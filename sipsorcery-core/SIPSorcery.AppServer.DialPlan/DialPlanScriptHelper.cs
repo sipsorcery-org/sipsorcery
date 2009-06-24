@@ -860,8 +860,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 return null;
             }
             else {
-                DBRead(m_userDataDBType, m_userDataDBConnStr, key);
-                return null;
+                return DBRead(m_userDataDBType, m_userDataDBConnStr, key);
             }
         }
 

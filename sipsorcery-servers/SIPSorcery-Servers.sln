@@ -30,6 +30,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{28496FF4-073
 		SIPSorcery.Web\Web.config = SIPSorcery.Web\Web.config
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Help", "Help", "{2211C2FB-5263-46C1-B60E-DB20E1369D51}"
+	ProjectSection(SolutionItems) = preProject
+		SIPSorcery.Web\help\calls.html = SIPSorcery.Web\help\calls.html
+		SIPSorcery.Web\help\console.html = SIPSorcery.Web\help\console.html
+		SIPSorcery.Web\help\dialplans.html = SIPSorcery.Web\help\dialplans.html
+		SIPSorcery.Web\help\sipaccounts.html = SIPSorcery.Web\help\sipaccounts.html
+		SIPSorcery.Web\help\sipproviders.html = SIPSorcery.Web\help\sipproviders.html
+		SIPSorcery.Web\help\webcallback.html = SIPSorcery.Web\help\webcallback.html
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,5 +73,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{031FFE96-4965-4D1E-AD80-1D051CF27AF8} = {3A407BCE-4A7A-4DB3-A64F-5F7D7B80BE97}
 		{28496FF4-0738-4E19-A657-3B00F1075E6A} = {3A407BCE-4A7A-4DB3-A64F-5F7D7B80BE97}
+		{2211C2FB-5263-46C1-B60E-DB20E1369D51} = {28496FF4-0738-4E19-A657-3B00F1075E6A}
 	EndGlobalSection
 EndGlobal

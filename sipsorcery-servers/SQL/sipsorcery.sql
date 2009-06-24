@@ -218,7 +218,7 @@ create table cdr
  answeredstatus int,							-- The SIP response status code of the final response for the call.
  answeredreason varchar(64),					-- The SIP response reason phrase of the final response for the call.
  duration int,									-- Number of seconds the call was established for.
- hunguptime timestamp null default null,	     -- The time the call was hungup.
+ hunguptime timestamp null default null,	    -- The time the call was hungup.
  hungupreason varchar(64),						-- The SIP response Reason header on the BYE request if present.
  Primary Key(id)
 );
@@ -226,3 +226,13 @@ create table cdr
 -- create index customers_custid_index on customers(customerid);
 -- create index customers_lastname_index on customers(lastname);
 -- create index customers_username_index on customers(username);
+
+-- SIP Sorcery User Data DDL (Postgresql & MySQL)
+
+create table dialplandata 
+(
+  dataowner varchar(32)not null,
+  datakey varchar(64) not null,
+  datavalue varchar(1024) not null,
+  Unique(dataowner, datakey)
+);
