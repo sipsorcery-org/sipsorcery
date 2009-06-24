@@ -229,6 +229,11 @@ namespace SIPSorcery.SIP
             return Crypto.GetSHAHash(sipHeader.CallId + sipHeader.To.ToTag + sipHeader.From.FromTag);
         }
 
+        public void Hangup(SIPTransport sipTransport) {
+            m_sipTransport = sipTransport;
+            Hangup();
+        }
+
         public void Hangup()
         {
             SIPEndPoint dstEndPoint = GetDestinationEndPoint();

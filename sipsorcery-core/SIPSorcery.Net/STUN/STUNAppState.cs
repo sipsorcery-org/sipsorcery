@@ -51,6 +51,8 @@ namespace SIPSorcery.Net
 	/// </summary>
 	public class STUNAppState
 	{
+        public const int DEFAULT_STUN_PORT = 3478;
+
 		public const string LOGGER_NAME = "stun";
 
 		public static ILog logger = null;

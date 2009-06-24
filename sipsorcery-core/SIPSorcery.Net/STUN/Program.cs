@@ -28,10 +28,7 @@ namespace SIPSorcery.Net
 
                 // Create the two listeners to receive STUN requests.
                 STUNListener primaryListener = new STUNListener(primaryEndPoint);
-                primaryListener.Name = "pri";
-
                 STUNListener secondaryListener = new STUNListener(secondaryEndPoint);
-                secondaryListener.Name = "sec";
 
                 // Wire up the STUN server to process the requests.
                 STUNServer stunServer = new STUNServer(primaryEndPoint, primaryListener.Send, secondaryEndPoint, secondaryListener.Send);

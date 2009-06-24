@@ -57,6 +57,7 @@ namespace SIPSorcery.Sys
             foreach (NetworkInterface adapter in adapters)
             {
                 IPInterfaceProperties adapterProperties = adapter.GetIPProperties();
+                
                 UnicastIPAddressInformationCollection localIPs = adapterProperties.UnicastAddresses;
                 foreach (UnicastIPAddressInformation localIP in localIPs)
                 {

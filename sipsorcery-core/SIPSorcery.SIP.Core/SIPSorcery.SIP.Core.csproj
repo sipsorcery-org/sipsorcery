@@ -110,7 +110,6 @@
     <Compile Include="SIPAuthorisation\SIPAuthorisationDigest.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="SIPAuthorisation\SIPRequestAuthorisationResult.cs" />
     <Compile Include="SIPCDR\SIPCDR.cs" />
     <Compile Include="SIPFunctionDelegates.cs" />
     <Compile Include="SIPTransactions\SIPNonInviteTransaction.cs" />

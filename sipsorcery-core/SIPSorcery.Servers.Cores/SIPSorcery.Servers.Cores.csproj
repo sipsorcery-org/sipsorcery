@@ -122,6 +122,9 @@
     <Reference Include="System.ServiceModel">
       <RequiredTargetFramework>3.0</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.ServiceModel.Web">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.Xml">
@@ -159,6 +162,11 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="SIPApplicationServer\WCFServices\CallManagerServiceInstanceProvider.cs" />
+    <Compile Include="SIPApplicationServer\WCFServices\CallManagerServiceProxy.cs" />
+    <Compile Include="SIPApplicationServer\WCFServices\CallManagerServices.cs" />
+    <Compile Include="SIPApplicationServer\WCFServices\CallManagerPassThruService.cs" />
+    <Compile Include="SIPApplicationServer\WCFServices\ICallManagerServices.cs" />
     <Compile Include="SIPMonitor\SIPMonitorMachineClient.cs" />
     <Compile Include="SIPMonitor\SIPMonitorControlClient.cs" />
     <Compile Include="SIPMonitor\SIPMonitorMediator.cs" />

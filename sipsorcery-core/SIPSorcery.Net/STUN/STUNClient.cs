@@ -11,50 +11,42 @@ namespace SIPSorcery.Net
 {
     public class STUNClient
     {
-        private ILog logger = AppState.logger;
+        private static ILog logger = AppState.logger;
 
-        private UdpClient m_udpClient;
-        private IPEndPoint m_stunServerEndPoint;
+        private static readonly int m_defaultSTUNPort = STUNAppState.DEFAULT_STUN_PORT;
 
-        public STUNClient(IPAddress localAddress, IPEndPoint stunServerEndPoint)
-        {
-            m_udpClient = new UdpClient(new IPEndPoint(localAddress, 0));
-            m_stunServerEndPoint = stunServerEndPoint;
-        }
+        public static IPAddress GetPublicIPAddress(string stunServer) {
+            try {
 
-        public void GetPublicIPAddress(object state)
-        {
-            try
-            {
-                logger.Debug("Sending initial STUN message to " + m_stunServerEndPoint + ".");
+                logger.Debug("STUNClient attempting to determine public IP from " + stunServer + ".");
 
+                UdpClient udpClient = new UdpClient(stunServer, m_defaultSTUNPort);
                 STUNMessage initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
                 byte[] stunMessageBytes = initMessage.ToByteBuffer();
-                m_udpClient.Send(stunMessageBytes, stunMessageBytes.Length, m_stunServerEndPoint);
+                udpClient.Send(stunMessageBytes, stunMessageBytes.Length);
 
                 IPEndPoint stunResponseEndPoint = null;
-                byte[] stunResponseBuffer = m_udpClient.Receive(ref stunResponseEndPoint);
+                byte[] stunResponseBuffer = udpClient.Receive(ref stunResponseEndPoint);
 
-                if (stunResponseBuffer != null && stunResponseBuffer.Length > 0)
-                {
-                    logger.Debug("Response to initial STUN message received from " + stunResponseEndPoint + ".");
+                if (stunResponseBuffer != null && stunResponseBuffer.Length > 0) {
+                    logger.Debug("STUNClient Response to initial STUN message received from " + stunResponseEndPoint + ".");
                     STUNMessage stunResponse = STUNMessage.ParseSTUNMessage(stunResponseBuffer, stunResponseBuffer.Length);
 
-                    if (stunResponse.Attributes.Count > 0)
-                    {
-                        foreach (STUNAttribute stunAttribute in stunResponse.Attributes)
-                        {
-                            if (stunAttribute.AttributeType == STUNAttributeTypesEnum.MappedAddress)
-                            {
-                                logger.Debug("Public IP=" + ((STUNAddressAttribute)stunAttribute).Address.ToString() + ".");
+                    if (stunResponse.Attributes.Count > 0) {
+                        foreach (STUNAttribute stunAttribute in stunResponse.Attributes) {
+                            if (stunAttribute.AttributeType == STUNAttributeTypesEnum.MappedAddress) {
+                                IPAddress publicAddress = ((STUNAddressAttribute)stunAttribute).Address;
+                                logger.Debug("STUNClient Public IP=" + publicAddress.ToString() + ".");
+                                return publicAddress;
                             }
                         }
                     }
                 }
+
+                return null;
             }
-            catch (Exception excp)
-            {
-                logger.Error("Exception GetPublicIPAddress. " + excp.Message);
+            catch (Exception excp) {
+                logger.Error("Exception STUNClient GetPublicIPAddress. " + excp.Message);
                 throw;
             }
         }

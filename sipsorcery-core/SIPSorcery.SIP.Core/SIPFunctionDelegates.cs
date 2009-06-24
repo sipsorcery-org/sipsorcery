@@ -53,9 +53,6 @@ namespace SIPSorcery.SIP
     public delegate void UnrecognisedMessageReceivedDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer);
     public delegate SIPEndPoint ResolveSIPEndPointDelegate(SIPURI uri, bool synchronous);
 
-    // Authorisation delegates.
-    public delegate SIPRequestAuthorisationResult SIPAuthoriseRequestDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, string ipAddressACL);
-
     // SIP Transaction delegates.
     public delegate void SIPTransactionStateChangeDelegate(SIPTransaction sipTransaction);
     public delegate void SIPTransactionResponseReceivedDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse);

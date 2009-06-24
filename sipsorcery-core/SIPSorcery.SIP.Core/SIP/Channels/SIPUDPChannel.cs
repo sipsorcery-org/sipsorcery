@@ -133,7 +133,7 @@ namespace SIPSorcery.SIP
 					{
                         // No need to care about zero byte packets.
                         //string remoteEndPoint = (inEndPoint != null) ? inEndPoint.ToString() : "could not determine";
-                        logger.Error("Zero bytes receveid on SIPUDPChannel " + m_localSIPEndPoint.ToString() + ".");
+                        logger.Error("Zero bytes received on SIPUDPChannel " + m_localSIPEndPoint.ToString() + ".");
 					}
 					else
 					{

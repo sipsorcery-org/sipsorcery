@@ -64,13 +64,13 @@ namespace SIPSorcery.Net
 	
 	public class STUNListener
 	{
+        private const string STUN_LISTENER_THREAD_NAME = "stunlistener-";
+
 		public ILog logger = AppState.logger;
 
 		private IPEndPoint m_localEndPoint = null;
 		private UdpClient m_stunConn = null;
 		private bool m_closed = false;
-
-        public string Name;
 
         public event STUNMessageReceived MessageReceived;
 
@@ -133,15 +133,12 @@ namespace SIPSorcery.Net
 		{
 			try
 			{
-				if(Name != null)
-				{
-					Thread.CurrentThread.Name = Name;
-				}
-
-				UdpClient stunConn = m_stunConn;
+    			UdpClient stunConn = m_stunConn;
 
 				IPEndPoint inEndPoint = new IPEndPoint(IPAddress.Any, 0);
 				byte[] buffer = null;
+
+                Thread.CurrentThread.Name = STUN_LISTENER_THREAD_NAME + inEndPoint.Port.ToString();
 
 				while(!m_closed)
 				{
@@ -209,7 +206,7 @@ namespace SIPSorcery.Net
 		{
 			try
 			{
-				logger.Debug("Closing STUNListener Channel " + Name + ".");
+				logger.Debug("Closing STUNListener.");
 				
 				m_closed = true;
 				m_stunConn.Close();

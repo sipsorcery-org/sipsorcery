@@ -100,7 +100,8 @@
     <Compile Include="SIPDNS\SIPDNSLookupResult.cs" />
     <Compile Include="SIPDNS\SIPDNSManager.cs" />
     <Compile Include="SIPPacketMangler.cs" />
-    <Compile Include="SIPRequestAuthoriser\SIPRequestAuthoriser.cs" />
+    <Compile Include="SIPRequestAuthoriser\SIPRequestAuthenticationResult.cs" />
+    <Compile Include="SIPRequestAuthoriser\SIPRequestAuthenticator.cs" />
     <Compile Include="SIPUserAgents\SIPServerUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPCallDescriptor.cs" />
     <Compile Include="SIPUserAgents\SIPClientUserAgent.cs" />

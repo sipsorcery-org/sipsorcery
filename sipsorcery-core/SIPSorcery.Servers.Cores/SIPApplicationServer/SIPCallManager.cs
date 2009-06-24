@@ -69,8 +69,8 @@ namespace SIPSorcery.Servers
         private SIPAssetPersistor<Customer> m_customerPersistor;
         private SIPMonitorLogDelegate Log_External;
         private SIPAssetGetListDelegate<SIPProvider> GetSIPProviders_External;
-        private GetDialPlanDelegate GetDialPlan_External;                       // Function to load user dial plans.
-        private GetSIPAccountDelegate GetSIPAccount_External;                   // Function in authenticate user outgoing calls.
+        private SIPAssetGetDelegate<SIPDialPlan> GetDialPlan_External;                       // Function to load user dial plans.
+        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;                   // Function in authenticate user outgoing calls.
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;   // Function to lookup bindings that have been registered for a SIP account.
         private GetCanonicalDomainDelegate GetCanonicalDomain_External; 
 
@@ -85,8 +85,8 @@ namespace SIPSorcery.Servers
             SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor,
             SIPAssetPersistor<SIPCDRAsset> sipCDRPersistor,
             DialPlanEngine dialPlanEngine,
-            GetDialPlanDelegate getDialPlan,
-            GetSIPAccountDelegate getSIPAccount,
+            SIPAssetGetDelegate<SIPDialPlan> getDialPlan,
+            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPAccountBindings,
             SIPAssetGetListDelegate<SIPProvider> getSIPProviders,
             GetCanonicalDomainDelegate getCanonicalDomain,
@@ -123,18 +123,18 @@ namespace SIPSorcery.Servers
 
                 while (!m_stop) {
                     try {
-                        List<SIPDialogueAsset> expiredCalls = m_sipDialoguePersistor.Get(d => d.Inserted.AddSeconds(d.CallDurationLimit) >= DateTime.Now, null, 0, Int32.MaxValue);
-                        if (expiredCalls != null && expiredCalls.Count > 0) {
-                            for (int index=0; index<expiredCalls.Count; index++) {
-                                SIPDialogueAsset expiredCall = expiredCalls[index];
-                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Hanging up expired call to " + expiredCall.RemoteTarget + " after " + expiredCall.CallDurationLimit + "s.", expiredCall.Owner));
-                                expiredCall.SIPDialogue.Hangup();
-                            }
+                        SIPDialogueAsset expiredCall = m_sipDialoguePersistor.Get(d => d.HangupAt <= DateTime.Now);
+                        if (expiredCall != null) {
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Hanging up expired call to " + expiredCall.RemoteTarget + " after " + expiredCall.CallDurationLimit + "s.", expiredCall.Owner));
+                            expiredCall.SIPDialogue.Hangup(m_sipTransport);
+                            CallHungup(expiredCall.SIPDialogue, "Call duration limit reached");
                         }
                     }
                     catch (Exception monitorExcp) {
                         logger.Error("Exception MonitorCalls Monitoring. " + monitorExcp.Message);
                     }
+
+                    Thread.Sleep(1000);
                 }
 
                 logger.Warn("SIPCallManger MonitorCalls thread stopping.");
@@ -151,8 +151,8 @@ namespace SIPSorcery.Servers
             try
             {
                 SIPURI callURI = inviteTransaction.TransactionRequest.URI;
-                SIPCallDirection callDirection = (uas.AuthorisedSIPUsername != null) ? SIPCallDirection.Out : SIPCallDirection.In; // Only outgoing calls will come through to here authenticated.
-                SIPAccount sipAccount = (callDirection == SIPCallDirection.Out) ? GetSIPAccount_External(uas.AuthorisedSIPUsername, uas.AuthorisedSIPDomain) : GetSIPAccount_External(callURI.User, GetCanonicalDomain_External(callURI.Host));
+                SIPCallDirection callDirection = (uas.IsAuthenticated) ? SIPCallDirection.Out : SIPCallDirection.In; // Only outgoing calls will come through to here authenticated.
+                SIPAccount sipAccount = uas.SIPAccount;
 
                 if (sipAccount != null)
                 {
@@ -171,7 +171,7 @@ namespace SIPSorcery.Servers
                     {
                         inviteTransaction.CDR.Owner = sipAccount.Owner;
                         string dialPlanName = (callDirection == SIPCallDirection.Out) ? sipAccount.OutDialPlanName : sipAccount.InDialPlanName;
-                        SIPDialPlan dialPlan = GetDialPlan_External(sipAccount.Owner, dialPlanName);
+                        SIPDialPlan dialPlan = GetDialPlan_External(d => d.Owner == sipAccount.Owner && d.DialPlanName == dialPlanName);
 
                         if (dialPlan != null)
                         {
@@ -275,25 +275,26 @@ namespace SIPSorcery.Servers
                     return "Sorry no matching user was found, the callback was not initiated.";
                 }
                 else {
-                    SIPDialPlan webCallbackDialPlan = GetDialPlan_External(username, WEB_CALLBACK_DIALPLAN_NAME);
-                    if (webCallbackDialPlan != null) {
+                    SIPDialPlan webCallbackDialPlan = GetDialPlan_External(d => d.Owner == username && d.DialPlanName == WEB_CALLBACK_DIALPLAN_NAME);
+                    if (webCallbackDialPlan == null) {
                         Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web Callback rejected as no " + WEB_CALLBACK_DIALPLAN_NAME + " dialplan exists.", username));
                         return "Sorry the specified user has not enabled callbacks, the callback was not initiated.";
                     }
                     else {
                         Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web Callback initialising to " + number + ".", username));
 
+                        UASInviteTransaction dummyTransaction = GetDummyWebCallbackTransaction(number);
                         DialPlanScriptContext scriptContext = new DialPlanScriptContext(
                                 Log_External,
                                 m_sipTransport,
                                 CreateDialogueBridge,
                                 m_outboundProxy,
-                                null,
+                                dummyTransaction,
                                 webCallbackDialPlan,
-                                null,
+                                GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
                                 m_traceDirectory,
                                 null);
-                        m_dialPlanEngine.Execute(scriptContext, null, SIPCallDirection.Out, CreateDialogueBridge, this);
+                        m_dialPlanEngine.Execute(scriptContext, dummyTransaction, SIPCallDirection.Out, CreateDialogueBridge, this);
 
                         return "Callback was successfully initiated.";
                     }
@@ -303,6 +304,17 @@ namespace SIPSorcery.Servers
                 logger.Error("Exception SIPCallManager ProcessWebCallback. " + excp.Message);
                 return "Sorry there was an unexpected error, the callback was not initiated.";
             }
+        }
+
+        private UASInviteTransaction GetDummyWebCallbackTransaction(string number) {
+            SIPRequest dummyInvite = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURIRelaxed(number + "@sipsorcery.com"));
+            SIPHeader dummyHeader = new SIPHeader("<sip:anon@sipsorcery.com>", "<sip:anon@sipsorcery.com>", 1, CallProperties.CreateNewCallId());
+            dummyHeader.CSeqMethod = SIPMethodsEnum.INVITE;
+            dummyHeader.Vias.PushViaHeader(new SIPViaHeader("127.0.0.1:5090", CallProperties.CreateBranchId()));
+            dummyInvite.Header = dummyHeader;
+            UASInviteTransaction dummyTransaction = m_sipTransport.CreateUASTransaction(dummyInvite, SIPEndPoint.ParseSIPEndPoint("127.0.0.1"), SIPEndPoint.ParseSIPEndPoint("127.0.0.1"), null);
+            return dummyTransaction;
+
         }
 
         public void CreateDialogueBridge(SIPDialogue clientDiaglogue, SIPDialogue forwardedDialogue, string owner)

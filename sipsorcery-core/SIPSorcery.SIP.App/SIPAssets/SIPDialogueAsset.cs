@@ -133,6 +133,20 @@ namespace SIPSorcery.SIP.App {
             set { SIPDialogue.Inserted = value; }
         }
 
+        [DataMember]
+        [Column(Storage = "_hangupat", Name = "hangupat", DbType = "timestamp", CanBeNull = true)]
+        public DateTime? HangupAt {
+            get {
+                if (CallDurationLimit != 0) {
+                    return Inserted.AddSeconds(CallDurationLimit);
+                }
+                else {
+                    return null;
+                }
+            }
+            set { }
+        }
+
         public SIPDialogueAsset() {
             SIPDialogue = new SIPDialogue();
         }
@@ -184,6 +198,8 @@ namespace SIPSorcery.SIP.App {
         }
 
         public string ToXMLNoParent() {
+            string hanupAtStr = (HangupAt != null) ? HangupAt.Value.ToString("dd MMM yyyy HH:mm:ss") : null;
+
             string dialogueXML =
                  "  <id>" + SIPDialogue.Id + "</id>" + m_newLine +
                  "  <owner>" + SIPDialogue.Owner + "</owner>" + m_newLine +
@@ -201,7 +217,8 @@ namespace SIPSorcery.SIP.App {
                  "  <routeset>" + SafeXML.MakeSafeXML(RouteSet) + "</routeset>" + m_newLine +
                  "  <cdrid>" + SIPDialogue.CDRId + "</cdrid>" + m_newLine +
                  "  <calldurationlimit>" + SIPDialogue.CallDurationLimit + "</calldurationlimit>" + m_newLine +
-                 "  <inserted>" + SIPDialogue.Inserted.ToString("dd MMM yyyy HH:mm:ss") + "</inserted>" + m_newLine;
+                 "  <inserted>" + SIPDialogue.Inserted.ToString("dd MMM yyyy HH:mm:ss") + "</inserted>" + m_newLine +
+                 "  <hangupat>" + hanupAtStr + "</hangupat>" + m_newLine;
 
             return dialogueXML;
         }

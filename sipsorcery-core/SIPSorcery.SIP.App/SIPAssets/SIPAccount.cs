@@ -303,6 +303,8 @@ namespace SIPSorcery.SIP.App
                 m_isAdminDisabled = (sipAccountRow.Table.Columns.Contains("isadmindisabled") && sipAccountRow["isadmindisabled"] != null && sipAccountRow["isadmindisabled"] != DBNull.Value) ? Convert.ToBoolean(sipAccountRow["isadmindisabled"]) : false;
                 m_adminDisabledReason = (sipAccountRow.Table.Columns.Contains("admindisabledreason") && sipAccountRow["admindisabledreason"] != null) ? sipAccountRow["admindisabledreason"] as string : null;
                 m_inserted = (sipAccountRow.Table.Columns.Contains("inserted") && sipAccountRow["inserted"] != null) ? Convert.ToDateTime(sipAccountRow["inserted"]) : DateTime.Now;
+                m_networkId = (sipAccountRow.Table.Columns.Contains("networkid") && sipAccountRow["networkid"] != null) ? sipAccountRow["networkid"] as string : null;
+                m_ipAddressACL = (sipAccountRow.Table.Columns.Contains("ipaddressacl") && sipAccountRow["ipaddressacl"] != null) ? sipAccountRow["ipaddressacl"] as string : null;
             }
             catch (Exception excp)
             {
@@ -411,9 +413,9 @@ namespace SIPSorcery.SIP.App
         public string ToXML()
         {
             string sipAccountXML =
-                "  <" + XML_ELEMENT_NAME + ">" + m_newLine +
+                " <" + XML_ELEMENT_NAME + ">" + m_newLine +
                ToXMLNoParent() + m_newLine +
-                "  </" + XML_ELEMENT_NAME + ">" + m_newLine;
+                " </" + XML_ELEMENT_NAME + ">" + m_newLine;
 
             return sipAccountXML;
         }
@@ -421,18 +423,20 @@ namespace SIPSorcery.SIP.App
         public string ToXMLNoParent()
         {
             string sipAccountXML =
-                "    <id>" + m_id + "</id>" + m_newLine +
-                "    <owner>" + m_owner + "</owner>" + m_newLine +
-                "    <sipusername>" + m_sipUsername + "</sipusername>" + m_newLine +
-                "    <sippassword>" + m_sipPassword + "</sippassword>" + m_newLine +
-                "    <domain>" + m_sipDomain + "</domain>" + m_newLine +
-                "    <sendnatkeepalives>" + m_sendNATKeepAlives + "</sendnatkeepalives>" + m_newLine +
-                "    <isincomingonly>" + m_isIncomingOnly + "</isincomingonly>" + m_newLine +
-                "    <outdialplanname>" + m_outDialPlanName + "</outdialplanname>" + m_newLine +
-                "    <indialplanname>" + m_inDialPlanName + "</indialplanname>" + m_newLine +
-                "    <isuserdisabled>" + m_isUserDisabled + "</isuserdisabled>" + m_newLine +
-                "    <isadmindisabled>" + m_isAdminDisabled + "</isadmindisabled>" + m_newLine +
-                "    <disabledreason>" + m_adminDisabledReason + "</disabledreason>" + m_newLine;
+                "  <id>" + m_id + "</id>" + m_newLine +
+                "  <owner>" + m_owner + "</owner>" + m_newLine +
+                "  <sipusername>" + m_sipUsername + "</sipusername>" + m_newLine +
+                "  <sippassword>" + m_sipPassword + "</sippassword>" + m_newLine +
+                "  <domain>" + m_sipDomain + "</domain>" + m_newLine +
+                "  <sendnatkeepalives>" + m_sendNATKeepAlives + "</sendnatkeepalives>" + m_newLine +
+                "  <isincomingonly>" + m_isIncomingOnly + "</isincomingonly>" + m_newLine +
+                "  <outdialplanname>" + m_outDialPlanName + "</outdialplanname>" + m_newLine +
+                "  <indialplanname>" + m_inDialPlanName + "</indialplanname>" + m_newLine +
+                "  <isuserdisabled>" + m_isUserDisabled + "</isuserdisabled>" + m_newLine +
+                "  <isadmindisabled>" + m_isAdminDisabled + "</isadmindisabled>" + m_newLine +
+                "  <disabledreason>" + m_adminDisabledReason + "</disabledreason>" + m_newLine +
+                "  <networkid>" + m_networkId + "</networkid>" + m_newLine +
+                "  <ipaddressacl>" + SafeXML.MakeSafeXML(m_ipAddressACL) + "</ipaddressacl>";
 
             return sipAccountXML;
         }

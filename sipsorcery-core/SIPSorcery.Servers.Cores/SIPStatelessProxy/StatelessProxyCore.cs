@@ -86,6 +86,8 @@ namespace SIPSorcery.Servers
         private StatelessProxyScriptHelper m_proxyScriptHelper;
         private DateTime m_lastScriptChange = DateTime.MinValue;
 
+        public IPAddress PublicIPAddress;       // Can be set if there is an object somewhere that knows the public IP. The address wil be available in the proxy runtime script.
+
 		public StatelessProxyCore(
             SIPMonitorLogDelegate proxyLogger,
             SIPTransport sipTransport,
@@ -264,6 +266,7 @@ namespace SIPSorcery.Servers
                         m_pythonEngine.Globals["summary"] = summaryStr;
                         m_pythonEngine.Globals["proxyBranch"] = proxyBranch;
                         m_pythonEngine.Globals["sipMethod"] = sipRequest.Method.ToString();
+                        m_pythonEngine.Globals["publicip"] = PublicIPAddress;
 
                         m_pythonCompiledScript.Execute();
                     }
@@ -280,6 +283,7 @@ namespace SIPSorcery.Servers
                         m_scriptScope.SetVariable("summary", summaryStr);
                         m_scriptScope.SetVariable("proxyBranch", proxyBranch);
                         m_scriptScope.SetVariable("sipMethod", sipRequest.Method.ToString());
+                        m_scriptScope.SetVariable("publicip", PublicIPAddress);
 
                         m_rubyCompiledScript.Execute(m_scriptScope);
                     }

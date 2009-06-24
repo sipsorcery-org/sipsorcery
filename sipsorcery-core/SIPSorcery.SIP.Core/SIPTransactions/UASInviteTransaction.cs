@@ -53,17 +53,9 @@ namespace SIPSorcery.SIP
     {
         private static string m_sipServerAgent = SIPConstants.SIP_SERVER_STRING;
 
-        public SIPAuthoriseRequestDelegate UASSIPRequestAuthenticate;               // Set this delegate if request authorisation is required.
         public event SIPTransactionCancelledDelegate UASInviteTransactionCancelled;
         public event SIPTransactionRequestReceivedDelegate NewCallReceived;
         public event SIPTransactionTimedOutDelegate UASInviteTransactionTimedOut;
-
-        private SIPRequestAuthorisationResult m_authorisationResult;
-
-        public SIPRequestAuthorisationResult AuthorisationResult
-        {
-            get { return m_authorisationResult; }
-        }
 
         internal UASInviteTransaction(
             SIPTransport sipTransport,
@@ -71,18 +63,15 @@ namespace SIPSorcery.SIP
             SIPEndPoint dstEndPoint,
             SIPEndPoint localSIPEndPoint,
             SIPEndPoint outboundProxy)
-            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
-		{
+            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy) {
             TransactionType = SIPTransactionTypesEnum.Invite;
             m_remoteTag = sipRequest.Header.From.FromTag;
 
-            if (sipRequest.Header.To.ToTag == null)
-            {
+            if (sipRequest.Header.To.ToTag == null) {
                 // This UAS needs to set the To Tag.
                 m_localTag = CallProperties.CreateNewTag();
             }
-            else
-            {
+            else {
                 // This is a re-INVITE.
                 m_localTag = sipRequest.Header.To.ToTag;
             }
@@ -104,7 +93,6 @@ namespace SIPSorcery.SIP
         {
             // Remove event handlers.
             UASInviteTransactionCancelled = null;
-            UASSIPRequestAuthenticate = null;
             NewCallReceived = null;
             UASInviteTransactionTimedOut = null;
             CDR = null;
@@ -128,68 +116,32 @@ namespace SIPSorcery.SIP
             logger.Warn("UASInviteTransaction received unexpected response, " + sipResponse.ReasonPhrase + " from " + remoteEndPoint.ToString() + ", ignoring.");
         }
 
-        private void UASInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
-        {
-            try
-            {
-                if (TransactionState == SIPTransactionStatesEnum.Terminated)
-                {
+        private void UASInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest) {
+            try {
+                if (TransactionState == SIPTransactionStatesEnum.Terminated) {
                     logger.Debug("Request received by UASInviteTransaction for a terminated transaction, ignoring.");
                 }
-                else if (sipRequest.Method != SIPMethodsEnum.INVITE)
-                {
+                else if (sipRequest.Method != SIPMethodsEnum.INVITE) {
                     logger.Warn("Unexpected " + sipRequest.Method + " passed to UASInviteTransaction.");
                 }
-                else
-                {
-                    if (TransactionState != SIPTransactionStatesEnum.Trying)
-                    {
+                else {
+                    if (TransactionState != SIPTransactionStatesEnum.Trying) {
                         SIPResponse tryingResponse = GetInfoResponse(m_transactionRequest, SIPResponseStatusCodesEnum.Trying);
                         SendInformationalResponse(tryingResponse);
                     }
 
-                    // Process INVITE.
-                    if (UASSIPRequestAuthenticate != null)
-                    {
-                        m_authorisationResult = UASSIPRequestAuthenticate(localSIPEndPoint, remoteEndPoint, sipRequest, null);
-                        if (m_authorisationResult.Authorised)
-                        {
-                            if (NewCallReceived != null)
-                            {
-                                NewCallReceived(localSIPEndPoint, remoteEndPoint, this, sipRequest);
-                            }
-                            else
-                            {
-                                // Nobody wants the call so return an error response.
-                                SIPResponse declinedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Nothing listening");
-                                SendFinalResponse(declinedResponse);
-                            }
-                        }
-                        else
-                        {
-                            // Send authorisation failure or required response
-                            SIPResponse authReqdResponse = SIPTransport.GetResponse(sipRequest, m_authorisationResult.ErrorResponse, null);
-                            authReqdResponse.Header.AuthenticationHeader = m_authorisationResult.AuthenticationRequiredHeader;
-                            SendFinalResponse(authReqdResponse);
-                        }
+                    // Notify new call subscribers.
+                    if (NewCallReceived != null) {
+                        NewCallReceived(localSIPEndPoint, remoteEndPoint, this, sipRequest);
                     }
-                    else
-                    {
-                        if (NewCallReceived != null)
-                        {
-                            NewCallReceived(localSIPEndPoint, remoteEndPoint, this, sipRequest);
-                        }
-                        else
-                        {
-                            // Nobody wants the call so return an error response.
-                            SIPResponse declinedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Nothing listening");
-                            SendFinalResponse(declinedResponse);
-                        }
+                    else {
+                        // Nobody wants the call so return an error response.
+                        SIPResponse declinedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Nothing listening");
+                        SendFinalResponse(declinedResponse);
                     }
                 }
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception UASInviteTransaction GotRequest. " + excp.Message);
             }
         }

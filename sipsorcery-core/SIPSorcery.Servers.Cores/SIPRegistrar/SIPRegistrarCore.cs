@@ -112,13 +112,13 @@ namespace SIPSorcery.Servers
         private SIPRegistrarBindingsManager m_registrarBindingsManager;
         private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
+        private SIPAuthenticateRequestDelegate SIPRequestAuthenticator_External;
 
         private string m_serverAgent = SIPConstants.SIP_SERVER_STRING;                    
         private bool m_mangleUACContact = false;            // Whether or not to adjust contact URIs that contain private hosts to the value of the bottom via received socket.
         private bool m_strictRealmHandling = false;         // If true the registrar will only accept registration requests for domains it is configured for, otherwise any realm is accepted.
         private event SIPMonitorLogDelegate m_registrarLogEvent;
         private SIPUserAgentConfigurationManager m_userAgentConfigs;
-        private SIPRequestAuthoriser m_sipRequestAuthoriser;
 
         public RegistrarCore(
             SIPTransport sipTransport,
@@ -129,7 +129,7 @@ namespace SIPSorcery.Servers
             bool strictRealmHandling,
             SIPMonitorLogDelegate proxyLogDelegate,
             SIPUserAgentConfigurationManager userAgentConfigs,
-            SIPRequestAuthoriser sipRequestAuthoriser) {
+            SIPAuthenticateRequestDelegate sipRequestAuthenticator) {
 
             m_sipTransport = sipTransport;
             m_registrarBindingsManager = registrarBindingsManager;
@@ -139,7 +139,7 @@ namespace SIPSorcery.Servers
             m_strictRealmHandling = strictRealmHandling;
             m_registrarLogEvent = proxyLogDelegate;
             m_userAgentConfigs = userAgentConfigs;
-            m_sipRequestAuthoriser = sipRequestAuthoriser;
+            SIPRequestAuthenticator_External = sipRequestAuthenticator;
         }
 
 		public void AddRegisterRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest registerRequest)
@@ -228,7 +228,7 @@ namespace SIPSorcery.Servers
                 //else if (sipRequest.Header.AuthenticationHeader != null)
                     //{
 
-                SIPRequestAuthorisationResult authorisationResult = m_sipRequestAuthoriser.AuthoriseSIPRequest(registerTransaction.LocalSIPEndPoint, registerTransaction.RemoteEndPoint, sipRequest, sipAccount.IPAddressACL);
+                SIPRequestAuthenticationResult authenticationResult = SIPRequestAuthenticator_External(registerTransaction.LocalSIPEndPoint, registerTransaction.RemoteEndPoint, sipRequest, sipAccount, FireProxyLogEvent);
 
                         /*SIPAuthenticationHeader reqAuthHeader = sipRequest.Header.AuthenticationHeader;
                         string requestNonce = (reqAuthHeader != null) ? reqAuthHeader.SIPDigest.Nonce : null;
@@ -264,16 +264,16 @@ namespace SIPSorcery.Servers
                          
                     }*/
 
-                    if (!authorisationResult.Authorised)
+                if (!authenticationResult.Authenticated)
                     {
                         // 401 Response with a fresh nonce needs to be sent.
                         //SIPResponse authReqdResponse = GetAuthReqdResponse(sipRequest, Crypto.GetRandomInt().ToString(), canonicalDomain);
                         //registerTransaction.SendFinalResponse(authReqdResponse);
-                        SIPResponse authReqdResponse = SIPTransport.GetResponse(sipRequest, authorisationResult.ErrorResponse, null);
-                        authReqdResponse.Header.AuthenticationHeader = authorisationResult.AuthenticationRequiredHeader;
+                    SIPResponse authReqdResponse = SIPTransport.GetResponse(sipRequest, authenticationResult.ErrorResponse, null);
+                    authReqdResponse.Header.AuthenticationHeader = authenticationResult.AuthenticationRequiredHeader;
                         registerTransaction.SendFinalResponse(authReqdResponse);
 
-                        if (authorisationResult.ErrorResponse == SIPResponseStatusCodesEnum.Forbidden) {
+                        if (authenticationResult.ErrorResponse == SIPResponseStatusCodesEnum.Forbidden) {
                             FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Warn, "Forbidden " + addressOfRecord.ToString() + " does not exist, " + sipRequest.Header.Vias.BottomViaHeader.ReceivedFromAddress + ", " + sipRequest.Header.UserAgent + ".", null));
                             return RegisterResultEnum.Forbidden;
                         }

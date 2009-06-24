@@ -64,12 +64,6 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.ServiceModel">
-      <RequiredTargetFramework>3.0</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.ServiceModel.Web">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -92,9 +86,7 @@
     <Compile Include="DialPlanLineContext.cs" />
     <Compile Include="DialPlanScriptContext.cs" />
     <Compile Include="DialPlanScriptHelper.cs" />
-    <Compile Include="DialPlanServices.cs" />
     <Compile Include="DialStringParser.cs" />
-    <Compile Include="IDialPlanServices.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
