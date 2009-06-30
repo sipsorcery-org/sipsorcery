@@ -278,11 +278,14 @@ namespace SIPSorcery.AppServer.DialPlan
 
                     if (dialPlanExecutionScript != null) {
                         dialPlanExecutionScript.InUse = true;
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Using existing script scope number " + dialPlanExecutionScript.ScriptNumber + " for dialplan execution for script owned by " + dialPlanContext.Owner + ".", null));
                     }
                     else if (m_dialPlanScriptContextsCreated < MAX_ALLOWED_SCRIPTSCOPES) {
-                        dialPlanExecutionScript = new DialPlanExecutingScript(m_scriptEngine.CreateScope(), FireProxyLogEvent);
-                        m_scripts.Add(dialPlanExecutionScript);
                         m_dialPlanScriptContextsCreated++;
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Creating script scope number " + m_dialPlanScriptContextsCreated + " for dialplan execution for script owned by " + dialPlanContext.Owner + ".", null));
+                        dialPlanExecutionScript = new DialPlanExecutingScript(m_scriptEngine.CreateScope(), FireProxyLogEvent);
+                        dialPlanExecutionScript.InUse = true;
+                        m_scripts.Add(dialPlanExecutionScript);
                     }
 
                     #endregion
@@ -319,8 +322,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                         //dialPlanExecutionScript.DialPlanScriptThread = new Thread(new ParameterizedThreadStart(ExecuteScript));
                         dialPlanExecutionScript.DialPlanScriptThread = new Thread(new ParameterizedThreadStart(delegate { ExecuteScript(dialPlanExecutionScript, dialPlanContext, planHelper, m_rubyScriptCommon + dialPlanContext.DialPlanScript); }));
-                        Thread scriptThread = dialPlanExecutionScript.DialPlanScriptThread;
-                        scriptThread.Start();
+                        dialPlanExecutionScript.DialPlanScriptThread.Start();
                         //scriptThread.Start(new object[] { dialPlanExecutionScript, dialPlanContext, planHelper, m_rubyScriptCommon + dialPlanContext.DialPlanScript });
                     }
                     else {
@@ -341,90 +343,6 @@ namespace SIPSorcery.AppServer.DialPlan
                 dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.InternalServerError, "Dial plan exception starting script");
             }
         }
-
-        /// <summary>
-        /// Execute dialplan script for non-invite request such as MESSAGE.
-        /// </summary>
-        /*public void ProcessNonInviteRequest(
-            CallManager callManager, 
-            IPEndPoint localEndPoint,
-            IPEndPoint remoteEndPoint,
-            SIPRequest sipRequest)
-        {
-            try
-            {
-                LastUsed = DateTime.Now;
-
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.DialPlan, "Processing non-INVITE dial plan script for " + sipRequest.Method + " " + sipRequest.URI.ToString() + ".", Owner));
-
-                TraceLog = null;
-                //m_initialTraceMessage = SIPMonitorServerTypesEnum.SIPTransaction + "=>" + "Request received " + localEndPoint + "<-" + remoteEndPoint + m_crLF + clientTransaction.TransactionRequest.ToString();
-                m_proxyCoreLogDelegate = coreLogDelegate;
-
-                if (m_script != null && m_script.Trim().Length > 0)
-                {
-                    SIPDialPlanExecutingScript dialPlanScriptContext = null;
-
-                    #region Get a script scope form the queue or if there are none available and there are still free slots create a new one.
-
-                    lock (m_scriptScopes)
-                    {
-                        foreach (SIPDialPlanExecutingScript scriptContext in m_scriptScopes.Values)
-                        {
-                            if (!scriptContext.InUse)
-                            {
-                                dialPlanScriptContext = scriptContext;
-                                break;
-                            }
-                        }
-
-                        if (dialPlanScriptContext != null)
-                        {
-                            dialPlanScriptContext.InUse = true;
-                        }
-                        else if (m_dialPlanScriptContextsCreated < MAX_ALLOWED_SCRIPTSCOPES)
-                        {
-                            dialPlanScriptContext = new SIPDialPlanExecutingScript(m_scriptRuntime.CreateScope("IronRuby"), FireProxyLogEvent);
-                            m_scriptScopes.Add(dialPlanScriptContext.Id, dialPlanScriptContext);
-                            m_dialPlanScriptContextsCreated++;
-                        }
-                    }
-
-                    #endregion
-
-                    #region If a script scope was obtained create a new thread and execute the script otherwise the callis not processed.
-
-                    if (dialPlanScriptContext != null)
-                    {
-                        dialPlanScriptContext.Initialise(Owner);
-                        dialPlanScriptContext.DialPlanScriptThread = new Thread(new ParameterizedThreadStart(ExecuteScript));
-                        Thread scriptThread = dialPlanScriptContext.DialPlanScriptThread;
-                        ScriptScope rubyScope = dialPlanScriptContext.DialPlanScriptScope;
-
-                        DialPlanScriptHelper planHelper = new DialPlanScriptHelper(m_sipTransport, dialPlanScriptContext.Id, FireProxyLogEvent, null, null, sipRequest, null, null, Owner, m_sipProviders, new ExtendScriptLifetimeDelegate(ExtendScriptLifetime), m_getCanonicalDomainDelegate, callManager, GetSIPAccountBindings, m_outboundProxySocket);
-
-                        rubyScope.SetVariable(SCRIPT_REQUESTOBJECT_NAME, sipRequest);
-                        rubyScope.SetVariable(SCRIPT_HELPEROBJECT_NAME, planHelper);
-
-                        scriptThread.Start(new object[] { dialPlanScriptContext, null, planHelper });
-                    }
-                    else
-                    {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.DialPlan, "Error processing call " + sipRequest.URI.ToString() + " there were no script slots available, script could not be executed.", Owner));
-                    }
-
-                    #endregion
-                }
-                else
-                {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatefulProxy, SIPMonitorEventTypesEnum.DialPlan, "Non-Invite requests can only be processed by script dialplans.", Owner));
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SIPDialPlan ProcessNonInviteRequest. " + excp.Message);
-            }
-        }*/
 
         /// <summary>
         /// Substitutes the special characters with variables from the SIP request.
@@ -519,6 +437,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 try
                 {
                     Thread.CurrentThread.Name = "dialplanscript-" + executingScript.ScriptNumber;
+                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution starting on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
                     m_scriptEngine.Execute(script, executingScript.DialPlanScriptScope);
 
                     /*string[] scriptLines = Regex.Split(script, @"(\r\n|\r|\n)");
@@ -533,14 +452,14 @@ namespace SIPSorcery.AppServer.DialPlan
                 //catch (System.Scripting.SyntaxErrorException)
                 catch (SyntaxErrorException syntaxExcp)
                 {
-                    logger.Warn("SSyntaxErrorException. Line=" + syntaxExcp.Line + ", " + syntaxExcp.SourceCode + ".");
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "There was a syntax error in your dial plan, please check.", executingScript.Owner));
+                    logger.Warn("SyntaxErrorException. Owner=" + dialPlanContext .Owner + ", DialPlanName=" + dialPlanContext.SIPDialPlan.DialPlanName + ", Line=" + syntaxExcp.Line + ".");
+                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "There was a syntax error in your dial plan on line " + syntaxExcp.Line + ", please check.", executingScript.Owner));
                     executingScript.ExecutionError = "Dial plan syntax error";
                 }
                 catch (MissingMethodException missingExcp)
                 {
                     logger.Warn("MissingMethodException. " + missingExcp.Message);
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "There was a missing method exception in your dial plan, please check.", executingScript.Owner));
+                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "There was a missing method exception in your dial plan: " + missingExcp.Message + ".", executingScript.Owner));
                     executingScript.ExecutionError = "Dial plan missing method";
                 }
                 catch (Exception excp)
@@ -562,6 +481,7 @@ namespace SIPSorcery.AppServer.DialPlan
             try {
                 if (dialPlan != null && !dialPlan.Id.IsNullOrBlank() && new Guid(dialPlan.Id) != Guid.Empty) {
                     int executionCount = Convert.ToInt32(m_dialPlanPersistor.GetProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName));
+                    logger.Debug("Incrementing dial plan execution count for " + dialPlan.DialPlanName + "@" + dialPlan.Owner + ", currently=" + executionCount + ".");
                     m_dialPlanPersistor.UpdateProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName, executionCount + 1);
                 }
             }
@@ -574,6 +494,7 @@ namespace SIPSorcery.AppServer.DialPlan
             try {
                 if (dialPlan != null && !dialPlan.Id.IsNullOrBlank() && new Guid(dialPlan.Id) != Guid.Empty) {
                     int executionCount = Convert.ToInt32(m_dialPlanPersistor.GetProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName));
+                    logger.Debug("Decrementing dial plan execution count for " + dialPlan.DialPlanName + "@" + dialPlan.Owner + ", currently=" + executionCount + ".");
                     m_dialPlanPersistor.UpdateProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName, executionCount - 1);
                 }
             }
@@ -604,7 +525,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                 }
 
                                 try {
-                                    if (!dialPlanContext.IsAnswered) {
+                                    if (dialPlanContext != null && !dialPlanContext.IsAnswered) {
                                         // The dialplan script has finished but the client call has not been answered. There could have be an
                                         // error executing the script or the dialplan could have completed without getting an answer.
                                         if (!killScript.ExecutionError.IsNullOrBlank()) {
@@ -631,7 +552,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                     killScript.Clear();
 
                                     if (new Guid(dialPlanContext.SIPDialPlan.Id) != Guid.Empty) {
-                                        DecrementDialPlanExecutionCount(dialPlanContext.SIPDialPlan);
+                                       DecrementDialPlanExecutionCount(dialPlanContext.SIPDialPlan);
                                     }
 
                                     try {

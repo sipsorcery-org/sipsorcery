@@ -304,20 +304,15 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public new string ToString()
-        {
+        public new string ToString() {
             string paramStr = null;
 
-            if (m_dictionary != null)
-            {
-                foreach (KeyValuePair<string, string> param in m_dictionary)
-                {
-                    if (param.Value != null && param.Value.Trim().Length > 0)
-                    {
+            if (m_dictionary != null) {
+                foreach (KeyValuePair<string, string> param in m_dictionary) {
+                    if (param.Value != null && param.Value.Trim().Length > 0) {
                         paramStr += TagDelimiter + param.Key + TAG_NAME_VALUE_SEPERATOR + SIPEscape.SIPEscapeString(param.Value);
                     }
-                    else
-                    {
+                    else {
                         paramStr += TagDelimiter + param.Key;
                     }
                 }

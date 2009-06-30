@@ -49,6 +49,7 @@ namespace SIPSorcery.SIP.App
     public delegate void DialogueBridgeClosedDelegate(string dialogueId, string owner);
     //public delegate List<SIPRegistrarBinding> GetSIPAccountBindingsDelegate(string user, string domain);
     //public delegate List<SIPProvider> GetSIPProvidersDelegate(string whereExpression);
+    public delegate void IPAddressChangedDelegate(IPAddress newIPAddress);
 
     // SIP User Agent Delegates.
     public delegate void SIPCallResponseDelegate(SIPClientUserAgent uac, SIPResponse sipResponse);

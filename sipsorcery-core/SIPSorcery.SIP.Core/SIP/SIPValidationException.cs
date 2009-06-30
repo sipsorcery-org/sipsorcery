@@ -39,16 +39,16 @@ namespace SIPSorcery.SIP
 {
     public enum SIPValidationFieldsEnum
     {
-        Unknown = 0,
-        Request = 1,
-        Response = 2,
-        URI = 3,
-        Headers = 4,
-        ContactHeader = 1,
-        FromHeader = 1,
-        RouteHeader = 1,
-        ToHeader = 1,
-        ViaHeader = 3,
+        Unknown,
+        Request,
+        Response,
+        URI,
+        Headers,
+        ContactHeader,
+        FromHeader,
+        RouteHeader,
+        ToHeader,
+        ViaHeader,
     }
 
     public class SIPValidationException : Exception

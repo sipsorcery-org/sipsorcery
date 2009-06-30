@@ -248,16 +248,22 @@ namespace SIPSorcery.SIP.App
             AdminMemberId = bindingRow["adminmemberid"] as string;
             m_isRegistered = (bindingRow.Table.Columns.Contains("isregistered") && bindingRow["isregistered"] != DBNull.Value && bindingRow["isregistered"] != null) ? Convert.ToBoolean(bindingRow["isregistered"]) : false;
 
-            if (bindingRow.Table.Columns.Contains("bindinguri") && bindingRow["bindinguri"] != DBNull.Value && bindingRow["bindinguri"] != null && bindingRow["bindinguri"].ToString().Length > 0) {
+            if (bindingRow.Table.Columns.Contains("bindinguri") && bindingRow["bindinguri"] != DBNull.Value && bindingRow["bindinguri"] != null && !bindingRow["bindinguri"].ToString().IsNullOrBlank()) {
                 m_bindingURI = SIPURI.ParseSIPURI(bindingRow["bindinguri"] as string);
+            }
+            else {
+                logger.Warn("Could not load BindingURI for SIPProviderBinding with id=" + m_id + ".");
             }
 
             if (bindingRow.Table.Columns.Contains("bindingexpiry") && bindingRow["bindingexpiry"] != DBNull.Value && bindingRow["bindingexpiry"] != null && bindingRow["bindingexpiry"].ToString().Length > 0) {
                 Int32.TryParse(bindingRow["bindingexpiry"] as string, out m_bindingExpiry);
             }
 
-            if (bindingRow.Table.Columns.Contains("contactheader") && bindingRow["contactheader"] != DBNull.Value && bindingRow["contactheader"] != null && bindingRow["contactheader"].ToString().Length > 0) {
+            if (bindingRow.Table.Columns.Contains("contactheader") && bindingRow["contactheader"] != DBNull.Value && bindingRow["contactheader"] != null && !bindingRow["contactheader"].ToString().IsNullOrBlank()) {
                 ContactsList = SIPContactHeader.ParseContactHeader(bindingRow["contactheader"] as string);
+            }
+            else {
+                logger.Warn("Could not load ContactHeader for SIPProviderBinding with id=" + m_id + ".");
             }
 
             if (bindingRow.Table.Columns.Contains("cseq") && bindingRow["cseq"] != DBNull.Value && bindingRow["cseq"] != null && bindingRow["cseq"].ToString().Length > 0) {

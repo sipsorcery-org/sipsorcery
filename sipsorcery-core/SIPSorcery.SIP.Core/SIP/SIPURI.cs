@@ -227,23 +227,21 @@ namespace SIPSorcery.SIP
             Host = host;
             ParseParamsAndHeaders(paramsAndHeaders);
             Scheme = scheme;
-            Parameters.Set(m_uriParamTransportKey, protocol.ToString());
+
+            if (protocol != SIPProtocolsEnum.udp) {
+                Parameters.Set(m_uriParamTransportKey, protocol.ToString());
+            }
         }
 
         public SIPURI(SIPSchemesEnum scheme, SIPEndPoint sipEndPoint)
         {
             Scheme = scheme;
             Host = sipEndPoint.SocketEndPoint.ToString();
-            Parameters.Set(m_uriParamTransportKey, sipEndPoint.SIPProtocol.ToString());
-        }
 
-        /*public static implicit operator SIPURI(string sipURI) {
-            return SIPURI.ParseSIPURI(sipURI);
+            if (sipEndPoint.SIPProtocol != SIPProtocolsEnum.udp) {
+                Parameters.Set(m_uriParamTransportKey, sipEndPoint.SIPProtocol.ToString());
+            }
         }
-
-        public static implicit operator string(SIPURI sipURI) {
-            return sipURI.ToString();
-        }*/
 
 		public static SIPURI ParseSIPURI(string uri)
 		{
@@ -361,40 +359,33 @@ namespace SIPSorcery.SIP
             }
         }
 
-		public new string ToString()
-		{
-			try
-			{
+        public new string ToString() {
+            try {
                 string uriStr = Scheme.ToString() + SCHEME_ADDR_SEPARATOR;
 
                 uriStr = (User != null) ? uriStr + User + USER_HOST_SEPARATOR + Host : uriStr + Host;
 
-                if (Parameters != null && Parameters.Count > 0)
-                {
+                if (Parameters != null && Parameters.Count > 0) {
                     uriStr += Parameters.ToString();
                 }
 
                 // If the URI's protocol is not implied already set the transport parameter.
-                if (Scheme != SIPSchemesEnum.sips && Protocol != SIPProtocolsEnum.udp && !Parameters.Has(m_uriParamTransportKey))
-                {
+                if (Scheme != SIPSchemesEnum.sips && Protocol != SIPProtocolsEnum.udp && !Parameters.Has(m_uriParamTransportKey)) {
                     uriStr += PARAM_TAG_DELIMITER + m_uriParamTransportKey + TAG_NAME_VALUE_SEPERATOR + Protocol.ToString();
                 }
 
-                if (Headers != null && Headers.Count > 0)
-                {
+                if (Headers != null && Headers.Count > 0) {
                     string headerStr = Headers.ToString();
-
-                    uriStr += HEADER_START_DELIMITER + headerStr.Substring(1);   
+                    uriStr += HEADER_START_DELIMITER + headerStr.Substring(1);
                 }
 
-				return uriStr;
-			}
-			catch(Exception excp)
-			{
-				logger.Error("Exception SIPURI ToString. " + excp.Message);
-				throw excp;
-			}
-		}
+                return uriStr;
+            }
+            catch (Exception excp) {
+                logger.Error("Exception SIPURI ToString. " + excp.Message);
+                throw excp;
+            }
+        }
 
         /// <summary>
         /// Reruens a string representation of the URI with any parameter and headers ommitted exceot for the transport
@@ -953,6 +944,26 @@ namespace SIPSorcery.SIP
 
                 SIPURI sipURI = SIPURI.ParseSIPURI("sip:;transport=UDP");
 
+                Console.WriteLine("-----------------------------------------");
+            }
+
+            [Test]
+            public void UDPProtocolToStringTest() {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                SIPURI sipURI = new SIPURI(SIPSchemesEnum.sip, SIPEndPoint.ParseSIPEndPoint("127.0.0.1"));
+                Console.WriteLine(sipURI.ToString());
+                Assert.IsTrue(sipURI.ToString() == "sip:127.0.0.1:5060", "The SIP URI was not ToString'ed correctly.");
+                Console.WriteLine("-----------------------------------------");
+            }
+
+            [Test]
+            public void ParseUDPProtocolToStringTest() {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                SIPURI sipURI = SIPURI.ParseSIPURIRelaxed("127.0.0.1");
+                Console.WriteLine(sipURI.ToString());
+                Assert.IsTrue(sipURI.ToString() == "sip:127.0.0.1", "The SIP URI was not ToString'ed correctly.");
                 Console.WriteLine("-----------------------------------------");
             }
         }

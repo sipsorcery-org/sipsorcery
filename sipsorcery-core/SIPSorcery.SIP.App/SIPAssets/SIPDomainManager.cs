@@ -67,6 +67,8 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public class SIPDomainManager
     {
+        public const string DEFAULT_LOCAL_DOMAIN = "local";
+
         private ILog logger = AppState.logger;
 
         private Dictionary<string, SIPDomain> m_domains = new Dictionary<string, SIPDomain>();  // Records the domains that are being maintained.
@@ -132,7 +134,12 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="host">The hostname to check for a serviced domain for.</param>
         /// <returns>The canconical domain name for the host if found or null if not.</returns>
-        public string GetDomain(string host)
+        public string GetDomain(string host) {
+            SIPDomain domain = GetSIPDomain(host);
+            return (domain != null) ? domain.Domain.ToLower() : null;
+        }
+
+        private SIPDomain GetSIPDomain(string host)
         {
             //logger.Debug("SIPDomainManager GetDomain for " + host + ".");
 
@@ -144,7 +151,7 @@ namespace SIPSorcery.SIP.App
             {
                 if(m_domains.ContainsKey(host.ToLower()))
                 {
-                    return host.ToLower();
+                    return m_domains[host.ToLower()];
                 }
                 else
                 {
@@ -153,7 +160,7 @@ namespace SIPSorcery.SIP.App
                         if (sipDomain.Aliases != null) {
                             foreach (string alias in sipDomain.Aliases) {
                                 if (alias.ToLower() == host.ToLower()) {
-                                    return sipDomain.Domain;
+                                    return sipDomain;
                                 }
                             }
                         }
@@ -213,6 +220,42 @@ namespace SIPSorcery.SIP.App
             {
                 logger.Error("Exception SIPDomainManager Get. " + excp.Message);
                 return null;
+            }
+        }
+
+        public void AddAlias(string domain, string alias) {
+            try {
+                if(domain.IsNullOrBlank() || alias.IsNullOrBlank()) {
+                    logger.Warn("AddAlias was passed a null alias or domain.");
+                }
+                else if (!HasDomain(alias.ToLower()) && HasDomain(domain.ToLower())) {
+                    SIPDomain sipDomain = GetSIPDomain(domain.ToLower());
+                    sipDomain.Aliases.Add(alias.ToLower());
+                }
+                else {
+                    logger.Warn("Could not add alias " + alias + " to domain " + domain + ".");
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception SIPDomainManager AddAlias. " + excp.Message);
+            }
+        }
+
+        public void RemoveAlias(string alias) {
+            try {
+                if (alias.IsNullOrBlank()) {
+                    logger.Warn("RemoveAlias was passed a null alias.");
+                }
+                else if (HasDomain(alias.ToLower())) {
+                    SIPDomain sipDomain = GetSIPDomain(alias.ToLower());
+                    sipDomain.Aliases.Remove(alias.ToLower());
+                }
+                else {
+                    logger.Warn("Could not remove alias " + alias + ".");
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception SIPDomainManager RemoveAlias. " + excp.Message);
             }
         }
     }

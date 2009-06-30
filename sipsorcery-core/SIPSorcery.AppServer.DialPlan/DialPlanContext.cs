@@ -251,6 +251,8 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 m_isAnswered = true;
                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call timed out in a " + sipTransaction.TransactionState + " state after " + DateTime.Now.Subtract(sipTransaction.Created).TotalSeconds.ToString("0.##") + "s.", Owner));
+                // Let the client know the call failed.
+                CallFailed(SIPResponseStatusCodesEnum.ServerTimeout, "The dial plan did not generate ringing");
                 if (CallCancelledByClient != null)
                 {
                     CallCancelledByClient(CallCancelCause.TimedOut);

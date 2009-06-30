@@ -373,6 +373,20 @@ namespace SIPSorcery.SIP
             m_sipTransport.SendResponse(sipResponse);
         }
 
+        public void RetransmitFinalResponse() {
+            try {
+                if (TransactionFinalResponse != null) {
+                    m_sipTransport.SendResponse(TransactionFinalResponse);
+                    Retransmits += 1;
+                    LastTransmit = DateTime.Now;
+                    ResponseRetransmit();
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception RetransmitFinalResponse. " + excp.Message);
+            }
+        }
+
         public void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
             FireTransactionTraceMessage("Send Request " + LocalSIPEndPoint.ToString() + "->" + dstEndPoint + m_crLF + sipRequest.ToString());
@@ -474,7 +488,7 @@ namespace SIPSorcery.SIP
             FireTransactionTraceMessage("Send Request retransmit " + Retransmits + " " + LocalSIPEndPoint.ToString() + "->" + this.RemoteEndPoint + m_crLF + this.TransactionRequest.ToString());
         }
 
-        public void ResponseRetransmit()
+        private void ResponseRetransmit()
         {
             if (TransactionResponseRetransmit != null)
             {

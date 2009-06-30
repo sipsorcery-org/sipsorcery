@@ -204,11 +204,9 @@ namespace SIPSorcery.Sys
                     using (DataContext dataContext = DBLinqContext.CreateDBLinqDataContext(m_storageType, m_dbConnStr)) {
                         Table<T> table = dataContext.GetTable<T>();
                         string idString = id.ToString();
-                        IEnumerator result = (from asset in table where asset.Id == idString select asset).Select("new (" + propertyName + ")").GetEnumerator();
-                        result.MoveNext();
-                        var resultObj = result.Current;
-                        PropertyInfo resultProperty = resultObj.GetType().GetProperty(propertyName);
-                        return resultProperty.GetValue(resultObj, null);
+                        Expression<Func<T, Object>> mySelect = DynamicExpression.ParseLambda<T, Object>(property.Name);
+                        var query = (from asset in table where asset.Id == idString select asset).Select(mySelect);
+                        return query.FirstOrDefault();
                     }
                 }
             }

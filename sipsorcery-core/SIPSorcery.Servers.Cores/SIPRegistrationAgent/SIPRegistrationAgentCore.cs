@@ -137,17 +137,6 @@ namespace SIPSorcery.Servers
             }
         }
 
-        public void SendContactRemovalRequest(SIPProvider sipProvider)
-        {
-            if (sipProvider != null)
-            {
-                SIPProviderBinding binding = m_bindingPersistor.Get(b => b.Id == sipProvider.Id);
-                if (binding != null && binding.IsRegistered) {
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(SendContactRemovalRequestAsync), sipProvider);
-                }
-            }
-        }
-
 		/// <summary>
 		/// Retrieve a list of accounts that the agent will register for from the database and then monitor them and any additional ones inserte.
 		/// </summary>
@@ -614,97 +603,6 @@ namespace SIPSorcery.Servers
             {
                 logger.Error("Exception GetAuthenticatedRegistrationRequest. " + excp.Message);
                 throw excp;
-            }
-        }
-
-        private void SendContactRemovalRequestAsync(object state)
-        {
-            try
-            {
-                SIPProviderBinding binding = (SIPProviderBinding)state;
-                SIPEndPoint registrarEndPoint = SIPDNSManager.Resolve(binding.RegistrarServer, true);
-                
-                if (registrarEndPoint == null)
-                {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRemoval, "Could not submit SIP Provider binding removal request for " + binding.ProviderName + ", DNS lookup for " + binding.RegistrarServer.ToString() + " failed.", binding.Owner));
-                }
-                else
-                {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRemoval, "Submitting SIP Provider binding removal request for " + binding.ProviderName + ".", binding.Owner));
-
-                    SIPEndPoint localSIPEndPoint = (binding.LocalSIPEndPoint != null) ? binding.LocalSIPEndPoint : m_sipTransport.GetDefaultSIPEndPoint(registrarEndPoint.SIPProtocol);
-                    binding.CSeq = ++binding.CSeq;
-
-                    SIPRequest regRequest = GetRegistrationRequest(null, binding, localSIPEndPoint, 0, registrarEndPoint);
-                    regRequest.LocalSIPEndPoint = binding.LocalSIPEndPoint;
-                    regRequest.Header.Expires = 0;
-                    SIPContactHeader contactHeader = new SIPContactHeader(null, binding.BindingSIPURI);
-                    regRequest.Header.Contact = new List<SIPContactHeader>();
-                    regRequest.Header.Contact.Add(contactHeader);
-                    regRequest.Header.Contact[0].Expires = 0;
-
-                    SIPNonInviteTransaction regTransaction = m_sipTransport.CreateNonInviteTransaction(regRequest, m_outboundProxy, localSIPEndPoint, m_outboundProxy);
-                    regTransaction.NonInviteTransactionFinalResponseReceived += new SIPTransactionResponseReceivedDelegate(
-                      (localEndPoint, remoteEndPoint, transaction, sipResponse) =>
-                      {
-                          // If requested authenticate the binding removal registration request.
-                          if ((sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised) && sipResponse.Header.AuthenticationHeader != null)
-                          {
-                              SIPRequest authenticatedRequest = GetAuthenticatedRegistrationRequest(binding, transaction.TransactionRequest, sipResponse);
-                              SIPNonInviteTransaction regAuthTransaction = m_sipTransport.CreateNonInviteTransaction(authenticatedRequest, m_outboundProxy, localSIPEndPoint, m_outboundProxy);
-                              m_sipTransport.SendSIPReliable(regAuthTransaction);
-                          }
-                      }
-                    );
-
-                    m_sipTransport.SendSIPReliable(regTransaction);
-
-                    FireProxyLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrationAgentBindingRemoval, binding.Owner, registrarEndPoint, binding.ProviderId.ToString()));
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SendContactRemovalRequest. " + excp.Message);
-            }
-        }
-
-        /// <summary>
-        /// Sends a registration request with an empty contact list. The SIP Registrar should return a list of all the currently registered contacts allowing 
-        /// the list held to be refreshed.
-        /// </summary>
-        /// <param name="registrationId"></param>
-        private void SendEmptyRegistrationRequest(SIPProviderBinding binding)
-        {
-            try
-            {
-                if (binding.RegistrarSIPEndPoint == null)
-                {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.Warn, "Could not submit SIP Provider Binding status request for " + binding.ProviderName + ", the Registrar socket was empty.", binding .Owner));
-                }
-                else if (binding.LocalSIPEndPoint == null)
-                {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.Warn, "Could not submit SIP Provider Binding status request for " + binding.ProviderName + ", the local socket to send from was empty.", binding.Owner));
-                }
-                else
-                {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRefresh, "Submitting registration refresh request for " + binding.Owner + " and " + binding.RegistrarServer.ToString() + ".", binding.Owner));
-
-                    binding.CSeq = binding.CSeq++;
-
-                    SIPRequest regRequest = GetRegistrationRequest(null, binding, binding.LocalSIPEndPoint, 0, binding.RegistrarSIPEndPoint);
-                    regRequest.LocalSIPEndPoint = binding.LocalSIPEndPoint;
-                    regRequest.Header.Expires = -1;                             // Stops the Expires header being sent.
-                    regRequest.Header.Contact = new List<SIPContactHeader>();   // Stops the Contact header being sent.
-
-                    SIPNonInviteTransaction regTransaction = m_sipTransport.CreateNonInviteTransaction(regRequest, m_outboundProxy, binding.LocalSIPEndPoint, m_outboundProxy);
-                    regTransaction.NonInviteTransactionFinalResponseReceived += new SIPTransactionResponseReceivedDelegate(ServerResponseReceived);
-
-                    m_sipTransport.SendSIPReliable(regTransaction);
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SendEmptyRegistrationRequest. " + excp.Message);
             }
         }
 

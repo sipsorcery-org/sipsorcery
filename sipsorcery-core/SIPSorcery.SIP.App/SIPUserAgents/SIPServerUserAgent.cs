@@ -54,19 +54,25 @@ namespace SIPSorcery.SIP.App
     public delegate void SIPIncomingCallCancelledDelegate(SIPServerUserAgent uas);
 
     public class SIPServerUserAgent {
-        private const string THREAD_NAME = "uas-";
 
         private static ILog logger = AssemblyState.logger;
 
         private SIPMonitorLogDelegate Log_External = SIPMonitorEvent.DefaultSIPMonitorLogger;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;
-        
+        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
+
         private SIPTransport m_sipTransport;
         private UASInviteTransaction m_uasTransaction;
         private SIPEndPoint m_outboundProxy;                   // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
         private SIPDialogue m_sipDialogue;
         private bool m_isAuthenticated;
-        private SIPAccount m_sipAccount;
+        private string m_sipUsername;
+        private string m_sipDomain;
+        private SIPCallDirection m_sipCallDirection;
+
+        public SIPCallDirection CallDirection {
+            get { return m_sipCallDirection; }
+        }
 
         public SIPDialogue SIPDialogue {
             get { return m_sipDialogue; }
@@ -76,55 +82,127 @@ namespace SIPSorcery.SIP.App
             get { return m_uasTransaction; }
         }
 
+        private SIPAccount m_sipAccount;
         public SIPAccount SIPAccount {
             get { return m_sipAccount; }
+            set { m_sipAccount = value; }
         }
 
         public bool IsAuthenticated {
             get { return m_isAuthenticated; }
+            set { m_isAuthenticated = value; }
         }
 
-        public event SIPIncomingCallDelegate NewCall;
+        //public event SIPIncomingCallDelegate NewCall;
         public event SIPIncomingCallCancelledDelegate CallCancelled;
 
         public SIPServerUserAgent(
             SIPTransport sipTransport,
             SIPEndPoint outboundProxy,
-            SIPAccount sipAccount,
+            string sipUsername,
+            string sipDomain,
+            SIPCallDirection callDirection,
+            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
             SIPAuthenticateRequestDelegate sipAuthenticateRequest,
-            SIPMonitorLogDelegate logDelegate) {
+            SIPMonitorLogDelegate logDelegate,
+            UASInviteTransaction uasTransaction) {
 
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
-            m_sipAccount = sipAccount;
+            m_sipUsername = sipUsername;
+            m_sipDomain = sipDomain;
+            m_sipCallDirection = callDirection;
+            GetSIPAccount_External = getSIPAccount;
             SIPAuthenticateRequest_External = sipAuthenticateRequest;
             Log_External = logDelegate ?? Log_External;
+            m_uasTransaction = uasTransaction;
+
+            m_uasTransaction.TransactionTraceMessage += TransactionTraceMessage;
+            m_uasTransaction.UASInviteTransactionTimedOut += ClientTimedOut;
+            m_uasTransaction.UASInviteTransactionCancelled += UASTransactionCancelled;
         }
 
-        public void InviteRequestReceivedAsync(SIPRequest inviteRequest, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint) {
-            ThreadPool.QueueUserWorkItem(delegate { InviteRequestReceived(inviteRequest, localSIPEndPoint, remoteEndPoint); });
-        }
-
-        public void InviteRequestReceived(SIPRequest inviteRequest, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint) {
+        public bool LoadSIPAccountForIncomingCall() {
             try {
-                if (Thread.CurrentThread.Name.IsNullOrBlank()) {
-                    Thread.CurrentThread.Name = THREAD_NAME + DateTime.Now.ToString("HHmmss") + "-" + Crypto.GetRandomString(3);
+                bool loaded = false;
+
+                if (GetSIPAccount_External == null) {
+                    // No point trying to authenticate if we haven't been given a  delegate to load the SIP account.
+                    Reject(SIPResponseStatusCodesEnum.InternalServerError, null);
+                }
+                else {
+                    m_sipAccount = GetSIPAccount_External(s => s.SIPUsername == m_sipUsername && s.SIPDomain == m_sipDomain);
+
+                    if (m_sipAccount == null) {
+                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Rejecting public call for " + m_sipUsername + "@" + m_sipDomain + ", SIP account not found.", null));
+                        Reject(SIPResponseStatusCodesEnum.NotFound, null);
+                    }
+                    else {
+                        loaded = true;
+                    }
                 }
 
-                m_uasTransaction = m_sipTransport.CreateUASTransaction(inviteRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                m_uasTransaction.TransactionTraceMessage += TransactionTraceMessage;
-                m_uasTransaction.UASInviteTransactionTimedOut += ClientTimedOut;
-                m_uasTransaction.UASInviteTransactionCancelled += UASTransactionCancelled;
-                m_uasTransaction.NewCallReceived += NewCallReceived;
-
-                m_uasTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, inviteRequest);
+                return loaded;
             }
             catch (Exception excp) {
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentServer, SIPMonitorEventTypesEnum.DialPlan, "Exception SIPServerUserAgent CallReceived. " + excp.Message, null));
-                logger.Error("Exception SIPServerUserAgent InviteRequestReceived. " + excp.Message);
-                // Don't throw here as method will typically be invoked on a separate thread and throwing an exception will crash the app.
-                //throw;
+                logger.Error("Exception LoadSIPAccountForIncomingCall. " + excp.Message);
+                Reject(SIPResponseStatusCodesEnum.InternalServerError, null);
+                return false;
             }
+        }
+
+        public bool AuthenticateCall() {
+            m_isAuthenticated = false;
+
+            try {
+                if (SIPAuthenticateRequest_External == null) {
+                    // No point trying to authenticate if we haven't been given an authentication delegate.
+                    Reject(SIPResponseStatusCodesEnum.InternalServerError, null);
+                }
+                else if (GetSIPAccount_External == null) {
+                    // No point trying to authenticate if we haven't been given a  delegate to load the SIP account.
+                    Reject(SIPResponseStatusCodesEnum.InternalServerError, null);
+                }
+                else {
+                    m_sipAccount = GetSIPAccount_External(s => s.SIPUsername == m_sipUsername && s.SIPDomain == m_sipDomain);
+
+                    if (m_sipAccount == null) {
+                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Rejecting authentication required call for " + m_sipUsername + "@" + m_sipDomain + ", SIP account not found.", null));
+                        Reject(SIPResponseStatusCodesEnum.Forbidden, null);
+                    }
+                    else {
+                        SIPRequest sipRequest = m_uasTransaction.TransactionRequest;
+                        SIPEndPoint localSIPEndPoint = m_uasTransaction.LocalSIPEndPoint;
+                        SIPEndPoint remoteEndPoint = m_uasTransaction.RemoteEndPoint;
+
+                        SIPRequestAuthenticationResult authenticationResult = SIPAuthenticateRequest_External(localSIPEndPoint, remoteEndPoint, sipRequest, m_sipAccount, Log_External);
+                        if (authenticationResult.Authenticated) {
+                            SIPEndPoint remoteUAEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
+                            if (authenticationResult.WasAuthenticatedByIP) {
+                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New call from " + remoteUAEndPoint.ToString() + " successfully authenticated by IP address.", m_sipAccount.Owner));
+                            }
+                            else {
+                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New call from " + remoteUAEndPoint.ToString() + " successfully authenticated by digest.", m_sipAccount.Owner));
+                            }
+
+                            m_isAuthenticated = true;
+                        }
+                        else {
+                            // Send authorisation failure or required response
+                            SIPResponse authReqdResponse = SIPTransport.GetResponse(sipRequest, authenticationResult.ErrorResponse, null);
+                            authReqdResponse.Header.AuthenticationHeader = authenticationResult.AuthenticationRequiredHeader;
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call not authenticated for " + m_sipUsername + "@" + m_sipDomain + ", responding with " + authenticationResult.ErrorResponse + ".", null));
+                            m_uasTransaction.SendFinalResponse(authReqdResponse);
+                        }
+                    }
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception SIPCallManager NewCallReceived. " + excp.Message);
+                Reject(SIPResponseStatusCodesEnum.InternalServerError, null);
+            }
+
+            return m_isAuthenticated;
         }
 
         public void SetRinging() {
@@ -156,57 +234,6 @@ namespace SIPSorcery.SIP.App
             m_uasTransaction.SendFinalResponse(redirectResponse);
         }
 
-        private void NewCallReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest) {
-            try {
-
-                UASInviteTransaction uasInviteTransaction = (UASInviteTransaction)sipTransaction;
-
-                if (m_sipAccount == null) {
-                    SIPResponse notFoundResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, null);
-                    sipTransaction.SendFinalResponse(notFoundResponse);
-                }
-                else if (SIPAuthenticateRequest_External == null) {
-                    // No authentication has been asked for pass the call straight through.
-                    if (NewCall != null) {
-                        NewCall(this);
-                    }
-                }
-                else {
-                    SIPRequestAuthenticationResult authenticationResult = SIPAuthenticateRequest_External(localSIPEndPoint, remoteEndPoint, sipRequest, m_sipAccount, Log_External);
-                    if (authenticationResult.Authenticated) {
-                        SIPEndPoint remoteUAEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
-                        if (authenticationResult.WasAuthenticatedByIP) {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New call from " + remoteUAEndPoint.ToString() + " successfully authenticated by IP address.", m_sipAccount.Owner));
-                        }
-                        else {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New call from " + remoteUAEndPoint.ToString() + " successfully authenticated by digest.", m_sipAccount.Owner));
-                        }
-
-                        m_isAuthenticated = true;
-                        if (NewCall != null) {
-                            NewCall(this);
-                        }
-                        else {
-                            SIPResponse notFoundResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, null);
-                            sipTransaction.SendFinalResponse(notFoundResponse);
-                        }
-                    }
-                    else {
-                        m_isAuthenticated = false;
-                        // Send authorisation failure or required response
-                        SIPResponse authReqdResponse = SIPTransport.GetResponse(sipRequest, authenticationResult.ErrorResponse, null);
-                        authReqdResponse.Header.AuthenticationHeader = authenticationResult.AuthenticationRequiredHeader;
-                        uasInviteTransaction.SendFinalResponse(authReqdResponse);
-                    }
-                }
-            }
-            catch (Exception excp) {
-                logger.Error("Exception SIPServerUserAgent NewCallReceived. " + excp.Message);
-                SIPResponse errorResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.InternalServerError, null);
-                sipTransaction.SendFinalResponse(errorResponse);
-            }
-        }
-
         private void UASTransactionCancelled(SIPTransaction sipTransaction) {
             if (CallCancelled != null) {
                 CallCancelled(this);
@@ -214,7 +241,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private void ClientTimedOut(SIPTransaction sipTransaction) {
-            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentServer, SIPMonitorEventTypesEnum.DialPlan, "Timed out waiting for client ACK.", null));
+            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentServer, SIPMonitorEventTypesEnum.DialPlan, "UAS timed out in transaction state " + m_uasTransaction.TransactionState + ".", null));
         }
 
         public void Hangup() {

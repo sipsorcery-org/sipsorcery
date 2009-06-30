@@ -72,7 +72,7 @@ namespace SIPSorcery.SIP.App
         // Netgears and the space has the potential to create too much confusion with the users and \ with the system.
         public static readonly char[] NONAPLPHANUM_ALLOWED_PASSWORD_CHARS = new char[]{'!','"','$','%','&','(',')','*',
 										   '+',',','.','/',':','<','=','>','?','@','[',']','^','_','`','{','|','}','~'};
-        public static readonly string USERNAME_ALLOWED_CHARS = @"a-zA-Z0-9_\-";
+        public static readonly string USERNAME_ALLOWED_CHARS = @"a-zA-Z0-9_\-\.";
 
         private static ILog logger = AppState.logger;
         private static string m_newLine = AppState.NewLine;
@@ -335,20 +335,19 @@ namespace SIPSorcery.SIP.App
                 {
                     throw new ApplicationException("The domain must be specified when creating a new SIP account.");
                 }
-                else if (Regex.Match(sipUsername, "[^" + USERNAME_ALLOWED_CHARS + "]").Success)
-                {
+                else if (sipUsername.Length < USERNAME_MIN_LENGTH) {
+                    throw new ArgumentException("The username must be at least " + USERNAME_MIN_LENGTH + " characters long.");
+                }
+                else if (Regex.Match(sipUsername, "[^" + USERNAME_ALLOWED_CHARS + "]").Success) {
                     throw new ArgumentException("The username had an invalid character, characters permitted are alpha-numeric and .-_.");
                 }
-                else if (sipPassword == null || sipPassword.Trim().Length == 0)
-                {
+                else if (sipPassword == null || sipPassword.Trim().Length == 0) {
                     throw new ArgumentException("A password must be specified.");
                 }
-                else if (sipPassword.Length < PASSWORD_MIN_LENGTH || sipPassword.Length > PASSWORD_MAX_LENGTH)
-                {
+                else if (sipPassword.Length < PASSWORD_MIN_LENGTH || sipPassword.Length > PASSWORD_MAX_LENGTH) {
                     throw new ArgumentException("The password field must be at least " + PASSWORD_MIN_LENGTH + " characters and no more than " + PASSWORD_MAX_LENGTH + " characters.");
                 }
-                else
-                {
+                else {
                     #region Check the password illegal characters.
 
                     char[] passwordChars = sipPassword.ToCharArray();
@@ -356,30 +355,23 @@ namespace SIPSorcery.SIP.App
                     bool illegalCharFound = false;
                     char illegalChar = ' ';
 
-                    foreach (char passwordChar in passwordChars)
-                    {
-                        if (Regex.Match(passwordChar.ToString(), "[a-zA-Z0-9]").Success)
-                        {
+                    foreach (char passwordChar in passwordChars) {
+                        if (Regex.Match(passwordChar.ToString(), "[a-zA-Z0-9]").Success) {
                             continue;
                         }
-                        else
-                        {
+                        else {
                             bool validChar = false;
-                            foreach (char allowedChar in NONAPLPHANUM_ALLOWED_PASSWORD_CHARS)
-                            {
-                                if (allowedChar == passwordChar)
-                                {
+                            foreach (char allowedChar in NONAPLPHANUM_ALLOWED_PASSWORD_CHARS) {
+                                if (allowedChar == passwordChar) {
                                     validChar = true;
                                     break;
                                 }
                             }
 
-                            if (validChar)
-                            {
+                            if (validChar) {
                                 continue;
                             }
-                            else
-                            {
+                            else {
                                 illegalCharFound = true;
                                 illegalChar = passwordChar;
                                 break;
@@ -389,8 +381,7 @@ namespace SIPSorcery.SIP.App
 
                     #endregion
 
-                    if (illegalCharFound)
-                    {
+                    if (illegalCharFound) {
                         throw new ArgumentException("Your password has an invalid character " + illegalChar + " it can only contain a to Z, 0 to 9 and characters in this set " + SafeXML.MakeSafeXML(new String(NONAPLPHANUM_ALLOWED_PASSWORD_CHARS)) + ".");
                     }
                 }

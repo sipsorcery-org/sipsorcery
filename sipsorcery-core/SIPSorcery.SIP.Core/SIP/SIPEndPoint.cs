@@ -43,37 +43,6 @@ namespace SIPSorcery.SIP
             SocketEndPoint = endPoint;
         }
 
-        /*public static SIPEndPoint ParseSIPEndPoint(string sipEndPointStr)
-        {
-            try
-            {
-                if (sipEndPointStr.IsNullOrBlank()) {
-                    return null;
-                }
-
-                SIPEndPoint sipEndPoint = new SIPEndPoint();
-                sipEndPointStr = sipEndPointStr.Trim();
-                string[] hostAndProtocol = sipEndPointStr.Split(';');
-                string[] hostAndPort = hostAndProtocol[0].Split(':');
-
-                // Determine the protocol.
-                bool protocolSet = false;
-                if (hostAndPort.Length > 2) {
-                    if (SIPSchemesType.GetSchemeType(hostAndPort[0]) == SIPSchemesEnum.sips) {
-                        sipEndPoint.SIPProtocol = SIPProtocolsEnum.tls;
-                        protocolSet = true;
-                    }
-                }
-
-                return new SIPEndPoint(sepURI.Protocol, IPSocket.ParseSocketString(sepURI.Host));
-            }
-            catch(Exception excp)
-            {
-                logger.Error("Exception ParseSIPEndPoint. " + excp.Message);
-                throw;
-            }
-        }*/
-
         public static SIPEndPoint ParseSIPEndPoint(string sipEndPointStr)
         {
             try {

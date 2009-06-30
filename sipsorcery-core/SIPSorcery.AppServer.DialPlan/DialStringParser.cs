@@ -130,7 +130,7 @@ namespace SIPSorcery.AppServer.DialPlan
             DialPlanContextsEnum dialPlanType,
             SIPRequest sipRequest, 
             string command, 
-            StringDictionary customHeaders,
+            HybridDictionary customHeaders,
             string customContentType,
             string customContent,
             string callersNetworkId)
@@ -240,7 +240,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private Queue<List<SIPCallDescriptor>> ParseScriptDialString(
             SIPRequest sipRequest, 
             string command, 
-            StringDictionary customHeaders,
+            HybridDictionary customHeaders,
             string customContentType,
             string customContent,
             string callersNetworkId) {
@@ -292,7 +292,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                         // header is already present.
                                         if (customHeaders != null && customHeaders.Count > 0) {
                                             foreach (DictionaryEntry customHeader in customHeaders) {
-                                                if (sipCallDescriptor.CustomHeaders.ContainsKey(customHeader.Key as string)) {
+                                                if (sipCallDescriptor.CustomHeaders.Contains(customHeader.Key as string)) {
                                                     sipCallDescriptor.CustomHeaders[customHeader.Key as string] = customHeader.Value as string;
                                                 }
                                                 else {
@@ -333,7 +333,7 @@ namespace SIPSorcery.AppServer.DialPlan
         public List<SIPCallDescriptor> GetForwardsForLocalLeg(
             SIPRequest sipRequest, 
             SIPAccount sipAccount, 
-            StringDictionary customHeaders,
+            HybridDictionary customHeaders,
             string customContentType,
             string customContent,
             string callersNetworkId) {
@@ -370,10 +370,10 @@ namespace SIPSorcery.AppServer.DialPlan
                         // Determine the content based on a custom request, caller's network id and whether mangling is required.
                         string contentType = null;
                         string content = null;
-                        bool wasSDPMangled = false;
+                        bool mangleResponseSDP = true;
 
                         if(!customContentType.IsNullOrBlank()) {
-                            contentType =  customContentType;
+                            contentType = customContentType;
                         }
                         else if(sipRequest != null) {
                             contentType = sipRequest.Header.ContentType;
@@ -382,8 +382,12 @@ namespace SIPSorcery.AppServer.DialPlan
                         if(!customContent.IsNullOrBlank()) {
                             content = customContent;
                         }
+                        else if (!callersNetworkId.IsNullOrBlank() && callersNetworkId == sipAccount.NetworkId) {
+                            mangleResponseSDP = false;
+                            content = sipRequest.Body;
+                        }
                         else if (sipRequest != null) {
-                            content = MangleContent(sipRequest.Body, sipRequest.Header.ProxyReceivedFrom, callersNetworkId, sipAccount.NetworkId, sipAccount.SIPUsername + "@" + sipAccount.SIPDomain, out wasSDPMangled);
+                            content = MangleContent(sipRequest.Body, sipRequest.Header.ProxyReceivedFrom, sipAccount.SIPUsername + "@" + sipAccount.SIPDomain);
                         }
 
                         SIPCallDescriptor switchCall = new SIPCallDescriptor(
@@ -397,8 +401,8 @@ namespace SIPSorcery.AppServer.DialPlan
                             null, 
                             SIPCallDirection.In, 
                             contentType, 
-                            content, 
-                            wasSDPMangled);
+                            content,
+                            mangleResponseSDP);
                         localUserSwitchCalls.Add(switchCall);
                     }
                 }
@@ -434,7 +438,6 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 string contentType = null;
                 string content = null;
-                bool wasSDPMangled = false;
 
                 if (!customContentType.IsNullOrBlank()) {
                     contentType = customContentType;
@@ -447,7 +450,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     content = customContent;
                 }
                 else if (sipRequest != null) {
-                    content = MangleContent(sipRequest.Body, sipRequest.Header.ProxyReceivedFrom, null, null, callLegURI.ToString(), out wasSDPMangled);
+                    content = MangleContent(sipRequest.Body, sipRequest.Header.ProxyReceivedFrom, callLegURI.ToString());
                 }
 
                 if (m_sipProviders != null) {
@@ -487,7 +490,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                     SIPCallDirection.Out,
                                     contentType,
                                     content,
-                                    wasSDPMangled);
+                                    true);
 
                                 providerFound = true;
                                 break;
@@ -518,7 +521,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         SIPCallDirection.Out,
                         contentType,
                         content,
-                        wasSDPMangled);
+                        true);
                 }
 
                 return SIPCallDescriptor;
@@ -557,17 +560,15 @@ namespace SIPSorcery.AppServer.DialPlan
             return fromHeader;
         }
 
-        private string MangleContent(string body, string proxyReceivedFromHeader, string callerNetworkId, string calleeNetworkId, string legDestination, out bool wasSDPMangled) {
-
-            wasSDPMangled = false;
-
+        private string MangleContent(string body, string proxyReceivedFromHeader, string legDestination) {
             try {
                 string content = null;
+                bool wasSDPMangled = false;
                 IPEndPoint sdpEndPoint = (!body.IsNullOrBlank()) ? SDP.GetSDPRTPEndPoint(body) : null;
                 //Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "MangleContent, SDP=" + sdpEndPoint.Address.ToString() + ", Proxy-ReceivedFrom=" + proxyReceivedFromHeader + ".", m_username));
                 IPAddress remoteUACAddress = null;
                 
-                if ((callerNetworkId == null || callerNetworkId != calleeNetworkId) && !body.IsNullOrBlank() && !proxyReceivedFromHeader.IsNullOrBlank()) {
+                if (!body.IsNullOrBlank() && !proxyReceivedFromHeader.IsNullOrBlank()) {
                     // Caller and callee are not on the same network id so an attempt will be made to mangle any private IP addresses found
                     // in the SDP.
                     //logger.Debug("Mangling SDP for call leg " + legDestination + ".");

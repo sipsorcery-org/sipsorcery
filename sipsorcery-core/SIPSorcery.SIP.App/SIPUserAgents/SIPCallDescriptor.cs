@@ -73,14 +73,14 @@ namespace SIPSorcery.SIP.App
         public string From;                     // A string representing the From header to be set for the call.
         public string To;                       // A string representing the To header to be set for the call.  
         public string RouteSet;                 // A route set for the forwarded call request. If there is only a single route or IP socket it will be treated like an Outbound Proxy (i.e. no Route header will be added).
-        public StringDictionary CustomHeaders;  // An optional list of custom SIP headers that will be added to the INVITE request.
+        public HybridDictionary CustomHeaders;  // An optional list of custom SIP headers that will be added to the INVITE request.
         public SIPCallDirection CallDirection;  // Indicates whether the call is incoming out outgoing relative to this server. An outgoing call is one that is placed by a user the server authenticates.
         public string ContentType;
         public string Content;
         public int DelaySeconds;                        // An amount in seconds to delay the intiation of this call when used as part of a dial string.
         public SIPCallRedirectModesEnum RedirectMode;   // Determines how the call will handle 3xx redirect responses.
         public int CallDurationLimit;                   // If non-zero sets a limit on the duration of any call created with this descriptor.
-        public bool MangleResponseSDP;                  // If true indicates the response SDP should be mangled if it contains a private IP address.
+        public bool MangleResponseSDP;                  // If false indicates the response SDP should be left alone if it contains a private IP address.
 
         public ManualResetEvent DelayMRE;       // If the call needs to be delayed DelaySeconds this MRE will be used.
 
@@ -91,7 +91,7 @@ namespace SIPSorcery.SIP.App
             string from, 
             string to, 
             string routeSet, 
-            StringDictionary customHeaders, 
+            HybridDictionary customHeaders, 
             string authUsername, 
             SIPCallDirection callDirection, 
             string contentType, 
@@ -149,9 +149,9 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public static StringDictionary ParseCustomHeaders(string customHeaders) {
+        public static HybridDictionary ParseCustomHeaders(string customHeaders) {
 
-            StringDictionary customHeaderList = new StringDictionary();
+            HybridDictionary customHeaderList = new HybridDictionary(false);
             
             try {
                 if (!customHeaders.IsNullOrBlank()) {
