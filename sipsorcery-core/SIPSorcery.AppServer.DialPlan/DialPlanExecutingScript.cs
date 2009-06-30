@@ -106,7 +106,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
             catch (Exception excp)
             {
-                logger.Error("Exception DialPlanExecutingScript StopExecution. " + excp.Message);
+                logger.Warn("Exception DialPlanExecutingScript StopExecution. " + excp.Message);
             }
         }
 
