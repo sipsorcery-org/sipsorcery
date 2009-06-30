@@ -71,6 +71,8 @@ namespace SIPSorcery.SIPProxy
         private bool m_stop;
         private ManualResetEvent m_stunClientMRE = new ManualResetEvent(false);     // Used to set the interval on the STUN lookups and also allow the thread to be stopped.
 
+        public event IPAddressChangedDelegate PublicIPAddressUpdated;
+
         public SIPProxyDaemon()
         {}
 
@@ -164,12 +166,16 @@ namespace SIPSorcery.SIPProxy
                 while (!m_stop) {
                     IPAddress publicIP = STUNClient.GetPublicIPAddress(m_stunServerHostname);
                     if (publicIP != null) {
-                        logger.Debug("The STUN client was able to determine the public IP address as " + publicIP.ToString() + ".");
+                        //logger.Debug("The STUN client was able to determine the public IP address as " + publicIP.ToString() + ".");
                         m_statelessProxyCore.PublicIPAddress = publicIP;
                     }
                     else {
-                        logger.Debug("The STUN client could not determine the public IP address.");
+                       // logger.Debug("The STUN client could not determine the public IP address.");
                         m_statelessProxyCore.PublicIPAddress = null;
+                    }
+
+                    if (PublicIPAddressUpdated != null) {
+                        PublicIPAddressUpdated(publicIP);
                     }
 
                     m_stunClientMRE.Reset();

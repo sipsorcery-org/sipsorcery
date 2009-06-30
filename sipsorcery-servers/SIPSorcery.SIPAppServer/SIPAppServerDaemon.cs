@@ -68,6 +68,7 @@ namespace SIPSorcery.SIPAppServer {
         private const int DIALPLAN_NOTUSED_PURGEPERIOD = 300;           // The number of seconds after last use that a dialplan will be purged for.
 
         private static ILog logger = SIPAppServerState.logger;
+        private static ILog dialPlanLogger = AppState.GetLogger("dialplan");
 
         private XmlNode m_sipAppServerSocketsNode = SIPAppServerState.SIPAppServerSocketsNode;
 
@@ -97,6 +98,7 @@ namespace SIPSorcery.SIPAppServer {
         private ServiceHost m_sipProvisioningHost;
         private ServiceHost m_callManagerSvcHost;
         private CustomerSessionManager m_customerSessionManager;
+        private IPAddress m_publicIPAddress;
 
         private StorageTypes m_storageType;
         private string m_connectionString;
@@ -118,6 +120,18 @@ namespace SIPSorcery.SIPAppServer {
 
                 if (m_sipProxyEnabled) {
                     m_sipProxyDaemon = new SIPProxyDaemon();
+                    m_sipProxyDaemon.PublicIPAddressUpdated += (ipAddress) => {
+                        if (ipAddress != null && m_sipSorceryPersistor.SIPDomainManager.GetDomain(ipAddress.ToString()) == null) {
+                            m_sipSorceryPersistor.SIPDomainManager.AddAlias(SIPDomainManager.DEFAULT_LOCAL_DOMAIN, ipAddress.ToString());
+                            m_sipSorceryPersistor.SIPDomainManager.AddAlias(SIPDomainManager.DEFAULT_LOCAL_DOMAIN, ipAddress.ToString() + ":" + SIPConstants.DEFAULT_SIP_PORT);
+                        }
+
+                        if (ipAddress != m_publicIPAddress && m_publicIPAddress != null) {
+                            m_sipSorceryPersistor.SIPDomainManager.RemoveAlias(m_publicIPAddress.ToString());
+                            m_sipSorceryPersistor.SIPDomainManager.RemoveAlias(m_publicIPAddress.ToString() + ":" + SIPConstants.DEFAULT_SIP_PORT);
+                            m_publicIPAddress = ipAddress;
+                        }
+                    };
                     m_sipProxyDaemon.Start();
                 }
 
@@ -344,7 +358,9 @@ namespace SIPSorcery.SIPAppServer {
                         sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.ContactRegisterInProgress &&
                         sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.Monitor &&
                         sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.UnrecognisedMessage)) {
-                        logger.Debug("as: " + sipMonitorEvent.Message);
+                        //logger.Debug("as (" + DateTime.Now.ToString("mm:ss:fff") + " " + sipMonitorEvent.Username + ") " + sipMonitorEvent.Message);
+                        string eventUsername = (sipMonitorEvent.Username.IsNullOrBlank()) ? null : " " + sipMonitorEvent.Username;
+                        dialPlanLogger.Debug("as (" + DateTime.Now.ToString("mm:ss:fff") + eventUsername + "): " + sipMonitorEvent.Message);
                     }
                 }
             }
@@ -373,26 +389,6 @@ namespace SIPSorcery.SIPAppServer {
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, sipResponse.Header.From.FromURI.User, localSIPEndPoint, endPoint));
         }
 
-       /* private void LogSIPRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest) {
-            string message = "App Svr Request Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
-            LogSIPMessage(message);
-        }
-
-        private void LogSIPRequestOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest) {
-            string message = "App Svr Request Sent: " + localSIPEndPoint + "->" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
-            LogSIPMessage(message);
-        }
-
-        private void LogSIPResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse) {
-            string message = "App Svr Response Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
-            LogSIPMessage(message);
-        }
-
-        private void LogSIPResponseOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse) {
-            string message = "App Svr Response Sent: " + localSIPEndPoint + "->" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
-            LogSIPMessage(message);
-        }*/
-
         private void LogSIPBadRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, string sipMessage, SIPValidationFieldsEnum errorField) {
             string message = "App Svr Bad Request Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + ", " + errorField;
             string fullMessage = "App Svr Bad Request Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + ", " + errorField + "\r\n" + sipMessage;
@@ -404,10 +400,6 @@ namespace SIPSorcery.SIPAppServer {
             string fullMessage = "App Svr Bad Response Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + ", " + errorField + "\r\n" + sipMessage;
             LogSIPBadMessage(message, fullMessage);
         }
-
-        //private void LogSIPMessage(string message) {
-        //    FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, null));
-        //}
 
         private void LogSIPBadMessage(string message, string fullTraceMessage) {
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.BadSIPMessage, message, null));

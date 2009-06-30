@@ -52,7 +52,7 @@ namespace SIPSorcery.SIPRegistrationAgent {
                     throw new NotImplementedException(m_sipRegAgentStorageType + " is not implemented for the SIP Registrar persistor.");
                 }
                 
-                SynchroniseBindings(sipProvidersPersistor, sipProviderBindingsPersistor);
+                //SynchroniseBindings(sipProvidersPersistor, sipProviderBindingsPersistor);
                 
                 SIPRegAgentDaemon daemon = new SIPRegAgentDaemon(sipProvidersPersistor, sipProviderBindingsPersistor);
 
@@ -79,7 +79,7 @@ namespace SIPSorcery.SIPRegistrationAgent {
 
         /// <summary>
         /// Synchronises the SIP Provider entries with the SIP Provider Binding entries. If a SIP Provider is set to register and does
-        /// not have abinding one needs to be added and vice versa.
+        /// not have a binding one needs to be added and vice versa.
         /// </summary>
         private static void SynchroniseBindings(SIPAssetPersistor<SIPProvider> sipProvidersPersistor, SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor) {
 
