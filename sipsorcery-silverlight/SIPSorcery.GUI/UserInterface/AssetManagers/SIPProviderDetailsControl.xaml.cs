@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -17,6 +18,9 @@ namespace SIPSorcery
 {
 	public partial class SIPProviderDetailsControl : UserControl
 	{
+        private const string BANNED_PROVIDER_SERVER_PATTERN = "sipsorcery";
+        private const string DEFAULT_CONTACT_HOST = "sipsorcery.com";
+
         private static char m_customHeadersSeparator = SIPProvider.CUSTOM_HEADERS_SEPARATOR;
         private static int m_defaultRegisterExpiry = SIPProvider.REGISTER_DEFAULT_EXPIRY;
         private static int m_minimumRegisterExpiry = SIPProvider.REGISTER_MINIMUM_EXPIRY;
@@ -131,10 +135,8 @@ namespace SIPSorcery
             }
         }
 
-        private void Add()
-        {
-            try
-            {
+        private void Add() {
+            try {
                 bool valid = false;
                 string validationError = "Unknown validation error.";
 
@@ -154,41 +156,58 @@ namespace SIPSorcery
                 Int32.TryParse(m_providerRegisterExpiry.Text, out registerExpiry);
 
                 string customHeaders = null;
-                if (m_providerCustomHeaders.Items.Count > 0)
-                {
-                    foreach (string customHeader in m_providerCustomHeaders.Items)
-                    {
+                if (m_providerCustomHeaders.Items.Count > 0) {
+                    foreach (string customHeader in m_providerCustomHeaders.Items) {
                         customHeaders += (m_sipProvider.CustomHeaders != null && m_sipProvider.CustomHeaders.Trim().Length > 0) ? m_customHeadersSeparator.ToString() : null;
                         customHeaders += customHeader;
                     }
                 }
 
-                if (providerName == null || providerName.Trim().Length == 0)
-                {
+                if (providerName == null || providerName.Trim().Length == 0) {
                     valid = false;
                     validationError = "A value for Provider Name must be specified.";
                 }
-                else if (providerServer == null)
-                {
+                else if (providerName.Contains(".")) {
+                    valid = false;
+                    validationError = "The Provider Name cannot contain a full stop '.' in order to avoid ambiguity with DNS host names, please remove the '.'.";
+                }
+                else if (providerServer == null) {
                     valid = false;
                     validationError = "A value for Server must be specified.";
                 }
-                else if (!m_providerRegisterServer.Text.IsNullOrBlank() && registerServer == null)
-                {
+                else if (Regex.Match(providerServer.Host, BANNED_PROVIDER_SERVER_PATTERN).Success) {
+                    valid = false;
+                    validationError = "The Provider Server contains a disallowed string. If you are trying to create a Provider entry pointing to sipsorcery.com it is not permitted.";
+                }
+                else if (!m_providerRegisterServer.Text.IsNullOrBlank() && registerServer == null) {
                     valid = false;
                     validationError = "The Register Server could not be understood.";
                 }
-                else if (registerEnabled && registerContact == null)
-                {
+                else if (registerEnabled && registerContact == null) {
+                    valid = false;
                     validationError = "A valid contact must be supplied to enable a provider registration.";
                 }
-                else
-                {
+                else if (providerServer.Host.IndexOf('.') == -1) {
+                    valid = false;
+                    validationError = "Your provider server entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
+                }
+                else if (registerServer != null && registerServer.Host.IndexOf('.') == -1) {
+                    valid = false;
+                    validationError = "Your register server entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
+                }
+                else if (registerContact != null && registerContact.Host.IndexOf('.') == -1) {
+                    valid = false;
+                    validationError = "Your register contact entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
+                }
+                else if (registerContact != null && registerContact.Host.IndexOf('@') == -1) {
+                    valid = false;
+                    validationError = "Your register contact entry appears to be invalid, the user portion was missing. Contacts must be of the form user@host.com, e.g. joe@sipsorcery.com.";
+                }
+                else {
                     valid = true;
                 }
 
-                if (valid)
-                {
+                if (valid) {
                     SIPProvider sipProvider = new SIPProvider(m_owner, providerName, providerUsername, providerPassword, providerServer, outboundProxy, providerFrom, customHeaders,
                         registerContact, registerExpiry, registerServer, authUsername, registerRealm, registerEnabled, true);
                     sipProvider.Inserted = DateTime.Now;
@@ -197,13 +216,11 @@ namespace SIPSorcery
                     WriteStatusMessage(MessageLevelsEnum.Info, "Adding SIP Provider please wait...");
                     SIPProviderAdd_External(sipProvider);
                 }
-                else
-                {
+                else {
                     WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
                 }
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 WriteStatusMessage(MessageLevelsEnum.Error, "Add Exception. " + excp.Message);
             }
         }
@@ -305,16 +322,18 @@ namespace SIPSorcery
             }
         }
 
-        private void ProviderRegister_Checked(object sender, System.Windows.RoutedEventArgs e)
-        {
+        private void ProviderRegister_Checked(object sender, System.Windows.RoutedEventArgs e) {
             m_providerRegisterContact.IsEnabled = true;
             m_providerRegisterExpiry.IsEnabled = true;
             m_providerRegisterRealm.IsEnabled = true;
             m_providerRegisterServer.IsEnabled = true;
 
-            if (m_providerRegisterExpiry.Text.Trim().Length == 0)
-            {
+            if (m_providerRegisterExpiry.Text.Trim().Length == 0) {
                 m_providerRegisterExpiry.Text = m_defaultRegisterExpiry.ToString();
+            }
+
+            if (m_providerRegisterContact.Text.Trim().Length == 0) {
+                m_providerRegisterContact.Text = m_owner + "@" + DEFAULT_CONTACT_HOST;
             }
         }
 

@@ -4,7 +4,7 @@
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	mc:Ignorable="d"
-	x:Class="SIPSorcery.DialPlanDetailsControl" xmlns:System="clr-namespace:System;assembly=mscorlib" OpacityMask="#FF111111" Height="Auto" Width="1020" d:DesignHeight="630">
+	x:Class="SIPSorcery.DialPlanDetailsControl" xmlns:System="clr-namespace:System;assembly=mscorlib" OpacityMask="#FF111111" Height="Auto" Width="1020" d:DesignHeight="653">
 
 	<StackPanel Height="Auto" x:Name="LayoutRoot" Background="#FF000000">
 		<Border Height="Auto" Width="Auto" BorderBrush="#FFA0F927" BorderThickness="1,1,1,1" CornerRadius="5,5,5,5">
@@ -33,11 +33,13 @@
 						<RadioButton Height="20" Foreground="#FFA0F927" Width="52" Canvas.Left="141" Content="Ruby" GroupName="m_dialPlanScriptType" IsChecked="True" x:Name="m_dialPlanTypeRuby" />
 						<RadioButton Height="20" Foreground="#FFA0F927" Width="79" Content="Extension" GroupName="m_dialPlanScriptType" Canvas.Left="206" x:Name="m_dialPlanTypeExtension" />			
 					</Canvas>
+					<Button Content="Update" Height="22" x:Name="m_updateButton2" Click="UpdateButtonClicked" Width="47" Canvas.Left="500" Canvas.Top="486" Padding="3,3,3,3" Margin="0,0,0,5" />
 					<Border Height="413.516" Width="994" Canvas.Left="7.999" Canvas.Top="64.518" Background="#FF272727" BorderBrush="#FFA0F927" BorderThickness="1,1,1,1">
-						<TextBox AcceptsReturn="True" Height="Auto" Width="Auto" Background="#FF272727" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" MaxLength="20000" Text="" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Foreground="#FFA0F927" VerticalScrollBarVisibility="Auto" x:Name="m_dialPlanText"/>
+						<TextBox AcceptsReturn="True" Height="Auto" Width="Auto" Background="#FF272727" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" MaxLength="30000" Text="" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Foreground="#FFA0F927" VerticalScrollBarVisibility="Auto" x:Name="m_dialPlanText"/>
 					</Border>		
+					<Button Content="Update" Height="22" x:Name="m_applyButton" Click="UpdateButtonClicked" Width="47" Canvas.Left="500" Canvas.Top="486" HorizontalAlignment="Center" Margin="0,5,0,0" />
 				</StackPanel>
-				<Button Content="Update" Height="22" x:Name="m_applyButton" Click="UpdateButtonClicked" Width="47" Canvas.Left="500" Canvas.Top="486" HorizontalAlignment="Center" />
+				
 			</StackPanel>
 		</Border>
 	</StackPanel>

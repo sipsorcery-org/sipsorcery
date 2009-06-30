@@ -8,7 +8,7 @@
 	xmlns:sipsorceryui="clr-namespace:SIPSorcery.UIControls;assembly=SIPSorcery"  
 	mc:Ignorable="d"
 	x:Class="SIPSorcery.SIPCallManager"
-	d:DesignWidth="800" d:DesignHeight="409.283" Width="1024" xmlns:SIPSorcery="clr-namespace:SIPSorcery" OpacityMask="{x:Null}" Height="Auto" HorizontalContentAlignment="Center" VerticalContentAlignment="Stretch" ScrollViewer.VerticalScrollBarVisibility="Disabled" HorizontalAlignment="Center">
+	d:DesignWidth="800" d:DesignHeight="479.283" Width="1024" xmlns:SIPSorcery="clr-namespace:SIPSorcery" OpacityMask="{x:Null}" Height="Auto" HorizontalContentAlignment="Center" VerticalContentAlignment="Stretch" ScrollViewer.VerticalScrollBarVisibility="Disabled" HorizontalAlignment="Center">
 
 	<UserControl.Resources>
 		<sipsorcery:SIPURIConverter x:Key="SIPURIStringConverter" />
@@ -45,7 +45,7 @@
 			</Border>
 		</sipsorceryui:AssetViewPanel>
 		<sipsorceryui:AssetViewPanel Height="Auto" x:Name="m_sipCDRsPanel" Width="Auto" Margin="0,5,0,5">
-			<Border BorderBrush="#FFA1FA28" BorderThickness="1,1,1,1" Height="222" x:Name="m_sipCDRsBorder" Width="1024">
+			<Border BorderBrush="#FFA1FA28" BorderThickness="1,1,1,1" Height="300" x:Name="m_sipCDRsBorder" Width="1024">
 				<data:DataGrid ColumnHeaderHeight="24" SelectionMode="Single" x:Name="m_cdrsGrid" AutoGenerateColumns="False" FontSize="11" 
 				RowBackground="Azure"
 				AlternatingRowBackground="LightSteelBlue" Height="Auto" Width="Auto">
@@ -81,7 +81,7 @@
 						IsReadOnly="True"
 						MinWidth="100" />
 					<data:DataGridTextColumn 
-						Header="Answer Status" 
+						Header="Status" 
 						Width="SizeToCells"
 						Binding="{Binding Path=AnsweredStatus}" 
 						IsReadOnly="True"

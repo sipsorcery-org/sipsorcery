@@ -28,7 +28,7 @@ namespace SIPSorcery
     public partial class SIPCallManager : UserControl
 	{
         private const int SIPCALLS_DISPLAY_COUNT = 10;
-        private const int SIPCDRS_DISPLAY_COUNT = 10;
+        private const int SIPCDRS_DISPLAY_COUNT = 25;
 
         private ActivityMessageDelegate LogActivityMessage_External;
         private ActivityProgressDelegate ShowActivityProgress_External;
