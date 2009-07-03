@@ -16,6 +16,8 @@ namespace SIPSorcery.SIP.App {
 
     public class InstanceProviderExtensionElement : BehaviorExtensionElement {
 
+        private const string DISABLED_PROVIDER_SERVERS_PATTERN = "DisabledProviderServersPattern";
+
         private static ILog logger = AppState.GetLogger("provisioningsvc");
 
         private static readonly string m_storageTypeKey = Persistence.PERSISTENCE_STORAGETYPE_KEY;
@@ -23,6 +25,7 @@ namespace SIPSorcery.SIP.App {
 
         private static StorageTypes m_serverStorageType;
         private static string m_serverStorageConnStr;
+        private static string m_disabledProviderServerPattern; 
 
         protected override object CreateBehavior() {
 
@@ -32,6 +35,12 @@ namespace SIPSorcery.SIP.App {
 
                 if (m_serverStorageType == StorageTypes.Unknown || m_serverStorageConnStr.IsNullOrBlank()) {
                     throw new ApplicationException("The Provisioning Web Service cannot start with no persistence settings specified.");
+                }
+
+                // Prevent users from creaing loopback or other crazy providers.
+                m_disabledProviderServerPattern = ConfigurationManager.AppSettings[DISABLED_PROVIDER_SERVERS_PATTERN];
+                if (!m_disabledProviderServerPattern.IsNullOrBlank()) {
+                    SIPProvider.DisallowedServerPatterns = m_disabledProviderServerPattern;
                 }
 
                 // The Registration Agent wants to know about any changes to SIP Provider entries in order to update any SIP 

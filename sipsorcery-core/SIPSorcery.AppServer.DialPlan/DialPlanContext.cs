@@ -137,7 +137,9 @@ namespace SIPSorcery.AppServer.DialPlan
                 TraceLog.AppendLine(SIPMonitorEventTypesEnum.SIPTransaction + "=>" + "Request received " + m_clientTransaction.LocalSIPEndPoint +
                     "<-" + m_clientTransaction.RemoteEndPoint + CRLF + m_clientTransaction.TransactionRequest.ToString());
 
-                m_clientTransaction.CDR.Owner = m_dialPlan.Owner;
+                if (m_clientTransaction.CDR != null) {
+                    m_clientTransaction.CDR.Owner = m_dialPlan.Owner;
+                }
                 m_clientTransaction.UASInviteTransactionTimedOut += ClientTransactionTimedOut;
                 m_clientTransaction.UASInviteTransactionCancelled += ClientCallCancelled;
                 m_clientTransaction.TransactionRemoved += ClientTransactionRemoved;
@@ -148,11 +150,11 @@ namespace SIPSorcery.AppServer.DialPlan
             try {
                 if (!m_isAnswered) {
                     if ((int)progressStatus >= 200) {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "CallProgress was passed an invalid response status of " + progressStatus + ", ignoring.", Owner));
+                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "CallProgress was passed an invalid response status of " + (int)progressStatus + ", ignoring.", Owner));
                     }
                     else {
                         if (m_clientTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding) {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "CallProgress ignoring progress response with status of " + progressStatus + " as already in " + m_clientTransaction.TransactionState + ".", Owner));
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "CallProgress ignoring progress response with status of " + (int)progressStatus + " as already in " + m_clientTransaction.TransactionState + ".", Owner));
                         }
                         else {
                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call progressing with " + progressStatus + ".", Owner));
@@ -181,12 +183,12 @@ namespace SIPSorcery.AppServer.DialPlan
             try {
                 if (!m_isAnswered) {
                     if ((int)failureStatus < 400) {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "CalFailure was passed an invalid response status of " + failureStatus + ", ignoring.", Owner));
+                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "CalFailure was passed an invalid response status of " + (int)failureStatus + ", ignoring.", Owner));
                     }
                     else {
                         m_isAnswered = true;
                         string failureReason = (!reasonPhrase.IsNullOrBlank()) ? " and " + reasonPhrase : null;
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call failed with " + failureStatus + failureReason + ".", Owner));
+                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call failed with a response status of " + (int)failureStatus + failureReason + ".", Owner));
                         SIPResponse failureResponse = SIPTransport.GetResponse(m_clientTransaction.TransactionRequest, failureStatus, reasonPhrase);
                         m_clientTransaction.SendFinalResponse(failureResponse);
                     }
@@ -204,11 +206,11 @@ namespace SIPSorcery.AppServer.DialPlan
             try {
                 if (!m_isAnswered) {
                     if ((int)answeredStatus < 200 || (int)answeredStatus > 299) {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "CallAnswered was passed an invalid response status of " + answeredStatus + ", ignoring.", Owner));
+                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "CallAnswered was passed an invalid response status of " + (int)answeredStatus + ", ignoring.", Owner));
                     }
                     else {
                         m_isAnswered = true;
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Answering client call with " + answeredStatus + ".", Owner));
+                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Answering client call with a response status of " + (int)answeredStatus + ".", Owner));
 
                         // Send the OK through to the client.
                         //if (m_manglePrivateAddresses)

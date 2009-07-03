@@ -56,16 +56,31 @@ namespace SIPSorcery.AppServer.DialPlan
             string[] replyFields = commandData.Split(',');
             string statusMessage = (replyFields.Length > 1 && replyFields[1] != null) ? replyFields[1].Trim() : null;
 
-            return Start(Convert.ToInt32(replyFields[0]), statusMessage);
+            return Start(Convert.ToInt32(replyFields[0]), statusMessage, null);
         }
 
-        public SIPResponse Start(int status, string reason) {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="status"></param>
+        /// <param name="reason"></param>
+        /// <param name="customHeaders">An optional list of pipe '|' delimited custom headers.</param>
+        /// <returns></returns>
+        public SIPResponse Start(int status, string reason, string customHeaders) {
             SIPResponseStatusCodesEnum statusCode = SIPResponseStatusCodes.GetStatusTypeForCode(status);
             if (!reason.IsNullOrBlank()) {
                 reason = reason.Trim();
             }
 
             SIPResponse sipResponse = new SIPResponse(statusCode, reason, null);
+
+            if (!customHeaders.IsNullOrBlank()) {
+                string[] headerList = customHeaders.Split('|');
+                foreach(string header in headerList) {
+                    sipResponse.Header.UnknownHeaders.Add(header);
+                }
+            }
+
             return sipResponse;
         }
     }

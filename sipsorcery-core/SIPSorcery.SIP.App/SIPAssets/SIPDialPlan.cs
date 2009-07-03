@@ -76,6 +76,8 @@ namespace SIPSorcery.SIP.App
 
         private ILog logger = AppState.logger;
 
+        public static int TimeZoneOffsetMinutes;
+        
         private string m_id;                  // Dial plan id used by the system. This is the database primary key and is not important for XML.
         [Column(Storage = "_id", Name = "id", DbType = "character varying(36)", IsPrimaryKey = true, CanBeNull = false)]
         [DataMember]
@@ -156,35 +158,46 @@ namespace SIPSorcery.SIP.App
             get { return SIPDialPlanScriptTypes.GetSIPDialPlanScriptType(m_scriptTypeDescription); }
         }
 
-        private DateTime m_lastUpdate;
+        private DateTime m_lastUpdateUTC;
         [Column(Storage = "_lastupdate", Name = "lastupdate", DbType = "timestamp", CanBeNull = true)]
         [DataMember]
-        public DateTime LastUpdate
+        public DateTime LastUpdateUTC
         {
-            get { return m_lastUpdate; }
+            get { return m_lastUpdateUTC; }
             set
             {
-                m_lastUpdate = value;
+                m_lastUpdateUTC = value;
                 NotifyPropertyChanged("LastUpdate");
             }
         }
 
-        private DateTime m_inserted;
-        [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
-        [DataMember]
-        public DateTime Inserted {
-            get { return m_inserted; }
-            set { m_inserted = value; }
+        public DateTime LastUpdate {
+            get { return LastUpdateUTC.AddMinutes(TimeZoneOffsetMinutes); }
         }
 
+        private DateTime m_insertedUTC;
+        [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
+        [DataMember]
+        public DateTime InsertedUTC {
+            get { return m_insertedUTC; }
+            set { m_insertedUTC = value; }
+        }
+
+        public DateTime Inserted {
+            get { return InsertedUTC.AddMinutes(TimeZoneOffsetMinutes); }
+        }
+
+        private int m_maxExecutionCount = DEFAULT_MAXIMUM_EXECUTION_COUNT;
+        [DataMember]
         [Column(Storage = "_maxexecutioncount", Name = "maxexecutioncount", DbType = "integer", CanBeNull = false)]
         public int MaxExecutionCount
         {
-            get { return DEFAULT_MAXIMUM_EXECUTION_COUNT; }
-            set { }  // By design can't be modified through the UI at this point.
+            get { return m_maxExecutionCount; }
+            set { m_maxExecutionCount = value;}  // By design can't be modified through the UI at this point.
         }
 
         private int m_executionCount;
+        [DataMember]
         [Column(Storage = "_executioncount", Name = "executioncount", DbType = "integer", CanBeNull = false)]
         public int ExecutionCount
         {
@@ -214,8 +227,8 @@ namespace SIPSorcery.SIP.App
             m_traceEmailAddress = traceEmailAddress;
             m_dialPlanScript = script;
             m_scriptTypeDescription = scriptType.ToString();
-            m_inserted = DateTime.Now;
-            m_lastUpdate = DateTime.Now;
+            m_insertedUTC = DateTime.Now.ToUniversalTime();
+            m_lastUpdateUTC = DateTime.Now.ToUniversalTime();
         }
 
 #if !SILVERLIGHT
@@ -233,9 +246,15 @@ namespace SIPSorcery.SIP.App
                 m_traceEmailAddress = (dialPlanRow.Table.Columns.Contains("traceemailaddress") && dialPlanRow["traceemailaddress"] != null) ? dialPlanRow["traceemailaddress"] as string : null;
                 m_dialPlanScript = (dialPlanRow["dialplanscript"] as string).Trim();
                 m_scriptTypeDescription = (dialPlanRow.Table.Columns.Contains("scripttype") && dialPlanRow["scripttype"] != null) ? SIPDialPlanScriptTypes.GetSIPDialPlanScriptType(dialPlanRow["scripttype"] as string).ToString() : SIPDialPlanScriptTypesEnum.Ruby.ToString();
-                MaxExecutionCount = (dialPlanRow.Table.Columns.Contains("maxexecutioncount") && dialPlanRow["maxexecutioncount"] != null) ? Convert.ToInt32(dialPlanRow["maxexecutioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
+                m_maxExecutionCount = (dialPlanRow.Table.Columns.Contains("maxexecutioncount") && dialPlanRow["maxexecutioncount"] != null) ? Convert.ToInt32(dialPlanRow["maxexecutioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
                 m_executionCount = (dialPlanRow.Table.Columns.Contains("executioncount") && dialPlanRow["executioncount"] != null) ? Convert.ToInt32(dialPlanRow["executioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
                 m_authorisedApps = (dialPlanRow.Table.Columns.Contains("authorisedapps") && dialPlanRow["authorisedapps"] != null) ? dialPlanRow["authorisedapps"] as string : null;
+                if (dialPlanRow.Table.Columns.Contains("inserted") & dialPlanRow["inserted"] != DBNull.Value) {
+                    InsertedUTC = Convert.ToDateTime(dialPlanRow["inserted"]);
+                }
+                if (dialPlanRow.Table.Columns.Contains("lastupdate") & dialPlanRow["lastupdate"] != DBNull.Value) {
+                    LastUpdateUTC = Convert.ToDateTime(dialPlanRow["lastupdate"]);
+                }
             }
             catch (Exception excp) {
                 logger.Error("Exception DialPlan Load. " + excp);
@@ -269,9 +288,11 @@ namespace SIPSorcery.SIP.App
                 "    <traceemailaddress>" + m_traceEmailAddress + "</traceemailaddress>" + m_newLine +
                 "    <dialplanscript><![CDATA[" + m_dialPlanScript + "]]></dialplanscript>" + m_newLine +
                 "    <scripttype>" + m_scriptTypeDescription + "</scripttype>" + m_newLine +
-                "    <maxexecutioncount>" + MaxExecutionCount + "</maxexecutioncount>" + m_newLine +
+                "    <maxexecutioncount>" + m_maxExecutionCount + "</maxexecutioncount>" + m_newLine +
                 "    <executioncount>" + m_executionCount + "</executioncount>" + m_newLine +
-                "    <authorisedapps>" + m_authorisedApps + "</authorisedapps>";
+                "    <authorisedapps>" + m_authorisedApps + "</authorisedapps>" + m_newLine +
+                "    <inserted>" + m_insertedUTC.ToString("o") + "</inserted>" + m_newLine +
+                "    <lastupdate>" + m_lastUpdateUTC.ToString("o") + "</lastudpate>";
 
             return dialPlanXML;
         }

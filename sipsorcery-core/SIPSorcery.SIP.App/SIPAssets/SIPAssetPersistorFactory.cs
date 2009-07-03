@@ -51,9 +51,21 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPAssetPersistorFactory
     {
+        public const string XML_DOMAINS_FILENAME = "sipdomains.xml";
+        public const string XML_SIPACCOUNTS_FILENAME = "sipaccounts.xml";
+        public const string XML_SIPPROVIDERS_FILENAME = "sipproviders.xml";
+        public const string XML_DIALPLANS_FILENAME = "sipdialplans.xml";
+        public const string XML_REGISTRAR_BINDINGS_FILENAME = "sipregistrarbindings.xml";
+        public const string XML_PROVIDER_BINDINGS_FILENAME = "sipproviderbindings.xml";
+        public const string XML_SIPDIALOGUES_FILENAME = "sipdialogues.xml";
+        public const string XML_SIPCDRS_FILENAME = "sipcdrs.xml";
+                
         public static SIPAssetPersistor<SIPAccount> CreateSIPAccountPersistor(StorageTypes storageType, string storageConnectionStr) {
             if (storageType == StorageTypes.XML) {
-                return new SIPAssetXMLPersistor<SIPAccount>(storageConnectionStr);
+                if (!storageConnectionStr.EndsWith(@"\")) {
+                    storageConnectionStr += @"\";
+                }
+                return new SIPAssetXMLPersistor<SIPAccount>(storageConnectionStr + XML_SIPACCOUNTS_FILENAME);
             }
             else if (storageType == StorageTypes.NHibernate) {
                 //return new SIPAssetNHibernatePersistor<T>(NHibernateHelper.OpenSession());
@@ -71,7 +83,10 @@ namespace SIPSorcery.SIP.App
 
         public static SIPAssetPersistor<SIPDialPlan> CreateDialPlanPersistor(StorageTypes storageType, string storageConnectionStr) {
             if (storageType == StorageTypes.XML) {
-                return new SIPAssetXMLPersistor<SIPDialPlan>(storageConnectionStr);
+                if (!storageConnectionStr.EndsWith(@"\")) {
+                    storageConnectionStr += @"\";
+                }
+                return new SIPAssetXMLPersistor<SIPDialPlan>(storageConnectionStr + XML_DIALPLANS_FILENAME);
             }
             else if (storageType == StorageTypes.NHibernate) {
                // return new SIPAssetNHibernatePersistor<SIPDialPlan>(NHibernateHelper.OpenSession());
@@ -89,7 +104,10 @@ namespace SIPSorcery.SIP.App
 
         public static SIPAssetPersistor<SIPProvider> CreateSIPProviderPersistor(StorageTypes storageType, string storageConnectionStr) {
             if (storageType == StorageTypes.XML) {
-                return new SIPAssetXMLPersistor<SIPProvider>(storageConnectionStr);
+                if (!storageConnectionStr.EndsWith(@"\")) {
+                    storageConnectionStr += @"\";
+                }
+                return new SIPAssetXMLPersistor<SIPProvider>(storageConnectionStr + XML_SIPPROVIDERS_FILENAME);
             }
             else if (storageType == StorageTypes.NHibernate) {
                 //return new SIPAssetNHibernatePersistor<SIPProvider>(NHibernateHelper.OpenSession());
@@ -107,7 +125,10 @@ namespace SIPSorcery.SIP.App
 
         public static SIPAssetPersistor<SIPProviderBinding> CreateSIPProviderBindingPersistor(StorageTypes storageType, string storageConnectionStr) {
             if (storageType == StorageTypes.XML) {
-                return new SIPAssetXMLPersistor<SIPProviderBinding>(storageConnectionStr);
+                if (!storageConnectionStr.EndsWith(@"\")) {
+                    storageConnectionStr += @"\";
+                }
+                return new SIPAssetXMLPersistor<SIPProviderBinding>(storageConnectionStr + XML_PROVIDER_BINDINGS_FILENAME);
             }
             else if (storageType == StorageTypes.NHibernate) {
                 //return new SIPAssetNHibernatePersistor<SIPProviderBinding>(NHibernateHelper.OpenSession());
@@ -125,7 +146,10 @@ namespace SIPSorcery.SIP.App
 
         public static SIPAssetPersistor<SIPDomain> CreateSIPDomainPersistor(StorageTypes storageType, string storageConnectionStr) {
             if (storageType == StorageTypes.XML) {
-                return new SIPAssetXMLPersistor<SIPDomain>(storageConnectionStr);
+                if (!storageConnectionStr.EndsWith(@"\")) {
+                    storageConnectionStr += @"\";
+                }
+                return new SIPAssetXMLPersistor<SIPDomain>(storageConnectionStr + XML_DOMAINS_FILENAME);
             }
             else if (storageType == StorageTypes.NHibernate) {
                 //return new SIPAssetNHibernatePersistor<SIPDomain>(NHibernateHelper.OpenSession());
@@ -143,7 +167,10 @@ namespace SIPSorcery.SIP.App
 
         public static SIPAssetPersistor<SIPRegistrarBinding> CreateSIPRegistrarBindingPersistor(StorageTypes storageType, string storageConnectionStr) {
             if (storageType == StorageTypes.XML) {
-                return new SIPAssetXMLPersistor<SIPRegistrarBinding>(storageConnectionStr);
+                if (!storageConnectionStr.EndsWith(@"\")) {
+                    storageConnectionStr += @"\";
+                }
+                return new SIPAssetXMLPersistor<SIPRegistrarBinding>(storageConnectionStr + XML_REGISTRAR_BINDINGS_FILENAME);
             }
             else if (storageType == StorageTypes.NHibernate) {
                 //return new SIPAssetNHibernatePersistor<SIPRegistrarBinding>(NHibernateHelper.OpenSession());
@@ -161,7 +188,10 @@ namespace SIPSorcery.SIP.App
 
         public static SIPAssetPersistor<SIPDialogueAsset> CreateSIPDialoguePersistor(StorageTypes storageType, string storageConnectionStr) {
             if (storageType == StorageTypes.XML) {
-                return new SIPAssetXMLPersistor<SIPDialogueAsset>(storageConnectionStr);
+                if (!storageConnectionStr.EndsWith(@"\")) {
+                    storageConnectionStr += @"\";
+                }
+                return new SIPAssetXMLPersistor<SIPDialogueAsset>(storageConnectionStr + XML_SIPDIALOGUES_FILENAME);
             }
             else if (storageType == StorageTypes.NHibernate) {
                 //return new SIPAssetNHibernatePersistor<SIPDialogueAsset>(NHibernateHelper.OpenSession());
@@ -179,7 +209,10 @@ namespace SIPSorcery.SIP.App
 
         public static SIPAssetPersistor<SIPCDRAsset> CreateSIPCDRPersistor(StorageTypes storageType, string storageConnectionStr) {
             if (storageType == StorageTypes.XML) {
-                return new SIPAssetXMLPersistor<SIPCDRAsset>(storageConnectionStr);
+                if (!storageConnectionStr.EndsWith(@"\")) {
+                    storageConnectionStr += @"\";
+                }
+                return new SIPAssetXMLPersistor<SIPCDRAsset>(storageConnectionStr + XML_SIPCDRS_FILENAME);
             }
             else if (storageType == StorageTypes.NHibernate) {
                 //return new SIPAssetNHibernatePersistor<SIPCDRAsset>(NHibernateHelper.OpenSession());

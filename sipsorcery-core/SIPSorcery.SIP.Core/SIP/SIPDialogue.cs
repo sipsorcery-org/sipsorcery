@@ -39,15 +39,13 @@ using System.Threading;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.SIP
-{
-    public enum SIPDialogueStateEnum
-    {
+namespace SIPSorcery.SIP {
+    public enum SIPDialogueStateEnum {
         Unknown = 0,
         Early = 1,
         Confirmed = 2,
     }
-    
+
     /// <summary>
     /// See "Chapter 12 Dialogs" in RFC3261.
     /// </summary>
@@ -56,18 +54,17 @@ namespace SIPSorcery.SIP
     /// from the UAS. In practice it's been noted that is a UAS (initial UAS) sends an in-dialogue request with a CSeq less than the
     /// UAC's CSeq it can cause problems. To avoid this issue when generating requests the remote CSeq is always used.
     /// </remarks>
-    public class SIPDialogue
-	{
+    public class SIPDialogue {
         protected static ILog logger = AssemblyState.logger;
 
-		protected static string m_CRLF = SIPConstants.CRLF;
-		protected static string m_sipVersion = SIPConstants.SIP_VERSION_STRING;
+        protected static string m_CRLF = SIPConstants.CRLF;
+        protected static string m_sipVersion = SIPConstants.SIP_VERSION_STRING;
 
         public SIPTransport m_sipTransport;
 
         public Guid Id { get; set; }                                // Id for persistence, NOT used for SIP call purposes.
         public string Owner { get; set; }                           // In cases where ownership needs to be set on the dialogue this value can be used. Does not have any effect on the operation of the dialogue and is for info only.
-        public string AdminMemberId { get; set; }      
+        public string AdminMemberId { get; set; }
         public string CallId { get; set; }
         public SIPRouteSet RouteSet { get; set; }
         public SIPUserField LocalUserField { get; set; }            // To header for a UAS, From header for a UAC.
@@ -89,10 +86,10 @@ namespace SIPSorcery.SIP
 
         public SIPDialogue() { }
 
-		public SIPDialogue(
+        public SIPDialogue(
             SIPTransport sipTransport,
-            string callId, 
-            SIPRouteSet routeSet, 
+            string callId,
+            SIPRouteSet routeSet,
             SIPUserField localUser,
             SIPUserField remoteUser,
             int cseq,
@@ -104,8 +101,7 @@ namespace SIPSorcery.SIP
             string owner,
             string adminMemberId,
             string sdp,
-            string remoteSDP)
-		{
+            string remoteSDP) {
             m_sipTransport = sipTransport;
 
             Id = Guid.NewGuid();
@@ -137,8 +133,7 @@ namespace SIPSorcery.SIP
             SIPTransport sipTransport,
             UASInviteTransaction uasInviteTransaction,
             string owner,
-            string adminMemberId)
-        {
+            string adminMemberId) {
             m_sipTransport = sipTransport;
 
             Id = Guid.NewGuid();
@@ -182,8 +177,7 @@ namespace SIPSorcery.SIP
           SIPTransport sipTransport,
           UACInviteTransaction uacInviteTransaction,
           string owner,
-          string adminMemberId)
-        {
+          string adminMemberId) {
             m_sipTransport = sipTransport;
 
             Id = Guid.NewGuid();
@@ -207,7 +201,7 @@ namespace SIPSorcery.SIP
 
             // Set the dialogue remote target and take care of mangling if an upstream proxy has indicated it's required.
             RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, uacInviteTransaction.RemoteEndPoint);
-            if(uacInviteTransaction.TransactionFinalResponse.Header.Contact != null && uacInviteTransaction.TransactionFinalResponse.Header.Contact.Count > 0) {
+            if (uacInviteTransaction.TransactionFinalResponse.Header.Contact != null && uacInviteTransaction.TransactionFinalResponse.Header.Contact.Count > 0) {
                 RemoteTarget = uacInviteTransaction.TransactionFinalResponse.Header.Contact[0].ContactURI;
                 if (!uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) {
                     // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
@@ -219,13 +213,11 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public static string GetDialogueId(string callId, string localTag, string remoteTag)
-        {
+        public static string GetDialogueId(string callId, string localTag, string remoteTag) {
             return Crypto.GetSHAHash(callId + localTag + remoteTag);
         }
 
-        public static string GetDialogueId(SIPHeader sipHeader)
-        {
+        public static string GetDialogueId(SIPHeader sipHeader) {
             return Crypto.GetSHAHash(sipHeader.CallId + sipHeader.To.ToTag + sipHeader.From.FromTag);
         }
 
@@ -234,8 +226,7 @@ namespace SIPSorcery.SIP
             Hangup();
         }
 
-        public void Hangup()
-        {
+        public void Hangup() {
             SIPEndPoint dstEndPoint = GetDestinationEndPoint();
             SIPEndPoint localSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint(dstEndPoint);
             if (localSIPEndPoint == null) {
@@ -259,8 +250,7 @@ namespace SIPSorcery.SIP
             return dstEndPoint;
         }
 
-        private SIPRequest GetByeRequest(SIPDialogue sipDialogue, SIPEndPoint localSIPEndPoint)
-        {
+        private SIPRequest GetByeRequest(SIPDialogue sipDialogue, SIPEndPoint localSIPEndPoint) {
             SIPRequest byeRequest = new SIPRequest(SIPMethodsEnum.BYE, sipDialogue.RemoteTarget);
             byeRequest.LocalSIPEndPoint = localSIPEndPoint;
             SIPFromHeader byeFromHeader = SIPFromHeader.ParseFromHeader(sipDialogue.LocalUserField.ToString());
@@ -277,5 +267,5 @@ namespace SIPSorcery.SIP
 
             return byeRequest;
         }
-	}
+    }
 }

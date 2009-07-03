@@ -58,6 +58,9 @@ namespace SIPSorcery.CRM
         {
             if (storageType == StorageTypes.XML)
             {
+                if(!storageDescription.EndsWith(@"\")) {
+                    storageDescription += @"\";
+                }
                 return new SIPAssetXMLPersistor<Customer>(storageDescription + CUSTOMERS_XML_FILENAME);
             }
             else if (storageType == StorageTypes.NHibernate)

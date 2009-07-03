@@ -95,11 +95,11 @@ namespace SIPSorcery.AppServer.DialPlan
 
         private DialogueBridgeCreatedDelegate m_createBridgeDelegate;
         private GetCanonicalDomainDelegate m_getCanonicalDomainDelegate;
-        private SIPRequest m_sipRequest;                                            // This is a copy of the SIP request from m_clientTransaction.
+        private SIPRequest m_sipRequest;                                                // This is a copy of the SIP request from m_clientTransaction.
         private SwitchCallMulti m_currentCall;
-        private SIPEndPoint m_outboundProxySocket;                                  // If this app forwards calls via an outbound proxy this value will be set.
-        private HybridDictionary m_customSIPHeaders = new HybridDictionary(false);  // Allows a dialplan user to add or customise SIP headers.
-        private string m_customContent;                                             // If set will be used by the Dial command as the INVITE body on forwarded requests.
+        private SIPEndPoint m_outboundProxySocket;                                      // If this app forwards calls via an outbound proxy this value will be set.
+        private HybridDictionary m_customSIPHeaders = new HybridDictionary(false);      // Allows a dialplan user to add or customise SIP headers for forwarded requests.
+        private string m_customContent;                                                 // If set will be used by the Dial command as the INVITE body on forwarded requests.
         private string m_customContentType;  
         private string m_customFromName;
         private string m_customFromUser;
@@ -365,21 +365,31 @@ namespace SIPSorcery.AppServer.DialPlan
             ThreadPool.QueueUserWorkItem(delegate { callbackApp.Callback(dest1, dest2, delaySeconds); });
         }
 
+        public void Respond(int statusCode, string reason) {
+            Respond(statusCode, reason, null);
+        }
+
         /// <summary>
         /// Sends a SIP response to the client call. If a final response is sent then the client call will hang up.
         /// </summary>
         /// <param name="statusCode"></param>
         /// <param name="reason"></param>
-        public void Respond(int statusCode, string reason) {
+        /// <param name="customerHeaders">Optional list of pipe '|' delimited custom headers.</param>
+        public void Respond(int statusCode, string reason, string customerHeaders) {
             try {
-                SIPReplyApp replyApp = new SIPReplyApp();
-                SIPResponse sipResponse = replyApp.Start(statusCode, reason);
-                if ((int)sipResponse.Status >= 300) {
-                    m_dialPlanContext.CallFailed(sipResponse.Status, sipResponse.ReasonPhrase);
-                    m_executingScript.StopExecution();
+                if (statusCode >= 200 && statusCode < 300) {
+                    Log("Respond cannot be used for 2xx responses.");
                 }
-                else if ((int)sipResponse.Status < 200) {
-                    m_dialPlanContext.CallProgress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
+                else {
+                    SIPReplyApp replyApp = new SIPReplyApp();
+                    SIPResponse sipResponse = replyApp.Start(statusCode, reason, customerHeaders);
+                    if ((int)sipResponse.Status >= 300) {
+                        m_dialPlanContext.CallFailed(sipResponse.Status, sipResponse.ReasonPhrase);
+                        m_executingScript.StopExecution();
+                    }
+                    else if ((int)sipResponse.Status < 200) {
+                        m_dialPlanContext.CallProgress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
+                    }
                 }
             }
             catch (Exception excp) {
@@ -662,14 +672,12 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <summary>
         /// Attempts to send a gTalk IM to the specified account.
         /// </summary>
-        public void GTalk(string username, string password, string sendToUser, string message)
-        {
-            try
-            {
+        public void GTalk(string username, string password, string sendToUser, string message) {
+            try {
                 XmppClientConnection xmppCon = new XmppClientConnection();
                 xmppCon.Password = password;
                 xmppCon.Username = username;
-                xmppCon.Server = "gmail.com"; 
+                xmppCon.Server = "gmail.com";
                 xmppCon.ConnectServer = "talk.google.com";
                 xmppCon.AutoAgents = false;
                 xmppCon.AutoPresence = false;
@@ -683,22 +691,19 @@ namespace SIPSorcery.AppServer.DialPlan
                 xmppCon.OnLogin += new ObjectHandler((sender) => waitForConnect.Set());
                 xmppCon.Open();
 
-                if (waitForConnect.WaitOne(5000, false))
-                {
+                if (waitForConnect.WaitOne(5000, false)) {
                     Log("Connected to gTalk for " + username + "@gmail.com.");
                     xmppCon.Send(new Message(new Jid(sendToUser + "@gmail.com"), MessageType.chat, message));
                     // Give the message time to be sent.
                     Thread.Sleep(1000);
                 }
-                else
-                {
+                else {
                     Log("Connection to gTalk for " + username + " timed out.");
                 }
 
                 xmppCon.Close();
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception GTalk. " + excp.Message);
                 Log("Exception GTalk. " + excp.Message);
             }

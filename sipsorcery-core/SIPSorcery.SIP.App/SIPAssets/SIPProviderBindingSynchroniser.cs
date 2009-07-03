@@ -44,7 +44,7 @@ namespace SIPSorcery.SIP.App {
                     }
                     else {
                         existingBinding.SetProviderFields(sipProvider);
-                        existingBinding.NextRegistrationTime = DateTime.Now;
+                        existingBinding.NextRegistrationTimeUTC = DateTime.Now.ToUniversalTime();
                         m_bindingPersistor.Update(existingBinding);
                     }
                 }
@@ -53,7 +53,7 @@ namespace SIPSorcery.SIP.App {
                         if (existingBinding.IsRegistered) {
                             // Let the registration agent know the existing binding should be expired.
                             existingBinding.BindingExpiry = 0;
-                            existingBinding.NextRegistrationTime = DateTime.Now;
+                            existingBinding.NextRegistrationTimeUTC = DateTime.Now.ToUniversalTime();
                             m_bindingPersistor.Update(existingBinding);
                         }
                         else {
@@ -76,7 +76,7 @@ namespace SIPSorcery.SIP.App {
                     if (existingBinding.IsRegistered) {
                         // Let the registration agent know the existing binding should be expired.
                         existingBinding.BindingExpiry = 0;
-                        existingBinding.NextRegistrationTime = DateTime.Now;
+                        existingBinding.NextRegistrationTimeUTC = DateTime.Now.ToUniversalTime();
                         m_bindingPersistor.Update(existingBinding);
                     }
                     else {

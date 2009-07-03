@@ -56,7 +56,7 @@ namespace SIPSorcery.SIP.App
                 }
                 else if (sipAccount.IsDisabled) {
                     if (logSIPMonitorEvent != null) {
-                        logSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Authoriser, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " is disabled for.", sipAccount.Owner));
+                        logSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Authoriser, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " is disabled for " + sipRequest.Method + ".", sipAccount.Owner));
                     }
                     return new SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum.Forbidden, null);
                 }

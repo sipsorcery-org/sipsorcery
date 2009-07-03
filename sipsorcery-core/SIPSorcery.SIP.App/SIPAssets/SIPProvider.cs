@@ -40,6 +40,7 @@ using System.ComponentModel;
 using System.Net;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 using SIPSorcery.Sys;
 using log4net;
@@ -67,6 +68,8 @@ namespace SIPSorcery.SIP.App
         public const int REGISTER_DEFAULT_EXPIRY = 3600;
         public const int REGISTER_MINIMUM_EXPIRY = 60;            // The minimum interval a registration will be accepted for. Anything less than this interval will use this minimum value.
         public const int REGISTER_MAXIMUM_EXPIRY = 3600;
+
+        public static string DisallowedServerPatterns;            // If set will be used as a regex pattern to prevent certain strings being used in the Provider Server and RegisterServer fields.
 
         private static string m_newLine = AppState.NewLine;
         private static ILog logger = AppState.logger;
@@ -295,26 +298,26 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private DateTime m_lastUpdate;
+        private DateTime m_lastUpdateUTC;
         [Column(Storage = "_lastupdate", Name = "lastupdate", DbType = "timestamp", CanBeNull = true)]
         [DataMember]
-        public DateTime LastUpdate
+        public DateTime LastUpdateUTC
         {
-            get { return m_lastUpdate; }
+            get { return m_lastUpdateUTC; }
             set
             {
-                m_lastUpdate = value;
+                m_lastUpdateUTC = value;
                 NotifyPropertyChanged("LastUpdate");
             }
         }
 
-        private DateTime m_inserted;
+        private DateTime m_insertedUTC;
         [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
         [DataMember]
-        public DateTime Inserted
+        public DateTime InsertedUTC
         {
-            get { return m_inserted; }
-            set { m_inserted = value; }
+            get { return m_insertedUTC; }
+            set { m_insertedUTC = value; }
         }
 
         /// <summary>
@@ -346,11 +349,6 @@ namespace SIPSorcery.SIP.App
             bool registerEnabled,
             bool registerEnabledAdmin)
         {
-            if (name == null || name.Trim().Length == 0)
-            {
-                throw new ApplicationException("The Provider Name must be specified when creating a new SIP Provider.");
-            }
-
             m_owner = owner;
             m_id = Guid.NewGuid().ToString();
             m_providerName = name;
@@ -367,20 +365,56 @@ namespace SIPSorcery.SIP.App
             m_registerRealm = registerRealm;
             m_registerEnabled = registerEnabled;
             m_registerAdminEnabled = registerEnabledAdmin;
-            m_inserted = DateTime.Now;
-            m_lastUpdate = DateTime.Now;
+            m_insertedUTC = DateTime.Now.ToUniversalTime();
+            m_lastUpdateUTC = DateTime.Now.ToUniversalTime();
 
             //if (m_registerContact != null)
             //{
             //    m_registerContact.Parameters.Set(CONTACT_ID_KEY, Crypto.GetRandomString(6));
             //}
 
-            if (m_registerContact == null && m_registerEnabled)
-            {
-                m_registerEnabled = false;
-                m_registerDisabledReason = "No Contact URI was specified for the registration.";
-                logger.Warn("Registrations for provider " + m_providerName + " owned by " + m_owner + " have been disabled due to an empty or invalid Contact URI.");
+            //if (m_registerContact == null && m_registerEnabled)
+            //{
+            //    m_registerEnabled = false;
+            //    m_registerDisabledReason = "No Contact URI was specified for the registration.";
+            //    logger.Warn("Registrations for provider " + m_providerName + " owned by " + m_owner + " have been disabled due to an empty or invalid Contact URI.");
+            //}
+        }
+
+        public static string ValidateAndClean(SIPProvider sipProvider) {
+
+            if (sipProvider.ProviderName.IsNullOrBlank()) {
+                return "A value for Provider Name must be specified.";
             }
+            else if (sipProvider.ProviderName.Contains(".")) {
+                return "The Provider Name cannot contain a full stop '.' in order to avoid ambiguity with DNS host names, please remove the '.'.";
+            }
+            else if (sipProvider.ProviderServer.IsNullOrBlank()) {
+                return "A value for Server must be specified.";
+            }
+            if (sipProvider.RegisterEnabled && sipProvider.m_registerContact == null) {
+                return "A valid contact must be supplied to enable a provider registration.";
+            }
+            else if (sipProvider.m_providerServer.Host.IndexOf('.') == -1) {
+                return "Your provider server entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
+            }
+            else if (sipProvider.m_registerServer != null && sipProvider.m_registerServer.Host.IndexOf('.') == -1) {
+                return "Your register server entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
+            }
+            else if (sipProvider.m_registerContact != null && sipProvider.m_registerContact.Host.IndexOf('.') == -1) {
+                return "Your register contact entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
+            }
+            else if (sipProvider.m_registerContact != null && sipProvider.m_registerContact.User.IsNullOrBlank()) {
+                return "Your register contact entry appears to be invalid, the user portion was missing. Contacts must be of the form user@host.com, e.g. joe@sipsorcery.com.";
+            }
+            else if (DisallowedServerPatterns != null && Regex.Match(sipProvider.m_providerServer.Host, DisallowedServerPatterns).Success) {
+                throw new ApplicationException("The Provider Server contains a disallowed string. If you are trying to create a Provider entry pointing to sipsorcery.com it is not permitted.");
+            }
+            else if (DisallowedServerPatterns != null && sipProvider.m_registerServer != null && Regex.Match(sipProvider.m_registerServer.Host, DisallowedServerPatterns).Success) {
+                throw new ApplicationException("The Provider Register Server contains a disallowed string. If you are trying to create a Provider entry pointing to sipsorcery.com it is not permitted.");
+            }
+
+            return null;
         }
         
 #if !SILVERLIGHT
@@ -407,8 +441,8 @@ namespace SIPSorcery.SIP.App
             m_registerEnabled = (providerRow.Table.Columns.Contains("registerenabled") && providerRow["registerenabled"] != DBNull.Value && providerRow["registerenabled"] != null) ? StorageLayer.ConvertToBoolean(providerRow["registerenabled"]) : false;
             m_registerAdminEnabled = (providerRow.Table.Columns.Contains("registerenabledadmin") && providerRow["registerenabledadmin"] != DBNull.Value && providerRow["registerenabledadmin"] != null) ? StorageLayer.ConvertToBoolean(providerRow["registerenabledadmin"]) : true;
             m_registerDisabledReason = (providerRow.Table.Columns.Contains("registerdisabledreason") && providerRow["registerdisabledreason"] != DBNull.Value && providerRow["registerdisabledreason"] != null) ? providerRow["registerdisabledreason"] as string : null;
-            m_lastUpdate = (providerRow.Table.Columns.Contains("lastupdate") && providerRow["lastupdate"] != DBNull.Value && providerRow["lastupdate"] != null) ? Convert.ToDateTime(providerRow["lastupdate"]) : DateTime.Now;
-            m_inserted = (providerRow.Table.Columns.Contains("inserted") && providerRow["inserted"] != DBNull.Value && providerRow["inserted"] != null) ? Convert.ToDateTime(providerRow["inserted"]) : DateTime.Now;
+            m_lastUpdateUTC = (providerRow.Table.Columns.Contains("lastupdate") && providerRow["lastupdate"] != DBNull.Value && providerRow["lastupdate"] != null) ? Convert.ToDateTime(providerRow["lastupdate"]) : DateTime.Now;
+            m_insertedUTC = (providerRow.Table.Columns.Contains("inserted") && providerRow["inserted"] != DBNull.Value && providerRow["inserted"] != null) ? Convert.ToDateTime(providerRow["inserted"]) : DateTime.Now;
 
             if (m_registerContact == null && m_registerEnabled) {
                 m_registerEnabled = false;
@@ -455,7 +489,9 @@ namespace SIPSorcery.SIP.App
                 "   <registerrealm>" + SafeXML.MakeSafeXML(m_registerRealm) + "</registerrealm>" + m_newLine +
                 "   <registerenabled>" + m_registerEnabled + "</registerenabled>" + m_newLine +
                 "   <registerenabledadmin>" + m_registerAdminEnabled + "</registerenabledadmin>" + m_newLine +
-                "   <registerdisabledreason>" + SafeXML.MakeSafeXML(m_registerDisabledReason) + "</registerdisabledreason>" + m_newLine;
+                "   <registerdisabledreason>" + SafeXML.MakeSafeXML(m_registerDisabledReason) + "</registerdisabledreason>" + m_newLine +
+                "   <inserted>" + m_insertedUTC.ToString("o") + "</inserted>" + m_newLine +
+                "   <lastupdate>" + m_lastUpdateUTC.ToString("o") + "</lastudpate>";
  
             return providerXML;
         }

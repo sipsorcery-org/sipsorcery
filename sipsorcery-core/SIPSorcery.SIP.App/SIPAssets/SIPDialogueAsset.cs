@@ -128,17 +128,17 @@ namespace SIPSorcery.SIP.App {
 
         [DataMember]
         [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
-        public DateTime Inserted {
-            get { return SIPDialogue.Inserted; }
-            set { SIPDialogue.Inserted = value; }
+        public DateTime InsertedUTC {
+            get { return SIPDialogue.Inserted.ToUniversalTime(); }
+            set { SIPDialogue.Inserted = value.ToLocalTime(); }
         }
 
         [DataMember]
         [Column(Storage = "_hangupat", Name = "hangupat", DbType = "timestamp", CanBeNull = true)]
-        public DateTime? HangupAt {
+        public DateTime? HangupAtUTC {
             get {
                 if (CallDurationLimit != 0) {
-                    return Inserted.AddSeconds(CallDurationLimit);
+                    return InsertedUTC.AddSeconds(CallDurationLimit);
                 }
                 else {
                     return null;
@@ -179,7 +179,7 @@ namespace SIPSorcery.SIP.App {
             SIPDialogue.OutboundProxy = (row["outboundproxy"] != null && row["outboundproxy"] != DBNull.Value && !(row["outboundproxy"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["outboundproxy"] as string) : null;
             SIPDialogue.CDRId = new Guid(row["cdrid"] as string);
             SIPDialogue.CallDurationLimit = (row["calldurationlimit"] != null && row["calldurationlimit"] != DBNull.Value) ? Convert.ToInt32(row["calldurationlimit"]) : 0;
-            SIPDialogue.Inserted = Convert.ToDateTime(row["inserted"]);
+            InsertedUTC = Convert.ToDateTime(row["inserted"]);
         }
 
         public Dictionary<Guid, object> Load(XmlDocument dom) {
@@ -198,7 +198,7 @@ namespace SIPSorcery.SIP.App {
         }
 
         public string ToXMLNoParent() {
-            string hanupAtStr = (HangupAt != null) ? HangupAt.Value.ToString("dd MMM yyyy HH:mm:ss") : null;
+            string hanupAtStr = (HangupAtUTC != null) ? HangupAtUTC.Value.ToString("o") : null;
 
             string dialogueXML =
                  "  <id>" + SIPDialogue.Id + "</id>" + m_newLine +
@@ -217,7 +217,7 @@ namespace SIPSorcery.SIP.App {
                  "  <routeset>" + SafeXML.MakeSafeXML(RouteSet) + "</routeset>" + m_newLine +
                  "  <cdrid>" + SIPDialogue.CDRId + "</cdrid>" + m_newLine +
                  "  <calldurationlimit>" + SIPDialogue.CallDurationLimit + "</calldurationlimit>" + m_newLine +
-                 "  <inserted>" + SIPDialogue.Inserted.ToString("dd MMM yyyy HH:mm:ss") + "</inserted>" + m_newLine +
+                 "  <inserted>" + InsertedUTC.ToString("o") + "</inserted>" + m_newLine +
                  "  <hangupat>" + hanupAtStr + "</hangupat>" + m_newLine;
 
             return dialogueXML;

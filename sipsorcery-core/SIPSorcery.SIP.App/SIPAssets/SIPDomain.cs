@@ -94,7 +94,7 @@ namespace SIPSorcery.SIP.App
         public string Owner { get; set; }
                 
         [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
-        public DateTime? Inserted { get; set; }
+        public DateTime? InsertedUTC { get; set; }
 
         [Column(Storage = "_aliaslist", Name = "aliaslist", DbType = "varchar(1024)", CanBeNull = true)]
         public string AliasList
@@ -122,7 +122,7 @@ namespace SIPSorcery.SIP.App
             Domain = domain;
             Owner = owner;
             Aliases = aliases;
-            Inserted = DateTime.Now;
+            InsertedUTC = DateTime.Now.ToUniversalTime();
         }
 
 #if !SILVERLIGHT
@@ -136,7 +136,7 @@ namespace SIPSorcery.SIP.App
             Domain = row["domain"] as string;
             Owner = (row.Table.Columns.Contains("owner") && row["owner"] != DBNull.Value) ? row["owner"] as string : null;
             if (row.Table.Columns.Contains("inserted") & row["inserted"] != DBNull.Value) {
-                Inserted = Convert.ToDateTime(row["inserted"]);
+                InsertedUTC = Convert.ToDateTime(row["inserted"]);
             }
 
             string aliasList = (row.Table.Columns.Contains("aliaslist") & row["aliaslist"] != DBNull.Value) ? row["aliaslist"] as string : null;

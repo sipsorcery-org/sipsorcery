@@ -87,6 +87,8 @@ namespace SIPSorcery.SIP.App
         private static string m_newLine = AppState.NewLine;
         private static ILog logger = AppState.GetLogger("sipregistrar");
 
+        public static int TimeZoneOffsetMinutes;
+
         private static Dictionary<string, int> m_userAgentExpirys = new Dictionary<string, int>();  // Result of parsing user agent expiry values from the App.Config Xml Node.
 
         [Column(Storage = "_id", Name = "id", DbType = "character varying(36)", IsPrimaryKey = true, CanBeNull = false)]
@@ -138,13 +140,17 @@ namespace SIPSorcery.SIP.App
             set { m_mangledContactURI = value; }
         }
 
-        private DateTime m_lastUpdate = DateTime.Now;
+        private DateTime m_lastUpdateUTC = DateTime.Now.ToUniversalTime();
         [Column(Storage = "_lastupdate", Name = "lastupdate", DbType = "timestamp", CanBeNull = false)]
         [DataMember]
-        public DateTime LastUpdate
+        public DateTime LastUpdateUTC
         {
-            get { return m_lastUpdate; }
-            set { m_lastUpdate = value;  }        // Don't delete, required for WCF serialisation.
+            get { return m_lastUpdateUTC; }
+            set { m_lastUpdateUTC = value;  }        // Don't delete, required for WCF serialisation.
+        }
+
+        public DateTime LastUpdateLocal {
+            get { return LastUpdateUTC.AddMinutes(TimeZoneOffsetMinutes); }
         }
 
         [IgnoreDataMember]
@@ -184,9 +190,9 @@ namespace SIPSorcery.SIP.App
         }
 
         [Column(Storage = "_expirytime", Name = "expirytime", DbType = "timestamp", CanBeNull = false)]
-        public DateTime ExpiryTime {
+        public DateTime ExpiryTimeUTC {
             get {
-                return m_lastUpdate.AddSeconds(m_expiry);
+                return m_lastUpdateUTC.AddSeconds(m_expiry);
             }
             private set { }
         }
@@ -194,14 +200,11 @@ namespace SIPSorcery.SIP.App
         [DataMember]
         public string Q         // The Q value on the on the Contact header to indicate relative priority among bindings for the same address of record.
         {
-            get
-            {
-                if (m_contactURI.Parameters != null)
-                {
+            get {
+                if (m_contactURI.Parameters != null) {
                     return m_contactURI.Parameters.Get(SIPContactHeader.QVALUE_PARAMETER_KEY);
                 }
-                else
-                {
+                else {
                     return null;
                 }
             }
@@ -254,8 +257,6 @@ namespace SIPSorcery.SIP.App
         }
 
         public SIPBindingRemovalReason RemovalReason = SIPBindingRemovalReason.Unknown;
-
-        public DateTime? LastNATKeepAliveSendTime;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -322,7 +323,7 @@ namespace SIPSorcery.SIP.App
             RemoteSIPEndPoint = (!(row["remotesipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["remotesipsocket"] as string) : null;
             m_proxySIPEndPoint = (!(row["proxysipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["proxysipsocket"] as string) : null;
             m_registrarSIPEndPoint = (!(row["registrarsipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["registrarsipsocket"] as string) : null;
-            LastUpdate = DateTime.Parse(row["lastupdate"] as string);
+            m_lastUpdateUTC = DateTime.Parse(row["lastupdate"] as string);
         }
 
         public Dictionary<Guid, object> Load(XmlDocument dom) {
@@ -336,7 +337,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void RefreshBinding(int expiry, SIPEndPoint remoteSIPEndPoint, SIPEndPoint proxySIPEndPoint, SIPEndPoint registrarSIPEndPoint)
         {
-            m_lastUpdate = DateTime.Now;
+            m_lastUpdateUTC = DateTime.Now.ToUniversalTime();
             RemoteSIPEndPoint = remoteSIPEndPoint;
             m_proxySIPEndPoint = proxySIPEndPoint;
             m_registrarSIPEndPoint = registrarSIPEndPoint;
@@ -357,13 +358,13 @@ namespace SIPSorcery.SIP.App
 
         public string ToContactString()
         {
-            int secondsRemaining = Convert.ToInt32(ExpiryTime.Subtract(DateTime.Now).TotalSeconds % Int32.MaxValue);
+            int secondsRemaining = Convert.ToInt32(ExpiryTimeUTC.Subtract(DateTime.Now.ToUniversalTime()).TotalSeconds % Int32.MaxValue);
             return "<" + m_contactURI.ToString() + ">;" + SIPContactHeader.EXPIRES_PARAMETER_KEY + "=" + secondsRemaining;
         }
 
         public string ToMangledContactString()
         {
-            int secondsRemaining = Convert.ToInt32(ExpiryTime.Subtract(DateTime.Now).TotalSeconds % Int32.MaxValue);
+            int secondsRemaining = Convert.ToInt32(ExpiryTimeUTC.Subtract(DateTime.Now.ToUniversalTime()).TotalSeconds % Int32.MaxValue);
             return "<" + m_mangledContactURI.ToString() + ">;" + SIPContactHeader.EXPIRES_PARAMETER_KEY + "=" + secondsRemaining;
         }
 
@@ -393,7 +394,7 @@ namespace SIPSorcery.SIP.App
                 "   <remotesipsocket>" + RemoteSIPSocket + "</remotesipsocket>" + m_newLine +
                 "   <proxysipsocket>" + ProxySIPSocket + "</proxysipsocket>" + m_newLine +
                 "   <registrarsipsocket>" + RegistrarSIPSocket + "</registrarsipsocket>" + m_newLine +
-                "   <lastupdate>" + LastUpdate.ToString("dd MMM yyyy HH:mm:ss") + "</lastupdate>" + m_newLine;
+                "   <lastupdate>" + m_lastUpdateUTC.ToString("o") + "</lastupdate>" + m_newLine;
 
             return registrarBindingXML;
         }

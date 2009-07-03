@@ -64,7 +64,7 @@ namespace SIPSorcery.CRM
         public string CustomerUsername;
 
         [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
-        public DateTime Inserted;
+        public DateTime InsertedUTC;
 
         [Column(Storage = "_expired", Name = "expired", DbType = "boolean", CanBeNull = false)]
         public bool Expired { get; set; }
@@ -78,7 +78,7 @@ namespace SIPSorcery.CRM
         {
             Id = id.ToString();
             CustomerUsername = customerUsername;
-            Inserted = DateTime.Now;
+            InsertedUTC = DateTime.Now.ToUniversalTime();
             IPAddress = ipAddress;
         }
 
@@ -90,7 +90,7 @@ namespace SIPSorcery.CRM
             try {
                 Id = customerSessionRow["id"] as string;
                 CustomerUsername = customerSessionRow["customerusername"] as string;
-                Inserted = Convert.ToDateTime(customerSessionRow["inserted"]);
+                InsertedUTC = Convert.ToDateTime(customerSessionRow["inserted"]);
                 Expired = Convert.ToBoolean(customerSessionRow["expired"]);
                 IPAddress = customerSessionRow["ipaddress"] as string;
             }
@@ -120,7 +120,7 @@ namespace SIPSorcery.CRM
             string customerSessionXML =
                 "    <id>" + Id + "</id>" + m_newLine +
                 "    <customerusername>" + CustomerUsername + "</customerusername>" + m_newLine +
-                "    <inserted>" + Inserted.ToString("dd MMM yyyy HH:mm:ss") + "</inserted>" + m_newLine +
+                "    <inserted>" + InsertedUTC.ToString("o") + "</inserted>" + m_newLine +
                 "    <expired>" + Expired + "</expired>" + m_newLine +
                 "    <ipaddress>" + IPAddress + "</ipaddress>";
 

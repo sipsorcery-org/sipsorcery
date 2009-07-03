@@ -162,6 +162,7 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="SIPApplicationServer\SIPNotifyManager.cs" />
     <Compile Include="SIPApplicationServer\WCFServices\CallManagerServiceInstanceProvider.cs" />
     <Compile Include="SIPApplicationServer\WCFServices\CallManagerServiceProxy.cs" />
     <Compile Include="SIPApplicationServer\WCFServices\CallManagerServices.cs" />
@@ -174,6 +175,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="SIPMonitor\SIPMonitorFilter.cs" />
+    <Compile Include="SIPStatelessProxy\AppServerDispatcher.cs" />
     <Compile Include="SIPStatelessProxy\NATKeepAliveRelay.cs" />
     <Compile Include="SIPRegistrar\SIPRegistrarBindingsManager.cs" />
     <Compile Include="SIPRegistrar\SIPUserAgentConfiguration.cs" />

@@ -35,7 +35,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq.Dynamic;
+//using System.Linq.Dynamic;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -145,7 +145,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 {
                     Queue<List<SIPCallDescriptor>> prioritisedCallList = new Queue<List<SIPCallDescriptor>>();
 
-                    if (dialPlanType == DialPlanContextsEnum.Line)
+                    if (dialPlanType == DialPlanContextsEnum.Line || (!command.Contains("[") && Regex.Match(command, @"\S+,\S+,\S+").Success))
                     {
                         // Singled legged call (Asterisk format).
                         SIPCallDescriptor SIPCallDescriptor = ParseAsteriskDialString(command, sipRequest);

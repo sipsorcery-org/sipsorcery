@@ -344,6 +344,17 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
+        public int GetExecutingScriptsCount() {
+            int count = 0;
+            for (int index = 0; index < m_scripts.Count; index++) {
+                if (m_scripts[index].InUse) {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
         /// <summary>
         /// Substitutes the special characters with variables from the SIP request.
         /// </summary>

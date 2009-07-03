@@ -63,11 +63,12 @@ namespace SIPSorcery.SIP.App
     {
         public const string XML_DOCUMENT_ELEMENT_NAME = "sipproviderbindings";
         public const string XML_ELEMENT_NAME = "sipproviderbinding";
-        //public const string REGAGENT_CONTACT_ID_KEY = "sipsorceryid";
         public const string REGAGENT_CONTACT_ID_KEY = "rinstance";
 
         private static string m_newLine = AppState.NewLine;
         private static ILog logger = AppState.logger;
+
+        public static int TimeZoneOffsetMinutes;
 
         private string m_id;
         [Column(Storage = "_id", Name = "id", DbType = "character varying(36)", IsPrimaryKey = true, CanBeNull = false)]
@@ -120,41 +121,67 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private DateTime? m_lastRegisterTime = null;
+        private DateTime? m_lastRegisterTimeUTC = null;
         [Column(Storage = "_lastregistertime", Name = "lastregistertime", DbType = "timestamp", CanBeNull = true)]
         [DataMember]
-        public DateTime? LastRegisterTime
+        public DateTime? LastRegisterTimeUTC
         {
-            get { return m_lastRegisterTime; }
+            get { return m_lastRegisterTimeUTC; }
             set
             {
-                m_lastRegisterTime = value;
+                m_lastRegisterTimeUTC = value;
                 NotifyPropertyChanged("LastRegisterTime");
             }
         }
 
-        private DateTime? m_lastRegisterAttempt = null;
+        public DateTime? LastRegisterTimeLocal {
+            get {
+                if (LastRegisterTimeUTC != null) {
+                    return LastRegisterTimeUTC.Value.AddMinutes(TimeZoneOffsetMinutes);
+                }
+                else {
+                    return null;
+                }
+            }
+        }
+
+        private DateTime? m_lastRegisterAttemptUTC = null;
         [DataMember]
         [Column(Storage = "_lastregisterattempt", Name = "lastregisterattempt", DbType = "timestamp", CanBeNull = true)]
-        public DateTime? LastRegisterAttempt {
-            get { return m_lastRegisterAttempt; }
+        public DateTime? LastRegisterAttemptUTC {
+            get { return m_lastRegisterAttemptUTC; }
             set {
-                m_lastRegisterAttempt = value;
+                m_lastRegisterAttemptUTC = value;
                 NotifyPropertyChanged("LastRegisterAttempt");
             }
         }
 
-        private DateTime m_nextRegistrationTime = DateTime.MaxValue;    // The time at which the next registration attempt should be sent.
+        public DateTime? LastRegisterAttemptLocal {
+            get {
+                if (LastRegisterAttemptUTC != null) {
+                    return LastRegisterAttemptUTC.Value.AddMinutes(TimeZoneOffsetMinutes);
+                }
+                else {
+                    return null;
+                }
+            }
+        }
+
+        private DateTime m_nextRegistrationTimeUTC = DateTime.MaxValue;    // The time at which the next registration attempt should be sent.
         [Column(Storage = "_nextregistrationtime", Name = "nextregistrationtime", DbType = "timestamp", CanBeNull = false)]
         [DataMember]
-        public DateTime NextRegistrationTime
+        public DateTime NextRegistrationTimeUTC
         {
-            get { return m_nextRegistrationTime; }
+            get { return m_nextRegistrationTimeUTC; }
             set
             {
-                m_nextRegistrationTime = value;
+                m_nextRegistrationTimeUTC = value;
                 NotifyPropertyChanged("NextRegistrationTime");
             }
+        }
+
+        public DateTime NextRegistrationTimeLocal {
+            get {return NextRegistrationTimeUTC.AddMinutes(TimeZoneOffsetMinutes); }
         }
 
         private bool m_isRegistered;
@@ -210,7 +237,6 @@ namespace SIPSorcery.SIP.App
         public int NonceCount = 1;                                  // When a WWW-Authenticate header is received a cnonce needs to be sent, this value increments each time a new cnonce is generated.
         public SIPEndPoint LocalSIPEndPoint;                        // The SIP end point the registration agent sent the request from.
         public SIPEndPoint RegistrarSIPEndPoint;                    // The SIP end point of the remote SIP Registrar.
-        //public string BindingTagId;                                 // Unique identifier for the reg agent to place in the binding contact to allow identification.
 
         // Fields populated and re-populated by the SIPProvider entry whenever a registration is initiated or refereshed.
         // The details are presisted and used for authenitcation of previous register requests or to remove existing bindings.
@@ -231,7 +257,7 @@ namespace SIPSorcery.SIP.App
             m_id = Guid.NewGuid().ToString();           
 
             // All set, let the Registration Agent know the binding is ready to be processed.
-            NextRegistrationTime = DateTime.Now;
+            NextRegistrationTimeUTC = DateTime.Now.ToUniversalTime();
         }
         
 #if !SILVERLIGHT
@@ -274,15 +300,15 @@ namespace SIPSorcery.SIP.App
             }
 
             if (bindingRow.Table.Columns.Contains("lastregistertime") && bindingRow["lastregistertime"] != DBNull.Value && bindingRow["lastregistertime"] != null && bindingRow["lastregistertime"].ToString().Length > 0) {
-                m_lastRegisterTime = Convert.ToDateTime(bindingRow["lastregistertime"]);
+                m_lastRegisterTimeUTC = Convert.ToDateTime(bindingRow["lastregistertime"]);
             }
 
             if (bindingRow.Table.Columns.Contains("lastregisterattempt") && bindingRow["lastregisterattempt"] != DBNull.Value && bindingRow["lastregisterattempt"] != null && bindingRow["lastregisterattempt"].ToString().Length > 0) {
-                m_lastRegisterAttempt = Convert.ToDateTime(bindingRow["lastregisterattempt"]);
+                m_lastRegisterAttemptUTC = Convert.ToDateTime(bindingRow["lastregisterattempt"]);
             }
 
             if (bindingRow.Table.Columns.Contains("nextregistrationtime") && bindingRow["nextregistrationtime"] != DBNull.Value && bindingRow["nextregistrationtime"] != null && bindingRow["nextregistrationtime"].ToString().Length > 0) {
-                m_nextRegistrationTime = Convert.ToDateTime(bindingRow["nextregistrationtime"]);
+                m_nextRegistrationTimeUTC = Convert.ToDateTime(bindingRow["nextregistrationtime"]);
             }
 
             if (bindingRow.Table.Columns.Contains("registrarsipsocket") && bindingRow["registrarsipsocket"] != DBNull.Value && bindingRow["registrarsipsocket"] != null && bindingRow["registrarsipsocket"].ToString().Length > 0) {
@@ -299,17 +325,6 @@ namespace SIPSorcery.SIP.App
 #endif
 
         public void SetProviderFields(SIPProvider sipProvider) {
-            // There will be cases where register enabled is switched off on a provider and a binding wants the fields set to send
-            // a zero expiry register.
-            /*if (!sipProvider.RegisterEnabled) {
-                throw new ApplicationException("Cannot create a new SIProviderBinding from a SIPProvider with RegisterEnabled set to false.");
-            }
-            else if (sipProvider.Registrar == null) {
-                throw new ApplicationException("Cannot create a new SIProviderBinding from a SIPProvider with an emtpy RegistrarServer.");
-            }
-            else if (sipProvider.RegisterContact == null) {
-                throw new ApplicationException("Cannot create a new SIProviderBinding from a SIPProvider with an emtpy RegisterContact.");
-            }*/
 
             m_providerId = sipProvider.Id;
             m_owner = sipProvider.Owner;
@@ -331,9 +346,17 @@ namespace SIPSorcery.SIP.App
             if (m_bindingURI != null && m_bindingURI.Parameters.Has(REGAGENT_CONTACT_ID_KEY)) {
                 bindingId = m_bindingURI.Parameters.Get(REGAGENT_CONTACT_ID_KEY);
             }
-            m_bindingURI = SIPURI.ParseSIPURI(sipProvider.RegisterContact);
-            if (!bindingId.IsNullOrBlank()) {
-                m_bindingURI.Parameters.Set(REGAGENT_CONTACT_ID_KEY, bindingId); 
+
+            if (!sipProvider.RegisterContact.IsNullOrBlank()) {
+                m_bindingURI = SIPURI.ParseSIPURI(sipProvider.RegisterContact);
+                if (!bindingId.IsNullOrBlank()) {
+                    m_bindingURI.Parameters.Set(REGAGENT_CONTACT_ID_KEY, bindingId);
+                }
+            }
+            else {
+                // The register contact field on the SIP Provider is empty. 
+                // This condition needs to be trearted as the binding being disbaled and it needs to be removed.
+                BindingExpiry = 0;
             }
         }
 
@@ -349,9 +372,9 @@ namespace SIPSorcery.SIP.App
 
         public string ToXMLNoParent()
         {
-            string lastRegisterTimeStr = (m_lastRegisterTime != null) ? m_lastRegisterTime.Value.ToString("dd MMM yyyy HH:mm:ss") : null;
-            string lastRegisterAttemptStr = (m_lastRegisterTime != null) ? m_lastRegisterAttempt.Value.ToString("dd MMM yyyy HH:mm:ss") : null;
-            string nextRegistrationTimeStr = (m_nextRegistrationTime != DateTime.MaxValue) ? m_nextRegistrationTime.ToString("dd MMM yyyy HH:mm:ss") : null;
+            string lastRegisterTimeStr = (m_lastRegisterTimeUTC != null) ? m_lastRegisterTimeUTC.Value.ToString("o") : null;
+            string lastRegisterAttemptStr = (m_lastRegisterTimeUTC != null) ? m_lastRegisterAttemptUTC.Value.ToString("o") : null;
+            string nextRegistrationTimeStr = (m_nextRegistrationTimeUTC != DateTime.MaxValue) ? m_nextRegistrationTimeUTC.ToString("o") : null;
             string bindingExpiryStr = (m_bindingExpiry > 0) ? m_bindingExpiry.ToString() : null;
             string bindingURIStr = (BindingURI != null) ? BindingURI.ToString() : null;
             string contactsListStr = null;

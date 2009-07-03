@@ -64,6 +64,7 @@ namespace SIPSorcery.Servers
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
         private SIPCallManager m_callManager;
+        private SIPNotifyManager m_notifyManager;
 
         public SIPAppServerCore(
 			SIPTransport sipTransport, 
@@ -71,6 +72,7 @@ namespace SIPSorcery.Servers
             SIPAssetGetDelegate<SIPAccount> getSIPAccount,
             SIPMonitorLogDelegate proxyLog,
             SIPCallManager callManager,
+            SIPNotifyManager notifyManager,
             SIPAuthenticateRequestDelegate sipAuthenticateRequest,
             SIPEndPoint outboundProxy)
 		{
@@ -78,6 +80,7 @@ namespace SIPSorcery.Servers
 			{
                 m_sipTransport = sipTransport;
                 m_callManager = callManager;
+                m_notifyManager = notifyManager;
 
                 m_sipTransport.SIPTransportRequestReceived += GotRequest; 
                 m_sipTransport.SIPTransportResponseReceived += GotResponse;
@@ -172,55 +175,18 @@ namespace SIPSorcery.Servers
 
                     #endregion
                 }
-                else if (sipRequest.Method == SIPMethodsEnum.NOTIFY)
-                {
-                    #region NOTIFY request handling.
+                else if (sipRequest.Method == SIPMethodsEnum.NOTIFY) {
+                    
+                    #region Process NOPTIFY requests.
 
-                    // Check if the notify request is for a sipswitch user.
-                    /*if (GetSIPAccount_External(sipRequest.URI.User, GetCanonicalDomain_External(sipRequest.URI.Host)) != null)
-                    {
-                         List<SIPRegistrarBinding> bindings = GetSIPAccountBindings_External(sipRequest.URI.User, sipRequest.URI.Host);
-
-                        if (bindings != null)
-                        {
-                            foreach (SIPRegistrarBinding binding in bindings)
-                            {
-                                SIPURI contactURI = binding.MangledContactURI;
-                                IPEndPoint contactEndPoint = m_sipTransport.GetURIEndPoint(contactURI, true);
-
-                                // Rather than create a brand new request copy the received one and modify the headers that need to be unique.
-                                SIPRequest notifyRequest = sipRequest.Copy();
-                                notifyRequest.URI = contactURI;
-                                notifyRequest.Header.Contact = SIPContactHeader.ParseContactHeader(localSIPEndPoint.ToString());
-                                notifyRequest.Header.To = new SIPToHeader(null, contactURI, null);
-                                notifyRequest.Header.CallId = CallProperties.CreateNewCallId();
-                                SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
-                                notifyRequest.Header.Via = new SIPViaSet();
-                                notifyRequest.Header.Via.PushViaHeader(viaHeader);
-
-                                logger.Debug("Forwarding NOTIFY to switch user binding " + contactURI.ToString() + " at " + IPSocket.GetSocketString(contactEndPoint) + ".");
-                                IPEndPoint nextHopSocket = (binding.ProxyEndPoint != null) ? binding.ProxyEndPoint : contactEndPoint;
-                                SIPNonInviteTransaction notifyTransaction = m_sipTransport.CreateNonInviteTransaction(notifyRequest, nextHopSocket, localSIPEndPoint);
-                                notifyTransaction.SendReliableRequest();
-                            }
-
-                            // Send OK response to server.
-                            SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                            m_sipTransport.SendResponse(okResponse);
-                        }
-                        else
-                        {
-                            // Send Not found response to server.
-                            SIPResponse notFoundResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, null);
-                            m_sipTransport.SendResponse(notFoundResponse);
-                        }
+                    if (GetCanonicalDomain_External(sipRequest.URI.Host) != null && !sipRequest.URI.User.IsNullOrBlank()) {
+                        m_notifyManager.QueueNotification(sipRequest);
                     }
-                    else
-                    {
-                        // Send Not found response to server.
-                        SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, null);
-                        m_sipTransport.SendResponse(okResponse);
-                    }*/
+                    else {
+                        // Send Not Serviced response to server.
+                        SIPResponse notServicedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Domain not serviced");
+                        m_sipTransport.SendResponse(notServicedResponse);
+                    }
 
                     #endregion
                 }
@@ -262,6 +228,7 @@ namespace SIPSorcery.Servers
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No transaction matched for ACK for " + sipRequest.URI.ToString() + ".", fromUser));
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.INVITE) {
+
                     #region INVITE request processing.
 
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "AppServerCore INVITE received, uri=" + sipRequest.URI.ToString() + ", cseq=" + sipRequest.Header.CSeq + ".", null));

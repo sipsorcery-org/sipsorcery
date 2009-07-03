@@ -85,18 +85,23 @@ namespace SIPSorcery.Servers
         private string m_proxyScript;
         private StatelessProxyScriptHelper m_proxyScriptHelper;
         private DateTime m_lastScriptChange = DateTime.MinValue;
+        private Dictionary<string, SIPDispatcherJob> m_dispatcherJobs = new Dictionary<string, SIPDispatcherJob>();
+        private SIPTransport m_dispatcherSIPTransport;
+        private XmlNode m_dispatcherJobsNode;
 
         public IPAddress PublicIPAddress;       // Can be set if there is an object somewhere that knows the public IP. The address wil be available in the proxy runtime script.
 
 		public StatelessProxyCore(
             SIPMonitorLogDelegate proxyLogger,
             SIPTransport sipTransport,
-            string scriptPath)
+            string scriptPath,
+            XmlNode dispatcherJobsNode)
 		{
 			try
 			{
                 m_proxyLogger = proxyLogger ?? m_proxyLogger;
                 m_scriptPath = scriptPath;
+                m_dispatcherJobsNode = dispatcherJobsNode;
                 m_sipTransport = sipTransport;
                 m_proxyScriptHelper = new StatelessProxyScriptHelper(
                     new SIPMonitorLogDelegate(SendMonitorEvent),         // Don't use the m_proxyLogger delegate directly here as doing so caused stack overflow exceptions in the IronRuby engine.
@@ -133,7 +138,6 @@ namespace SIPSorcery.Servers
                 else if (m_proxyScriptType == ProxyScriptEnum.Ruby)
                 {
                     logger.Debug("Stateless proxy script is Ruby.");
-                    //ScriptRuntime scriptRuntime = IronRuby.Ruby.CreateRuntime();
                     ScriptRuntime scriptRuntime = IronRuby.Ruby.CreateRuntime();
                     m_scriptScope = scriptRuntime.CreateScope("IronRuby");
                     m_rubyCompiledScript = m_scriptScope.Engine.CreateScriptSourceFromString(m_proxyScript).Compile();
@@ -146,6 +150,35 @@ namespace SIPSorcery.Servers
                 // Events that pass the SIP requests and responses onto the Stateless Proxy Core.
                 m_sipTransport.SIPTransportRequestReceived += GotRequest;
                 m_sipTransport.SIPTransportResponseReceived += GotResponse;
+
+                if (m_dispatcherJobsNode != null && m_dispatcherJobsNode.ChildNodes.Count > 0) {
+                    try {
+                        SIPChannel dispatcherChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 7080));
+                        m_dispatcherSIPTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), dispatcherChannel, true, false); 
+
+                        foreach (XmlNode dispatcherNode in m_dispatcherJobsNode.ChildNodes) {
+                            string jobType = dispatcherNode.Attributes.GetNamedItem("class").Value;
+                            string jobKey = dispatcherNode.Attributes.GetNamedItem("key").Value;
+
+                            if (!jobKey.IsNullOrBlank() && !jobType.IsNullOrBlank()) {
+                                SIPDispatcherJob job = SIPDispatcherJobFactory.CreateJob(jobType, dispatcherNode, m_dispatcherSIPTransport);
+                                if (job != null && !m_dispatcherJobs.ContainsKey(jobKey)) {
+                                    ThreadPool.QueueUserWorkItem(delegate { job.Start(); });
+                                    m_dispatcherJobs.Add(jobKey, job);
+                                }
+                            }
+                            else {
+                                logger.Warn("The job key or class were empty for a SIPDispatcherJob node.\n" + dispatcherNode.OuterXml);
+                            }
+                        }
+                    }
+                    catch (Exception dispatcherExcp) {
+                        logger.Error("Exception StatelessProxyCore Starting Dispatcher. " + dispatcherExcp.Message);
+                    }
+                }
+                else {
+                    logger.Debug("No dispatcher jobs were supplied to the StatelessProxyCore.");
+                }
             }
 			catch(Exception excp)
 			{
@@ -268,6 +301,10 @@ namespace SIPSorcery.Servers
                         m_pythonEngine.Globals["sipMethod"] = sipRequest.Method.ToString();
                         m_pythonEngine.Globals["publicip"] = PublicIPAddress;
 
+                        foreach (KeyValuePair<string, SIPDispatcherJob> dispatcherJob in m_dispatcherJobs) {
+                            m_pythonEngine.Globals[dispatcherJob.Key] = dispatcherJob.Value.GetSIPEndPoint();
+                        }
+
                         m_pythonCompiledScript.Execute();
                     }
                     else
@@ -284,6 +321,10 @@ namespace SIPSorcery.Servers
                         m_scriptScope.SetVariable("proxyBranch", proxyBranch);
                         m_scriptScope.SetVariable("sipMethod", sipRequest.Method.ToString());
                         m_scriptScope.SetVariable("publicip", PublicIPAddress);
+
+                        foreach (KeyValuePair<string, SIPDispatcherJob> dispatcherJob in m_dispatcherJobs) {
+                            m_scriptScope.SetVariable(dispatcherJob.Key, dispatcherJob.Value.GetSIPEndPoint());
+                        }
 
                         m_rubyCompiledScript.Execute(m_scriptScope);
                     }

@@ -38,6 +38,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 using SIPSorcery.Sys;
 using log4net;
@@ -56,6 +57,15 @@ namespace SIPSorcery.CRM
         public const string XML_DOCUMENT_ELEMENT_NAME = "customers";
         public const string XML_ELEMENT_NAME = "customer";
         public const string TOPLEVEL_ADMIN_ID = "*";    // If a customer record has their AdminId set to this value they are in charge!
+
+        private const int MAX_FIELD_LENGTH = 64;
+        private const int MIN_USERNAME_LENGTH = 5;
+        private const int MAX_USERNAME_LENGTH = 20;
+        private const int MIN_PASSWORD_LENGTH = 6;
+        private const int MAX_PASSWORD_LENGTH = 20;
+        private const int MAX_WEBSITE_FIELD_LENGTH = 256;
+
+        public static readonly string USERNAME_ALLOWED_CHARS = @"a-zA-Z0-9_\-";     // The '.' character is not allowed in customer usernames in order to support a domain like structure for SIP account usernames.
 
         private static ILog logger = AppState.logger;
         private static string m_newLine = AppState.NewLine;
@@ -108,10 +118,67 @@ namespace SIPSorcery.CRM
         [Column(Storage = "_adminmemberid", Name = "adminmemberid", DbType = "character varying(32)", CanBeNull = true)]
         public string AdminMemberId { get; set; }    // If set it designates this customer as a belonging to the administrative domain of the customer with the same adminid.
 
+        [Column(Storage = "_timezone", Name = "timezone", DbType = "character varying(128)", CanBeNull = true)]
+        public string TimeZone { get; set; }
+
         [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
-        public DateTime Inserted { get; set; }
+        public DateTime InsertedUTC { get; set; }
 
         public Customer() { }
+
+        public static string ValidateAndClean(Customer customer) {
+
+            if (customer.FirstName.IsNullOrBlank()) {
+                return "A first name must be specified.";
+            }
+            else if (customer.FirstName.Trim().Length > MAX_FIELD_LENGTH) {
+                return "The first name length must be less than " + MAX_FIELD_LENGTH + ".";
+            }
+            else if (customer.LastName.IsNullOrBlank()) {
+                return "A last name must be specified.";
+            }
+            else if (customer.LastName.Trim().Length > MAX_FIELD_LENGTH) {
+                return "The last name length must be less than " + MAX_FIELD_LENGTH + ".";
+            }
+            else if (customer.EmailAddress.IsNullOrBlank()) {
+                return "An email address must be specified.";
+            }
+            else if (customer.EmailAddress.Trim().Length > MAX_FIELD_LENGTH) {
+                return "The email address length must be less than " + MAX_FIELD_LENGTH + ".";
+            }
+            else if (customer.CustomerUsername.IsNullOrBlank()) {
+                return "A username must be specified.";
+            }
+            else if (customer.CustomerUsername.Trim().Length > MAX_USERNAME_LENGTH || customer.CustomerUsername.Trim().Length < MIN_USERNAME_LENGTH) {
+                return "The username length must be between " + MIN_USERNAME_LENGTH + " and " + MAX_USERNAME_LENGTH + ".";
+            }
+            else if (Regex.Match(customer.CustomerUsername.Trim(), "[^" + USERNAME_ALLOWED_CHARS + "]").Success) {
+                return "The username had an invalid character, characters permitted are alpha-numeric and -_ (no full stop characters '.' are allowed).";
+            }
+            else if (customer.CustomerPassword.IsNullOrBlank()) {
+                return "A password must be specified.";
+            }
+            else if (customer.CustomerPassword.Trim().Length > MAX_PASSWORD_LENGTH || customer.CustomerPassword.Trim().Length < MIN_PASSWORD_LENGTH) {
+                return "The password length must be between " + MIN_PASSWORD_LENGTH + " and " + MAX_PASSWORD_LENGTH + ".";
+            }
+            else if (customer.SecurityAnswer.IsNullOrBlank()) {
+                return "The answer to the security question must be specified.";
+            }
+            else if (customer.SecurityAnswer.Trim().Length > MAX_FIELD_LENGTH) {
+                return "The security question answer length must be less than " + MAX_FIELD_LENGTH + ".";
+            }
+            else if (customer.City.IsNullOrBlank()) {
+                return "Your city must be specified. If you don't live in a city please enter the one closest to you.";
+            }
+            else if (customer.City.Trim().Length > MAX_FIELD_LENGTH) {
+                return "The city length must be less than " + MAX_FIELD_LENGTH + ".";
+            }
+            else if (!customer.WebSite.IsNullOrBlank() && customer.WebSite.Trim().Length > MAX_WEBSITE_FIELD_LENGTH) {
+                return "The web site length must be less than " + MAX_WEBSITE_FIELD_LENGTH + ".";
+            }
+
+            return null;
+        }
 
 #if !SILVERLIGHT
 
@@ -135,7 +202,7 @@ namespace SIPSorcery.CRM
                 SecurityAnswer = (customerRow.Table.Columns.Contains("securityanswer") && customerRow["securityanswer"] != null) ? customerRow["securityanswer"] as string : null;
                 WebSite = (customerRow.Table.Columns.Contains("website") && customerRow["website"] != null) ? customerRow["website"] as string : null;
                 CreatedFromIPAddress = (customerRow.Table.Columns.Contains("createdfromipaddress") && customerRow["createdfromipaddress"] != null) ? customerRow["createdfromipaddress"] as string : null;
-                Inserted = (customerRow.Table.Columns.Contains("inserted") && customerRow["inserted"] != null) ? Convert.ToDateTime(customerRow["inserted"]) : DateTime.MinValue;
+                InsertedUTC = (customerRow.Table.Columns.Contains("inserted") && customerRow["inserted"] != null) ? Convert.ToDateTime(customerRow["inserted"]) : DateTime.MinValue;
             }
             catch (Exception excp) {
                 logger.Error("Exception Customer Load. " + excp.Message);
@@ -175,7 +242,7 @@ namespace SIPSorcery.CRM
                  "  <securityquestion>" + SecurityQuestion + "</securityquestion>" + m_newLine +
                  "  <securityanswer>" + SafeXML.MakeSafeXML(SecurityAnswer) + "</securityanswer>" + m_newLine +
                  "  <createdfromipaddress>" + CreatedFromIPAddress + "</createdfromipaddress>" + m_newLine +
-                 "  <inserted>" + Inserted.ToString("dd MMM yyyy HH:mm:ss") + "</inserted>" + m_newLine +
+                 "  <inserted>" + InsertedUTC.ToString("dd MMM yyyy HH:mm:ss") + "</inserted>" + m_newLine +
                  "  <active>" + Active + "</active>" + m_newLine +
                  "  <suspended>" + Suspended + "</suspended>";
 

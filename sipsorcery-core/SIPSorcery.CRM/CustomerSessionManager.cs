@@ -94,7 +94,7 @@ namespace SIPSorcery.CRM
 
                 if (customerSession != null)
                 {
-                    if (DateTime.Now.Subtract(customerSession.Inserted).TotalMinutes > CustomerSession.MAX_SESSION_LIFETIME_MINUTES)
+                    if (DateTime.Now.ToUniversalTime().Subtract(customerSession.InsertedUTC).TotalMinutes > CustomerSession.MAX_SESSION_LIFETIME_MINUTES)
                     {
                         customerSession.Expired = true;
                         m_customerSessionPersistor.Update(customerSession);

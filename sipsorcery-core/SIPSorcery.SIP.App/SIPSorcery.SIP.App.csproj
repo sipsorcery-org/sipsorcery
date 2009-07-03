@@ -97,6 +97,8 @@
     <Compile Include="SIPAssets\SIPProviderBindingSynchroniser.cs" />
     <Compile Include="SIPAssets\SIPRegistrarBinding.cs" />
     <Compile Include="SIPAppFunctionDelegates.cs" />
+    <Compile Include="SIPDispatcherJob\SIPDispatcherJobFactory.cs" />
+    <Compile Include="SIPDispatcherJob\SIPDispatcherJob.cs" />
     <Compile Include="SIPDNS\SIPDNSLookupResult.cs" />
     <Compile Include="SIPDNS\SIPDNSManager.cs" />
     <Compile Include="SIPPacketMangler.cs" />

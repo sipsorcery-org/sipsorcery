@@ -134,8 +134,19 @@ namespace SIPSorcery.SIP.App
                     m_sipAccount = GetSIPAccount_External(s => s.SIPUsername == m_sipUsername && s.SIPDomain == m_sipDomain);
 
                     if (m_sipAccount == null) {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Rejecting public call for " + m_sipUsername + "@" + m_sipDomain + ", SIP account not found.", null));
-                        Reject(SIPResponseStatusCodesEnum.NotFound, null);
+                        // A full lookup failed. Now try a partial lookup if the incoming username is in a dotted domain name format.
+                        if (m_sipUsername.Contains(".")) {
+                            string sipUsernameSuffix = m_sipUsername.Substring(m_sipUsername.LastIndexOf("."));
+                            m_sipAccount = GetSIPAccount_External(s => s.SIPUsername == sipUsernameSuffix && s.SIPDomain == m_sipDomain);
+                        }
+
+                        if (m_sipAccount == null) {
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Rejecting public call for " + m_sipUsername + "@" + m_sipDomain + ", SIP account not found.", null));
+                            Reject(SIPResponseStatusCodesEnum.NotFound, null);
+                        }
+                        else {
+                            loaded = true;
+                        }
                     }
                     else {
                         loaded = true;

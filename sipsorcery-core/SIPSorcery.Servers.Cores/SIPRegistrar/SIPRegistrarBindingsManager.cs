@@ -123,12 +123,12 @@ namespace SIPSorcery.Servers {
 
                 while (!m_stop) {
                     try {
-                        DateTime expiryTime = DateTime.Now.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
+                        DateTime expiryTime = DateTime.Now.ToUniversalTime().AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
                         //m_bindingsPersistor.Delete(b => b.ExpiryTime < expiryTime);
-                        List<SIPRegistrarBinding> expiredBindings = m_bindingsPersistor.Get(b => b.ExpiryTime < expiryTime, null, 0, Int32.MaxValue);
+                        List<SIPRegistrarBinding> expiredBindings = m_bindingsPersistor.Get(b => b.ExpiryTimeUTC < expiryTime, null, 0, Int32.MaxValue);
                         if (expiredBindings != null && expiredBindings.Count > 0) {
                             foreach (SIPRegistrarBinding binding in expiredBindings) {
-                                FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingExpired, "Deleting expired binding for " + binding.SIPAccountName + " and " + binding.MangledContactURI + ", last register " + binding.LastUpdate.ToString("HH:mm:ss") + ".", binding.Owner));
+                                FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingExpired, "Deleting expired binding for " + binding.SIPAccountName + " and " + binding.MangledContactURI + ", last register " + binding.LastUpdateUTC.ToString("HH:mm:ss") + ".", binding.Owner));
                                 m_bindingsPersistor.Delete(binding);
                             }
                         }
@@ -249,7 +249,7 @@ namespace SIPSorcery.Servers {
 
                             if (m_bindingsPersistor.Count(b => b.SIPAccountId == sipAccount.Id) >= m_maxBindingsPerAccount) {
                                 // Need to remove the oldest binding to stay within limit.
-                                SIPRegistrarBinding oldestBinding = m_bindingsPersistor.Get(b => b.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue).OrderBy(x => x.LastUpdate).Last();
+                                SIPRegistrarBinding oldestBinding = m_bindingsPersistor.Get(b => b.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue).OrderBy(x => x.LastUpdateUTC).Last();
                                 FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingInProgress, "Binding limit exceeded for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + " removing oldest binding to stay within limit of " + m_maxBindingsPerAccount + ".", sipAccount.Owner));
                                 m_bindingsPersistor.Delete(oldestBinding);
 
@@ -301,7 +301,7 @@ namespace SIPSorcery.Servers {
 
                 foreach (SIPRegistrarBinding binding in bindings) {
                     SIPContactHeader bindingContact = new SIPContactHeader(null, binding.MangledContactSIPURI);
-                    bindingContact.Expires = Convert.ToInt32(binding.ExpiryTime.Subtract(DateTime.Now).TotalSeconds % Int32.MaxValue);
+                    bindingContact.Expires = Convert.ToInt32(binding.ExpiryTimeUTC.Subtract(DateTime.Now.ToUniversalTime()).TotalSeconds % Int32.MaxValue);
                     contactHeaderList.Add(bindingContact);
                 }
 

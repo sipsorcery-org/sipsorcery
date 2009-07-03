@@ -1468,6 +1468,22 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public List<SIPEndPoint> GetListeningSIPEndPoints() {
+            try {
+                List<SIPEndPoint> endPointsList = new List<SIPEndPoint>();
+
+                foreach (SIPChannel channel in m_sipChannels.Values) {
+                    endPointsList.Add(channel.SIPChannelEndPoint);
+                }
+
+                return endPointsList;
+            }
+            catch (Exception excp) {
+                logger.Error("Exception GetListeningSIPEndPoints. " + excp.Message);
+                throw;
+            }
+        }
+
         #region Logging and metrics..
 
         private void FireSIPRequestInTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)

@@ -177,7 +177,9 @@ namespace SIPSorcery.SIP.App
 
                         // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
                         m_serverTransaction = m_sipTransport.CreateUACTransaction(switchServerInvite, m_serverEndPoint, m_localSIPEndPoint, m_outboundProxy);
-                        m_serverTransaction.CDR.Owner = Owner;
+                        if (m_serverTransaction.CDR != null) {
+                            m_serverTransaction.CDR.Owner = Owner;
+                        }
                         m_serverTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
                         m_serverTransaction.UACInviteTransactionFinalResponseReceived += ServerFinalResponseReceived;
                         m_serverTransaction.UACInviteTransactionTimedOut += ServerTimedOut;
@@ -287,8 +289,10 @@ namespace SIPSorcery.SIP.App
                 {
                     // No action required. Correctly received request terminated on an INVITE we cancelled.
                 }
-                else if (m_callCancelled)
-                {
+                else if (m_callCancelled) {
+                    
+                    #region Call has been cancelled, hangup.
+
                     if (m_hungupOnCancel)
                     {
                         Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "A cancelled call to " + m_sipCallDescriptor.Uri.ToString() + " has been answered AND has already been hungup, no further action being taken.", Owner));
@@ -321,6 +325,8 @@ namespace SIPSorcery.SIP.App
                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "No contact header provided on response for cancelled call to " + m_sipCallDescriptor.Uri.ToString() + " no further action.", Owner));
                         }
                     }
+
+                    #endregion
                 }
                 else if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
                 {
@@ -354,7 +360,9 @@ namespace SIPSorcery.SIP.App
 
                             // Create a new UAC transaction to establish the authenticated server call.
                             m_serverTransaction = m_sipTransport.CreateUACTransaction(authInviteRequest, m_serverEndPoint, localSIPEndPoint, m_outboundProxy);
-                            m_serverTransaction.CDR.Owner = Owner;
+                            if (m_serverTransaction.CDR != null) {
+                                m_serverTransaction.CDR.Owner = Owner;
+                            }
                             m_serverTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
                             m_serverTransaction.UACInviteTransactionFinalResponseReceived += ServerFinalResponseReceived;
                             m_serverTransaction.UACInviteTransactionTimedOut += ServerTimedOut;
@@ -375,35 +383,37 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    if (!sipResponse.Body.IsNullOrBlank()) {
-                        //m_callInProgress = false; // the call is now established
-                        //logger.Debug("Final response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + ForwardedTransaction.TransactionRequest.URI.ToString() + ".");
-                        // Determine of response SDP should be mangled.
-                        
-                        IPEndPoint sdpEndPoint = SDP.GetSDPRTPEndPoint(sipResponse.Body);
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "UAC response SDP was mangled from sdp=" + sdpEndPoint.Address.ToString() + ", proxyfrom=" + sipResponse.Header.ProxyReceivedFrom + ", mangle=" + m_sipCallDescriptor.MangleResponseSDP + ".", null));
-                        IPAddress remoteUASAddress = null;
-                        bool wasSDPMangled = false;
-                        if (m_sipCallDescriptor.MangleResponseSDP && sdpEndPoint != null && !sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) {
-                            remoteUASAddress = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom).SocketEndPoint.Address;
-                            sipResponse.Body = SIPPacketMangler.MangleSDP(sipResponse.Body, remoteUASAddress.ToString(), out wasSDPMangled);
+                    if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299) {
+                        if (!sipResponse.Body.IsNullOrBlank()) {
+                            //m_callInProgress = false; // the call is now established
+                            //logger.Debug("Final response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + ForwardedTransaction.TransactionRequest.URI.ToString() + ".");
+                            // Determine of response SDP should be mangled.
+
+                            IPEndPoint sdpEndPoint = SDP.GetSDPRTPEndPoint(sipResponse.Body);
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "UAC response SDP was mangled from sdp=" + sdpEndPoint.Address.ToString() + ", proxyfrom=" + sipResponse.Header.ProxyReceivedFrom + ", mangle=" + m_sipCallDescriptor.MangleResponseSDP + ".", null));
+                            IPAddress remoteUASAddress = null;
+                            bool wasSDPMangled = false;
+                            if (m_sipCallDescriptor.MangleResponseSDP && sdpEndPoint != null && !sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) {
+                                remoteUASAddress = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom).SocketEndPoint.Address;
+                                sipResponse.Body = SIPPacketMangler.MangleSDP(sipResponse.Body, remoteUASAddress.ToString(), out wasSDPMangled);
+                            }
+
+                            if (wasSDPMangled) {
+                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on response was mangled from " + sdpEndPoint.Address.ToString() + " to " + remoteUASAddress.ToString() + ".", Owner));
+                            }
+                            else {
+                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on response had address of " + sdpEndPoint.Address.ToString() + ".", Owner));
+                            }
                         }
 
-                        if (wasSDPMangled) {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on response was mangled from " + sdpEndPoint.Address.ToString() + " to " + remoteUASAddress.ToString() + ".", Owner));
-                        }
-                        else {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on response had address of " + sdpEndPoint.Address.ToString() + ".", Owner));
-                        }
+                        m_sipDialogue = new SIPDialogue(m_sipTransport, m_serverTransaction, Owner, AdminMemberId);
+                        m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
                     }
 
-                    m_sipDialogue = new SIPDialogue(m_sipTransport, m_serverTransaction, Owner, AdminMemberId);
-                    m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
                     FireCallAnswered(this, sipResponse);
                 }
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.Error, "Exception ServerFinalResponseReceived. " + excp.Message, Owner));
             }
         }
@@ -412,13 +422,17 @@ namespace SIPSorcery.SIP.App
         {
             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Information response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
 
-            if (sipResponse.Status == SIPResponseStatusCodesEnum.Ringing || sipResponse.Status == SIPResponseStatusCodesEnum.SessionProgress)
-            {
-                FireCallRinging(this, sipResponse);
+            if (m_callCancelled) {
+                // Call was cancelled in the interim.
+                Cancel();
             }
-            else
-            {
-                FireCallTrying(this, sipResponse);
+            else {
+                if (sipResponse.Status == SIPResponseStatusCodesEnum.Ringing || sipResponse.Status == SIPResponseStatusCodesEnum.SessionProgress) {
+                    FireCallRinging(this, sipResponse);
+                }
+                else {
+                    FireCallTrying(this, sipResponse);
+                }
             }
         }
 
