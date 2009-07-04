@@ -137,9 +137,6 @@ namespace SIPSorcery
 
         private void Add() {
             try {
-                bool valid = false;
-                string validationError = "Unknown validation error.";
-
                 string providerName = m_providerName.Text.Trim();
                 string providerUsername = m_providerUsername.Text.Trim();
                 string providerPassword = m_providerPassword.Text.Trim();
@@ -163,73 +160,27 @@ namespace SIPSorcery
                     }
                 }
 
-                if (providerName == null || providerName.Trim().Length == 0) {
-                    valid = false;
-                    validationError = "A value for Provider Name must be specified.";
-                }
-                else if (providerName.Contains(".")) {
-                    valid = false;
-                    validationError = "The Provider Name cannot contain a full stop '.' in order to avoid ambiguity with DNS host names, please remove the '.'.";
-                }
-                else if (providerServer == null) {
-                    valid = false;
-                    validationError = "A value for Server must be specified.";
-                }
-                else if (Regex.Match(providerServer.Host, BANNED_PROVIDER_SERVER_PATTERN).Success) {
-                    valid = false;
-                    validationError = "The Provider Server contains a disallowed string. If you are trying to create a Provider entry pointing to sipsorcery.com it is not permitted.";
-                }
-                else if (!m_providerRegisterServer.Text.IsNullOrBlank() && registerServer == null) {
-                    valid = false;
-                    validationError = "The Register Server could not be understood.";
-                }
-                else if (registerEnabled && registerContact == null) {
-                    valid = false;
-                    validationError = "A valid contact must be supplied to enable a provider registration.";
-                }
-                else if (providerServer.Host.IndexOf('.') == -1) {
-                    valid = false;
-                    validationError = "Your provider server entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
-                }
-                else if (registerServer != null && registerServer.Host.IndexOf('.') == -1) {
-                    valid = false;
-                    validationError = "Your register server entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
-                }
-                else if (registerContact != null && registerContact.Host.IndexOf('.') == -1) {
-                    valid = false;
-                    validationError = "Your register contact entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
-                }
-                else if (registerContact != null && registerContact.Host.IndexOf('@') == -1) {
-                    valid = false;
-                    validationError = "Your register contact entry appears to be invalid, the user portion was missing. Contacts must be of the form user@host.com, e.g. joe@sipsorcery.com.";
+                SIPProvider sipProvider = new SIPProvider(m_owner, providerName, providerUsername, providerPassword, providerServer, outboundProxy, providerFrom, customHeaders,
+                        registerContact, registerExpiry, registerServer, authUsername, registerRealm, registerEnabled, true);
+                    sipProvider.InsertedUTC = DateTime.Now.ToUniversalTime();
+                    sipProvider.LastUpdateUTC = DateTime.Now.ToUniversalTime();
+
+                string validationError = SIPProvider.ValidateAndClean(sipProvider);
+                if (validationError != null) {
+                    WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
                 }
                 else {
-                    valid = true;
-                }
-
-                if (valid) {
-                    SIPProvider sipProvider = new SIPProvider(m_owner, providerName, providerUsername, providerPassword, providerServer, outboundProxy, providerFrom, customHeaders,
-                        registerContact, registerExpiry, registerServer, authUsername, registerRealm, registerEnabled, true);
-                    sipProvider.Inserted = DateTime.Now;
-                    sipProvider.LastUpdate = DateTime.Now;
-
                     WriteStatusMessage(MessageLevelsEnum.Info, "Adding SIP Provider please wait...");
                     SIPProviderAdd_External(sipProvider);
                 }
-                else {
-                    WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
-                }
             }
             catch (Exception excp) {
-                WriteStatusMessage(MessageLevelsEnum.Error, "Add Exception. " + excp.Message);
+                WriteStatusMessage(MessageLevelsEnum.Error, "Add SIPProvider Exception. " + excp.Message);
             }
         }
 
         private void Update() {
             try {
-                bool valid = false;
-                string validationError = "Unknown validation error.";
-
                 m_sipProvider.ProviderName = m_providerName.Text;
                 m_sipProvider.ProviderUsername = m_providerUsername.Text;
                 m_sipProvider.ProviderPassword = m_providerPassword.Text;
@@ -255,32 +206,18 @@ namespace SIPSorcery
                     }
                 }
 
-                if (m_sipProvider.ProviderName == null || m_sipProvider.ProviderName.Trim().Length == 0) {
-                    validationError = "A value for Provider Name must be specified.";
-                }
-                else if (m_sipProvider.ProviderServer == null) {
-                    validationError = "A value for Server must be specified.";
-                }
-                else if (m_sipProvider.RegisterExpiry < m_minimumRegisterExpiry || m_sipProvider.RegisterExpiry > m_maximumRegisterExpiry) {
-                    validationError = "The registration expiry must be between " + m_minimumRegisterExpiry + " and " + m_maximumRegisterExpiry + " seconds.";
-                }
-                else if (m_sipProvider.RegisterEnabled && m_sipProvider.RegisterContact == null) {
-                    validationError = "A valid contact must be supplied to enable a provider registration.";
-                }
-                else {
-                    valid = true;
+                if (m_sipProvider.RegisterEnabled && m_sipProvider.RegisterAdminEnabled) {
+                    m_sipProvider.RegisterDisabledReason = null;
                 }
 
-                if (valid) {
-                    if (m_sipProvider.RegisterEnabled && m_sipProvider.RegisterAdminEnabled) {
-                        m_sipProvider.RegisterDisabledReason = null;
-                    }
+                string validationError = SIPProvider.ValidateAndClean(m_sipProvider);
+                if (validationError != null) {
+                    WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
+                }
+                else {
 
                     WriteStatusMessage(MessageLevelsEnum.Info, "Updating SIP Provider please wait...");
                     SIPProviderUpdate_External(m_sipProvider);
-                }
-                else {
-                    WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
                 }
             }
             catch (Exception excp) {

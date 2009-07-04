@@ -124,19 +124,19 @@
 					<data:DataGridTextColumn 
 						Header="Last Register" 
 						Width="SizeToCells"
-						Binding="{Binding LastRegisterTime, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding LastRegisterTimeLocal, Converter={StaticResource DateTimeConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100"/>
 					<data:DataGridTextColumn 
 						Header="Last Attempt" 
 						Width="SizeToCells"
-						Binding="{Binding LastRegisterAttempt, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding LastRegisterAttemptLocal, Converter={StaticResource DateTimeConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100"/>
 					<data:DataGridTextColumn 
 						Header="Next Attempt" 
 						Width="SizeToCells"
-						Binding="{Binding NextRegistrationTime, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding NextRegistrationTimeLocal, Converter={StaticResource DateTimeConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100"/>
 					<data:DataGridTextColumn 

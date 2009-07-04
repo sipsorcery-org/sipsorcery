@@ -53,7 +53,7 @@
 					<data:DataGridTextColumn 
 						Header="Call Date" 
 						Width="SizeToCells"
-						Binding="{Binding Path=Created, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding Path=CreatedLocal, Converter={StaticResource DateTimeConverter}}" 
 						IsReadOnly="True"
 						MinWidth="200"/>
 					<data:DataGridTextColumn 
@@ -77,7 +77,7 @@
 					<data:DataGridTextColumn 
 						Header="AnsweredTime" 
 						Width="SizeToCells"
-						Binding="{Binding Path=AnsweredTime, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding Path=AnsweredTimeLocal, Converter={StaticResource DateTimeConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100" />
 					<data:DataGridTextColumn 
@@ -87,9 +87,15 @@
 						IsReadOnly="True"
 						MinWidth="80" />
 					<data:DataGridTextColumn 
+						Header="Answer Reason" 
+						Width="SizeToCells"
+						Binding="{Binding Path=AnsweredReason}" 
+						IsReadOnly="True"
+						MinWidth="150" />
+					<data:DataGridTextColumn 
 						Header="Hungup" 
 						Width="SizeToCells"
-						Binding="{Binding Path=HungupTime, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding Path=HungupTimeLocal, Converter={StaticResource DateTimeConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100" />
 				</data:DataGrid.Columns>

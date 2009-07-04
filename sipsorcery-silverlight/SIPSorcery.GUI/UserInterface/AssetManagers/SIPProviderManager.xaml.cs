@@ -25,6 +25,9 @@ namespace SIPSorcery
 {
     public partial class SIPProviderManager : UserControl
 	{
+        private const int SIPPROVIDERS_DISPLAY_COUNT = 25;
+        private const int SIPPROVIDERBINDINGS_DISPLAY_COUNT = 25;
+
         private ActivityMessageDelegate LogActivityMessage_External;
         private ActivityProgressDelegate ShowActivityProgress_External;
         private SIPSorceryPersistor m_persistor;
@@ -69,15 +72,16 @@ namespace SIPSorcery
             ShowActivityProgress_External = showActivityProgress;
             m_persistor = persistor;
             m_owner = owner;
-            m_sipProviderBindingsWhere = "RegisterActive = True";
 
             m_sipProvidersPanel.SetTitle("SIP Providers");
+            m_sipProvidersPanel.DisplayCount = SIPPROVIDERS_DISPLAY_COUNT;
             m_sipProvidersPanel.MenuEnableFilter(false);
             m_sipProvidersPanel.MenuEnableDelete(false);
             m_sipProvidersPanel.Add += SIPProvidersPanel_Add;
             m_sipProvidersPanel.GetAssetList = GetSIPProviders;
 
             m_sipProviderRegistrationsPanel.SetTitle("SIP Provider Registrations");
+            m_sipProviderRegistrationsPanel.DisplayCount = SIPPROVIDERBINDINGS_DISPLAY_COUNT;
             m_sipProviderRegistrationsPanel.MenuEnableAdd(false);
             m_sipProviderRegistrationsPanel.MenuEnableFilter(false);
             m_sipProviderRegistrationsPanel.MenuEnableDelete(false);

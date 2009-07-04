@@ -126,7 +126,7 @@
 					<data:DataGridTextColumn 
 						Header="Last Update" 
 						Width="SizeToCells"
-						Binding="{Binding Path=LastUpdate, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding Path=LastUpdateLocal, Converter={StaticResource DateTimeConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100" />
 					<data:DataGridTextColumn 

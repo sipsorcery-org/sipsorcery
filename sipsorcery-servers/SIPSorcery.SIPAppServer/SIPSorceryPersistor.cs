@@ -53,15 +53,6 @@ namespace SIPSorcery.SIPAppServer {
 
     public class SIPSorceryPersistor {
 
-        public const string XML_DOMAINS_FILENAME = "sipdomains.xml";
-        public const string XML_SIPACCOUNTS_FILENAME = "sipaccounts.xml";
-        public const string XML_SIPPROVIDERS_FILENAME = "sipproviders.xml";
-        public const string XML_DIALPLANS_FILENAME = "sipdialplans.xml";
-        public const string XML_REGISTRAR_BINDINGS_FILENAME = "sipregistrarbindings.xml";
-        public const string XML_PROVIDER_BINDINGS_FILENAME = "sipproviderbindings.xml";
-        public const string XML_SIPDIALOGUES_FILENAME = "sipdialogues.xml";
-        public const string XML_SIPCDRS_FILENAME = "sipcdrs.xml";
-
         private const string WRITE_CDRS_THREAD_NAME = "sipappsvr-writecdrs";
 
         private ILog logger = AppState.logger;
@@ -101,14 +92,14 @@ namespace SIPSorcery.SIPAppServer {
                     throw new ApplicationException("Directory " + storageConnectionStr + " does not exist for XML persistor.");
                 }
 
-                m_sipAccountsPersistor = SIPAssetPersistorFactory.CreateSIPAccountPersistor(StorageTypes.XML, storageConnectionStr + XML_SIPACCOUNTS_FILENAME);
-                m_dialPlanPersistor = SIPAssetPersistorFactory.CreateDialPlanPersistor(StorageTypes.XML, storageConnectionStr + XML_DIALPLANS_FILENAME);
-                m_sipProvidersPersistor = SIPAssetPersistorFactory.CreateSIPProviderPersistor(StorageTypes.XML, storageConnectionStr + XML_SIPPROVIDERS_FILENAME);
-                m_sipProviderBindingsPersistor = SIPAssetPersistorFactory.CreateSIPProviderBindingPersistor(StorageTypes.XML, storageConnectionStr + XML_PROVIDER_BINDINGS_FILENAME);
-                m_sipDomainManager = new SIPDomainManager(StorageTypes.XML, storageConnectionStr + XML_DOMAINS_FILENAME);
-                m_sipRegistrarBindingPersistor = SIPAssetPersistorFactory.CreateSIPRegistrarBindingPersistor(StorageTypes.XML, storageConnectionStr + XML_REGISTRAR_BINDINGS_FILENAME);
-                m_sipDialoguePersistor = SIPAssetPersistorFactory.CreateSIPDialoguePersistor(StorageTypes.XML, storageConnectionStr + XML_SIPDIALOGUES_FILENAME);
-                m_sipCDRPersistor = SIPAssetPersistorFactory.CreateSIPCDRPersistor(StorageTypes.XML, storageConnectionStr + XML_SIPCDRS_FILENAME);
+                m_sipAccountsPersistor = SIPAssetPersistorFactory.CreateSIPAccountPersistor(StorageTypes.XML, storageConnectionStr);
+                m_dialPlanPersistor = SIPAssetPersistorFactory.CreateDialPlanPersistor(StorageTypes.XML, storageConnectionStr);
+                m_sipProvidersPersistor = SIPAssetPersistorFactory.CreateSIPProviderPersistor(StorageTypes.XML, storageConnectionStr);
+                m_sipProviderBindingsPersistor = SIPAssetPersistorFactory.CreateSIPProviderBindingPersistor(StorageTypes.XML, storageConnectionStr);
+                m_sipDomainManager = new SIPDomainManager(StorageTypes.XML, storageConnectionStr);
+                m_sipRegistrarBindingPersistor = SIPAssetPersistorFactory.CreateSIPRegistrarBindingPersistor(StorageTypes.XML, storageConnectionStr);
+                m_sipDialoguePersistor = SIPAssetPersistorFactory.CreateSIPDialoguePersistor(StorageTypes.XML, storageConnectionStr);
+                m_sipCDRPersistor = SIPAssetPersistorFactory.CreateSIPCDRPersistor(StorageTypes.XML, storageConnectionStr);
             }
             else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql) {
                 m_sipAccountsPersistor = SIPAssetPersistorFactory.CreateSIPAccountPersistor(storageType, storageConnectionStr);

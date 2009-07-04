@@ -13,6 +13,7 @@ using System.Windows.Shapes;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Persistence;
 using SIPSorcery.SIPSorceryProvisioningClient;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery
 {
@@ -226,13 +227,8 @@ namespace SIPSorcery
             }
         }
 
-        private void Add()
-        {
-            try
-            {
-                bool valid = false;
-                string validationError = "Unknown validation error.";
-
+        private void Add() {
+            try {
                 string username = m_sipAccountUsername.Text.Trim();
                 string password = m_sipAccountPassword.Text.Trim();
                 string domain = m_domainNames.SelectedItem as string;
@@ -243,51 +239,31 @@ namespace SIPSorcery
                 bool sendKeepAlives = m_keepAlivesCheckBox.IsChecked.Value;
                 bool isIncomingOnly = m_statusIncomingOnlyRadio.IsChecked.Value;
 
-                if (username == null || username.Trim().Length == 0)
-                {
-                    WriteStatusMessage(MessageLevelsEnum.Warn, "Username cannot be emtpy");
-                }
-                else if (!isIncomingOnly && (password == null || password.Trim().Length == 0))
-                {
-                    WriteStatusMessage(MessageLevelsEnum.Warn, "Password cannot be emtpy");
-                }
-                else
-                {
-                    valid = true;
-                }
+                SIPAccount sipAccount = new SIPAccount(m_owner, domain, username, password, outDialPlan);
+                sipAccount.InDialPlanName = inDialPlan;
+                sipAccount.SendNATKeepAlives = sendKeepAlives;
+                sipAccount.IsIncomingOnly = isIncomingOnly;
+                sipAccount.NetworkId = networkId;
+                sipAccount.IPAddressACL = ipAddressACL;
+                sipAccount.InsertedUTC = DateTime.Now;
 
-                if (valid)
-                {
-                    SIPAccount sipAccount = new SIPAccount(m_owner, domain, username, password, outDialPlan);
-                    sipAccount.InDialPlanName = inDialPlan;
-                    sipAccount.SendNATKeepAlives = sendKeepAlives;
-                    sipAccount.IsIncomingOnly = isIncomingOnly;
-                    sipAccount.NetworkId = networkId;
-                    sipAccount.IPAddressACL = ipAddressACL;
-                    sipAccount.Inserted = DateTime.Now;
-
+                string validationError = SIPAccount.ValidateAndClean(sipAccount);
+                if (validationError != null) {
+                    WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
+                }
+                else {
                     WriteStatusMessage(MessageLevelsEnum.Info, "Adding SIP Account please wait...");
                     AddSIPAccount_External(sipAccount);
                 }
-                else
-                {
-                    WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
-                }
             }
-            catch (Exception excp)
-            {
-                WriteStatusMessage(MessageLevelsEnum.Error, "Add Exception. " + excp.Message);
+            catch (Exception excp) {
+                WriteStatusMessage(MessageLevelsEnum.Error, "Add SIPAccount Exception. " + excp.Message);
             }
         }
 
         private void Update()
         {
-            if (!m_statusIncomingOnlyRadio.IsChecked.Value && (m_sipAccountPassword.Text == null || m_sipAccountPassword.Text.Trim().Length == 0))
-            {
-                WriteStatusMessage(MessageLevelsEnum.Warn, "Password cannot be emtpy");
-            }
-            else
-            {
+            try {
                 m_sipAccount.SIPPassword = m_sipAccountPassword.Text;
                 m_sipAccount.OutDialPlanName = (m_outDialPlan.SelectedIndex != -1) ? m_outDialPlan.SelectedItem as string : null;
                 m_sipAccount.InDialPlanName = (m_inDialPlan.SelectedIndex != -1) ? m_inDialPlan.SelectedItem as string : null;
@@ -297,8 +273,17 @@ namespace SIPSorcery
                 m_sipAccount.NetworkId = m_sipAccountNetworkId.Text.Trim();
                 m_sipAccount.IPAddressACL = m_sipAccountIPAddressACL.Text.Trim();
 
-                WriteStatusMessage(MessageLevelsEnum.Info, "Attempting to update SIP Account " + m_sipAccount.SIPUsername + "@" + m_sipAccount.SIPDomain + " please wait...");
-                UpdateSIPAccount_External(m_sipAccount);
+                string validationError = SIPAccount.ValidateAndClean(m_sipAccount);
+                if (validationError != null) {
+                    WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
+                }
+                else {
+                    WriteStatusMessage(MessageLevelsEnum.Info, "Attempting to update SIP Account " + m_sipAccount.SIPUsername + "@" + m_sipAccount.SIPDomain + " please wait...");
+                    UpdateSIPAccount_External(m_sipAccount);
+                }
+            }
+            catch (Exception excp) {
+                WriteStatusMessage(MessageLevelsEnum.Error, "Update SIPAccount Exception. " + excp.Message);
             }
         }
 

@@ -69,7 +69,7 @@ namespace SIPSorcery
             //}
 
             string server = Application.Current.Host.Source.DnsSafeHost;
-            if(server == LOCALHOST_MONITOR_HOST) {
+            if (server == LOCALHOST_MONITOR_HOST || Application.Current.Host.Source.Scheme == "file") {
                 m_sipMonitorHost = LOCALHOST_MONITOR_HOST;
                 m_provisioningServiceURL = LOCALHOST_PROVISIONING_URL;
             }
@@ -300,6 +300,10 @@ namespace SIPSorcery
 
                     m_sessionExpired = false;
                     m_authId = e.Result;
+
+                    //SIPCDRAsset.TimeZoneOffsetMinutes = 600;
+                    //SIPProviderBinding.TimeZoneOffsetMinutes = 600;
+                    //SIPRegistrarBinding.TimeZoneOffsetMinutes = 600;
 
 #if !BLEND
                     m_authorisedPersistor = SIPSorceryPersistorFactory.CreateSIPSorceryPersistor(SIPPersistorTypesEnum.WebService, m_provisioningServiceURL, m_authId);

@@ -64,11 +64,11 @@ using log4net;
 
 namespace SIPSorcery.SIPAppServer {
     public class SIPAppServerDaemon {
-        public const int MINIMUM_RELOAD_DELAY = 15;                     // Minimum period between reloads of the registration agent.   
-        private const int DIALPLAN_NOTUSED_PURGEPERIOD = 300;           // The number of seconds after last use that a dialplan will be purged for.
-
+        
         private static ILog logger = SIPAppServerState.logger;
         private static ILog dialPlanLogger = AppState.GetLogger("dialplan");
+
+        private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
 
         private XmlNode m_sipAppServerSocketsNode = SIPAppServerState.SIPAppServerSocketsNode;
 
@@ -87,6 +87,7 @@ namespace SIPSorcery.SIPAppServer {
         private SIPMonitorEventWriter m_monitorEventWriter;
         private SIPAppServerCore m_appServerCore;
         private SIPCallManager m_callManager;
+        private SIPNotifyManager m_notifyManager;
         private SIPProxyDaemon m_sipProxyDaemon;
         private SIPMonitorDaemon m_sipMonitorDaemon;
         private SIPRegAgentDaemon m_sipRegAgentDaemon;
@@ -132,7 +133,19 @@ namespace SIPSorcery.SIPAppServer {
                             m_publicIPAddress = ipAddress;
                         }
                     };
+
                     m_sipProxyDaemon.Start();
+
+                    // Add the sockets that are being listened on as domain aliases so that any SIP user agents on the same network
+                    // will be able to communicate.
+                    List<SIPEndPoint> listeningEndPoints = m_sipProxyDaemon.GetListeningSIPEndPoints();
+                    string defaultDomain = m_sipSorceryPersistor.SIPDomainManager.GetDomain(SIPDomainManager.DEFAULT_LOCAL_DOMAIN);
+                    foreach (SIPEndPoint listeningEndPoint in listeningEndPoints) {
+                        m_sipSorceryPersistor.SIPDomainManager.AddAlias(defaultDomain, listeningEndPoint.SocketEndPoint.ToString());
+                        if (listeningEndPoint.SocketEndPoint.Port == m_defaultSIPPort) {
+                            m_sipSorceryPersistor.SIPDomainManager.AddAlias(SIPDomainManager.DEFAULT_LOCAL_DOMAIN, listeningEndPoint.SocketEndPoint.Address.ToString());
+                        }
+                    }
                 }
 
                 if (m_sipMonitorEnabled) {
@@ -216,8 +229,16 @@ namespace SIPSorcery.SIPAppServer {
                          m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                          m_customerSessionManager.CustomerPersistor,
                          m_traceDirectory);
-
                     m_callManager.Start();
+
+                    m_notifyManager = new SIPNotifyManager(
+                        m_sipTransport,
+                        m_outboundProxy,
+                        FireSIPMonitorEvent,
+                        m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                        m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
+                        m_sipSorceryPersistor.SIPDomainManager.GetDomain);
+                    m_notifyManager.Start();
 
                     m_appServerCore = new SIPAppServerCore(
                         m_sipTransport,
@@ -225,6 +246,7 @@ namespace SIPSorcery.SIPAppServer {
                         m_sipSorceryPersistor.SIPAccountsPersistor.Get,
                         FireSIPMonitorEvent,
                         m_callManager,
+                        m_notifyManager,
                         SIPRequestAuthenticator.AuthenticateSIPRequest,
                         m_outboundProxy);
                 }
@@ -307,6 +329,10 @@ namespace SIPSorcery.SIPAppServer {
 
                 if (m_callManager != null) {
                     m_callManager.Stop();
+                }
+
+                if (m_notifyManager != null) {
+                    m_notifyManager.Stop();
                 }
 
                 if (m_monitorEventWriter != null) {

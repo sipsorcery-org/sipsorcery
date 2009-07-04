@@ -19,6 +19,7 @@ create table customers
  createdfromipaddress varchar(15),
  adminid varchar(32),					-- Like a whitelabelid. If set identifies this user as the administrative owner of all accounts that have the same value for their adminmemberid.
  adminmemberid varchar(32),				-- If set it designates this customer as a belonging to the administrative domain of the customer with the same adminid.
+ timezone varchar(128),
  inserted timestamp not null default now(),
  Primary Key(id),
  Unique(customerusername)

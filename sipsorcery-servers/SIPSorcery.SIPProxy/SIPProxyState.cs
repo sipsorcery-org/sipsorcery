@@ -60,6 +60,7 @@ namespace SIPSorcery.SIPProxy
         private const string PROXY_LOOPBACK_PORT_KEY = "MonitorLoopbackPort";
         private const string PROXY_NATKEEPALIVESOCKET_KEY = "NATKeepAliveSocket";
         private const string PROXY_STUNSERVERHOSTNAME_KEY = "STUNServerHostname";
+        private const string PROXY_DISPATCHERJOBS_NODE_NAME = "sipdispatcherjobs";
 
         public static ILog logger;
 
@@ -69,6 +70,7 @@ namespace SIPSorcery.SIPProxy
         public static readonly int MonitorLoopbackPort;
         public static readonly IPEndPoint NATKeepAliveSocket;
         public static readonly string STUNServerHostname;
+        public static readonly XmlNode SIPDispatcherJobsNode;
 
         static SIPProxyState()
         {
@@ -94,6 +96,8 @@ namespace SIPSorcery.SIPProxy
                 }
                 Int32.TryParse(AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_LOOPBACK_PORT_KEY), out MonitorLoopbackPort);
                 STUNServerHostname = AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_STUNSERVERHOSTNAME_KEY);
+
+                SIPDispatcherJobsNode = m_sipProxyNode.SelectSingleNode(PROXY_DISPATCHERJOBS_NODE_NAME);
             }
             catch (Exception excp)
             {

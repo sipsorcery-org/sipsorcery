@@ -28,8 +28,8 @@ namespace SIPSorcery
 
     public partial class SIPAccountManager : UserControl
 	{
-        private const int SIPACCOUNTS_DISPLAY_COUNT = 10;
-        private const int SIPBINDINGS_DISPLAY_COUNT = 10;
+        private const int SIPACCOUNTS_DISPLAY_COUNT = 25;
+        private const int SIPBINDINGS_DISPLAY_COUNT = 25;
 
         private ActivityMessageDelegate LogActivityMessage_External;
         private ActivityProgressDelegate ShowActivityProgress_External;
@@ -89,6 +89,7 @@ namespace SIPSorcery
             m_sipAccountsPanel.GetAssetList = GetSIPAccounts;
 
             m_sipBindingsPanel.SetTitle("SIP Bindings");
+            m_sipBindingsPanel.DisplayCount = SIPBINDINGS_DISPLAY_COUNT;
             m_sipBindingsPanel.MenuEnableAdd(false);
             m_sipBindingsPanel.MenuEnableFilter(false);
             m_sipBindingsPanel.MenuEnableDelete(false);
@@ -99,14 +100,14 @@ namespace SIPSorcery
         {
             Initialised = true;
 
-            m_persistor.GetSIPDomainsComplete += new GetSIPDomainsCompleteDelegate(GetSIPDomainsComplete);
-            m_persistor.GetSIPAccountsCountComplete += new GetSIPAccountsCountCompleteDelegate(GetSIPAccountsCountComplete);
-            m_persistor.GetSIPAccountsComplete += new GetSIPAccountsCompleteDelegate(GetSIPAccountsComplete);
-            m_persistor.UpdateSIPAccountComplete += new UpdateSIPAccountCompleteDelegate(UpdateSIPAccountComplete);
-            m_persistor.DeleteSIPAccountComplete += new DeleteSIPAccountCompleteDelegate(DeleteSIPAccountComplete);
-            m_persistor.AddSIPAccountComplete += new AddSIPAccountCompleteDelegate(AddSIPAccountComplete);
-            m_persistor.GetRegistrarBindingsCountComplete += new GetRegistrarBindingsCountCompleteDelegate(GetRegistrarBindingsCountComplete);
-            m_persistor.GetRegistrarBindingsComplete += new GetRegistrarBindingsCompleteDelegate(GetRegistrarBindingsComplete);
+            m_persistor.GetSIPDomainsComplete += GetSIPDomainsComplete;
+            m_persistor.GetSIPAccountsCountComplete += GetSIPAccountsCountComplete;
+            m_persistor.GetSIPAccountsComplete += GetSIPAccountsComplete;
+            m_persistor.UpdateSIPAccountComplete += UpdateSIPAccountComplete;
+            m_persistor.DeleteSIPAccountComplete += DeleteSIPAccountComplete;
+            m_persistor.AddSIPAccountComplete += AddSIPAccountComplete;
+            m_persistor.GetRegistrarBindingsCountComplete += GetRegistrarBindingsCountComplete;
+            m_persistor.GetRegistrarBindingsComplete += GetRegistrarBindingsComplete;
 
             Load();
         }
@@ -147,13 +148,13 @@ namespace SIPSorcery
 
         public void Close()
         {
-            m_persistor.GetSIPAccountsCountComplete -= new GetSIPAccountsCountCompleteDelegate(GetSIPAccountsCountComplete);
-            m_persistor.GetSIPAccountsComplete -= new GetSIPAccountsCompleteDelegate(GetSIPAccountsComplete);
-            m_persistor.GetSIPDomainsComplete -= new GetSIPDomainsCompleteDelegate(GetSIPDomainsComplete);
-            m_persistor.UpdateSIPAccountComplete -= new UpdateSIPAccountCompleteDelegate(UpdateSIPAccountComplete);
-            m_persistor.DeleteSIPAccountComplete -= new DeleteSIPAccountCompleteDelegate(DeleteSIPAccountComplete);
-            m_persistor.AddSIPAccountComplete -= new AddSIPAccountCompleteDelegate(AddSIPAccountComplete);
-            m_persistor.GetRegistrarBindingsCountComplete -= new GetRegistrarBindingsCountCompleteDelegate(GetRegistrarBindingsCountComplete);
+            m_persistor.GetSIPAccountsCountComplete -= GetSIPAccountsCountComplete;
+            m_persistor.GetSIPAccountsComplete -= GetSIPAccountsComplete;
+            m_persistor.GetSIPDomainsComplete -= GetSIPDomainsComplete;
+            m_persistor.UpdateSIPAccountComplete -= UpdateSIPAccountComplete;
+            m_persistor.DeleteSIPAccountComplete -= DeleteSIPAccountComplete;
+            m_persistor.AddSIPAccountComplete -= AddSIPAccountComplete;
+            m_persistor.GetRegistrarBindingsCountComplete -= GetRegistrarBindingsCountComplete;
         }
 
         public void SIPMonitorMachineEventHandler(SIPMonitorMachineEvent machineEvent)
