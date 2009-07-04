@@ -136,7 +136,7 @@ namespace SIPSorcery.SIP.App
                     if (m_sipAccount == null) {
                         // A full lookup failed. Now try a partial lookup if the incoming username is in a dotted domain name format.
                         if (m_sipUsername.Contains(".")) {
-                            string sipUsernameSuffix = m_sipUsername.Substring(m_sipUsername.LastIndexOf("."));
+                            string sipUsernameSuffix = m_sipUsername.Substring(m_sipUsername.LastIndexOf(".") + 1);
                             m_sipAccount = GetSIPAccount_External(s => s.SIPUsername == sipUsernameSuffix && s.SIPDomain == m_sipDomain);
                         }
 
