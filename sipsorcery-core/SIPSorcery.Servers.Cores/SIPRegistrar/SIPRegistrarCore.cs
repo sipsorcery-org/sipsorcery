@@ -101,7 +101,7 @@ namespace SIPSorcery.Servers
 	{	
 		//private const int CACHE_EXPIRY_TIME = 10;			        // Time in minutes a SIP account can exist in the cache and use a previous registration before a new auth will be requested, balance with agressive NAT timeouts.
 															        // a random element is also used in conjunction with this to attempt to mitigate registration spikes.
-        public const string PROXY_VIA_PARAMETER_NAME = "proxy";     // A proxy forwarding REGISTER requests will add a parameter with this name and a value of the socket it received the request on.
+        //public const string PROXY_VIA_PARAMETER_NAME = "proxy";     // A proxy forwarding REGISTER requests will add a parameter with this name and a value of the socket it received the request on.
 
 		private static ILog logger = AppState.GetLogger("sipregistrar");
 
@@ -304,20 +304,9 @@ namespace SIPSorcery.Servers
                         {
                             //logger.Debug("Recording registration record for " + addressOfRecord.ToString() + ".");
 
-                            SIPEndPoint uacRemoteEndPoint = registerTransaction.RemoteEndPoint;
-                            SIPEndPoint proxySIPEndPoint = null;
+                            SIPEndPoint uacRemoteEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : registerTransaction.RemoteEndPoint;
+                            SIPEndPoint proxySIPEndPoint = (!sipRequest.Header.ProxyReceivedOn.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedOn) : null;
                             SIPEndPoint registrarEndPoint = registerTransaction.LocalSIPEndPoint;
-
-                            // Identify whether a Proxy is in front of the Registrar.
-                            foreach(SIPViaHeader viaHeader in sipRequest.Header.Vias.Via)  {
-                                if (viaHeader.ViaParameters.Has(PROXY_VIA_PARAMETER_NAME)) {
-                                    // The "proxy" Via parameter must be written onto the top Via header received by the Proxy. So the Via header
-                                    // with the "proxy" parameter also holds the IP socket of the user agent. If the "proxy" is showing up on a different
-                                    // Via header the Proxy is configured incorrectly. Fix it and don't change the line below.
-                                    proxySIPEndPoint = SIPEndPoint.ParseSIPEndPoint(viaHeader.ViaParameters.Get(PROXY_VIA_PARAMETER_NAME));
-                                    uacRemoteEndPoint = new SIPEndPoint(viaHeader.Transport, IPSocket.ParseSocketString(viaHeader.ReceivedFromAddress));
-                                }
-                            }
 
                             int contactHeaderExpiry = -1;
                             if (sipRequest.Header.Contact[0].ContactParameters.Has(m_sipExpiresParameterKey)) {

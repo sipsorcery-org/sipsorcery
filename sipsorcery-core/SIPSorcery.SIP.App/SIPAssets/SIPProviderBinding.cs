@@ -241,7 +241,7 @@ namespace SIPSorcery.SIP.App
         // Fields populated and re-populated by the SIPProvider entry whenever a registration is initiated or refereshed.
         // The details are presisted and used for authenitcation of previous register requests or to remove existing bindings.
         public SIPURI RegistrarServer;
-        public string ProviderUsername;
+        public string ProviderAuthUsername;
         public string ProviderPassword;
         public string RegistrarRealm;
 
@@ -330,7 +330,7 @@ namespace SIPSorcery.SIP.App
             m_owner = sipProvider.Owner;
             AdminMemberId = sipProvider.AdminMemberId;
             ProviderName = sipProvider.ProviderName;
-            ProviderUsername = (!sipProvider.ProviderAuthUsername.IsNullOrBlank()) ? sipProvider.ProviderAuthUsername : sipProvider.ProviderUsername;
+            ProviderAuthUsername = (!sipProvider.ProviderAuthUsername.IsNullOrBlank()) ? sipProvider.ProviderAuthUsername : sipProvider.ProviderUsername;
             ProviderPassword = sipProvider.ProviderPassword;
             RegistrarServer = sipProvider.Registrar.CopyOf();
             RegistrarRealm = (!sipProvider.RegisterRealm.IsNullOrBlank()) ? sipProvider.RegisterRealm : RegistrarServer.Host;

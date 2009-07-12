@@ -251,29 +251,22 @@ namespace SIPSorcery.SIP
 		#if UNITTEST
 	
 		[TestFixture]
-		public class SIPResponseUnitTest
+        public class SIPAuthorisationDigestUnitTest
 		{
 			[TestFixtureSetUp]
 			public void Init()
-			{
-				
-			}
+			{}
 
 			[TestFixtureTearDown]
 			public void Dispose()
-			{			
-				
-			}
+			{}
 
-			[Test]
-			public void SampleTest()
-			{
-				Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-				
-				Assert.IsTrue(true, "True was false.");
-
-				Console.WriteLine("-----------------------------------------");
-			}
+            [Test]
+            public void SampleTest() {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                Assert.IsTrue(true, "True was false.");
+                Console.WriteLine("-----------------------------------------");
+            }
 
 			[Test]
 			public void KnownDigestTest()
@@ -393,7 +386,6 @@ namespace SIPSorcery.SIP
                  Console.WriteLine("-----------------------------------------");
              }
 
-
             [Test]
             public void KnownWWWAuthenticateDigestTest()
             {
@@ -430,6 +422,25 @@ namespace SIPSorcery.SIP
                 Console.WriteLine(authRequest.ToString());
 
                 Assert.IsTrue(authRequest.ToString() == @"Digest username=""user@aim.com"",realm=""aol.com"",nonce=""48e7541d4339e27ee7b520a4bf8a8e3c4fffcb90"",uri=""sip:01135312222222@sip.aol.com;transport=udp"",response=""18ad0e62fcc9d7f141a72078c4a0784f"",cnonce=""cf2e005f1801550717cc8c59193aa9f4"",nc=00000001,qop=auth,opaque=""004533235332435434ffac663e"",algorithm=MD5", "The authorisation header was not put to a string correctly.");
+
+                Console.WriteLine("-----------------------------------------");
+            }
+
+            [Test]
+            public void KnownQOPUnitTest() {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate, "Digest realm=\"jnctn.net\", nonce=\"4a597e1c0000a1636739088e9151ef2f319af257c8f585f1\", qop=\"auth\"");
+                authRequest.SetCredentials("user", "password", "sip:user.onsip.com", "REGISTER");
+                authRequest.Cnonce = "d3a1ca6af34e72e2461b794f48d5045d";
+
+                string digest = authRequest.Digest;
+                authRequest.Response = digest;
+
+                Console.WriteLine("Digest = " + digest + ".");
+                Console.WriteLine(authRequest.ToString());
+
+                Assert.IsTrue(authRequest.Response == "7709215c1d58c1912dc59d1e8b5b6248", "The authentication response digest was not generated properly.");
 
                 Console.WriteLine("-----------------------------------------");
             }

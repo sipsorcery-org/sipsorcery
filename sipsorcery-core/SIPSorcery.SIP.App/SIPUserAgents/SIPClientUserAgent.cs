@@ -120,52 +120,46 @@ namespace SIPSorcery.SIP.App
 
         public void Call(SIPCallDescriptor sipCallDescriptor)
         {
-            try
-            {
+            try {
                 m_sipCallDescriptor = sipCallDescriptor;
                 SIPURI callURI = SIPURI.ParseSIPURI(sipCallDescriptor.Uri);
                 SIPRouteSet routeSet = null;
 
-                if (!m_callCancelled)
-                {
+                if (!m_callCancelled) {
                     // Determine the destination end point for this request.
-                    if (m_outboundProxy != null)
-                    {
+                    if (sipCallDescriptor.IsLoopbackCall) {
+                        m_outboundProxy = m_sipTransport.GetDefaultSIPEndPoint();
+                    }
+                    
+                    if (m_outboundProxy != null) {
                         // Using the system outbound proxy only, no additional user routing requirements.
                         m_serverEndPoint = m_outboundProxy;
                     }
 
                     // A custom route set may have been specified for the call.
-                    if (m_sipCallDescriptor.RouteSet != null && m_sipCallDescriptor.RouteSet.IndexOf(OUTBOUNDPROXY_AS_ROUTESET_CHAR) != -1)
-                    {
-                        try
-                        {
+                    if (m_sipCallDescriptor.RouteSet != null && m_sipCallDescriptor.RouteSet.IndexOf(OUTBOUNDPROXY_AS_ROUTESET_CHAR) != -1) {
+                        try {
                             routeSet = new SIPRouteSet();
                             routeSet.PushRoute(new SIPRoute(m_sipCallDescriptor.RouteSet, true));
                         }
-                        catch
-                        {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Error an outbound proxy value was not recognised in SwitchCall. " + m_sipCallDescriptor.RouteSet + ".", Owner));
+                        catch {
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Error an outbound proxy value was not recognised in SIPClientUserAgent Call. " + m_sipCallDescriptor.RouteSet + ".", Owner));
                         }
                     }
 
                     // No outbound proxy, determine the forward destination based on the SIP request.
-                    if (m_serverEndPoint == null)
-                    {
-                        if (routeSet == null || routeSet.Length == 0)
-                        {
+                    if (m_serverEndPoint == null) {
+                        if (routeSet == null || routeSet.Length == 0) {
                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Attempting to resolve " + callURI.Host + ".", Owner));
                             m_serverEndPoint = m_sipTransport.GetURIEndPoint(callURI, true);
                         }
-                        else
-                        {
+                        else {
                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Route set for call " + routeSet.ToString() + ".", Owner));
                             m_serverEndPoint = m_sipTransport.GetURIEndPoint(routeSet.TopRoute.URI, true);
                         }
                     }
 
-                    if (m_serverEndPoint != null)
-                    {
+                    if (m_serverEndPoint != null) {
                         Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Switching to " + SIPURI.ParseSIPURI(m_sipCallDescriptor.Uri).CanonicalAddress + " via " + m_serverEndPoint + ".", Owner));
 
                         m_localSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint(m_serverEndPoint);
@@ -187,27 +181,22 @@ namespace SIPSorcery.SIP.App
 
                         m_serverTransaction.SendInviteRequest(m_serverEndPoint, m_serverTransaction.TransactionRequest);
                     }
-                    else
-                    {
-                        if (routeSet == null || routeSet.Length == 0)
-                        {
+                    else {
+                        if (routeSet == null || routeSet.Length == 0) {
                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Forward leg failed, could not resolve URI host " + callURI.Host, Owner));
                             FireCallFailed(this, "unresolvable destination " + callURI.Host);
                         }
-                        else
-                        {
+                        else {
                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Forward leg failed, could not resolve top Route host " + routeSet.TopRoute.Host, Owner));
                             FireCallFailed(this, "unresolvable destination " + routeSet.TopRoute.Host);
                         }
                     }
                 }
             }
-            catch (ApplicationException appExcp)
-            {
+            catch (ApplicationException appExcp) {
                 FireCallFailed(this, appExcp.Message);
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Exception UserAgentClient Call. " + excp.Message, Owner));
                 FireCallFailed(this, excp.Message);
             }
@@ -352,8 +341,14 @@ namespace SIPSorcery.SIP.App
                             authRequest.SetCredentials(username, m_sipCallDescriptor.Password, m_sipCallDescriptor.Uri.ToString(), SIPMethodsEnum.INVITE.ToString());
 
                             SIPRequest authInviteRequest = m_serverTransaction.TransactionRequest;
-                            authInviteRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
-                            authInviteRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
+                            
+                            if (SIPProviderMagicJack.IsMagicJackRequest(sipResponse)) {
+                                authInviteRequest.Header.AuthenticationHeader = SIPProviderMagicJack.GetAuthenticationHeader(sipResponse);
+                            }
+                            else {
+                                authInviteRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
+                                authInviteRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
+                            }
 
                             authInviteRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                             authInviteRequest.Header.CSeq = authInviteRequest.Header.CSeq + 1;

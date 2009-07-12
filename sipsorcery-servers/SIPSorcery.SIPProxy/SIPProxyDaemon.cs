@@ -156,18 +156,23 @@ namespace SIPSorcery.SIPProxy {
                 logger.Debug("SIPProxyDaemon STUN client started.");
 
                 while (!m_stop) {
-                    IPAddress publicIP = STUNClient.GetPublicIPAddress(m_stunServerHostname);
-                    if (publicIP != null) {
-                        //logger.Debug("The STUN client was able to determine the public IP address as " + publicIP.ToString() + ".");
-                        m_statelessProxyCore.PublicIPAddress = publicIP;
-                    }
-                    else {
-                        // logger.Debug("The STUN client could not determine the public IP address.");
-                        m_statelessProxyCore.PublicIPAddress = null;
-                    }
+                    try {
+                        IPAddress publicIP = STUNClient.GetPublicIPAddress(m_stunServerHostname);
+                        if (publicIP != null) {
+                            //logger.Debug("The STUN client was able to determine the public IP address as " + publicIP.ToString() + ".");
+                            m_statelessProxyCore.PublicIPAddress = publicIP;
+                        }
+                        else {
+                            // logger.Debug("The STUN client could not determine the public IP address.");
+                            m_statelessProxyCore.PublicIPAddress = null;
+                        }
 
-                    if (PublicIPAddressUpdated != null) {
-                        PublicIPAddressUpdated(publicIP);
+                        if (PublicIPAddressUpdated != null) {
+                            PublicIPAddressUpdated(publicIP);
+                        }
+                    }
+                    catch (Exception getAddrExcp) {
+                        logger.Error("Exception StartSTUNClient GetPublicIPAddress. " + getAddrExcp.Message);
                     }
 
                     m_stunClientMRE.Reset();

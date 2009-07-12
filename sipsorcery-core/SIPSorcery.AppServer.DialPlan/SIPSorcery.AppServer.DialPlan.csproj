@@ -77,9 +77,7 @@
   <ItemGroup>
     <Compile Include="DialPlanApps\CallbackApp.cs" />
     <Compile Include="DialPlanApps\RTSPApp.cs" />
-    <Compile Include="DialPlanApps\SIPReplyApp.cs" />
-    <Compile Include="DialPlanApps\SkeletonApp.cs" />
-    <Compile Include="DialPlanApps\SwitchCallMulti.cs" />
+    <Compile Include="DialPlanApps\ForkCall.cs" />
     <Compile Include="DialPlanCommand.cs" />
     <Compile Include="DialPlanContext.cs" />
     <Compile Include="DialPlanEngine.cs" />

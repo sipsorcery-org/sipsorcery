@@ -175,7 +175,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="SIPMonitor\SIPMonitorFilter.cs" />
-    <Compile Include="SIPStatelessProxy\AppServerDispatcher.cs" />
+    <Compile Include="SIPStatelessProxy\CallDispatcher.cs" />
     <Compile Include="SIPStatelessProxy\NATKeepAliveRelay.cs" />
     <Compile Include="SIPRegistrar\SIPRegistrarBindingsManager.cs" />
     <Compile Include="SIPRegistrar\SIPUserAgentConfiguration.cs" />

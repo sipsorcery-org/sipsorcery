@@ -130,7 +130,11 @@ namespace SIPSorcery.SIPAppServer {
                         if (ipAddress != m_publicIPAddress && m_publicIPAddress != null) {
                             m_sipSorceryPersistor.SIPDomainManager.RemoveAlias(m_publicIPAddress.ToString());
                             m_sipSorceryPersistor.SIPDomainManager.RemoveAlias(m_publicIPAddress.ToString() + ":" + SIPConstants.DEFAULT_SIP_PORT);
+                        }
+
+                        if (ipAddress != null) {
                             m_publicIPAddress = ipAddress;
+                            DialStringParser.PublicIPAddress = ipAddress;
                         }
                     };
 
@@ -258,6 +262,7 @@ namespace SIPSorcery.SIPAppServer {
                         logger.Warn("Provisioning hosted service could not be started as Persistor object was null.");
                     }
                     else {
+                        
                         ProvisioningServiceInstanceProvider instanceProvider = new ProvisioningServiceInstanceProvider(
                             m_sipSorceryPersistor.SIPAccountsPersistor,
                             m_sipSorceryPersistor.SIPDialPlanPersistor,
@@ -284,9 +289,11 @@ namespace SIPSorcery.SIPAppServer {
                 try {
                     m_accessPolicyHost = new ServiceHost(typeof(CrossDomainService));
                     m_accessPolicyHost.Open();
+
+                    logger.Debug("CrossDomain hosted service successfully started on " + m_callManagerSvcHost.BaseAddresses[0].AbsoluteUri + ".");
                 }
                 catch (Exception excp) {
-                    logger.Error("Exception starting CrossDomain hosted service. " + excp.Message);
+                    logger.Warn("Exception starting CrossDomain hosted service. " + excp.Message);
                 }
 
                 try {
@@ -294,9 +301,11 @@ namespace SIPSorcery.SIPAppServer {
                     m_callManagerSvcHost = new ServiceHost(typeof(CallManagerServices));
                     m_callManagerSvcHost.Description.Behaviors.Add(callManagerSvcInstanceProvider);
                     m_callManagerSvcHost.Open();
+
+                    logger.Debug("CallManager hosted service successfully started on " + m_callManagerSvcHost.BaseAddresses[0].AbsoluteUri + ".");
                 }
                 catch (Exception excp) {
-                    logger.Error("Exception starting CallManager hosted service. " + excp.Message);
+                    logger.Warn("Exception starting CallManager hosted service. " + excp.Message);
                 }
 
                 // Initialise random number to save delay on first SIP request.

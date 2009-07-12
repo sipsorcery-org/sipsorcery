@@ -40,6 +40,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Help", "Help", "{2211C2FB-5
 		SIPSorcery.Web\help\webcallback.html = SIPSorcery.Web\help\webcallback.html
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPDispatcher", "SIPSorcery.SIPDispatcher\SIPSorcery.SIPDispatcher.csproj", "{15FEC54D-2438-4222-AE40-2FE93F7AD3D8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -66,6 +68,10 @@ Global
 		{92B0EB84-6587-4D7A-803B-C9FA0230A4B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{92B0EB84-6587-4D7A-803B-C9FA0230A4B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{92B0EB84-6587-4D7A-803B-C9FA0230A4B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15FEC54D-2438-4222-AE40-2FE93F7AD3D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15FEC54D-2438-4222-AE40-2FE93F7AD3D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15FEC54D-2438-4222-AE40-2FE93F7AD3D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15FEC54D-2438-4222-AE40-2FE93F7AD3D8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -97,7 +97,7 @@ namespace SIPSorcery.AppServer.DialPlan
     {
         private static ILog logger = AppState.GetLogger("sipproxy");
 
-        private static string m_sipProxyUserAgent = "www.mysipswitch.com";
+        private static string m_sipProxyUserAgent = "sipsorcery.com";
 
         private event SIPMonitorLogDelegate m_statefulProxyLogEvent;
 

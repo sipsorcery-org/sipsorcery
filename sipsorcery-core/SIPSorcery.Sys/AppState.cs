@@ -30,7 +30,7 @@ namespace SIPSorcery.Sys
 	{
         public const string CRLF = "\r\n";
         public const string DEFAULT_ERRRORLOG_FILE = @"c:\\temp\\appstate.error.log";
-        private const string APP_LOGGING_ID = "blueface";								// Name of log4net identifier.
+        private const string APP_LOGGING_ID = "sipsorcery";								// Name of log4net identifier.
         public const string ERROR_EMAILNOTIFICATION_KEY = "ErrorNotificationAddress";
         
         public static ILog logger;		        // Used to provide logging functionality for the application.

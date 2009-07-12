@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: SwitchCallMulti.cs
+// Filename: ForkCall.cs
 //
-// Description: A dial plan command that allows multiple instances of the SwitchCall.
+// Description: A dial plan command that facilitates forked calls.
 // 
 // History:
 // 07 Feb 2008	    Aaron Clauson	    Created.
@@ -50,9 +50,9 @@ using NUnit.Framework;
 
 namespace SIPSorcery.AppServer.DialPlan
 {
-    public class SwitchCallMulti
+    public class ForkCall
     {
-        private const string THEAD_NAME = "switchcall-";
+        private const string THEAD_NAME = "forkcall-";
 
         public const int MAX_CALLS_PER_LEG = 10;
         public const int MAX_DELAY_SECONDS = 120;
@@ -83,11 +83,11 @@ namespace SIPSorcery.AppServer.DialPlan
         private List<SIPCallDescriptor> m_delayedCalls = new List<SIPCallDescriptor>();
    
         /// <remarks>
-        /// The SwitchCallMulti allows a SIP call to be forked to multiple destinations. To do this it utilises multiple
+        /// The ForkCall allows a SIP call to be forked to multiple destinations. To do this it utilises multiple
         /// simultaneous SIPCallDescriptor objects and consolidates their responses to work out what should and shouldn't
-        /// be forwarded onto the client that initiated the call. The SwitchCallMutli acts as a classic SIP forking proxy.
+        /// be forwarded onto the client that initiated the call. The ForkCall acts as a classic SIP forking proxy.
         /// 
-        /// The SwitchCallMulti is capable of both multiple forwards and also of follow on forwarding in the event of a call 
+        /// The ForkCall is capable of both multiple forwards and also of follow on forwarding in the event of a call 
         /// leg of multiple forwards not succeeding. As an example:
         /// 
         ///     Dial(provider1&provider2|provider3&provider4|provider5&provider6)
@@ -104,7 +104,7 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="manglePrivateAddresses"></param>
         /// <param name="username">The username of the call owner.</param>
         /// <param name="emailAddress">The email address of the call owner. Used to email the optional SIP trace to.</param>
-        public SwitchCallMulti(
+        public ForkCall(
             SIPTransport sipTransport,
             SIPMonitorLogDelegate statefulProxyLogEvent,
             string username,
@@ -151,7 +151,17 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 for (int index = 0; index < callDescriptors.Count; index++ )
                 {
-                    ThreadPool.QueueUserWorkItem(StartNewCallAsync, callDescriptors[index]);
+                    int availableThreads = 0;
+                    int ioCompletionThreadsAvailable = 0;
+                    ThreadPool.GetAvailableThreads(out availableThreads, out ioCompletionThreadsAvailable);
+                    
+                    if (availableThreads <= 0) {
+                        logger.Warn("The ThreadPool had no threads available in the pool to start a ForkCall leg, task will be queued.");
+                    }
+
+                    SIPCallDescriptor callDescriptor = callDescriptors[index];
+                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "ForkCall commencing call leg to " + callDescriptor.Uri + ".", m_username));
+                    ThreadPool.QueueUserWorkItem(delegate { StartNewCallAsync(callDescriptor); });
                 }
             }
             else
@@ -160,12 +170,11 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        private void StartNewCallAsync(object state)
+        private void StartNewCallAsync(SIPCallDescriptor callDescriptor)
         {
             try
             {
                 Thread.CurrentThread.Name = THEAD_NAME + DateTime.Now.ToString("HHmmss") + "-" + Crypto.GetRandomString(3);
-                SIPCallDescriptor callDescriptor = (SIPCallDescriptor)state;
                 StartNewCallSync(callDescriptor);
             }
             catch (Exception excp)
@@ -213,7 +222,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SwitchCallMulti StartNewCall. " + excp.Message);
+                logger.Error("Exception ForkCall StartNewCall. " + excp.Message);
             }
         }
 
@@ -253,11 +262,11 @@ namespace SIPSorcery.AppServer.DialPlan
                     uac.Cancel();
                 }
                 else {
-                    CallProgress(progressResponse.Status, progressResponse.ReasonPhrase, progressResponse.Header.ContentType, progressResponse.Body);
+                    CallProgress(progressResponse.Status, progressResponse.ReasonPhrase, null, progressResponse.Header.ContentType, progressResponse.Body);
                 }
             }
             catch (Exception excp) {
-                logger.Error("Exception SwitchCallMulti UACCallProgress. " + excp);
+                logger.Error("Exception ForkCall UACCallProgress. " + excp);
             }
         }
 
@@ -283,7 +292,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_answeredUAC = answeredUAC;
 
                         if (CallAnswered != null) {
-                            CallAnswered(answeredResponse.Status, answeredResponse.ReasonPhrase, answeredResponse.Header.ContentType, answeredResponse.Body, answeredUAC.SIPDialogue);
+                            CallAnswered(answeredResponse.Status, answeredResponse.ReasonPhrase, null, answeredResponse.Header.ContentType, answeredResponse.Body, answeredUAC.SIPDialogue);
                         }
 
                         // Cancel/hangup and other calls on this leg that are still around.
@@ -327,14 +336,14 @@ namespace SIPSorcery.AppServer.DialPlan
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SwitchCallMulti UACCallAnswered. " + excp);
+                logger.Error("Exception ForkCall UACCallAnswered. " + excp);
             }
         }
 
         public void CancelNotRequiredCallLegs(CallCancelCause cancelCause) {
             try {
                 m_commandCancelled = true;
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Cancelling all call legs for SwitchCallMulti app.", m_username));
+                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Cancelling all call legs for ForkCall app.", m_username));
                 
                 // Cancel all forwarded call legs.
                 int attempts = 0;
@@ -352,7 +361,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 CallLegCompleted();
             }
             catch (Exception excp) {
-                logger.Error("Exception SwitchCallMulti CancelAllCallLegs. " + excp);
+                logger.Error("Exception ForkCall CancelAllCallLegs. " + excp);
             }
         }
 
@@ -388,10 +397,10 @@ namespace SIPSorcery.AppServer.DialPlan
                     else if (CallFailed != null) {
                         // No more call legs to attempt, or call has already been answered or cancelled.
                         if (m_lastFailureStatus != SIPResponseStatusCodesEnum.None) {
-                            CallFailed(m_lastFailureStatus, m_lastFailureReason);
+                            CallFailed(m_lastFailureStatus, m_lastFailureReason, null);
                         }
                         else {
-                            CallFailed(SIPResponseStatusCodesEnum.TemporarilyNotAvailable, "All forwards failed.");
+                            CallFailed(SIPResponseStatusCodesEnum.TemporarilyNotAvailable, "All forwards failed.", null);
                         }
                     }
                 }
@@ -408,7 +417,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
             }
             catch (Exception excp) {
-                logger.Error("Exception FireProxyLogEvent SwitchCallMulti. " + excp.Message);
+                logger.Error("Exception FireProxyLogEvent ForkCall. " + excp.Message);
             }
         }
 
@@ -417,7 +426,7 @@ namespace SIPSorcery.AppServer.DialPlan
 		#if UNITTEST
 
 		[TestFixture]
-		public class SwitchCallMultiUnitTest
+		public class ForkCallUnitTest
 		{			
 			[TestFixtureSetUp]
 			public void Init()

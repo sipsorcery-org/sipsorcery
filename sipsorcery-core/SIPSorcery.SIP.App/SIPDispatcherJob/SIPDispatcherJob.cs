@@ -46,6 +46,10 @@ namespace SIPSorcery.SIP.App {
             return null;
         }
 
+        public virtual bool IsSIPEndPointMonitored(SIPEndPoint sipEndPoint) {
+            return false;
+        }
+
         public void Stop() {
             m_stop = true;
         }

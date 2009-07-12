@@ -1672,7 +1672,6 @@ namespace SIPSorcery.SIP
     /// </remarks>
 	public class SIPRoute
 	{
-		private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
 		private static string m_looseRouterParameter = SIPConstants.SIP_LOOSEROUTER_PARAMETER;
 
 		private static char[] m_angles = new char[]{'<', '>'};

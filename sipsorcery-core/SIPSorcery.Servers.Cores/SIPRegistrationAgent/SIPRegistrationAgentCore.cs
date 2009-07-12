@@ -513,7 +513,7 @@ namespace SIPSorcery.Servers
                 string realm = binding.RegistrarRealm;
 
                 SIPURI registerURI = SIPURI.ParseSIPURIRelaxed(realm);
-                SIPURI regUserURI = SIPURI.ParseSIPURIRelaxed(binding.ProviderUsername + "@" + realm);
+                SIPURI regUserURI = SIPURI.ParseSIPURIRelaxed(sipProvider.ProviderUsername + "@" + realm);
 
                 SIPFromHeader fromHeader = new SIPFromHeader(null, regUserURI, CallProperties.CreateNewTag());
                 SIPToHeader toHeader = new SIPToHeader(null, regUserURI, null);
@@ -582,27 +582,29 @@ namespace SIPSorcery.Servers
 			}
 		}
 
-        private SIPRequest GetAuthenticatedRegistrationRequest(SIPProviderBinding binding, SIPRequest registerRequest, SIPResponse sipResponse)
-        {
-            try
-            {
+        private SIPRequest GetAuthenticatedRegistrationRequest(SIPProviderBinding binding, SIPRequest registerRequest, SIPResponse sipResponse) {
+            try {
                 SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
-                string username = binding.ProviderUsername;
-                authRequest.SetCredentials(username, binding.ProviderPassword, registerRequest.URI.ToString(), SIPMethodsEnum.REGISTER.ToString());
-                
+                authRequest.SetCredentials(binding.ProviderAuthUsername, binding.ProviderPassword, registerRequest.URI.ToString(), SIPMethodsEnum.REGISTER.ToString());
+
                 SIPRequest regRequest = registerRequest.Copy();
                 regRequest.LocalSIPEndPoint = registerRequest.LocalSIPEndPoint;
                 regRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                 regRequest.Header.From.FromTag = CallProperties.CreateNewTag();
                 regRequest.Header.To.ToTag = null;
                 regRequest.Header.CSeq = ++binding.CSeq;
-                regRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
-                regRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
+
+                if (SIPProviderMagicJack.IsMagicJackRequest(sipResponse)) {
+                    regRequest.Header.AuthenticationHeader = SIPProviderMagicJack.GetAuthenticationHeader(sipResponse);
+                }
+                else {
+                    regRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
+                    regRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
+                }
 
                 return regRequest;
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception GetAuthenticatedRegistrationRequest. " + excp.Message);
                 throw excp;
             }

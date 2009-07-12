@@ -97,11 +97,14 @@
     <Compile Include="SIPAssets\SIPProviderBindingSynchroniser.cs" />
     <Compile Include="SIPAssets\SIPRegistrarBinding.cs" />
     <Compile Include="SIPAppFunctionDelegates.cs" />
+    <Compile Include="SIPDispatcherJob\AppServerDispatcher.cs" />
+    <Compile Include="SIPDispatcherJob\SIPDispatcherJobLoader.cs" />
     <Compile Include="SIPDispatcherJob\SIPDispatcherJobFactory.cs" />
     <Compile Include="SIPDispatcherJob\SIPDispatcherJob.cs" />
     <Compile Include="SIPDNS\SIPDNSLookupResult.cs" />
     <Compile Include="SIPDNS\SIPDNSManager.cs" />
     <Compile Include="SIPPacketMangler.cs" />
+    <Compile Include="SIPProviderTweaks\SIPProviderMagicJack.cs" />
     <Compile Include="SIPRequestAuthoriser\SIPRequestAuthenticationResult.cs" />
     <Compile Include="SIPRequestAuthoriser\SIPRequestAuthenticator.cs" />
     <Compile Include="SIPUserAgents\SIPServerUserAgent.cs" />

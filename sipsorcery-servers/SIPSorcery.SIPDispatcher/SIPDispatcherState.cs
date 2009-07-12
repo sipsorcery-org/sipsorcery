@@ -1,14 +1,14 @@
 ﻿// ============================================================================
-// FileName: SIPMonitorState.cs
+// FileName: SIPDispatcherState.cs
 //
 // Description:
-// Application configuration for a SIP Monitor Server.
+// Application configuration for a SIP Dispatcher Server.
 //
 // Author(s):
 // Aaron Clauson
 //
 // History:
-// 25 mar 2009	Aaron Clauson	Created.
+// 05 Jul 2009	Aaron Clauson	Created.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -43,31 +43,26 @@ using System.Xml;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.SIPMonitor
+namespace SIPSorcery.SIPDispatcher
 {
     /// <summary>
     /// Retrieves application conifguration settings from App.Config.
     /// </summary>
-    public class SIPMonitorState : IConfigurationSectionHandler
+    public class SIPDispatcherState : IConfigurationSectionHandler
     {
-        private const string LOGGER_NAME = "sipmonitor";
+        private const string LOGGER_NAME = "sipdispatcher";
 
-        public const string SIPMONITOR_CONFIGNODE_NAME = "sipmonitor";
+        public const string SIPDISPATCHER_CONFIGNODE_NAME = "sipdispatcher";
 
-        private const string SIPMONITOR_CLIENT_SOCKETS_NODE_NAME = "sipmonitorclientsockets";
-        private const string SIPMONITOR_MACHINE_SOCKETS_NODE_NAME = "sipmonitormachinesockets";
-        private const string SIPMONITOR_LOOPBACK_EVENTPORT_KEY = "MonitorLoopbackPort";
-        private const string SIPMONITOR_SILVELRIGHT_POLICY_FILE_PATH = "SilverlightPolicyFilePath";
+        private const string SIPDISPATCHER_SIPSOCKETS_NODE_NAME = "sipsockets";
+        private const string PROXY_DISPATCHERJOBS_NODE_NAME = "sipdispatcherjobs";
 
         public static ILog logger;
 
-        private static XmlNode m_sipMonitorConfigNode;
-        public static readonly XmlNode MonitorClientSocketsNode;
-        public static readonly XmlNode MonitorMachineSocketsNode;
-        public static readonly int MonitorLoopbackPort;
-        public static readonly string SilverlightPolicyFilePath;
+        private static XmlNode m_sipDispatcherConfigNode;
+        public static readonly XmlNode SIPDispatcherJobsNode;
 
-        static SIPMonitorState()
+        static SIPDispatcherState()
         {
             try
             {
@@ -75,32 +70,28 @@ namespace SIPSorcery.SIPMonitor
 
                 try
                 {
-                    
                     log4net.Config.XmlConfigurator.Configure();
                     logger = log4net.LogManager.GetLogger(LOGGER_NAME);
                 }
                 catch (Exception logExcp)
                 {
-                    Console.WriteLine("Exception SIPMonitorState Configure Logging. " + logExcp.Message);
+                    Console.WriteLine("Exception SIPDispatcherState Configure Logging. " + logExcp.Message);
                 }
 
                 #endregion
 
-                if (ConfigurationManager.GetSection(SIPMONITOR_CONFIGNODE_NAME) != null) {
-                    m_sipMonitorConfigNode = (XmlNode)ConfigurationManager.GetSection(SIPMONITOR_CONFIGNODE_NAME);
+                if (ConfigurationManager.GetSection(SIPDISPATCHER_CONFIGNODE_NAME) != null) {
+                    m_sipDispatcherConfigNode = (XmlNode)ConfigurationManager.GetSection(SIPDISPATCHER_CONFIGNODE_NAME);
                 }
                 else {
-                    throw new ApplicationException("The SIP Monitor could not be started, no " + SIPMONITOR_CONFIGNODE_NAME + " config node available.");
+                    throw new ApplicationException("The SIP Dispatcher could not be started, no " + SIPDISPATCHER_CONFIGNODE_NAME + " config node available.");
                 }
 
-                MonitorClientSocketsNode = m_sipMonitorConfigNode.SelectSingleNode(SIPMONITOR_CLIENT_SOCKETS_NODE_NAME);
-                MonitorMachineSocketsNode = m_sipMonitorConfigNode.SelectSingleNode(SIPMONITOR_MACHINE_SOCKETS_NODE_NAME);
-                Int32.TryParse(AppState.GetConfigNodeValue(m_sipMonitorConfigNode, SIPMONITOR_LOOPBACK_EVENTPORT_KEY), out MonitorLoopbackPort);
-                SilverlightPolicyFilePath = AppState.GetConfigNodeValue(m_sipMonitorConfigNode, SIPMONITOR_SILVELRIGHT_POLICY_FILE_PATH);
+                SIPDispatcherJobsNode = m_sipDispatcherConfigNode.SelectSingleNode(PROXY_DISPATCHERJOBS_NODE_NAME);
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPMonitorState. " + excp.Message);
+                logger.Error("Exception SIPDispatcherState. " + excp.Message);
                 throw;
             }
         }

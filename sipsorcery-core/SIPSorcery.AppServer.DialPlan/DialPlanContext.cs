@@ -12,9 +12,9 @@ using log4net;
 namespace SIPSorcery.AppServer.DialPlan
 {
     public delegate void CallCancelledDelegate(CallCancelCause cancelCause);
-    public delegate void CallProgressDelegate(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string progressContentType, string progressBody);
-    public delegate void CallFailedDelegate(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase);
-    public delegate void CallAnsweredDelegate(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue);
+    public delegate void CallProgressDelegate(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody);
+    public delegate void CallFailedDelegate(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders);
+    public delegate void CallAnsweredDelegate(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string[] customHeaders, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue);
 
     public enum DialPlanAppResult
     {
@@ -146,7 +146,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        public void CallProgress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string progressContentType, string progressBody) {
+        public void CallProgress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody) {
             try {
                 if (!m_isAnswered) {
                     if ((int)progressStatus >= 200) {
@@ -166,6 +166,12 @@ namespace SIPSorcery.AppServer.DialPlan
                                 progressResponse.Header.ContentLength = progressBody.Length;
                             }
 
+                            if (customHeaders != null && customHeaders.Length > 0) {
+                                foreach (string header in customHeaders) {
+                                    progressResponse.Header.UnknownHeaders.Add(header);
+                                }
+                            }
+
                             m_clientTransaction.SendInformationalResponse(progressResponse);
                         }
                     }
@@ -179,7 +185,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        public void CallFailed(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase) {
+        public void CallFailed(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders) {
             try {
                 if (!m_isAnswered) {
                     if ((int)failureStatus < 400) {
@@ -190,6 +196,13 @@ namespace SIPSorcery.AppServer.DialPlan
                         string failureReason = (!reasonPhrase.IsNullOrBlank()) ? " and " + reasonPhrase : null;
                         Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call failed with a response status of " + (int)failureStatus + failureReason + ".", Owner));
                         SIPResponse failureResponse = SIPTransport.GetResponse(m_clientTransaction.TransactionRequest, failureStatus, reasonPhrase);
+
+                        if (customHeaders != null && customHeaders.Length > 0) {
+                            foreach (string header in customHeaders) {
+                                failureResponse.Header.UnknownHeaders.Add(header);
+                            }
+                        }
+
                         m_clientTransaction.SendFinalResponse(failureResponse);
                     }
                 }
@@ -202,7 +215,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        public void CallAnswered(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue) {
+        public void CallAnswered(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string[] customHeaders, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue) {
             try {
                 if (!m_isAnswered) {
                     if ((int)answeredStatus < 200 || (int)answeredStatus > 299) {
@@ -219,6 +232,13 @@ namespace SIPSorcery.AppServer.DialPlan
                         //}
 
                         SIPResponse okResponse = m_clientTransaction.GetOkResponse(m_clientTransaction.TransactionRequest, m_clientTransaction.LocalSIPEndPoint, answeredContentType, answeredBody);
+
+                        if (customHeaders != null && customHeaders.Length > 0) {
+                            foreach (string header in customHeaders) {
+                                okResponse.Header.UnknownHeaders.Add(header);
+                            }
+                        }
+                                                
                         m_clientTransaction.SendFinalResponse(okResponse);
 
                         // NOTE the Record-Route header does not get reversed for this Route set!! Since the Route set is being used from the server end NOT
@@ -254,7 +274,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 m_isAnswered = true;
                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call timed out in a " + sipTransaction.TransactionState + " state after " + DateTime.Now.Subtract(sipTransaction.Created).TotalSeconds.ToString("0.##") + "s.", Owner));
                 // Let the client know the call failed.
-                CallFailed(SIPResponseStatusCodesEnum.ServerTimeout, "The dial plan did not generate ringing");
+                CallFailed(SIPResponseStatusCodesEnum.ServerTimeout, "The dial plan did not generate ringing", null);
                 if (CallCancelledByClient != null)
                 {
                     CallCancelledByClient(CallCancelCause.TimedOut);

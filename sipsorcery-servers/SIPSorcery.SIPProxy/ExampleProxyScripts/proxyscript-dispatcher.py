@@ -5,7 +5,6 @@ from SIPSorcery.SIP import *
 m_registrarSocket = "udp:127.0.0.1:5001"
 m_regAgentSocket = "udp:127.0.0.1:5002"
 m_proxySocketInternal = "udp:127.0.0.1:5060"
-m_appServerSocket = "udp:127.0.0.1:5065"
 
 if isreq:
   
@@ -36,7 +35,7 @@ if isreq:
     sys.Respond(req, SIPResponseStatusCodesEnum.MethodNotAllowed, None)
 
   else:
-    if remoteEndPoint.ToString() == m_appServerSocket:
+    if dispatcher.IsAppServer(remoteEndPoint):
       # Request from a SIP Application server for an external UA.
       dest = sys.Resolve(req)
       contactURI = None
@@ -47,14 +46,16 @@ if isreq:
         else:
           # Request is for same private network as the proxy, don't use external public IP.
           contactURI = SIPURI(req.URI.Scheme, sys.GetDefaultSIPEndPoint(dest.SIPProtocol))
-      src = sys.GetDefaultSIPEndPoint(dest.SIPProtocol)
-      branch = req.Header.Vias.PopTopViaHeader().Branch
-      sys.SendTransparent(dest, req, branch, src, contactURI)
+      #src = sys.GetDefaultSIPEndPoint(dest.SIPProtocol)
+      #branch = req.Header.Vias.PopTopViaHeader().Branch
+      #sys.SendTransparent(dest, req, branch, src, contactURI)
+      dispatcher.DispatchOut(req, dest, contactURI)
     else:
       # Request from an external UA for a SIP Application Server
       req.Header.ProxyReceivedOn = localEndPoint.ToString()
       req.Header.ProxyReceivedFrom = remoteEndPoint.ToString()
-      sys.Send(m_appServerSocket, req, proxyBranch, m_proxySocketInternal)
+      #sys.Send(m_appServerSocket, req, proxyBranch, m_proxySocketInternal)
+      dispatcher.DispatchIn(req, m_proxySocketInternal, proxyBranch)
 
   #===== End SIP Request Processing =====
 
@@ -75,14 +76,14 @@ else:
     resp.Header.Vias.PushViaHeader(SIPViaHeader(SIPEndPoint.ParseSIPEndPoint(m_regAgentSocket), topVia.Branch))  
     sys.Send(resp, SIPEndPoint.ParseSIPEndPoint(m_proxySocketInternal))
 
-  elif remoteEndPoint.ToString() == m_appServerSocket:
+  elif dispatcher.IsAppServer(remoteEndPoint):
     # Responses from SIP Application Servers for external UAs.    
     if sipMethod == "INVITE":
       if not outSocket.SocketEndPoint.Address.ToString().StartsWith("10."):
         # INVITE response from an SIP Application Server, need to set the Contact URI to the proxy socket for the protocol.
         contactURI = SIPURI(resp.Header.To.ToURI.Scheme, SIPEndPoint.ParseSIPEndPoint(publicip.ToString()))
       else:
-        contactURI = SIPURI(resp.Header.To.ToURI.Scheme, sys.GetDefaultSIPEndPoint(destRegistrar.SIPProtocol))
+        contactURI = SIPURI(resp.Header.To.ToURI.Scheme, sys.GetDefaultSIPEndPoint(topVia.Transport))
       sys.Send(resp, outSocket, contactURI)
     else:
       sys.Send(resp, outSocket)
@@ -91,7 +92,8 @@ else:
     # Responses from external UAs for SIP Application Servers.
     resp.Header.ProxyReceivedOn = localEndPoint.ToString()
     resp.Header.ProxyReceivedFrom = remoteEndPoint.ToString()    
-    resp.Header.Vias.PushViaHeader(SIPViaHeader(SIPEndPoint.ParseSIPEndPoint(m_appServerSocket), topVia.Branch))  
-    sys.Send(resp, SIPEndPoint.ParseSIPEndPoint(m_proxySocketInternal))
+    #resp.Header.Vias.PushViaHeader(SIPViaHeader(SIPEndPoint.ParseSIPEndPoint(m_appServerSocket), topVia.Branch))  
+    #sys.Send(resp, SIPEndPoint.ParseSIPEndPoint(m_proxySocketInternal))
+    dispatcher.DispatchIn(resp, m_proxySocketInternal, topVia.Branch)
         
   #===== End SIP Response Processing =====

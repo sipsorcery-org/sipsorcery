@@ -96,7 +96,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private DialogueBridgeCreatedDelegate m_createBridgeDelegate;
         private GetCanonicalDomainDelegate m_getCanonicalDomainDelegate;
         private SIPRequest m_sipRequest;                                                // This is a copy of the SIP request from m_clientTransaction.
-        private SwitchCallMulti m_currentCall;
+        private ForkCall m_currentCall;
         private SIPEndPoint m_outboundProxySocket;                                      // If this app forwards calls via an outbound proxy this value will be set.
         private HybridDictionary m_customSIPHeaders = new HybridDictionary(false);      // Allows a dialplan user to add or customise SIP headers for forwarded requests.
         private string m_customContent;                                                 // If set will be used by the Dial command as the INVITE body on forwarded requests.
@@ -106,6 +106,8 @@ namespace SIPSorcery.AppServer.DialPlan
         private string m_customFromHost;
         private SIPCallDirection m_callDirection;
         private DialStringParser m_dialStringParser;
+        private bool m_clientCallCancelled;
+        private ManualResetEvent m_waitForCallCompleted;
               
         // Deprecated, use LastFailureReason.
         public string LastFailureMessage
@@ -202,7 +204,11 @@ namespace SIPSorcery.AppServer.DialPlan
 
             m_dialPlanContext.TraceLog.AppendLine("DialPlan=> Dialplan trace commenced at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff") + ".");
             m_dialPlanContext.CallCancelledByClient += ClientCallTerminated;
-            m_dialStringParser = new DialStringParser(m_sipTransport, m_username, m_sipProviders, m_sipAccountPersistor.Get, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate);
+            SIPAssetGetDelegate<SIPAccount> getSIPAccount = null;
+            if(m_sipAccountPersistor != null) {
+                getSIPAccount = m_sipAccountPersistor.Get;
+            }
+            m_dialStringParser = new DialStringParser(m_sipTransport, m_username, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate);
         }
 
         /// <remarks>
@@ -212,10 +218,16 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="cancelCause"></param>
         private void ClientCallTerminated(CallCancelCause cancelCause) {
             try {
+                m_clientCallCancelled = true;
+
                 Log("Dialplan call was terminated by client side due to " + cancelCause + ".");
 
                 if (m_currentCall != null) {
                     m_currentCall.CancelNotRequiredCallLegs(cancelCause);
+                }
+
+                if (m_waitForCallCompleted != null) {
+                    m_waitForCallCompleted.Set();
                 }
 
                 m_executingScript.StopExecution();
@@ -280,8 +292,10 @@ namespace SIPSorcery.AppServer.DialPlan
                 return DialPlanAppResult.Error;
             }
             else {
+                Log("Commencing Dial with: " + data + ".");
+
                 DialPlanAppResult result = DialPlanAppResult.Unknown;
-                ManualResetEvent waitForCallCompleted = new ManualResetEvent(false);
+                m_waitForCallCompleted = new ManualResetEvent(false);
 
                 SIPResponseStatusCodesEnum answeredStatus = SIPResponseStatusCodesEnum.None;
                 string answeredReason = null;
@@ -289,22 +303,22 @@ namespace SIPSorcery.AppServer.DialPlan
                 string answeredBody = null;
                 SIPDialogue answeredDialogue = null;
 
-                m_currentCall = new SwitchCallMulti(m_sipTransport, FireProxyLogEvent, Username, m_adminMemberId, LastDialled, m_outboundProxySocket);
+                m_currentCall = new ForkCall(m_sipTransport, FireProxyLogEvent, Username, m_adminMemberId, LastDialled, m_outboundProxySocket);
                 m_currentCall.CallProgress += m_dialPlanContext.CallProgress;
-                m_currentCall.CallFailed += (status, reason) => {
+                m_currentCall.CallFailed += (status, reason, headers) => {
                     LastFailureStatus = status;
                     LastFailureReason = reason;
                     result = DialPlanAppResult.Failed;
-                    waitForCallCompleted.Set();
+                    m_waitForCallCompleted.Set();
                 };
-                m_currentCall.CallAnswered += (status, reason, contentType, body, dialogue) => {
+                m_currentCall.CallAnswered += (status, reason, headers, contentType, body, dialogue) => {
                     answeredStatus = status;
                     answeredReason = reason;
                     answeredContentType = contentType;
                     answeredBody = body;
                     answeredDialogue = dialogue;
                     result = DialPlanAppResult.Answered;
-                    waitForCallCompleted.Set();
+                    m_waitForCallCompleted.Set();
                 };
 
                 LastDialled = new List<SIPTransaction>();
@@ -319,23 +333,28 @@ namespace SIPSorcery.AppServer.DialPlan
                     // Wait for an answer.
                     ringTimeout = (ringTimeout > m_maxRingTime) ? m_maxRingTime : ringTimeout;
                     ExtendScriptTimeout(ringTimeout + DEFAULT_CREATECALL_RINGTIME);
-                    if (waitForCallCompleted.WaitOne(ringTimeout * 1000, false)) {
-                        if (result == DialPlanAppResult.Answered) {
-                            m_dialPlanContext.CallAnswered(answeredStatus, answeredReason, answeredContentType, answeredBody, answeredDialogue);
-                            // Dial plan script stops once there is an answered call to bridge to.
-                            m_executingScript.StopExecution();
+
+                    if (m_waitForCallCompleted.WaitOne(ringTimeout * 1000, false)) {
+                        if (!m_clientCallCancelled) {
+                            if (result == DialPlanAppResult.Answered) {
+                                m_dialPlanContext.CallAnswered(answeredStatus, answeredReason, null, answeredContentType, answeredBody, answeredDialogue);
+                                // Dial plan script stops once there is an answered call to bridge to.
+                                m_executingScript.StopExecution();
+                            }
                         }
                     }
                     else {
-                        // Call timed out.
-                        m_currentCall.CancelNotRequiredCallLegs(CallCancelCause.TimedOut);
-                        result = DialPlanAppResult.TimedOut;
+                        if (!m_clientCallCancelled) {
+                            // Call timed out.
+                            m_currentCall.CancelNotRequiredCallLegs(CallCancelCause.TimedOut);
+                            result = DialPlanAppResult.TimedOut;
+                        }
                     }
 
                     return result;
                 }
                 catch (Exception excp) {
-                    logger.Error("Exception DialPlanScriptHelper Dial. " + excp);
+                    logger.Error("Exception DialPlanScriptHelper Dial. " + excp.Message);
                     return DialPlanAppResult.Error;
                 }
             }
@@ -375,20 +394,24 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="statusCode"></param>
         /// <param name="reason"></param>
         /// <param name="customerHeaders">Optional list of pipe '|' delimited custom headers.</param>
-        public void Respond(int statusCode, string reason, string customerHeaders) {
+        public void Respond(int statusCode, string reason, string customHeaders) {
             try {
                 if (statusCode >= 200 && statusCode < 300) {
                     Log("Respond cannot be used for 2xx responses.");
                 }
                 else {
-                    SIPReplyApp replyApp = new SIPReplyApp();
-                    SIPResponse sipResponse = replyApp.Start(statusCode, reason, customerHeaders);
-                    if ((int)sipResponse.Status >= 300) {
-                        m_dialPlanContext.CallFailed(sipResponse.Status, sipResponse.ReasonPhrase);
+                    string[] customHeadersList = null;
+                    if (!customHeaders.IsNullOrBlank()) {
+                        customHeadersList = customHeaders.Split('|');
+                    }
+
+                    SIPResponseStatusCodesEnum status = SIPResponseStatusCodes.GetStatusTypeForCode(statusCode);
+                    if (statusCode >= 300) {
+                        m_dialPlanContext.CallFailed(status, reason, customHeadersList);
                         m_executingScript.StopExecution();
                     }
-                    else if ((int)sipResponse.Status < 200) {
-                        m_dialPlanContext.CallProgress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
+                    else if (statusCode < 200) {
+                        m_dialPlanContext.CallProgress(status, reason, customHeadersList, null, null);
                     }
                 }
             }

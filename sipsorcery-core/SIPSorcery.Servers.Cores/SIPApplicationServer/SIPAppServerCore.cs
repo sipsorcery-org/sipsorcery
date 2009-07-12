@@ -233,14 +233,18 @@ namespace SIPSorcery.Servers
 
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "AppServerCore INVITE received, uri=" + sipRequest.URI.ToString() + ", cseq=" + sipRequest.Header.CSeq + ".", null));
 
+                    // A check is made to see if the  call has originated from the same process as the one that it has been received on. 
+                    // If so it is a loopback call. Typically loopback calls are used to get calls from one user to another user's dialplan.
+                    //if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host) != null && !m_sipTransport.IsLocalSIPEndPoint(remoteEndPoint)) {
                     if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host) != null) {
+
                         // Call identified as outgoing call for application server serviced domain.
                         //string fromUser = sipRequest.Header.From.FromUserField.URI.User;
                         string fromDomain = GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host);
                         //SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == fromUser && s.SIPDomain == fromDomain);
                         //string owner = (sipAccount != null) ? sipAccount.Owner : "unknown";
-
                         //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New outgoing call to " + sipRequest.URI.ToString() + " (cseq=" + sipRequest.Header.CSeq + ").", owner));
+
                         UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
                         SIPServerUserAgent outgoingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, fromUser, fromDomain, SIPCallDirection.Out, GetSIPAccount_External, SIPRequestAuthenticator.AuthenticateSIPRequest, FireProxyLogEvent, uasTransaction);
                         uasTransaction.NewCallReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(outgoingCall); };
@@ -250,7 +254,7 @@ namespace SIPSorcery.Servers
                         // Call identified as incoming call for application server serviced domain.
                         string uriUser = sipRequest.URI.User;
                         string uriDomain = GetCanonicalDomain_External(sipRequest.URI.Host);
-                       // SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == uriUser && s.SIPDomain == uriDomain);
+                        // SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == uriUser && s.SIPDomain == uriDomain);
                         //string owner = (sipAccount != null) ? sipAccount.Owner : "unknown";
 
                         //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New incoming call to " + sipRequest.URI.ToString() + ".", owner));

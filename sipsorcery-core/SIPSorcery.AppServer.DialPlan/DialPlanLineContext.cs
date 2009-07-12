@@ -129,11 +129,9 @@ namespace SIPSorcery.AppServer.DialPlan
          ///     - N = any digit 2 to 9.
          ///   - Otherwise the match is either an equality or regex match depending on the operator.
          /// </summary>
-         /// <param name="localEndPoint">The socket on the proxy that the call request was received on.</param>
-         /// <param name="remoteEndPoint">The socket the call request was received from.</param>
          /// <param name="sipRequest">The received call request.</param>
          /// <returns>A struct indicating where and how the call should be forwarded on.</returns>
-         public DialPlanCommand GetDialPlanMatch(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, SIPRequest sipRequest)
+         public DialPlanCommand GetDialPlanMatch(SIPRequest sipRequest)
          {
              try
              {

@@ -81,6 +81,7 @@ namespace SIPSorcery.SIP.App
         public SIPCallRedirectModesEnum RedirectMode;   // Determines how the call will handle 3xx redirect responses.
         public int CallDurationLimit;                   // If non-zero sets a limit on the duration of any call created with this descriptor.
         public bool MangleResponseSDP;                  // If false indicates the response SDP should be left alone if it contains a private IP address.
+        public bool IsLoopbackCall;                     // Gets set to true if the call destination is the same UA that's originating the call. An exmaple of using this it to call from one user into another user's dialplan.
 
         public ManualResetEvent DelayMRE;       // If the call needs to be delayed DelaySeconds this MRE will be used.
 

@@ -263,11 +263,16 @@ namespace SIPSorcery.SIP
 
         public void CancelCall()
         {
-            base.Cancel();
+            try {
+                base.Cancel();
 
-            if (CDR != null)
-            {
-                CDR.Cancelled();
+                if (CDR != null) {
+                    CDR.Cancelled();
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception UACInviteTransaction CancelCall. " + excp.Message);
+                throw;
             }
         }
 	}

@@ -173,6 +173,10 @@ namespace SIPSorcery.Servers
             m_sipTransport.SendResponse(sipResponse);
         }
 
+        public void Send(SIPResponse sipResponse, string localSIPEndPoint) {
+            Send(sipResponse, SIPEndPoint.ParseSIPEndPoint(localSIPEndPoint), null);
+        }
+
         public void Send(SIPResponse sipResponse, SIPEndPoint localSIPEndPoint) {
             Send(sipResponse, localSIPEndPoint, null);
         }
@@ -195,28 +199,6 @@ namespace SIPSorcery.Servers
             m_sipTransport.SendResponse(sipResponse);
         }
 
-        /*public void Send(SIPResponse sipResponse, SIPEndPoint recvdSIPEndPoint, SIPEndPoint sendSIPEndPoint, string channelName) {
-            if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.INVITE && sipResponse.Header.RecordRoutes.Length > 0) {
-                // Iterate through the record-route headers and replace the one set by this proxy.
-                for (int index = 0; index < sipResponse.Header.RecordRoutes.Length; index++) {
-                    SIPRoute recordRoute = sipResponse.Header.RecordRoutes.GetAt(index);
-                    
-                    if (recordRoute.URI.ToSIPEndPoint() == recvdSIPEndPoint) {
-                        // A route was found matching the received SIPEndPoint. Replace with the sending SIPEndPoint.
-                        SIPSchemesEnum scheme = (sendSIPEndPoint.SIPProtocol == SIPProtocolsEnum.tls) ? SIPSchemesEnum.sips : SIPSchemesEnum.sip;
-                        SIPRoute sipRoute = new SIPRoute(new SIPURI(scheme, sendSIPEndPoint), true);
-                        if (!channelName.IsNullOrBlank()) {
-                            sipRoute.URI.Parameters.Set(CHANNEL_NAME_KEY, channelName);
-                        }
-                        sipResponse.Header.RecordRoutes.SetAt(index, sipRoute);
-                        break;
-                    }
-                }
-            }
-
-            m_sipTransport.SendResponse(sipResponse);
-        }*/
-
         /// <summary>
         /// Helper method for dynamic proxy runtime script.
         /// </summary>
@@ -228,22 +210,6 @@ namespace SIPSorcery.Servers
         {
             SIPResponse response = SIPTransport.GetResponse(sipRequest, responseCode, reasonPhrase);
             m_sipTransport.SendResponse(response);
-        }
-
-        public void Mangle(SIPResponse sipResponse)
-        {
-            if (sipResponse != null)
-            {
-                SIPPacketMangler.MangleSIPResponse(SIPMonitorServerTypesEnum.StatelessProxy, sipResponse, sipResponse.RemoteSIPEndPoint, null, m_proxyLogger);
-            }
-        }
-
-        public void Mangle(SIPRequest sipRequest)
-        {
-            if (sipRequest != null )
-            {
-                SIPPacketMangler.MangleSIPRequest(SIPMonitorServerTypesEnum.StatelessProxy, sipRequest, null, m_proxyLogger);
-            }
         }
 
         public SIPEndPoint Resolve(SIPRequest sipRequest)

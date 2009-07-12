@@ -146,74 +146,58 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override void SendInformationalResponse(SIPResponse sipResponse)
-        {
-            base.SendInformationalResponse(sipResponse);
+        public override void SendInformationalResponse(SIPResponse sipResponse) {
+            try {
+                base.SendInformationalResponse(sipResponse);
 
-            if (CDR != null)
-            {
-                CDR.Progress(sipResponse.Status, sipResponse.ReasonPhrase);
+                if (CDR != null) {
+                    CDR.Progress(sipResponse.Status, sipResponse.ReasonPhrase);
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception UASInviteTransaction SendInformationalResponse. " + excp.Message);
+                throw;
             }
         }
 
-        public override void SendFinalResponse(SIPResponse sipResponse)
-        {
-            base.SendFinalResponse(sipResponse);
+        public override void SendFinalResponse(SIPResponse sipResponse) {
+            try {
+                base.SendFinalResponse(sipResponse);
 
-            if (CDR != null)
-            {
-                CDR.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase);
+                if (CDR != null) {
+                    CDR.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase);
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception UASInviteTransaction SendFinalResponse. " + excp.Message);
+                throw;
             }
         }
 
         public void CancelCall()
         {
-            if (TransactionState == SIPTransactionStatesEnum.Calling || TransactionState == SIPTransactionStatesEnum.Trying || TransactionState == SIPTransactionStatesEnum.Proceeding)
-            {
-                base.Cancel();
+            try {
+                if (TransactionState == SIPTransactionStatesEnum.Calling || TransactionState == SIPTransactionStatesEnum.Trying || TransactionState == SIPTransactionStatesEnum.Proceeding) {
+                    base.Cancel();
 
-                SIPResponse cancelResponse = SIPTransport.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
-                SendFinalResponse(cancelResponse);
+                    SIPResponse cancelResponse = SIPTransport.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
+                    SendFinalResponse(cancelResponse);
 
-                if (UASInviteTransactionCancelled != null)
-                {
-                    UASInviteTransactionCancelled(this);
+                    if (UASInviteTransactionCancelled != null) {
+                        UASInviteTransactionCancelled(this);
+                    }
+                }
+                else {
+                    logger.Warn("A request was made to cancel transaction " + TransactionId + " that was not in the calling, trying or proceeding states, state=" + TransactionState + ".");
+                }
+
+                if (CDR != null) {
+                    CDR.Cancelled();
                 }
             }
-            else
-            {
-                logger.Warn("A request was made to cancel transaction " + TransactionId + " that was not in the calling, trying or proceeding states, state=" + TransactionState + ".");
-            }
-
-            if (CDR != null)
-            {
-                CDR.Cancelled();
-            }
-        }
-
-        public SIPResponse GetAuthReqdResponse(SIPRequest sipRequest, SIPEndPoint localSIPEndPoint, string realm, string nonce)
-        {
-            try
-            {
-                SIPResponse authReqdResponse = new SIPResponse(SIPResponseStatusCodesEnum.ProxyAuthenticationRequired, null, sipRequest.LocalSIPEndPoint);
-                SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.ProxyAuthenticate, realm, nonce);
-
-                SIPHeader requestHeader = sipRequest.Header;
-                SIPHeader unauthHeader = new SIPHeader(new SIPContactHeader(null, new SIPURI(sipRequest.URI.Scheme, localSIPEndPoint)), requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);
-                unauthHeader.CSeqMethod = requestHeader.CSeqMethod;
-                unauthHeader.Vias = requestHeader.Vias;
-                unauthHeader.AuthenticationHeader = authHeader;
-                unauthHeader.UserAgent = m_sipServerAgent;
-                unauthHeader.MaxForwards = Int32.MinValue;
-
-                authReqdResponse.Header = unauthHeader;
-
-                return authReqdResponse;
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception GetAuthReqdResponse. " + excp.Message);
-                throw excp;
+            catch (Exception excp) {
+                logger.Error("Exception UASInviteTransaction CancelCall. " + excp.Message);
+                throw;
             }
         }
 
