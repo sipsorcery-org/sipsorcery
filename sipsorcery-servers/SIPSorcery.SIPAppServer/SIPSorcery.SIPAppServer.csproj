@@ -8,7 +8,7 @@
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SIPSorcery.SIPAppServer</RootNamespace>
-    <AssemblyName>sipsorcery-appsvrpri</AssemblyName>
+    <AssemblyName>sipsorcery-appsvr</AssemblyName>
     <StartupObject>
     </StartupObject>
     <FileUpgradeFlags>
