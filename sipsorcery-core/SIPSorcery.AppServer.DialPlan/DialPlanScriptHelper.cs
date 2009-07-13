@@ -327,7 +327,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 LastDialled = new List<SIPTransaction>();
 
                 try {
-                    Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, m_customSIPHeaders, m_customContentType, m_customContent, m_dialPlanContext.CallersNetworkId);
+                    Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, m_customSIPHeaders, m_customContentType, m_customContent, m_dialPlanContext.CallersNetworkId, m_dialPlanContext.SIPDialPlan.DialPlanName);
                     if (m_customFromName != null || m_customFromUser != null || m_customFromHost != null) {
                         UpdateCallQueueFromHeaders(callsQueue, m_customFromName, m_customFromUser, m_customFromHost);
                     }

@@ -224,7 +224,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         ForkCall.CallProgress += dialPlanContext.CallProgress;
                         ForkCall.CallFailed += dialPlanContext.CallFailed;
                         ForkCall.CallAnswered += dialPlanContext.CallAnswered;
-                        Queue<List<SIPCallDescriptor>> calls = dialStringParser.ParseDialString(DialPlanContextsEnum.Line, sipRequest, matchedCommand.Data, null, null, null, dialPlanContext.CallersNetworkId);
+                        Queue<List<SIPCallDescriptor>> calls = dialStringParser.ParseDialString(DialPlanContextsEnum.Line, sipRequest, matchedCommand.Data, null, null, null, dialPlanContext.CallersNetworkId, dialPlanContext.SIPDialPlan.DialPlanName);
                         ForkCall.Start(calls);
                     }
                     else

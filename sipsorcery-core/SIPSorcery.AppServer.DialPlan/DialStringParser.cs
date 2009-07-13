@@ -138,7 +138,8 @@ namespace SIPSorcery.AppServer.DialPlan
             HybridDictionary customHeaders,
             string customContentType,
             string customContent,
-            string callersNetworkId)
+            string callersNetworkId, 
+            string dialplanName)
         {
             try
             {
@@ -162,7 +163,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         // Multi legged call (Script sys.Dial format).
                         //string providersString = (command.IndexOf(',') == -1) ? command : command.Substring(0, command.IndexOf(','));
-                        prioritisedCallList = ParseScriptDialString(sipRequest, command, customHeaders, customContentType, customContent, callersNetworkId);
+                        prioritisedCallList = ParseScriptDialString(sipRequest, command, customHeaders, customContentType, customContent, callersNetworkId, dialplanName);
                     }
 
                     return prioritisedCallList;
@@ -253,7 +254,8 @@ namespace SIPSorcery.AppServer.DialPlan
             HybridDictionary customHeaders,
             string customContentType,
             string customContent,
-            string callersNetworkId) {
+            string callersNetworkId, 
+            string dialplanName) {
             try {
                 Queue<List<SIPCallDescriptor>> callsQueue = new Queue<List<SIPCallDescriptor>>();
                 string[] followonLegs = command.Split(CALLLEG_FOLLOWON_SEPARATOR);
@@ -286,7 +288,8 @@ namespace SIPSorcery.AppServer.DialPlan
                                 if (localDomain != null) {
                                     SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == callLegSIPURI.User && s.SIPDomain == localDomain);
                                     if (sipAccount != null) {
-                                        if (sipAccount.InDialPlanName.IsNullOrBlank()) {
+                                        // An incoming dialplan won't be used if it's invoked from itself.
+                                        if (sipAccount.InDialPlanName.IsNullOrBlank() || (m_username == sipAccount.Owner && dialplanName == sipAccount.InDialPlanName)) {
                                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg is for local domain looking up bindings for " + callLegSIPURI.User + "@" + localDomain + " for call leg " + callLegDestination + ".", m_username));
                                             switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, sipAccount, customHeaders, customContentType, customContent, callersNetworkId));
                                         }
