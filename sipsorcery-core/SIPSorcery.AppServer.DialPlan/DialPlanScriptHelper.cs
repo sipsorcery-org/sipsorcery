@@ -90,6 +90,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private SIPMonitorLogDelegate m_dialPlanLogDelegate;
 
         private SIPTransport m_sipTransport;
+        private SIPTransport m_sipLoopbackTransport;
         private DialPlanExecutingScript m_executingScript;
         private List<SIPProvider> m_sipProviders;
 
@@ -170,6 +171,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public DialPlanScriptHelper(
             SIPTransport sipTransport,
+            SIPTransport sipLoopbackTransport,
             DialPlanExecutingScript executingScript,
             SIPMonitorLogDelegate logDelegate, 
             DialogueBridgeCreatedDelegate createBridgeDelegate,
@@ -186,6 +188,7 @@ namespace SIPSorcery.AppServer.DialPlan
             )
         {
             m_sipTransport = sipTransport;
+            m_sipLoopbackTransport = sipLoopbackTransport;
             m_executingScript = executingScript;
             m_dialPlanLogDelegate = logDelegate;
             m_createBridgeDelegate = createBridgeDelegate;
@@ -208,7 +211,7 @@ namespace SIPSorcery.AppServer.DialPlan
             if(m_sipAccountPersistor != null) {
                 getSIPAccount = m_sipAccountPersistor.Get;
             }
-            m_dialStringParser = new DialStringParser(m_sipTransport, m_username, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate);
+            m_dialStringParser = new DialStringParser(m_sipTransport, m_sipLoopbackTransport, m_username, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate);
         }
 
         /// <remarks>

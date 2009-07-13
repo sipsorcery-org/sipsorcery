@@ -89,11 +89,13 @@ namespace SIPSorcery.AppServer.DialPlan
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetRegistrarBindings_External;
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
         private SIPTransport m_sipTransport;
+        private SIPTransport m_sipLoopbackTransport;
 
         public static IPAddress PublicIPAddress;    // If the app server is behind a NAT then it can set this address to be used in mangled SDP.
 
         public DialStringParser(
             SIPTransport sipTransport, 
+            SIPTransport sipLoopbackTransport,
             string username, 
             List<SIPProvider> sipProviders,
             SIPAssetGetDelegate<SIPAccount> getSIPAccount,
@@ -102,6 +104,7 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPMonitorLogDelegate logDelegate)
         {
             m_sipTransport = sipTransport;
+            m_sipLoopbackTransport = sipLoopbackTransport;
             m_username = username;
             m_sipProviders = sipProviders;
             GetSIPAccount_External = getSIPAccount;
@@ -283,16 +286,18 @@ namespace SIPSorcery.AppServer.DialPlan
                                 if (localDomain != null) {
                                     SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == callLegSIPURI.User && s.SIPDomain == localDomain);
                                     if (sipAccount != null) {
-                                        //if (sipAccount.InDialPlanName.IsNullOrBlank()) {
+                                        if (sipAccount.InDialPlanName.IsNullOrBlank()) {
                                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg is for local domain looking up bindings for " + callLegSIPURI.User + "@" + localDomain + " for call leg " + callLegDestination + ".", m_username));
                                             switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, sipAccount, customHeaders, customContentType, customContent, callersNetworkId));
-                                        //}
-                                        //else {
-                                        //    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg is for local domain forwarding to incoming dialplan for " + callLegSIPURI.User + "@" + localDomain + ".", m_username));
-                                        //    SIPCallDescriptor loopbackCall = new SIPCallDescriptor(null, null, "sip:" + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain, sipRequest.Header.From.ToString(), null, null, null, null, SIPCallDirection.Out, customContentType, customContent, true);
-                                        //    loopbackCall.IsLoopbackCall = true;
-                                        //    switchCalls.Add(loopbackCall);
-                                       // }
+                                        }
+                                        else {
+                                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg is for local domain forwarding to incoming dialplan for " + callLegSIPURI.User + "@" + localDomain + ".", m_username));
+                                            SIPRouteSet routeSet = new SIPRouteSet();
+                                            routeSet.PushRoute(new SIPRoute(new SIPURI(SIPSchemesEnum.sip, m_sipLoopbackTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp)), true));
+                                            SIPCallDescriptor loopbackCall = new SIPCallDescriptor(null, null, "sip:" + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain, sipRequest.Header.From.ToString(), null, routeSet.ToString(), null, null, SIPCallDirection.Out, customContentType, customContent, true);
+                                            loopbackCall.IsLoopbackCall = true;
+                                            switchCalls.Add(loopbackCall);
+                                        }
                                     }
                                     else {
                                         Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account could be found for local call leg " + callLeg + ".", m_username));

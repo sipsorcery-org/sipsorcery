@@ -93,6 +93,7 @@ namespace SIPSorcery.AppServer.DialPlan
         }
 
         private SIPTransport m_sipTransport;
+        private SIPTransport m_sipLoopbackTransport;
         private SIPEndPoint m_outboundProxySocket;                           // If this app forwards calls via an outbound proxy this value will be set.
         private SIPMonitorLogDelegate LogDelegate_External;                  // Delegate from proxy core to fire when log messages should be bubbled up to the core.
         private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
@@ -108,6 +109,7 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="createBridgeDelegate">A function delegate that is called in the event that the dial plan command results in a call being answered and a bridge needing to be created.</param>
 		public DialPlanEngine(
             SIPTransport sipTransport, 
+            SIPTransport sipLoopbackTransport,
             GetCanonicalDomainDelegate getCanonicalDomain,
             SIPMonitorLogDelegate logDelegate,
             SIPAssetPersistor<SIPAccount> sipAssetPersistor,
@@ -121,6 +123,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
 
             m_sipTransport = sipTransport;
+            m_sipLoopbackTransport = sipLoopbackTransport;
             GetCanonicalDomainDelegate_External = getCanonicalDomain;
             LogDelegate_External = logDelegate;
             m_sipAccountPersistor = sipAssetPersistor;
@@ -168,18 +171,15 @@ namespace SIPSorcery.AppServer.DialPlan
           UASInviteTransaction transaction,
           SIPCallDirection callDirection,
           DialogueBridgeCreatedDelegate createBridgeDelegate,
-          ISIPCallManager callManager)
-        {
+          ISIPCallManager callManager) {
             if (dialPlanContext == null) {
                 throw new ArgumentNullException("The DialPlanContext parameter cannot be null when attempting to execute a dialplan.");
             }
 
-            if (dialPlanContext.ContextType == DialPlanContextsEnum.Line)
-            {
+            if (dialPlanContext.ContextType == DialPlanContextsEnum.Line) {
                 ExecuteDialPlanLine((DialPlanLineContext)dialPlanContext, transaction, callDirection, createBridgeDelegate);
             }
-            else
-            {
+            else {
                 ExecuteDialPlanScript((DialPlanScriptContext)dialPlanContext, transaction, callDirection, createBridgeDelegate, callManager);
             }
         }
@@ -219,7 +219,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 {
                     if (matchedCommand.Data != null && matchedCommand.Data.Trim().Length > 0)
                     {
-                        DialStringParser dialStringParser = new DialStringParser(m_sipTransport, dialPlanContext.Owner, dialPlanContext.SIPProviders, m_sipAccountPersistor.Get, GetSIPAccountBindings_External, GetCanonicalDomainDelegate_External, LogDelegate_External);
+                        DialStringParser dialStringParser = new DialStringParser(m_sipTransport, m_sipLoopbackTransport, dialPlanContext.Owner, dialPlanContext.SIPProviders, m_sipAccountPersistor.Get, GetSIPAccountBindings_External, GetCanonicalDomainDelegate_External, LogDelegate_External);
                         ForkCall ForkCall = new ForkCall(m_sipTransport, FireProxyLogEvent, dialPlanContext.Owner, dialPlanContext.AdminMemberId, null, m_outboundProxySocket);
                         ForkCall.CallProgress += dialPlanContext.CallProgress;
                         ForkCall.CallFailed += dialPlanContext.CallFailed;
@@ -322,6 +322,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         SIPRequest scriptSIPRequest = transaction.TransactionRequest.Copy();
                         DialPlanScriptHelper planHelper = new DialPlanScriptHelper(
                             m_sipTransport,
+                            m_sipLoopbackTransport,
                             dialPlanExecutionScript,
                             FireProxyLogEvent,
                             createBridgeDelegate,

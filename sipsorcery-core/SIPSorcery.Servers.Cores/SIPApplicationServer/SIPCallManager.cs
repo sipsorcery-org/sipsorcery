@@ -407,8 +407,13 @@ namespace SIPSorcery.Servers
             clientDiaglogue.BridgeId = bridgeId;
             forwardedDialogue.BridgeId = bridgeId;
 
-            AddDialogue(clientDiaglogue);
-            AddDialogue(forwardedDialogue);
+            //if (!clientDiaglogue.RemoteTarget.Host.StartsWith("127.0.0.1")) {
+                m_sipDialoguePersistor.Add(new SIPDialogueAsset(clientDiaglogue));
+            //}
+
+            //if (!forwardedDialogue.RemoteTarget.Host.StartsWith("127.0.0.1")) {
+                m_sipDialoguePersistor.Add(new SIPDialogueAsset(forwardedDialogue));
+            //}
 
             SIPEndPoint clientDialogueRemoteEP = (IPSocket.IsIPSocket(clientDiaglogue.RemoteTarget.Host)) ? SIPEndPoint.ParseSIPEndPoint(clientDiaglogue.RemoteTarget.Host) : null;
             Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueCreated, clientDiaglogue.Owner, clientDialogueRemoteEP, clientDiaglogue.DialogueId));
@@ -445,7 +450,15 @@ namespace SIPSorcery.Servers
                         logger.Warn("There was no CDR attached to orphaned dialogue in SIPCallManager CallHungup.");
                     }
 
-                    orphanedDialogue.Hangup();
+                    if (orphanedDialogue.RemoteTarget.Host.StartsWith("127.0.0.1")) {
+                        // This is a loopbacked call. Loopback calls share the same callid.
+                        //logger.Debug("Loopback dialogue hungup for " + orphanedDialogue.RemoteTarget.ToString() + ".");
+                        SIPDialogue oppositeLoopbackDialogue = GetDialogueWithSameCallId(orphanedDialogue);
+                        CallHungup(oppositeLoopbackDialogue, hangupCause);
+                    }
+                    else {
+                        orphanedDialogue.Hangup();
+                    }
 
                     m_sipDialoguePersistor.Delete(new SIPDialogueAsset(sipDialogue));
                     m_sipDialoguePersistor.Delete(new SIPDialogueAsset(orphanedDialogue));
@@ -556,8 +569,18 @@ namespace SIPSorcery.Servers
             }
         }
 
-        private void AddDialogue(SIPDialogue dialogue) {
-            m_sipDialoguePersistor.Add(new SIPDialogueAsset(dialogue));
+        public SIPDialogue GetDialogueWithSameCallId(SIPDialogue dialogue) {
+            if (!dialogue.CallId.IsNullOrBlank()) {
+                SIPDialogueAsset dialogueAsset = m_sipDialoguePersistor.Get(d => d.CallId == dialogue.CallId && d.DialogueId != dialogue.DialogueId);
+                SIPDialogue sipDialogue = (dialogueAsset != null) ? dialogueAsset.SIPDialogue : null;
+                if (sipDialogue != null) {
+                    sipDialogue.m_sipTransport = m_sipTransport;
+                }
+                return sipDialogue;
+            }
+            else {
+                return null;
+            }
         }
 
         /// <summary>

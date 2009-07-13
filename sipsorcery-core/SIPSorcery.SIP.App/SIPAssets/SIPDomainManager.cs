@@ -231,6 +231,7 @@ namespace SIPSorcery.SIP.App
                 else if (!HasDomain(alias.ToLower()) && HasDomain(domain.ToLower())) {
                     SIPDomain sipDomain = GetSIPDomain(domain.ToLower());
                     sipDomain.Aliases.Add(alias.ToLower());
+                    logger.Debug("  SIPDomainManager added alias to " + sipDomain.Domain + " of " + alias.ToLower() + ".");
                 }
                 else {
                     logger.Warn("Could not add alias " + alias + " to domain " + domain + ".");

@@ -64,7 +64,9 @@ using log4net;
 
 namespace SIPSorcery.SIPAppServer {
     public class SIPAppServerDaemon {
-        
+
+        private const int SIP_LOOPBACK_PORT = 10060;
+
         private static ILog logger = SIPAppServerState.logger;
         private static ILog dialPlanLogger = AppState.GetLogger("dialplan");
 
@@ -94,6 +96,7 @@ namespace SIPSorcery.SIPAppServer {
         private SIPRegistrarDaemon m_sipRegistrarDaemon;
 
         private SIPTransport m_sipTransport;
+        private SIPTransport m_sipLoopbackTransport;
         private DialPlanEngine m_dialPlanEngine;
         private ServiceHost m_accessPolicyHost;
         private ServiceHost m_sipProvisioningHost;
@@ -122,19 +125,16 @@ namespace SIPSorcery.SIPAppServer {
                 if (m_sipProxyEnabled) {
                     m_sipProxyDaemon = new SIPProxyDaemon();
                     m_sipProxyDaemon.PublicIPAddressUpdated += (ipAddress) => {
-                        if (ipAddress != null && m_sipSorceryPersistor.SIPDomainManager.GetDomain(ipAddress.ToString()) == null) {
-                            m_sipSorceryPersistor.SIPDomainManager.AddAlias(SIPDomainManager.DEFAULT_LOCAL_DOMAIN, ipAddress.ToString());
-                            m_sipSorceryPersistor.SIPDomainManager.AddAlias(SIPDomainManager.DEFAULT_LOCAL_DOMAIN, ipAddress.ToString() + ":" + SIPConstants.DEFAULT_SIP_PORT);
-                        }
-
-                        if (ipAddress != m_publicIPAddress && m_publicIPAddress != null) {
-                            m_sipSorceryPersistor.SIPDomainManager.RemoveAlias(m_publicIPAddress.ToString());
-                            m_sipSorceryPersistor.SIPDomainManager.RemoveAlias(m_publicIPAddress.ToString() + ":" + SIPConstants.DEFAULT_SIP_PORT);
-                        }
-
-                        if (ipAddress != null) {
+                        if (ipAddress != null && (m_publicIPAddress == null || ipAddress.ToString() != m_publicIPAddress.ToString())) {
                             m_publicIPAddress = ipAddress;
                             DialStringParser.PublicIPAddress = ipAddress;
+                            m_sipSorceryPersistor.SIPDomainManager.AddAlias(SIPDomainManager.DEFAULT_LOCAL_DOMAIN, ipAddress.ToString());
+                            m_sipSorceryPersistor.SIPDomainManager.AddAlias(SIPDomainManager.DEFAULT_LOCAL_DOMAIN, ipAddress.ToString() + ":" + SIPConstants.DEFAULT_SIP_PORT);
+
+                            if (m_publicIPAddress != null) {
+                                m_sipSorceryPersistor.SIPDomainManager.RemoveAlias(m_publicIPAddress.ToString());
+                                m_sipSorceryPersistor.SIPDomainManager.RemoveAlias(m_publicIPAddress.ToString() + ":" + SIPConstants.DEFAULT_SIP_PORT);
+                            }
                         }
                     };
 
@@ -194,7 +194,7 @@ namespace SIPSorcery.SIPAppServer {
                         SIPCDR.CancelledCDR += m_sipSorceryPersistor.QueueCDR;
                     }
 
-                    #region Initialise the SIPTransport layer.
+                    #region Initialise the SIPTransport layers.
 
                     m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), true, false);
                     m_sipTransport.AddSIPChannel(SIPTransportConfig.ParseSIPChannelsNode(m_sipAppServerSocketsNode));
@@ -207,10 +207,32 @@ namespace SIPSorcery.SIPAppServer {
                     m_sipTransport.SIPBadResponseInTraceEvent += LogSIPBadResponseIn;
                     m_sipTransport.UnrecognisedMessageReceived += UnrecognisedMessageReceived;
 
+                    m_sipLoopbackTransport = new SIPTransport(SIPDNSManager.Resolve, null, false, false);
+                    m_sipLoopbackTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, SIP_LOOPBACK_PORT)));
+                    
+                    m_sipLoopbackTransport.SIPTransportRequestReceived += (localSIPEndPoint, remoteEndPoint, sipRequest) => {
+                        if (remoteEndPoint == m_sipTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp)) {
+                            string route = (sipRequest.Header.Routes != null) ? sipRequest.Header.Routes.ToString() : null;
+                            string proxyBranch = CallProperties.CreateBranchId(SIPConstants.SIP_BRANCH_MAGICCOOKIE, null, null, sipRequest.Header.CallId, null, null, sipRequest.Header.CSeq, route, null, null);
+                            SIPViaHeader viaHeader = new SIPViaHeader(m_sipLoopbackTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp), proxyBranch);
+                            sipRequest.Header.Vias.PushViaHeader(viaHeader);
+                            m_sipLoopbackTransport.SendRequest(m_sipTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp), sipRequest);
+                        }
+                        else {
+                            logger.Warn("SIP request received from " + remoteEndPoint.ToString() + " on loopback socket, ignoring.");
+                        }
+                    };
+
+                    m_sipLoopbackTransport.SIPTransportResponseReceived += (localSIPEndPoint, remoteEndPoint, sipResponse) => {
+                        sipResponse.Header.Vias.PopTopViaHeader();
+                        m_sipLoopbackTransport.SendResponse(sipResponse);
+                    };
+
                     #endregion
 
                     m_dialPlanEngine = new DialPlanEngine(
                         m_sipTransport,
+                        m_sipLoopbackTransport,
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                         FireSIPMonitorEvent,
                         m_sipSorceryPersistor.SIPAccountsPersistor,
@@ -246,6 +268,7 @@ namespace SIPSorcery.SIPAppServer {
 
                     m_appServerCore = new SIPAppServerCore(
                         m_sipTransport,
+                        m_sipLoopbackTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp),
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                         m_sipSorceryPersistor.SIPAccountsPersistor.Get,
                         FireSIPMonitorEvent,
@@ -362,6 +385,10 @@ namespace SIPSorcery.SIPAppServer {
 
                 if (m_sipRegAgentDaemon != null) {
                     m_sipRegAgentDaemon.Stop();
+                }
+
+                if (m_sipLoopbackTransport != null) {
+                    m_sipLoopbackTransport.Shutdown();
                 }
 
                 // Shutdown the SIPTransport layer.

@@ -128,9 +128,9 @@ namespace SIPSorcery.SIP.App
                 if (!m_callCancelled) {
                     // Determine the destination end point for this request.
                     if (sipCallDescriptor.IsLoopbackCall) {
-                        m_outboundProxy = m_sipTransport.GetDefaultSIPEndPoint();
+                        m_outboundProxy = null;
                     }
-                    
+
                     if (m_outboundProxy != null) {
                         // Using the system outbound proxy only, no additional user routing requirements.
                         m_serverEndPoint = m_outboundProxy;
@@ -174,6 +174,7 @@ namespace SIPSorcery.SIP.App
                         if (m_serverTransaction.CDR != null) {
                             m_serverTransaction.CDR.Owner = Owner;
                         }
+
                         m_serverTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
                         m_serverTransaction.UACInviteTransactionFinalResponseReceived += ServerFinalResponseReceived;
                         m_serverTransaction.UACInviteTransactionTimedOut += ServerTimedOut;

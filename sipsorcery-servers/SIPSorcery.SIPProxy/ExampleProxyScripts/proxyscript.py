@@ -82,7 +82,7 @@ else:
         # INVITE response from an SIP Application Server, need to set the Contact URI to the proxy socket for the protocol.
         contactURI = SIPURI(resp.Header.To.ToURI.Scheme, SIPEndPoint.ParseSIPEndPoint(publicip.ToString()))
       else:
-        contactURI = SIPURI(resp.Header.To.ToURI.Scheme, sys.GetDefaultSIPEndPoint(destRegistrar.SIPProtocol))
+        contactURI = SIPURI(resp.Header.To.ToURI.Scheme, sys.GetDefaultSIPEndPoint(resp.Header.Vias.TopViaHeader.Transport))
       sys.Send(resp, outSocket, contactURI)
     else:
       sys.Send(resp, outSocket)

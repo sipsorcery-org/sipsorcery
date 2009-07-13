@@ -62,12 +62,14 @@ namespace SIPSorcery.Servers
         private SIPAuthenticateRequestDelegate SIPRequestAuthenticator_External;
 
         private SIPTransport m_sipTransport;
+        private SIPEndPoint m_loopbackSIPEndPoint;
         private SIPEndPoint m_outboundProxy;
         private SIPCallManager m_callManager;
         private SIPNotifyManager m_notifyManager;
 
         public SIPAppServerCore(
 			SIPTransport sipTransport, 
+            SIPEndPoint loopbackSIPEndPoint,
             GetCanonicalDomainDelegate getCanonicalDomain,
             SIPAssetGetDelegate<SIPAccount> getSIPAccount,
             SIPMonitorLogDelegate proxyLog,
@@ -79,6 +81,7 @@ namespace SIPSorcery.Servers
 			try
 			{
                 m_sipTransport = sipTransport;
+                m_loopbackSIPEndPoint = loopbackSIPEndPoint;
                 m_callManager = callManager;
                 m_notifyManager = notifyManager;
 
@@ -236,7 +239,7 @@ namespace SIPSorcery.Servers
                     // A check is made to see if the  call has originated from the same process as the one that it has been received on. 
                     // If so it is a loopback call. Typically loopback calls are used to get calls from one user to another user's dialplan.
                     //if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host) != null && !m_sipTransport.IsLocalSIPEndPoint(remoteEndPoint)) {
-                    if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host) != null) {
+                    if (remoteEndPoint.ToString() != m_loopbackSIPEndPoint.ToString() && GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host) != null) {
 
                         // Call identified as outgoing call for application server serviced domain.
                         //string fromUser = sipRequest.Header.From.FromUserField.URI.User;
@@ -250,7 +253,7 @@ namespace SIPSorcery.Servers
                         uasTransaction.NewCallReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(outgoingCall); };
                         uasTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
                     }
-                    else if (GetCanonicalDomain_External(sipRequest.URI.Host) != null) {
+                    else if (remoteEndPoint.ToString() == m_loopbackSIPEndPoint.ToString() || GetCanonicalDomain_External(sipRequest.URI.Host) != null) {
                         // Call identified as incoming call for application server serviced domain.
                         string uriUser = sipRequest.URI.User;
                         string uriDomain = GetCanonicalDomain_External(sipRequest.URI.Host);
