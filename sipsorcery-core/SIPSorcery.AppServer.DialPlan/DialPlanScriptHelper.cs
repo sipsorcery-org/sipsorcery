@@ -290,7 +290,11 @@ namespace SIPSorcery.AppServer.DialPlan
             int answeredCallLimit,
             SIPRequest clientRequest) {
 
-            if (data.IsNullOrBlank()) {
+            if (m_dialPlanContext.IsAnswered) {
+                Log("The call has already been answered the Dial command was not processed.");
+                return DialPlanAppResult.AlreadyAnswered;
+            }
+            else if (data.IsNullOrBlank()) {
                 Log("The dial string cannot be empty when calling Dial.");
                 return DialPlanAppResult.Error;
             }

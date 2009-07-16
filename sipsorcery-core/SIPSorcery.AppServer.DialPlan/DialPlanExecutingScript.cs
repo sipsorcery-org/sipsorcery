@@ -105,11 +105,11 @@ namespace SIPSorcery.AppServer.DialPlan
                 logger.Debug("DialPlanExecutingScript StopExecution on " + DialPlanScriptThread.Name + ".");
                 Complete = true;
                 //DialPlanScriptThread.Suspend();
-                lock (m_scriptInterpreters) {
-                    for (int index = 0; index < m_scriptInterpreters.Count; index++) {
-                        m_scriptInterpreters[index].Halt();
-                    }
-                }
+                //lock (m_scriptInterpreters) {
+                 //   for (int index = 0; index < m_scriptInterpreters.Count; index++) {
+                //        m_scriptInterpreters[index].Halt();
+                //    }
+                //}
             }
             catch (Exception excp) {
                 logger.Warn("Exception DialPlanExecutingScript StopExecution. " + excp.Message);

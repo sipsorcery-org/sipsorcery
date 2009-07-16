@@ -303,6 +303,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     if (dialPlanExecutionScript != null) {
                         dialPlanExecutionScript.InUse = true;
                         FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Using existing script scope number " + dialPlanExecutionScript.ScriptNumber + " for dialplan execution for script owned by " + dialPlanContext.Owner + ".", null));
+                        dialPlanExecutionScript.DialPlanScriptScope = m_scriptEngine.CreateScope();
                     }
                     else if (m_dialPlanScriptContextsCreated < MAX_ALLOWED_SCRIPTSCOPES) {
                         m_dialPlanScriptContextsCreated++;
@@ -483,6 +484,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 //        m_scriptEngine.Execute(scriptLine + "\n", executingScript.DialPlanScriptScope);
                 //    }
                // }
+                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution finished after full sctipt run on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
             }
             catch (ApplicationException appExcp) {
                 if (appExcp.Message != "Script was halted by external intervention.") {
@@ -490,6 +492,9 @@ namespace SIPSorcery.AppServer.DialPlan
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "There was an exception executing your dial plan script: " + appExcp.Message, executingScript.Owner));
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "ApplicationException on user " + executingScript.Owner + "'s dial plan script. " + appExcp.Message, null));
                     executingScript.ExecutionError = appExcp.Message;
+                }
+                else {
+                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution finished after being halted due to execution interrupt on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
                 }
             }
             //catch (System.Scripting.SyntaxErrorException)

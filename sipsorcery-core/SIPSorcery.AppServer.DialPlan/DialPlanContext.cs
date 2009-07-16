@@ -26,6 +26,7 @@ namespace SIPSorcery.AppServer.DialPlan
         AdminCancelled = 5,     // Call cancelled by a an external administrative action or dial plan rule.
         TimedOut = 6,           // No response from any forward within the time limit.
         Error = 7,
+        AlreadyAnswered = 8,    // Was answered prior to the Dial command.
     }
 
     public enum DialPlanContextsEnum
