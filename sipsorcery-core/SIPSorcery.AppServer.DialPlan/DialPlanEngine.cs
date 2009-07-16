@@ -142,7 +142,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 monitorScriptsThread.Start();
 
                 m_scriptEngine = Ruby.CreateEngine();
-                Interpreter.InterpreterCreated += new InterpreterCreatedDelegate(InterpreterCreated);
+                //Interpreter.InterpreterCreated += new InterpreterCreatedDelegate(InterpreterCreated);
 
                 //ScriptRuntimeSetup setup = new ScriptRuntimeSetup();
                 //setup.LanguageSetups.Add(IronRuby.Ruby.CreateLanguageSetup());

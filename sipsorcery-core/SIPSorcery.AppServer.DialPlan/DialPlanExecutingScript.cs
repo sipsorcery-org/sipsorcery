@@ -117,14 +117,14 @@ namespace SIPSorcery.AppServer.DialPlan
         }
 
         public void AddInterpreter(Interpreter interpreter) {
-            if(Complete == true) {
+            /*if(Complete == true) {
                 interpreter.Halt();
             }
             else {
                 lock (m_scriptInterpreters) {
                     m_scriptInterpreters.Add(interpreter);
                 }
-            }
+            }*/
         }
 
         public void Clear()
