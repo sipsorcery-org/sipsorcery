@@ -484,7 +484,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 //        m_scriptEngine.Execute(scriptLine + "\n", executingScript.DialPlanScriptScope);
                 //    }
                // }
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution finished after full sctipt run on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
+                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution finished after full script run on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
             }
             catch (ApplicationException appExcp) {
                 if (appExcp.Message != "Script was halted by external intervention.") {

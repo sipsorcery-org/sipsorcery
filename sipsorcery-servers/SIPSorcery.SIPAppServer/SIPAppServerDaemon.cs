@@ -313,7 +313,7 @@ namespace SIPSorcery.SIPAppServer {
                     m_accessPolicyHost = new ServiceHost(typeof(CrossDomainService));
                     m_accessPolicyHost.Open();
 
-                    logger.Debug("CrossDomain hosted service successfully started on " + m_callManagerSvcHost.BaseAddresses[0].AbsoluteUri + ".");
+                    logger.Debug("CrossDomain hosted service successfully started on " + m_accessPolicyHost.BaseAddresses[0].AbsoluteUri + ".");
                 }
                 catch (Exception excp) {
                     logger.Warn("Exception starting CrossDomain hosted service. " + excp.Message);
