@@ -418,7 +418,9 @@ namespace SIPSorcery.SIP
 
         public SIPEndPoint ToSIPEndPoint() {
             if (IPSocket.IsIPSocket(Host) || IPSocket.IsIPAddress(Host)) {
-                return SIPEndPoint.ParseSIPEndPoint(ToString());
+                SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(Host);
+                sipEndPoint.SIPProtocol = Protocol;
+                return sipEndPoint;
             }
             else {
                 return null;

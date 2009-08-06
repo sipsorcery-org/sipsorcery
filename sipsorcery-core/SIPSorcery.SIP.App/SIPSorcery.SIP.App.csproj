@@ -35,9 +35,25 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\DbLinq.dll</HintPath>
     </Reference>
+    <Reference Include="IronPython, Version=2.6.0.10, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\stable\IronPython.dll</HintPath>
+    </Reference>
+    <Reference Include="IronRuby, Version=0.6.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\stable\IronRuby.dll</HintPath>
+    </Reference>
     <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Scripting, Version=0.9.6.10, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\stable\Microsoft.Scripting.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Scripting.Core, Version=0.9.6.10, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\stable\Microsoft.Scripting.Core.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework, Version=2.2.2.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
       <SpecificVersion>False</SpecificVersion>
@@ -79,6 +95,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="AssemblyState.cs" />
+    <Compile Include="DLR\ScriptLoader.cs" />
     <Compile Include="Instrumentation\SIPTransportMetricsGraphAgent.cs" />
     <Compile Include="Monitoring\SIPMonitorControlClientEvent.cs" />
     <Compile Include="Monitoring\SIPMonitorEvent.cs" />
@@ -107,9 +124,11 @@
     <Compile Include="SIPProviderTweaks\SIPProviderMagicJack.cs" />
     <Compile Include="SIPRequestAuthoriser\SIPRequestAuthenticationResult.cs" />
     <Compile Include="SIPRequestAuthoriser\SIPRequestAuthenticator.cs" />
+    <Compile Include="SIPUserAgents\SIPB2BUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPServerUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPCallDescriptor.cs" />
     <Compile Include="SIPUserAgents\SIPClientUserAgent.cs" />
+    <Compile Include="WCFServices\IProvisioningServiceAjax.cs" />
     <Compile Include="WCFServices\CrossDomainWebService.cs" />
     <Compile Include="WCFServices\IProvisioningService.cs" />
     <Compile Include="WCFServices\ProvisioningServiceInstanceProvider.cs" />

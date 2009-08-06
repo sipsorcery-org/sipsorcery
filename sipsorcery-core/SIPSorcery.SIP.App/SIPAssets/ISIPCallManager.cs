@@ -9,5 +9,6 @@ namespace SIPSorcery.SIP.App {
         void CreateDialogueBridge(SIPDialogue firstLegDialogue, SIPDialogue secondLegDialogue, string owner);
         void ReInvite(SIPDialogue firstLegDialogue, string RemoteSDP);
         int GetCurrentCallCount(string owner);
+        void QueueNewCall(ISIPServerUserAgent serverUA);
     }
 }

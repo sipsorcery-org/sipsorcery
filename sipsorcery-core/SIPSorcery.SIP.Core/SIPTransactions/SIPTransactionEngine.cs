@@ -81,17 +81,17 @@ namespace SIPSorcery.SIP
 
             lock (m_transactions)
             {
-                if (transactionMethod == SIPMethodsEnum.ACK)
-                {
-                    logger.Info("Matching ACK with contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + ".");
-                }
+                //if (transactionMethod == SIPMethodsEnum.ACK)
+                //{
+                    //logger.Info("Matching ACK with contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + ".");
+                //}
 
                 if (transactionId != null && m_transactions.ContainsKey(transactionId))
                 {
-                    if (transactionMethod == SIPMethodsEnum.ACK)
-                    {
-                        logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by branchid.");
-                    }
+                    //if (transactionMethod == SIPMethodsEnum.ACK)
+                    //{
+                        //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by branchid.");
+                    //}
 
                     return m_transactions[transactionId];
                 }
@@ -128,7 +128,7 @@ namespace SIPSorcery.SIP
                                     transaction.TransactionFinalResponse.Header.From.FromTag == sipRequest.Header.From.FromTag &&
                                     transaction.TransactionFinalResponse.Header.CSeq == sipRequest.Header.CSeq)
                                 {
-                                    logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by callid, tags and cseq.");
+                                    //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by callid, tags and cseq.");
 
                                     return transaction;
                                 }
@@ -137,13 +137,13 @@ namespace SIPSorcery.SIP
                                     IsCallIdUniqueForPending(sipRequest.Header.CallId))
                                 {
                                     string requestEndPoint = (sipRequest.RemoteSIPEndPoint != null) ? sipRequest.RemoteSIPEndPoint.ToString() : " ? ";
-                                    logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched using Call-ID mechanism (to tags: " + transaction.TransactionFinalResponse.Header.To.ToTag + "=" + sipRequest.Header.To.ToTag + ", from tags:" + transaction.TransactionFinalResponse.Header.From.FromTag + "=" + sipRequest.Header.From.FromTag + ").");
+                                    //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched using Call-ID mechanism (to tags: " + transaction.TransactionFinalResponse.Header.To.ToTag + "=" + sipRequest.Header.To.ToTag + ", from tags:" + transaction.TransactionFinalResponse.Header.From.FromTag + "=" + sipRequest.Header.From.FromTag + ").");
                                     return transaction;
                                 }
                             }
                         }
 
-                        logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was not matched.");
+                        //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was not matched.");
                     }
 
                     return null;
@@ -428,13 +428,13 @@ namespace SIPSorcery.SIP
                 {
                     SIPTransactionEngine clientEngine = new SIPTransactionEngine();     // Client side of the INVITE.
                     SIPEndPoint clientEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 12013));
-                    clientTransport = new SIPTransport(MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(clientEndPoint.SocketEndPoint), false, false);
+                    clientTransport = new SIPTransport(MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(clientEndPoint.SocketEndPoint), false);
                     SetTransportTraceEvents(clientTransport);
 
                     SIPTransactionEngine serverEngine = new SIPTransactionEngine();     // Server side of the INVITE.
                     UASInviteTransaction serverTransaction = null;
                     SIPEndPoint serverEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 12014));
-                    serverTransport = new SIPTransport(MockSIPDNSManager.Resolve, serverEngine, new SIPUDPChannel(serverEndPoint.SocketEndPoint), false, false);
+                    serverTransport = new SIPTransport(MockSIPDNSManager.Resolve, serverEngine, new SIPUDPChannel(serverEndPoint.SocketEndPoint), false);
                     SetTransportTraceEvents(serverTransport);
                     serverTransport.SIPTransportRequestReceived += (localEndPoint, remoteEndPoint, sipRequest) =>
                     {

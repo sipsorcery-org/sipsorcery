@@ -99,25 +99,26 @@ namespace SIPSorcery.SIP
 		{
 			try
 			{
-				SIPEndPoint inEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
 				byte[] buffer = null;
 
                 logger.Debug("SIPUDPChannel socket on " + m_localSIPEndPoint.ToString() + " listening started.");
 
 				while(!m_closed)
 				{
+                    SIPEndPoint inEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
+
                     try
                     {
                         buffer = m_sipConn.Receive(ref inEndPoint.SocketEndPoint);
                     }
-                    catch (SocketException sockExcp)
+                    catch (SocketException)
                     {
                         // ToDo. Pretty sure these exceptions get thrown when an ICMP message comes back indicating there is no listening
                         // socket on the other end. It would be nice to be able to relate that back to the socket that the data was sent to
                         // so that we know to stop sending.
                         //logger.Warn("SocketException SIPUDPChannel Receive (" + sockExcp.ErrorCode + "). " + sockExcp.Message);
 
-                        inEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
+                        //inEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
                         continue;
                     }
                     catch(Exception listenExcp)

@@ -34,7 +34,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -62,6 +65,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
         private SIPTransport m_sipTransport;
         private event SIPMonitorLogDelegate m_statefulProxyLogEvent;           // Used to send log messages back to the application server core.
+        private QueueNewCallDelegate QueueNewCall_External;
 
         private string m_username;                          // The call owner.
         private string m_adminMemberId;
@@ -71,14 +75,14 @@ namespace SIPSorcery.AppServer.DialPlan
 
         private bool m_callAnswered;                        // Set to true once the first Ok response has been received from a forwarded call leg.
         private bool m_commandCancelled;
-        private SIPClientUserAgent m_answeredUAC;
+        private ISIPClientUserAgent m_answeredUAC;
 
         internal event CallProgressDelegate CallProgress;
         internal event CallFailedDelegate CallFailed;
         internal event CallAnsweredDelegate CallAnswered;
 
         private Queue<List<SIPCallDescriptor>> m_priorityCallsQueue = new Queue<List<SIPCallDescriptor>>(); // A queue of mulitple call legs that will be attempted until the call is answered ot there are none left.
-        private List<SIPClientUserAgent> m_switchCalls = new List<SIPClientUserAgent>();                    // Holds the multiple forwards that are currently being attempted.
+        private List<ISIPClientUserAgent> m_switchCalls = new List<ISIPClientUserAgent>();                    // Holds the multiple forwards that are currently being attempted.
         private List<SIPTransaction> m_switchCallTransactions;                                              // Used to maintain a list of all the transactions used in the call. Allows response codes and such to be checked.    
         private List<SIPCallDescriptor> m_delayedCalls = new List<SIPCallDescriptor>();
    
@@ -107,6 +111,7 @@ namespace SIPSorcery.AppServer.DialPlan
         public ForkCall(
             SIPTransport sipTransport,
             SIPMonitorLogDelegate statefulProxyLogEvent,
+            QueueNewCallDelegate queueNewCall,
             string username,
             string adminMemberId,
             List<SIPTransaction> switchCallTransactions,
@@ -114,6 +119,7 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             m_sipTransport = sipTransport;
             m_statefulProxyLogEvent = statefulProxyLogEvent;
+            QueueNewCall_External = queueNewCall;
             m_username = username;
             m_adminMemberId = adminMemberId;
             m_switchCallTransactions = switchCallTransactions;
@@ -160,7 +166,12 @@ namespace SIPSorcery.AppServer.DialPlan
                     }
 
                     SIPCallDescriptor callDescriptor = callDescriptors[index];
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "ForkCall commencing call leg to " + callDescriptor.Uri + ".", m_username));
+                    if (callDescriptor.ToSIPAccount != null) {
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "ForkCall commencing call leg to " + callDescriptor.ToSIPAccount.SIPUsername + "@" + callDescriptor.ToSIPAccount.SIPDomain + ".", m_username));
+                    }
+                    else {
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "ForkCall commencing call leg to " + callDescriptor.Uri + ".", m_username));
+                    }
                     ThreadPool.QueueUserWorkItem(delegate { StartNewCallAsync(callDescriptor); });
                 }
             }
@@ -197,7 +208,12 @@ namespace SIPSorcery.AppServer.DialPlan
                     }
 
                     int delaySeconds = (callDescriptor.DelaySeconds > MAX_DELAY_SECONDS) ? MAX_DELAY_SECONDS : callDescriptor.DelaySeconds;
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Delaying call leg to " + callDescriptor.Uri.ToString() + " by " + delaySeconds + "s.", m_username));
+                    if (callDescriptor.ToSIPAccount != null) {
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Delaying call leg to " + callDescriptor.ToSIPAccount.SIPUsername + "@" + callDescriptor.ToSIPAccount.SIPDomain + " by " + delaySeconds + "s.", m_username));
+                    }
+                    else {
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Delaying call leg to " + callDescriptor.Uri.ToString() + " by " + delaySeconds + "s.", m_username));
+                    }
                     callDescriptor.DelayMRE.WaitOne(delaySeconds * 1000);
                 }
 
@@ -207,7 +223,15 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 if (!m_callAnswered && !m_commandCancelled)
                 {
-                    SIPClientUserAgent uacCall = new SIPClientUserAgent(m_sipTransport, m_outboundProxySocket, m_username, m_adminMemberId, m_statefulProxyLogEvent);
+                    ISIPClientUserAgent uacCall = null;
+
+                    if (callDescriptor.ToSIPAccount == null) {
+                        uacCall = new SIPClientUserAgent(m_sipTransport, m_outboundProxySocket, m_username, m_adminMemberId, m_statefulProxyLogEvent);
+                    }
+                    else {
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Creating B2B call for " + callDescriptor.ToSIPAccount.SIPUsername + "@" + callDescriptor.ToSIPAccount.SIPDomain + ".", m_username));
+                        uacCall = new SIPB2BUserAgent(m_statefulProxyLogEvent, QueueNewCall_External, m_sipTransport, m_username, m_adminMemberId);
+                    }
 
                     lock (m_switchCalls) {
                         m_switchCalls.Add(uacCall);
@@ -232,7 +256,7 @@ namespace SIPSorcery.AppServer.DialPlan
         /// </summary>
         /// <param name="sipSwitchCall"></param>
         /// <param name="errorMessage"></param>
-        private void UACCallFailed(SIPClientUserAgent uac, string errorMessage)
+        private void UACCallFailed(ISIPClientUserAgent uac, string errorMessage)
         {
             lock (m_switchCalls)
             {
@@ -254,7 +278,7 @@ namespace SIPSorcery.AppServer.DialPlan
             CallLegCompleted();
         }
 
-        private void UACCallProgress(SIPClientUserAgent uac, SIPResponse progressResponse) {
+        private void UACCallProgress(ISIPClientUserAgent uac, SIPResponse progressResponse) {
             try {
                 if (m_commandCancelled)
                 {
@@ -270,7 +294,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        private void UACCallAnswered(SIPClientUserAgent answeredUAC, SIPResponse answeredResponse)
+        private void UACCallAnswered(ISIPClientUserAgent answeredUAC, SIPResponse answeredResponse)
         {
             try
             {
@@ -302,8 +326,8 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         // Call already answered or cancelled already, hangup (send BYE).
                         FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg " + answeredUAC.CallDescriptor.Uri + " answered but call was already answered or cancelled, hanging up.", m_username));
-                        SIPDialogue sipDialogue = new SIPDialogue(m_sipTransport, answeredUAC.ServerTransaction, m_username, m_adminMemberId);
-                        sipDialogue.Hangup();
+                        SIPDialogue sipDialogue = new SIPDialogue(answeredUAC.ServerTransaction, m_username, m_adminMemberId);
+                        sipDialogue.Hangup(m_sipTransport, m_outboundProxySocket);
                     }
                 }
                 else if (answeredResponse != null && answeredResponse.StatusCode >= 300 && answeredResponse.StatusCode <= 399) {
@@ -315,7 +339,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     else if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.Add) {
                         // A redirect response was received. Create a new call leg(s) using the SIP URIs in the contact header of the response.
                         FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response to " + redirectURI.ToString() + " accepted.", m_username));
-                        SIPCallDescriptor redirectCallDescriptor = new SIPCallDescriptor(null, null, redirectURI.ToString(), null, null, null, null, null, SIPCallDirection.Out, null, null, true);
+                        SIPCallDescriptor redirectCallDescriptor = new SIPCallDescriptor(null, null, redirectURI.ToString(), null, null, null, null, null, SIPCallDirection.Out, null, null, null);
                         StartNewCallAsync(redirectCallDescriptor);
                     }
                     else if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.Replace) {
@@ -346,11 +370,12 @@ namespace SIPSorcery.AppServer.DialPlan
                 FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Cancelling all call legs for ForkCall app.", m_username));
                 
                 // Cancel all forwarded call legs.
-                int attempts = 0;
-                while (m_switchCalls.Count > 0 && attempts < MAX_CALLS_PER_LEG) {
-                    SIPClientUserAgent uac = m_switchCalls[0];
-                    uac.Cancel();
-                    attempts++;
+                if (m_switchCalls.Count > 0) {
+                    ISIPClientUserAgent[] inProgressCalls = (from ua in m_switchCalls where !ua.IsUACAnswered select ua).ToArray();
+                    for (int index = 0; index < inProgressCalls.Length; index++) {
+                        ISIPClientUserAgent uac = inProgressCalls[index];
+                        uac.Cancel();
+                    }
                 }
 
                 // Signal any delayed calls that they are no longer required.

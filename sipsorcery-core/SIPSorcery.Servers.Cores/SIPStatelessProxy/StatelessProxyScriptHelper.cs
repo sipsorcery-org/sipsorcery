@@ -143,7 +143,7 @@ namespace SIPSorcery.Servers
         /// default channel that matches the destination end point should be used.</param>
         /// <param name="setContactToLocal">If true the Contact header URI will be overwritten with the URI of the
         /// proxy socket the request is being sent from. This should only be used for INVITE requests.</param>
-        public void SendTransparent(SIPEndPoint dstSIPEndPoint, SIPRequest sipRequest, string proxyBranch, SIPEndPoint localSIPEndPoint, SIPURI contactURI)
+        public void SendTransparent(SIPEndPoint dstSIPEndPoint, SIPRequest sipRequest, string proxyBranch, SIPEndPoint localSIPEndPoint, SIPURI contactURI, IPAddress publicIPAddress)
         {
             if (dstSIPEndPoint == null)
             {
@@ -156,6 +156,9 @@ namespace SIPSorcery.Servers
 
             sipRequest.Header.Vias = new SIPViaSet();
             SIPViaHeader via = new SIPViaHeader(localSIPEndPoint, proxyBranch);
+            if (publicIPAddress != null) {
+                via.Host = publicIPAddress.ToString();
+            }
             sipRequest.Header.Vias.PushViaHeader(via);
 
             sipRequest.LocalSIPEndPoint = localSIPEndPoint;
@@ -190,13 +193,18 @@ namespace SIPSorcery.Servers
         /// is being sent from. This should only be used for INVITE responses where the contact header needs to be updated
         /// to make sure the correct proxy socket is used for in-dialogue requests.</param>
         public void Send(SIPResponse sipResponse, SIPEndPoint localSIPEndPoint, SIPURI contactURI) {
-            sipResponse.LocalSIPEndPoint = localSIPEndPoint;
+            try {
+                sipResponse.LocalSIPEndPoint = localSIPEndPoint;
 
-            if (contactURI != null && sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0) {
-                sipResponse.Header.Contact[0].ContactURI = contactURI;
+                if (contactURI != null && sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0) {
+                    sipResponse.Header.Contact[0].ContactURI = contactURI;
+                }
+
+                m_sipTransport.SendResponse(sipResponse);
             }
-
-            m_sipTransport.SendResponse(sipResponse);
+            catch (Exception excp) {
+                logger.Error("Exception StatelessProxyScriptHelper Send SIPResponse. " + excp);
+            }
         }
 
         /// <summary>

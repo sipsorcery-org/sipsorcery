@@ -27,7 +27,7 @@ namespace SIPSorcery.SIP.App {
 
                 if (sipTransport == null) {
                     SIPChannel dispatcherChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0));
-                    sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), dispatcherChannel, true, false);
+                    sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), dispatcherChannel, true);
                 }
 
                 foreach (XmlNode dispatcherNode in m_configNode.ChildNodes) {

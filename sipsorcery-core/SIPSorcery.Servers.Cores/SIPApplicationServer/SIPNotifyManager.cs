@@ -150,7 +150,7 @@ namespace SIPSorcery.Servers
 
                 string fromURI = (sipRequest.Header.From != null && sipRequest.Header.From.FromURI != null) ? sipRequest.Header.From.FromURI.ToString() : "unknown";
 
-                string domain = GetCanonicalDomain_External(sipRequest.URI.Host);
+                string domain = GetCanonicalDomain_External(sipRequest.URI.Host, true);
                 if (domain != null) {
 
                     SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == sipRequest.URI.User && s.SIPDomain == domain);
@@ -162,7 +162,7 @@ namespace SIPSorcery.Servers
 
                             foreach (SIPRegistrarBinding binding in bindings) {
                                 SIPURI dstURI = binding.MangledContactSIPURI;
-                                SIPEndPoint localSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint(dstURI.Protocol);
+                                SIPEndPoint localSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy.SIPProtocol) : m_sipTransport.GetDefaultSIPEndPoint(dstURI.Protocol);
                                 SIPEndPoint dstSIPEndPoint = (m_outboundProxy == null) ? m_sipTransport.GetURIEndPoint(dstURI, true) : m_outboundProxy;
 
                                 // Rather than create a brand new request copy the received one and modify the headers that need to be unique.

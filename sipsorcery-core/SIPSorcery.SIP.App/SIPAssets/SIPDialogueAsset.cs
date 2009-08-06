@@ -106,12 +106,6 @@ namespace SIPSorcery.SIP.App {
             set { SIPDialogue.RouteSet = (!value.IsNullOrBlank()) ? SIPRouteSet.ParseSIPRouteSet(value) : null; }
         }
 
-        [Column(Storage = "_outboundproxy", Name = "outboundproxy", DbType = "character varying(128)", IsPrimaryKey = false, CanBeNull = true)]
-        public string OutboundProxy {
-            get { return (SIPDialogue.OutboundProxy != null) ? SIPDialogue.OutboundProxy.ToString() : null; }
-            set { SIPDialogue.OutboundProxy = (!value.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(value) : null; }
-        }
-
         [Column(Storage = "_cdrid", Name = "cdrid", DbType = "character varying(36)", IsPrimaryKey = false, CanBeNull = false)]
         public string CDRId {
             get { return SIPDialogue.CDRId.ToString(); }
@@ -176,7 +170,7 @@ namespace SIPSorcery.SIP.App {
             SIPDialogue.BridgeId = new Guid(row["bridgeid"] as string);
             SIPDialogue.RemoteTarget = SIPURI.ParseSIPURI(row["remotetarget"] as string);
             SIPDialogue.RouteSet = (row["routeset"] != null && row["routeset"] != DBNull.Value && !(row["routeset"] as string).IsNullOrBlank()) ? SIPRouteSet.ParseSIPRouteSet(row["routeset"] as string) : null;
-            SIPDialogue.OutboundProxy = (row["outboundproxy"] != null && row["outboundproxy"] != DBNull.Value && !(row["outboundproxy"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["outboundproxy"] as string) : null;
+            //SIPDialogue.OutboundProxy = (row["outboundproxy"] != null && row["outboundproxy"] != DBNull.Value && !(row["outboundproxy"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["outboundproxy"] as string) : null;
             SIPDialogue.CDRId = new Guid(row["cdrid"] as string);
             SIPDialogue.CallDurationLimit = (row["calldurationlimit"] != null && row["calldurationlimit"] != DBNull.Value) ? Convert.ToInt32(row["calldurationlimit"]) : 0;
             InsertedUTC = Convert.ToDateTime(row["inserted"]);
@@ -213,7 +207,6 @@ namespace SIPSorcery.SIP.App {
                  "  <remotetarget>" + SafeXML.MakeSafeXML(SIPDialogue.RemoteTarget.ToString()) + "</remotetarget>" + m_newLine +
                  "  <localuserfield>" + SafeXML.MakeSafeXML(SIPDialogue.LocalUserField.ToString()) + "</localuserfield>" + m_newLine +
                  "  <remoteuserfield>" + SafeXML.MakeSafeXML(SIPDialogue.RemoteUserField.ToString()) + "</remoteuserfield>" + m_newLine +
-                 "  <outboundproxy>" + OutboundProxy + "</outboundproxy>" + m_newLine +
                  "  <routeset>" + SafeXML.MakeSafeXML(RouteSet) + "</routeset>" + m_newLine +
                  "  <cdrid>" + SIPDialogue.CDRId + "</cdrid>" + m_newLine +
                  "  <calldurationlimit>" + SIPDialogue.CallDurationLimit + "</calldurationlimit>" + m_newLine +

@@ -53,7 +53,7 @@ using log4net;
 
 namespace SIPSorcery.SIP.App
 {
-    public class SIPProvisioningWebService : IProvisioningService {
+    public class SIPProvisioningWebService : IProvisioningService, IProvisioningServiceAjax {
         public const string AUTH_TOKEN_KEY = "authid";
 
         private ILog logger = AppState.GetLogger("provisioning");
@@ -181,7 +181,7 @@ namespace SIPSorcery.SIP.App
                 logger.Debug("Default dialplan added for " + customer.CustomerUsername + ".");
 
                 // Get default domain name.
-                string defaultDomain = SIPDomainManager.GetDomain("local");
+                string defaultDomain = SIPDomainManager.GetDomain("local", true);
 
                 // Create SIP account.
                 if (SIPAccountPersistor.Get(s => s.SIPUsername == customer.CustomerUsername && s.SIPDomain == defaultDomain) == null) {

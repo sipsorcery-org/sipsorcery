@@ -53,6 +53,7 @@ namespace SIPSorcery.SIP.App
         private static ILog logger = AppState.logger;
 
         public static string MangleSDP(string sdpBody, string publicIPAddress, out bool wasMangled) {
+
             wasMangled = false;
 
             try {

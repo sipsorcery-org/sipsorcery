@@ -162,11 +162,13 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="SIPApplicationServer\SIPCallDispatcher.cs" />
     <Compile Include="SIPApplicationServer\SIPNotifyManager.cs" />
     <Compile Include="SIPApplicationServer\WCFServices\CallManagerServiceInstanceProvider.cs" />
     <Compile Include="SIPApplicationServer\WCFServices\CallManagerServiceProxy.cs" />
     <Compile Include="SIPApplicationServer\WCFServices\CallManagerServices.cs" />
     <Compile Include="SIPApplicationServer\WCFServices\CallManagerPassThruService.cs" />
+    <Compile Include="SIPApplicationServer\WCFServices\CallManagerPassThruServiceInstanceProvider.cs" />
     <Compile Include="SIPApplicationServer\WCFServices\ICallManagerServices.cs" />
     <Compile Include="SIPMonitor\SIPMonitorMachineClient.cs" />
     <Compile Include="SIPMonitor\SIPMonitorControlClient.cs" />
@@ -175,7 +177,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="SIPMonitor\SIPMonitorFilter.cs" />
-    <Compile Include="SIPStatelessProxy\CallDispatcher.cs" />
     <Compile Include="SIPStatelessProxy\NATKeepAliveRelay.cs" />
     <Compile Include="SIPRegistrar\SIPRegistrarBindingsManager.cs" />
     <Compile Include="SIPRegistrar\SIPUserAgentConfiguration.cs" />
@@ -189,6 +190,9 @@
     <Compile Include="SIPStatelessProxy\StatelessProxyCore.cs">
       <SubType>Code</SubType>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

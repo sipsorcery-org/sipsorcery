@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
+using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading;
 using SIPSorcery.Sys;
@@ -15,9 +17,14 @@ namespace SIPSorcery.Servers {
         private static ILog logger = AppState.logger;
 
         private CallManagerServiceClient m_callManagerClient;
+        private SIPCallDispatcher m_sipCallDispatcher;
 
         public CallManagerPassThruService() {
            m_callManagerClient = new CallManagerServiceClient("CallManagerSvc");
+        }
+
+        public CallManagerPassThruService(SIPCallDispatcher sipCallDispatcher) {
+            m_sipCallDispatcher = sipCallDispatcher;
         }
 
         public bool IsAlive() {
@@ -27,14 +34,23 @@ namespace SIPSorcery.Servers {
                 bool isAlive = false;
                 ManualResetEvent isAliveMRE = new ManualResetEvent(false);
 
-                m_callManagerClient.IsAliveComplete += (s, a) => { isAlive = a.Result; isAliveMRE.Set(); };
-                m_callManagerClient.IsAliveAsync();
+                CallManagerServiceClient client = (m_sipCallDispatcher != null) ? m_sipCallDispatcher.GetCallManagerClient() : m_callManagerClient;
 
-                if (isAliveMRE.WaitOne(OPERATION_TIMEOUT)) {
-                    return isAlive;
+                if (client != null) {
+                    logger.Debug("Sending isalive request to client endpoint at " + client.Endpoint.Address.ToString() + ".");
+
+                    client.IsAliveComplete += (s, a) => { isAlive = a.Result; isAliveMRE.Set(); };
+                    client.IsAliveAsync();
+
+                    if (isAliveMRE.WaitOne(OPERATION_TIMEOUT)) {
+                        return isAlive;
+                    }
+                    else {
+                        throw new TimeoutException();
+                    }
                 }
                 else {
-                    throw new TimeoutException();
+                    throw new ApplicationException("Call Manager Pass Thru service could not create a client.");
                 }
             }
             catch (Exception excp) {
@@ -50,14 +66,23 @@ namespace SIPSorcery.Servers {
                 string result = null;
                 ManualResetEvent webCallbackMRE = new ManualResetEvent(false);
 
-                m_callManagerClient.WebCallbackComplete += (s, a) => { result = a.Result; webCallbackMRE.Set(); };
-                m_callManagerClient.WebCallbackAsync(username, number);
+                CallManagerServiceClient client = (m_sipCallDispatcher != null) ? m_sipCallDispatcher.GetCallManagerClient() : m_callManagerClient;
 
-                if (webCallbackMRE.WaitOne(OPERATION_TIMEOUT)) {
-                    return result;
+                if (client != null) {
+                    logger.Debug("Sending webcallback request to client endpoint at " + client.Endpoint.Address.ToString() + ".");
+
+                    client.WebCallbackComplete += (s, a) => { result = a.Result; webCallbackMRE.Set(); };
+                    client.WebCallbackAsync(username, number);
+
+                    if (webCallbackMRE.WaitOne(OPERATION_TIMEOUT)) {
+                        return result;
+                    }
+                    else {
+                        throw new TimeoutException();
+                    }
                 }
                 else {
-                    throw new TimeoutException();
+                    throw new ApplicationException("Call Manager Pass Thru service could not create a client.");
                 }
             }
             catch (Exception excp) {

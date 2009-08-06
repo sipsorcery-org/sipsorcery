@@ -44,211 +44,76 @@ using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
-using IronPython.Compiler;
-using IronPython.Hosting;
-using IronRuby;
 using log4net;
-using Microsoft.Scripting;
 using Microsoft.Scripting.Hosting;
 
 #if UNITTEST
 using NUnit.Framework;
 #endif
 
-namespace SIPSorcery.Servers
-{	  
-    public class StatelessProxyCore
-	{
-        private enum ProxyScriptEnum
-        {
-            None = 0,
-            Python = 1,
-            Ruby = 2,
-        }
-
-        public const string APP_SERVER_DISPATCHER_KEY = "appserver";
-
-        private const string PYTHON_SCRIPT_EXTENSION = ".py";
-        private const string RUBY_SCRIPT_EXTENSION = ".rb";
-        private const string JAVASCRIPT_SCRIPT_EXTENSION = ".js";
-
+namespace SIPSorcery.Servers {
+    public class StatelessProxyCore {
         private static ILog logger = log4net.LogManager.GetLogger("sipproxy");
 
         private SIPMonitorLogDelegate m_proxyLogger = (e) => { };
 
         private SIPTransport m_sipTransport;
-        private ScriptScope m_scriptScope;
-        private Microsoft.Scripting.Hosting.CompiledCode m_compiledScript;
-        //private IronPythonIronPythonEngine m_pythonEngine;
-        //private IronPython.Hosting.CompiledCode m_pythonCompiledScript;
+        private CompiledCode m_compiledScript;
         private string m_scriptPath;
-        private ProxyScriptEnum m_proxyScriptType;
-        private string m_proxyScript;
+        private ScriptLoader m_scriptLoader;
         private StatelessProxyScriptHelper m_proxyScriptHelper;
-        private CallDispatcher m_dispatcher;
         private DateTime m_lastScriptChange = DateTime.MinValue;
-        private Dictionary<string, SIPDispatcherJob> m_dispatcherJobs = new Dictionary<string, SIPDispatcherJob>();
-        private XmlNode m_dispatcherJobsNode;
 
         public IPAddress PublicIPAddress;       // Can be set if there is an object somewhere that knows the public IP. The address wil be available in the proxy runtime script.
 
-		public StatelessProxyCore(
+        public StatelessProxyCore(
             SIPMonitorLogDelegate proxyLogger,
             SIPTransport sipTransport,
-            string scriptPath,
-            XmlNode dispatcherJobsNode)
-		{
-			try
-			{
+            string scriptPath) {
+            try {
                 m_proxyLogger = proxyLogger ?? m_proxyLogger;
                 m_scriptPath = scriptPath;
-                m_dispatcherJobsNode = dispatcherJobsNode;
                 m_sipTransport = sipTransport;
                 m_proxyScriptHelper = new StatelessProxyScriptHelper(
                     new SIPMonitorLogDelegate(SendMonitorEvent),         // Don't use the m_proxyLogger delegate directly here as doing so caused stack overflow exceptions in the IronRuby engine.
                     sipTransport);
-                m_dispatcher = new CallDispatcher(m_proxyScriptHelper);
 
-                if (!File.Exists(m_scriptPath))
-                {
-                    throw new ApplicationException("Cannot instantiate SIP Proxy without a script file.");
-                }
-
-                StreamReader sr = new StreamReader(m_scriptPath);
-                m_proxyScript = sr.ReadToEnd();
-                sr.Close();
-
-                // File system watcher needs a fully qualified path.
-                if (!m_scriptPath.Contains(Path.DirectorySeparatorChar.ToString()))
-                {
-                    m_scriptPath = Environment.CurrentDirectory + Path.DirectorySeparatorChar + m_scriptPath;
-                }
-
-                FileSystemWatcher runtimeWatcher = new FileSystemWatcher(Path.GetDirectoryName(m_scriptPath), Path.GetFileName(m_scriptPath));
-                runtimeWatcher.Changed += new FileSystemEventHandler(ProxyScriptChanged);
-                runtimeWatcher.EnableRaisingEvents = true;
-
-                // Configure script engine.
-                m_proxyScriptType = GetProxyScriptType(m_scriptPath);
-
-                if (m_proxyScriptType == ProxyScriptEnum.Python)
-                {
-                    logger.Debug("Stateless proxy script is Python.");
-                    //m_pythonEngine = new PythonEngine();
-                    // m_pythonCompiledScript = m_pythonEngine.Compile(m_proxyScript);
-                    ScriptRuntime scriptRuntime = IronPython.Hosting.Python.CreateRuntime();
-                    m_scriptScope = scriptRuntime.CreateScope("IronPython");
-                    m_compiledScript = m_scriptScope.Engine.CreateScriptSourceFromString(m_proxyScript).Compile();
-                }
-                else if (m_proxyScriptType == ProxyScriptEnum.Ruby)
-                {
-                    logger.Debug("Stateless proxy script is Ruby.");
-                    ScriptRuntime scriptRuntime = IronRuby.Ruby.CreateRuntime();
-                    m_scriptScope = scriptRuntime.CreateScope("IronRuby");
-                    m_compiledScript = m_scriptScope.Engine.CreateScriptSourceFromString(m_proxyScript).Compile();
-                }
-                else
-                {
-                    throw new ApplicationException("Stateless Proxy Core cannot start, unrecognised proxy script type " + m_proxyScriptType + ".");
-                }
-
-                if (m_dispatcher != null) {
-                    if (m_dispatcherJobsNode != null && m_dispatcherJobsNode.ChildNodes.Count > 0) {
-                        SIPDispatcherJobLoader dispatcherLoader = new SIPDispatcherJobLoader(m_dispatcherJobsNode);
-                        m_dispatcherJobs = dispatcherLoader.Load(null);
-
-                        m_dispatcher.GetActiveAppServer = m_dispatcherJobs[APP_SERVER_DISPATCHER_KEY].GetSIPEndPoint;
-                        m_dispatcher.IsAppServer = m_dispatcherJobs[APP_SERVER_DISPATCHER_KEY].IsSIPEndPointMonitored;
-                    }
-                    else {
-                        logger.Debug("No dispatcher jobs were supplied to the StatelessProxyCore.");
-                    }
-                }
+                m_scriptLoader = new ScriptLoader(SendMonitorEvent, m_scriptPath);
+                m_scriptLoader.ScriptFileChanged += (s, e) => { m_compiledScript = m_scriptLoader.GetCompiledScript(); };
+                m_compiledScript = m_scriptLoader.GetCompiledScript();
 
                 // Events that pass the SIP requests and responses onto the Stateless Proxy Core.
                 m_sipTransport.SIPTransportRequestReceived += GotRequest;
                 m_sipTransport.SIPTransportResponseReceived += GotResponse;
             }
-			catch(Exception excp)
-			{
-				logger.Error("Exception StatelessProxyCore (ctor). " + excp.Message);
-				throw excp;
-			}
-		}
-
-        private void ProxyScriptChanged(object sender, FileSystemEventArgs e)
-        {
-            try
-            {
-                if (DateTime.Now.Subtract(m_lastScriptChange).TotalSeconds > 1)
-                {
-                    m_lastScriptChange = DateTime.Now;  // Prevent double re-loads. The file changed event fires twice when a file is saved.
-                    logger.Debug("Reloading proxy script from " + m_scriptPath + ".");
-
-                    string tempPath = Path.GetDirectoryName(m_scriptPath) + Path.DirectorySeparatorChar + Path.GetFileName(m_scriptPath) + ".tmp";
-                    File.Copy(m_scriptPath, tempPath, true);
-
-                    StreamReader sr = new StreamReader(tempPath);
-                    m_proxyScript = sr.ReadToEnd();
-                    sr.Close();
-
-                    /*if (m_proxyScriptType == ProxyScriptEnum.Python)
-                    {
-                        m_pythonCompiledScript = m_pythonEngine.Compile(m_proxyScript);
-                    }
-                    else
-                    {
-                        m_rubyCompiledScript = m_scriptScope.Engine.CreateScriptSourceFromString(m_proxyScript).Compile();
-                    }*/
-
-                    m_compiledScript = m_scriptScope.Engine.CreateScriptSourceFromString(m_proxyScript).Compile();
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception ProxyScriptChanged. " + excp.Message);
+            catch (Exception excp) {
+                logger.Error("Exception StatelessProxyCore (ctor). " + excp.Message);
+                throw excp;
             }
         }
 
-        private ProxyScriptEnum GetProxyScriptType(string scriptFileName)
-        {
-            string extension = Path.GetExtension(scriptFileName);
-
-            switch (extension)
-            {
-                case PYTHON_SCRIPT_EXTENSION:
-                    return ProxyScriptEnum.Python;
-                case RUBY_SCRIPT_EXTENSION:
-                    return ProxyScriptEnum.Ruby;
-                default:
-                    throw new ApplicationException("The script engine could not be identified for the proxy script with extension of " + extension + ".");
-            }
-        }
-
-		/// <summary>
-		///  From RFC3261: Stateless Proxy Request Processing:
-		///  
-		///  For each target, the proxy forwards the request following these
-		///   1.  Make a copy of the received request
-		///   2.  Update the Request-URI
-		///   3.  Update the Max-Forwards header field
-		///   4.  Optionally add a Record-route header field value
-		///   5.  Optionally add additional header fields
-		///   6.  Postprocess routing information
-		///   7.  Determine the next-hop address, port, and transport
-		///   8.  Add a Via header field value
-		///   9.  Add a Content-Length header field if necessary
-		///  10.  Forward the new request
-		///  
-		///  See sections 12.2.1.1 and 16.12.1.2 in the SIP RFC for the best explanation on the way the Route header works.
-		/// </summary>
-		/// <param name="sipRequest"></param>
-		/// <param name="inEndPoint">End point the request was received on.</param>
-		/// <param name="sipChannel"></param>
-		private void GotRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
-		{
-            try
-            {
+        /// <summary>
+        ///  From RFC3261: Stateless Proxy Request Processing:
+        ///  
+        ///  For each target, the proxy forwards the request following these
+        ///   1.  Make a copy of the received request
+        ///   2.  Update the Request-URI
+        ///   3.  Update the Max-Forwards header field
+        ///   4.  Optionally add a Record-route header field value
+        ///   5.  Optionally add additional header fields
+        ///   6.  Postprocess routing information
+        ///   7.  Determine the next-hop address, port, and transport
+        ///   8.  Add a Via header field value
+        ///   9.  Add a Content-Length header field if necessary
+        ///  10.  Forward the new request
+        ///  
+        ///  See sections 12.2.1.1 and 16.12.1.2 in the SIP RFC for the best explanation on the way the Route header works.
+        /// </summary>
+        /// <param name="sipRequest"></param>
+        /// <param name="inEndPoint">End point the request was received on.</param>
+        /// <param name="sipChannel"></param>
+        private void GotRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) {
+            try {
                 DateTime startTime = DateTime.Now;
                 DateTime scriptStartTime = DateTime.Now;
 
@@ -257,12 +122,10 @@ namespace SIPSorcery.Servers
                 //string fromTag = (sipRequest.Header.From != null) ? sipRequest.Header.From.FromTag : null;
                 string route = (sipRequest.Header.Routes != null) ? sipRequest.Header.Routes.ToString() : null;
                 //string authHeader = (sipRequest.Header.AuthenticationHeader != null) ? sipRequest.Header.AuthenticationHeader.ToString() : null;
-                string proxyBranch =  CallProperties.CreateBranchId(SIPConstants.SIP_BRANCH_MAGICCOOKIE, null, null, sipRequest.Header.CallId, null, null, sipRequest.Header.CSeq, route, null, null);
+                string proxyBranch = CallProperties.CreateBranchId(SIPConstants.SIP_BRANCH_MAGICCOOKIE, null, null, sipRequest.Header.CallId, null, null, sipRequest.Header.CSeq, route, null, null);
                 // Check whether the branch parameter already exists in the Via list.
-                foreach (SIPViaHeader viaHeader in sipRequest.Header.Vias.Via)
-                {
-                    if (viaHeader.Branch == proxyBranch)
-                    {
+                foreach (SIPViaHeader viaHeader in sipRequest.Header.Vias.Via) {
+                    if (viaHeader.Branch == proxyBranch) {
                         SendMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatelessProxy, SIPMonitorEventTypesEnum.Warn, "Loop detected on request from " + remoteEndPoint + " to " + sipRequest.URI.ToString() + ".", null));
                         m_sipTransport.SendResponse(GetProxyResponse(sipRequest, SIPResponseStatusCodesEnum.LoopDetected));
                         return;
@@ -274,8 +137,7 @@ namespace SIPSorcery.Servers
                 string toUser = (sipRequest.Header.To != null) ? sipRequest.Header.To.ToURI.User : null;
                 string summaryStr = "req " + sipRequest.Method + " from=" + fromUser + ", to=" + toUser + ", " + remoteEndPoint.ToString();
 
-                lock (this)
-                {
+                lock (this) {
                     scriptStartTime = DateTime.Now;
                     //m_scriptScope.Execute(m_proxyScript);
 
@@ -297,37 +159,44 @@ namespace SIPSorcery.Servers
                     }
                     else
                     {*/
-                        //m_scriptScope.ClearVariables();
+                    //m_scriptScope.ClearVariables();
 
-                        m_scriptScope.SetVariable("sys", m_proxyScriptHelper);
-                        m_scriptScope.SetVariable("dispatcher", m_dispatcher);
-                        m_scriptScope.SetVariable("localEndPoint", localSIPEndPoint);
-                        m_scriptScope.SetVariable("channelName", m_sipTransport.FindSIPChannel(localSIPEndPoint).Name);
-                        m_scriptScope.SetVariable("isreq", true);
-                        m_scriptScope.SetVariable("req", sipRequest);
-                        m_scriptScope.SetVariable("remoteEndPoint", remoteEndPoint);
-                        m_scriptScope.SetVariable("summary", summaryStr);
-                        m_scriptScope.SetVariable("proxyBranch", proxyBranch);
-                        m_scriptScope.SetVariable("sipMethod", sipRequest.Method.ToString());
-                        m_scriptScope.SetVariable("publicip", PublicIPAddress);
+                    m_compiledScript.DefaultScope.RemoveVariable("sys");
+                    m_compiledScript.DefaultScope.RemoveVariable("localEndPoint");
+                    m_compiledScript.DefaultScope.RemoveVariable("isreq");
+                    m_compiledScript.DefaultScope.RemoveVariable("req");
+                    m_compiledScript.DefaultScope.RemoveVariable("remoteEndPoint");
+                    m_compiledScript.DefaultScope.RemoveVariable("summary");
+                    m_compiledScript.DefaultScope.RemoveVariable("proxyBranch");
+                    m_compiledScript.DefaultScope.RemoveVariable("sipMethod");
+                    m_compiledScript.DefaultScope.RemoveVariable("publicip");
 
-                        m_compiledScript.Execute(m_scriptScope);
+                    m_compiledScript.DefaultScope.SetVariable("sys", m_proxyScriptHelper);
+                    m_compiledScript.DefaultScope.SetVariable("localEndPoint", localSIPEndPoint);
+                    //m_compiledScript.DefaultScope.SetVariable("channelName", m_sipTransport.FindSIPChannel(localSIPEndPoint).Name);
+                    m_compiledScript.DefaultScope.SetVariable("isreq", true);
+                    m_compiledScript.DefaultScope.SetVariable("req", sipRequest);
+                    m_compiledScript.DefaultScope.SetVariable("remoteEndPoint", remoteEndPoint);
+                    m_compiledScript.DefaultScope.SetVariable("summary", summaryStr);
+                    m_compiledScript.DefaultScope.SetVariable("proxyBranch", proxyBranch);
+                    m_compiledScript.DefaultScope.SetVariable("sipMethod", sipRequest.Method.ToString());
+                    m_compiledScript.DefaultScope.SetVariable("publicip", PublicIPAddress);
+
+                    //m_compiledScript.Execute(m_scriptScope);
+                    m_compiledScript.Execute();
                     //}
                 }
 
                 double processingTime = DateTime.Now.Subtract(startTime).TotalMilliseconds;
-                if (processingTime > 20)
-                {
+                if (processingTime > 20) {
                     double scriptTime = DateTime.Now.Subtract(scriptStartTime).TotalMilliseconds;
                     logger.Debug("GotRequest processing time=" + processingTime.ToString("0.##") + "ms, script time=" + scriptTime.ToString("0.##") + ".");
                 }
             }
-            catch (SIPValidationException)
-            {
+            catch (SIPValidationException) {
                 throw;
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 string reqExcpError = "Exception StatelessProxyCore GotRequest. " + excp.Message;
                 logger.Error(reqExcpError);
                 SIPMonitorEvent reqExcpEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatelessProxy, SIPMonitorEventTypesEnum.Error, reqExcpError, localSIPEndPoint, remoteEndPoint, null);
@@ -335,22 +204,20 @@ namespace SIPSorcery.Servers
 
                 throw excp;
             }
-		}	
-		
-		/// <summary>
-		///  From RFC3261: Stateless Proxy Response Processing:
-		///  
-		/// When a response arrives at a stateless proxy, the proxy MUST inspect the sent-by value in the first
-		/// (topmost) Via header field value.  If that address matches the proxy, (it equals a value this proxy has 
-		/// inserted into previous requests) the proxy MUST remove that header field value from the response and  
-		/// forward the result to the location indicated in the next Via header field value.  The proxy MUST NOT add 
-		/// to, modify, or remove the message body.  Unless specified otherwise, the proxy MUST NOT remove
-		/// any other header field values.  If the address does not match the  proxy, the message MUST be silently discarded.
-		/// </summary>
-        private void GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
-		{
-            try
-            {
+        }
+
+        /// <summary>
+        ///  From RFC3261: Stateless Proxy Response Processing:
+        ///  
+        /// When a response arrives at a stateless proxy, the proxy MUST inspect the sent-by value in the first
+        /// (topmost) Via header field value.  If that address matches the proxy, (it equals a value this proxy has 
+        /// inserted into previous requests) the proxy MUST remove that header field value from the response and  
+        /// forward the result to the location indicated in the next Via header field value.  The proxy MUST NOT add 
+        /// to, modify, or remove the message body.  Unless specified otherwise, the proxy MUST NOT remove
+        /// any other header field values.  If the address does not match the  proxy, the message MUST be silently discarded.
+        /// </summary>
+        private void GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) {
+            try {
                 DateTime startTime = DateTime.Now;
                 DateTime scriptStartTime = DateTime.Now;
 
@@ -362,18 +229,18 @@ namespace SIPSorcery.Servers
                 SIPViaHeader topVia = sipResponse.Header.Vias.PopTopViaHeader();
                 SIPEndPoint outSocket = localSIPEndPoint;
 
-                // If the second Via header on the response was also set by this proxy it means the request was originally recieved and forwarded
+                // If the second Via header on the response was also set by this proxy it means the request was originally received and forwarded
                 // on different sockets. To get the response to travel the same path in reverse it must be forwarded from the proxy socket indicated
                 // by the second top Via.
                 if (sipResponse.Header.Vias.Length > 0) {
                     SIPViaHeader nextTopVia = sipResponse.Header.Vias.TopViaHeader;
                     SIPEndPoint nextTopViaSIPEndPoint = new SIPEndPoint(nextTopVia.Transport, IPSocket.ParseSocketString(nextTopVia.ContactAddress));
-                    if (m_sipTransport.IsLocalSIPEndPoint(nextTopViaSIPEndPoint)) {
+                    if (m_sipTransport.IsLocalSIPEndPoint(nextTopViaSIPEndPoint) || (PublicIPAddress != null && nextTopViaSIPEndPoint.SocketEndPoint.Address.ToString() == PublicIPAddress.ToString())) {
                         sipResponse.Header.Vias.PopTopViaHeader();
                         outSocket = nextTopViaSIPEndPoint;
                     }
                 }
-                
+
                 /*string channelName = topVia.ViaParameters.Get(CHANNEL_NAME_KEY);
                 if (!channelName.IsNullOrBlank())
                 {
@@ -384,8 +251,7 @@ namespace SIPSorcery.Servers
                     }
                 }*/
 
-                lock (this)
-                {
+                lock (this) {
                     //m_scriptScope.SetVariable("topVia", proxyVia);
 
                     scriptStartTime = DateTime.Now;
@@ -406,32 +272,40 @@ namespace SIPSorcery.Servers
                     }
                     else
                     {*/
-                        //m_scriptScope.ClearVariables();
+                    //m_scriptScope.ClearVariables();
+                    m_compiledScript.DefaultScope.RemoveVariable("sys");
+                    m_compiledScript.DefaultScope.RemoveVariable("isreq");
+                    m_compiledScript.DefaultScope.RemoveVariable("localEndPoint");
+                    m_compiledScript.DefaultScope.RemoveVariable("outSocket");
+                    m_compiledScript.DefaultScope.RemoveVariable("resp");
+                    m_compiledScript.DefaultScope.RemoveVariable("remoteEndPoint");
+                    m_compiledScript.DefaultScope.RemoveVariable("summary");
+                    m_compiledScript.DefaultScope.RemoveVariable("sipMethod");
+                    m_compiledScript.DefaultScope.RemoveVariable("topVia");
 
-                        m_scriptScope.SetVariable("sys", m_proxyScriptHelper);
-                        m_scriptScope.SetVariable("isreq", false);
-                        m_scriptScope.SetVariable("localEndPoint", localSIPEndPoint);
-                        m_scriptScope.SetVariable("outSocket", outSocket);
-                        m_scriptScope.SetVariable("resp", sipResponse);
-                        m_scriptScope.SetVariable("remoteEndPoint", remoteEndPoint);
-                        m_scriptScope.SetVariable("summary", summaryStr);
-                        m_scriptScope.SetVariable("sipMethod", sipResponse.Header.CSeqMethod.ToString());
-                        m_scriptScope.SetVariable("topVia", topVia);
+                    m_compiledScript.DefaultScope.SetVariable("sys", m_proxyScriptHelper);
+                    m_compiledScript.DefaultScope.SetVariable("isreq", false);
+                    m_compiledScript.DefaultScope.SetVariable("localEndPoint", localSIPEndPoint);
+                    m_compiledScript.DefaultScope.SetVariable("outSocket", outSocket);
+                    m_compiledScript.DefaultScope.SetVariable("resp", sipResponse);
+                    m_compiledScript.DefaultScope.SetVariable("remoteEndPoint", remoteEndPoint);
+                    m_compiledScript.DefaultScope.SetVariable("summary", summaryStr);
+                    m_compiledScript.DefaultScope.SetVariable("sipMethod", sipResponse.Header.CSeqMethod.ToString());
+                    m_compiledScript.DefaultScope.SetVariable("topVia", topVia);
 
-                        //m_rubyCompiledScript.Execute(m_scriptScope);
-                        m_compiledScript.Execute(m_scriptScope);
+                    //m_rubyCompiledScript.Execute(m_scriptScope);
+                    //m_compiledScript.Execute(m_scriptScope);
+                    m_compiledScript.Execute();
                     //}
                 }
 
                 double processingTime = DateTime.Now.Subtract(startTime).TotalMilliseconds;
-                if (processingTime > 20)
-                {
+                if (processingTime > 20) {
                     double scriptTime = DateTime.Now.Subtract(scriptStartTime).TotalMilliseconds;
                     logger.Debug("GotResponse processing time=" + processingTime.ToString("0.##") + "ms, script time=" + scriptTime.ToString("0.##") + ".");
                 }
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 string respExcpError = "Exception StatelessProxyCore GotResponse. " + excp.Message;
                 logger.Error(respExcpError);
                 SIPMonitorEvent respExcpEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatelessProxy, SIPMonitorEventTypesEnum.Error, respExcpError, localSIPEndPoint, remoteEndPoint, null);
@@ -439,32 +313,28 @@ namespace SIPSorcery.Servers
 
                 throw excp;
             }
-		}
+        }
 
-        private SIPResponse GetProxyResponse(SIPRequest sipRequest, SIPResponseStatusCodesEnum responseCode)
-        {
+        private SIPResponse GetProxyResponse(SIPRequest sipRequest, SIPResponseStatusCodesEnum responseCode) {
             return SIPTransport.GetResponse(sipRequest, responseCode, null);
         }
 
-        private void SendMonitorEvent(SIPMonitorEventTypesEnum eventType, string message, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, SIPEndPoint dstEndPoint)
-        {
+        private void SendMonitorEvent(SIPMonitorEventTypesEnum eventType, string message, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, SIPEndPoint dstEndPoint) {
             SIPMonitorEvent proxyEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatelessProxy, eventType, message, localEndPoint, remoteEndPoint, dstEndPoint);
             SendMonitorEvent(proxyEvent);
         }
-	
-		private void SendMonitorEvent(SIPMonitorEvent monitorEvent)
-		{
-            if (m_proxyLogger != null)
-			{
+
+        private void SendMonitorEvent(SIPMonitorEvent monitorEvent) {
+            if (m_proxyLogger != null) {
                 m_proxyLogger(monitorEvent);
-			}
-		}
-	
-		#region Unit testing.
+            }
+        }
 
-		#if UNITTEST
+        #region Unit testing.
 
-		#region Mock Objects
+        #if UNITTEST
+
+        #region Mock Objects
 
 		/*public class ProxySIPChannel
 		{		
@@ -496,7 +366,7 @@ namespace SIPSorcery.Servers
 		}*/
 			
 
-		#endregion
+        #endregion
 
 		/*
 		[TestFixture]
@@ -796,8 +666,8 @@ namespace SIPSorcery.Servers
 			}						
 		}
 		*/
-		#endif
+        #endif
 
-		#endregion
-	}
+        #endregion
+    }
 }

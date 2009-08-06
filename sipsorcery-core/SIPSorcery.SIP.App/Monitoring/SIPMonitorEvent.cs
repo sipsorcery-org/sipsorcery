@@ -122,6 +122,7 @@ namespace SIPSorcery.SIP.App
         BindingFailed = 61,
         ContactRefresh = 62,
         NATKeepAliveRelay = 63,
+        CallDispatcher = 64,
 	}
 
 	public class SIPMonitorEventTypes

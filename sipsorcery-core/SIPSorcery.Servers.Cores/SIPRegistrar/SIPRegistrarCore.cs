@@ -173,9 +173,9 @@ namespace SIPSorcery.Servers
             SIPRequest sipRequest = registerTransaction.TransactionRequest;
             SIPURI registerURI = sipRequest.URI;
             SIPToHeader toHeader = sipRequest.Header.To;
-            bool authenticated = false;
+            //bool authenticated = false;
             SIPParameterlessURI addressOfRecord = null;
-            string canonicalDomain = (m_strictRealmHandling) ? GetCanonicalDomain_External(toHeader.ToURI.Host) : toHeader.ToURI.Host;
+            string canonicalDomain = (m_strictRealmHandling) ? GetCanonicalDomain_External(toHeader.ToURI.Host, true) : toHeader.ToURI.Host;
 
             try
             {

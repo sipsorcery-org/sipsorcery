@@ -115,7 +115,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Reverses ToString().
         /// </summary>
-        /// <param name="serialisedSIPEndPoint">The serialised SIP end point MUST be in teh form protocol:socket and protocol must
+        /// <param name="serialisedSIPEndPoint">The serialised SIP end point MUST be in the form protocol:socket and protocol must
         /// be exactly 3 characters. Valid examples are udp:10.0.0.1:5060, invalid example is 10.0.0.1:5060.</param>
         private static SIPEndPoint ParseSerialisedSIPEndPoint(string serialisedSIPEndPoint) {
             return new SIPEndPoint(SIPProtocolsType.GetProtocolType(serialisedSIPEndPoint.Substring(0, 3)), IPSocket.ParseSocketString(serialisedSIPEndPoint.Substring(4)));

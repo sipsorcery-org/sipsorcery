@@ -57,7 +57,8 @@ namespace SIPSorcery.AppServer.DialPlan
         private DialogueBridgeCreatedDelegate CreateBridge_External;
 
         private SIPTransport m_sipTransport;
-        private UASInviteTransaction m_clientTransaction;
+        //private UASInviteTransaction m_clientTransaction;
+        private ISIPServerUserAgent m_sipServerUserAgent;
         private SIPEndPoint m_outboundProxy;        // If this app forwards calls via an outbound proxy this value will be set.
         private string m_traceDirectory;
 
@@ -91,23 +92,27 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             get { return m_traceLog; }
         }
-        public string ClientCallContentType
-        {
-            get{ return m_clientTransaction.TransactionRequest.Header.ContentType; }
-        }
-        public string ClientCallContent
-        {
-            get{ return m_clientTransaction.TransactionRequest.Body; }
-        }
-        public SIPRequest ClientInviteRequest
-        {
-            get { return m_clientTransaction.TransactionRequest; }
-        }
+        //public string ClientCallContentType
+        //{
+        //    get { return m_sipServerUserAgent.SIPTransaction.TransactionRequest.Header.ContentType; }
+        //}
+       // public string ClientCallContent
+        //{
+       //     get { return m_sipServerUserAgent.SIPTransaction.TransactionRequest.Body; }
+        //}
+        //public SIPRequest ClientInviteRequest
+        //{
+        //    get { return m_sipServerUserAgent.SIPTransaction.TransactionRequest; }
+        //}
         public string CallersNetworkId;             // If the caller was a locally administered SIP account this will hold it's network id. Used so calls between two accounts on the same local network can be identified.
 
         private bool m_isAnswered;
         public bool IsAnswered {
             get { return m_isAnswered; }
+        }
+
+        public SIPAccount SIPAccount {
+            get { return m_sipServerUserAgent.SIPAccount; }
         }
 
         internal event CallCancelledDelegate CallCancelledByClient;
@@ -117,7 +122,7 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPTransport sipTransport,
             DialogueBridgeCreatedDelegate createBridge,
             SIPEndPoint outboundProxy,
-            UASInviteTransaction clientTransaction,
+            ISIPServerUserAgent sipServerUserAgent,
             SIPDialPlan dialPlan,
             List<SIPProvider> sipProviders,
             string traceDirectory,
@@ -127,132 +132,47 @@ namespace SIPSorcery.AppServer.DialPlan
             CreateBridge_External = createBridge;
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
-            m_clientTransaction = clientTransaction;
+            m_sipServerUserAgent = sipServerUserAgent;
             m_dialPlan = dialPlan;
             m_sipProviders = sipProviders;
             m_traceDirectory = traceDirectory;
             CallersNetworkId = callersNetworkId;
 
-            if (m_clientTransaction != null) {
-                clientTransaction.TransactionTraceMessage += TransactionTraceMessage;
-                TraceLog.AppendLine(SIPMonitorEventTypesEnum.SIPTransaction + "=>" + "Request received " + m_clientTransaction.LocalSIPEndPoint +
-                    "<-" + m_clientTransaction.RemoteEndPoint + CRLF + m_clientTransaction.TransactionRequest.ToString());
-
-                if (m_clientTransaction.CDR != null) {
-                    m_clientTransaction.CDR.Owner = m_dialPlan.Owner;
-                }
-                m_clientTransaction.UASInviteTransactionTimedOut += ClientTransactionTimedOut;
-                m_clientTransaction.UASInviteTransactionCancelled += ClientCallCancelled;
-                m_clientTransaction.TransactionRemoved += ClientTransactionRemoved;
-            }
+            m_sipServerUserAgent.CallCancelled += ClientCallCancelled;
+            m_sipServerUserAgent.NoRingTimeout += ClientCallNoRingTimeout;
+            m_sipServerUserAgent.TransactionComplete += ClientTransactionRemoved;
+            m_sipServerUserAgent.SetTraceDelegate(TransactionTraceMessage);
         }
 
         public void CallProgress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody) {
-            try {
-                if (!m_isAnswered) {
-                    if ((int)progressStatus >= 200) {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "CallProgress was passed an invalid response status of " + (int)progressStatus + ", ignoring.", Owner));
-                    }
-                    else {
-                        if (m_clientTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding) {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "CallProgress ignoring progress response with status of " + (int)progressStatus + " as already in " + m_clientTransaction.TransactionState + ".", Owner));
-                        }
-                        else {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call progressing with " + progressStatus + ".", Owner));
-                            SIPResponse progressResponse = SIPTransport.GetResponse(m_clientTransaction.TransactionRequest, progressStatus, reasonPhrase);
-
-                            if (!progressBody.IsNullOrBlank()) {
-                                progressResponse.Body = progressBody;
-                                progressResponse.Header.ContentType = progressContentType;
-                                progressResponse.Header.ContentLength = progressBody.Length;
-                            }
-
-                            if (customHeaders != null && customHeaders.Length > 0) {
-                                foreach (string header in customHeaders) {
-                                    progressResponse.Header.UnknownHeaders.Add(header);
-                                }
-                            }
-
-                            m_clientTransaction.SendInformationalResponse(progressResponse);
-                        }
-                    }
-                }
-                else {
-                    logger.Warn("DialPlanContext CallProgress fired on already answered call.");
-                }
-            }
-            catch (Exception excp) {
-                logger.Error("Exception DialPlanContext CallProgress. " + excp.Message);
+            if (!m_isAnswered) {
+                m_sipServerUserAgent.Progress(progressStatus, reasonPhrase, customHeaders, progressContentType, progressBody);
             }
         }
 
         public void CallFailed(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders) {
-            try {
-                if (!m_isAnswered) {
-                    if ((int)failureStatus < 400) {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "CalFailure was passed an invalid response status of " + (int)failureStatus + ", ignoring.", Owner));
-                    }
-                    else {
-                        m_isAnswered = true;
-                        string failureReason = (!reasonPhrase.IsNullOrBlank()) ? " and " + reasonPhrase : null;
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call failed with a response status of " + (int)failureStatus + failureReason + ".", Owner));
-                        SIPResponse failureResponse = SIPTransport.GetResponse(m_clientTransaction.TransactionRequest, failureStatus, reasonPhrase);
-
-                        if (customHeaders != null && customHeaders.Length > 0) {
-                            foreach (string header in customHeaders) {
-                                failureResponse.Header.UnknownHeaders.Add(header);
-                            }
-                        }
-
-                        m_clientTransaction.SendFinalResponse(failureResponse);
-                    }
-                }
-                else {
-                    logger.Warn("DialPlanContext CallFailed fired on already answered call.");
-                }
-            }
-            catch (Exception excp) {
-                logger.Error("Exception DialPlanContext CallFailed. " + excp.Message);
+            if (!m_isAnswered) {
+                m_isAnswered = true;
+                m_sipServerUserAgent.Reject(failureStatus, reasonPhrase, customHeaders);
             }
         }
 
         public void CallAnswered(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string[] customHeaders, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue) {
             try {
                 if (!m_isAnswered) {
-                    if ((int)answeredStatus < 200 || (int)answeredStatus > 299) {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "CallAnswered was passed an invalid response status of " + (int)answeredStatus + ", ignoring.", Owner));
-                    }
-                    else {
-                        m_isAnswered = true;
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Answering client call with a response status of " + (int)answeredStatus + ".", Owner));
+                    m_isAnswered = true;
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Answering client call with a response status of " + (int)answeredStatus + ".", Owner));
 
-                        // Send the OK through to the client.
-                        //if (m_manglePrivateAddresses)
-                        //{
-                        //    SIPPacketMangler.MangleSIPResponse(SIPMonitorServerTypesEnum.StatefulProxy, answeredResponse, answeredUAC.ServerTransaction.RemoteEndPoint, m_username, m_statefulProxyLogEvent);
-                        //}
+                    SIPDialogue uasDialogue = m_sipServerUserAgent.Answer(answeredContentType, answeredBody, answeredDialogue);
 
-                        SIPResponse okResponse = m_clientTransaction.GetOkResponse(m_clientTransaction.TransactionRequest, m_clientTransaction.LocalSIPEndPoint, answeredContentType, answeredBody);
-
-                        if (customHeaders != null && customHeaders.Length > 0) {
-                            foreach (string header in customHeaders) {
-                                okResponse.Header.UnknownHeaders.Add(header);
-                            }
+                    if (!m_sipServerUserAgent.IsB2B) {
+                        if (uasDialogue != null) {
+                            // Record the now established call with the call manager for in dialogue management and hangups.
+                            CreateBridge_External(uasDialogue, answeredDialogue, m_dialPlan.Owner);
                         }
-                                                
-                        m_clientTransaction.SendFinalResponse(okResponse);
-
-                        // NOTE the Record-Route header does not get reversed for this Route set!! Since the Route set is being used from the server end NOT
-                        // the client end a reversal will generate a Route set in the wrong order.
-                        SIPDialogue clientLegDialogue = new SIPDialogue(
-                            m_sipTransport,
-                            m_clientTransaction,
-                            m_dialPlan.Owner,
-                            m_dialPlan.AdminMemberId);
-
-                        // Record the now established call with the call manager for in dialogue management and hangups.
-
-                        CreateBridge_External(clientLegDialogue, answeredDialogue, m_dialPlan.Owner);
+                        else {
+                            logger.Warn("Failed to get a SIPDialogue from UAS.Answer.");
+                        }
                     }
                 }
                 else {
@@ -269,41 +189,38 @@ namespace SIPSorcery.AppServer.DialPlan
         /// if the invite transaction timeout value has been adjusted.
         /// </summary>
         /// <param name="sipTransaction"></param>
-        private void ClientTransactionTimedOut(SIPTransaction sipTransaction) {
-            if (!m_isAnswered)
-            {
+        private void ClientCallNoRingTimeout(ISIPServerUserAgent sipServerUserAgent) {
+            try {
                 m_isAnswered = true;
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call timed out in a " + sipTransaction.TransactionState + " state after " + DateTime.Now.Subtract(sipTransaction.Created).TotalSeconds.ToString("0.##") + "s.", Owner));
-                // Let the client know the call failed.
-                CallFailed(SIPResponseStatusCodesEnum.ServerTimeout, "The dial plan did not generate ringing", null);
-                if (CallCancelledByClient != null)
-                {
+                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call timed out, no ringing response was receved within the allowed time.", Owner));
+                if (CallCancelledByClient != null) {
                     CallCancelledByClient(CallCancelCause.TimedOut);
                 }
             }
-            else
-            {
-                logger.Warn("DialPlanContext ClientTransactionTimedOut fired on already answered call.");
+            catch (Exception excp) {
+                logger.Error("Exception ClientCallNoRingTimeout. " + excp.Message);
             }
         }
 
-        private void ClientCallCancelled(SIPTransaction clientTransaction) {
-            if (!m_isAnswered)
-            {
-                m_isAnswered = true;
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call cancelled halting dial plan.", Owner));
-                if (CallCancelledByClient != null)
-                {
-                    CallCancelledByClient(CallCancelCause.ClientCancelled);
+        private void ClientCallCancelled(ISIPServerUserAgent uas) {
+            try {
+                if (!m_isAnswered) {
+                    m_isAnswered = true;
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call cancelled halting dial plan.", Owner));
+                    if (CallCancelledByClient != null) {
+                        CallCancelledByClient(CallCancelCause.ClientCancelled);
+                    }
+                }
+                else {
+                    logger.Warn("DialPlanContext ClientCallCancelled fired on already answered call.");
                 }
             }
-            else
-            {
-                logger.Warn("DialPlanContext ClientCallCancelled fired on already answered call.");
+            catch (Exception excp) {
+                logger.Error("Exception DialPlanContext ClientCallCancelled. " + excp.Message);
             }
         }
 
-        private void ClientTransactionRemoved(SIPTransaction sipTransaction) {
+        private void ClientTransactionRemoved(ISIPServerUserAgent uas) {
             try {
                 if (!m_traceDirectory.IsNullOrBlank() && !TraceEmailAddress.IsNullOrBlank() && TraceLog != null && TraceLog.Length > 0) {
                     if (!Directory.Exists(m_traceDirectory)) {

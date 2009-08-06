@@ -38,6 +38,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -58,6 +59,7 @@ namespace SIPSorcery.SIP.App
         public const string DELAY_CALL_OPTION_KEY = "dt";       // Dial string option to delay the start of a call leg.
         public const string REDIRECT_MODE_OPTION_KEY = "rm";    // Dial string option to set the redirect mode of a call leg. Redirect mode refers to how 3xx responses to a call are handled.
         public const string CALL_DURATION_OPTION_KEY = "cd";    // Dial string option used to set the maximum duration of a call in seconds.
+        public const string MANGLE_MODE_OPTION_KEY = "ma";      // Dial string option used to specify whether the SDP should be mangled. Default is true.
 
         private readonly static string m_defaultFromURI = SIPConstants.SIP_DEFAULT_FROMURI;
         private static char m_customHeadersSeparator = SIPProvider.CUSTOM_HEADERS_SEPARATOR;
@@ -80,10 +82,19 @@ namespace SIPSorcery.SIP.App
         public int DelaySeconds;                        // An amount in seconds to delay the intiation of this call when used as part of a dial string.
         public SIPCallRedirectModesEnum RedirectMode;   // Determines how the call will handle 3xx redirect responses.
         public int CallDurationLimit;                   // If non-zero sets a limit on the duration of any call created with this descriptor.
-        public bool MangleResponseSDP;                  // If false indicates the response SDP should be left alone if it contains a private IP address.
-        public bool IsLoopbackCall;                     // Gets set to true if the call destination is the same UA that's originating the call. An exmaple of using this it to call from one user into another user's dialplan.
+        public bool MangleResponseSDP = true;           // If false indicates the response SDP should be left alone if it contains a private IP address.
+        public IPAddress MangleIPAddress;               // If mangling is required on this call this address needs to be set as the one to mangle to.
+
+        public SIPAccount ToSIPAccount;                 // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
 
         public ManualResetEvent DelayMRE;       // If the call needs to be delayed DelaySeconds this MRE will be used.
+
+        public SIPCallDescriptor(SIPAccount toSIPAccount, string fromHeader, string contentType, string content) {
+            ToSIPAccount = toSIPAccount;
+            From = fromHeader;
+            ContentType = contentType;
+            Content = content;
+        }
 
         public SIPCallDescriptor(
             string username, 
@@ -97,7 +108,7 @@ namespace SIPSorcery.SIP.App
             SIPCallDirection callDirection, 
             string contentType, 
             string content,
-            bool mangleResponseSDP)
+            IPAddress mangleIPAddress)
         {
             Username = username;            
             Password = password;            
@@ -110,7 +121,7 @@ namespace SIPSorcery.SIP.App
             CallDirection = callDirection;
             ContentType = contentType;
             Content = content;
-            MangleResponseSDP = mangleResponseSDP;
+            MangleIPAddress = mangleIPAddress;
         }
 
         public void ParseCallOptions(string options)
@@ -146,6 +157,12 @@ namespace SIPSorcery.SIP.App
                 if (callDurationMatch.Success)
                 {
                     Int32.TryParse(callDurationMatch.Result("${callduration}"), out CallDurationLimit);
+                }
+
+                // Parse the mange option.
+                Match mangleMatch = Regex.Match(options, MANGLE_MODE_OPTION_KEY + @"=(?<mangle>\w+)");
+                if (mangleMatch.Success) {
+                    Boolean.TryParse(mangleMatch.Result("${mangle}"), out MangleResponseSDP);
                 }
             }
         }

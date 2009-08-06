@@ -90,7 +90,6 @@ namespace SIPSorcery.AppServer.DialPlan
         private SIPMonitorLogDelegate m_dialPlanLogDelegate;
 
         private SIPTransport m_sipTransport;
-        private SIPTransport m_sipLoopbackTransport;
         private DialPlanExecutingScript m_executingScript;
         private List<SIPProvider> m_sipProviders;
 
@@ -171,11 +170,9 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public DialPlanScriptHelper(
             SIPTransport sipTransport,
-            SIPTransport sipLoopbackTransport,
             DialPlanExecutingScript executingScript,
             SIPMonitorLogDelegate logDelegate, 
             DialogueBridgeCreatedDelegate createBridgeDelegate,
-            UASInviteTransaction clientTransaction,
             SIPRequest sipRequest,
             SIPCallDirection callDirection,
             DialPlanContext dialPlanContext,
@@ -188,7 +185,6 @@ namespace SIPSorcery.AppServer.DialPlan
             )
         {
             m_sipTransport = sipTransport;
-            m_sipLoopbackTransport = sipLoopbackTransport;
             m_executingScript = executingScript;
             m_dialPlanLogDelegate = logDelegate;
             m_createBridgeDelegate = createBridgeDelegate;
@@ -211,7 +207,7 @@ namespace SIPSorcery.AppServer.DialPlan
             if(m_sipAccountPersistor != null) {
                 getSIPAccount = m_sipAccountPersistor.Get;
             }
-            m_dialStringParser = new DialStringParser(m_sipTransport, m_sipLoopbackTransport, m_username, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate);
+            m_dialStringParser = new DialStringParser(m_sipTransport, m_dialPlanContext.Owner, m_dialPlanContext.SIPAccount, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate);
         }
 
         /// <remarks>
@@ -232,8 +228,6 @@ namespace SIPSorcery.AppServer.DialPlan
                 if (m_waitForCallCompleted != null) {
                     m_waitForCallCompleted.Set();
                 }
-
-                m_executingScript.StopExecution();
             }
             catch (Exception excp) {
                 logger.Error("Exception ClientCallTerminated. " + excp.Message);
@@ -310,7 +304,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 string answeredBody = null;
                 SIPDialogue answeredDialogue = null;
 
-                m_currentCall = new ForkCall(m_sipTransport, FireProxyLogEvent, Username, m_adminMemberId, LastDialled, m_outboundProxySocket);
+                m_currentCall = new ForkCall(m_sipTransport, FireProxyLogEvent, m_callManager.QueueNewCall, Username, m_adminMemberId, LastDialled, m_outboundProxySocket);
                 m_currentCall.CallProgress += m_dialPlanContext.CallProgress;
                 m_currentCall.CallFailed += (status, reason, headers) => {
                     LastFailureStatus = status;
@@ -340,12 +334,15 @@ namespace SIPSorcery.AppServer.DialPlan
                     // Wait for an answer.
                     ringTimeout = (ringTimeout > m_maxRingTime) ? m_maxRingTime : ringTimeout;
                     ExtendScriptTimeout(ringTimeout + DEFAULT_CREATECALL_RINGTIME);
+                    DateTime startTime = DateTime.Now;
 
                     if (m_waitForCallCompleted.WaitOne(ringTimeout * 1000, false)) {
                         if (!m_clientCallCancelled) {
                             if (result == DialPlanAppResult.Answered) {
                                 m_dialPlanContext.CallAnswered(answeredStatus, answeredReason, null, answeredContentType, answeredBody, answeredDialogue);
-                                // Dial plan script stops once there is an answered call to bridge to.
+
+                                // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
+                                Log("Dial command was successfully answered in " + DateTime.Now.Subtract(startTime).TotalSeconds + "s.");
                                 m_executingScript.StopExecution();
                             }
                         }
@@ -358,7 +355,15 @@ namespace SIPSorcery.AppServer.DialPlan
                         }
                     }
 
+                    if (m_clientCallCancelled) {
+                        Log("Dial command was halted by cancellation of client call after " + DateTime.Now.Subtract(startTime).TotalSeconds + "s.");
+                        m_executingScript.StopExecution();
+                    }
+
                     return result;
+                }
+                catch (ThreadAbortException) {
+                    return DialPlanAppResult.Unknown;
                 }
                 catch (Exception excp) {
                     logger.Error("Exception DialPlanScriptHelper Dial. " + excp.Message);
@@ -403,7 +408,10 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="customerHeaders">Optional list of pipe '|' delimited custom headers.</param>
         public void Respond(int statusCode, string reason, string customHeaders) {
             try {
-                if (statusCode >= 200 && statusCode < 300) {
+                if (m_dialPlanContext.IsAnswered) {
+                    Log("The call has already been answered the Respond command was not processed.");
+                }
+                else if (statusCode >= 200 && statusCode < 300) {
                     Log("Respond cannot be used for 2xx responses.");
                 }
                 else {
@@ -422,6 +430,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     }
                 }
             }
+            catch (ThreadAbortException) { }
             catch (Exception excp) {
                 Log("Exception Respond. " + excp.Message);
             }
@@ -495,7 +504,7 @@ namespace SIPSorcery.AppServer.DialPlan
         public bool IsAvailable(string username, string domain)
         {
             try {
-                string canonicalDomain = m_getCanonicalDomainDelegate(domain);
+                string canonicalDomain = m_getCanonicalDomainDelegate(domain, false);
                 if (canonicalDomain.IsNullOrBlank()) {
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The " + domain + " is not a serviced domain.", Username));
                     return false;
@@ -553,7 +562,7 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                string canonicalDomain = m_getCanonicalDomainDelegate(domain);
+                string canonicalDomain = m_getCanonicalDomainDelegate(domain, false);
                 if (canonicalDomain.IsNullOrBlank()) {
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The " + domain + " is not a serviced domain.", Username));
                     return null;

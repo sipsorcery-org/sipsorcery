@@ -22,12 +22,12 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPTransport sipTransport,
             DialogueBridgeCreatedDelegate createBridge,
             SIPEndPoint outboundProxy,
-            UASInviteTransaction clientTransaction,
+            ISIPServerUserAgent sipServerUserAgent,
             SIPDialPlan dialPlan,
             List<SIPProvider> sipProviders,
             string traceDirectory,
             string callersNetworkId)
-            : base(monitorLogDelegate, sipTransport, createBridge, outboundProxy, clientTransaction, dialPlan, sipProviders, traceDirectory, callersNetworkId)
+            : base(monitorLogDelegate, sipTransport, createBridge, outboundProxy, sipServerUserAgent, dialPlan, sipProviders, traceDirectory, callersNetworkId)
          {
              ContextType = DialPlanContextsEnum.Line;
              string[] dialPlanEntries = dialPlan.DialPlanScript.Split(new char[] { '\n' });

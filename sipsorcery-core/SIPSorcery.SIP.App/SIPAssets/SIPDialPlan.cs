@@ -206,6 +206,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_authorisedApps;     // A semi-colon delimited list of privileged apps that this dialplan is authorised to use.
+        [DataMember]
         [Column(Storage = "_authorisedapps", Name = "authorisedapps", DbType = "character varying(2048)", CanBeNull = true)]
         public string AuthorisedApps {
             get { return m_authorisedApps; }

@@ -124,7 +124,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 if (secondLegDialogue == null)
                 {
                     Log("The second call leg to " + dest2 + " was unsuccessful.");
-                    firstLegDialogue.Hangup();
+                    firstLegDialogue.Hangup(m_sipTransport, m_outboundProxy);
                     return;
                 }
 
@@ -159,7 +159,7 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPDialogue answeredDialogue = null;
             ManualResetEvent waitForCallCompleted = new ManualResetEvent(false);
 
-            ForkCall call = new ForkCall(m_sipTransport, Log_External, m_username, m_adminMemberId, null, m_outboundProxy);
+            ForkCall call = new ForkCall(m_sipTransport, Log_External, m_callManager.QueueNewCall, m_username, m_adminMemberId, null, m_outboundProxy);
             call.CallProgress += (s, r, h, t, b) => { Log("Progress response of " + s + " received on CallBack Dial" + "."); };
             call.CallFailed += (s, r, h) => { waitForCallCompleted.Set(); };
             call.CallAnswered += (s, r, h, t, b, d) => { answeredDialogue = d; waitForCallCompleted.Set(); };

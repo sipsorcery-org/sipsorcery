@@ -76,7 +76,8 @@ namespace SIPSorcery.SIP.App {
                         m_startCheckTime = DateTime.Now;
 
                         SIPClientUserAgent uac = new SIPClientUserAgent(m_sipTransport, null, null, null, LogMonitorEvent);
-                        SIPCallDescriptor callDescriptor = new SIPCallDescriptor(null, null, m_activeAppServerEntry.AppServerURI.ToString(), null, null, null, null, null, SIPCallDirection.Out, null, null, false);
+                        SIPCallDescriptor callDescriptor = new SIPCallDescriptor(null, null, m_activeAppServerEntry.AppServerURI.ToString(), null, null, null, null, null, SIPCallDirection.Out, null, null, null);
+                        callDescriptor.MangleResponseSDP = false;
                         uac.CallFailed += CallFailed;
                         uac.CallAnswered += CallAnswered;
                         uac.Call(callDescriptor);
@@ -125,7 +126,7 @@ namespace SIPSorcery.SIP.App {
             }
         }
 
-        private void CallAnswered(SIPClientUserAgent uac, SIPResponse sipResponse) {
+        private void CallAnswered(ISIPClientUserAgent uac, SIPResponse sipResponse) {
             logger.Debug("AppServerDispatcher CallAnswered with " + (int)sipResponse.Status + " " + sipResponse.ReasonPhrase + ".");
             SIPHeader okHeader = uac.ServerTransaction.TransactionFinalResponse.Header;
             int executionCount = 0;
@@ -139,7 +140,7 @@ namespace SIPSorcery.SIP.App {
             logger.Debug("AppServerDispatcher response took " + DateTime.Now.Subtract(m_startCheckTime).TotalMilliseconds.ToString("0.##") + "ms.");
         }
 
-        private void CallFailed(SIPClientUserAgent uac, string errorMessage) {
+        private void CallFailed(ISIPClientUserAgent uac, string errorMessage) {
             logger.Debug("AppServerDispatcher CallFailed with " + errorMessage + ".");
             m_activeAppServerEntry.HasFailed = true;
             m_activeAppServerEntry = GetActiveAppServer();

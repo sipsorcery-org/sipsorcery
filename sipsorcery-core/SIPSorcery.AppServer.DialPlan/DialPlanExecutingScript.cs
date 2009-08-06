@@ -50,7 +50,7 @@ namespace SIPSorcery.AppServer.DialPlan
 {
     public class DialPlanExecutingScript
     {
-        public const int MAX_SCRIPTPROCESSING_SECONDS = 10;           // The maximum amount of time a script will be able to execute for without completing or executing a Dial command.
+        public const int MAX_SCRIPTPROCESSING_SECONDS = 5;           // The maximum amount of time a script will be able to execute for without completing or executing a Dial command.
 
         private static int ScriptCounter;
 
@@ -59,7 +59,6 @@ namespace SIPSorcery.AppServer.DialPlan
         public Guid Id;
         public Thread DialPlanScriptThread;
         public ScriptScope DialPlanScriptScope;
-        public bool InUse;
         public bool Complete;
         public DialPlanContext ExecutingDialPlanContext;
         public string Owner;
@@ -86,7 +85,6 @@ namespace SIPSorcery.AppServer.DialPlan
             Owner = ExecutingDialPlanContext.Owner;
             StartTime = DateTime.Now;
             EndTime = StartTime.AddSeconds(MAX_SCRIPTPROCESSING_SECONDS);
-            InUse = true;
             Complete = false;
             ExecutionError = null;
             LastFailureStatus = SIPResponseStatusCodesEnum.None;
@@ -104,46 +102,22 @@ namespace SIPSorcery.AppServer.DialPlan
             try {
                 logger.Debug("DialPlanExecutingScript StopExecution on " + DialPlanScriptThread.Name + ".");
                 Complete = true;
-                //DialPlanScriptThread.Suspend();
-                //lock (m_scriptInterpreters) {
-                 //   for (int index = 0; index < m_scriptInterpreters.Count; index++) {
-                //        m_scriptInterpreters[index].Halt();
-                //    }
-                //}
+                DialPlanScriptThread.Abort();
             }
+            catch (ThreadAbortException) { }
             catch (Exception excp) {
                 logger.Warn("Exception DialPlanExecutingScript StopExecution. " + excp.Message);
             }
         }
 
-        public void AddInterpreter(Interpreter interpreter) {
-            /*if(Complete == true) {
-                interpreter.Halt();
-            }
-            else {
-                lock (m_scriptInterpreters) {
-                    m_scriptInterpreters.Add(interpreter);
-                }
-            }*/
-        }
-
-        public void Clear()
-        {
+        /*public void Clear() {
             logger.Debug("Clearing DialPlanExecutingScript on " + DialPlanScriptThread.Name + ".");
             ExecutingDialPlanContext = null;
             Owner = null;
-            InUse = false;
             Complete = false;
             ExecutionError = null;
             LastFailureStatus = SIPResponseStatusCodesEnum.None;
             LastFailureReason = null;
-
-            lock (m_scriptInterpreters) {
-                for (int index = 0; index < m_scriptInterpreters.Count; index++) {
-                    m_scriptInterpreters[index].Reset();
-                }
-                m_scriptInterpreters.Clear();
-            }
-        }
+        }*/
     }
 }

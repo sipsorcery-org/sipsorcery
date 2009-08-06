@@ -58,22 +58,22 @@ namespace SIPSorcery.Servers
 
         private SIPMonitorLogDelegate SIPMonitorLogEvent_External;              // Function to log messages from this core.
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
-        SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
+        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
         private SIPAuthenticateRequestDelegate SIPRequestAuthenticator_External;
 
         private SIPTransport m_sipTransport;
-        private SIPEndPoint m_loopbackSIPEndPoint;
         private SIPEndPoint m_outboundProxy;
         private SIPCallManager m_callManager;
         private SIPNotifyManager m_notifyManager;
+        private SIPCallDispatcher m_callDispatcher;
 
         public SIPAppServerCore(
 			SIPTransport sipTransport, 
-            SIPEndPoint loopbackSIPEndPoint,
             GetCanonicalDomainDelegate getCanonicalDomain,
             SIPAssetGetDelegate<SIPAccount> getSIPAccount,
             SIPMonitorLogDelegate proxyLog,
             SIPCallManager callManager,
+            SIPCallDispatcher callDispatcher,
             SIPNotifyManager notifyManager,
             SIPAuthenticateRequestDelegate sipAuthenticateRequest,
             SIPEndPoint outboundProxy)
@@ -81,8 +81,8 @@ namespace SIPSorcery.Servers
 			try
 			{
                 m_sipTransport = sipTransport;
-                m_loopbackSIPEndPoint = loopbackSIPEndPoint;
                 m_callManager = callManager;
+                m_callDispatcher = callDispatcher;
                 m_notifyManager = notifyManager;
 
                 m_sipTransport.SIPTransportRequestReceived += GotRequest; 
@@ -111,6 +111,7 @@ namespace SIPSorcery.Servers
                 string fromURIStr = (sipRequest.Header.From != null) ? sipRequest.Header.From.FromURI.ToString() : "null";
                 //string toUser = (sipRequest.Header.To != null) ? sipRequest.Header.To.ToURI.User : null;
                 //string summaryStr = "req " + sipRequest.Method + " from=" + fromUser + ", to=" + toUser + ", " + remoteEndPoint.ToString();
+                //logger.Debug("AppServerCore GotRequest " + sipRequest.Method + " from " + remoteEndPoint.ToString() + " callid=" + sipRequest.Header.CallId + ".");
 
                 SIPDialogue dialogue = null;
 
@@ -122,7 +123,11 @@ namespace SIPSorcery.Servers
                     dialogue = m_callManager.GetDialogue(sipRequest, remoteEndPoint);
                 }
 
-                if (dialogue != null && sipRequest.Method != SIPMethodsEnum.ACK)
+                if (dialogue != null && m_callDispatcher != null && m_callDispatcher.IsWorkerSIPEndPoint(remoteEndPoint)) {
+                    SIPEndPoint dstSIPEndPoint = m_sipTransport.GetRequestEndPoint(sipRequest, m_outboundProxy, false);
+                    m_sipTransport.SendRequest(dstSIPEndPoint, sipRequest);
+                }
+                else if (dialogue != null && sipRequest.Method != SIPMethodsEnum.ACK)
                 {
                     #region Process in dialogue requests.
 
@@ -182,7 +187,7 @@ namespace SIPSorcery.Servers
                     
                     #region Process NOPTIFY requests.
 
-                    if (GetCanonicalDomain_External(sipRequest.URI.Host) != null && !sipRequest.URI.User.IsNullOrBlank()) {
+                    if (GetCanonicalDomain_External(sipRequest.URI.Host, true) != null && !sipRequest.URI.User.IsNullOrBlank()) {
                         m_notifyManager.QueueNotification(sipRequest);
                     }
                     else {
@@ -197,19 +202,22 @@ namespace SIPSorcery.Servers
                 {
                     #region CANCEL request handling.
 
-                    UASInviteTransaction inviteTransaction = (UASInviteTransaction)m_sipTransport.GetTransaction(SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, SIPMethodsEnum.INVITE));
-
-                    if (inviteTransaction != null)
-                    {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Cancelling call for " + sipRequest.URI.ToString() + ".", fromUser));
-                        SIPCancelTransaction cancelTransaction = m_sipTransport.CreateCancelTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, inviteTransaction);
-                        cancelTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+                    if (m_callDispatcher != null) {
+                        m_callDispatcher.Dispatch(remoteEndPoint.ToString(), sipRequest);
                     }
-                    else
-                    {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No matching transaction was found for CANCEL to " + sipRequest.URI.ToString() + ".", fromUser));
-                        SIPResponse noCallLegResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
-                        m_sipTransport.SendResponse(noCallLegResponse);
+                    else {
+                        UASInviteTransaction inviteTransaction = (UASInviteTransaction)m_sipTransport.GetTransaction(SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, SIPMethodsEnum.INVITE));
+
+                        if (inviteTransaction != null) {
+                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Cancelling call for " + sipRequest.URI.ToString() + ".", fromUser));
+                            SIPCancelTransaction cancelTransaction = m_sipTransport.CreateCancelTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, inviteTransaction);
+                            cancelTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+                        }
+                        else {
+                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No matching transaction was found for CANCEL to " + sipRequest.URI.ToString() + ".", fromUser));
+                            SIPResponse noCallLegResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
+                            m_sipTransport.SendResponse(noCallLegResponse);
+                        }
                     }
 
                     #endregion
@@ -228,50 +236,60 @@ namespace SIPSorcery.Servers
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.ACK)
                 {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No transaction matched for ACK for " + sipRequest.URI.ToString() + ".", fromUser));
+                    if (m_callDispatcher != null) {
+                        m_callDispatcher.Dispatch(remoteEndPoint.ToString(), sipRequest);
+                    }
+                    else {
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No transaction matched for ACK for " + sipRequest.URI.ToString() + ".", fromUser));
+                    }
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.INVITE) {
 
                     #region INVITE request processing.
 
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "AppServerCore INVITE received, uri=" + sipRequest.URI.ToString() + ", cseq=" + sipRequest.Header.CSeq + ".", null));
-
-                    // A check is made to see if the  call has originated from the same process as the one that it has been received on. 
-                    // If so it is a loopback call. Typically loopback calls are used to get calls from one user to another user's dialplan.
-                    //if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host) != null && !m_sipTransport.IsLocalSIPEndPoint(remoteEndPoint)) {
-                    if (remoteEndPoint.ToString() != m_loopbackSIPEndPoint.ToString() && GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host) != null) {
-
-                        // Call identified as outgoing call for application server serviced domain.
-                        //string fromUser = sipRequest.Header.From.FromUserField.URI.User;
-                        string fromDomain = GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host);
-                        //SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == fromUser && s.SIPDomain == fromDomain);
-                        //string owner = (sipAccount != null) ? sipAccount.Owner : "unknown";
-                        //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New outgoing call to " + sipRequest.URI.ToString() + " (cseq=" + sipRequest.Header.CSeq + ").", owner));
-
-                        UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                        SIPServerUserAgent outgoingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, fromUser, fromDomain, SIPCallDirection.Out, GetSIPAccount_External, SIPRequestAuthenticator.AuthenticateSIPRequest, FireProxyLogEvent, uasTransaction);
-                        uasTransaction.NewCallReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(outgoingCall); };
-                        uasTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
-                    }
-                    else if (remoteEndPoint.ToString() == m_loopbackSIPEndPoint.ToString() || GetCanonicalDomain_External(sipRequest.URI.Host) != null) {
-                        // Call identified as incoming call for application server serviced domain.
-                        string uriUser = sipRequest.URI.User;
-                        string uriDomain = GetCanonicalDomain_External(sipRequest.URI.Host);
-                        // SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == uriUser && s.SIPDomain == uriDomain);
-                        //string owner = (sipAccount != null) ? sipAccount.Owner : "unknown";
-
-                        //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New incoming call to " + sipRequest.URI.ToString() + ".", owner));
-                        UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                        SIPServerUserAgent incomingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, uriUser, uriDomain, SIPCallDirection.In, GetSIPAccount_External, null, FireProxyLogEvent, uasTransaction);
-                        uasTransaction.NewCallReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(incomingCall); };
-                        uasTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+                    if (m_callDispatcher != null) {
+                        m_callDispatcher.Dispatch(remoteEndPoint.ToString(), sipRequest);
                     }
                     else {
-                        // Return not found for non-serviced domain.
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Domain not serviced " + sipRequest.URI.ToString() + ", returning not found.", null));
-                        UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                        SIPResponse notServicedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Domain not serviced");
-                        uasTransaction.SendFinalResponse(notServicedResponse);
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "AppServerCore INVITE received, uri=" + sipRequest.URI.ToString() + ", cseq=" + sipRequest.Header.CSeq + ".", null));
+
+                        // A check is made to see if the  call has originated from the same process as the one that it has been received on. 
+                        // If so it is a loopback call. Typically loopback calls are used to get calls from one user to another user's dialplan.
+                        //if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host) != null && !m_sipTransport.IsLocalSIPEndPoint(remoteEndPoint)) {
+                        if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host, false) != null) {
+
+                            // Call identified as outgoing call for application server serviced domain.
+                            //string fromUser = sipRequest.Header.From.FromUserField.URI.User;
+                            string fromDomain = GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host, false);
+                            //SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == fromUser && s.SIPDomain == fromDomain);
+                            //string owner = (sipAccount != null) ? sipAccount.Owner : "unknown";
+                            //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New outgoing call to " + sipRequest.URI.ToString() + " (cseq=" + sipRequest.Header.CSeq + ").", owner));
+
+                            UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                            SIPServerUserAgent outgoingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, fromUser, fromDomain, SIPCallDirection.Out, GetSIPAccount_External, SIPRequestAuthenticator.AuthenticateSIPRequest, FireProxyLogEvent, uasTransaction);
+                            uasTransaction.NewCallReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(outgoingCall); };
+                            uasTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+                        }
+                        else if (GetCanonicalDomain_External(sipRequest.URI.Host, true) != null) {
+                            // Call identified as incoming call for application server serviced domain.
+                            string uriUser = sipRequest.URI.User;
+                            string uriDomain = GetCanonicalDomain_External(sipRequest.URI.Host, true);
+                            // SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == uriUser && s.SIPDomain == uriDomain);
+                            //string owner = (sipAccount != null) ? sipAccount.Owner : "unknown";
+
+                            //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New incoming call to " + sipRequest.URI.ToString() + ".", owner));
+                            UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                            SIPServerUserAgent incomingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, uriUser, uriDomain, SIPCallDirection.In, GetSIPAccount_External, null, FireProxyLogEvent, uasTransaction);
+                            uasTransaction.NewCallReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(incomingCall); };
+                            uasTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+                        }
+                        else {
+                            // Return not found for non-serviced domain.
+                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Domain not serviced " + sipRequest.URI.ToString() + ", returning not found.", null));
+                            UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                            SIPResponse notServicedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Domain not serviced");
+                            uasTransaction.SendFinalResponse(notServicedResponse);
+                        }
                     }
 
                     #endregion
@@ -294,19 +312,23 @@ namespace SIPSorcery.Servers
 
         public void GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
         {
-            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "App Server received a SIP response from " + remoteEndPoint + " that did not match an existing transaction.\n" + sipResponse.ToString(), null));
+            string remoteEndPointStr = remoteEndPoint.ToString();
+            //logger.Debug("AppServerCore GotResponse " + sipResponse.Header.CSeqMethod + " " + sipResponse.StatusCode + " from " + remoteEndPointStr + " callid=" + sipResponse.Header.CallId + ".");
+
+            if (m_callDispatcher != null && m_callDispatcher.IsDispatcherCall(sipResponse.Header.CallId)) {
+                m_callDispatcher.Dispatch(remoteEndPoint, sipResponse);
+            }
+            else {
+                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "App Server received a SIP response from " + remoteEndPoint + " that did not match an existing transaction.\n" + sipResponse.ToString(), null));
+            }
         }
 
-        private void FireProxyLogEvent(SIPMonitorEvent monitorEvent)
-        {           
-            if (SIPMonitorLogEvent_External != null)
-            {
-                try
-                {
+        private void FireProxyLogEvent(SIPMonitorEvent monitorEvent) {
+            if (SIPMonitorLogEvent_External != null) {
+                try {
                     SIPMonitorLogEvent_External(monitorEvent);
                 }
-                catch (Exception excp)
-                {
+                catch (Exception excp) {
                     logger.Error("Exception FireProxyLogEvent SIPAppServerCore. " + excp.Message);
                 }
             }

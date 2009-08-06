@@ -447,6 +447,7 @@ namespace SIPSorcery.SIP
 				SIPViaHeader[] sipViaHeaders = SIPViaHeader.ParseSIPViaHeader(noPortViaHeader);
 
 				Console.WriteLine("Via Header Contact Address = " + sipViaHeaders[0].ContactAddress);
+                Console.WriteLine("Via Header Received From Address = " + sipViaHeaders[0].ReceivedFromAddress);
 
                 Assert.IsTrue(sipViaHeaders[0].Host == "192.168.1.1", "The Via header host was not parsed correctly");
 				Assert.IsTrue("192.168.1.1" == sipViaHeaders[0].ContactAddress, "The Via header contact address was not correctly parsed, " + sipViaHeaders[0].ContactAddress + ".");
@@ -1820,7 +1821,7 @@ namespace SIPSorcery.SIP
 			}
 
             [Test]
-            public void SetLooseRouteeTest()
+            public void SetLooseRouteTest()
             {
                 Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
@@ -1857,10 +1858,12 @@ namespace SIPSorcery.SIP
                 SIPRoute route = SIPRoute.ParseSIPRoute("12345656 <sip:127.0.0.1:5060;lr>");
 
                 Console.WriteLine("SIP Route=" + route.ToString() + ".");
+                Console.WriteLine("Route to SIPEndPoint=" + route.ToSIPEndPoint().ToString() + ".");
 
                 Assert.AreEqual(route.Host, "127.0.0.1:5060", "The SIP route host was not parsed correctly.");
                 Assert.AreEqual(route.ToString(), "\"12345656\" <sip:127.0.0.1:5060;lr>", "The SIP route string was not correct.");
                 Assert.IsFalse(route.IsStrictRouter, "Route was not correctly passed as a loose router.");
+                Assert.AreEqual(route.ToSIPEndPoint().ToString(), "udp:127.0.0.1:5060", "The SIP route did not produce the correct SIP End Point.");
             }
 
             [Test]
@@ -1875,6 +1878,22 @@ namespace SIPSorcery.SIP
                 Assert.AreEqual(route.Host, "127.0.0.1:5060", "The SIP route host was not parsed correctly.");
                 Assert.AreEqual(route.ToString(), "\"Joe Bloggs\" <sip:127.0.0.1:5060;lr>", "The SIP route string was not correct.");
                 Assert.IsFalse(route.IsStrictRouter, "Route was not correctly passed as a loose router.");
+            }
+
+            [Test]
+            public void ParseRouteWithUserPortionTest() {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                string routeStr = "<sip:0033820600000@127.0.0.1:5060;lr;transport=udp>";
+                SIPRoute route = SIPRoute.ParseSIPRoute(routeStr);
+
+                Console.WriteLine("SIP Route=" + route.ToString() + ".");
+                Console.WriteLine("Route to SIPEndPoint=" + route.ToSIPEndPoint().ToString() + ".");
+
+                Assert.AreEqual(route.Host, "127.0.0.1:5060", "The SIP route host was not parsed correctly.");
+                Assert.AreEqual(route.ToString(), routeStr, "The SIP route string was not correct.");
+                Assert.IsFalse(route.IsStrictRouter, "Route was not correctly passed as a loose router.");
+                Assert.AreEqual(route.ToSIPEndPoint().ToString(), "udp:127.0.0.1:5060", "The SIP route did not produce the correct SIP End Point.");
             }
 		}
 
