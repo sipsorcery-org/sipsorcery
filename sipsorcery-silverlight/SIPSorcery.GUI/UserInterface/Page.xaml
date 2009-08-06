@@ -14,6 +14,7 @@
 			<SIPSorcery:CreateAccountControl x:Name="m_createAccountControl" Visibility="Collapsed"/>
 			<Image Height="Auto" Width="Auto" Source="../Images/wizard-logo.png" Stretch="None" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="m_logo"/>
 			<Image Height="40" HorizontalAlignment="Center" VerticalAlignment="Top" Width="185" Source="../Images/small_logo.png" Stretch="Fill"/>
+			<TextBlock Height="22" HorizontalAlignment="Left" Margin="21,8,0,0" VerticalAlignment="Top" Width="376" Text="" TextWrapping="Wrap" Foreground="#FF85DB02" x:Name="m_versionTextBlock"/>
 		</Grid>
 	</ScrollViewer>
 </UserControl>

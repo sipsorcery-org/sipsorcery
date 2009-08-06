@@ -60,7 +60,7 @@ namespace SIPSorcery.SIPProxy
         private const string PROXY_LOOPBACK_PORT_KEY = "MonitorLoopbackPort";
         private const string PROXY_NATKEEPALIVESOCKET_KEY = "NATKeepAliveSocket";
         private const string PROXY_STUNSERVERHOSTNAME_KEY = "STUNServerHostname";
-        private const string PROXY_DISPATCHERJOBS_NODE_NAME = "sipdispatcherjobs";
+        private const string PROXY_PUBLICIPADDRESS_KEY = "PublicIPAddress";
 
         public static ILog logger;
 
@@ -70,7 +70,7 @@ namespace SIPSorcery.SIPProxy
         public static readonly int MonitorLoopbackPort;
         public static readonly IPEndPoint NATKeepAliveSocket;
         public static readonly string STUNServerHostname;
-        public static readonly XmlNode SIPDispatcherJobsNode;
+        public static readonly string PublicIPAddress;          // Should only be set if operaintg on a static public IP otherwise use the STUN client.
 
         static SIPProxyState()
         {
@@ -96,8 +96,7 @@ namespace SIPSorcery.SIPProxy
                 }
                 Int32.TryParse(AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_LOOPBACK_PORT_KEY), out MonitorLoopbackPort);
                 STUNServerHostname = AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_STUNSERVERHOSTNAME_KEY);
-
-                SIPDispatcherJobsNode = m_sipProxyNode.SelectSingleNode(PROXY_DISPATCHERJOBS_NODE_NAME);
+                PublicIPAddress = AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_PUBLICIPADDRESS_KEY);
             }
             catch (Exception excp)
             {

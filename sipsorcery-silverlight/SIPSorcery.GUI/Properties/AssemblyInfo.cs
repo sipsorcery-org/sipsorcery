@@ -11,7 +11,7 @@ using System.Windows.Markup;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("OEM")]
 [assembly: AssemblyProduct("SIPSorcery.Client")]
-[assembly: AssemblyCopyright("Copyright © OEM 2008")]
+[assembly: AssemblyCopyright("Released under BSD Public License.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Windows.Markup;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.0.*")]
+[assembly: AssemblyFileVersion("1.0.0.*")]

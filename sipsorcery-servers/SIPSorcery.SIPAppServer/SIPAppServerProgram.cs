@@ -7,7 +7,9 @@ using System.Text;
 using System.Threading;
 using SIPSorcery.CRM;
 using SIPSorcery.Net;
+using SIPSorcery.SIP;
 using SIPSorcery.Sys;
+using log4net;
 
 namespace SIPSorcery.SIPAppServer
 {
@@ -15,6 +17,8 @@ namespace SIPSorcery.SIPAppServer
     {
         private static readonly string m_storageTypeKey = Persistence.PERSISTENCE_STORAGETYPE_KEY;
         private static readonly string m_connStrKey = Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
+
+        private static ILog logger = AppState.logger;
 
         private static ManualResetEvent m_proxyUp = new ManualResetEvent(false);
 
@@ -36,12 +40,32 @@ namespace SIPSorcery.SIPAppServer
                     throw new ApplicationException("The SIP Application Service cannot start with no persistence settings specified.");
                 }
 
-                SIPAppServerDaemon daemon = new SIPAppServerDaemon(m_serverStorageType, m_serverStorageConnStr);
-
-                if (args != null && args.Length == 1 && args[0].StartsWith("-c"))
+                if (args != null && args.Length > 0)
                 {
                     isConsole = true;
                     Console.WriteLine("SIP App Server starting");
+                    logger.Debug("SIP App Server Console starting...");
+
+                    string sipSocket = null;
+                    string callManagerSvcAddress = null;
+
+                    foreach (string arg in args) {
+                        if (arg.StartsWith("-sip:")) {
+                            sipSocket = arg.Substring(5);
+                        }
+                        else if (arg.StartsWith("-cms:")) {
+                            callManagerSvcAddress = arg.Substring(5);
+                        }
+                    }
+
+                    SIPAppServerDaemon daemon = null;
+
+                    if (sipSocket.IsNullOrBlank() || callManagerSvcAddress.IsNullOrBlank()) {
+                        daemon = new SIPAppServerDaemon(m_serverStorageType, m_serverStorageConnStr);
+                    }
+                    else {
+                        daemon = new SIPAppServerDaemon(m_serverStorageType, m_serverStorageConnStr, SIPEndPoint.ParseSIPEndPoint(sipSocket), callManagerSvcAddress);
+                    }
 
                     Thread daemonThread = new Thread(new ThreadStart(daemon.Start));
                     daemonThread.Start();
@@ -50,7 +74,9 @@ namespace SIPSorcery.SIPAppServer
                 }
                 else
                 {
+                    logger.Debug("SIP App Server Windows Service Starting...");
                     System.ServiceProcess.ServiceBase[] ServicesToRun;
+                    SIPAppServerDaemon daemon = new SIPAppServerDaemon(m_serverStorageType, m_serverStorageConnStr);
                     ServicesToRun = new System.ServiceProcess.ServiceBase[] { new Service(daemon) };
                     System.ServiceProcess.ServiceBase.Run(ServicesToRun);
                 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Windows;
@@ -23,10 +24,11 @@ namespace SIPSorcery
         private const int REINITIALISE_WAIT_PERIOD = 10000;
         private const int DEFAULT_WEB_PORT = 80;
         private const int DEFAULT_PROVISIONING_WEBSERVICE_PORT = 8080;
+        private const string DEFAULT_PROVISIONING_FILE = "provisioning.svc";
         private const string DEFAULT_MONITOR_HOST = "www.sipsorcery.com";
         private const string DEFAULT_PROVISIONING_URL = "https://www.sipsorcery.com/provisioning.svc";
         private const string LOCALHOST_MONITOR_HOST = "localhost";
-        private const string LOCALHOST_PROVISIONING_URL = "http://localhost:8080/provisioning";
+        private const string LOCALHOST_PROVISIONING_URL = "http://localhost:8080/provisioning.svc";
 
         private string m_dummyOwner = SIPSorceryGUITestPersistor.DUMMY_OWNER;
 
@@ -58,6 +60,9 @@ namespace SIPSorcery
 
         private void Page_Loaded(object sender, System.Windows.RoutedEventArgs e)
         {
+
+            m_versionTextBlock.Text = Assembly.GetExecutingAssembly().FullName.Split(',')[1];
+            //m_versionTextBlock.Text = "version: " + Assembly.GetExecutingAssembly().FullName;
             m_appStatusMessage.Text = "Initialising...";
             //m_loginControl.Visibility = Visibility.Collapsed;
             m_loginControl.CreateNewAccountClicked += CreateNewAccountClicked;
@@ -68,10 +73,20 @@ namespace SIPSorcery
             //    hostPort = DEFAULT_PROVISIONING_WEBSERVICE_PORT;
             //}
 
-            string server = Application.Current.Host.Source.DnsSafeHost;
-            if (server == LOCALHOST_MONITOR_HOST || Application.Current.Host.Source.Scheme == "file") {
-                m_sipMonitorHost = LOCALHOST_MONITOR_HOST;
-                m_provisioningServiceURL = LOCALHOST_PROVISIONING_URL;
+            try {
+                string server = Application.Current.Host.Source.DnsSafeHost;
+                if (server == LOCALHOST_MONITOR_HOST || Application.Current.Host.Source.Scheme == "file") {
+                    m_sipMonitorHost = LOCALHOST_MONITOR_HOST;
+                    m_provisioningServiceURL = LOCALHOST_PROVISIONING_URL;
+                }
+                else if (server != DEFAULT_MONITOR_HOST) {
+                    m_sipMonitorHost = server;
+                    m_provisioningServiceURL = Application.Current.Host.Source.Scheme + "://" + server + ":" + DEFAULT_PROVISIONING_WEBSERVICE_PORT + "/" + DEFAULT_PROVISIONING_FILE;
+                }
+            }
+            catch {
+                m_sipMonitorHost = DEFAULT_MONITOR_HOST;
+                m_provisioningServiceURL = DEFAULT_PROVISIONING_URL;
             }
 
             ThreadPool.QueueUserWorkItem(new WaitCallback(Initialise), null);
@@ -212,14 +227,14 @@ namespace SIPSorcery
                 }
                 else
                 {
-                    m_persistorStatusMessage = "Could not connect to provisioning service.";
+                    m_persistorStatusMessage = "Could not connect to provisioning service on " + m_provisioningServiceURL + ".";
                     m_persistorStatus = ServiceConnectionStatesEnum.Error;
                 }
             }
             catch
             {
                 //m_persistorStatusMessage = excp.Message;
-                m_persistorStatusMessage = "Could not connect to provisioning service.";
+                m_persistorStatusMessage = "Could not connect to provisioning service on " + m_provisioningServiceURL + ".";
                 m_persistorStatus = ServiceConnectionStatesEnum.Error;
             }
             finally

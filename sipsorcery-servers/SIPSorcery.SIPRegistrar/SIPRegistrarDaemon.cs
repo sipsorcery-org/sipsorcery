@@ -98,7 +98,7 @@ namespace SIPSorcery.SIPRegistrar {
                 }
 
                 // Configure the SIP transport layer.
-                m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), false, false);
+                m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), false);
                 List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipRegistrarSocketsNode);
                 m_sipTransport.AddSIPChannel(sipChannels);
 

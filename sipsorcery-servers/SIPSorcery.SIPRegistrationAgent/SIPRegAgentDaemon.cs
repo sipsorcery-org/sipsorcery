@@ -84,6 +84,10 @@ namespace SIPSorcery.SIPRegistrationAgent
             {
                 logger.Debug("SIP Registration Agent daemon starting...");
 
+                if (m_sipRegAgentSocketsNode == null) {
+                    throw new ApplicationException("The SIP Registration Agent could not be started, no SIP transport sockets node could be found.");
+                }
+
                 // Pre-flight checks.
                 if (m_sipRegAgentSocketsNode == null || m_sipRegAgentSocketsNode.ChildNodes.Count == 0)
                 {
@@ -99,7 +103,7 @@ namespace SIPSorcery.SIPRegistrationAgent
                 }
 
                 // Configure the SIP transport layer.
-                m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), false, false);
+                m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), false);
                 List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipRegAgentSocketsNode);
                 m_sipTransport.AddSIPChannel(sipChannels);
 

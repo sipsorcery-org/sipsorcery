@@ -61,6 +61,8 @@ namespace SIPSorcery.SIPAppServer
         private const string RUBY_SCRIPT_COMMON_PATH_KEY = "RubyScriptCommonPath";
         private const string OUTBOUND_PROXY_KEY = "OutboundProxy";
         private const string NAT_KEEPALIVE_RELAY_SOCKET_KEY = "NATKeepAliveRelaySocket";
+        private const string SIPCALL_DISPATCHER_WORKERS_NODE_NAME = "sipdispatcherworkers";
+        private const string SIPCALL_DISPATCHER_SCRIPTPATH_NAME = "SIPCallDispatcherScriptPath";
 
 		public static ILog logger = null;
 
@@ -72,6 +74,8 @@ namespace SIPSorcery.SIPAppServer
         public static readonly string RubyScriptCommonPath;
         public static readonly SIPEndPoint OutboundProxy;
         public static readonly IPEndPoint NATKeepAliveRelaySocket;
+        public static readonly XmlNode SIPCallDispatcherWorkersNode;
+        public static string SIPCallDispatcherScriptPath;
 
 		static SIPAppServerState()
 		{
@@ -90,10 +94,6 @@ namespace SIPSorcery.SIPAppServer
                 }
 
                 SIPAppServerSocketsNode = m_sipAppServerConfigNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
-                if (SIPAppServerSocketsNode == null)
-                {
-                    throw new ApplicationException("The SIP Proxy could not be started, no " + SIPSOCKETS_CONFIGNODE_NAME + " node could be found.");
-                }
 
                 Int32.TryParse(AppState.GetConfigNodeValue(m_sipAppServerConfigNode, APPSERVER_LOOPBACK_PORT_KEY), out MonitorLoopbackPort);
                 TraceDirectory = AppState.GetConfigNodeValue(m_sipAppServerConfigNode, TRACE_DIRECTORY_KEY);
@@ -102,6 +102,8 @@ namespace SIPSorcery.SIPAppServer
                 {
                     OutboundProxy = SIPEndPoint.ParseSIPEndPoint(AppState.GetConfigNodeValue(m_sipAppServerConfigNode, OUTBOUND_PROXY_KEY));
                 }
+                SIPCallDispatcherWorkersNode = m_sipAppServerConfigNode.SelectSingleNode(SIPCALL_DISPATCHER_WORKERS_NODE_NAME);
+                SIPCallDispatcherScriptPath = AppState.GetConfigNodeValue(m_sipAppServerConfigNode, SIPCALL_DISPATCHER_SCRIPTPATH_NAME);
 			}
 			catch(Exception excp)
 			{

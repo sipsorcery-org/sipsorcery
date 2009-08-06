@@ -18,7 +18,7 @@ namespace SIPSorcery
 {
 	public partial class SIPProviderDetailsControl : UserControl
 	{
-        private const string BANNED_PROVIDER_SERVER_PATTERN = "sipsorcery";
+        //private const string BANNED_PROVIDER_SERVER_PATTERN = "sipsorcery";
         private const string DEFAULT_CONTACT_HOST = "sipsorcery.com";
 
         private static char m_customHeadersSeparator = SIPProvider.CUSTOM_HEADERS_SEPARATOR;

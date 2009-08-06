@@ -183,7 +183,6 @@ create table sipdialogues
  localuserfield varchar(512) not null,
  remoteuserfield varchar(512) not null,
  routeset varchar(512),
- outboundproxy varchar(128),
  cdrid varchar(36) not null,
  calldurationlimit int,
  inserted timestamp not null default now(),
@@ -224,9 +223,11 @@ create table cdr
  Primary Key(id)
 );
 
--- create index customers_custid_index on customers(customerid);
--- create index customers_lastname_index on customers(lastname);
--- create index customers_username_index on customers(username);
+create index customers_custid_index on customers(customerusername);
+create index cdrs_lastname_index on cdr(created);
+create index cdrs_owner_index on cdr(owner);
+create index providerbindings_nextregtime_index on sipproviderbindings(nextregistrationtime);
+--insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;174.129.236.7;174.129.236.7:5060', null, default);
 
 -- SIP Sorcery User Data DDL (Postgresql & MySQL)
 

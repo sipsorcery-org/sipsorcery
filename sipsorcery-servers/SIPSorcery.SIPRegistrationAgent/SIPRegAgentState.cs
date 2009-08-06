@@ -88,18 +88,16 @@ namespace SIPSorcery.SIPRegistrationAgent
                 if (ConfigurationManager.GetSection(SIPREGAGENT_CONFIGNODE_NAME) != null) {
                     m_sipRegAgentNode = (XmlNode)ConfigurationManager.GetSection(SIPREGAGENT_CONFIGNODE_NAME);
                 }
+
+                if (m_sipRegAgentNode == null) {
+                    logger.Warn("The SIP Registration Agent " + SIPREGAGENT_CONFIGNODE_NAME + " config node was not available, the agent will not be able to start.");
+                }
                 else {
-                    throw new ApplicationException("The SIP Registration Agent could not be started, no " + SIPREGAGENT_CONFIGNODE_NAME + " config node available.");
-                }
-
-                SIPRegAgentSocketsNode = m_sipRegAgentNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
-                if (SIPRegAgentSocketsNode == null) {
-                    throw new ApplicationException("The SIP Registration Agent could not be started, no " + SIPSOCKETS_CONFIGNODE_NAME + " node could be found.");
-                }
-
-                Int32.TryParse(AppState.GetConfigNodeValue(m_sipRegAgentNode, MONITOR_LOOPBACK_PORT_KEY), out MonitorLoopbackPort);
-                if (!AppState.GetConfigNodeValue(m_sipRegAgentNode, OUTBOUND_PROXY_KEY).IsNullOrBlank()) {
-                    OutboundProxy = SIPEndPoint.ParseSIPEndPoint(AppState.GetConfigNodeValue(m_sipRegAgentNode, OUTBOUND_PROXY_KEY));
+                    SIPRegAgentSocketsNode = m_sipRegAgentNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
+                    Int32.TryParse(AppState.GetConfigNodeValue(m_sipRegAgentNode, MONITOR_LOOPBACK_PORT_KEY), out MonitorLoopbackPort);
+                    if (!AppState.GetConfigNodeValue(m_sipRegAgentNode, OUTBOUND_PROXY_KEY).IsNullOrBlank()) {
+                        OutboundProxy = SIPEndPoint.ParseSIPEndPoint(AppState.GetConfigNodeValue(m_sipRegAgentNode, OUTBOUND_PROXY_KEY));
+                    }
                 }
             }
             catch (Exception excp)

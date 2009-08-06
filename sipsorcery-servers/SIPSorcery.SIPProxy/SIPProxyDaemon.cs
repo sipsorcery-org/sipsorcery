@@ -60,7 +60,7 @@ namespace SIPSorcery.SIPProxy {
         private string m_proxyRuntimeScriptPath = SIPProxyState.ProxyScriptPath;
         private IPEndPoint m_natKeepAliveSocket = SIPProxyState.NATKeepAliveSocket;
         private string m_stunServerHostname = SIPProxyState.STUNServerHostname;
-        private XmlNode m_dispatcherJobsNode = SIPProxyState.SIPDispatcherJobsNode;
+        private string m_publicIPAddress = SIPProxyState.PublicIPAddress;
 
         private SIPTransport m_sipTransport;
         private StatelessProxyCore m_statelessProxyCore;
@@ -94,16 +94,20 @@ namespace SIPSorcery.SIPProxy {
                 }
 
                 // Configure the SIP transport layer.
-                m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, null, false, false);
+                m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, null, false);
                 List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipProxySocketsNode);
                 m_sipTransport.AddSIPChannel(sipChannels);
 
                 // Create the SIP stateless proxy core.
-                m_statelessProxyCore = new StatelessProxyCore(FireSIPMonitorEvent, m_sipTransport, m_proxyRuntimeScriptPath, m_dispatcherJobsNode);
+                m_statelessProxyCore = new StatelessProxyCore(FireSIPMonitorEvent, m_sipTransport, m_proxyRuntimeScriptPath);
 
                 // If a STUN server hostname has been specified start the STUN client thread.
                 if (!m_stunServerHostname.IsNullOrBlank()) {
                     ThreadPool.QueueUserWorkItem(delegate { StartSTUNClient(); });
+                }
+
+                if (!m_publicIPAddress.IsNullOrBlank()) {
+                    m_statelessProxyCore.PublicIPAddress = IPAddress.Parse(m_publicIPAddress);
                 }
 
                 // Logging.
@@ -239,21 +243,25 @@ namespace SIPSorcery.SIPProxy {
 
         private void LogSIPRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest) {
             string message = "Proxy Request Received: " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
+            //logger.Debug("pr: request in " + sipRequest.Method + " " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + ", callid=" + sipRequest.Header.CallId + ".");
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatelessProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, sipRequest.Header.From.FromURI.User, localSIPEndPoint, endPoint));
         }
 
         private void LogSIPRequestOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest) {
             string message = "Proxy Request Sent: " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
+            //logger.Debug("pr: request out " + sipRequest.Method + " " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + ", callid=" + sipRequest.Header.CallId + ".");
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatelessProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, sipRequest.Header.From.FromURI.User, localSIPEndPoint, endPoint));
         }
 
         private void LogSIPResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse) {
             string message = "Proxy Response Received: " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
+            //logger.Debug("pr: response in " + sipResponse.Header.CSeqMethod + " " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + ", callid=" + sipResponse.Header.CallId + ".");
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatelessProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, sipResponse.Header.From.FromURI.User, localSIPEndPoint, endPoint));
         }
 
         private void LogSIPResponseOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse) {
             string message = "Proxy Response Sent: " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
+            //logger.Debug("pr: response out " + sipResponse.Header.CSeqMethod + " " + localSIPEndPoint.ToString() + "->" + endPoint.ToString()+ ", callid=" + sipResponse.Header.CallId + ".");
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.StatelessProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, sipResponse.Header.From.FromURI.User, localSIPEndPoint, endPoint));
         }
 
