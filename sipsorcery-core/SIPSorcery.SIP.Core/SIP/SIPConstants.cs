@@ -174,6 +174,7 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_REQUIRE = "Require";
         public const string SIP_HEADER_ROUTE = "Route";
         public const string SIP_HEADER_SERVER = "Server";
+        public const string SIP_HEADER_SUPPORTED = "Supported";
         public const string SIP_HEADER_TIMESTAMP = "Timestamp";
 		public const string SIP_HEADER_TO = "To";
         public const string SIP_HEADER_USERAGENT = "User-Agent";
@@ -188,6 +189,8 @@ namespace SIPSorcery.SIP
 		public const string SIP_COMPACTHEADER_CONTENTLENGTH = "l";
 		public const string SIP_COMPACTHEADER_CONTENTTYPE = "c";
 		public const string SIP_COMPACTHEADER_VIA = "v";
+        public const string SIP_COMPACTHEADER_SUPPORTED = "k";
+        public const string SIP_COMPACTHEADER_SUBJECT = "s";
 
 		// SIP Header Extensions for SIP Event Package RFC 3265.
 		public const string SIP_HEADER_EVENT = "Event";

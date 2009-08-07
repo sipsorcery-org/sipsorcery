@@ -126,6 +126,9 @@ namespace SIPSorcery.SIP.App {
             try {
                 m_uacCallDescriptor = sipCallDescriptor;
                 SIPRequest uacInviteRequest = GetInviteRequest(sipCallDescriptor.ToSIPAccount, sipCallDescriptor.From);
+                if (sipCallDescriptor.MangleResponseSDP && sipCallDescriptor.MangleIPAddress != null) {
+                    uacInviteRequest.Header.ProxyReceivedFrom = sipCallDescriptor.MangleIPAddress.ToString();
+                }
                 uacInviteRequest.Body = sipCallDescriptor.Content;
                 uacInviteRequest.Header.ContentType = sipCallDescriptor.ContentType;
                 uacInviteRequest.LocalSIPEndPoint = m_blackhole;

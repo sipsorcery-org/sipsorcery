@@ -2314,6 +2314,7 @@ namespace SIPSorcery.SIP
         public string Require;
         public SIPRouteSet Routes = new SIPRouteSet();
         public string Server;
+        public string Supported;
         public string Timestamp;
 		public SIPToHeader To;
 		public string UserAgent;
@@ -2693,6 +2694,12 @@ namespace SIPSorcery.SIP
                             sipHeader.ProxyReceivedOn = headerValue;
                         }
                         #endregion
+                        #region Supported
+                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_SUPPORTED.ToLower() ||
+                            headerNameLower == SIPHeaders.SIP_HEADER_SUPPORTED.ToLower()) {
+                            sipHeader.Supported = headerValue;
+                        }
+                        #endregion
 
                         else
                         {
@@ -2800,8 +2807,9 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append( (ReferredBy != null) ? SIPHeaders.SIP_HEADER_REFERREDBY + ": " + ReferredBy + m_CRLF : null);
                 headersBuilder.Append( (Require != null) ? SIPHeaders.SIP_HEADER_REQUIRE + ": " + Require + m_CRLF : null);
                 headersBuilder.Append( (Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);
+                headersBuilder.Append( (Supported != null) ? SIPHeaders.SIP_HEADER_SUPPORTED + ": " + Supported + m_CRLF : null);
                 headersBuilder.Append( (ProxyReceivedFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM + ": " + ProxyReceivedFrom + m_CRLF : null);
-                headersBuilder.Append((ProxyReceivedOn != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON + ": " + ProxyReceivedOn + m_CRLF : null);
+                headersBuilder.Append( (ProxyReceivedOn != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON + ": " + ProxyReceivedOn + m_CRLF : null);
 
 				// Unknown SIP headers
 				foreach(string unknownHeader in UnknownHeaders)
