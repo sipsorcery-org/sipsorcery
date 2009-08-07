@@ -518,12 +518,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 //else if (sipRequest != null) {
                 //    content = MangleContent(sipRequest.Body, sipRequest.Header.ProxyReceivedFrom, callLegURI.ToString());
                 //}
-
-                IPAddress publicSDPAddress = PublicIPAddress;
-                if (publicSDPAddress == null) {
-                    string remoteUAStr = sipRequest.Header.ProxyReceivedFrom;
-                    publicSDPAddress = (!remoteUAStr.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(remoteUAStr).SocketEndPoint.Address : sipRequest.RemoteSIPEndPoint.SocketEndPoint.Address;
-                }
+                IPAddress publicSDPAddress = GetRequestPublicIPAddress(sipRequest);
    
                 if (m_sipProviders != null) {
                     foreach (SIPProvider provider in m_sipProviders) {
@@ -631,52 +626,6 @@ namespace SIPSorcery.AppServer.DialPlan
 
             return fromHeader;
         }
-
-        /*private string MangleContent(string body, string proxyReceivedFromHeader, string legDestination) {
-            try {
-                string content = null;
-                bool wasSDPMangled = false;
-                IPEndPoint sdpEndPoint = (!body.IsNullOrBlank()) ? SDP.GetSDPRTPEndPoint(body) : null;
-                //Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "MangleContent, SDP=" + sdpEndPoint.Address.ToString() + ", Proxy-ReceivedFrom=" + proxyReceivedFromHeader + ".", m_username));
-                IPAddress sdpIPAddress = null;
-                
-                if (!body.IsNullOrBlank() && !proxyReceivedFromHeader.IsNullOrBlank()) {
-                    // Caller and callee are not on the same network id so an attempt will be made to mangle any private IP addresses found
-                    // in the SDP.
-                    //logger.Debug("Mangling SDP for call leg " + legDestination + ".");
-                    if (PublicIPAddress != null) {
-                        sdpIPAddress = PublicIPAddress;
-                    }
-                    else {
-                        sdpIPAddress = SIPEndPoint.ParseSIPEndPoint(proxyReceivedFromHeader).SocketEndPoint.Address;
-                    }
-
-                    if (sdpIPAddress != null) {
-                        content = SIPPacketMangler.MangleSDP(body, sdpIPAddress.ToString(), out wasSDPMangled);
-                    }
-                }
-                else {
-                    //logger.Debug("Not mangling SDP for call leg " + legDestination + ".");
-                    content = body;
-                }
-
-                if (wasSDPMangled) {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP for call to " + legDestination + " had address mangled from " + sdpEndPoint.Address.ToString() + " to " + sdpIPAddress.ToString() + ".", m_username));
-                }
-                else if (sdpEndPoint != null) {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP for call to " + legDestination + " using address of " + sdpEndPoint.Address.ToString() + ".", m_username));
-                }
-                else {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Could not determine the IP address for SDP request for call to " + legDestination + ".", m_username));
-                }
-
-                return content;
-            }
-            catch (Exception excp) {
-                logger.Error("Exception MangleContent. " + excp.Message);
-                return body;
-            }
-        }*/
 
         private bool IsURIInQueue(Queue<List<SIPCallDescriptor>> callQueue, string callURI) {
             try {
