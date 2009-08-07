@@ -25,7 +25,7 @@ if isreq:
       destRegistrar = req.Header.Routes.PopRoute().ToSIPEndPoint()
       src = sys.GetDefaultSIPEndPoint(destRegistrar.SIPProtocol)
       req.Header.Routes = None
-      sys.SendTransparent(destRegistrar, req, branch, src, None)
+      sys.SendTransparent(destRegistrar, req, branch, src, None, publicip)
           
     else:
       req.Header.ProxyReceivedOn = localEndPoint.ToString()
@@ -36,7 +36,7 @@ if isreq:
     sys.Respond(req, SIPResponseStatusCodesEnum.MethodNotAllowed, None)
 
   else:
-    if remoteEndPoint.ToString() == m_appServerSocket:
+    if remoteEndPoint.ToString().StartsWith("udp:127.0.0.1"):
       # Request from a SIP Application server for an external UA.
       dest = sys.Resolve(req)
       contactURI = None
@@ -49,7 +49,10 @@ if isreq:
           contactURI = SIPURI(req.URI.Scheme, sys.GetDefaultSIPEndPoint(dest.SIPProtocol))
       src = sys.GetDefaultSIPEndPoint(dest.SIPProtocol)
       branch = req.Header.Vias.PopTopViaHeader().Branch
-      sys.SendTransparent(dest, req, branch, src, contactURI)
+      if not dest.SocketEndPoint.Address.ToString().StartsWith("10."):
+        sys.SendTransparent(dest, req, branch, src, contactURI, publicip)
+      else:
+        sys.SendTransparent(dest, req, branch, src, contactURI, None)
     else:
       # Request from an external UA for a SIP Application Server
       req.Header.ProxyReceivedOn = localEndPoint.ToString()
@@ -75,7 +78,7 @@ else:
     resp.Header.Vias.PushViaHeader(SIPViaHeader(SIPEndPoint.ParseSIPEndPoint(m_regAgentSocket), topVia.Branch))  
     sys.Send(resp, SIPEndPoint.ParseSIPEndPoint(m_proxySocketInternal))
 
-  elif remoteEndPoint.ToString() == m_appServerSocket:
+  elif remoteEndPoint.ToString().StartsWith("udp:127.0.0.1"):
     # Responses from SIP Application Servers for external UAs.    
     if sipMethod == "INVITE":
       if not outSocket.SocketEndPoint.Address.ToString().StartsWith("10."):
@@ -90,7 +93,7 @@ else:
   else: 
     # Responses from external UAs for SIP Application Servers.
     resp.Header.ProxyReceivedOn = localEndPoint.ToString()
-    resp.Header.ProxyReceivedFrom = remoteEndPoint.ToString()    
+    resp.Header.ProxyReceivedFrom = remoteEndPoint.ToString()
     resp.Header.Vias.PushViaHeader(SIPViaHeader(SIPEndPoint.ParseSIPEndPoint(m_appServerSocket), topVia.Branch))  
     sys.Send(resp, SIPEndPoint.ParseSIPEndPoint(m_proxySocketInternal))
         
