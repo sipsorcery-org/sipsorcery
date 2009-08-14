@@ -27,7 +27,7 @@ namespace SIPSorcery.AppServer.DialPlan
             List<SIPProvider> sipProviders,
             string traceDirectory,
             string callersNetworkId)
-            : base(monitorLogDelegate, sipTransport, createBridge, outboundProxy, sipServerUserAgent, dialPlan, sipProviders, traceDirectory, callersNetworkId)
+            : base(monitorLogDelegate, sipTransport, createBridge, outboundProxy, sipServerUserAgent, dialPlan, sipProviders, traceDirectory, callersNetworkId, Guid.Empty)
          {
              ContextType = DialPlanContextsEnum.Line;
              string[] dialPlanEntries = dialPlan.DialPlanScript.Split(new char[] { '\n' });

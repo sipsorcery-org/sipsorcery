@@ -172,6 +172,8 @@ namespace SIPSorcery.SIP.App
                     throw new ApplicationException("The requested username is already in use please try a different one.");
                 }
 
+                customer.MaxExecutionCount = Customer.DEFAULT_MAXIMUM_EXECUTION_COUNT;
+
                 CRMCustomerPersistor.Add(customer);
                 logger.Debug("New customer record added for " + customer.CustomerUsername + ".");
 

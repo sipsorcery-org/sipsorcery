@@ -76,6 +76,7 @@ namespace SIPSorcery.SIP.App
         void Hungup(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest);
         void NoCDR();
         void SetTraceDelegate(SIPTransactionTraceMessageDelegate traceDelegate);
+        void SetOwner(string owner, string adminMemberId);
     }
 
     public class SIPServerUserAgent : ISIPServerUserAgent {
@@ -422,6 +423,11 @@ namespace SIPSorcery.SIP.App
             byeTransaction.TransactionTraceMessage += TransactionTraceMessage;
             SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
             byeTransaction.SendFinalResponse(byeResponse);
+        }
+
+        public void SetOwner(string owner, string adminMemberId) {
+            m_owner = owner;
+            m_adminMemberId = adminMemberId;
         }
 
         private void ByeFinalResponseReceived(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) {

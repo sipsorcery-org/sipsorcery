@@ -57,6 +57,7 @@ namespace SIPSorcery.Servers
         private const int MAX_QUEUEWAIT_PERIOD = 4000;              // Maximum time to wait to check the new calls queue if no events are received.
         private const int MAX_NEWCALL_QUEUE = 10;                   // Maximum number of new calls that will be queued for processing.
         private const string DISPATCHER_SIPACCOUNT_NAME = "dispatcher";
+        private const int MAX_CALLBACK_WAIT_SECONDS = 15;
 
         private static ILog logger = AppState.logger;
 
@@ -83,6 +84,8 @@ namespace SIPSorcery.Servers
         private AutoResetEvent m_newCallReady = new AutoResetEvent(false);
         private DialPlanEngine m_dialPlanEngine;
         private SIPAccount m_dispatcherSIPAccount;                                                          // Special SIP account used to service requests from monitoring or dispatcher agents.
+
+        private Dictionary<string, CallbackWaiter> m_waitingForCallbacks = new Dictionary<string, CallbackWaiter>();
 
         public SIPCallManager(
             SIPTransport sipTransport,
@@ -169,25 +172,66 @@ namespace SIPSorcery.Servers
                         }
 
                         if (newCall != null) {
-                            if (newCall.CallDirection == SIPCallDirection.In) {
-                                if (newCall.CallRequest.URI.User == DISPATCHER_SIPACCOUNT_NAME) {
-                                    // This is a special system account used by monitoring or dispatcher agents that want to check
-                                    // the state of the application server.
-                                    newCall.NoCDR();
-                                    newCall.SIPAccount = m_dispatcherSIPAccount;
+
+                                if (newCall.CallDirection == SIPCallDirection.In) {
+
+                                    // Check if this call is being waited for by a dialplan application.
+                                    CallbackWaiter matchingApp = null;
+
+                                    try {
+                                        if (m_waitingForCallbacks.Count > 0) {
+                                            List<CallbackWaiter> expiredWaiters = new List<CallbackWaiter>();
+                                            lock (m_waitingForCallbacks) {
+                                                foreach (CallbackWaiter waitingApp in m_waitingForCallbacks.Values) {
+                                                    if (DateTime.Now.Subtract(waitingApp.Added).TotalSeconds > MAX_CALLBACK_WAIT_SECONDS) {
+                                                        expiredWaiters.Add(waitingApp);
+                                                    }
+                                                    else {
+                                                        bool match = waitingApp.IsMyCall(newCall);
+                                                        if (match) {
+                                                            matchingApp = waitingApp;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+
+                                                if (expiredWaiters.Count > 0) {
+                                                    foreach (CallbackWaiter expiredApp in expiredWaiters) {
+                                                        m_waitingForCallbacks.Remove(expiredApp.UniqueId);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    catch (Exception callbackExcp) {
+                                        logger.Error("Exception ProcessNewCalls Checking Callbacks. " + callbackExcp.Message);
+                                    }
+
+                                    if (matchingApp != null) {
+                                        lock (m_waitingForCallbacks) {
+                                            m_waitingForCallbacks.Remove(matchingApp.UniqueId);
+                                        }
+                                    }
+                                    else {
+                                        if (newCall.CallRequest.URI.User == DISPATCHER_SIPACCOUNT_NAME) {
+                                            // This is a special system account used by monitoring or dispatcher agents that want to check
+                                            // the state of the application server.
+                                            newCall.NoCDR();
+                                            newCall.SIPAccount = m_dispatcherSIPAccount;
+                                            ProcessNewCall(newCall);
+                                        }
+                                        else if (newCall.LoadSIPAccountForIncomingCall()) {
+                                            ProcessNewCall(newCall);
+                                        }
+                                        else {
+                                            logger.Error("ProcessNewCalls could not load incoming SIP Account for " + newCall.CallRequest.URI.ToString() + ".");
+                                        }
+                                    }
+                                }
+                                else if (newCall.AuthenticateCall()) {
                                     ProcessNewCall(newCall);
                                 }
-                                else if (newCall.LoadSIPAccountForIncomingCall()) {
-                                    ProcessNewCall(newCall);
-                                }
-                                else {
-                                    logger.Error("ProcessNewCalls could not load incoming SIP Account for " + newCall.CallRequest.URI.ToString() + ".");
-                                }
                             }
-                            else if (newCall.AuthenticateCall()) {
-                                ProcessNewCall(newCall);
-                            }
-                        }
                     }
 
                     m_newCallReady.Reset();
@@ -246,7 +290,8 @@ namespace SIPSorcery.Servers
                                 dispatcherDialPlan,
                                 null,
                                 m_traceDirectory,
-                                sipAccount.NetworkId);
+                                sipAccount.NetworkId,
+                                Guid.Empty);
                         m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
                     }
                     else if (sipAccount.IsDisabled) {
@@ -262,31 +307,32 @@ namespace SIPSorcery.Servers
                         SIPDialPlan dialPlan = GetDialPlan_External(d => d.Owner == sipAccount.Owner && d.DialPlanName == dialPlanName);
 
                         if (dialPlan != null) {
-                            if (dialPlan.ExecutionCount >= dialPlan.MaxExecutionCount) {
-                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of dial plan " + dialPlan.DialPlanName + " was not processed as maximum execution count has been reached.", sipAccount.Owner));
-                                uas.Reject(SIPResponseStatusCodesEnum.TemporarilyNotAvailable, "Dial plan execution exceeded maximum allowed", null);
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Using dialplan " + dialPlanName + " for " + uas.CallDirection + " call to " + callURI.ToString() + ".", sipAccount.Owner));
+
+                            if (dialPlan.ScriptType == SIPDialPlanScriptTypesEnum.Asterisk) {
+                                DialPlanLineContext lineContext = new DialPlanLineContext(
+                                    Log_External,
+                                    m_sipTransport,
+                                    CreateDialogueBridge,
+                                    m_outboundProxy,
+                                    uas,
+                                    dialPlan,
+                                    GetSIPProviders_External(p => p.Owner == sipAccount.Owner, null, 0, Int32.MaxValue),
+                                    m_traceDirectory,
+                                    sipAccount.NetworkId);
+                                if (!uas.IsUASAnswered) {
+                                    m_dialPlanEngine.Execute(lineContext, uas, uas.CallDirection, CreateDialogueBridge, this);
+                                }
+                                else {
+                                    // This can occur if the call is cancelled by the caller between when the INVITE was received and when the dialplan execution was ready.
+                                    logger.Debug("Dialplan execution for " + dialPlanName + " for " + uas.CallDirection + " call to " + callURI.ToString() + " did not proceed as call already answered.");
+                                }
                             }
                             else {
-                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Using dialplan " + dialPlanName + " for " + uas.CallDirection + " call to " + callURI.ToString() + ".", sipAccount.Owner));
-
-                                if (dialPlan.ScriptType == SIPDialPlanScriptTypesEnum.Asterisk) {
-                                    DialPlanLineContext lineContext = new DialPlanLineContext(
-                                        Log_External,
-                                        m_sipTransport,
-                                        CreateDialogueBridge,
-                                        m_outboundProxy,
-                                        uas,
-                                        dialPlan,
-                                        GetSIPProviders_External(p => p.Owner == sipAccount.Owner, null, 0, Int32.MaxValue),
-                                        m_traceDirectory,
-                                        sipAccount.NetworkId);
-                                    if (!uas.IsUASAnswered) {
-                                        m_dialPlanEngine.Execute(lineContext, uas, uas.CallDirection, CreateDialogueBridge, this);
-                                    }
-                                    else {
-                                        // This can occur if the call is cancelled by the caller between when the INVITE was received and when the dialplan execution was ready.
-                                        logger.Debug("Dialplan execution for " + dialPlanName + " for " + uas.CallDirection + " call to " + callURI.ToString() + " did not proceed as call already answered.");
-                                    }
+                                Customer customer = m_customerPersistor.Get(c => c.CustomerUsername == dialPlan.Owner);
+                                if (!IsDialPlanExecutionAllowed(dialPlan, customer)) {
+                                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of dial plan " + dialPlan.DialPlanName + " was not processed as maximum execution count has been reached.", sipAccount.Owner));
+                                    uas.Reject(SIPResponseStatusCodesEnum.TemporarilyNotAvailable, "Dial plan execution exceeded maximum allowed", null);
                                 }
                                 else {
                                     DialPlanScriptContext scriptContext = new DialPlanScriptContext(
@@ -298,7 +344,9 @@ namespace SIPSorcery.Servers
                                         dialPlan,
                                         GetSIPProviders_External(p => p.Owner == sipAccount.Owner, null, 0, Int32.MaxValue),
                                         m_traceDirectory,
-                                        (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.NetworkId : null);
+                                        (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.NetworkId : null,
+                                        new Guid(customer.Id));
+
                                     if (!uas.IsUASAnswered) {
                                         m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
                                     }
@@ -327,7 +375,8 @@ namespace SIPSorcery.Servers
                                         incomingDialPlan,
                                         null,
                                         m_traceDirectory,
-                                        null);
+                                        null,
+                                        Guid.Empty);
                                 if (!uas.IsUASAnswered) {
                                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
                                 }
@@ -377,23 +426,29 @@ namespace SIPSorcery.Servers
                         return "Sorry the specified user has not enabled callbacks, the callback was not initiated.";
                     }
                     else {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web Callback initialising to " + number + ".", username));
+                        if (!IsDialPlanExecutionAllowed(webCallbackDialPlan, customer)) {
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of web callback dial plan was not processed as maximum execution count has been reached.", username));
+                            return "Sorry the callback was not initiated, dial plan execution exceeded maximum allowed";
+                        }
+                        else {
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web Callback initialising to " + number + ".", username));
 
-                        UASInviteTransaction dummyTransaction = GetDummyWebCallbackTransaction(number);
-                        SIPServerUserAgent dummyUAS = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, username, SIPDomainManager.DEFAULT_LOCAL_DOMAIN, SIPCallDirection.Out, GetSIPAccount_External, null, Log_External, dummyTransaction);
-                        DialPlanScriptContext scriptContext = new DialPlanScriptContext(
-                                Log_External,
-                                m_sipTransport,
-                                CreateDialogueBridge,
-                                m_outboundProxy,
-                                dummyUAS,
-                                webCallbackDialPlan,
-                                GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
-                                m_traceDirectory,
-                                null);
-                        m_dialPlanEngine.Execute(scriptContext, dummyUAS, SIPCallDirection.Out, CreateDialogueBridge, this);
-
-                        return "Callback was successfully initiated.";
+                            UASInviteTransaction dummyTransaction = GetDummyWebCallbackTransaction(number);
+                            SIPServerUserAgent dummyUAS = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, username, SIPDomainManager.DEFAULT_LOCAL_DOMAIN, SIPCallDirection.Out, GetSIPAccount_External, null, Log_External, dummyTransaction);
+                            DialPlanScriptContext scriptContext = new DialPlanScriptContext(
+                                    Log_External,
+                                    m_sipTransport,
+                                    CreateDialogueBridge,
+                                    m_outboundProxy,
+                                    dummyUAS,
+                                    webCallbackDialPlan,
+                                    GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
+                                    m_traceDirectory,
+                                    null,
+                                    Guid.Empty);
+                            m_dialPlanEngine.Execute(scriptContext, dummyUAS, SIPCallDirection.Out, CreateDialogueBridge, this);
+                            return "Callback was successfully initiated.";
+                        }
                     }
                 }
             }
@@ -812,6 +867,29 @@ namespace SIPSorcery.Servers
             catch (Exception excp) {
                 logger.Error("Exception GetCurrentCallCount. " + excp.Message);
                 return -1;
+            }
+        }
+
+        public void AddWaitingApplication(CallbackWaiter callbackWaiter) {
+            lock (m_waitingForCallbacks) {
+                if (m_waitingForCallbacks.ContainsKey(callbackWaiter.UniqueId)) {
+                    m_waitingForCallbacks[callbackWaiter.UniqueId] = callbackWaiter;
+                }
+                else {
+                    m_waitingForCallbacks.Add(callbackWaiter.UniqueId, callbackWaiter);
+                }
+            }
+        }
+
+        private bool IsDialPlanExecutionAllowed(SIPDialPlan dialPlan, Customer customer) {
+            int maxAllowedExecutionCount = (customer != null) ? customer.MaxExecutionCount : 0;
+            int currentExecutionCount = (customer != null) ? customer.ExecutionCount : 0;
+
+            if (dialPlan.ExecutionCount >= dialPlan.MaxExecutionCount || currentExecutionCount >= maxAllowedExecutionCount) {
+                return false;
+            }
+            else {
+                return true;
             }
         }
     }

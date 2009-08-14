@@ -193,7 +193,7 @@ namespace SIPSorcery.SIP.App
         public int MaxExecutionCount
         {
             get { return m_maxExecutionCount; }
-            set { m_maxExecutionCount = value;}  // By design can't be modified through the UI at this point.
+            set { m_maxExecutionCount = value;}  
         }
 
         private int m_executionCount;

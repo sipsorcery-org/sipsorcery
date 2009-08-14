@@ -65,6 +65,7 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
       <Aliases>global</Aliases>
     </Reference>
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -76,6 +77,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DialPlanApps\CallbackApp.cs" />
+    <Compile Include="DialPlanApps\GoogleVoiceCall.cs" />
     <Compile Include="DialPlanApps\RTSPApp.cs" />
     <Compile Include="DialPlanApps\ForkCall.cs" />
     <Compile Include="DialPlanCommand.cs" />
@@ -89,6 +91,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery.CRM\SIPSorcery.CRM.csproj">
+      <Project>{F951789F-1ABB-42E8-BB51-F028DC4824EF}</Project>
+      <Name>SIPSorcery.CRM</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">
       <Project>{55898587-8456-40D4-BB88-C9FC8BD6BA9C}</Project>
       <Name>SIPSorcery.Net</Name>

@@ -39,7 +39,16 @@ namespace SIPSorcery.Servers {
                 if (client != null) {
                     logger.Debug("Sending isalive request to client endpoint at " + client.Endpoint.Address.ToString() + ".");
 
-                    client.IsAliveComplete += (s, a) => { isAlive = a.Result; isAliveMRE.Set(); };
+                    client.IsAliveComplete += (s, a) => {
+                        try {
+                            isAlive = a.Result;
+                            isAliveMRE.Set();
+                        }
+                        catch (Exception excp) {
+                            logger.Error("Exception IsAliveComplete. " + excp.Message);
+                            isAlive = false;
+                        }
+                    };
                     client.IsAliveAsync();
 
                     if (isAliveMRE.WaitOne(OPERATION_TIMEOUT)) {
@@ -55,7 +64,8 @@ namespace SIPSorcery.Servers {
             }
             catch (Exception excp) {
                 logger.Error("Exception CallManagerPassThruService IsAlive. " + excp.Message);
-                throw;
+                //throw;
+                return false;
             }
         }
 
@@ -71,7 +81,24 @@ namespace SIPSorcery.Servers {
                 if (client != null) {
                     logger.Debug("Sending webcallback request to client endpoint at " + client.Endpoint.Address.ToString() + ".");
 
-                    client.WebCallbackComplete += (s, a) => { result = a.Result; webCallbackMRE.Set(); };
+                    client.WebCallbackComplete += (s, a) => {
+                        try {
+                            if(a != null) {
+                                if(a.Error != null) {
+                                    result = a.Error.Message;
+                                }
+                                else {
+                                    result = a.Result; 
+                                }
+                            } 
+                            webCallbackMRE.Set();
+                        }
+                        catch (Exception excp) {
+                            logger.Debug("Exception CallManagerPassThruService WebCallbackComplete. " + excp.Message);
+                            result = excp.Message;
+                        }
+                    };
+
                     client.WebCallbackAsync(username, number);
 
                     if (webCallbackMRE.WaitOne(OPERATION_TIMEOUT)) {

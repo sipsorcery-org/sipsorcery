@@ -56,15 +56,16 @@ namespace SIPSorcery.CRM
     {
         public const string XML_DOCUMENT_ELEMENT_NAME = "customers";
         public const string XML_ELEMENT_NAME = "customer";
-        public const string TOPLEVEL_ADMIN_ID = "*";    // If a customer record has their AdminId set to this value they are in charge!
-
+        public const string TOPLEVEL_ADMIN_ID = "*";                    // If a customer record has their AdminId set to this value they are in charge!
+        public const int DEFAULT_MAXIMUM_EXECUTION_COUNT = 5;           // The default value for the maximum allowed simultaneous executions of all the customer's dial plans.
+        
         private const int MAX_FIELD_LENGTH = 64;
         private const int MIN_USERNAME_LENGTH = 5;
         private const int MAX_USERNAME_LENGTH = 20;
         private const int MIN_PASSWORD_LENGTH = 6;
         private const int MAX_PASSWORD_LENGTH = 20;
         private const int MAX_WEBSITE_FIELD_LENGTH = 256;
-
+        
         public static readonly string USERNAME_ALLOWED_CHARS = @"a-zA-Z0-9_\-";     // The '.' character is not allowed in customer usernames in order to support a domain like structure for SIP account usernames.
 
         private static ILog logger = AppState.logger;
@@ -123,6 +124,12 @@ namespace SIPSorcery.CRM
 
         [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
         public DateTime InsertedUTC { get; set; }
+
+        [Column(Storage = "_maxexecutioncount", Name = "maxexecutioncount", DbType = "integer", CanBeNull = false)]
+        public int MaxExecutionCount { get; set; }
+
+        [Column(Storage = "_executioncount", Name = "executioncount", DbType = "integer", CanBeNull = false)]
+        public int ExecutionCount { get; set; }
 
         public Customer() { }
 

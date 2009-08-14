@@ -75,6 +75,7 @@ namespace SIPSorcery.SIP {
         public SIPURI RemoteTarget { get; set; }                    // This will be the Contact URI in the INVITE request or in the 2xx INVITE response and is where subsequent dialogue requests should be sent.
         public string DialogueId { get; set; }
         public Guid CDRId { get; set; }                             // Call detail record for call the dialogue belongs to.
+        public string ContentType { get; private set; }             // The content type on the request or response that created this dialogue. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
         public string SDP { get; private set; }                     // The sessions description protocol payload. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
         public string RemoteSDP { get; private set; }               // The sessions description protocol payload from the remote end. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
         public Guid BridgeId { get; set; }                          // If this dialogue gets bridged by a higher level application server the id for the bridge can be stored here.                   
@@ -147,6 +148,7 @@ namespace SIPSorcery.SIP {
             CDRId = uasInviteTransaction.CDR.CDRId;
             Owner = owner;
             AdminMemberId = adminMemberId;
+            ContentType = uasInviteTransaction.TransactionFinalResponse.Header.ContentType;
             SDP = uasInviteTransaction.TransactionFinalResponse.Body;
             RemoteSDP = uasInviteTransaction.TransactionRequest.Body;
             //OutboundProxy = uasInviteTransaction.OutboundProxy;
@@ -191,6 +193,7 @@ namespace SIPSorcery.SIP {
             CDRId = uacInviteTransaction.CDR.CDRId;
             Owner = owner;
             AdminMemberId = adminMemberId;
+            ContentType = uacInviteTransaction.TransactionRequest.Header.ContentType;
             SDP = uacInviteTransaction.TransactionRequest.Body;
             RemoteSDP = uacInviteTransaction.TransactionFinalResponse.Body;
             //OutboundProxy = uacInviteTransaction.OutboundProxy;

@@ -325,7 +325,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                                             SIPCallDescriptor loopbackCall = new SIPCallDescriptor(calledSIPAccount, fromHeader.ToString(), contentType, content);
                                             loopbackCall.ParseCallOptions(options);
-                                            loopbackCall.MangleIPAddress = GetRequestPublicIPAddress(sipRequest);
+                                            loopbackCall.MangleIPAddress = (PublicIPAddress != null) ? PublicIPAddress : SIPPacketMangler.GetRequestIPAddress(sipRequest);
                                             switchCalls.Add(loopbackCall);
                                         }
                                     }
@@ -453,7 +453,7 @@ namespace SIPSorcery.AppServer.DialPlan
                             content = MangleContent(sipRequest.Body, sipRequest.Header.ProxyReceivedFrom, sipAccount.SIPUsername + "@" + sipAccount.SIPDomain);
                         }*/
 
-                        IPAddress publicSDPAddress = GetRequestPublicIPAddress(sipRequest);
+                        IPAddress publicSDPAddress = (PublicIPAddress != null) ? PublicIPAddress : SIPPacketMangler.GetRequestIPAddress(sipRequest);
 
                         SIPCallDescriptor switchCall = new SIPCallDescriptor(
                             null, 
@@ -518,7 +518,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 //else if (sipRequest != null) {
                 //    content = MangleContent(sipRequest.Body, sipRequest.Header.ProxyReceivedFrom, callLegURI.ToString());
                 //}
-                IPAddress publicSDPAddress = GetRequestPublicIPAddress(sipRequest);
+                IPAddress publicSDPAddress = (PublicIPAddress != null) ? PublicIPAddress : SIPPacketMangler.GetRequestIPAddress(sipRequest);
    
                 if (m_sipProviders != null) {
                     foreach (SIPProvider provider in m_sipProviders) {
@@ -658,20 +658,6 @@ namespace SIPSorcery.AppServer.DialPlan
                 logger.Error("Exception isURIInQueue. " + excp.Message);
                 return false;
             }
-        }
-
-        private IPAddress GetRequestPublicIPAddress(SIPRequest sipRequest) {
-            IPAddress publicIPAddress = PublicIPAddress;
-            if (publicIPAddress == null) {
-                string remoteUAStr = sipRequest.Header.ProxyReceivedFrom;
-                if (!remoteUAStr.IsNullOrBlank()) {
-                    publicIPAddress = SIPEndPoint.ParseSIPEndPoint(remoteUAStr).SocketEndPoint.Address;
-                }
-                else if (sipRequest.RemoteSIPEndPoint != null) {
-                    publicIPAddress = sipRequest.RemoteSIPEndPoint.SocketEndPoint.Address;
-                }
-            }
-            return publicIPAddress;
         }
 
         #region Unit testing.

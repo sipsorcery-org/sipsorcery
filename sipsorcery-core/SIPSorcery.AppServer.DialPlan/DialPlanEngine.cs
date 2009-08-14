@@ -48,6 +48,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using SIPSorcery.CRM;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -100,6 +101,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;
         private GetCanonicalDomainDelegate GetCanonicalDomainDelegate_External;
         private SIPAssetPersistor<SIPDialPlan> m_dialPlanPersistor;
+        private SIPAssetPersistor<Customer> m_customerPersistor;
 
         private DateTime m_rubyCommonLastReload = DateTime.Now;
         private string m_rubyScriptCommonPath;
@@ -114,6 +116,7 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPAssetPersistor<SIPAccount> sipAssetPersistor,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getBindings,
             SIPAssetPersistor<SIPDialPlan> dialPlanPersistor,
+            SIPAssetPersistor<Customer> customerPersistor,
             SIPEndPoint outboundProxySocket,
             string rubyScriptCommonPath)
 		{
@@ -127,6 +130,7 @@ namespace SIPSorcery.AppServer.DialPlan
             m_sipAccountPersistor = sipAssetPersistor;
             GetSIPAccountBindings_External = getBindings;
             m_dialPlanPersistor = dialPlanPersistor;
+            m_customerPersistor = customerPersistor;
             m_outboundProxySocket = outboundProxySocket;
             m_rubyScriptCommonPath = rubyScriptCommonPath;
 
@@ -315,7 +319,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         rubyScope.SetVariable(SCRIPT_HELPEROBJECT_NAME, planHelper);
 
                         if (new Guid(dialPlanContext.SIPDialPlan.Id) != Guid.Empty) {
-                            IncrementDialPlanExecutionCount(dialPlanContext.SIPDialPlan);
+                            IncrementDialPlanExecutionCount(dialPlanContext.SIPDialPlan, dialPlanContext.CustomerId);
                         }
 
                         //dialPlanExecutionScript.DialPlanScriptThread = new Thread(new ParameterizedThreadStart(ExecuteScript));
@@ -484,12 +488,18 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        private void IncrementDialPlanExecutionCount(SIPDialPlan dialPlan) {
+        private void IncrementDialPlanExecutionCount(SIPDialPlan dialPlan, Guid customerId) {
             try {
                 if (dialPlan != null && !dialPlan.Id.IsNullOrBlank() && new Guid(dialPlan.Id) != Guid.Empty) {
                     int executionCount = Convert.ToInt32(m_dialPlanPersistor.GetProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName));
                     logger.Debug("Incrementing dial plan execution count for " + dialPlan.DialPlanName + "@" + dialPlan.Owner + ", currently=" + executionCount + ".");
                     m_dialPlanPersistor.UpdateProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName, executionCount + 1);
+
+                    if (customerId != Guid.Empty) {
+                        int customerExecutionCount = Convert.ToInt32(m_customerPersistor.GetProperty(customerId, m_sipDialPlanExecutionCountPropertyName));
+                        logger.Debug("Incrementing customer execution count for " + dialPlan.Owner + ", currently=" + customerExecutionCount + ".");
+                        m_customerPersistor.UpdateProperty(customerId, m_sipDialPlanExecutionCountPropertyName, customerExecutionCount + 1);
+                    }
                 }
             }
             catch (Exception excp) {
@@ -497,12 +507,20 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        private void DecrementDialPlanExecutionCount(SIPDialPlan dialPlan) {
+        private void DecrementDialPlanExecutionCount(SIPDialPlan dialPlan, Guid customerId) {
             try {
                 if (dialPlan != null && !dialPlan.Id.IsNullOrBlank() && new Guid(dialPlan.Id) != Guid.Empty) {
                     int executionCount = Convert.ToInt32(m_dialPlanPersistor.GetProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName));
                     logger.Debug("Decrementing dial plan execution count for " + dialPlan.DialPlanName + "@" + dialPlan.Owner + ", currently=" + executionCount + ".");
-                    m_dialPlanPersistor.UpdateProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName, executionCount - 1);
+                    executionCount = (executionCount > 0) ? executionCount - 1 : 0;
+                    m_dialPlanPersistor.UpdateProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName, executionCount);
+
+                    if (customerId != Guid.Empty) {
+                        int customerExecutionCount = Convert.ToInt32(m_customerPersistor.GetProperty(customerId, m_sipDialPlanExecutionCountPropertyName));
+                        logger.Debug("Decrementing customer execution count for " + dialPlan.Owner + ", currently=" + customerExecutionCount + ".");
+                        customerExecutionCount = (customerExecutionCount > 0) ? customerExecutionCount - 1 : 0;
+                        m_customerPersistor.UpdateProperty(customerId, m_sipDialPlanExecutionCountPropertyName, customerExecutionCount);
+                    }
                 }
             }
             catch (Exception excp) {
@@ -568,7 +586,7 @@ namespace SIPSorcery.AppServer.DialPlan
                             finally {
                                 try {
                                     if (new Guid(dialPlanContext.SIPDialPlan.Id) != Guid.Empty) {
-                                        DecrementDialPlanExecutionCount(dialPlanContext.SIPDialPlan);
+                                        DecrementDialPlanExecutionCount(dialPlanContext.SIPDialPlan, dialPlanContext.CustomerId);
                                     }
 
                                     if (killScript.DialPlanScriptThread.IsAlive) {

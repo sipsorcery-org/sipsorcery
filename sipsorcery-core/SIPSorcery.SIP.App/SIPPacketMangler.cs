@@ -182,5 +182,17 @@ namespace SIPSorcery.SIP.App
                 logger.Error("Exception MangleSIPResponse. " + excp.Message);
             }
         }
+
+        public static IPAddress GetRequestIPAddress(SIPRequest sipRequest) {
+            IPAddress requestIPAddress = null;
+            string remoteUAStr = sipRequest.Header.ProxyReceivedFrom;
+            if (!remoteUAStr.IsNullOrBlank()) {
+                requestIPAddress = SIPEndPoint.ParseSIPEndPoint(remoteUAStr).SocketEndPoint.Address;
+            }
+            else if (sipRequest.RemoteSIPEndPoint != null) {
+                requestIPAddress = sipRequest.RemoteSIPEndPoint.SocketEndPoint.Address;
+            }
+            return requestIPAddress;
+        }
     }
 }

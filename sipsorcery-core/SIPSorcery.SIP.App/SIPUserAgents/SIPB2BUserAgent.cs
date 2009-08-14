@@ -287,6 +287,12 @@ namespace SIPSorcery.SIP.App {
             m_uasTransaction.CDR = null;
         }
 
+        public void SetOwner(string owner, string adminMemberId) {
+            m_uacOwner = owner;
+            m_uacAdminMemberId = adminMemberId;
+        }
+
+
         #endregion
 
         public void Hangup() {

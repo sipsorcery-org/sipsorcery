@@ -354,6 +354,10 @@ namespace SIPSorcery.AppServer.DialPlan
                     // This call leg failed, record the failure status and reason.
                     m_lastFailureStatus = answeredResponse.Status;
                     m_lastFailureReason = answeredResponse.ReasonPhrase;
+
+                    if (m_switchCallTransactions != null) {
+                        m_switchCallTransactions.Add(answeredUAC.ServerTransaction);
+                    }
                 }
 
                 CallLegCompleted();

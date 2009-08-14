@@ -79,6 +79,8 @@ namespace SIPSorcery.AppServer.DialPlan
         private const string USERDATA_DBTYPE_KEY = "UserDataDBType";
         private const string USERDATA_DBCONNSTR_KEY = "UserDataDBConnStr";
         private const int MAX_DATA_ENTRIES_PER_USER = 100;
+        private const int MAX_CALLS_ALLOWED = 20;       // The maximum number of outgoing call requests that will be allowed per dialplan execution.
+        private const int MAX_CALLBACKS_ALLOWED = 3;    // The maximum number of callback method calls that will be alowed per dialplan instance.
 
         private static int m_maxRingTime = SIPTimings.MAX_RING_TIME;
         //private static SIPSchemesEnum m_defaultScheme = SIPSchemesEnum.sip;
@@ -124,7 +126,9 @@ namespace SIPSorcery.AppServer.DialPlan
             get { return m_executingScript.LastFailureStatus; }
             set { m_executingScript.LastFailureStatus = value; }
         }
-        private int m_emailCount = 0;   // Keeps count of the emails that have been sent during this dialpan execution.
+        private int m_emailCount = 0;               // Keeps count of the emails that have been sent during this dialpan execution.
+        private int m_callInitialisationCount = 0;  // Keeps count of the number of call initialisations that have been attempted by a dialplan execution.
+        private int m_callbackRequests = 0;         // Keeps count of the number of call back requests that have been attempted by a dialplan execution.
 
         private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
         private SIPAssetPersistor<SIPDialPlan> m_sipDialPlanPersistor;
@@ -157,6 +161,8 @@ namespace SIPSorcery.AppServer.DialPlan
             get { return m_dialPlanContext.SendTrace; }
             set { m_dialPlanContext.SendTrace = value; }
         }
+
+        public static IPAddress PublicIPAddress;    // If the app server is behind a NAT then it can set this address to be used in mangled SDP.
 
         static DialPlanScriptHelper() {
             try {
@@ -228,6 +234,9 @@ namespace SIPSorcery.AppServer.DialPlan
                 if (m_waitForCallCompleted != null) {
                     m_waitForCallCompleted.Set();
                 }
+                else {
+                    m_executingScript.StopExecution();
+                }
             }
             catch (Exception excp) {
                 logger.Error("Exception ClientCallTerminated. " + excp.Message);
@@ -292,6 +301,10 @@ namespace SIPSorcery.AppServer.DialPlan
                 Log("The dial string cannot be empty when calling Dial.");
                 return DialPlanAppResult.Error;
             }
+            else if (m_callInitialisationCount > MAX_CALLS_ALLOWED) {
+                Log("You have exceeded the maximum allowed calls for a dialplan execution.");
+                return DialPlanAppResult.Error;
+            }
             else {
                 Log("Commencing Dial with: " + data + ".");
 
@@ -303,6 +316,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 string answeredContentType = null;
                 string answeredBody = null;
                 SIPDialogue answeredDialogue = null;
+                LastDialled = new List<SIPTransaction>();
 
                 m_currentCall = new ForkCall(m_sipTransport, FireProxyLogEvent, m_callManager.QueueNewCall, Username, m_adminMemberId, LastDialled, m_outboundProxySocket);
                 m_currentCall.CallProgress += m_dialPlanContext.CallProgress;
@@ -322,13 +336,20 @@ namespace SIPSorcery.AppServer.DialPlan
                     m_waitForCallCompleted.Set();
                 };
 
-                LastDialled = new List<SIPTransaction>();
-
                 try {
                     Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, m_customSIPHeaders, m_customContentType, m_customContent, m_dialPlanContext.CallersNetworkId, m_dialPlanContext.SIPDialPlan.DialPlanName);
                     if (m_customFromName != null || m_customFromUser != null || m_customFromHost != null) {
                         UpdateCallQueueFromHeaders(callsQueue, m_customFromName, m_customFromUser, m_customFromHost);
                     }
+                    List<SIPCallDescriptor>[] callListArray = callsQueue.ToArray();
+                    foreach (List<SIPCallDescriptor> callList in callListArray) {
+                        m_callInitialisationCount += callList.Count;
+                    }
+                    if (m_callInitialisationCount > MAX_CALLS_ALLOWED) {
+                        Log("You have exceeded the maximum allowed calls for a dialplan execution.");
+                        return DialPlanAppResult.Error;
+                    }
+
                     m_currentCall.Start(callsQueue);
 
                     // Wait for an answer.
@@ -356,7 +377,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     }
 
                     if (m_clientCallCancelled) {
-                        Log("Dial command was halted by cancellation of client call after " + DateTime.Now.Subtract(startTime).TotalSeconds + "s.");
+                        Log("Dial command was halted by cancellation of client call after " + DateTime.Now.Subtract(startTime).TotalSeconds.ToString("#.00") + "s.");
                         m_executingScript.StopExecution();
                     }
 
@@ -392,8 +413,14 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public void Callback(string dest1, string dest2, int delaySeconds)
         {
-            CallbackApp callbackApp = new CallbackApp(m_sipTransport, m_callManager, m_dialStringParser, FireProxyLogEvent, m_username, m_adminMemberId, m_outboundProxySocket);
-            ThreadPool.QueueUserWorkItem(delegate { callbackApp.Callback(dest1, dest2, delaySeconds); });
+            m_callbackRequests++;
+            if (m_callbackRequests > MAX_CALLBACKS_ALLOWED) {
+                Log("You have exceeded the maximum allowed callbacks for a dialplan execution.");
+            }
+            else {
+                CallbackApp callbackApp = new CallbackApp(m_sipTransport, m_callManager, m_dialStringParser, FireProxyLogEvent, m_username, m_adminMemberId, m_outboundProxySocket);
+                ThreadPool.QueueUserWorkItem(delegate { callbackApp.Callback(dest1, dest2, delaySeconds); });
+            }
         }
 
         public void Respond(int statusCode, string reason) {
@@ -551,7 +578,8 @@ namespace SIPSorcery.AppServer.DialPlan
         /// </summary>
         public SIPRegistrarBinding[] GetBindings()
         {
-            return GetBindings(Username, DEFAULT_LOCAL_DOMAIN);
+            string canonicalDomain = m_getCanonicalDomainDelegate(DEFAULT_LOCAL_DOMAIN, true);
+            return GetBindings(Username, canonicalDomain);
         }
 
         /// <summary>
@@ -745,6 +773,67 @@ namespace SIPSorcery.AppServer.DialPlan
             catch (Exception excp) {
                 logger.Error("Exception GTalk. " + excp.Message);
                 Log("Exception GTalk. " + excp.Message);
+            }
+        }
+
+        public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, bool notUsed) {
+            GoogleVoiceCall(emailAddress, password, forwardingNumber, destinationNumber);
+        }
+
+        public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber) {
+            try {
+                DateTime startTime = DateTime.Now;
+
+                ExtendScriptTimeout(DEFAULT_CREATECALL_RINGTIME);
+                GoogleVoiceCall googleCall = new GoogleVoiceCall(m_sipTransport, m_callManager, m_dialPlanLogDelegate, m_username, m_adminMemberId, m_outboundProxySocket);
+                googleCall.CallProgress += m_dialPlanContext.CallProgress;
+
+                /*if (hangupOnSuccess) {
+                    Log("Hanging up originating call prior to initiating Google Voice Call.");
+                    m_dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.RequestPending, "Google voice call initiated", null);
+                    Thread.Sleep(3000);
+                }*/
+
+                string content = m_sipRequest.Body;
+                IPAddress requestSDPAddress = (PublicIPAddress != null) ? PublicIPAddress : SIPPacketMangler.GetRequestIPAddress(m_sipRequest);
+
+                IPEndPoint sdpEndPoint = SDP.GetSDPRTPEndPoint(content);
+                if (sdpEndPoint != null) {
+                    if (!SIPTransport.IsPrivateAddress(sdpEndPoint.Address.ToString())) {
+                        Log("SDP on GoogleVoiceCall call had public IP not mangled, RTP socket " + sdpEndPoint.ToString() + ".");
+                    }
+                    else {
+                        bool wasSDPMangled = false;
+                        if (requestSDPAddress != null) {
+                            if (sdpEndPoint != null) {
+                                content = SIPPacketMangler.MangleSDP(content, requestSDPAddress.ToString(), out wasSDPMangled);
+                            }
+                        }
+
+                        if (wasSDPMangled) {
+                            Log("SDP on GoogleVoiceCall call had RTP socket mangled from " + sdpEndPoint.ToString() + " to " + requestSDPAddress.ToString() + ":" + sdpEndPoint.Port + ".");
+                        }
+                        else if (sdpEndPoint != null) {
+                            Log("SDP on GoogleVoiceCall could not be mangled, using original RTP socket of " + sdpEndPoint.ToString() + ".");
+                        }
+                    }
+                }
+                else {
+                    Log("SDP RTP socket on GoogleVoiceCall call could not be determined.");
+                }
+
+                SIPDialogue answeredDialogue = googleCall.InitiateCall(emailAddress, password, forwardingNumber, destinationNumber, m_sipRequest.Header.ContentType, content);
+                if (answeredDialogue != null) {
+                    m_dialPlanContext.CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, answeredDialogue.ContentType, answeredDialogue.RemoteSDP, answeredDialogue);
+
+                    // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
+                    Log("Google Voice Call was successfully answered in " + DateTime.Now.Subtract(startTime).TotalSeconds.ToString("#.00") + "s.");
+                    m_executingScript.StopExecution();
+                }
+            }
+            catch (ThreadAbortException) {  }
+            catch (Exception excp) {
+                Log("Exception on GoogleVoiceCall. " + excp.Message);
             }
         }
 

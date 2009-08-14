@@ -106,6 +106,8 @@ namespace SIPSorcery.AppServer.DialPlan
         //}
         public string CallersNetworkId;             // If the caller was a locally administered SIP account this will hold it's network id. Used so calls between two accounts on the same local network can be identified.
 
+        public Guid CustomerId;                     // The id of the customer that owns this dialplan.
+
         private bool m_isAnswered;
         public bool IsAnswered {
             get { return m_isAnswered; }
@@ -126,7 +128,8 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPDialPlan dialPlan,
             List<SIPProvider> sipProviders,
             string traceDirectory,
-            string callersNetworkId) {
+            string callersNetworkId,
+            Guid customerId) {
 
             Log_External = monitorLogDelegate;
             CreateBridge_External = createBridge;
@@ -137,6 +140,7 @@ namespace SIPSorcery.AppServer.DialPlan
             m_sipProviders = sipProviders;
             m_traceDirectory = traceDirectory;
             CallersNetworkId = callersNetworkId;
+            CustomerId = customerId;
 
             m_sipServerUserAgent.CallCancelled += ClientCallCancelled;
             m_sipServerUserAgent.NoRingTimeout += ClientCallNoRingTimeout;
