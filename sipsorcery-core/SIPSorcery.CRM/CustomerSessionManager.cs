@@ -66,19 +66,26 @@ namespace SIPSorcery.CRM
 
         public CustomerSession Authenticate(string username, string password, string ipAddress) {
             try {
-                Customer customer = m_customerPersistor.Get(c => c.CustomerUsername == username && c.CustomerPassword == password);
-
-                if (customer != null) {
-                    logger.Debug("Login successful for " + username + ".");
-
-                    Guid sessionId = Guid.NewGuid();
-                    CustomerSession customerSession = new CustomerSession(sessionId, customer.CustomerUsername, ipAddress);
-                    m_customerSessionPersistor.Add(customerSession);
-                    return customerSession;
+                if (username.IsNullOrBlank() || password.IsNullOrBlank()) {
+                    logger.Debug("Login failed, either username or password was not specified.");
+                    return null;
                 }
                 else {
-                    logger.Debug("Login failed for " + username + ".");
-                    return null;
+                    // Don't do the password check via the database as different ones have different string case matching.
+                    Customer customer = m_customerPersistor.Get(c => c.CustomerUsername == username);
+
+                    if (customer != null && customer.CustomerPassword == password) {
+                        logger.Debug("Login successful for " + username + ".");
+
+                        Guid sessionId = Guid.NewGuid();
+                        CustomerSession customerSession = new CustomerSession(sessionId, customer.CustomerUsername, ipAddress);
+                        m_customerSessionPersistor.Add(customerSession);
+                        return customerSession;
+                    }
+                    else {
+                        logger.Debug("Login failed for " + username + ".");
+                        return null;
+                    }
                 }
             }
             catch (Exception excp) {
