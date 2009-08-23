@@ -571,7 +571,13 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="domain">The SIP domain to check for the account in.</param>
         /// <returns>Returns true if the SIP account exists, false otherwise.</returns>
         public bool DoesSIPAccountExist(string username, string domain) {
-            return (m_sipAccountPersistor.Count(s => s.SIPUsername == username && s.SIPDomain == domain) > 0);
+            string canonicalDomain = m_getCanonicalDomainDelegate(domain, false);
+            if (!canonicalDomain.IsNullOrBlank()) {
+                return (m_sipAccountPersistor.Count(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain) > 0);
+            }
+            else {
+                return false;
+            }
         }
 
         /// <summary>
