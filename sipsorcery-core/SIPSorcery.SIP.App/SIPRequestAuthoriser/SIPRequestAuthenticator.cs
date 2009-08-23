@@ -43,10 +43,16 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPRequestAuthenticator
     {
+        private const int NONCE_REFRESH_SECONDS = 120;
+        
         private static ILog logger = AssemblyState.logger;
 
+        private static string m_previousNoncePrefix = null;
+        private static string m_currentNoncePrefix = null;
+        private static DateTime m_lastNoncePrefixUpdate = DateTime.Now;
+
         /// <summary>
-        /// Attempts to authorise a SIP request.
+        /// Authenticates a SIP request.
         /// </summary>
         public static SIPRequestAuthenticationResult AuthenticateSIPRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, SIPAccount sipAccount, SIPMonitorLogDelegate logSIPMonitorEvent) {
             try {
@@ -73,7 +79,7 @@ namespace SIPSorcery.SIP.App
                             }
                         }
 
-                        SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, sipAccount.SIPDomain, Crypto.GetRandomInt().ToString());
+                        SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, sipAccount.SIPDomain, GetNonce());
                         return new SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum.Unauthorised, authHeader);
                     }
                     else {
@@ -89,21 +95,31 @@ namespace SIPSorcery.SIP.App
                         string requestNonce = reqAuthHeader.SIPDigest.Nonce;
                         string uri = reqAuthHeader.SIPDigest.URI;
                         string response = reqAuthHeader.SIPDigest.Response;
-
-                        SIPAuthorisationDigest checkAuthReq = reqAuthHeader.SIPDigest;
-                        checkAuthReq.SetCredentials(sipAccount.SIPUsername, sipAccount.SIPPassword, uri, sipRequest.Method.ToString());
-                        string digest = checkAuthReq.Digest;
-
-                        if (digest == response) {
-                            // Successfully authenticated
-                            return new SIPRequestAuthenticationResult(true, false);
+                        
+                        // Check for stale nonces.
+                        if (IsNonceStale(requestNonce)) {
+                            if (logSIPMonitorEvent != null) {
+                                logSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Authoriser, SIPMonitorEventTypesEnum.Warn, "Authentication failed stale nonce for realm=" + sipAccount.SIPDomain + ", username=" + sipAccount.SIPUsername + ", uri=" + uri + ", nonce=" + requestNonce + ", method=" + sipRequest.Method + ".", sipAccount.Owner));
+                            }
+                            SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, sipAccount.SIPDomain, GetNonce());
+                            return new SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum.Unauthorised, authHeader);
                         }
                         else {
-                            if (logSIPMonitorEvent != null) {
-                                logSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Authoriser, SIPMonitorEventTypesEnum.DialPlan, "Authentication token check failed for realm=" + sipAccount.SIPDomain + ", username=" + sipAccount.SIPUsername + ", uri=" + uri + ", nonce=" + requestNonce + ", method=" + sipRequest.Method + ".", sipAccount.Owner));
+                            SIPAuthorisationDigest checkAuthReq = reqAuthHeader.SIPDigest;
+                            checkAuthReq.SetCredentials(sipAccount.SIPUsername, sipAccount.SIPPassword, uri, sipRequest.Method.ToString());
+                            string digest = checkAuthReq.Digest;
+
+                            if (digest == response) {
+                                // Successfully authenticated
+                                return new SIPRequestAuthenticationResult(true, false);
                             }
-                            SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, sipAccount.SIPDomain, Crypto.GetRandomInt().ToString());
-                            return new SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum.Unauthorised, authHeader);
+                            else {
+                                if (logSIPMonitorEvent != null) {
+                                    logSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Authoriser, SIPMonitorEventTypesEnum.Warn, "Authentication token check failed for realm=" + sipAccount.SIPDomain + ", username=" + sipAccount.SIPUsername + ", uri=" + uri + ", nonce=" + requestNonce + ", method=" + sipRequest.Method + ".", sipAccount.Owner));
+                                }
+                                SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, sipAccount.SIPDomain, GetNonce());
+                                return new SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum.Unauthorised, authHeader);
+                            }
                         }
                     }
                 }
@@ -113,6 +129,31 @@ namespace SIPSorcery.SIP.App
                     logSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Authoriser, SIPMonitorEventTypesEnum.Error, "Exception AuthoriseSIPRequest. " + excp.Message, null));
                 }
                 return new SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum.InternalServerError, null);
+            }
+        }
+
+        public static string GetNonce() {
+            if (m_currentNoncePrefix == null || DateTime.Now.Subtract(m_lastNoncePrefixUpdate).TotalSeconds > NONCE_REFRESH_SECONDS) {
+                m_lastNoncePrefixUpdate = DateTime.Now;
+                m_previousNoncePrefix = m_currentNoncePrefix;
+                m_currentNoncePrefix = Crypto.GetRandomInt().ToString();
+            }
+
+            return m_currentNoncePrefix + Crypto.GetRandomInt().ToString();
+        }
+
+        private static bool IsNonceStale(string nonce) {
+            if (nonce.IsNullOrBlank()) {
+                return true;
+            }
+            else if (m_currentNoncePrefix != null && nonce.StartsWith(m_currentNoncePrefix)) {
+                return false;
+            }
+            else if(m_previousNoncePrefix != null && nonce.StartsWith(m_previousNoncePrefix)) {
+                return false;
+            }
+            else {
+                return true;
             }
         }
     }

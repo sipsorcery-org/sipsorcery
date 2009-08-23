@@ -335,6 +335,9 @@ namespace SIPSorcery.Servers
                                     uas.Reject(SIPResponseStatusCodesEnum.TemporarilyNotAvailable, "Dial plan execution exceeded maximum allowed", null);
                                 }
                                 else {
+                                    if (!customer.AuthorisedApps.IsNullOrBlank()) {
+                                        dialPlan.AuthorisedApps = customer.AuthorisedApps + dialPlan.AuthorisedApps;
+                                    }
                                     DialPlanScriptContext scriptContext = new DialPlanScriptContext(
                                         Log_External,
                                         m_sipTransport,

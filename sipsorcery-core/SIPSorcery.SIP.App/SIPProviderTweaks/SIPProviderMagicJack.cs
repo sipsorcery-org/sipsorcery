@@ -21,7 +21,10 @@ namespace SIPSorcery.SIP.App {
 
         public static bool IsMagicJackRequest(SIPResponse sipResponse) {
             if (sipResponse.Header.AuthenticationHeader != null &&
-                sipResponse.Header.AuthenticationHeader.SIPDigest.Realm == "stratus.com") {
+                sipResponse.Header.AuthenticationHeader.SIPDigest.Realm == "stratus.com" &&
+                sipResponse.Header.To != null && 
+                sipResponse.Header.To.ToURI != null &&
+                sipResponse.Header.To.ToURI.Host.ToLower() == "talk4free.com") {
                 return true;
             }
 

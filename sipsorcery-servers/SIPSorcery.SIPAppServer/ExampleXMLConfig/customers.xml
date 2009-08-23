@@ -1,7 +1,7 @@
 <customers>
  <customer>
   <id>d334ff6f-081a-4af5-a714-e8a9303cc577</id>
-  <customerusername>user</customerusername>
+  <customerusername>username</customerusername>
   <customerpassword>password</customerpassword>
   <emailaddress></emailaddress>
   <firstname></firstname>
@@ -14,8 +14,10 @@
   <securityquestion></securityquestion>
   <securityanswer></securityanswer>
   <createdfromipaddress></createdfromipaddress>
-  <inserted>01 Jan 0001 00:00:00</inserted>
   <active>False</active>
   <suspended>False</suspended>
+  <executioncount>0</executioncount>
+  <maxexecutioncount>5</maxexecutioncount>
+  <authorisedapps></authorisedapps>
  </customer>
 </customers>

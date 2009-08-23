@@ -12,13 +12,16 @@ create table customers
  city varchar(64),
  country varchar(64),
  website varchar(256),		
- active bool not null default True,		-- Whether this account has been used in the last month (or specified period). 
- suspended bool not null default False,	-- Whether this account has been suspended. If so it will not be authorised for logins. 
+ active bool not null default True,			-- Whether this account has been used in the last month (or specified period). 
+ suspended bool not null default False,		-- Whether this account has been suspended. If so it will not be authorised for logins. 
  securityquestion varchar(1024),
  securityanswer varchar(256),
  createdfromipaddress varchar(15),
- adminid varchar(32),					-- Like a whitelabelid. If set identifies this user as the administrative owner of all accounts that have the same value for their adminmemberid.
- adminmemberid varchar(32),				-- If set it designates this customer as a belonging to the administrative domain of the customer with the same adminid.
+ adminid varchar(32),						-- Like a whitelabelid. If set identifies this user as the administrative owner of all accounts that have the same value for their adminmemberid.
+ adminmemberid varchar(32),					-- If set it designates this customer as a belonging to the administrative domain of the customer with the same adminid.
+ maxexecutioncount int not null,	     	-- The mamimum number of simultaneous executions of the customer's dialplans that are permitted.
+ executioncount int not null,				-- The current number of dialplan executions in progress.
+ authorisedapps varchar(2048),				-- A semi-colon delimited list of privileged apps that this customer's dialplan are authorised to use.
  timezone varchar(128),
  inserted timestamp not null default now(),
  Primary Key(id),
@@ -84,8 +87,8 @@ create table sipregistrarbindings
  owner varchar(32) not null,				-- The username of the customer that owns the domain.
  adminmemberid varchar(32),
  useragent varchar(1024),
- contacturi varchar(1024) not null,			-- This is the URI the user agent sent in its Contact header requesting a binding for.
- mangledcontacturi varchar(1024),			-- The is the URI the Registrar deemed in its wisdom was the binding the user agent really wanted set (wisdom=try and cope with NAT).
+ contacturi varchar(767) not null,			-- This is the URI the user agent sent in its Contact header requesting a binding for.
+ mangledcontacturi varchar(767),			-- The is the URI the Registrar deemed in its wisdom was the binding the user agent really wanted set (wisdom=try and cope with NAT).
  expiry int not null,
  remotesipsocket varchar(64) not null,
  proxysipsocket varchar(64),
@@ -227,9 +230,12 @@ create index customers_custid_index on customers(customerusername);
 create index cdrs_lastname_index on cdr(created);
 create index cdrs_owner_index on cdr(owner);
 create index providerbindings_nextregtime_index on sipproviderbindings(nextregistrationtime);
+create index regbindings_sipaccid_index on sipregistrarbindings(sipaccountid);
+create index regbindings_contact_index on sipregistrarbindings(contacturi);
+
 --insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;174.129.236.7;174.129.236.7:5060', null, default);
 
--- SIP Sorcery User Data DDL (Postgresql & MySQL)
+-- SIP Sorcery User Data DDL (Postgresql & MySQL) sipsorcery-userdata
 
 create table dialplandata 
 (

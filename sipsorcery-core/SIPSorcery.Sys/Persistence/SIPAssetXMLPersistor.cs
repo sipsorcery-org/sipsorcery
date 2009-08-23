@@ -84,8 +84,14 @@ namespace SIPSorcery.Sys
                 fs.Close();
             }
 
-            XmlDocument sipAssetDOM = LoadSIPAssetsDOM(m_xmlAssetFilePath);
-            LoadSIPAssetsFromXML(sipAssetDOM);
+            try {
+                XmlDocument sipAssetDOM = LoadSIPAssetsDOM(m_xmlAssetFilePath);
+                LoadSIPAssetsFromXML(sipAssetDOM);
+            }
+            catch (Exception excp) {
+                logger.Error("Exception loading XML from " + m_xmlAssetFilePath + ". " + excp.Message);
+                throw;
+            }
         }
 
         public override T Add(T sipAsset)

@@ -70,6 +70,12 @@
      </p> 
      
      <p>      
+     <span style="color: Blue"><b>DBDelete(string key)</b></span>
+     <br />
+      Deletes a keyed value from database.
+     </p> 
+     
+     <p>      
      <span style="color: Blue"><b>WebGet(string url)</b></span>
      <br />
       Sends a HTTP GET request and returns the result to the dialplan.
@@ -140,6 +146,16 @@
      <br />
      Sends an email. This application requires authorisation which an be gained by sending a 
      request to admin@sipsorcery.com.
+     </p>
+     
+     <p>      
+     <span style="color: Blue"><b>GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber)</b></span>
+     <br />
+     Places an outbound call via the Google Voice service. The application works by initiating a callback with the a HTTP request with Google Voice.
+     The incoming call leg of the callback is then matched to the call leg that initiated the sipsorcery dial plan execution. The emailAddress and password are
+     the credentials used to login to the Google Voice portal. The forwardingNumber is the number to request teh Google Voice callback on and to match up
+     with the sipsorcery call should be a Gizmo number. The destinationNumber is the number that will be passed to the callback as the outgoing leg
+     and is the external number that will be called.
      </p>
      
  </body>

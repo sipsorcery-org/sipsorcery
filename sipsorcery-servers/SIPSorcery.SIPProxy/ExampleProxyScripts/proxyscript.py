@@ -34,25 +34,29 @@ if isreq:
     
   elif sipMethod == "SUBSCRIBE":
     sys.Respond(req, SIPResponseStatusCodesEnum.MethodNotAllowed, None)
-
+ 
   else:
     if remoteEndPoint.ToString().StartsWith("udp:127.0.0.1"):
       # Request from a SIP Application server for an external UA.
       dest = sys.Resolve(req)
-      contactURI = None
-      if sipMethod == "INVITE":
-        if not dest.SocketEndPoint.Address.ToString().StartsWith("10."):
-          # Request is for an external UA, use public IP.
-          contactURI = SIPURI(req.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(publicip.ToString()))
-        else:
-          # Request is for same private network as the proxy, don't use external public IP.
-          contactURI = SIPURI(req.URI.Scheme, sys.GetDefaultSIPEndPoint(dest.SIPProtocol))
-      src = sys.GetDefaultSIPEndPoint(dest.SIPProtocol)
-      branch = req.Header.Vias.PopTopViaHeader().Branch
-      if not dest.SocketEndPoint.Address.ToString().StartsWith("10."):
-        sys.SendTransparent(dest, req, branch, src, contactURI, publicip)
+      if dest == None:
+        if sipMethod != "ACK":
+          sys.Respond(req, SIPResponseStatusCodesEnum.DoesNotExistAnywhere, "Host " + req.URI.Host + " unresolvable")
       else:
-        sys.SendTransparent(dest, req, branch, src, contactURI, None)
+        contactURI = None
+        if sipMethod == "INVITE":
+          if not dest.SocketEndPoint.Address.ToString().StartsWith("10."):
+            # Request is for an external UA, use public IP.
+            contactURI = SIPURI(req.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(publicip.ToString()))
+          else:
+            # Request is for same private network as the proxy, don't use external public IP.
+            contactURI = SIPURI(req.URI.Scheme, sys.GetDefaultSIPEndPoint(dest.SIPProtocol))
+        src = sys.GetDefaultSIPEndPoint(dest.SIPProtocol)
+        branch = req.Header.Vias.PopTopViaHeader().Branch
+        if not dest.SocketEndPoint.Address.ToString().StartsWith("10."):
+          sys.SendTransparent(dest, req, branch, src, contactURI, publicip)
+        else:
+          sys.SendTransparent(dest, req, branch, src, contactURI, None)
     else:
       # Request from an external UA for a SIP Application Server
       req.Header.ProxyReceivedOn = localEndPoint.ToString()

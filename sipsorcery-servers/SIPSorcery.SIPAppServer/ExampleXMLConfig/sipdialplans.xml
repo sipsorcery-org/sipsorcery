@@ -12,5 +12,6 @@ sys.Dial("blueface")
     <scripttype>Ruby</scripttype>
     <maxexecutioncount>3</maxexecutioncount>
     <executioncount>0</executioncount>
+    <authorisedapps></authorisedapps>
   </sipdialplan>
 </sipdialplans>

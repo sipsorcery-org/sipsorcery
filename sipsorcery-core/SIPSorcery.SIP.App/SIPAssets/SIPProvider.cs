@@ -491,7 +491,7 @@ namespace SIPSorcery.SIP.App
                 "   <registerenabledadmin>" + m_registerAdminEnabled + "</registerenabledadmin>" + m_newLine +
                 "   <registerdisabledreason>" + SafeXML.MakeSafeXML(m_registerDisabledReason) + "</registerdisabledreason>" + m_newLine +
                 "   <inserted>" + m_insertedUTC.ToString("o") + "</inserted>" + m_newLine +
-                "   <lastupdate>" + m_lastUpdateUTC.ToString("o") + "</lastudpate>";
+                "   <lastupdate>" + m_lastUpdateUTC.ToString("o") + "</lastupdate>" + m_newLine;
  
             return providerXML;
         }

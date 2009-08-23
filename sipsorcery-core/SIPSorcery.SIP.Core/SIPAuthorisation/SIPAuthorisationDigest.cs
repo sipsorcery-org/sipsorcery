@@ -371,7 +371,7 @@ namespace SIPSorcery.SIP
 				Console.WriteLine("-----------------------------------------");
 			}
 
-             [Test]
+            [Test]
             public void ParseWWWAuthenticateDigestTest()
             {
                  Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);

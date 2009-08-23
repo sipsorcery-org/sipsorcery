@@ -26,7 +26,7 @@
      arrives for your username and can contain any processing you wish. However since there is no SIP call to bridge to using
      the Dial command will not work. An example of a minimal dialplan for a web callback is:
      <pre style="font-family: Courier">
-  sys.Log("webcallback dialplan startting...callback number=#{req.URI.user}")
+  sys.Log("webcallback dialplan starting...callback number=#{req.URI.user}")
   sys.Callback("username@local", "#{req.URI.user}@provider")
      </pre>
      </li>

@@ -1,10 +1,10 @@
 <sipaccounts>
  <sipaccount>
     <id>f26c585f-bc76-4f18-8d0a-555d98cc11d4</id>
-    <owner>aaron</owner>
+    <owner>username</owner>
     <sipusername>username</sipusername>
     <sippassword>password</sippassword>
-    <domain>10.1.1.5</domain>
+    <domain>mydomain</domain>
     <sendnatkeepalives>True</sendnatkeepalives>
     <isincomingonly>False</isincomingonly>
     <outdialplanname>default</outdialplanname>

@@ -131,6 +131,9 @@ namespace SIPSorcery.CRM
         [Column(Storage = "_executioncount", Name = "executioncount", DbType = "integer", CanBeNull = false)]
         public int ExecutionCount { get; set; }
 
+        [Column(Storage = "_authorisedapps", Name = "authorisedapps", DbType = "character varying(2048)", CanBeNull = true)]
+        public string AuthorisedApps { get; set; }
+
         public Customer() { }
 
         public static string ValidateAndClean(Customer customer) {
@@ -210,6 +213,10 @@ namespace SIPSorcery.CRM
                 WebSite = (customerRow.Table.Columns.Contains("website") && customerRow["website"] != null) ? customerRow["website"] as string : null;
                 CreatedFromIPAddress = (customerRow.Table.Columns.Contains("createdfromipaddress") && customerRow["createdfromipaddress"] != null) ? customerRow["createdfromipaddress"] as string : null;
                 InsertedUTC = (customerRow.Table.Columns.Contains("inserted") && customerRow["inserted"] != null) ? Convert.ToDateTime(customerRow["inserted"]) : DateTime.MinValue;
+                Suspended = (customerRow.Table.Columns.Contains("suspended") && customerRow["suspended"] != null) ? Convert.ToBoolean(customerRow["suspended"]) : false;
+                ExecutionCount = (customerRow.Table.Columns.Contains("executioncount") && customerRow["executioncount"] != null) ? Convert.ToInt32(customerRow["executioncount"]) : 0;
+                MaxExecutionCount = (customerRow.Table.Columns.Contains("maxexecutioncount") && customerRow["maxexecutioncount"] != null) ? Convert.ToInt32(customerRow["maxexecutioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
+                AuthorisedApps = (customerRow.Table.Columns.Contains("authorisedapps") && customerRow["authorisedapps"] != null) ? customerRow["authorisedapps"] as string : null;
             }
             catch (Exception excp) {
                 logger.Error("Exception Customer Load. " + excp.Message);
@@ -234,25 +241,27 @@ namespace SIPSorcery.CRM
         }
 
          public string ToXMLNoParent() {
-             string customerXML =
-                 "  <id>" + Id + "</id>" + m_newLine +
-                 "  <customerusername>" + CustomerUsername + "</customerusername>" + m_newLine +
-                 "  <customerpassword>" + CustomerPassword + "</customerpassword>" + m_newLine +
-                 "  <emailaddress>" + EmailAddress + "</emailaddress>" + m_newLine +
-                 "  <firstname>" + SafeXML.MakeSafeXML(FirstName) + "</firstname>" + m_newLine +
-                 "  <lastname>" + SafeXML.MakeSafeXML(LastName) + "</lastname>" + m_newLine +
-                 "  <city>" + SafeXML.MakeSafeXML(City) + "</city>" + m_newLine +
-                 "  <country>" + Country + "</country>" + m_newLine +
-                 "  <adminid>" + AdminId + "</adminid>" + m_newLine +
-                 "  <adminmemberid>" + AdminMemberId + "</adminmemberid>" + m_newLine +
-                 "  <website>" + SafeXML.MakeSafeXML(WebSite) + "</website>" + m_newLine +
-                 "  <securityquestion>" + SecurityQuestion + "</securityquestion>" + m_newLine +
-                 "  <securityanswer>" + SafeXML.MakeSafeXML(SecurityAnswer) + "</securityanswer>" + m_newLine +
-                 "  <createdfromipaddress>" + CreatedFromIPAddress + "</createdfromipaddress>" + m_newLine +
-                 "  <inserted>" + InsertedUTC.ToString("dd MMM yyyy HH:mm:ss") + "</inserted>" + m_newLine +
-                 "  <active>" + Active + "</active>" + m_newLine +
-                 "  <suspended>" + Suspended + "</suspended>";
-
+            string customerXML =
+                "  <id>" + Id + "</id>" + m_newLine +
+                "  <customerusername>" + CustomerUsername + "</customerusername>" + m_newLine +
+                "  <customerpassword>" + CustomerPassword + "</customerpassword>" + m_newLine +
+                "  <emailaddress>" + EmailAddress + "</emailaddress>" + m_newLine +
+                "  <firstname>" + SafeXML.MakeSafeXML(FirstName) + "</firstname>" + m_newLine +
+                "  <lastname>" + SafeXML.MakeSafeXML(LastName) + "</lastname>" + m_newLine +
+                "  <city>" + SafeXML.MakeSafeXML(City) + "</city>" + m_newLine +
+                "  <country>" + Country + "</country>" + m_newLine +
+                "  <adminid>" + AdminId + "</adminid>" + m_newLine +
+                "  <adminmemberid>" + AdminMemberId + "</adminmemberid>" + m_newLine +
+                "  <website>" + SafeXML.MakeSafeXML(WebSite) + "</website>" + m_newLine +
+                "  <securityquestion>" + SecurityQuestion + "</securityquestion>" + m_newLine +
+                "  <securityanswer>" + SafeXML.MakeSafeXML(SecurityAnswer) + "</securityanswer>" + m_newLine +
+                "  <createdfromipaddress>" + CreatedFromIPAddress + "</createdfromipaddress>" + m_newLine +
+                "  <inserted>" + InsertedUTC.ToString("dd MMM yyyy HH:mm:ss") + "</inserted>" + m_newLine +
+                "  <active>" + Active + "</active>" + m_newLine +
+                "  <suspended>" + Suspended + "</suspended>" + m_newLine +
+                "  <executioncount>" + ExecutionCount + "</executioncount>" + m_newLine +
+                "  <maxexecutioncount>" + MaxExecutionCount + "</maxexecutioncount>" + m_newLine +
+                "  <authorisedapps>" + AuthorisedApps + "</authorisedapps>" + m_newLine;
 
              return customerXML;
          }

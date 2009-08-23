@@ -353,13 +353,14 @@ namespace SIPSorcery.AppServer.DialPlan
                     m_currentCall.Start(callsQueue);
 
                     // Wait for an answer.
-                    ringTimeout = (ringTimeout > m_maxRingTime) ? m_maxRingTime : ringTimeout;
+                    ringTimeout = (ringTimeout * 1000 > m_maxRingTime) ? m_maxRingTime : ringTimeout * 1000;
                     ExtendScriptTimeout(ringTimeout + DEFAULT_CREATECALL_RINGTIME);
                     DateTime startTime = DateTime.Now;
 
-                    if (m_waitForCallCompleted.WaitOne(ringTimeout * 1000, false)) {
+                    if (m_waitForCallCompleted.WaitOne(ringTimeout, false)) {
                         if (!m_clientCallCancelled) {
                             if (result == DialPlanAppResult.Answered) {
+                                answeredDialogue.CallDurationLimit = answeredCallLimit;
                                 m_dialPlanContext.CallAnswered(answeredStatus, answeredReason, null, answeredContentType, answeredBody, answeredDialogue);
 
                                 // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
@@ -972,6 +973,37 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
+        public void DBDelete(string key) {
+            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank()) {
+                Log("DBDelete failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
+            }
+            else {
+                DBDelete(m_userDataDBType, m_userDataDBConnStr, key);
+            }
+        }
+
+        public void DBDelete(string dbType, string dbConnStr, string key) {
+            StorageTypes storageType = GetStorageType(dbType);
+            if (storageType != StorageTypes.Unknown) {
+                DBDelete(storageType, dbConnStr, key);
+            }
+        }
+
+        private void DBDelete(StorageTypes storageType, string dbConnStr, string key) {
+            try {
+                StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
+
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("dataowner", m_username);
+                parameters.Add("datakey", key);
+                storageLayer.ExecuteNonQuery(storageType, dbConnStr, "delete from dialplandata where dataowner = @dataowner and datakey = @datakey", parameters);
+                Log("DBDelete sucessful for datakey \"" + key + "\".");
+            }
+            catch (Exception excp) {
+                Log("Exception DBDelete. " + excp.Message);
+            }
+        }
+
         public void DBExecuteNonQuery(string dbType, string dbConnStr, string query) {
             try {
                 if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "dbexecutenonquery")) {
@@ -1040,7 +1072,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     if (storageType != StorageTypes.Unknown) {
                         StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
                         string result = storageLayer.ExecuteScalar(storageType, dbConnStr, query) as string;
-                        Log("DBExecuteScalar sucessful result=" + result + ".");
+                        Log("DBExecuteScalar successful result=" + result + ".");
                         return result;
                     }
                     else {

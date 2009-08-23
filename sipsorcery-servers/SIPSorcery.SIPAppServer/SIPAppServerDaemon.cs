@@ -141,6 +141,7 @@ namespace SIPSorcery.SIPAppServer {
                         if (ipAddress != null && (m_publicIPAddress == null || ipAddress.ToString() != m_publicIPAddress.ToString())) {
                             m_publicIPAddress = ipAddress;
                             DialStringParser.PublicIPAddress = ipAddress;
+                            DialPlanScriptHelper.PublicIPAddress = ipAddress;
                         }
                     };
 
@@ -224,6 +225,7 @@ namespace SIPSorcery.SIPAppServer {
                     m_sipSorceryPersistor.SIPAccountsPersistor,
                     m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
                     m_sipSorceryPersistor.SIPDialPlanPersistor,
+                    m_customerSessionManager.CustomerPersistor,
                     m_outboundProxy,
                     m_rubyScriptCommonPath);
 

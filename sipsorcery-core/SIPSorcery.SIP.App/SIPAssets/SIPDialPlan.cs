@@ -250,12 +250,8 @@ namespace SIPSorcery.SIP.App
                 m_maxExecutionCount = (dialPlanRow.Table.Columns.Contains("maxexecutioncount") && dialPlanRow["maxexecutioncount"] != null) ? Convert.ToInt32(dialPlanRow["maxexecutioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
                 m_executionCount = (dialPlanRow.Table.Columns.Contains("executioncount") && dialPlanRow["executioncount"] != null) ? Convert.ToInt32(dialPlanRow["executioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
                 m_authorisedApps = (dialPlanRow.Table.Columns.Contains("authorisedapps") && dialPlanRow["authorisedapps"] != null) ? dialPlanRow["authorisedapps"] as string : null;
-                if (dialPlanRow.Table.Columns.Contains("inserted") & dialPlanRow["inserted"] != DBNull.Value) {
-                    InsertedUTC = Convert.ToDateTime(dialPlanRow["inserted"]);
-                }
-                if (dialPlanRow.Table.Columns.Contains("lastupdate") & dialPlanRow["lastupdate"] != DBNull.Value) {
-                    LastUpdateUTC = Convert.ToDateTime(dialPlanRow["lastupdate"]);
-                }
+                InsertedUTC = (dialPlanRow.Table.Columns.Contains("inserted")&& dialPlanRow["inserted"] != null && dialPlanRow["inserted"] != DBNull.Value) ? InsertedUTC = Convert.ToDateTime(dialPlanRow["inserted"]) : DateTime.Now;
+                LastUpdateUTC = (dialPlanRow.Table.Columns.Contains("lastupdate") && dialPlanRow["lastupdate"] != null && dialPlanRow["lastupdate"] != DBNull.Value) ? Convert.ToDateTime(dialPlanRow["lastupdate"]) : DateTime.Now;
             }
             catch (Exception excp) {
                 logger.Error("Exception DialPlan Load. " + excp);
@@ -293,7 +289,7 @@ namespace SIPSorcery.SIP.App
                 "    <executioncount>" + m_executionCount + "</executioncount>" + m_newLine +
                 "    <authorisedapps>" + m_authorisedApps + "</authorisedapps>" + m_newLine +
                 "    <inserted>" + m_insertedUTC.ToString("o") + "</inserted>" + m_newLine +
-                "    <lastupdate>" + m_lastUpdateUTC.ToString("o") + "</lastudpate>";
+                "    <lastupdate>" + m_lastUpdateUTC.ToString("o") + "</lastupdate>" + m_newLine;
 
             return dialPlanXML;
         }

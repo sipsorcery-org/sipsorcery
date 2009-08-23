@@ -2,23 +2,17 @@ import clr
 clr.AddReference('SIPSorcery.SIP.Core')
 from SIPSorcery.SIP import *
 
-m_appServerSocket = "udp:10.1.1.2:5065"
 m_registrarSocket = "udp:127.0.0.1:5001"
 m_regAgentSocket = "udp:127.0.0.1:5002"
-m_proxyExternalSocket = "udp:10.1.1.2:5060"
+m_proxySocketInternal = "udp:127.0.0.1:5060"
+m_appServerSocket = "udp:127.0.0.1:5065"
 
 if isreq:
   
   #===== SIP Request Processing =====
- 
+
   #sys.Log("req " + summary)
   req.Header.MaxForwards = req.Header.MaxForwards - 1
-
-  # If the request has come from outside then record the proxy socket it arrived on so that the responses can be sent on the same.
-  if remoteEndPoint.ToString() != m_appServerSocket and \
-     remoteEndPoint.ToString() != m_registrarSocket and \
-     remoteEndPoint.ToString() != m_regAgentSocket:
-     req.Header.Vias.TopViaHeader.ViaParameters.Set("proxy", localEndPoint.ToString())
   
   if sipMethod == "REGISTER":
     if remoteEndPoint.ToString() == m_regAgentSocket:
@@ -28,44 +22,46 @@ if isreq:
 
       # The registration agent has indicated where it wants the REGISTER request sent to by adding a Route header.
       # Remove the header in case it confuses the SIP Registrar the REGISTER is being sent to.
-      destRegistrar = sys.Resolve(req.Header.Routes.PopRoute().URI)
+      destRegistrar = req.Header.Routes.PopRoute().ToSIPEndPoint()
+      src = sys.GetDefaultSIPEndPoint(destRegistrar.SIPProtocol)
       req.Header.Routes = None
-      req.LocalSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(m_proxyExternalSocket)
-      #sys.Log("regagent->" + destRegistrar)
-      sys.Send(destRegistrar, req, branch, channelName, False)
-    
+      sys.SendTransparent(destRegistrar, req, branch, src, None, publicip)
+          
     else:
-      req.LocalSIPEndPoint = None					# Forward to the Registrar over default UDP channel.
-      sys.Send(m_registrarSocket, req, proxyBranch, channelName, False)
+      req.Header.ProxyReceivedOn = localEndPoint.ToString()
+      req.Header.ProxyReceivedFrom = remoteEndPoint.ToString()
+      sys.Send(m_registrarSocket, req, proxyBranch, m_proxySocketInternal)
     
-  elif sipMethod == "INVITE":
-    if remoteEndPoint.ToString() == m_appServerSocket:			# INVITEs from App Server - incoming calls.
-      dstEndPoint = sys.Resolve(req)
-      if dstEndPoint != None : 
-        sys.Send(dstEndPoint, req, proxyBranch, channelName, (req.Header.To.ToTag == None))
+  elif sipMethod == "SUBSCRIBE":
+    sys.Respond(req, SIPResponseStatusCodesEnum.MethodNotAllowed, None)
+ 
+  else:
+    if remoteEndPoint.ToString().StartsWith("udp:127.0.0.1"):
+      # Request from a SIP Application server for an external UA.
+      dest = sys.Resolve(req)
+      if dest == None:
+        if sipMethod != "ACK":
+          sys.Respond(req, SIPResponseStatusCodesEnum.DoesNotExistAnywhere, "Host " + req.URI.Host + " unresolvable")
       else:
-        sys.Log("Failed to resolve destination for INVITE to " + req.URI.ToString() + ", request dropped.");
-
-    else:								# INVITEs to App Server from UAs - outgoing calls.
-      if req.Header.Contact != None and req.Header.Contact.Count > 0: 	# Mangle contact address so the proxy can get back to the user agent.
-         req.Header.Contact[0].ContactURI.Host = remoteEndPoint.SocketEndPoint.ToString()  
-      req.LocalSIPEndPoint = None					# Forward to the App Server over default UDP channel.
-      sys.Send(m_appServerSocket, req, proxyBranch, channelName, (req.Header.To.ToTag == None))  # Don't add a Record-Route header for in dialogue requests.
-
-  else:									# Not a REGISTER or INVITE request.
-    if sipMethod == "BYE":
-      sys.Log("BYE Routes=" + req.ReceivedRoute.ToString() + ".")
-
-    req.Header.MaxForwards = req.Header.MaxForwards - 1
-    req.LocalSIPEndPoint = None						# Force the proxy to forward over the default channel for the destination's protocol.
-    if remoteEndPoint.ToString() == m_appServerSocket:
-      dstEndPoint = sys.Resolve(req)
-      if dstEndPoint != None : 
-        sys.Send(dstEndPoint, req, proxyBranch, channelName, False)
-      else:
-        sys.Log("Failed to resolve destination for " + req.Method.ToString()  + " to " + req.URI.ToString() + ", request dropped.");
+        contactURI = None
+        if sipMethod == "INVITE":
+          if not dest.SocketEndPoint.Address.ToString().StartsWith("10."):
+            # Request is for an external UA, use public IP.
+            contactURI = SIPURI(req.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(publicip.ToString()))
+          else:
+            # Request is for same private network as the proxy, don't use external public IP.
+            contactURI = SIPURI(req.URI.Scheme, sys.GetDefaultSIPEndPoint(dest.SIPProtocol))
+        src = sys.GetDefaultSIPEndPoint(dest.SIPProtocol)
+        branch = req.Header.Vias.PopTopViaHeader().Branch
+        if not dest.SocketEndPoint.Address.ToString().StartsWith("10."):
+          sys.SendTransparent(dest, req, branch, src, contactURI, publicip)
+        else:
+          sys.SendTransparent(dest, req, branch, src, contactURI, None)
     else:
-      sys.Send(m_appServerSocket, req, proxyBranch, channelName, False)
+      # Request from an external UA for a SIP Application Server
+      req.Header.ProxyReceivedOn = localEndPoint.ToString()
+      req.Header.ProxyReceivedFrom = remoteEndPoint.ToString()
+      sys.Send(m_appServerSocket, req, proxyBranch, m_proxySocketInternal)
 
   #===== End SIP Request Processing =====
 
@@ -74,42 +70,35 @@ else:
   #===== SIP Response Processing =====
 
   #sys.Log("resp " + summary)
-  #sys.Log("remoteendpoint= " + remoteEndPoint.ToString())
  
-  proxyVia = resp.Header.Vias.PopTopViaHeader()
+  if sipMethod == "REGISTER" and remoteEndPoint.ToString() == m_registrarSocket:
+    # REGISTER response from SIP Registrar.
+    resp.Header.ProxyReceivedOn = None
+    resp.Header.ProxyReceivedFrom = None
+    sys.Send(resp, outSocket)
 
-  # This block is used to make sure that a response from one of the server agents gets sent from the correct proxy socket.
-  cn = proxyVia.ViaParameters.Get("cn")
-  #sys.Log("Via cn= " + cn)
-  if cn != None:
-    cnSIPEndPoint = sys.GetChannelSIPEndPoint(cn)  # Forward back to UA from the same proxy socket the original request came on.
-    #sys.Log("cn SIPEndPoint= " + cnSIPEndPoint.ToString())
-    if cnSIPEndPoint != None:
-      resp.LocalSIPEndPoint = cnSIPEndPoint
+  elif sipMethod == "REGISTER":
+    # REGISTER response for SIP Registration Agent.
+    resp.Header.Vias.PushViaHeader(SIPViaHeader(SIPEndPoint.ParseSIPEndPoint(m_regAgentSocket), topVia.Branch))  
+    sys.Send(resp, SIPEndPoint.ParseSIPEndPoint(m_proxySocketInternal))
+
+  elif remoteEndPoint.ToString().StartsWith("udp:127.0.0.1"):
+    # Responses from SIP Application Servers for external UAs.    
+    if sipMethod == "INVITE":
+      if not outSocket.SocketEndPoint.Address.ToString().StartsWith("10."):
+        # INVITE response from an SIP Application Server, need to set the Contact URI to the proxy socket for the protocol.
+        contactURI = SIPURI(resp.Header.To.ToURI.Scheme, SIPEndPoint.ParseSIPEndPoint(publicip.ToString()))
+      else:
+        contactURI = SIPURI(resp.Header.To.ToURI.Scheme, sys.GetDefaultSIPEndPoint(resp.Header.Vias.TopViaHeader.Transport))
+      sys.Send(resp, outSocket, contactURI)
     else:
-      resp.LocalSIPEndPoint = None
-  else:
-    resp.LocalSIPEndPoint = None				# Will force the response to be sent from the default channel for the Via protocol.
+      sys.Send(resp, outSocket)
 
-  if sipMethod == "REGISTER":
-
-    if remoteEndPoint.ToString() != m_registrarSocket:
-      # REGISTER response for Registration Agent.
-      # Add back on the Via header that was removed when the original REGISTER request was passed through from the Agent.
-      resp.Header.Vias.PushViaHeader(SIPViaHeader(SIPEndPoint.ParseSIPEndPoint(m_regAgentSocket), proxyVia.Branch))
-      sys.Send(resp)
-    else:
-      sys.Send(resp)
-    
-  elif sipMethod == "INVITE":
-    # Mangle contact address if needed.
-    if resp.Header.Contact != None and resp.Header.Contact.Count > 0:
-      resp.Header.Contact[0].ContactURI.Host = remoteEndPoint.SocketEndPoint.ToString()
-    sys.Send(resp, localEndPoint, cnSIPEndPoint, channelName) 
-   
-  else:
-    sys.Send(resp)
-  
+  else: 
+    # Responses from external UAs for SIP Application Servers.
+    resp.Header.ProxyReceivedOn = localEndPoint.ToString()
+    resp.Header.ProxyReceivedFrom = remoteEndPoint.ToString()
+    resp.Header.Vias.PushViaHeader(SIPViaHeader(SIPEndPoint.ParseSIPEndPoint(m_appServerSocket), topVia.Branch))  
+    sys.Send(resp, SIPEndPoint.ParseSIPEndPoint(m_proxySocketInternal))
+        
   #===== End SIP Response Processing =====
-
- 
