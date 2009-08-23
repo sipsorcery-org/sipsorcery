@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReferenceGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ID="b2846b17-b596-4ad9-90da-079b64b75a98" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+  <ClientOptions>
+    <GenerateAsynchronousMethods>true</GenerateAsynchronousMethods>
+    <EnableDataBinding>true</EnableDataBinding>
+    <ExcludedTypes />
+    <ImportXmlTypes>false</ImportXmlTypes>
+    <GenerateInternalTypes>false</GenerateInternalTypes>
+    <GenerateMessageContracts>false</GenerateMessageContracts>
+    <NamespaceMappings />
+    <CollectionMappings>
+      <CollectionMapping TypeName="System.Collections.ObjectModel.ObservableCollection`1" Category="List" />
+    </CollectionMappings>
+    <GenerateSerializableTypes>false</GenerateSerializableTypes>
+    <Serializer>Auto</Serializer>
+    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferencedAssemblies />
+    <ReferencedDataContractTypes />
+    <ServiceContractMappings />
+  </ClientOptions>
+  <MetadataSources>
+    <MetadataSource Address="https://www.sipsorcery.com/provisioning.svc" Protocol="http" SourceId="1" />
+  </MetadataSources>
+  <Metadata>
+    <MetadataFile FileName="provisioning.xsd" MetadataType="Schema" ID="f71f01b0-9460-419e-b72d-7739242681d1" SourceId="1" SourceUrl="https://www.sipsorcery.com/provisioning.svc?xsd=xsd0" />
+    <MetadataFile FileName="SIPProvisioningWebService.wsdl" MetadataType="Wsdl" ID="86c3827a-f708-48d7-971f-881b8544c62b" SourceId="1" SourceUrl="https://www.sipsorcery.com/provisioning.svc?wsdl" />
+    <MetadataFile FileName="provisioning1.xsd" MetadataType="Schema" ID="41f5e68d-d3d8-4e6c-b3c4-89ac49b466fa" SourceId="1" SourceUrl="https://www.sipsorcery.com/provisioning.svc?xsd=xsd3" />
+    <MetadataFile FileName="provisioning.disco" MetadataType="Disco" ID="3a31d26c-3297-444b-9d19-b029afb93f24" SourceId="1" SourceUrl="https://www.sipsorcery.com/provisioning.svc?disco" />
+    <MetadataFile FileName="provisioning.wsdl" MetadataType="Wsdl" ID="da68f132-de9f-484f-b39f-863a607ec491" SourceId="1" SourceUrl="https://www.sipsorcery.com/provisioning.svc?wsdl=wsdl0" />
+    <MetadataFile FileName="provisioning2.xsd" MetadataType="Schema" ID="1e426b0f-d5ef-4809-9d4e-350923d8771d" SourceId="1" SourceUrl="https://www.sipsorcery.com/provisioning.svc?xsd=xsd1" />
+    <MetadataFile FileName="provisioning3.xsd" MetadataType="Schema" ID="8657c7a1-48ab-4288-89f5-9c4a4209de92" SourceId="1" SourceUrl="https://www.sipsorcery.com/provisioning.svc?xsd=xsd2" />
+  </Metadata>
+  <Extensions>
+    <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
+    <ExtensionFile FileName="configuration.svcinfo" Name="configuration.svcinfo" />
+  </Extensions>
+</ReferenceGroup>

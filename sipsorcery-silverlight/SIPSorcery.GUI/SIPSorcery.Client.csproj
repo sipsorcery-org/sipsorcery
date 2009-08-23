@@ -141,7 +141,7 @@
     <Compile Include="AssemblyState.cs" />
     <Compile Include="FunctionDelegates.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Service References\SIPSorceryProvisioningClient\Reference.cs">
+    <Compile Include="WCFReferences\SIPSorceryProvisioningClient\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.svcmap</DependentUpon>
@@ -200,7 +200,7 @@
     <Resource Include="Images\wizard-2.png" />
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadata Include="Service References\" />
+    <WCFMetadata Include="WCFReferences\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\DataSources\BlueFace.VoIP.App.SIP.DialPlan.datasource" />
@@ -224,18 +224,18 @@
     <None Include="Properties\DataSources\SIPSorcery.SIP.App.SIPRegistrarBinding.datasource" />
     <None Include="Properties\DataSources\SIPSorcery.SIP.SIPCDR.datasource" />
     <None Include="Properties\DataSources\SIPSorcery.SIP.SIPDialogue.datasource" />
-    <None Include="Service References\SIPSorceryProvisioningClient\provisioning.wsdl" />
-    <None Include="Service References\SIPSorceryProvisioningClient\provisioning.xsd" />
-    <None Include="Service References\SIPSorceryProvisioningClient\provisioning1.xsd" />
-    <None Include="Service References\SIPSorceryProvisioningClient\provisioning2.xsd" />
-    <None Include="Service References\SIPSorceryProvisioningClient\provisioning3.xsd" />
-    <None Include="Service References\SIPSorceryProvisioningClient\SIPProvisioningWebService.wsdl" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning.wsdl" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning.xsd" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning1.xsd" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning2.xsd" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning3.xsd" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\SIPProvisioningWebService.wsdl" />
     <Resource Include="Images\wizard-logo.png" />
     <Resource Include="Images\small_logo.png" />
-    <None Include="Service References\SIPSorceryProvisioningClient\provisioning.disco" />
-    <None Include="Service References\SIPSorceryProvisioningClient\configuration91.svcinfo" />
-    <None Include="Service References\SIPSorceryProvisioningClient\configuration.svcinfo" />
-    <None Include="Service References\SIPSorceryProvisioningClient\Reference.svcmap">
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning.disco" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\configuration91.svcinfo" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\configuration.svcinfo" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\Reference.svcmap">
       <Generator>WCF Proxy Generator</Generator>
       <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
@@ -296,7 +296,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadataStorage Include="Service References\SIPSorceryProvisioningClient\" />
+    <WCFMetadataStorage Include="WCFReferences\SIPSorceryProvisioningClient\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Silverlight\v3.0\Microsoft.Silverlight.CSharp.targets" Condition="" />
   <ProjectExtensions>
