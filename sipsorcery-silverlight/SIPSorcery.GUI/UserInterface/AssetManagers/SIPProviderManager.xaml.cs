@@ -18,8 +18,8 @@ using System.Windows.Shapes;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Persistence;
 using SIPSorcery.Silverlight.Messaging;
-using SIPSorcery.SIPSorceryProvisioningClient;
 using SIPSorcery.UIControls;
+using SIPSorcery.SIPSorceryProvisioningClient;
 
 namespace SIPSorcery
 {

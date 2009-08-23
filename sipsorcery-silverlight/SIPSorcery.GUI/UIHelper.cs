@@ -14,7 +14,6 @@ using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using SIPSorcery.SIP.App;
-using SIPSorcery.SIPSorceryProvisioningClient;
 
 namespace SIPSorcery
 {

@@ -5,8 +5,6 @@
     <DefaultClrNameSpace>SIPSyrup</DefaultClrNameSpace>
     <AssemblyName>SIPSorcery</AssemblyName>
     <RootNamespace>SIPSorcery</RootNamespace>
-    <ApplicationVersion>1.0.0.*</ApplicationVersion>
-    <ApplicationRevision>0</ApplicationRevision>
     <AlwaysCompileMarkupFilesInSeparateDomain>false</AlwaysCompileMarkupFilesInSeparateDomain>
     <ExpressionBlendCreationVersion>2.1.1111.0</ExpressionBlendCreationVersion>
     <ProjectGuid>{0E3DF5C2-6EF0-47D9-8004-BD073B12A9D2}</ProjectGuid>
@@ -26,6 +24,26 @@
     <SilverlightApplication>true</SilverlightApplication>
     <ValidateXaml>true</ValidateXaml>
     <ThrowErrorsInValidation>false</ThrowErrorsInValidation>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -58,63 +76,63 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Serialization, Version=2.0.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <ApplicationDefinition Include="App.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Page Include="UserInterface\AssetManagers\DialPlanDetailsControl.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\SIPProviderDetailsControl.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\DialPlanManager.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UIControls\AssetListMenuBar.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\SIPProviderManager.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\CallManager\SIPCallManager.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\CreateAccountControl.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\LoginControl.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\MonitoringConsole.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\Page.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\SIPAccountDetailsControl.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\SIPAccountManager.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\CityLightsDisplay.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\UserPage.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Compile Include="App.xaml.cs">
@@ -123,15 +141,15 @@
     <Compile Include="AssemblyState.cs" />
     <Compile Include="FunctionDelegates.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Services\SIPSorceryGUITestPersistor.cs" />
-    <Compile Include="Sockets\SocketClient.cs" />
-    <Compile Include="UIControls\AssetViewPanel.cs" />
-    <Compile Include="UIHelper.cs" />
     <Compile Include="Service References\SIPSorceryProvisioningClient\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
+    <Compile Include="Services\SIPSorceryGUITestPersistor.cs" />
+    <Compile Include="Sockets\SocketClient.cs" />
+    <Compile Include="UIControls\AssetViewPanel.cs" />
+    <Compile Include="UIHelper.cs" />
     <Compile Include="Services\SIPSorceryPersistor.cs" />
     <Compile Include="Services\SIPSorceryWebServicePersistor.cs" />
     <Compile Include="UIControls\DataGridConverters.cs" />
@@ -206,43 +224,22 @@
     <None Include="Properties\DataSources\SIPSorcery.SIP.App.SIPRegistrarBinding.datasource" />
     <None Include="Properties\DataSources\SIPSorcery.SIP.SIPCDR.datasource" />
     <None Include="Properties\DataSources\SIPSorcery.SIP.SIPDialogue.datasource" />
-    <None Include="Service References\SIPSorceryProvisioningClient\configuration91.svcinfo" />
-    <None Include="Service References\SIPSorceryProvisioningClient\configuration.svcinfo" />
     <None Include="Service References\SIPSorceryProvisioningClient\provisioning.wsdl" />
     <None Include="Service References\SIPSorceryProvisioningClient\provisioning.xsd" />
     <None Include="Service References\SIPSorceryProvisioningClient\provisioning1.xsd" />
     <None Include="Service References\SIPSorceryProvisioningClient\provisioning2.xsd" />
     <None Include="Service References\SIPSorceryProvisioningClient\provisioning3.xsd" />
+    <None Include="Service References\SIPSorceryProvisioningClient\SIPProvisioningWebService.wsdl" />
+    <Resource Include="Images\wizard-logo.png" />
+    <Resource Include="Images\small_logo.png" />
+    <None Include="Service References\SIPSorceryProvisioningClient\provisioning.disco" />
+    <None Include="Service References\SIPSorceryProvisioningClient\configuration91.svcinfo" />
+    <None Include="Service References\SIPSorceryProvisioningClient\configuration.svcinfo" />
     <None Include="Service References\SIPSorceryProvisioningClient\Reference.svcmap">
       <Generator>WCF Proxy Generator</Generator>
       <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
-    <None Include="Service References\SIPSorceryProvisioningClient\SIPProvisioningWebService1.wsdl" />
-    <None Include="Service References\SIPSorceryProvisioningClient\SIPSorcery.SIPSorceryProvisioningClient.DialPlan.datasource">
-    </None>
-    <None Include="Service References\SIPSorceryProvisioningClient\SIPSorcery.SIPSorceryProvisioningClient.DialPlan1.datasource">
-    </None>
-    <None Include="Service References\SIPSorceryProvisioningClient\SIPSorcery.SIPSorceryProvisioningClient.SIPAccount.datasource">
-    </None>
-    <None Include="Service References\SIPSorceryProvisioningClient\SIPSorcery.SIPSorceryProvisioningClient.SIPDialogue.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\SIPSorceryProvisioningClient\SIPSorcery.SIPSorceryProvisioningClient.SIPDomain.datasource">
-    </None>
-    <None Include="Service References\SIPSorceryProvisioningClient\SIPSorcery.SIPSorceryProvisioningClient.SIPExtension.datasource">
-    </None>
-    <None Include="Service References\SIPSorceryProvisioningClient\SIPSorcery.SIPSorceryProvisioningClient.SIPProvider.datasource">
-    </None>
-    <None Include="Service References\SIPSorceryProvisioningClient\SIPSorcery.SIPSorceryProvisioningClient.SIPRegistrationAgentRecord.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <Resource Include="Images\wizard-logo.png" />
-    <Resource Include="Images\small_logo.png" />
-    <None Include="Service References\SIPSorceryProvisioningClient\provisioning.disco" />
     <Content Include="ServiceReferences.ClientConfig" />
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadataStorage Include="Service References\SIPSorceryProvisioningClient\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery.Messaging\SIPSorcery.Silverlight.Messaging.csproj">
@@ -266,7 +263,42 @@
       <Name>SIPSorcery.Sys</Name>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath)\Microsoft\Silverlight\V2.0\Microsoft.Silverlight.CSharp.targets" />
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadataStorage Include="Service References\SIPSorceryProvisioningClient\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Silverlight\v3.0\Microsoft.Silverlight.CSharp.targets" Condition="" />
   <ProjectExtensions>
     <VisualStudio>
       <FlavorProperties GUID="{A1591282-1198-4647-A2B1-27E5FF5F6F3B}">

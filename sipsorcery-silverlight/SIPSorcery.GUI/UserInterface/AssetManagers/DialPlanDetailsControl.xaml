@@ -35,7 +35,7 @@
 					</Canvas>
 					<Button Content="Update" Height="22" x:Name="m_updateButton2" Click="UpdateButtonClicked" Width="47" Canvas.Left="500" Canvas.Top="486" Padding="3,3,3,3" Margin="0,0,0,5" />
 					<Border Height="413.516" Width="994" Canvas.Left="7.999" Canvas.Top="64.518" Background="#FF272727" BorderBrush="#FFA0F927" BorderThickness="1,1,1,1">
-						<TextBox AcceptsReturn="True" Height="Auto" Width="Auto" Background="#FF272727" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" MaxLength="30000" Text="" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Foreground="#FFA0F927" VerticalScrollBarVisibility="Auto" x:Name="m_dialPlanText"/>
+						<TextBox AcceptsReturn="True" Height="Auto" Width="Auto" Background="Black" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" MaxLength="30000" Text="" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Foreground="#FFA0F927" VerticalScrollBarVisibility="Auto" x:Name="m_dialPlanText" FontFamily="Courier New" FontSize="12" CaretBrush="White"/>
 					</Border>		
 					<Button Content="Update" Height="22" x:Name="m_applyButton" Click="UpdateButtonClicked" Width="47" Canvas.Left="500" Canvas.Top="486" HorizontalAlignment="Center" Margin="0,5,0,0" />
 				</StackPanel>

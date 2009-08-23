@@ -16,6 +16,8 @@ using System.Windows.Threading;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Persistence;
 using SIPSorcery.Sockets;
+using SIPSorcery.Sys;
+using SIPSorcery.SIPSorceryProvisioningClient;
 
 namespace SIPSorcery
 {  
@@ -60,7 +62,6 @@ namespace SIPSorcery
 
         private void Page_Loaded(object sender, System.Windows.RoutedEventArgs e)
         {
-
             m_versionTextBlock.Text = Assembly.GetExecutingAssembly().FullName.Split(',')[1];
             //m_versionTextBlock.Text = "version: " + Assembly.GetExecutingAssembly().FullName;
             m_appStatusMessage.Text = "Initialising...";
@@ -73,8 +74,9 @@ namespace SIPSorcery
             //    hostPort = DEFAULT_PROVISIONING_WEBSERVICE_PORT;
             //}
 
+            string server = Application.Current.Host.Source.DnsSafeHost;
+
             try {
-                string server = Application.Current.Host.Source.DnsSafeHost;
                 if (server == LOCALHOST_MONITOR_HOST || Application.Current.Host.Source.Scheme == "file") {
                     m_sipMonitorHost = LOCALHOST_MONITOR_HOST;
                     m_provisioningServiceURL = LOCALHOST_PROVISIONING_URL;
@@ -89,7 +91,12 @@ namespace SIPSorcery
                 m_provisioningServiceURL = DEFAULT_PROVISIONING_URL;
             }
 
-            ThreadPool.QueueUserWorkItem(new WaitCallback(Initialise), null);
+            if (server != DEFAULT_MONITOR_HOST) {
+                m_setSvcLink.Visibility = Visibility.Visible;
+                m_provisioningSvcTextBox.Text = m_provisioningServiceURL;
+            }
+
+            ThreadPool.QueueUserWorkItem(delegate { Initialise(); });
 
             //UIHelper.SetPluginDimensions(LayoutRoot.RenderSize.Width, LayoutRoot.RenderSize.Height);
         }
@@ -99,7 +106,7 @@ namespace SIPSorcery
             m_logo.Visibility = (m_createAccountControl.Visibility == Visibility.Collapsed) ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private void Initialise(object state)
+        private void Initialise()
         {
 
 #if !BLEND
@@ -126,23 +133,23 @@ namespace SIPSorcery
         /// </summary>
         private void InitialiseServices(int millisecondsDelay)
         {
-            m_provisioningInitialisationInProgress = true;
-            m_monitorInitialisationInProgress = true;
+            if (!m_provisioningInitialisationInProgress) {
 
-            if (millisecondsDelay > 0)
-            {
-                Thread.Sleep(millisecondsDelay);
-            }
+                m_provisioningInitialisationInProgress = true;
+                m_monitorInitialisationInProgress = true;
 
-            try
-            {
-                m_unauthorisedPersistor.IsAliveAsync();
-            }
-            catch (Exception provExcp)
-            {
-                m_persistorStatusMessage = provExcp.Message;
-                m_persistorStatus = ServiceConnectionStatesEnum.Error;
-                UpdateAppStatus();
+                if (millisecondsDelay > 0) {
+                    Thread.Sleep(millisecondsDelay);
+                }
+
+                try {
+                    m_unauthorisedPersistor.IsAliveAsync();
+                }
+                catch (Exception provExcp) {
+                    m_persistorStatusMessage = provExcp.Message;
+                    m_persistorStatus = ServiceConnectionStatesEnum.Error;
+                    UpdateAppStatus();
+                }
             }
         }
 
@@ -187,25 +194,45 @@ namespace SIPSorcery
                 if (m_monitorStatus == ServiceConnectionStatesEnum.Ok)
                 {
                     UIHelper.SetFill(m_appStatusIcon, Colors.Green);
-                    UIHelper.SetText(m_appStatusMessage, "Ready (auto refresh enabled)");
+                    if (m_provisioningServiceURL == DEFAULT_PROVISIONING_URL) {
+                        UIHelper.SetText(m_appStatusMessage, "Ready (auto refresh enabled)");
+                    }
+                    else {
+                        UIHelper.SetText(m_appStatusMessage, "Connected " + m_provisioningServiceURL + ".");
+                    }
                     UIHelper.SetFocus(m_loginControl);
 
                     if (m_userPage != null)
                     {
                         m_userPage.SetAppStatusIconColour(Colors.Green);
-                        m_userPage.SetAppStatusMessage("Ready (auto refresh enabled)");
+                        if (m_provisioningServiceURL == DEFAULT_PROVISIONING_URL) {
+                            m_userPage.SetAppStatusMessage("Ready (auto refresh enabled)");  
+                        }
+                        else {
+                            m_userPage.SetAppStatusMessage("Ready (auto refresh enabled) " + m_sipMonitorHost + ".");
+                        }
                     }
                 }
                 else
                 {
                     UIHelper.SetFill(m_appStatusIcon, Colors.Green);
-                    UIHelper.SetText(m_appStatusMessage, "Ready");
+                    if (m_provisioningServiceURL == DEFAULT_PROVISIONING_URL) {
+                        UIHelper.SetText(m_appStatusMessage, "Ready");
+                    }
+                    else {
+                        UIHelper.SetText(m_appStatusMessage, "Ready\n" + m_provisioningServiceURL + ".");
+                    }
                     UIHelper.SetFocus(m_loginControl);
 
                     if (m_userPage != null)
                     {
                         m_userPage.SetAppStatusIconColour(Colors.Green);
-                        m_userPage.SetAppStatusMessage("Ready");
+                        if (m_provisioningServiceURL == DEFAULT_PROVISIONING_URL) {
+                            m_userPage.SetAppStatusMessage("Ready");
+                        }
+                        else {
+                            m_userPage.SetAppStatusMessage("Ready " + m_sipMonitorHost + ".");
+                        }
                     }
                 }
             }
@@ -216,7 +243,7 @@ namespace SIPSorcery
             //}
         }
 
-        private void PersistorIsAliveComplete(SIPSorcery.SIPSorceryProvisioningClient.IsAliveCompletedEventArgs e)
+        private void PersistorIsAliveComplete(IsAliveCompletedEventArgs e)
         {
             try
             {
@@ -288,7 +315,7 @@ namespace SIPSorcery
             m_unauthorisedPersistor.LoginAsync(username, password);
         }
 
-        private void LoginComplete(SIPSorcery.SIPSorceryProvisioningClient.LoginCompletedEventArgs e)
+        private void LoginComplete(LoginCompletedEventArgs e)
         {
             if (e.Error != null)
             {
@@ -413,12 +440,32 @@ namespace SIPSorcery
                     m_sipEventMonitorClient.Close();
                 }
 
-                ThreadPool.QueueUserWorkItem(new WaitCallback(Initialise), null);
+                ThreadPool.QueueUserWorkItem(delegate { Initialise(); });
             }
         }
 
         private void CreateCustomerComplete(System.ComponentModel.AsyncCompletedEventArgs e) {
             m_createAccountControl.CustomerCreated(e);
+        }
+
+        private void DisplaySetServiceTextBox(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+            m_provisioningSvcTextBox.Visibility = (m_provisioningSvcTextBox.Visibility == Visibility.Visible) ? Visibility.Collapsed : Visibility.Visible;
+            m_setSvcLinkApply.Visibility = m_provisioningSvcTextBox.Visibility;
+        }
+
+        private void ApplySetService(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+            if (!m_provisioningSvcTextBox.Text.IsNullOrBlank()) {
+                Uri uriResult = null;
+                if (Uri.TryCreate(m_provisioningSvcTextBox.Text, UriKind.Absolute, out uriResult)) {
+                    m_provisioningServiceURL = uriResult.ToString();
+                    m_sipMonitorHost = uriResult.Host;
+                    UIHelper.SetText(m_appStatusMessage, "Attempting to connect to " + m_provisioningServiceURL + ".");
+                    Initialise();
+                }
+                else {
+                    UIHelper.SetText(m_appStatusMessage, "Could not parse URI from " + m_provisioningSvcTextBox.Text + ".");
+                }
+            }
         }
     }
 }

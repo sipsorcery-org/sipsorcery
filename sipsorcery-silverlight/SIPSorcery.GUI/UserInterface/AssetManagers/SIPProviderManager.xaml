@@ -35,7 +35,7 @@
 							IsReadOnly="True"
 							MinWidth="80"/>
 						<data:DataGridTextColumn 
-		                    Header="Userame" 
+		                    Header="Username" 
 		                    Width="SizeToCells"
 		                    Binding="{Binding ProviderUsername}" 
 							IsReadOnly="True"
