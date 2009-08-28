@@ -353,14 +353,23 @@ namespace SIPSorcery.AppServer.DialPlan
                     m_currentCall.Start(callsQueue);
 
                     // Wait for an answer.
-                    ringTimeout = (ringTimeout * 1000 > m_maxRingTime) ? m_maxRingTime : ringTimeout * 1000;
+                    if (ringTimeout <= 0 || ringTimeout * 1000 > m_maxRingTime) {
+                        ringTimeout = m_maxRingTime;
+                    }
+                    else  {
+                        ringTimeout = ringTimeout * 1000;
+                    }
                     ExtendScriptTimeout(ringTimeout + DEFAULT_CREATECALL_RINGTIME);
                     DateTime startTime = DateTime.Now;
 
                     if (m_waitForCallCompleted.WaitOne(ringTimeout, false)) {
                         if (!m_clientCallCancelled) {
                             if (result == DialPlanAppResult.Answered) {
-                                answeredDialogue.CallDurationLimit = answeredCallLimit;
+                                // The call limit duration is only used if there hasn't already been a per leg duration set on the call.
+                                if (answeredCallLimit > 0 && answeredDialogue.CallDurationLimit == 0) {
+                                    answeredDialogue.CallDurationLimit = answeredCallLimit;
+                                }
+
                                 m_dialPlanContext.CallAnswered(answeredStatus, answeredReason, null, answeredContentType, answeredBody, answeredDialogue);
 
                                 // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
@@ -784,10 +793,14 @@ namespace SIPSorcery.AppServer.DialPlan
         }
 
         public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, bool notUsed) {
-            GoogleVoiceCall(emailAddress, password, forwardingNumber, destinationNumber);
+            GoogleVoiceCall(emailAddress, password, forwardingNumber, destinationNumber, null);
         }
 
         public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber) {
+            GoogleVoiceCall(emailAddress, password, forwardingNumber, destinationNumber, null);
+        }
+
+        public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromURIUserToMatch) {
             try {
                 DateTime startTime = DateTime.Now;
 
@@ -829,7 +842,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     Log("SDP RTP socket on GoogleVoiceCall call could not be determined.");
                 }
 
-                SIPDialogue answeredDialogue = googleCall.InitiateCall(emailAddress, password, forwardingNumber, destinationNumber, m_sipRequest.Header.ContentType, content);
+                SIPDialogue answeredDialogue = googleCall.InitiateCall(emailAddress, password, forwardingNumber, destinationNumber, fromURIUserToMatch, m_sipRequest.Header.ContentType, content);
                 if (answeredDialogue != null) {
                     m_dialPlanContext.CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, answeredDialogue.ContentType, answeredDialogue.RemoteSDP, answeredDialogue);
 

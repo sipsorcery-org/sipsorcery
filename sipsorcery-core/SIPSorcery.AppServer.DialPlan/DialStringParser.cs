@@ -224,7 +224,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     Boolean.TryParse(dataFields[5].Trim(), out traceReqd);
                 }
 
-                forwardURI = SIPURI.ParseSIPURIRelaxed(DialPlanEngine.SubstituteRequestVars(sipRequest, forwardURIStr));
+                forwardURI = SIPURI.ParseSIPURIRelaxed(SubstituteRequestVars(sipRequest, forwardURIStr));
                 if (forwardURI != null) {
                     if (forwardURI.User == null) {
                         forwardURI.User = sipRequest.URI.User;
@@ -292,7 +292,7 @@ namespace SIPSorcery.AppServer.DialPlan
                             }
 
                             // Determine whether the call forward is for a local domain or not.
-                            SIPURI callLegSIPURI = SIPURI.ParseSIPURIRelaxed(DialPlanEngine.SubstituteRequestVars(sipRequest, callLegDestination));
+                            SIPURI callLegSIPURI = SIPURI.ParseSIPURIRelaxed(SubstituteRequestVars(sipRequest, callLegDestination));
                             if (callLegSIPURI != null && callLegSIPURI.User == null) {
                                 callLegSIPURI.User = sipRequest.URI.User;
                             }
@@ -342,11 +342,12 @@ namespace SIPSorcery.AppServer.DialPlan
                                         // header is already present.
                                         if (customHeaders != null && customHeaders.Count > 0) {
                                             foreach (DictionaryEntry customHeader in customHeaders) {
+                                                string customHeaderValue = SubstituteRequestVars(sipRequest, customHeader.Value as string);
                                                 if (sipCallDescriptor.CustomHeaders.Contains(customHeader.Key as string)) {
-                                                    sipCallDescriptor.CustomHeaders[customHeader.Key as string] = customHeader.Value as string;
+                                                    sipCallDescriptor.CustomHeaders[customHeader.Key as string] = customHeaderValue;
                                                 }
                                                 else {
-                                                    sipCallDescriptor.CustomHeaders.Add(customHeader.Key as string, customHeader.Value as string);
+                                                    sipCallDescriptor.CustomHeaders.Add(customHeader.Key as string, customHeaderValue);
                                                 }
                                             }
                                         }
@@ -552,7 +553,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                     fromHeader.ToString(),
                                     providerURI.ToString(),
                                     (provider.ProviderOutboundProxy != null && provider.ProviderOutboundProxy.Trim().Length > 0) ? provider.ProviderOutboundProxy.Trim() : null,
-                                    SIPCallDescriptor.ParseCustomHeaders(provider.CustomHeaders),
+                                    SIPCallDescriptor.ParseCustomHeaders(SubstituteRequestVars(sipRequest, provider.CustomHeaders)),
                                     provider.ProviderAuthUsername,
                                     SIPCallDirection.Out,
                                     contentType,
@@ -613,7 +614,7 @@ namespace SIPSorcery.AppServer.DialPlan
             if (fromHeaderOption != null && fromHeaderOption.Trim().Length > 0)
             {
                 SIPFromHeader dialplanFrom = SIPFromHeader.ParseFromHeader(fromHeaderOption);
-                fromHeader = SIPFromHeader.ParseFromHeader(DialPlanEngine.SubstituteRequestVars(sipRequest, fromHeaderOption));
+                fromHeader = SIPFromHeader.ParseFromHeader(SubstituteRequestVars(sipRequest, fromHeaderOption));
             }
             else if (Regex.Match(username, ANON_CALLERS).Success)
             {
@@ -625,6 +626,79 @@ namespace SIPSorcery.AppServer.DialPlan
             }
 
             return fromHeader;
+        }
+
+        /// <summary>
+        /// Substitutes the special characters with variables from the SIP request.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="substituteString"></param>
+        /// <returns></returns>
+        public static string SubstituteRequestVars(SIPRequest request, string substituteString) {
+            try {
+                if (substituteString == null || substituteString.Trim().Length == 0 || request == null) {
+                    return substituteString;
+                }
+                else {
+                    string resultString = substituteString;
+
+                    #region Replacing ${dst} and ${exten} with request URI.
+
+                    if (Regex.Match(substituteString, @"\$\{(dst|exten)(:|\})", RegexOptions.IgnoreCase).Success) {
+                        MatchCollection matches = Regex.Matches(substituteString, @"\$\{(dst|exten):\d+?\}", RegexOptions.IgnoreCase);
+                        foreach (Match match in matches) {
+                            int trimCharCount = Convert.ToInt32(Regex.Match(match.Value, @"\$\{(dst|exten):(?<count>\d+)\}", RegexOptions.IgnoreCase).Result("${count}"));
+
+                            if (trimCharCount < request.URI.User.Length) {
+                                string trimmedDst = request.URI.User.Substring(trimCharCount);
+                                resultString = Regex.Replace(resultString, Regex.Escape(match.Value), trimmedDst, RegexOptions.IgnoreCase);
+                            }
+                            else {
+                                logger.Warn("A SIP destination could not be trimmed " + request.URI.User + " " + substituteString + ", original destination being used.");
+                            }
+                        }
+
+                        resultString = Regex.Replace(resultString, @"\$\{(dst|exten).*?\}", request.URI.User, RegexOptions.IgnoreCase);
+                    }
+
+                    #endregion
+
+                    #region Replacing ${fromname} with the request From header name.
+
+                    if (request.Header.From != null && request.Header.From.FromName != null && Regex.Match(substituteString, @"\$\{fromname\}", RegexOptions.IgnoreCase).Success) {
+                        resultString = Regex.Replace(resultString, @"\$\{fromname\}", request.Header.From.FromName, RegexOptions.IgnoreCase);
+                    }
+
+                    #endregion
+
+                    #region Replacing ${fromuriuser} with the request From URI user.
+
+                    if (request.Header.From != null && request.Header.From.FromURI != null && request.Header.From.FromURI.User != null && Regex.Match(substituteString, @"\$\{fromuriuser\}", RegexOptions.IgnoreCase).Success) {
+                        resultString = Regex.Replace(resultString, @"\$\{fromuriuser\}", request.Header.From.FromURI.User, RegexOptions.IgnoreCase);
+                    }
+
+                    #endregion
+
+                    /*#region Replacing ${username} with the switch command username.
+
+                    if (Regex.Match(substituteString, @"\$\{username\}", RegexOptions.IgnoreCase).Success && request.Header.From != null)
+                    {
+                        resultString = Regex.Replace(resultString, @"\$\{username\}", swCommand.Username, RegexOptions.IgnoreCase);
+                    }
+
+                    #endregion*/
+
+                    // If parts of the From header were empty replace them with an empty string.
+                    resultString = Regex.Replace(resultString, @"\$\{fromname\}", "", RegexOptions.IgnoreCase);
+                    resultString = Regex.Replace(resultString, @"\$\{fromuriuser\}", "", RegexOptions.IgnoreCase);
+
+                    return resultString.Trim();
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception SubstituteRequestVars. " + excp.Message);
+                return substituteString;
+            }
         }
 
         private bool IsURIInQueue(Queue<List<SIPCallDescriptor>> callQueue, string callURI) {
@@ -851,6 +925,86 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 Console.WriteLine("First destination uri=" + firstLeg[0].Uri.ToString());
                 Console.WriteLine("Second destination uri=" + firstLeg[1].Uri.ToString());
+
+                Console.WriteLine("---------------------------------");
+            }
+
+          [Test]
+            public void SubstitueDstVarTest()
+            {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+               
+                SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:380@sip.mysipswitch.com"));
+                request.Header = new SIPHeader();
+                string substitutedString = SubstituteRequestVars(request, "${dst}123");
+
+                Console.Write("Substituted string=" + substitutedString + ".");
+ 
+                Assert.IsTrue(substitutedString == "380123", "The destination was not substituted correctly.");
+
+                Console.WriteLine("---------------------------------");
+            }
+
+            [Test]
+            public void SubstitueEmptyFromNameTest()
+            {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:380@sip.mysipswitch.com"));
+                request.Header = new SIPHeader();
+                string substitutedString = SubstituteRequestVars(request, "${fromname} <sip:user@provider>");
+
+                Console.Write("Substituted string=" + substitutedString + ".");
+
+                Assert.IsTrue(substitutedString == "<sip:user@provider>", "The from header was not substituted correctly.");
+
+                Console.WriteLine("---------------------------------");
+            }
+
+            [Test]
+            public void SubstitueDoubleDstVarTest()
+            {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:380@sip.mysipswitch.com"));
+                request.Header = new SIPHeader();
+                string substitutedString = SubstituteRequestVars(request, "${dst}123${dst}");
+
+                Console.Write("Substituted string=" + substitutedString + ".");
+
+                Assert.IsTrue(substitutedString == "380123380", "The destination was not substituted correctly.");
+
+                Console.WriteLine("---------------------------------");
+            }
+
+            [Test]
+            public void SubstitueDoubleDstSubStrVarTest()
+            {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:380@sip.mysipswitch.com"));
+                request.Header = new SIPHeader();
+                string substitutedString = SubstituteRequestVars(request, "${dst:1}123${dst:2}");
+
+                Console.Write("Substituted string=" + substitutedString + ".");
+
+                Assert.IsTrue(substitutedString == "801230", "The destination was not substituted correctly.");
+
+                Console.WriteLine("---------------------------------");
+            }
+
+            [Test]
+            public void SubstitueMixedDstSubStrVarTest()
+            {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:380@sip.mysipswitch.com"));
+                request.Header = new SIPHeader();
+                string substitutedString = SubstituteRequestVars(request, "${dst:1}123${dst}000");
+
+                Console.Write("Substituted string=" + substitutedString + ".");
+
+                Assert.IsTrue(substitutedString == "80123380000", "The destination was not substituted correctly.");
 
                 Console.WriteLine("---------------------------------");
             }

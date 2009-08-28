@@ -65,6 +65,7 @@ namespace SIPSorcery.AppServer.DialPlan {
         private SIPEndPoint m_outboundProxy;
 
         private string m_forwardingNumber;
+        private string m_fromURIUserToMatch;
         private ManualResetEvent m_waitForCallback = new ManualResetEvent(false);
         private ISIPServerUserAgent m_callbackCall;
 
@@ -87,8 +88,26 @@ namespace SIPSorcery.AppServer.DialPlan {
             m_outboundProxy = outboundProxy;
         }
 
-        public SIPDialogue InitiateCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string contentType, string body) {
+        /// <summary>
+        /// Initiates a Google Voice callback by sending 3 HTTP requests and then waiting for the incoming SIP call.
+        /// </summary>
+        /// <param name="emailAddress">The Google Voice email address to login with.</param>
+        /// <param name="password">The Google Voice password to login with.</param>
+        /// <param name="forwardingNumber">The number to request Google Voice to do the intial callback on.</param>
+        /// <param name="destinationNumber">The number to request Google Voice to dial out on. This is what Google will attempt to
+        /// call once the callback on the forwardingNumber is answered.</param>
+        /// <param name="fromUserToMatch">The FromURI user to match to recognise the incoming call. If null it will be assumed that
+        /// Gizmo is being used and the X-GoogleVoice header will be used.</param>
+        /// <param name="contentType">The content type of the SIP call into sipsorcery that created the Google Voice call. It is
+        /// what will be sent in the Ok response to the initial incoming callback.</param>
+        /// <param name="body">The content of the SIP call into sipsorcery that created the Google Voice call. It is
+        /// what will be sent in the Ok response to the initial incoming callback.</param>
+        /// <returns>If successful the dialogue of the established call otherwsie null.</returns>
+        public SIPDialogue InitiateCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromUserToMatch, string contentType, string body) {
             try {
+                m_forwardingNumber = forwardingNumber;
+                m_fromURIUserToMatch = fromUserToMatch;
+
                 if (CallProgress != null) {
                     CallProgress(SIPResponseStatusCodesEnum.Ringing, "Initiating Google Voice call", null, null, null);
                 }
@@ -132,9 +151,6 @@ namespace SIPSorcery.AppServer.DialPlan {
                     response.Close();
                     throw new ApplicationException("Login to google.com failed for " + emailAddress + " with response " + response.StatusCode + ".");
                 }
-                //Stream dataStream = response.GetResponseStream();
-                //StreamReader reader = new StreamReader(dataStream);
-                //string responseFromServer = reader.ReadToEnd();
                 response.Close();
 
                 // We're now logged in. Need to load up the Google Voice page to get the rnr hidden input value which is needed for
@@ -174,8 +190,7 @@ namespace SIPSorcery.AppServer.DialPlan {
 
         private SIPDialogue SendCallRequest(CookieContainer cookies, string forwardingNumber, string destinationNumber, string rnr, string contentType, string body) {
             try {
-                m_forwardingNumber = forwardingNumber;
-                CallbackWaiter callbackWaiter = new CallbackWaiter(CallbackWaiterEnum.GoogleVoice, m_forwardingNumber, MatchIncomingCall);
+                CallbackWaiter callbackWaiter = new CallbackWaiter(CallbackWaiterEnum.GoogleVoice, forwardingNumber, MatchIncomingCall);
                 m_callManager.AddWaitingApplication(callbackWaiter);
                 
                 string callData = "outgoingNumber=" + Uri.EscapeDataString(destinationNumber) + "&forwardingNumber=" + Uri.EscapeDataString(forwardingNumber) + 
@@ -220,8 +235,18 @@ namespace SIPSorcery.AppServer.DialPlan {
         private bool MatchIncomingCall(ISIPServerUserAgent incomingCall) {
             try {
                 SIPHeader callHeader = incomingCall.CallRequest.Header;
+                bool matchedCall = false;
 
-                if (callHeader.UnknownHeaders.Contains("X-GoogleVoice: true") && callHeader.To.ToURI.User == m_forwardingNumber.Substring(1)) {
+                if (!m_fromURIUserToMatch.IsNullOrBlank()) {
+                    if (callHeader.From.FromURI.User == m_fromURIUserToMatch) {
+                        matchedCall = true;
+                    }
+                }
+                else if (callHeader.UnknownHeaders.Contains("X-GoogleVoice: true") && callHeader.To.ToURI.User == m_forwardingNumber.Substring(1)) {
+                    matchedCall = true;
+                }
+
+                if (matchedCall) {
                     m_callbackCall = incomingCall;
                     m_callbackCall.SetOwner(m_username, m_adminMemberId);
                     m_waitForCallback.Set();
