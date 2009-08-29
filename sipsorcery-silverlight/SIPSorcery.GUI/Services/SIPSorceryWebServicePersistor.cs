@@ -17,7 +17,11 @@ using SIPSorcery.Silverlight.Messaging;
 using SIPSorcery.SIPSorceryProvisioningClient;
 
 namespace SIPSorcery.Persistence {
+
     public class SIPSorceryWebServicePersistor : SIPSorceryPersistor {
+
+        private static int MAX_WCF_MESSAGE_SIZE = 1000000;   // Limit messages to 1MB.
+
         public override event IsAliveCompleteDelegate IsAliveComplete;
         public override event LoginCompleteDelegate LoginComplete;
         public override event LogoutCompleteDelegate LogoutComplete;
@@ -56,6 +60,7 @@ namespace SIPSorcery.Persistence {
             //BasicHttpBinding binding = new BasicHttpBinding();
             BasicHttpSecurityMode securitymode = (serverURL.StartsWith("https")) ? BasicHttpSecurityMode.Transport : BasicHttpSecurityMode.None;
             BasicHttpCustomHeaderBinding binding = new BasicHttpCustomHeaderBinding(new SecurityHeader(authid), securitymode);
+            binding.MaxReceivedMessageSize = MAX_WCF_MESSAGE_SIZE;
             
             EndpointAddress address = new EndpointAddress(serverURL);
             m_provisioningServiceProxy = new ProvisioningServiceClient(binding, address);
