@@ -316,7 +316,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_answeredUAC = answeredUAC;
 
                         if (CallAnswered != null) {
-                            CallAnswered(answeredResponse.Status, answeredResponse.ReasonPhrase, null, answeredResponse.Header.ContentType, answeredResponse.Body, answeredUAC.SIPDialogue);
+                            CallAnswered(answeredResponse.Status, answeredResponse.ReasonPhrase, null, null, answeredResponse.Header.ContentType, answeredResponse.Body, answeredUAC.SIPDialogue);
                         }
 
                         // Cancel/hangup and other calls on this leg that are still around.

@@ -133,14 +133,14 @@ namespace SIPSorcery.Net
 
 	public class SDPMediaFormatAttributes
 	{	
-		private static Hashtable m_formatAttributes = new Hashtable();
+		private static Dictionary<string, string> m_formatAttributes = new Dictionary<string,string>();
 
 		static SDPMediaFormatAttributes()
 		{
-			m_formatAttributes["PCMU"] = "a=rtpmap:0 PCMU/8000";
-			m_formatAttributes["GSM"] = "a=rtpmap:3 GSM/8000";
-			m_formatAttributes["PCMA"] = "a=rtpmap:8 PCMA/8000";
-			m_formatAttributes["G723"] = "a=rtpmap:96 G723/8000";
+			m_formatAttributes.Add("PCMU", "a=rtpmap:0 PCMU/8000");
+			m_formatAttributes.Add("GSM", "a=rtpmap:3 GSM/8000");
+			m_formatAttributes.Add("PCMA", "a=rtpmap:8 PCMA/8000");
+			m_formatAttributes.Add("G723", "a=rtpmap:96 G723/8000");
 		}
 
 		public static string GetFormatAttribute(SDPMediaFormatTypesEnum mediaType)
@@ -350,7 +350,7 @@ namespace SIPSorcery.Net
                         }
                         else if (sdpLine.Trim().StartsWith("m="))
                         {
-                            string[] mediaFields = sdpLine.Substring(2).Trim().Split(new char[] {' '}, 4);
+                            string[] mediaFields = sdpLine.Substring(2).Trim().Split(' ');
                             media.Media = SDPMediaTypes.GetSDPMediaType(mediaFields[0]);
                             Int32.TryParse(mediaFields[1], out media.Port);
                             media.Transport = mediaFields[2];

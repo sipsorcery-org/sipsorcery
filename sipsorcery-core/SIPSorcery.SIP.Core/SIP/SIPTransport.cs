@@ -227,6 +227,13 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public void RemoveSIPChannel(SIPChannel sipChannel) {
+            if(m_sipChannels.ContainsKey(sipChannel.SIPChannelEndPoint.ToString())) {
+                m_sipChannels.Remove(sipChannel.SIPChannelEndPoint.ToString());
+                sipChannel.SIPMessageReceived -= ReceiveMessage;
+            }
+        }
+
         private void StartTransportThread()
         {
             if (!m_transportThreadStarted)
@@ -1168,7 +1175,7 @@ namespace SIPSorcery.SIP
                                                 requestTransaction.RetransmitFinalResponse();
                                             }
                                             else if (sipRequest.Method == SIPMethodsEnum.ACK) {
-                                                //logger.Debug("ACK received for (" + requestTransaction.TransactionId + ") " + requestTransaction.TransactionRequest.URI.ToString() + ", callid=" + sipRequest.Header.CallId + ".");
+                                                logger.Debug("ACK received for " + requestTransaction.TransactionRequest.URI.ToString() + ".");
 
                                                 if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Completed) {
                                                     //logger.Debug("ACK received for INVITE, setting state to Confirmed, " + sipRequest.URI.ToString() + " from " + sipRequest.Header.From.FromURI.User + " " + remoteEndPoint + ".");

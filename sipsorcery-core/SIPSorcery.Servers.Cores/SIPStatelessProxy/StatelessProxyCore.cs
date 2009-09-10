@@ -122,7 +122,7 @@ namespace SIPSorcery.Servers {
                 //string fromTag = (sipRequest.Header.From != null) ? sipRequest.Header.From.FromTag : null;
                 string route = (sipRequest.Header.Routes != null) ? sipRequest.Header.Routes.ToString() : null;
                 //string authHeader = (sipRequest.Header.AuthenticationHeader != null) ? sipRequest.Header.AuthenticationHeader.ToString() : null;
-                string proxyBranch = CallProperties.CreateBranchId(SIPConstants.SIP_BRANCH_MAGICCOOKIE, null, null, sipRequest.Header.CallId, null, null, sipRequest.Header.CSeq, route, null, null);
+                string proxyBranch = CallProperties.CreateBranchId(SIPConstants.SIP_BRANCH_MAGICCOOKIE, null, null, sipRequest.Header.CallId, sipRequest.URI.ToString(), null, sipRequest.Header.CSeq, route, null, null);
                 // Check whether the branch parameter already exists in the Via list.
                 foreach (SIPViaHeader viaHeader in sipRequest.Header.Vias.Via) {
                     if (viaHeader.Branch == proxyBranch) {

@@ -11,10 +11,14 @@ namespace SIPSorcery.SIP.App {
     public interface IProvisioningService {
 
         [OperationContract] bool IsAlive();
+        [OperationContract] bool AreNewAccountsEnabled();
         [OperationContract] void CreateCustomer(Customer customer);
         [OperationContract] void DeleteCustomer(string customerUsername);
         [OperationContract] string Login(string username, string password);
         [OperationContract] void Logout();
+        [OperationContract] Customer GetCustomer(string username);
+        [OperationContract] void UpdateCustomer(Customer customer);
+        [OperationContract] void UpdateCustomerPassword(string username, string oldPassword, string newPassword);
         [OperationContract] List<SIPDomain> GetSIPDomains(string filterExpression, int offset, int count);
         [OperationContract] int GetSIPAccountsCount(string whereExpression);
         [OperationContract] List<SIPAccount> GetSIPAccounts(string whereExpression, int offset, int count);

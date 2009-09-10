@@ -152,6 +152,11 @@ namespace SIPSorcery.Servers
                 return;
             }
 
+            if (!sipRequest.Header.ProxySendFrom.IsNullOrBlank() && localSIPEndPoint == null) {
+                SIPChannel proxyChannel = m_sipTransport.FindSIPChannel(SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxySendFrom));
+                localSIPEndPoint = (proxyChannel != null) ? proxyChannel.SIPChannelEndPoint : null;
+            }
+
             localSIPEndPoint = localSIPEndPoint ?? m_sipTransport.GetDefaultTransportContact(dstSIPEndPoint.SIPProtocol);
 
             sipRequest.Header.Vias = new SIPViaSet();

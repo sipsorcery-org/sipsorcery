@@ -16,16 +16,40 @@ namespace SIPSorcery
 	public partial class CreateAccountControl : UserControl
 	{
         public CreateCustomerDelegate CreateCustomer_External;
-        public LoginDelegate Login_External;
+        //public LoginDelegate Login_External;
 
-        // Used when a new customer account is created to automatically sign the user on.
-        private string m_username;
-        private string m_password;
+        private string m_emailAddress;
 
-		public CreateAccountControl()
-		{
-			InitializeComponent();
-		}
+        public CreateAccountControl() {
+            InitializeComponent();
+        }
+
+        public void SetDataEntryEnabled(bool enabled) {
+            Visibility dataEntryVisibility = (enabled) ? Visibility.Visible : Visibility.Collapsed;
+            UIHelper.SetVisibility(m_firstNameTextBox, dataEntryVisibility);
+            UIHelper.SetVisibility(m_lastNameTextBox, dataEntryVisibility);
+            UIHelper.SetVisibility(m_emailAddressTextBox, dataEntryVisibility);
+            UIHelper.SetVisibility(m_usernameTextBox, dataEntryVisibility);
+            UIHelper.SetVisibility(m_passwordTextBox, dataEntryVisibility);
+            UIHelper.SetVisibility(m_retypePasswordTextBox, dataEntryVisibility);
+            UIHelper.SetVisibility(m_securityAnswerTextBox, dataEntryVisibility);
+            UIHelper.SetVisibility(m_cityTextBox, dataEntryVisibility);
+            UIHelper.SetVisibility(m_securityQuestionListBox, dataEntryVisibility);
+            UIHelper.SetVisibility(m_countryListBox, dataEntryVisibility);
+            UIHelper.SetVisibility(m_webSiteTextBox, dataEntryVisibility);
+            UIHelper.SetVisibility(m_createAccountButton, dataEntryVisibility);
+            UIHelper.SetVisibility(m_firstNameLabel, dataEntryVisibility);
+            UIHelper.SetVisibility(m_lastNameLabel, dataEntryVisibility);
+            UIHelper.SetVisibility(m_emailAddressLabel, dataEntryVisibility);
+            UIHelper.SetVisibility(m_usernameLabel, dataEntryVisibility);
+            UIHelper.SetVisibility(m_passwordLabel, dataEntryVisibility);
+            UIHelper.SetVisibility(m_retypedPasswordLabel, dataEntryVisibility);
+            UIHelper.SetVisibility(m_securityQuestionLabel, dataEntryVisibility);
+            UIHelper.SetVisibility(m_securityAnswerLabel, dataEntryVisibility);
+            UIHelper.SetVisibility(m_cityLabel, dataEntryVisibility);
+            UIHelper.SetVisibility(m_countryLabel, dataEntryVisibility);
+            UIHelper.SetVisibility(m_webSiteLabel, dataEntryVisibility);
+        }
 
         private void CreateCustomerButton_Click(object sender, System.Windows.RoutedEventArgs e) {
             try {
@@ -59,25 +83,29 @@ namespace SIPSorcery
                         m_statusTextBlock.Text = "The password and retyped password did not match.";
                     }
                     else {
+                        SetDataEntryEnabled(false);
+                        UIHelper.SetText(m_statusTextBlock, "Attempting to create new customer, please wait...");
+
                         CreateCustomer_External(customer);
 
-                        m_username = customer.CustomerUsername;
-                        m_password = customer.CustomerPassword;
+                        m_emailAddress = customer.EmailAddress;
                     }
                 }
             }
             catch (Exception excp) {
+                SetDataEntryEnabled(true);
                 m_statusTextBlock.Text = "Exception creating customer. " + excp.Message;
             }
         }
 
         public void CustomerCreated(System.ComponentModel.AsyncCompletedEventArgs e) {
             if (e.Error == null) {
-                m_statusTextBlock.Text = "Customer successfully created.";
                 Clear();
-                Login_External(m_username, m_password);
+                UIHelper.SetText(m_statusTextBlock, "A comfirmation email has been sent to " + m_emailAddress + ". " +
+                    "Please click on the link contained in the email to activate your account. Accounts not activated within 24 hours are removed.");
             }
             else {
+                SetDataEntryEnabled(true);
                 m_statusTextBlock.Text = e.Error.Message;
             }
         }
@@ -92,6 +120,7 @@ namespace SIPSorcery
             UIHelper.SetText(m_retypePasswordTextBox, String.Empty);
             UIHelper.SetText(m_securityAnswerTextBox, String.Empty);
             UIHelper.SetText(m_cityTextBox, String.Empty);
+            UIHelper.SetText(m_webSiteTextBox, String.Empty);
             UIHelper.SetComboBoxSelectedId(m_securityQuestionListBox, 0);
             UIHelper.SetComboBoxSelectedId(m_countryListBox, 14);
         }

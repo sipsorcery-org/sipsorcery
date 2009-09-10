@@ -18,10 +18,22 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
     [System.ServiceModel.ServiceContractAttribute(Namespace="http://www.sipsorcery.com/provisioning", ConfigurationName="SIPSorceryProvisioningClient.IProvisioningService")]
     public interface IProvisioningService {
         
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRs", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRsResponse")]
+        System.IAsyncResult BeginGetCDRs(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
+        
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> EndGetCDRs(System.IAsyncResult result);
+        
         [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/IsAlive", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/IsAliveResponse")]
         System.IAsyncResult BeginIsAlive(System.AsyncCallback callback, object asyncState);
         
         bool EndIsAlive(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AreNewAccountsEnabled" +
+            "", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/AreNewAccountsEnabled" +
+            "Response")]
+        System.IAsyncResult BeginAreNewAccountsEnabled(System.AsyncCallback callback, object asyncState);
+        
+        bool EndAreNewAccountsEnabled(System.IAsyncResult result);
         
         [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/CreateCustomer", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/CreateCustomerRespons" +
             "e")]
@@ -44,6 +56,24 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         System.IAsyncResult BeginLogout(System.AsyncCallback callback, object asyncState);
         
         void EndLogout(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCustomer", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCustomerResponse")]
+        System.IAsyncResult BeginGetCustomer(string username, System.AsyncCallback callback, object asyncState);
+        
+        SIPSorcery.CRM.Customer EndGetCustomer(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateCustomer", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateCustomerRespons" +
+            "e")]
+        System.IAsyncResult BeginUpdateCustomer(SIPSorcery.CRM.Customer customer, System.AsyncCallback callback, object asyncState);
+        
+        void EndUpdateCustomer(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateCustomerPasswor" +
+            "d", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateCustomerPasswor" +
+            "dResponse")]
+        System.IAsyncResult BeginUpdateCustomerPassword(string username, string oldPassword, string newPassword, System.AsyncCallback callback, object asyncState);
+        
+        void EndUpdateCustomerPassword(System.IAsyncResult result);
         
         [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPDomains", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPDomainsResponse" +
             "")]
@@ -182,15 +212,29 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         System.IAsyncResult BeginGetCDRsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
         
         int EndGetCDRsCount(System.IAsyncResult result);
-        
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRs", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRsResponse")]
-        System.IAsyncResult BeginGetCDRs(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
-        
-        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> EndGetCDRs(System.IAsyncResult result);
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "3.0.0.0")]
     public interface IProvisioningServiceChannel : SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService, System.ServiceModel.IClientChannel {
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "3.0.0.0")]
+    public partial class GetCDRsCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetCDRsCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset>)(this.results[0]));
+            }
+        }
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
@@ -200,6 +244,25 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         private object[] results;
         
         public IsAliveCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public bool Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((bool)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "3.0.0.0")]
+    public partial class AreNewAccountsEnabledCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public AreNewAccountsEnabledCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
                 base(exception, cancelled, userState) {
             this.results = results;
         }
@@ -227,6 +290,25 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             get {
                 base.RaiseExceptionIfNecessary();
                 return ((string)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "3.0.0.0")]
+    public partial class GetCustomerCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetCustomerCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public SIPSorcery.CRM.Customer Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((SIPSorcery.CRM.Customer)(this.results[0]));
             }
         }
     }
@@ -670,32 +752,25 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "3.0.0.0")]
-    public partial class GetCDRsCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
-        
-        private object[] results;
-        
-        public GetCDRsCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
-                base(exception, cancelled, userState) {
-            this.results = results;
-        }
-        
-        public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> Result {
-            get {
-                base.RaiseExceptionIfNecessary();
-                return ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset>)(this.results[0]));
-            }
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "3.0.0.0")]
     public partial class ProvisioningServiceClient : System.ServiceModel.ClientBase<SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService>, SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService {
+        
+        private BeginOperationDelegate onBeginGetCDRsDelegate;
+        
+        private EndOperationDelegate onEndGetCDRsDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetCDRsCompletedDelegate;
         
         private BeginOperationDelegate onBeginIsAliveDelegate;
         
         private EndOperationDelegate onEndIsAliveDelegate;
         
         private System.Threading.SendOrPostCallback onIsAliveCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginAreNewAccountsEnabledDelegate;
+        
+        private EndOperationDelegate onEndAreNewAccountsEnabledDelegate;
+        
+        private System.Threading.SendOrPostCallback onAreNewAccountsEnabledCompletedDelegate;
         
         private BeginOperationDelegate onBeginCreateCustomerDelegate;
         
@@ -720,6 +795,24 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         private EndOperationDelegate onEndLogoutDelegate;
         
         private System.Threading.SendOrPostCallback onLogoutCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetCustomerDelegate;
+        
+        private EndOperationDelegate onEndGetCustomerDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetCustomerCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginUpdateCustomerDelegate;
+        
+        private EndOperationDelegate onEndUpdateCustomerDelegate;
+        
+        private System.Threading.SendOrPostCallback onUpdateCustomerCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginUpdateCustomerPasswordDelegate;
+        
+        private EndOperationDelegate onEndUpdateCustomerPasswordDelegate;
+        
+        private System.Threading.SendOrPostCallback onUpdateCustomerPasswordCompletedDelegate;
         
         private BeginOperationDelegate onBeginGetSIPDomainsDelegate;
         
@@ -859,12 +952,6 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         
         private System.Threading.SendOrPostCallback onGetCDRsCountCompletedDelegate;
         
-        private BeginOperationDelegate onBeginGetCDRsDelegate;
-        
-        private EndOperationDelegate onEndGetCDRsDelegate;
-        
-        private System.Threading.SendOrPostCallback onGetCDRsCompletedDelegate;
-        
         private BeginOperationDelegate onBeginOpenDelegate;
         
         private EndOperationDelegate onEndOpenDelegate;
@@ -918,7 +1005,11 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             }
         }
         
+        public event System.EventHandler<GetCDRsCompletedEventArgs> GetCDRsCompleted;
+        
         public event System.EventHandler<IsAliveCompletedEventArgs> IsAliveCompleted;
+        
+        public event System.EventHandler<AreNewAccountsEnabledCompletedEventArgs> AreNewAccountsEnabledCompleted;
         
         public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> CreateCustomerCompleted;
         
@@ -927,6 +1018,12 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         public event System.EventHandler<LoginCompletedEventArgs> LoginCompleted;
         
         public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> LogoutCompleted;
+        
+        public event System.EventHandler<GetCustomerCompletedEventArgs> GetCustomerCompleted;
+        
+        public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> UpdateCustomerCompleted;
+        
+        public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> UpdateCustomerPasswordCompleted;
         
         public event System.EventHandler<GetSIPDomainsCompletedEventArgs> GetSIPDomainsCompleted;
         
@@ -974,11 +1071,59 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         
         public event System.EventHandler<GetCDRsCountCompletedEventArgs> GetCDRsCountCompleted;
         
-        public event System.EventHandler<GetCDRsCompletedEventArgs> GetCDRsCompleted;
-        
         public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> OpenCompleted;
         
         public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> CloseCompleted;
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetCDRs(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetCDRs(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetCDRs(System.IAsyncResult result) {
+            return base.Channel.EndGetCDRs(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetCDRs(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            int offset = ((int)(inValues[1]));
+            int count = ((int)(inValues[2]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetCDRs(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        private object[] OnEndGetCDRs(System.IAsyncResult result) {
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetCDRs(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetCDRsCompleted(object state) {
+            if ((this.GetCDRsCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetCDRsCompleted(this, new GetCDRsCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetCDRsAsync(string whereExpression, int offset, int count) {
+            this.GetCDRsAsync(whereExpression, offset, count, null);
+        }
+        
+        public void GetCDRsAsync(string whereExpression, int offset, int count, object userState) {
+            if ((this.onBeginGetCDRsDelegate == null)) {
+                this.onBeginGetCDRsDelegate = new BeginOperationDelegate(this.OnBeginGetCDRs);
+            }
+            if ((this.onEndGetCDRsDelegate == null)) {
+                this.onEndGetCDRsDelegate = new EndOperationDelegate(this.OnEndGetCDRs);
+            }
+            if ((this.onGetCDRsCompletedDelegate == null)) {
+                this.onGetCDRsCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetCDRsCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetCDRsDelegate, new object[] {
+                        whereExpression,
+                        offset,
+                        count}, this.onEndGetCDRsDelegate, this.onGetCDRsCompletedDelegate, userState);
+        }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
         System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginIsAlive(System.AsyncCallback callback, object asyncState) {
@@ -1022,6 +1167,50 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
                 this.onIsAliveCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnIsAliveCompleted);
             }
             base.InvokeAsync(this.onBeginIsAliveDelegate, null, this.onEndIsAliveDelegate, this.onIsAliveCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginAreNewAccountsEnabled(System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginAreNewAccountsEnabled(callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        bool SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndAreNewAccountsEnabled(System.IAsyncResult result) {
+            return base.Channel.EndAreNewAccountsEnabled(result);
+        }
+        
+        private System.IAsyncResult OnBeginAreNewAccountsEnabled(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginAreNewAccountsEnabled(callback, asyncState);
+        }
+        
+        private object[] OnEndAreNewAccountsEnabled(System.IAsyncResult result) {
+            bool retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndAreNewAccountsEnabled(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnAreNewAccountsEnabledCompleted(object state) {
+            if ((this.AreNewAccountsEnabledCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.AreNewAccountsEnabledCompleted(this, new AreNewAccountsEnabledCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void AreNewAccountsEnabledAsync() {
+            this.AreNewAccountsEnabledAsync(null);
+        }
+        
+        public void AreNewAccountsEnabledAsync(object userState) {
+            if ((this.onBeginAreNewAccountsEnabledDelegate == null)) {
+                this.onBeginAreNewAccountsEnabledDelegate = new BeginOperationDelegate(this.OnBeginAreNewAccountsEnabled);
+            }
+            if ((this.onEndAreNewAccountsEnabledDelegate == null)) {
+                this.onEndAreNewAccountsEnabledDelegate = new EndOperationDelegate(this.OnEndAreNewAccountsEnabled);
+            }
+            if ((this.onAreNewAccountsEnabledCompletedDelegate == null)) {
+                this.onAreNewAccountsEnabledCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnAreNewAccountsEnabledCompleted);
+            }
+            base.InvokeAsync(this.onBeginAreNewAccountsEnabledDelegate, null, this.onEndAreNewAccountsEnabledDelegate, this.onAreNewAccountsEnabledCompletedDelegate, userState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
@@ -1203,6 +1392,146 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
                 this.onLogoutCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnLogoutCompleted);
             }
             base.InvokeAsync(this.onBeginLogoutDelegate, null, this.onEndLogoutDelegate, this.onLogoutCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetCustomer(string username, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetCustomer(username, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        SIPSorcery.CRM.Customer SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetCustomer(System.IAsyncResult result) {
+            return base.Channel.EndGetCustomer(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetCustomer(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string username = ((string)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetCustomer(username, callback, asyncState);
+        }
+        
+        private object[] OnEndGetCustomer(System.IAsyncResult result) {
+            SIPSorcery.CRM.Customer retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetCustomer(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetCustomerCompleted(object state) {
+            if ((this.GetCustomerCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetCustomerCompleted(this, new GetCustomerCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetCustomerAsync(string username) {
+            this.GetCustomerAsync(username, null);
+        }
+        
+        public void GetCustomerAsync(string username, object userState) {
+            if ((this.onBeginGetCustomerDelegate == null)) {
+                this.onBeginGetCustomerDelegate = new BeginOperationDelegate(this.OnBeginGetCustomer);
+            }
+            if ((this.onEndGetCustomerDelegate == null)) {
+                this.onEndGetCustomerDelegate = new EndOperationDelegate(this.OnEndGetCustomer);
+            }
+            if ((this.onGetCustomerCompletedDelegate == null)) {
+                this.onGetCustomerCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetCustomerCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetCustomerDelegate, new object[] {
+                        username}, this.onEndGetCustomerDelegate, this.onGetCustomerCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginUpdateCustomer(SIPSorcery.CRM.Customer customer, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginUpdateCustomer(customer, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        void SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndUpdateCustomer(System.IAsyncResult result) {
+            base.Channel.EndUpdateCustomer(result);
+        }
+        
+        private System.IAsyncResult OnBeginUpdateCustomer(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            SIPSorcery.CRM.Customer customer = ((SIPSorcery.CRM.Customer)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginUpdateCustomer(customer, callback, asyncState);
+        }
+        
+        private object[] OnEndUpdateCustomer(System.IAsyncResult result) {
+            ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndUpdateCustomer(result);
+            return null;
+        }
+        
+        private void OnUpdateCustomerCompleted(object state) {
+            if ((this.UpdateCustomerCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.UpdateCustomerCompleted(this, new System.ComponentModel.AsyncCompletedEventArgs(e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void UpdateCustomerAsync(SIPSorcery.CRM.Customer customer) {
+            this.UpdateCustomerAsync(customer, null);
+        }
+        
+        public void UpdateCustomerAsync(SIPSorcery.CRM.Customer customer, object userState) {
+            if ((this.onBeginUpdateCustomerDelegate == null)) {
+                this.onBeginUpdateCustomerDelegate = new BeginOperationDelegate(this.OnBeginUpdateCustomer);
+            }
+            if ((this.onEndUpdateCustomerDelegate == null)) {
+                this.onEndUpdateCustomerDelegate = new EndOperationDelegate(this.OnEndUpdateCustomer);
+            }
+            if ((this.onUpdateCustomerCompletedDelegate == null)) {
+                this.onUpdateCustomerCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnUpdateCustomerCompleted);
+            }
+            base.InvokeAsync(this.onBeginUpdateCustomerDelegate, new object[] {
+                        customer}, this.onEndUpdateCustomerDelegate, this.onUpdateCustomerCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginUpdateCustomerPassword(string username, string oldPassword, string newPassword, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginUpdateCustomerPassword(username, oldPassword, newPassword, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        void SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndUpdateCustomerPassword(System.IAsyncResult result) {
+            base.Channel.EndUpdateCustomerPassword(result);
+        }
+        
+        private System.IAsyncResult OnBeginUpdateCustomerPassword(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string username = ((string)(inValues[0]));
+            string oldPassword = ((string)(inValues[1]));
+            string newPassword = ((string)(inValues[2]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginUpdateCustomerPassword(username, oldPassword, newPassword, callback, asyncState);
+        }
+        
+        private object[] OnEndUpdateCustomerPassword(System.IAsyncResult result) {
+            ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndUpdateCustomerPassword(result);
+            return null;
+        }
+        
+        private void OnUpdateCustomerPasswordCompleted(object state) {
+            if ((this.UpdateCustomerPasswordCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.UpdateCustomerPasswordCompleted(this, new System.ComponentModel.AsyncCompletedEventArgs(e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void UpdateCustomerPasswordAsync(string username, string oldPassword, string newPassword) {
+            this.UpdateCustomerPasswordAsync(username, oldPassword, newPassword, null);
+        }
+        
+        public void UpdateCustomerPasswordAsync(string username, string oldPassword, string newPassword, object userState) {
+            if ((this.onBeginUpdateCustomerPasswordDelegate == null)) {
+                this.onBeginUpdateCustomerPasswordDelegate = new BeginOperationDelegate(this.OnBeginUpdateCustomerPassword);
+            }
+            if ((this.onEndUpdateCustomerPasswordDelegate == null)) {
+                this.onEndUpdateCustomerPasswordDelegate = new EndOperationDelegate(this.OnEndUpdateCustomerPassword);
+            }
+            if ((this.onUpdateCustomerPasswordCompletedDelegate == null)) {
+                this.onUpdateCustomerPasswordCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnUpdateCustomerPasswordCompleted);
+            }
+            base.InvokeAsync(this.onBeginUpdateCustomerPasswordDelegate, new object[] {
+                        username,
+                        oldPassword,
+                        newPassword}, this.onEndUpdateCustomerPasswordDelegate, this.onUpdateCustomerPasswordCompletedDelegate, userState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
@@ -2291,56 +2620,6 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
                         whereExpression}, this.onEndGetCDRsCountDelegate, this.onGetCDRsCountCompletedDelegate, userState);
         }
         
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetCDRs(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
-            return base.Channel.BeginGetCDRs(whereExpression, offset, count, callback, asyncState);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetCDRs(System.IAsyncResult result) {
-            return base.Channel.EndGetCDRs(result);
-        }
-        
-        private System.IAsyncResult OnBeginGetCDRs(object[] inValues, System.AsyncCallback callback, object asyncState) {
-            string whereExpression = ((string)(inValues[0]));
-            int offset = ((int)(inValues[1]));
-            int count = ((int)(inValues[2]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetCDRs(whereExpression, offset, count, callback, asyncState);
-        }
-        
-        private object[] OnEndGetCDRs(System.IAsyncResult result) {
-            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetCDRs(result);
-            return new object[] {
-                    retVal};
-        }
-        
-        private void OnGetCDRsCompleted(object state) {
-            if ((this.GetCDRsCompleted != null)) {
-                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
-                this.GetCDRsCompleted(this, new GetCDRsCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
-            }
-        }
-        
-        public void GetCDRsAsync(string whereExpression, int offset, int count) {
-            this.GetCDRsAsync(whereExpression, offset, count, null);
-        }
-        
-        public void GetCDRsAsync(string whereExpression, int offset, int count, object userState) {
-            if ((this.onBeginGetCDRsDelegate == null)) {
-                this.onBeginGetCDRsDelegate = new BeginOperationDelegate(this.OnBeginGetCDRs);
-            }
-            if ((this.onEndGetCDRsDelegate == null)) {
-                this.onEndGetCDRsDelegate = new EndOperationDelegate(this.OnEndGetCDRs);
-            }
-            if ((this.onGetCDRsCompletedDelegate == null)) {
-                this.onGetCDRsCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetCDRsCompleted);
-            }
-            base.InvokeAsync(this.onBeginGetCDRsDelegate, new object[] {
-                        whereExpression,
-                        offset,
-                        count}, this.onEndGetCDRsDelegate, this.onGetCDRsCompletedDelegate, userState);
-        }
-        
         private System.IAsyncResult OnBeginOpen(object[] inValues, System.AsyncCallback callback, object asyncState) {
             return ((System.ServiceModel.ICommunicationObject)(this)).BeginOpen(callback, asyncState);
         }
@@ -2417,6 +2696,21 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
                     base(client) {
             }
             
+            public System.IAsyncResult BeginGetCDRs(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[3];
+                _args[0] = whereExpression;
+                _args[1] = offset;
+                _args[2] = count;
+                System.IAsyncResult _result = base.BeginInvoke("GetCDRs", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> EndGetCDRs(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> _result = ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset>)(base.EndInvoke("GetCDRs", _args, result)));
+                return _result;
+            }
+            
             public System.IAsyncResult BeginIsAlive(System.AsyncCallback callback, object asyncState) {
                 object[] _args = new object[0];
                 System.IAsyncResult _result = base.BeginInvoke("IsAlive", _args, callback, asyncState);
@@ -2426,6 +2720,18 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             public bool EndIsAlive(System.IAsyncResult result) {
                 object[] _args = new object[0];
                 bool _result = ((bool)(base.EndInvoke("IsAlive", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginAreNewAccountsEnabled(System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[0];
+                System.IAsyncResult _result = base.BeginInvoke("AreNewAccountsEnabled", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public bool EndAreNewAccountsEnabled(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                bool _result = ((bool)(base.EndInvoke("AreNewAccountsEnabled", _args, result)));
                 return _result;
             }
             
@@ -2476,6 +2782,45 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             public void EndLogout(System.IAsyncResult result) {
                 object[] _args = new object[0];
                 base.EndInvoke("Logout", _args, result);
+            }
+            
+            public System.IAsyncResult BeginGetCustomer(string username, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = username;
+                System.IAsyncResult _result = base.BeginInvoke("GetCustomer", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public SIPSorcery.CRM.Customer EndGetCustomer(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                SIPSorcery.CRM.Customer _result = ((SIPSorcery.CRM.Customer)(base.EndInvoke("GetCustomer", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginUpdateCustomer(SIPSorcery.CRM.Customer customer, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = customer;
+                System.IAsyncResult _result = base.BeginInvoke("UpdateCustomer", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public void EndUpdateCustomer(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                base.EndInvoke("UpdateCustomer", _args, result);
+            }
+            
+            public System.IAsyncResult BeginUpdateCustomerPassword(string username, string oldPassword, string newPassword, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[3];
+                _args[0] = username;
+                _args[1] = oldPassword;
+                _args[2] = newPassword;
+                System.IAsyncResult _result = base.BeginInvoke("UpdateCustomerPassword", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public void EndUpdateCustomerPassword(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                base.EndInvoke("UpdateCustomerPassword", _args, result);
             }
             
             public System.IAsyncResult BeginGetSIPDomains(string filterExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
@@ -2788,21 +3133,6 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             public int EndGetCDRsCount(System.IAsyncResult result) {
                 object[] _args = new object[0];
                 int _result = ((int)(base.EndInvoke("GetCDRsCount", _args, result)));
-                return _result;
-            }
-            
-            public System.IAsyncResult BeginGetCDRs(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
-                object[] _args = new object[3];
-                _args[0] = whereExpression;
-                _args[1] = offset;
-                _args[2] = count;
-                System.IAsyncResult _result = base.BeginInvoke("GetCDRs", _args, callback, asyncState);
-                return _result;
-            }
-            
-            public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> EndGetCDRs(System.IAsyncResult result) {
-                object[] _args = new object[0];
-                System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> _result = ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset>)(base.EndInvoke("GetCDRs", _args, result)));
                 return _result;
             }
         }

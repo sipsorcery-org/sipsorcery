@@ -146,6 +146,10 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public void SetLocalTag(string localTag) {
+            m_localTag = localTag;
+        }
+
         public override void SendInformationalResponse(SIPResponse sipResponse) {
             try {
                 base.SendInformationalResponse(sipResponse);

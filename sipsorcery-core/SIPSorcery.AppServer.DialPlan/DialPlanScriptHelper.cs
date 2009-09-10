@@ -83,7 +83,6 @@ namespace SIPSorcery.AppServer.DialPlan
         private const int MAX_CALLBACKS_ALLOWED = 3;    // The maximum number of callback method calls that will be alowed per dialplan instance.
 
         private static int m_maxRingTime = SIPTimings.MAX_RING_TIME;
-        //private static SIPSchemesEnum m_defaultScheme = SIPSchemesEnum.sip;
 
         private static readonly StorageTypes m_userDataDBType = StorageTypes.Unknown;
         private static readonly string m_userDataDBConnStr;
@@ -94,13 +93,13 @@ namespace SIPSorcery.AppServer.DialPlan
         private SIPTransport m_sipTransport;
         private DialPlanExecutingScript m_executingScript;
         private List<SIPProvider> m_sipProviders;
+        private DialogueBridgeCreatedDelegate CreateBridge_External;
 
-        private DialogueBridgeCreatedDelegate m_createBridgeDelegate;
         private GetCanonicalDomainDelegate m_getCanonicalDomainDelegate;
         private SIPRequest m_sipRequest;                                                // This is a copy of the SIP request from m_clientTransaction.
         private ForkCall m_currentCall;
         private SIPEndPoint m_outboundProxySocket;                                      // If this app forwards calls via an outbound proxy this value will be set.
-        private HybridDictionary m_customSIPHeaders = new HybridDictionary(false);      // Allows a dialplan user to add or customise SIP headers for forwarded requests.
+        private List<string> m_customSIPHeaders = new List<string>();                   // Allows a dialplan user to add or customise SIP headers for forwarded requests.
         private string m_customContent;                                                 // If set will be used by the Dial command as the INVITE body on forwarded requests.
         private string m_customContentType;  
         private string m_customFromName;
@@ -177,8 +176,8 @@ namespace SIPSorcery.AppServer.DialPlan
         public DialPlanScriptHelper(
             SIPTransport sipTransport,
             DialPlanExecutingScript executingScript,
-            SIPMonitorLogDelegate logDelegate, 
-            DialogueBridgeCreatedDelegate createBridgeDelegate,
+            SIPMonitorLogDelegate logDelegate,
+            DialogueBridgeCreatedDelegate createBridge,
             SIPRequest sipRequest,
             SIPCallDirection callDirection,
             DialPlanContext dialPlanContext,
@@ -188,12 +187,11 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPAssetPersistor<SIPDialPlan> sipDialPlanPersistor,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPAccountBindings,
             SIPEndPoint outboundProxySocket
-            )
-        {
+            ) {
             m_sipTransport = sipTransport;
             m_executingScript = executingScript;
             m_dialPlanLogDelegate = logDelegate;
-            m_createBridgeDelegate = createBridgeDelegate;
+            CreateBridge_External = createBridge;
             m_sipRequest = sipRequest;
             m_callDirection = callDirection;
             m_dialPlanContext = dialPlanContext;
@@ -210,10 +208,21 @@ namespace SIPSorcery.AppServer.DialPlan
             m_dialPlanContext.TraceLog.AppendLine("DialPlan=> Dialplan trace commenced at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff") + ".");
             m_dialPlanContext.CallCancelledByClient += ClientCallTerminated;
             SIPAssetGetDelegate<SIPAccount> getSIPAccount = null;
-            if(m_sipAccountPersistor != null) {
+            if (m_sipAccountPersistor != null) {
                 getSIPAccount = m_sipAccountPersistor.Get;
             }
             m_dialStringParser = new DialStringParser(m_sipTransport, m_dialPlanContext.Owner, m_dialPlanContext.SIPAccount, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate);
+            
+            foreach (string unknownHeader in m_sipRequest.Header.UnknownHeaders) {
+                if(!unknownHeader.IsNullOrBlank() && unknownHeader.StartsWith(SwitchboardApp.SWITCHBOARD_REMOTE_HEADER)) {
+                    m_dialPlanContext.CreateBridge_External = (uasDialogue, uacDialogue, owner) => {
+                        logger.Debug("Calling switchboardapp create bridge delegate.");
+                        uasDialogue.RemoteTarget = new SIPURI(uasDialogue.RemoteTarget.Scheme, SIPEndPoint.ParseSIPEndPoint(unknownHeader.Substring(unknownHeader.IndexOf(":") + 1).Trim()));
+                        CreateBridge_External(uasDialogue, uacDialogue, owner);
+                    };
+                    break;
+                }
+            }
         }
 
         /// <remarks>
@@ -326,7 +335,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     result = DialPlanAppResult.Failed;
                     m_waitForCallCompleted.Set();
                 };
-                m_currentCall.CallAnswered += (status, reason, headers, contentType, body, dialogue) => {
+                m_currentCall.CallAnswered += (status, reason, toTag, headers, contentType, body, dialogue) => {
                     answeredStatus = status;
                     answeredReason = reason;
                     answeredContentType = contentType;
@@ -370,10 +379,10 @@ namespace SIPSorcery.AppServer.DialPlan
                                     answeredDialogue.CallDurationLimit = answeredCallLimit;
                                 }
 
-                                m_dialPlanContext.CallAnswered(answeredStatus, answeredReason, null, answeredContentType, answeredBody, answeredDialogue);
+                                m_dialPlanContext.CallAnswered(answeredStatus, answeredReason, null, null, answeredContentType, answeredBody, answeredDialogue);
 
                                 // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
-                                Log("Dial command was successfully answered in " + DateTime.Now.Subtract(startTime).TotalSeconds + "s.");
+                                Log("Dial command was successfully answered in " + DateTime.Now.Subtract(startTime).TotalSeconds.ToString("0.00") + "s.");
                                 m_executingScript.StopExecution();
                             }
                         }
@@ -659,12 +668,13 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 string trimmedName = headerName.Trim();
                 string trimmedValue = (headerValue != null) ? headerValue.Trim() : String.Empty;
-                if (m_customSIPHeaders.Contains(trimmedName)) {
+                /*if (m_customSIPHeaders.Contains(trimmedName)) {
                     m_customSIPHeaders[trimmedName] = trimmedValue;
                 }
                 else {
                     m_customSIPHeaders.Add(trimmedName, trimmedValue);
-                }
+                }*/
+                m_customSIPHeaders.Add(trimmedName + ": " + trimmedValue);
                 Log("Custom SIP header " + trimmedName + " successfully added to list.");
             }
         }
@@ -697,8 +707,8 @@ namespace SIPSorcery.AppServer.DialPlan
         /// </summary>
         public void PrintCustomSIPHeaders() {
             Log("Custom SIP Header List:");
-            foreach (DictionaryEntry customHeader in m_customSIPHeaders) {
-                Log(" " + customHeader.Key + ": " + customHeader.Value);
+            foreach (string customHeader in m_customSIPHeaders) {
+                Log(" " + customHeader);
             }
         }
 
@@ -808,12 +818,6 @@ namespace SIPSorcery.AppServer.DialPlan
                 GoogleVoiceCall googleCall = new GoogleVoiceCall(m_sipTransport, m_callManager, m_dialPlanLogDelegate, m_username, m_adminMemberId, m_outboundProxySocket);
                 googleCall.CallProgress += m_dialPlanContext.CallProgress;
 
-                /*if (hangupOnSuccess) {
-                    Log("Hanging up originating call prior to initiating Google Voice Call.");
-                    m_dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.RequestPending, "Google voice call initiated", null);
-                    Thread.Sleep(3000);
-                }*/
-
                 string content = m_sipRequest.Body;
                 IPAddress requestSDPAddress = (PublicIPAddress != null) ? PublicIPAddress : SIPPacketMangler.GetRequestIPAddress(m_sipRequest);
 
@@ -844,10 +848,10 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialogue answeredDialogue = googleCall.InitiateCall(emailAddress, password, forwardingNumber, destinationNumber, fromURIUserToMatch, m_sipRequest.Header.ContentType, content);
                 if (answeredDialogue != null) {
-                    m_dialPlanContext.CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, answeredDialogue.ContentType, answeredDialogue.RemoteSDP, answeredDialogue);
+                    m_dialPlanContext.CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, null, answeredDialogue.ContentType, answeredDialogue.RemoteSDP, answeredDialogue);
 
                     // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
-                    Log("Google Voice Call was successfully answered in " + DateTime.Now.Subtract(startTime).TotalSeconds.ToString("#.00") + "s.");
+                    Log("Google Voice Call was successfully answered in " + DateTime.Now.Subtract(startTime).TotalSeconds.ToString("0.00") + "s.");
                     m_executingScript.StopExecution();
                 }
             }
@@ -1104,6 +1108,14 @@ namespace SIPSorcery.AppServer.DialPlan
                 Log("Exception DBExecuteScalar. " + excp.Message);
                 return null;
             }
+        }
+
+        public void Switchboard() {
+            ExtendScriptTimeout(30);
+            SIPAccount sipAccount = m_sipAccountPersistor.Get(s => s.SIPUsername == "switchboard" && s.SIPDomain == "sipsorcery.com");
+            List<SIPRegistrarBinding> bindings = GetSIPAccountBindings_External(s => s.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
+            SwitchboardApp switchboardApp = new SwitchboardApp(m_sipTransport, FireProxyLogEvent, m_username, m_adminMemberId, m_outboundProxySocket, m_dialPlanContext);
+            switchboardApp.SendToSwitchboard(m_sipRequest, bindings[0]);
         }
 
         private StorageTypes GetStorageType(string dbType) {

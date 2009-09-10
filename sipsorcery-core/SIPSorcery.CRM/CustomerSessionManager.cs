@@ -49,6 +49,8 @@ namespace SIPSorcery.CRM
 
     public class CustomerSessionManager {
 
+        public const int SESSION_ID_STRING_LENGTH = 96;  // 384 bits of entropy.
+
         private static ILog logger = AppState.logger;
 
         private SIPAssetPersistor<Customer> m_customerPersistor;
@@ -75,12 +77,17 @@ namespace SIPSorcery.CRM
                     Customer customer = m_customerPersistor.Get(c => c.CustomerUsername == username);
 
                     if (customer != null && customer.CustomerPassword == password) {
-                        logger.Debug("Login successful for " + username + ".");
+                        if (!customer.EmailAddressConfirmed) {
+                            throw new ApplicationException("Your email address has not yet been confirmed.");
+                        }
+                        else {
+                            logger.Debug("Login successful for " + username + ".");
 
-                        Guid sessionId = Guid.NewGuid();
-                        CustomerSession customerSession = new CustomerSession(sessionId, customer.CustomerUsername, ipAddress);
-                        m_customerSessionPersistor.Add(customerSession);
-                        return customerSession;
+                            string sessionId = Crypto.GetRandomByteString(SESSION_ID_STRING_LENGTH / 2);
+                            CustomerSession customerSession = new CustomerSession(Guid.NewGuid(), sessionId, customer.CustomerUsername, ipAddress);
+                            m_customerSessionPersistor.Add(customerSession);
+                            return customerSession;
+                        }
                     }
                     else {
                         logger.Debug("Login failed for " + username + ".");
@@ -96,7 +103,7 @@ namespace SIPSorcery.CRM
 
         public CustomerSession Authenticate(string sessionId) {
             try {
-                CustomerSession customerSession = m_customerSessionPersistor.Get(s => s.Id == sessionId && !s.Expired);
+                CustomerSession customerSession = m_customerSessionPersistor.Get(s => s.SessionID == sessionId && !s.Expired);
                 //CustomerSession customerSession = m_customerSessionPersistor.Get(s => s.Id == sessionId);
 
                 if (customerSession != null)
@@ -127,7 +134,7 @@ namespace SIPSorcery.CRM
         public void ExpireToken(string sessionId) {
 
             try {
-                CustomerSession customerSession = m_customerSessionPersistor.Get(s => s.Id == sessionId);
+                CustomerSession customerSession = m_customerSessionPersistor.Get(s => s.SessionID == sessionId);
                 if (customerSession != null)
                 {
                     customerSession.Expired = true;

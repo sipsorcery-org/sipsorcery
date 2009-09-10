@@ -147,7 +147,7 @@ namespace SIPSorcery.AppServer.DialPlan
             DialPlanContextsEnum dialPlanType,
             SIPRequest sipRequest, 
             string command, 
-            HybridDictionary customHeaders,
+            List<string> customHeaders,
             string customContentType,
             string customContent,
             string callersNetworkId, 
@@ -265,7 +265,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private Queue<List<SIPCallDescriptor>> ParseScriptDialString(
             SIPRequest sipRequest, 
             string command, 
-            HybridDictionary customHeaders,
+            List<string> customHeaders,
             string customContentType,
             string customContent,
             string callersNetworkId, 
@@ -341,14 +341,15 @@ namespace SIPSorcery.AppServer.DialPlan
                                         // Add and provided custom headers to those already present in the call descriptor and overwrite if an existing
                                         // header is already present.
                                         if (customHeaders != null && customHeaders.Count > 0) {
-                                            foreach (DictionaryEntry customHeader in customHeaders) {
-                                                string customHeaderValue = SubstituteRequestVars(sipRequest, customHeader.Value as string);
-                                                if (sipCallDescriptor.CustomHeaders.Contains(customHeader.Key as string)) {
+                                            foreach (string customHeader in customHeaders) {
+                                                string customHeaderValue = SubstituteRequestVars(sipRequest, customHeader);
+                                                sipCallDescriptor.CustomHeaders.Add(customHeaderValue);
+                                                /*if (sipCallDescriptor.CustomHeaders.Contains(customHeader.Key as string)) {
                                                     sipCallDescriptor.CustomHeaders[customHeader.Key as string] = customHeaderValue;
                                                 }
                                                 else {
                                                     sipCallDescriptor.CustomHeaders.Add(customHeader.Key as string, customHeaderValue);
-                                                }
+                                                }*/
                                             }
                                         }
 
@@ -396,7 +397,7 @@ namespace SIPSorcery.AppServer.DialPlan
         public List<SIPCallDescriptor> GetForwardsForLocalLeg(
             SIPRequest sipRequest, 
             SIPAccount sipAccount, 
-            HybridDictionary customHeaders,
+            List<string> customHeaders,
             string customContentType,
             string customContent,
             string options,
@@ -420,17 +421,8 @@ namespace SIPSorcery.AppServer.DialPlan
                         SIPURI contactURI = binding.MangledContactSIPURI;
 
                         //logger.Debug("Creating switch call for local user " + contactURI.ToString() + ".");
-                        SIPEndPoint outboundProxy = null;
-
-                        // If the binding has a proxy socket defined that's NOT a socket on this agent then the call should be sent to the proxy for forwarding to the user agent.
-                        if (binding.ProxySIPEndPoint != null) {
-                            if (!m_sipTransport.IsLocalSIPEndPoint(new SIPEndPoint(contactURI))) {
-                                outboundProxy = binding.ProxySIPEndPoint;
-                            }
-                        }
-
-                        string outboundProxyStr = (outboundProxy != null) ? outboundProxy.ToString() : null;
-
+                        //SIPEndPoint outboundProxy = null;
+                         
                         // Determine the content based on a custom request, caller's network id and whether mangling is required.
                         string contentType =(sipRequest != null) ? sipRequest.Header.ContentType : null;
                         string content = (sipRequest != null) ? sipRequest.Body : null;
@@ -462,13 +454,17 @@ namespace SIPSorcery.AppServer.DialPlan
                             contactURI.ToString(), 
                             sipRequest.Header.From.ToString(),
                             new SIPToHeader(null, SIPURI.ParseSIPURIRelaxed(sipAccount.SIPUsername + "@" + sipAccount.SIPDomain), null).ToString(), 
-                            outboundProxyStr, 
+                            null, 
                             customHeaders, 
                             null, 
                             SIPCallDirection.In, 
                             contentType, 
                             content,
                             publicSDPAddress);
+                        // If the binding has a proxy socket defined set the header to ask the upstream proxy to use it.
+                        if (binding.ProxySIPEndPoint != null) {
+                            switchCall.ProxySendFrom = binding.ProxySIPEndPoint.ToString();
+                        }
                         switchCall.ParseCallOptions(options);
                         if (sipAccount != null && !sipAccount.NetworkId.IsNullOrBlank() && sipAccount.NetworkId == callersNetworkId) {
                             switchCall.MangleResponseSDP = false;

@@ -103,8 +103,16 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="UserInterface\CallManager\SIPSwitchboard.xaml">
+      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UserInterface\CreateAccountControl.xaml">
       <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserInterface\CustomerSettingsControl.xaml">
+      <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\LoginControl.xaml">
@@ -141,6 +149,12 @@
     <Compile Include="AssemblyState.cs" />
     <Compile Include="FunctionDelegates.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UserInterface\CallManager\SIPSwitchboard.xaml.cs">
+      <DependentUpon>SIPSwitchboard.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\CustomerSettingsControl.xaml.cs">
+      <DependentUpon>CustomerSettingsControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="WCFReferences\SIPSorceryProvisioningClient\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -213,6 +227,7 @@
     <None Include="Properties\DataSources\BlueFace.VoIP.App.SIP.SIPRegistrationAgentRecord.datasource" />
     <None Include="Properties\DataSources\BlueFace.VoIP.Net.SIP.SIPCDR.datasource" />
     <None Include="Properties\DataSources\BlueFace.VoIP.Net.SIP.SIPDialogue1.datasource" />
+    <None Include="Properties\DataSources\SIPSorcery.CRM.Customer.datasource" />
     <None Include="Properties\DataSources\SIPSorcery.SIP.App.DialPlan.datasource" />
     <None Include="Properties\DataSources\SIPSorcery.SIP.App.SIPAccount.datasource" />
     <None Include="Properties\DataSources\SIPSorcery.SIP.App.SIPCDRAsset.datasource" />
@@ -224,22 +239,22 @@
     <None Include="Properties\DataSources\SIPSorcery.SIP.App.SIPRegistrarBinding.datasource" />
     <None Include="Properties\DataSources\SIPSorcery.SIP.SIPCDR.datasource" />
     <None Include="Properties\DataSources\SIPSorcery.SIP.SIPDialogue.datasource" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning.wsdl" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning.xsd" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning1.xsd" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning2.xsd" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning3.xsd" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\SIPProvisioningWebService.wsdl" />
     <Resource Include="Images\wizard-logo.png" />
     <Resource Include="Images\small_logo.png" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning.disco" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\configuration91.svcinfo" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\configuration.svcinfo" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning1.wsdl" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning4.xsd" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning41.xsd" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning42.xsd" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning43.xsd" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\Reference.svcmap">
       <Generator>WCF Proxy Generator</Generator>
       <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\SIPProvisioningWebService1.wsdl" />
     <Content Include="ServiceReferences.ClientConfig" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning1.disco" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery.Messaging\SIPSorcery.Silverlight.Messaging.csproj">

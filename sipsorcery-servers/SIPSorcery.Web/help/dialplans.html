@@ -149,13 +149,18 @@
      </p>
      
      <p>      
-     <span style="color: Blue"><b>GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber)</b></span>
+     <span style="color: Blue"><b>GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromUserToMatch)</b></span>
      <br />
      Places an outbound call via the Google Voice service. The application works by initiating a callback with the a HTTP request with Google Voice.
-     The incoming call leg of the callback is then matched to the call leg that initiated the sipsorcery dial plan execution. The emailAddress and password are
-     the credentials used to login to the Google Voice portal. The forwardingNumber is the number to request teh Google Voice callback on and to match up
-     with the sipsorcery call should be a Gizmo number. The destinationNumber is the number that will be passed to the callback as the outgoing leg
-     and is the external number that will be called.
+     The incoming call leg of the callback is then matched to the call leg that initiated the sipsorcery dial plan execution. 
+     <br /><br />
+     - The <b>emailAddress</b> and <b>password</b> are the credentials used to login to the Google Voice portal. <br />
+     - The <b>forwardingNumber</b> is the number to request the Google Voice callback on. Whatever this number is it needs to get the call to sipsorcery.<br />
+     - The <b>destinationNumber</b> is the number that will be passed to the callback as the outgoing leg and is the external number that will be called.<br />
+     - The <b>fromUserToMatch</b> is used to match the incoming callback to the SIP call that initiated the dial plan execution. By specifying this field
+       sipsorcery will look at the From URI user, in a SIP From header of From: "Joe Bloggs" &lt;sip:12345678@somehost.com&gt; the From URI user is 12345678,
+       to match the calls. The fromUserToMatch can be left blank in which case the match will assume Gizmo is the incoming call provider and will perform
+       the macth by looking for an X-GoogleVoice: true header and a SIP To URI user equal to the forwardingNumber.
      </p>
      
  </body>

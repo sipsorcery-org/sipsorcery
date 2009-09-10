@@ -121,9 +121,11 @@ namespace SIPSorcery.Servers {
             try {
                 Thread.CurrentThread.Name = EXPIRE_BINDINGS_THREAD_NAME;
 
+                DateTime expiryTime = DateTime.Now.ToUniversalTime().AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
+
                 while (!m_stop) {
                     try {
-                        DateTime expiryTime = DateTime.Now.ToUniversalTime().AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
+                        expiryTime = DateTime.Now.ToUniversalTime().AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
                         //m_bindingsPersistor.Delete(b => b.ExpiryTime < expiryTime);
                         List<SIPRegistrarBinding> expiredBindings = m_bindingsPersistor.Get(b => b.ExpiryTimeUTC < expiryTime, null, 0, Int32.MaxValue);
                         if (expiredBindings != null && expiredBindings.Count > 0) {

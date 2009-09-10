@@ -119,7 +119,7 @@ namespace SIPSorcery.Servers
         }
 
         public void Start() {
-            ThreadPool.QueueUserWorkItem(delegate { MonitorCalls(); });
+            //ThreadPool.QueueUserWorkItem(delegate { MonitorCalls(); });
             ThreadPool.QueueUserWorkItem(delegate { ProcessNewCalls(PROCESS_CALLS_THREAD_NAME_PREFIX + "-1"); });
             ThreadPool.QueueUserWorkItem(delegate { ProcessNewCalls(PROCESS_CALLS_THREAD_NAME_PREFIX + "-2"); });
             ThreadPool.QueueUserWorkItem(delegate { ProcessNewCalls(PROCESS_CALLS_THREAD_NAME_PREFIX + "-3"); });
@@ -134,10 +134,12 @@ namespace SIPSorcery.Servers
         private void MonitorCalls() {
             try {
                 Thread.CurrentThread.Name = MONITOR_CALLLIMITS_THREAD_NAME;
+                
+                DateTime utcNow = DateTime.Now.ToUniversalTime();
 
                 while (!m_stop) {
                     try {
-                        DateTime utcNow = DateTime.Now.ToUniversalTime();
+                        utcNow = DateTime.Now.ToUniversalTime();
                         SIPDialogueAsset expiredCall = m_sipDialoguePersistor.Get(d => d.HangupAtUTC <= utcNow);
                         if (expiredCall != null) {
                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Hanging up expired call to " + expiredCall.RemoteTarget + " after " + expiredCall.CallDurationLimit + "s.", expiredCall.Owner));
@@ -477,13 +479,8 @@ namespace SIPSorcery.Servers
             clientDiaglogue.BridgeId = bridgeId;
             forwardedDialogue.BridgeId = bridgeId;
 
-            //if (!clientDiaglogue.RemoteTarget.Host.StartsWith("127.0.0.1")) {
-                m_sipDialoguePersistor.Add(new SIPDialogueAsset(clientDiaglogue));
-            //}
-
-            //if (!forwardedDialogue.RemoteTarget.Host.StartsWith("127.0.0.1")) {
-                m_sipDialoguePersistor.Add(new SIPDialogueAsset(forwardedDialogue));
-            //}
+            m_sipDialoguePersistor.Add(new SIPDialogueAsset(clientDiaglogue));
+            m_sipDialoguePersistor.Add(new SIPDialogueAsset(forwardedDialogue));
 
             SIPEndPoint clientDialogueRemoteEP = (IPSocket.IsIPSocket(clientDiaglogue.RemoteTarget.Host)) ? SIPEndPoint.ParseSIPEndPoint(clientDiaglogue.RemoteTarget.Host) : null;
             Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueCreated, clientDiaglogue.Owner, clientDialogueRemoteEP, clientDiaglogue.DialogueId));

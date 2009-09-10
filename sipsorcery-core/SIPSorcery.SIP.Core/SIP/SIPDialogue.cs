@@ -79,7 +79,6 @@ namespace SIPSorcery.SIP {
         public string SDP { get; private set; }                     // The sessions description protocol payload. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
         public string RemoteSDP { get; private set; }               // The sessions description protocol payload from the remote end. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
         public Guid BridgeId { get; set; }                          // If this dialogue gets bridged by a higher level application server the id for the bridge can be stored here.                   
-        //public SIPEndPoint OutboundProxy { get; set; }
         public int CallDurationLimit { get; set; }                  // If non-zero indicates the dialogue established should only be permitted to stay up for this many seconds.
         public DateTime Inserted { get; set; }
 
@@ -120,7 +119,6 @@ namespace SIPSorcery.SIP {
             AdminMemberId = adminMemberId;
             SDP = sdp;
             RemoteSDP = remoteSDP;
-            //OutboundProxy = outboundProxy;
             Inserted = DateTime.Now;
         }
 
@@ -151,14 +149,13 @@ namespace SIPSorcery.SIP {
             ContentType = uasInviteTransaction.TransactionFinalResponse.Header.ContentType;
             SDP = uasInviteTransaction.TransactionFinalResponse.Body;
             RemoteSDP = uasInviteTransaction.TransactionRequest.Body;
-            //OutboundProxy = uasInviteTransaction.OutboundProxy;
             Inserted = DateTime.Now;
 
             DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
 
-            RemoteTarget = new SIPURI(uasInviteTransaction.TransactionRequest.URI.Scheme, uasInviteTransaction.RemoteEndPoint);
+            RemoteTarget = new SIPURI(uasInviteTransaction.TransactionRequest.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(uasInviteTransaction.RemoteEndPoint.ToString()));
             if (uasInviteTransaction.TransactionRequest.Header.Contact != null && uasInviteTransaction.TransactionRequest.Header.Contact.Count > 0) {
-                RemoteTarget = uasInviteTransaction.TransactionRequest.Header.Contact[0].ContactURI;
+                RemoteTarget = uasInviteTransaction.TransactionRequest.Header.Contact[0].ContactURI.CopyOf();
                 if (!uasInviteTransaction.TransactionRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) {
                     // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
                     if (SIPTransport.IsPrivateAddress(RemoteTarget.Host)) {
@@ -202,9 +199,9 @@ namespace SIPSorcery.SIP {
             DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
 
             // Set the dialogue remote target and take care of mangling if an upstream proxy has indicated it's required.
-            RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, uacInviteTransaction.RemoteEndPoint);
+            RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(uacInviteTransaction.RemoteEndPoint.ToString()));
             if (uacInviteTransaction.TransactionFinalResponse.Header.Contact != null && uacInviteTransaction.TransactionFinalResponse.Header.Contact.Count > 0) {
-                RemoteTarget = uacInviteTransaction.TransactionFinalResponse.Header.Contact[0].ContactURI;
+                RemoteTarget = uacInviteTransaction.TransactionFinalResponse.Header.Contact[0].ContactURI.CopyOf();
                 if (!uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) {
                     // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
                     if (SIPTransport.IsPrivateAddress(RemoteTarget.Host)) {
@@ -216,11 +213,11 @@ namespace SIPSorcery.SIP {
         }
 
         public static string GetDialogueId(string callId, string localTag, string remoteTag) {
-            return Crypto.GetSHAHash(callId + localTag + remoteTag);
+            return Crypto.GetSHAHashAsString(callId + localTag + remoteTag);
         }
 
         public static string GetDialogueId(SIPHeader sipHeader) {
-            return Crypto.GetSHAHash(sipHeader.CallId + sipHeader.To.ToTag + sipHeader.From.FromTag);
+            return Crypto.GetSHAHashAsString(sipHeader.CallId + sipHeader.To.ToTag + sipHeader.From.FromTag);
         }
 
         public void Hangup(SIPTransport sipTransport, SIPEndPoint outboundProxy) {

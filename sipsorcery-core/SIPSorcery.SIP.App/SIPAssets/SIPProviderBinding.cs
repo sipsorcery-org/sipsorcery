@@ -106,7 +106,7 @@ namespace SIPSorcery.SIP.App
         }
 
         [Column(Storage = "_adminmemberid", Name = "adminmemberid", DbType = "character varying(32)", CanBeNull = true)]
-        public string AdminMemberId { get; private set; }    // If set it designates this asset as a belonging to a user with the matching adminid.
+        public string AdminMemberId { get; set; }    // If set it designates this asset as a belonging to a user with the matching adminid.
 
         private string m_registrationFailureMessage;         // Used to record why a registration failed if it does so.
         [Column(Storage = "_registrationfailuremessage", Name = "registrationfailuremessage", DbType = "character varying(1024)", CanBeNull = true)]
@@ -239,7 +239,7 @@ namespace SIPSorcery.SIP.App
         public SIPEndPoint RegistrarSIPEndPoint;                    // The SIP end point of the remote SIP Registrar.
 
         // Fields populated and re-populated by the SIPProvider entry whenever a registration is initiated or refereshed.
-        // The details are presisted and used for authenitcation of previous register requests or to remove existing bindings.
+        // The details are persisted and used for authentication of previous register requests or to remove existing bindings.
         public SIPURI RegistrarServer;
         public string ProviderAuthUsername;
         public string ProviderPassword;

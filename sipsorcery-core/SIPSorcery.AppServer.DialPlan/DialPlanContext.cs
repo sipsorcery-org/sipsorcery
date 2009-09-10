@@ -14,7 +14,7 @@ namespace SIPSorcery.AppServer.DialPlan
     public delegate void CallCancelledDelegate(CallCancelCause cancelCause);
     public delegate void CallProgressDelegate(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody);
     public delegate void CallFailedDelegate(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders);
-    public delegate void CallAnsweredDelegate(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string[] customHeaders, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue);
+    public delegate void CallAnsweredDelegate(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string toTag, string[] customHeaders, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue);
 
     public enum DialPlanAppResult
     {
@@ -47,6 +47,7 @@ namespace SIPSorcery.AppServer.DialPlan
     }
 
     public class DialPlanContext {
+
         private const string TRACE_FROM_ADDRESS = "siptrace@sipsorcery.com";
         private const string TRACE_SUBJECT = "SIP Sorcery Trace";
         
@@ -54,10 +55,9 @@ namespace SIPSorcery.AppServer.DialPlan
         private string CRLF = SIPConstants.CRLF;
 
         private SIPMonitorLogDelegate Log_External;
-        private DialogueBridgeCreatedDelegate CreateBridge_External;
+        public DialogueBridgeCreatedDelegate CreateBridge_External;
 
         private SIPTransport m_sipTransport;
-        //private UASInviteTransaction m_clientTransaction;
         private ISIPServerUserAgent m_sipServerUserAgent;
         private SIPEndPoint m_outboundProxy;        // If this app forwards calls via an outbound proxy this value will be set.
         private string m_traceDirectory;
@@ -92,20 +92,8 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             get { return m_traceLog; }
         }
-        //public string ClientCallContentType
-        //{
-        //    get { return m_sipServerUserAgent.SIPTransaction.TransactionRequest.Header.ContentType; }
-        //}
-       // public string ClientCallContent
-        //{
-       //     get { return m_sipServerUserAgent.SIPTransaction.TransactionRequest.Body; }
-        //}
-        //public SIPRequest ClientInviteRequest
-        //{
-        //    get { return m_sipServerUserAgent.SIPTransaction.TransactionRequest; }
-        //}
-        public string CallersNetworkId;             // If the caller was a locally administered SIP account this will hold it's network id. Used so calls between two accounts on the same local network can be identified.
 
+        public string CallersNetworkId;             // If the caller was a locally administered SIP account this will hold it's network id. Used so calls between two accounts on the same local network can be identified.
         public Guid CustomerId;                     // The id of the customer that owns this dialplan.
 
         private bool m_isAnswered;
@@ -161,15 +149,15 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        public void CallAnswered(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string[] customHeaders, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue) {
+        public void CallAnswered(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string toTag, string[] customHeaders, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue) {
             try {
                 if (!m_isAnswered) {
                     m_isAnswered = true;
                     Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Answering client call with a response status of " + (int)answeredStatus + ".", Owner));
 
-                    SIPDialogue uasDialogue = m_sipServerUserAgent.Answer(answeredContentType, answeredBody, answeredDialogue);
+                    SIPDialogue uasDialogue = m_sipServerUserAgent.Answer(answeredContentType, answeredBody, toTag, answeredDialogue);
 
-                    if (!m_sipServerUserAgent.IsB2B) {
+                    if (!m_sipServerUserAgent.IsB2B && answeredDialogue != null) {
                         if (uasDialogue != null) {
                             // Record the now established call with the call manager for in dialogue management and hangups.
                             CreateBridge_External(uasDialogue, answeredDialogue, m_dialPlan.Owner);

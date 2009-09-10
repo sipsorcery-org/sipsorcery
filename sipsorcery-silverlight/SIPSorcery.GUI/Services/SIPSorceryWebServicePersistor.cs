@@ -23,8 +23,12 @@ namespace SIPSorcery.Persistence {
         private static int MAX_WCF_MESSAGE_SIZE = 1000000;   // Limit messages to 1MB.
 
         public override event IsAliveCompleteDelegate IsAliveComplete;
+        public override event AreNewAccountsEnabledCompleteDelegate AreNewAccountsEnabledComplete;
         public override event LoginCompleteDelegate LoginComplete;
         public override event LogoutCompleteDelegate LogoutComplete;
+        public override event GetCustomerCompleteDelegate GetCustomerComplete;
+        public override event UpdateCustomerCompleteDelegate UpdateCustomerComplete;
+        public override event UpdateCustomerPasswordCompleteDelegate UpdateCustomerPasswordComplete;
         public override event GetSIPAccountsCompleteDelegate GetSIPAccountsComplete;
         public override event GetSIPAccountsCountCompleteDelegate GetSIPAccountsCountComplete;
         public override event AddSIPAccountCompleteDelegate AddSIPAccountComplete;
@@ -67,8 +71,12 @@ namespace SIPSorcery.Persistence {
 
             // Provisioning web service delegates.
             m_provisioningServiceProxy.IsAliveCompleted += IsAliveCompleted;
+            m_provisioningServiceProxy.AreNewAccountsEnabledCompleted += AreNewAccountsEnabledCompleted;
             m_provisioningServiceProxy.LoginCompleted += LoginCompleted;
             m_provisioningServiceProxy.LogoutCompleted += LogoutCompleted;
+            m_provisioningServiceProxy.GetCustomerCompleted += GetCustomerCompleted;
+            m_provisioningServiceProxy.UpdateCustomerCompleted += UpdateCustomerCompleted;
+            m_provisioningServiceProxy.UpdateCustomerPasswordCompleted += UpdateCustomerPasswordCompleted;
             m_provisioningServiceProxy.GetSIPAccountsCompleted += GetSIPAccountsCompleted;
             m_provisioningServiceProxy.GetSIPAccountsCountCompleted += GetSIPAccountsCountCompleted;
             m_provisioningServiceProxy.AddSIPAccountCompleted += AddSIPAccountCompleted;
@@ -120,6 +128,14 @@ namespace SIPSorcery.Persistence {
             }
         }
 
+        public override void AreNewAccountsEnabledAsync() {
+            m_provisioningServiceProxy.AreNewAccountsEnabledAsync();
+        }
+
+        private void AreNewAccountsEnabledCompleted(object sender, AreNewAccountsEnabledCompletedEventArgs e) {
+            AreNewAccountsEnabledComplete(e);
+        }
+
         public override void LoginAsync(string username, string password) {
             m_provisioningServiceProxy.LoginAsync(username, password);
         }
@@ -134,6 +150,45 @@ namespace SIPSorcery.Persistence {
 
         private void LogoutCompleted(object sender, AsyncCompletedEventArgs e) {
             LogoutComplete(e);
+        }
+
+        public override void GetCustomerAsync(string username) {
+            m_provisioningServiceProxy.GetCustomerAsync(username);
+        }
+
+        private void GetCustomerCompleted(object sender, GetCustomerCompletedEventArgs e) {
+            if (IsUnauthorised(e.Error)) {
+                SessionExpired();
+            }
+            else {
+                GetCustomerComplete(e);
+            }
+        }
+
+        public override void UpdateCustomerAsync(Customer customer) {
+            m_provisioningServiceProxy.UpdateCustomerAsync(customer);
+        }
+
+        private void UpdateCustomerCompleted(object sender, AsyncCompletedEventArgs e) {
+            if (IsUnauthorised(e.Error)) {
+                SessionExpired();
+            }
+            else {
+                UpdateCustomerComplete(e);
+            }
+        }
+
+        public override void UpdateCustomerPassword(string username, string oldPassword, string newPassword) {
+            m_provisioningServiceProxy.UpdateCustomerPasswordAsync(username, oldPassword, newPassword);
+        }
+
+        private void UpdateCustomerPasswordCompleted(object sender, AsyncCompletedEventArgs e) {
+            if (IsUnauthorised(e.Error)) {
+                SessionExpired();
+            }
+            else {
+                UpdateCustomerPasswordComplete(e);
+            }
         }
 
         private void GetSIPDomainsCompleted(object sender, GetSIPDomainsCompletedEventArgs e) {

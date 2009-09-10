@@ -60,6 +60,9 @@ namespace SIPSorcery.CRM
         [Column(Storage = "_id", Name = "id", DbType = "character varying(36)", IsPrimaryKey = true, CanBeNull = false)]
         public string Id { get; set; }
 
+        [Column(Storage = "_sessionid", Name = "sessionid", DbType = "character varying(96)", CanBeNull = false)]
+        public string SessionID { get; set; }
+
         [Column(Storage = "_customerusername", Name = "customerusername", DbType = "character varying(32)", CanBeNull = false)]
         public string CustomerUsername;
 
@@ -74,9 +77,10 @@ namespace SIPSorcery.CRM
 
         public CustomerSession() { }
 
-        public CustomerSession(Guid id, string customerUsername, string ipAddress)
+        public CustomerSession(Guid id, string sessionID, string customerUsername, string ipAddress)
         {
             Id = id.ToString();
+            SessionID = sessionID;
             CustomerUsername = customerUsername;
             InsertedUTC = DateTime.Now.ToUniversalTime();
             IPAddress = ipAddress;
@@ -89,6 +93,7 @@ namespace SIPSorcery.CRM
         public void Load(DataRow customerSessionRow) {
             try {
                 Id = customerSessionRow["id"] as string;
+                SessionID = customerSessionRow["sessionid"] as string;
                 CustomerUsername = customerSessionRow["customerusername"] as string;
                 InsertedUTC = Convert.ToDateTime(customerSessionRow["inserted"]);
                 Expired = Convert.ToBoolean(customerSessionRow["expired"]);
@@ -119,6 +124,7 @@ namespace SIPSorcery.CRM
         {
             string customerSessionXML =
                 "    <id>" + Id + "</id>" + m_newLine +
+                "    <sessionid>" + SessionID + "</sessionid>" + m_newLine +
                 "    <customerusername>" + CustomerUsername + "</customerusername>" + m_newLine +
                 "    <inserted>" + InsertedUTC.ToString("o") + "</inserted>" + m_newLine +
                 "    <expired>" + Expired + "</expired>" + m_newLine +

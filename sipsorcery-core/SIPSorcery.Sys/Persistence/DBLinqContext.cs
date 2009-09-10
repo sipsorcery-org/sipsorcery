@@ -37,6 +37,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text;
 using DbLinq.Data.Linq;
@@ -50,6 +51,7 @@ namespace SIPSorcery.Sys {
     public class DBLinqContext {
 
         private static System.Data.Linq.Mapping.MappingSource m_mappingSource = new AttributeMappingSource();
+        //private static TextWriter dbLinqLogWriter = new StreamWriter(@"C:\Temp\sipsorcery\dblinq.log", true, Encoding.ASCII);
 
         public static DataContext CreateDBLinqDataContext(StorageTypes storageType, string connectionString) {
             DataContext dataContext = null;
@@ -67,7 +69,9 @@ namespace SIPSorcery.Sys {
                     throw new NotSupportedException("Database type " + storageType + " is not supported by CreateDBLinqDataContext.");
             }
 
+            //dataContext.QueryCacheEnabled = true;
             //dataContext.Log = Console.Out;
+            //dataContext.Log = dbLinqLogWriter;
             dataContext.ObjectTrackingEnabled = false;
             return dataContext;
         }

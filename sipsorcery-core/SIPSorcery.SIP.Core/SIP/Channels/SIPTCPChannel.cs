@@ -58,8 +58,8 @@ namespace SIPSorcery.SIP
 
         private TcpListener m_tcpServerListener;
         private bool m_closed = false;
-        private Dictionary<IPEndPoint, SIPConnection> m_connectedSockets = new Dictionary<IPEndPoint, SIPConnection>();
-        private List<IPEndPoint> m_connectingSockets = new List<IPEndPoint>();  // List of sockets that are in the process of being connected to. Need to avoid SIP re-transmits initiating multiple connect attempts.
+        private Dictionary<string, SIPConnection> m_connectedSockets = new Dictionary<string, SIPConnection>();
+        private List<string> m_connectingSockets = new List<string>();  // List of sockets that are in the process of being connected to. Need to avoid SIP re-transmits initiating multiple connect attempts.
 
         public SIPTCPChannel(IPEndPoint endPoint) {
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tcp, endPoint);
@@ -114,7 +114,7 @@ namespace SIPSorcery.SIP
 
                     //SIPTCPConnection sipTCPClient = new SIPTCPConnection(this, clientSocket, remoteEndPoint, SIPTCPConnectionsEnum.Listener);
                     SIPConnection sipTCPClient = new SIPConnection(this, tcpClient.GetStream(), remoteEndPoint, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Listener);
-                    m_connectedSockets.Add(remoteEndPoint, sipTCPClient);
+                    m_connectedSockets.Add(remoteEndPoint.ToString(), sipTCPClient);
 
                     sipTCPClient.SIPSocketDisconnected += SIPTCPSocketDisconnected;
                     sipTCPClient.SIPMessageReceived += SIPTCPMessageReceived;
@@ -136,7 +136,7 @@ namespace SIPSorcery.SIP
             try
             {
                 logger.Debug("TCP socket from " + remoteEndPoint + " disconnected.");
-                m_connectedSockets.Remove(remoteEndPoint);
+                m_connectedSockets.Remove(remoteEndPoint.ToString());
             }
             catch (Exception excp)
             {
@@ -172,9 +172,9 @@ namespace SIPSorcery.SIP
 
                     // Lookup a client socket that is connected to the destination.
                     //m_sipConn(buffer, buffer.Length, destinationEndPoint);
-                    if (m_connectedSockets.ContainsKey(dstEndPoint))
+                    if (m_connectedSockets.ContainsKey(dstEndPoint.ToString()))
                     {
-                        SIPConnection sipTCPClient = m_connectedSockets[dstEndPoint];
+                        SIPConnection sipTCPClient = m_connectedSockets[dstEndPoint.ToString()];
 
                         try
                         {
@@ -185,20 +185,20 @@ namespace SIPSorcery.SIP
                         {
                             logger.Warn("Could not send to TCP socket " + dstEndPoint + ", closing and removing.");
                             sipTCPClient.SIPStream.Close();
-                            m_connectedSockets.Remove(dstEndPoint);
+                            m_connectedSockets.Remove(dstEndPoint.ToString());
                         }
                     }
 
                     if(!sent)
                     {
-                        if (!m_connectingSockets.Contains(dstEndPoint)) {
+                        if (!m_connectingSockets.Contains(dstEndPoint.ToString())) {
                             logger.Debug("Attempting to establish TCP connection to " + dstEndPoint + ".");
 
                             TcpClient tcpClient = new TcpClient();
                             tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                             tcpClient.Client.Bind(m_localSIPEndPoint.SocketEndPoint);
 
-                            m_connectingSockets.Add(dstEndPoint);
+                            m_connectingSockets.Add(dstEndPoint.ToString());
                             tcpClient.BeginConnect(dstEndPoint.Address, dstEndPoint.Port, EndConnect, new object[] { tcpClient, dstEndPoint, buffer });
                         }
                         else {
@@ -242,7 +242,7 @@ namespace SIPSorcery.SIP
                 IPEndPoint dstEndPoint = (IPEndPoint)stateObj[1];
                 byte[] buffer = (byte[])stateObj[2];
 
-                m_connectingSockets.Remove(dstEndPoint);
+                m_connectingSockets.Remove(dstEndPoint.ToString());
 
                 tcpClient.EndConnect(ar);
 
@@ -251,7 +251,7 @@ namespace SIPSorcery.SIP
                     logger.Debug("Established TCP connection to " + dstEndPoint + ".");
 
                     SIPConnection callerConnection = new SIPConnection(this, tcpClient.GetStream(), dstEndPoint, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
-                    m_connectedSockets.Add(dstEndPoint, callerConnection);
+                    m_connectedSockets.Add(dstEndPoint.ToString(), callerConnection);
                     
                     callerConnection.SIPSocketDisconnected += SIPTCPSocketDisconnected;
                     callerConnection.SIPMessageReceived += SIPTCPMessageReceived;

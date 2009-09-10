@@ -144,10 +144,12 @@ namespace SIPSorcery.Servers
         {
             try
             {
+                DateTime utcNow = DateTime.Now;
+
                 while (m_sendRegisters)
                 {
                     try {
-                        DateTime utcNow = DateTime.Now.ToUniversalTime();
+                        utcNow = DateTime.Now.ToUniversalTime();
                         SIPProviderBinding binding = m_bindingPersistor.Get(b => b.NextRegistrationTimeUTC <= utcNow);
 
                         while (binding != null) {
@@ -321,7 +323,7 @@ namespace SIPSorcery.Servers
                     binding.NextRegistrationTimeUTC = DateTime.Now.ToUniversalTime().AddSeconds(REGISTER_FAILURERETRY_INTERVAL);
                     binding.IsRegistered = false;
                     m_bindingPersistor.Update(binding);
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration timed out for " + binding.Owner + " on " + binding.RegistrarServer.ToString() + ", next attempt in " + REGISTER_FAILURERETRY_INTERVAL + "s.", binding.Owner));
+                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration timed out for " + binding.Owner + " and provider " + binding.ProviderName + " registering to " + binding.RegistrarSIPEndPoint.ToString() + ", next attempt in " + REGISTER_FAILURERETRY_INTERVAL + "s.", binding.Owner));
                     FireProxyLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrationAgentBindingUpdate, binding.Owner, binding.RegistrarSIPEndPoint, binding.ProviderId.ToString()));
 
                     RemoveCachedBinding(new Guid(binding.Id));

@@ -391,8 +391,6 @@ namespace SIPSorcery.SIP
                 log4net.Layout.ILayout fallbackLayout = new log4net.Layout.PatternLayout("%m%n");
                 appender.Layout = fallbackLayout;
                 log4net.Config.BasicConfigurator.Configure(appender);
-
-                Crypto.GetRandomString();
             }
 
             [TestFixtureTearDown]
@@ -413,6 +411,44 @@ namespace SIPSorcery.SIP
                 clientEngine.AddTransaction(clientTransaction);
                 clientEngine.AddTransaction(clientTransaction);
             }
+
+            /// <summary>
+            /// Tests that the transaction ID is correctly generated and matched for a request and response pair.
+            /// </summary>
+            [Test]
+            public void MatchOnRequestAndResponseTest() {
+
+                SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
+                SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
+
+                SIPRequest inviteRequest = SIPRequest.ParseSIPRequest("INVITE sip:dummy@udp:127.0.0.1:12014 SIP/2.0" + m_CRLF +
+                    "Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27" + m_CRLF +
+                    "To: <sip:dummy@udp:127.0.0.1:12014>" + m_CRLF +
+                    "From: <sip:unittest@mysipswitch.com>;tag=2062917371" + m_CRLF +
+                    "Call-ID: 8ae45c15425040179a4285d774ccbaf6" + m_CRLF +
+                    "CSeq: 1 INVITE" + m_CRLF +
+                    "Contact: <sip:127.0.0.1:1234>" + m_CRLF +
+                    "Max-Forwards: 70" + m_CRLF +
+                    "User-Agent: unittest" + m_CRLF +
+                    "Content-Length: 5" + m_CRLF +
+                    "Content-Type: application/sdp" + m_CRLF +
+                    m_CRLF +
+                    "dummy");
+
+                SIPTransaction transaction =  new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, dummySIPEndPoint, null);
+                transactionEngine.AddTransaction(transaction);
+
+                SIPResponse sipResponse = SIPResponse.ParseSIPResponse("SIP/2.0 603 Nothing listening" + m_CRLF +
+                    "Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013" + m_CRLF +
+                    "To: <sip:dummy@udp:127.0.0.1:12014>" + m_CRLF +
+                    "From: <sip:unittest@mysipswitch.com>;tag=2062917371" + m_CRLF +
+                    "Call-ID: 8ae45c15425040179a4285d774ccbaf6" + m_CRLF +
+                    "CSeq: 1 INVITE" + m_CRLF +
+                    "Content-Length: 0" + m_CRLF +
+                    m_CRLF);
+
+                Assert.IsNotNull(transactionEngine.GetTransaction(sipResponse), "Transaction should have matched, check the hashing mechanism.");
+           }
 
             /// <summary>
             /// Tests the production and recognition of an ACK request for this transaction engine.

@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Sys", "SIPSorcer
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Silverlight.CRM", "SIPSorcery.Silverlight.CRM\SIPSorcery.Silverlight.CRM.csproj", "{FDC64126-97E7-4076-910B-E842F730CF3E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Net", "SIPSorcery.Net\SIPSorcery.Net.csproj", "{B9A3E915-302F-4433-8696-85368A5496B4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|.NET = Debug|.NET
@@ -97,6 +99,16 @@ Global
 		{FDC64126-97E7-4076-910B-E842F730CF3E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FDC64126-97E7-4076-910B-E842F730CF3E}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{FDC64126-97E7-4076-910B-E842F730CF3E}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Debug|.NET.ActiveCfg = Debug|Any CPU
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Release|.NET.ActiveCfg = Release|Any CPU
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

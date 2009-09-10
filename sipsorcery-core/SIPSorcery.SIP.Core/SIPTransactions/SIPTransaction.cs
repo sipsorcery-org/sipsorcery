@@ -266,7 +266,7 @@ namespace SIPSorcery.SIP
         
         public static string GetRequestTransactionId(string branchId, SIPMethodsEnum method)
         {
-            return Crypto.GetSHAHash(branchId + method.ToString());
+            return Crypto.GetSHAHashAsString(branchId + method.ToString());
         }
 
         public void GotRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
@@ -375,7 +375,7 @@ namespace SIPSorcery.SIP
 
         public void RetransmitFinalResponse() {
             try {
-                if (TransactionFinalResponse != null) {
+                if (TransactionFinalResponse != null && TransactionState != SIPTransactionStatesEnum.Confirmed) {
                     m_sipTransport.SendResponse(TransactionFinalResponse);
                     Retransmits += 1;
                     LastTransmit = DateTime.Now;

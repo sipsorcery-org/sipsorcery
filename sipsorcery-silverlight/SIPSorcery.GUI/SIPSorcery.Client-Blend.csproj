@@ -26,6 +26,7 @@
     <SilverlightApplication>true</SilverlightApplication>
     <ValidateXaml>true</ValidateXaml>
     <ThrowErrorsInValidation>false</ThrowErrorsInValidation>
+    <ExpressionBlendVersion>3.0.1927.0</ExpressionBlendVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -101,6 +102,10 @@
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="UserInterface\CallManager\SIPSwitchboard.xaml">
+      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UserInterface\CallManager\SIPCallManager.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
@@ -110,6 +115,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\CreateAccountControl.xaml">
+      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserInterface\CustomerSettingsControl.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -168,6 +177,9 @@
     <Compile Include="UserInterface\AssetManagers\SIPProviderManager.xaml.cs">
       <DependentUpon>SIPProviderManager.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UserInterface\CallManager\SIPSwitchboard.xaml.cs">
+      <DependentUpon>SIPSwitchboard.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserInterface\CallManager\SIPCallManager.xaml.cs">
       <DependentUpon>SIPCallManager.xaml</DependentUpon>
     </Compile>
@@ -176,6 +188,9 @@
     </Compile>
     <Compile Include="UserInterface\CreateAccountControl.xaml.cs">
       <DependentUpon>CreateAccountControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\CustomerSettingsControl.xaml.cs">
+      <DependentUpon>CustomerSettingsControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\LoginControl.xaml.cs">
       <DependentUpon>LoginControl.xaml</DependentUpon>

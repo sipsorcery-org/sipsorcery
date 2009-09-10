@@ -76,6 +76,7 @@ namespace SIPSorcery.Servers
 		private static ILog logger = AppState.logger;
 
         private static readonly string m_topLevelAdminId = Customer.TOPLEVEL_ADMIN_ID;
+        private static readonly int m_sessionIDLength = CustomerSessionManager.SESSION_ID_STRING_LENGTH;
 
         private AuthenticateCustomerDelegate AuthenticateUser_External = (u, p, i) => { return null; };
         private AuthenticateTokenDelegate AuthenticateSession_External = (s) => { return null; };
@@ -420,7 +421,7 @@ namespace SIPSorcery.Servers
                     machineSocket.Close();
                 }
                 else {
-                    byte[] buffer = new byte[64];
+                    byte[] buffer = new byte[m_sessionIDLength];
                     int bytesRead = machineSocket.Receive(buffer);
 
                     string token = Encoding.ASCII.GetString(buffer, 0, bytesRead);
@@ -433,7 +434,7 @@ namespace SIPSorcery.Servers
                         m_machineClients.Add(machineClient);
                     }
                     else {
-                        logger.Debug("Invalid token supplied by mahcine client at " + machineEndPoint + " closing socket.");
+                        logger.Debug("Invalid token supplied by machine client at " + machineEndPoint + " closing socket.");
                         machineSocket.Close();
                     }
                 }

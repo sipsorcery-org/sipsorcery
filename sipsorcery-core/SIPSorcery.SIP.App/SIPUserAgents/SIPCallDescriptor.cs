@@ -36,6 +36,7 @@
 // ============================================================================
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
@@ -75,7 +76,8 @@ namespace SIPSorcery.SIP.App
         public string From;                     // A string representing the From header to be set for the call.
         public string To;                       // A string representing the To header to be set for the call.  
         public string RouteSet;                 // A route set for the forwarded call request. If there is only a single route or IP socket it will be treated like an Outbound Proxy (i.e. no Route header will be added).
-        public HybridDictionary CustomHeaders;  // An optional list of custom SIP headers that will be added to the INVITE request.
+        public string ProxySendFrom;            // Used to set the Proxy-SendFrom header which informs an upstream proxy which socket the request should try and go out on.
+        public List<string> CustomHeaders;      // An optional list of custom SIP headers that will be added to the INVITE request.
         public SIPCallDirection CallDirection;  // Indicates whether the call is incoming out outgoing relative to this server. An outgoing call is one that is placed by a user the server authenticates.
         public string ContentType;
         public string Content;
@@ -102,8 +104,8 @@ namespace SIPSorcery.SIP.App
             string uri, 
             string from, 
             string to, 
-            string routeSet, 
-            HybridDictionary customHeaders, 
+            string routeSet,
+            List<string> customHeaders, 
             string authUsername, 
             SIPCallDirection callDirection, 
             string contentType, 
@@ -167,9 +169,9 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public static HybridDictionary ParseCustomHeaders(string customHeaders) {
+        public static List<string> ParseCustomHeaders(string customHeaders) {
 
-            HybridDictionary customHeaderList = new HybridDictionary(false);
+            List<string> customHeaderList = new List<string>();
             
             try {
                 if (!customHeaders.IsNullOrBlank()) {
@@ -177,21 +179,24 @@ namespace SIPSorcery.SIP.App
 
                     if (customerHeadersList != null && customerHeadersList.Length > 0) {
                         foreach (string customHeader in customerHeadersList) {
-                            if (customHeader.IndexOf(':') == -1) {
+                            if (customHeader.IsNullOrBlank()) {
+                                continue;
+                            }
+                            else if (customHeader.IndexOf(':') == -1) {
                                 logger.Warn("ParseCustomHeaders skipping custom header due to missing colon, " + customHeader + ".");
                                 continue;
                             }
                             else {
-                                int colonIndex = customHeader.IndexOf(':');
-                                string headerName = customHeader.Substring(0, colonIndex).Trim();
-                                string headerValue = (customHeader.Length > colonIndex) ? customHeader.Substring(colonIndex + 1).Trim() : String.Empty;
+                                //int colonIndex = customHeader.IndexOf(':');
+                                //string headerName = customHeader.Substring(0, colonIndex).Trim();
+                                //string headerValue = (customHeader.Length > colonIndex) ? customHeader.Substring(colonIndex + 1).Trim() : String.Empty;
 
-                                if (headerName != null && Regex.Match(headerName.Trim(), "^(Via|From|To|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success) {
+                                if (Regex.Match(customHeader.Trim(), "^(Via|From|To|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success) {
                                     logger.Warn("ParseCustomHeaders skipping custom header due to an non-permitted string in header name, " + customHeader + ".");
                                     continue;
                                 }
                                 else {
-                                    customHeaderList.Add(headerName, headerValue);
+                                    customHeaderList.Add(customHeader.Trim());
                                 }
                             }
                         }

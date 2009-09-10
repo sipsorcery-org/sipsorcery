@@ -118,11 +118,13 @@ namespace SIPSorcery
 #endif
 
             m_unauthorisedPersistor.IsAliveComplete += PersistorIsAliveComplete;
+            m_unauthorisedPersistor.AreNewAccountsEnabledComplete += AreNewAccountsEnabledComplete;
             m_unauthorisedPersistor.LoginComplete += LoginComplete;
             m_unauthorisedPersistor.CreateCustomerComplete += CreateCustomerComplete;
             m_loginControl.Login_External = LoginAsync;
             m_createAccountControl.CreateCustomer_External = m_unauthorisedPersistor.CreateCustomerAsync;
-            m_createAccountControl.Login_External = LoginAsync;
+            //m_createAccountControl.Login_External = LoginAsync;
+            m_createAccountControl.SetDataEntryEnabled(true);
 
             InitialiseServices(0);
         }
@@ -144,6 +146,7 @@ namespace SIPSorcery
 
                 try {
                     m_unauthorisedPersistor.IsAliveAsync();
+                    m_unauthorisedPersistor.AreNewAccountsEnabledAsync();
                 }
                 catch (Exception provExcp) {
                     m_persistorStatusMessage = provExcp.Message;
@@ -271,6 +274,21 @@ namespace SIPSorcery
             }
         }
 
+        private void AreNewAccountsEnabledComplete(AreNewAccountsEnabledCompletedEventArgs e) {
+            try {
+                if (e.Result) {
+                    m_loginControl.EnableNewAccounts();
+                }
+                else {
+                    m_loginControl.DisableNewAccounts("New accounts disabled. Please monitor sipsorcery.wordpress.com.");
+                }
+            }
+            catch (Exception excp) {
+                string exceptionMessage = (excp.Message.Length > 100) ? excp.Message.Substring(0, 100) : excp.Message;
+                m_loginControl.DisableNewAccounts(exceptionMessage);
+            }
+        }
+
         private void SIPEventMonitorClient_MonitorConnectionChange(SocketConnectionStatus connectionState)
         {
             try {
@@ -303,10 +321,7 @@ namespace SIPSorcery
         }
 
         private void LoginAsync(string username, string password)
-        {
-            UIHelper.SetVisibility(m_createAccountControl, Visibility.Collapsed);
-            UIHelper.SetVisibility(m_logo, Visibility.Visible);
-            m_createAccountControl.Clear();
+        {  
 #if !BLEND
             m_owner = username;
 #else
@@ -334,8 +349,7 @@ namespace SIPSorcery
                     //UIHelper.SetVisibility(m_sipMonitorDisplay, Visibility.Collapsed);
                     UIHelper.SetText(m_appStatusMessage, "Initialising...");
                     UIHelper.SetFill(m_appStatusIcon, Colors.Blue);
-                    m_loginControl.Clear();
-
+                    
                     //UIHelper.RemoveChild(m_topCanvas, m_appStatusCanvas);
                     //UIHelper.RemoveChild(m_topCanvas, m_loginControl);
                     //UIHelper.RemoveChild(m_topCanvas, m_sipMonitorDisplay);
@@ -359,6 +373,10 @@ namespace SIPSorcery
 #endif
                     m_authorisedPersistor.SessionExpired += SessionExpired;
                     m_authorisedPersistor.LogoutComplete += LogoutComplete;
+
+                    m_loginControl.Clear();
+                    m_createAccountControl.Clear();
+                    UIHelper.SetVisibility(m_createAccountControl, Visibility.Collapsed);
 
                     m_userPage = new UserPage(m_authorisedPersistor, m_sipEventMonitorClient, LogoutAsync, m_owner, m_sipMonitorHost, m_sipControlMonitorPort);
                     m_mainPageBorder.Content = m_userPage;
@@ -445,6 +463,9 @@ namespace SIPSorcery
         }
 
         private void CreateCustomerComplete(System.ComponentModel.AsyncCompletedEventArgs e) {
+            if (e.Error == null) {
+                m_loginControl.DisableNewAccounts(null);
+            }
             m_createAccountControl.CustomerCreated(e);
         }
 

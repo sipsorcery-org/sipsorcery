@@ -20,6 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SQL", "SQL", "{031FFE96-496
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{28496FF4-0738-4E19-A657-3B00F1075E6A}"
 	ProjectSection(SolutionItems) = preProject
+		SIPSorcery.Web\about.html = SIPSorcery.Web\about.html
 		SIPSorcery.Web\callmanager.svc = SIPSorcery.Web\callmanager.svc
 		SIPSorcery.Web\clientaccesspolicy.xml = SIPSorcery.Web\clientaccesspolicy.xml
 		SIPSorcery.Web\default.html = SIPSorcery.Web\default.html
@@ -41,6 +42,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Help", "Help", "{2211C2FB-5
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPDispatcher", "SIPSorcery.SIPDispatcher\SIPSorcery.SIPDispatcher.csproj", "{15FEC54D-2438-4222-AE40-2FE93F7AD3D8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "images", "images", "{F3F57B34-13FE-450F-BD88-D1F90910EAF7}"
+	ProjectSection(SolutionItems) = preProject
+		SIPSorcery.Web\images\banner.jpg = SIPSorcery.Web\images\banner.jpg
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.CRM.Web", "SIPSorcery.CRM.Web\SIPSorcery.CRM.Web.csproj", "{4A4987CA-60B5-4423-BA7D-B22ADD6561CF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -72,6 +80,10 @@ Global
 		{15FEC54D-2438-4222-AE40-2FE93F7AD3D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{15FEC54D-2438-4222-AE40-2FE93F7AD3D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{15FEC54D-2438-4222-AE40-2FE93F7AD3D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A4987CA-60B5-4423-BA7D-B22ADD6561CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A4987CA-60B5-4423-BA7D-B22ADD6561CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A4987CA-60B5-4423-BA7D-B22ADD6561CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A4987CA-60B5-4423-BA7D-B22ADD6561CF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -80,5 +92,6 @@ Global
 		{031FFE96-4965-4D1E-AD80-1D051CF27AF8} = {3A407BCE-4A7A-4DB3-A64F-5F7D7B80BE97}
 		{28496FF4-0738-4E19-A657-3B00F1075E6A} = {3A407BCE-4A7A-4DB3-A64F-5F7D7B80BE97}
 		{2211C2FB-5263-46C1-B60E-DB20E1369D51} = {28496FF4-0738-4E19-A657-3B00F1075E6A}
+		{F3F57B34-13FE-450F-BD88-D1F90910EAF7} = {28496FF4-0738-4E19-A657-3B00F1075E6A}
 	EndGlobalSection
 EndGlobal

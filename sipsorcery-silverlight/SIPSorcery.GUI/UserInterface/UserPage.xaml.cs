@@ -32,6 +32,8 @@ namespace SIPSorcery
         private SIPProviderManager m_sipProviderManager;
         private SIPCallManager m_sipCallsManager;
         private MonitoringConsole m_monitorConsole;
+        private SIPSwitchboard m_switchboard;
+        private CustomerSettingsControl m_customerSettings;
 
         private TextBlock m_selectedTextBlock = null;
 
@@ -85,6 +87,14 @@ namespace SIPSorcery
             m_monitorConsole = new MonitoringConsole(LogActivityMessage, m_owner, m_monitorHost, m_monitorPort);
             m_monitorConsole.Visibility = Visibility.Collapsed;
             m_mainCanvas.Children.Add(m_monitorConsole);
+
+            m_switchboard = new SIPSwitchboard(LogActivityMessage, m_owner);
+            m_switchboard.Visibility = Visibility.Collapsed;
+            m_mainCanvas.Children.Add(m_switchboard);
+
+            m_customerSettings = new CustomerSettingsControl(LogActivityMessage, m_persistor, m_owner);
+            m_customerSettings.Visibility = Visibility.Collapsed;
+            m_mainCanvas.Children.Add(m_customerSettings);
 
             SetActive(m_sipAccountManager);
             SetSelectedTextBlock(m_sipAccountsLink);
@@ -179,6 +189,8 @@ namespace SIPSorcery
             m_sipProviderManager.Visibility = (m_sipProviderManager == control) ? Visibility.Visible : Visibility.Collapsed;
             m_sipCallsManager.Visibility = (m_sipCallsManager == control) ? Visibility.Visible : Visibility.Collapsed;
             m_monitorConsole.Visibility = (m_monitorConsole == control) ? Visibility.Visible : Visibility.Collapsed;
+            m_switchboard.Visibility = (m_switchboard == control) ? Visibility.Visible : Visibility.Collapsed;
+            m_customerSettings.Visibility = (m_customerSettings == control) ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void SIPAccountsLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -310,6 +322,19 @@ namespace SIPSorcery
             {
                 LogActivityMessage(MessageLevelsEnum.Error, "Exception ShowActivityProgress. " + excp.Message);
             }
+        }
+
+        private void SwitchboardLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+            SetActive(m_switchboard);
+            SetSelectedTextBlock(m_switchboardLink);
+            m_switchboard.Start();
+        }
+
+        private void SettingsLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            SetActive(m_customerSettings);
+            SetSelectedTextBlock(m_settingsLink);
+            m_customerSettings.Load();
         }
 	}
 }

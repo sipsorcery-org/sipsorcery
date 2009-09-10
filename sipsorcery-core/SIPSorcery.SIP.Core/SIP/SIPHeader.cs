@@ -2327,6 +2327,7 @@ namespace SIPSorcery.SIP
         // Non-core custom SIP headers used to allow a SIP Proxy to communicate network info to internal server agents.
         public string ProxyReceivedOn;
         public string ProxyReceivedFrom;
+        public string ProxySendFrom;
 
         public List<string> UnknownHeaders = new List<string>();	// Holds any unrecognised headers.
 
@@ -2694,6 +2695,11 @@ namespace SIPSorcery.SIP
                             sipHeader.ProxyReceivedOn = headerValue;
                         }
                         #endregion
+                        #region Proxy-SendFrom.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_SENDFROM.ToLower()) {
+                            sipHeader.ProxySendFrom = headerValue;
+                        }
+                        #endregion
                         #region Supported
                         else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_SUPPORTED.ToLower() ||
                             headerNameLower == SIPHeaders.SIP_HEADER_SUPPORTED.ToLower()) {
@@ -2810,6 +2816,7 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append( (Supported != null) ? SIPHeaders.SIP_HEADER_SUPPORTED + ": " + Supported + m_CRLF : null);
                 headersBuilder.Append( (ProxyReceivedFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM + ": " + ProxyReceivedFrom + m_CRLF : null);
                 headersBuilder.Append( (ProxyReceivedOn != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON + ": " + ProxyReceivedOn + m_CRLF : null);
+                headersBuilder.Append( (ProxySendFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_SENDFROM + ": " + ProxySendFrom + m_CRLF : null);
 
 				// Unknown SIP headers
 				foreach(string unknownHeader in UnknownHeaders)

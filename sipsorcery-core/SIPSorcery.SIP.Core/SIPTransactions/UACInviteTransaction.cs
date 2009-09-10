@@ -226,6 +226,7 @@ namespace SIPSorcery.SIP
             SIPHeader header = new SIPHeader(TransactionRequest.Header.From, sipResponse.Header.To, sipResponse.Header.CSeq, sipResponse.Header.CallId);
             header.CSeqMethod = SIPMethodsEnum.ACK;
             header.AuthenticationHeader = TransactionRequest.Header.AuthenticationHeader;
+            header.ProxySendFrom = base.TransactionRequest.Header.ProxySendFrom;
 
             if (sipResponse.Header.RecordRoutes != null)
             {
@@ -252,6 +253,7 @@ namespace SIPSorcery.SIP
             header.CSeqMethod = SIPMethodsEnum.ACK;
             header.AuthenticationHeader = TransactionRequest.Header.AuthenticationHeader;
             header.Routes = base.TransactionRequest.Header.Routes;
+            header.ProxySendFrom = base.TransactionRequest.Header.ProxySendFrom;
           
             ackRequest.Header = header;
 

@@ -97,7 +97,7 @@ namespace SIPSorcery.SIP.App
         }
 
         [Column(Storage = "_adminmemberid", Name = "adminmemberid", DbType = "character varying(32)", CanBeNull = true)]
-        public string AdminMemberId { get; private set; }    // If set it designates this asset as a belonging to a user with the matching adminid.
+        public string AdminMemberId { get; set; }    // If set it designates this asset as a belonging to a user with the matching adminid.
        
         private string m_providerName;
         [Column(Storage = "_providername", Name = "providername", DbType = "character varying(50)", CanBeNull = false)]

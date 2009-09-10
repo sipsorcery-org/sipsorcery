@@ -61,6 +61,9 @@
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\Monitoring\SIPMonitorMachineEvent.cs">
       <Link>Monitoring\SIPMonitorMachineEvent.cs</Link>
     </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAppFunctionDelegates.cs">
+      <Link>SIPAppFunctionDelegates.cs</Link>
+    </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPAccount.cs">
       <Link>SIPAssets\SIPAccount.cs</Link>
     </Compile>
@@ -88,9 +91,37 @@
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPRegistrarBinding.cs">
       <Link>SIPAssets\SIPRegistrarBinding.cs</Link>
     </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPPacketMangler.cs">
+      <Link>SIPPacketMangler.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPProviderTweaks\SIPProviderMagicJack.cs">
+      <Link>SIPProviderTweaks\SIPProviderMagicJack.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPRequestAuthoriser\SIPRequestAuthenticationResult.cs">
+      <Link>SIPRequestAuthoriser\SIPRequestAuthenticationResult.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPUserAgents\ISIPClientUserAgent.cs">
+      <Link>SIPUserAgents\ISIPClientUserAgent.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPUserAgents\ISIPServerUserAgent.cs">
+      <Link>SIPUserAgents\ISIPServerUserAgent.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPUserAgents\SIPCallDescriptor.cs">
+      <Link>SIPUserAgents\SIPCallDescriptor.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPUserAgents\SIPClientUserAgent.cs">
+      <Link>SIPUserAgents\SIPClientUserAgent.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPUserAgents\SIPServerUserAgent.cs">
+      <Link>SIPUserAgents\SIPServerUserAgent.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">
+      <Project>{B9A3E915-302F-4433-8696-85368A5496B4}</Project>
+      <Name>SIPSorcery.Net</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Silverlight.SIP\SIPSorcery.Silverlight.SIP.csproj">
       <Project>{F996B6D4-3731-44A5-A35A-A6CE4010BC64}</Project>
       <Name>SIPSorcery.Silverlight.SIP</Name>

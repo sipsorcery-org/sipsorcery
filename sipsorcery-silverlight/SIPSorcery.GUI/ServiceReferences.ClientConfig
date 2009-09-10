@@ -16,7 +16,7 @@
                 </binding>
                 <binding name="BasicHttpBinding_IProvisioningService2" maxBufferSize="2147483647"
                     maxReceivedMessageSize="2147483647">
-                    <security mode="Transport" />
+                    <security mode="None" />
                 </binding>
             </basicHttpBinding>
             <customBinding>
@@ -48,7 +48,7 @@
                 binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_IProvisioningService"
                 contract="SIPSorceryProvisioningClient.IProvisioningService"
                 name="BasicHttpBinding_IProvisioningService" />
-            <endpoint address="https://www.sipsorcery.com/provisioning.svc"
+            <endpoint address="http://suzannes-pc:8080/provisioning.svc"
                 binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_IProvisioningService2"
                 contract="SIPSorceryProvisioningClient.IProvisioningService"
                 name="BasicHttpBinding_IProvisioningService2" />

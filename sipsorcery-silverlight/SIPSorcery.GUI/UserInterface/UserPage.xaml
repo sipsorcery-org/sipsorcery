@@ -17,15 +17,16 @@
 			<TextBlock Height="16" Width="394.5" Text="Persistor service connection message" TextWrapping="Wrap" Foreground="{StaticResource NormalTextBrush}" x:Name="m_appStatusMessage" HorizontalAlignment="Left" Margin="21,0,0,0" VerticalAlignment="Top" d:LayoutOverrides="Height"/>
 			<Ellipse Height="12" Width="12" Fill="#FF2000FF" Stroke="#FF000000" x:Name="m_appStatusIcon" HorizontalAlignment="Left" Margin="5,2,0,0" VerticalAlignment="Top" d:LayoutOverrides="Width, Height"/>
 			<TextBlock Cursor="Hand" x:Name="m_callsLink" Width="29" Foreground="{StaticResource NormalTextBrush}" Text="Calls" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="CallsLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="224.079,0,0,0"/>
-			<TextBlock Cursor="Hand" x:Name="m_cityLightsLink" Width="62" Foreground="{StaticResource NormalTextBrush}" Text="City Lights" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="CityLightsLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="305,0,0,0" Visibility="Collapsed"/>
+			<TextBlock Cursor="Hand" x:Name="m_switchboardLink" Width="70" Foreground="{StaticResource NormalTextBrush}" Text="Switchboard" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="SwitchboardLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="305,0,0,0" Visibility="Collapsed"/>
 			<Image Margin="0,0,0,-181" Source="../Images/small_logo.png" Stretch="None" VerticalAlignment="Top" HorizontalAlignment="Center"/>
-			<TextBlock Cursor="Hand" x:Name="m_deleteLink" Width="88" Foreground="{StaticResource NormalTextBrush}" Text="Delete Account" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="DeleteAccountLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Right" Margin="0,0,87,0" VerticalAlignment="Bottom" d:LayoutOverrides="Height"/>
-			<TextBlock Cursor="Hand" x:Name="m_helpLink" Width="29" Foreground="{StaticResource NormalTextBrush}" Text="Help" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="HelpLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,226,0"/>
+			<TextBlock Cursor="Hand" x:Name="m_deleteLink" Width="88" Foreground="{StaticResource NormalTextBrush}" Text="Delete Account" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="DeleteAccountLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Right" Margin="0,0,77,0" VerticalAlignment="Bottom" d:LayoutOverrides="Height"/>
+			<TextBlock Cursor="Hand" x:Name="m_helpLink" Width="29" Foreground="{StaticResource NormalTextBrush}" Text="Help" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="HelpLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,200,0"/>
+			<TextBlock Cursor="Hand" x:Name="m_settingsLink" Width="95" Foreground="{StaticResource NormalTextBrush}" Text="Account Settings" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="SettingsLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,272,0"/>
 		</Grid>
 		<Border Height="Auto" Width="1014" Margin="0,0,0,5" BorderBrush="#FFA0F927" BorderThickness="2,2,2,2" CornerRadius="5,5,5,5">
 			<StackPanel Height="Auto" Width="1014">
 				<ScrollViewer Height="73" x:Name="m_activityLogScrollViewer" Width="1014" Background="#FF282828" BorderBrush="{x:Null}" BorderThickness="0,0,0,0">
-					<TextBlock Height="Auto" Width="983" Text="" TextWrapping="Wrap" x:Name="m_activityTextBlock" Foreground="#FFA0F927" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
+					<TextBlock Height="Auto" Width="983" Text="" TextWrapping="Wrap" x:Name="m_activityTextBlock" Foreground="{StaticResource NormalTextBrush}" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
 				</ScrollViewer>
 				<ProgressBar Height="15" Width="1014" Margin="0,4,0,0" x:Name="m_activityPorgressBar" Foreground="#FFA0F927" Value="40" Background="#FF000000" Visibility="Collapsed"/>
 			</StackPanel>

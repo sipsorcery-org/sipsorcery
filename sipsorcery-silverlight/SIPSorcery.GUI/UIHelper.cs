@@ -132,7 +132,7 @@ namespace SIPSorcery
                 textBlock.Inlines.Add(activityRun);
                 textBlock.Inlines.Add(new LineBreak());
 
-                scrollViewer.ScrollToVerticalOffset(scrollViewer.ScrollableHeight);
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.ScrollableHeight + 20);
             }
             else
             {

@@ -52,16 +52,28 @@
         </script>
     </head>
     <body style="background-color: black;">
-        <!--<div id="silverlightControlHost" style="height: 100%;">-->
-            <object id="silverlightControlHost" data="data:application/x-silverlight," type="application/x-silverlight" width="100%" height="100%">
-                <param name="source" value="ClientBin/sipsorcery.xap"/>
-                <param name="onerror" value="onSilverlightError" />
-                <param name="background" value="black" />
-                <a href="http://go.microsoft.com/fwlink/?LinkID=115261" style="text-decoration: none;">
-                    <img src="http://go.microsoft.com/fwlink/?LinkId=108181" alt="Get Microsoft Silverlight" style="border-style: none"/>
-                </a>
-            </object>
-            <iframe style='visibility:hidden;height:0;width:0;border:0px'></iframe>
-        <!--</div>-->
+     
+        <table style="font-family: Arial;">
+            <tr>
+                <td width="80px" />
+                <!--<td width="80px"><a href="about.html" style="color: #A0F927;">About</a></td>-->
+                <td width="80px"><a href="http://sipsorcery.wordpress.com/" style="color: #A0F927;">Blog</a></td>
+                <td width="80px"><a href="http://www.mysipswitch.com/forum/index.php" style="color: #A0F927;">Forum</a></td>
+                <td width="80px"><a href="http://sipsorcery.codeplex.com/" style="color: #A0F927;">Source</a></td>
+            </tr>
+        </table>
+     
+        <br />
+       
+        <object id="silverlightControlHost" data="data:application/x-silverlight," type="application/x-silverlight" width="100%" height="100%">
+            <param name="source" value="ClientBin/sipsorcery.xap"/>
+            <param name="onerror" value="onSilverlightError" />
+            <param name="background" value="black" />
+            <a href="http://go.microsoft.com/fwlink/?LinkID=115261" style="text-decoration: none;">
+                <img src="http://go.microsoft.com/fwlink/?LinkId=108181" alt="Get Microsoft Silverlight" style="border-style: none"/>
+            </a>
+        </object>
+        <iframe style='visibility:hidden;height:0;width:0;border:0px'></iframe>
+       
     </body>
 </html>

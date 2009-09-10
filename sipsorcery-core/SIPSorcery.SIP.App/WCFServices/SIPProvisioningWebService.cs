@@ -54,7 +54,18 @@ using log4net;
 namespace SIPSorcery.SIP.App
 {
     public class SIPProvisioningWebService : IProvisioningService, IProvisioningServiceAjax {
+
         public const string AUTH_TOKEN_KEY = "authid";
+        private const string NEW_ACCOUNT_EMAIL_FROM_ADDRESS = "admin@sipsorcery.com";
+        private const string NEW_ACCOUNT_EMAIL_SUBJECT = "SIPSorcery Account Confirmation";
+
+        private const string NEW_ACCOUNT_EMAIL_BODY =
+            "Hi {0},\r\n\r\n" +
+            "This is your automated SIPSorcery new account confirmation email.\r\n\r\n" +
+            "To confirm your account please visit the link below. If you did not request this email please ignore it.\r\n\r\n" +
+            "http://www.sipsorcery.com/customerconfirm.aspx?id={1}\r\n\r\n" +
+            "Regards,\r\n\r\n" +
+            "SIPSorcery";
 
         private ILog logger = AppState.GetLogger("provisioning");
 
@@ -70,6 +81,8 @@ namespace SIPSorcery.SIP.App
         private SIPDomainManager SIPDomainManager;
         private SIPMonitorLogDelegate LogDelegate_External = (e) => { };
 
+        private int m_newCustomersAllowedLimit;
+
         public SIPProvisioningWebService() { }
 
         public SIPProvisioningWebService(
@@ -82,7 +95,8 @@ namespace SIPSorcery.SIP.App
             SIPAssetPersistor<SIPCDRAsset> sipCDRPersistor,
             CustomerSessionManager crmSessionManager,
             SIPDomainManager sipDomainManager,
-            SIPMonitorLogDelegate log) {
+            SIPMonitorLogDelegate log,
+            int newCustomersAllowedLimit) {
 
             SIPAccountPersistor = sipAccountPersistor;
             DialPlanPersistor = sipDialPlanPersistor;
@@ -95,6 +109,7 @@ namespace SIPSorcery.SIP.App
             CRMSessionManager = crmSessionManager;
             SIPDomainManager = sipDomainManager;
             LogDelegate_External = log;
+            m_newCustomersAllowedLimit = newCustomersAllowedLimit;
         }
 
         private string GetAuthId() {
@@ -164,47 +179,72 @@ namespace SIPSorcery.SIP.App
             return true;
         }
 
+        public bool AreNewAccountsEnabled() {
+            logger.Debug("AreNewAccountsEnabled called from " + OperationContext.Current.Channel.RemoteAddress + ".");
+            return m_newCustomersAllowedLimit == 0 || CRMCustomerPersistor.Count(null) < m_newCustomersAllowedLimit;
+        }
+
         public void CreateCustomer(Customer customer) {
             try {
-                // Check whether the username is already taken.
-                Customer existingCustomer = CRMCustomerPersistor.Get(c => c.CustomerUsername.ToLower() == customer.CustomerUsername.ToLower());
-                if (existingCustomer != null) {
-                    throw new ApplicationException("The requested username is already in use please try a different one.");
-                }
-
-                customer.MaxExecutionCount = Customer.DEFAULT_MAXIMUM_EXECUTION_COUNT;
-
-                CRMCustomerPersistor.Add(customer);
-                logger.Debug("New customer record added for " + customer.CustomerUsername + ".");
-
-                // Create a default dialplan.
-                SIPDialPlan defaultDialPlan = new SIPDialPlan(customer.CustomerUsername, "default", null, "sys.Log(\"hello world\")\n", SIPDialPlanScriptTypesEnum.Ruby);
-                DialPlanPersistor.Add(defaultDialPlan);
-                logger.Debug("Default dialplan added for " + customer.CustomerUsername + ".");
-
-                // Get default domain name.
-                string defaultDomain = SIPDomainManager.GetDomain("local", true);
-
-                // Create SIP account.
-                if (SIPAccountPersistor.Get(s => s.SIPUsername == customer.CustomerUsername && s.SIPDomain == defaultDomain) == null) {
-                    SIPAccount sipAccount = new SIPAccount(customer.CustomerUsername, defaultDomain, customer.CustomerUsername, customer.CustomerPassword, "default");
-                    SIPAccountPersistor.Add(sipAccount);
-                    logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");
+                // Check whether the number of customers is within the allowed limit.
+                if (m_newCustomersAllowedLimit != 0 && CRMCustomerPersistor.Count(null) >= m_newCustomersAllowedLimit) {
+                    throw new ApplicationException("Sorry new account creations are currently disabled. Please monitor sipsorcery.wordpress.com for updates.");
                 }
                 else {
-                    int attempts = 0;
-                    while (attempts < 10) {
-                        string testUsername = customer.CustomerUsername + Crypto.GetRandomString(4);
-                        if (SIPAccountPersistor.Get(s => s.SIPUsername == testUsername && s.SIPDomain == defaultDomain) == null) {
-                            SIPAccount sipAccount = new SIPAccount(customer.CustomerUsername, defaultDomain, testUsername, customer.CustomerPassword, "default");
-                            SIPAccountPersistor.Add(sipAccount);
-                            logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");
-                            break;
-                        }
-                        else {
-                            attempts++;
+                    // Check whether the username is already taken.
+                    Customer existingCustomer = CRMCustomerPersistor.Get(c => c.CustomerUsername.ToLower() == customer.CustomerUsername.ToLower());
+                    if (existingCustomer != null) {
+                        throw new ApplicationException("The requested username is already in use please try a different one.");
+                    }
+
+                    // Check whether the email address is already taken.
+                    existingCustomer = CRMCustomerPersistor.Get(c => c.EmailAddress.ToLower() == customer.EmailAddress.ToLower());
+                    if (existingCustomer != null) {
+                        throw new ApplicationException("The email address is already associated with an account.");
+                    }
+
+                    string validationError = Customer.ValidateAndClean(customer);
+                    if (validationError != null) {
+                        throw new ApplicationException(validationError);
+                    }
+
+                    customer.MaxExecutionCount = Customer.DEFAULT_MAXIMUM_EXECUTION_COUNT;
+
+                    CRMCustomerPersistor.Add(customer);
+                    logger.Debug("New customer record added for " + customer.CustomerUsername + ".");
+
+                    // Create a default dialplan.
+                    SIPDialPlan defaultDialPlan = new SIPDialPlan(customer.CustomerUsername, "default", null, "sys.Log(\"hello world\")\n", SIPDialPlanScriptTypesEnum.Ruby);
+                    DialPlanPersistor.Add(defaultDialPlan);
+                    logger.Debug("Default dialplan added for " + customer.CustomerUsername + ".");
+
+                    // Get default domain name.
+                    string defaultDomain = SIPDomainManager.GetDomain("local", true);
+
+                    // Create SIP account.
+                    if (SIPAccountPersistor.Get(s => s.SIPUsername == customer.CustomerUsername && s.SIPDomain == defaultDomain) == null) {
+                        SIPAccount sipAccount = new SIPAccount(customer.CustomerUsername, defaultDomain, customer.CustomerUsername, customer.CustomerPassword, "default");
+                        SIPAccountPersistor.Add(sipAccount);
+                        logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");
+                    }
+                    else {
+                        int attempts = 0;
+                        while (attempts < 10) {
+                            string testUsername = customer.CustomerUsername + Crypto.GetRandomString(4);
+                            if (SIPAccountPersistor.Get(s => s.SIPUsername == testUsername && s.SIPDomain == defaultDomain) == null) {
+                                SIPAccount sipAccount = new SIPAccount(customer.CustomerUsername, defaultDomain, testUsername, customer.CustomerPassword, "default");
+                                SIPAccountPersistor.Add(sipAccount);
+                                logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");
+                                break;
+                            }
+                            else {
+                                attempts++;
+                            }
                         }
                     }
+
+                    logger.Debug("Sending new account confirmation email to " + customer.EmailAddress + ".");
+                    Email.SendEmail(customer.EmailAddress, NEW_ACCOUNT_EMAIL_FROM_ADDRESS, NEW_ACCOUNT_EMAIL_SUBJECT, String.Format(NEW_ACCOUNT_EMAIL_BODY, customer.FirstName, customer.Id));
                 }
             }
             catch (Exception excp) {
@@ -246,7 +286,7 @@ namespace SIPSorcery.SIP.App
 
                 CustomerSession customerSession = CRMSessionManager.Authenticate(username, password, ipAddress);
                 if (customerSession != null) {
-                    return customerSession.Id;
+                    return customerSession.SessionID;
                 }
                 else {
                     return null;
@@ -270,6 +310,61 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp) {
                 logger.Error("Exception Logout. " + excp.Message);
+            }
+        }
+
+        public Customer GetCustomer(string username) {
+            Customer customer = AuthoriseRequest();
+
+            if (customer.CustomerUsername == username) {
+                return customer;
+            }
+            else {
+                throw new ApplicationException("You are not authorised to retrieve customer for username " + username + ".");
+            }
+        }
+
+        public void UpdateCustomer(Customer updatedCustomer) {
+            Customer customer = AuthoriseRequest();
+
+            if (customer.CustomerUsername == updatedCustomer.CustomerUsername) {
+                logger.Debug("Updating customer details for " + customer.CustomerUsername);
+                customer.FirstName = updatedCustomer.FirstName;
+                customer.LastName = updatedCustomer.LastName;
+                customer.EmailAddress = updatedCustomer.EmailAddress;
+                customer.SecurityQuestion = updatedCustomer.SecurityQuestion;
+                customer.SecurityAnswer = updatedCustomer.SecurityAnswer;
+                customer.City = updatedCustomer.City;
+                customer.Country = updatedCustomer.Country;
+                customer.WebSite = updatedCustomer.WebSite;
+
+                string validationError = Customer.ValidateAndClean(customer);
+                if (validationError != null) {
+                    throw new ApplicationException(validationError);
+                }
+
+                CRMCustomerPersistor.Update(customer);
+            }
+            else {
+                throw new ApplicationException("You are not authorised to update customer for username " + updatedCustomer.CustomerUsername + ".");
+            }
+        }
+
+        public void UpdateCustomerPassword(string username, string oldPassword, string newPassword) {
+            Customer customer = AuthoriseRequest();
+
+            if (customer.CustomerUsername == username) {
+                if (customer.CustomerPassword != oldPassword) {
+                    throw new ApplicationException("The existing password did not match when attempting a password update.");
+                }
+                else {
+                    logger.Debug("Updating customer password for " + customer.CustomerUsername);
+                    customer.CustomerPassword = newPassword;
+                    CRMCustomerPersistor.Update(customer);
+                }
+            }
+            else {
+                throw new ApplicationException("You are not authorised to update customer password for username " + username + ".");
             }
         }
 

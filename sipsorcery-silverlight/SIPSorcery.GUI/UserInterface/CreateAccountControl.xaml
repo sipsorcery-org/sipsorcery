@@ -5,32 +5,32 @@
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	mc:Ignorable="d"
 	x:Class="SIPSorcery.CreateAccountControl"
-	d:DesignWidth="640" d:DesignHeight="480" Width="450" Height="400">
+	d:DesignWidth="640" Width="450" Height="435">
 
 	<Grid x:Name="LayoutRoot">
-		<TextBox x:Name="m_usernameTextBox" Text="" TextWrapping="Wrap" TabIndex="7" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="144,142,108,0" VerticalAlignment="Top"/>
-		<TextBlock Height="16" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Username" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="17,142,0,0" VerticalAlignment="Top"/>
+		<TextBox x:Name="m_usernameTextBox" Text="" TextWrapping="Wrap" TabIndex="7" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,166,107,0" VerticalAlignment="Top"/>
+		<TextBlock x:Name="m_usernameLabel" Height="16" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Username" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,166,0,0" VerticalAlignment="Top"/>
 		<TextBlock Height="16" Width="Auto" FontSize="11" Foreground="{StaticResource InfoTextBrush}" Text="Create New Account" TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,8,0,0" VerticalAlignment="Top"/>
-		<TextBlock Height="16" Width="65.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="First Name" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="17,64,0,0" VerticalAlignment="Top" d:LayoutOverrides="Width"/>
-		<TextBox x:Name="m_firstNameTextBox" Text="" TextWrapping="Wrap" TabIndex="4" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="144,64,108,0" VerticalAlignment="Top"/>
-		<TextBlock Height="16" Width="65.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Last Name" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="17,90,0,0" VerticalAlignment="Top"/>
-		<TextBox x:Name="m_lastNameTextBox" Text="" TextWrapping="Wrap" TabIndex="5" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="144,90,108,0" VerticalAlignment="Top"/>
-		<PasswordBox x:Name="m_passwordTextBox" TabIndex="8" TabNavigation="Local" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="144,168,108,0" VerticalAlignment="Top" Height="20"/>
-		<TextBlock Height="16" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Password" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="17,168,0,0" VerticalAlignment="Top"/>
-		<TextBlock Width="97.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Retype Password" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="17,194,0,0" VerticalAlignment="Top"/>
-		<PasswordBox x:Name="m_retypePasswordTextBox" TabIndex="9" TabNavigation="Local" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="144,194,108,186"/>
-		<TextBox x:Name="m_emailAddressTextBox" Text="" TextWrapping="Wrap" TabIndex="6" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="144,116,108,0" VerticalAlignment="Top"/>
-		<TextBlock Height="16" Width="81.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Email Address" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="17,116,0,0" VerticalAlignment="Top"/>
-		<TextBlock Width="110.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Security Question" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="17,222,0,0" VerticalAlignment="Top" Height="16"/>
-		<ComboBox Margin="144,220,8,0" VerticalAlignment="Top" Height="25" x:Name="m_securityQuestionListBox" TabIndex="10" SelectedIndex="0">
+		<TextBlock x:Name="m_firstNameLabel" Height="16" Width="65.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="First Name" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,88,0,0" VerticalAlignment="Top"/>
+		<TextBox x:Name="m_firstNameTextBox" Text="" TextWrapping="Wrap" TabIndex="4" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,88,107,0" VerticalAlignment="Top"/>
+		<TextBlock x:Name="m_lastNameLabel" Height="16" Width="65.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Last Name" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,114,0,0" VerticalAlignment="Top"/>
+		<TextBox x:Name="m_lastNameTextBox" Text="" TextWrapping="Wrap" TabIndex="5" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,114,107,0" VerticalAlignment="Top"/>
+		<PasswordBox x:Name="m_passwordTextBox" TabIndex="8" TabNavigation="Local" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,192,107,0" VerticalAlignment="Top" Height="20"/>
+		<TextBlock x:Name="m_passwordLabel" Height="16" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Password" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,192,0,0" VerticalAlignment="Top"/>
+		<TextBlock x:Name="m_retypedPasswordLabel" Width="97.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Retype Password" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,218,0,0" VerticalAlignment="Top"/>
+		<PasswordBox x:Name="m_retypePasswordTextBox" TabIndex="9" TabNavigation="Local" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,0,107,197" Height="20" VerticalAlignment="Bottom"/>
+		<TextBox x:Name="m_emailAddressTextBox" Text="" TextWrapping="Wrap" TabIndex="6" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,140,107,0" VerticalAlignment="Top"/>
+		<TextBlock x:Name="m_emailAddressLabel" Height="16" Width="81.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Email Address" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,140,0,0" VerticalAlignment="Top"/>
+		<TextBlock x:Name="m_securityQuestionLabel" Width="110.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Security Question" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,246,0,0" VerticalAlignment="Top" Height="16"/>
+		<ComboBox Margin="145,244,7,0" VerticalAlignment="Top" Height="25" x:Name="m_securityQuestionListBox" TabIndex="10" SelectedIndex="0">
 			<TextBlock FontSize="11" Text="What is your mother's maiden name?" />
 			<TextBlock FontSize="11" Text="What is your favourite colour?" />
 			<TextBlock FontSize="11" Text="Which city were you born in?" />
 			<TextBlock FontSize="11" Text="What was the name of your high school?" />
 			<TextBlock FontSize="11" Text="Who is your favourite philosopher?" />
 		</ComboBox>
-		<TextBlock Width="97.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Security Answer" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="17,251,0,0" Height="16" VerticalAlignment="Top"/>
-		<ComboBox Margin="144,303,8,0" VerticalAlignment="Top" Height="25" x:Name="m_countryListBox" TabIndex="13" SelectedIndex="14">
+		<TextBlock x:Name="m_securityAnswerLabel" Width="97.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Security Answer" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,275,0,0" Height="16" VerticalAlignment="Top"/>
+		<ComboBox Margin="145,327,7,0" VerticalAlignment="Top" Height="25" x:Name="m_countryListBox" TabIndex="13" SelectedIndex="14">
 			<TextBlock FontSize="11" Text="Afghanistan" />
 			<TextBlock FontSize="11" Text="Albania" />
 			<TextBlock FontSize="11" Text="Algeria" />
@@ -287,13 +287,13 @@
 			<TextBlock FontSize="11" Text="Zambia" />
 			<TextBlock FontSize="11" Text="Zimbabwe" />
 		</ComboBox>
-		<TextBlock Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Country" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="17,303,0,0" Height="16" VerticalAlignment="Top"/>
-		<TextBlock Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="City" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="17,277,0,0" Height="16" VerticalAlignment="Top"/>
-		<TextBox x:Name="m_cityTextBox" Text="" TextWrapping="Wrap" TabIndex="12" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="144,277,108,0" VerticalAlignment="Top"/>
-		<Button Height="22" Margin="144,370,213,0" VerticalAlignment="Top" Content="Create Account" Click="CreateCustomerButton_Click" TabIndex="15"/>
-		<TextBlock Height="32" Margin="17,28,8,0" VerticalAlignment="Top" Text="" TextWrapping="Wrap" x:Name="m_statusTextBlock" Foreground="{StaticResource WarningTextBrush}" TextAlignment="Left" HorizontalAlignment="Center"/>
-		<TextBox x:Name="m_securityAnswerTextBox" Text="" TextWrapping="Wrap" TabIndex="11" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="144,251,108,0" VerticalAlignment="Top"/>
-		<TextBox x:Name="m_webSiteTextBox" Text="" TextWrapping="Wrap" TabIndex="14" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="144,334,108,0" VerticalAlignment="Top"/>
-		<TextBlock Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Web Site" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="17,334,0,0" Height="16" VerticalAlignment="Top"/>
+		<TextBlock x:Name="m_countryLabel" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Country" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,327,0,0" Height="16" VerticalAlignment="Top"/>
+		<TextBlock x:Name="m_cityLabel" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="City" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,301,0,0" Height="16" VerticalAlignment="Top"/>
+		<TextBox x:Name="m_cityTextBox" Text="" TextWrapping="Wrap" TabIndex="12" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,301,107,0" VerticalAlignment="Top"/>
+		<Button x:Name="m_createAccountButton" Height="22" Margin="145,394,212,0" VerticalAlignment="Top" Content="Create Account" Click="CreateCustomerButton_Click" TabIndex="15"/>
+		<TextBlock Height="48" Margin="0,36,0,0" VerticalAlignment="Top" Text="" TextWrapping="Wrap" x:Name="m_statusTextBlock" Foreground="{StaticResource WarningTextBrush}" TextAlignment="Left" HorizontalAlignment="Center"/>
+		<TextBox x:Name="m_securityAnswerTextBox" Text="" TextWrapping="Wrap" TabIndex="11" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,275,107,0" VerticalAlignment="Top"/>
+		<TextBox x:Name="m_webSiteTextBox" Text="" TextWrapping="Wrap" TabIndex="14" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,358,107,0" VerticalAlignment="Top"/>
+		<TextBlock x:Name="m_webSiteLabel" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Web Site" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,358,0,0" Height="16" VerticalAlignment="Top"/>
 	</Grid>
 </UserControl>

@@ -14,8 +14,9 @@
 			<Button Height="23" Content="Login" Width="46" x:Name="m_loginButton" Click="LoginButton_Click" TabIndex="3" TabNavigation="Local" Canvas.Left="193" Canvas.Top="20" Padding="0,0,0,0"/>
 			<TextBlock Height="20" Width="60" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Password" TextWrapping="Wrap" Canvas.Top="33"/>
 			<TextBlock Height="20" Width="60" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Username" TextWrapping="Wrap" d:LayoutOverrides="Height" Canvas.Top="8"/>
-			<TextBlock Height="16" Width="111.928" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Create New Account" TextWrapping="Wrap" Canvas.Top="66" TextDecorations="Underline" MouseLeftButtonUp="CreateNewAccount_MouseLeftButtonUp" Cursor="Hand"/>
+			<TextBlock x:Name="m_newAccountCreate" Height="16" Width="111.928" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Create New Account" TextWrapping="Wrap" Canvas.Top="66" TextDecorations="Underline" MouseLeftButtonUp="CreateNewAccount_MouseLeftButtonUp" Cursor="Hand" Visibility="Collapsed"/>
 			<TextBlock Height="16" Width="109.672" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Forgotten Password" TextWrapping="Wrap" TextDecorations="Underline" Canvas.Top="95" MouseLeftButtonUp="ForgottenPassword_MouseLeftButtonUp" Visibility="Collapsed" Cursor="Hand"/>
+			<TextBlock x:Name="m_newAccountsDisabledMessage" Height="34" Width="231" Canvas.Left="8" Canvas.Top="57" Text="New accounts disabled. Please monitor sipsorcery.wordpress.com." TextWrapping="Wrap" Foreground="{StaticResource WarningTextBrush}" Visibility="Collapsed"/>
 		</Canvas>
 	</StackPanel>
 </UserControl>

@@ -199,6 +199,7 @@ namespace SIPSorcery.SIP
         // Custom SIP headers to allow proxy to communicate network info to internal servers.
         public const string SIP_HEADER_PROXY_RECEIVEDON = "Proxy-ReceivedOn";
         public const string SIP_HEADER_PROXY_RECEIVEDFROM = "Proxy-ReceivedFrom";
+        public const string SIP_HEADER_PROXY_SENDFROM = "Proxy-SendFrom";
 	}
 
 	public class SIPHeaderAncillary

@@ -56,8 +56,12 @@ namespace SIPSorcery.Persistence
         private static ObservableCollection<SIPProvider> m_sipProviderBindings = new ObservableCollection<SIPProvider>();
 
         public override event IsAliveCompleteDelegate IsAliveComplete;
+        public override event AreNewAccountsEnabledCompleteDelegate AreNewAccountsEnabledComplete;
         public override event LoginCompleteDelegate LoginComplete;
         public override event LogoutCompleteDelegate LogoutComplete;
+        public override event GetCustomerCompleteDelegate GetCustomerComplete;
+        public override event UpdateCustomerCompleteDelegate UpdateCustomerComplete;
+        public override event UpdateCustomerPasswordCompleteDelegate UpdateCustomerPasswordComplete;
         public override event GetSIPDomainsCompleteDelegate GetSIPDomainsComplete;
         public override event GetSIPAccountsCountCompleteDelegate GetSIPAccountsCountComplete;
         public override event GetSIPAccountsCompleteDelegate GetSIPAccountsComplete;
@@ -93,6 +97,10 @@ namespace SIPSorcery.Persistence
             }
         }
 
+        public override void AreNewAccountsEnabledAsync() {
+            AreNewAccountsEnabledComplete(new AreNewAccountsEnabledCompletedEventArgs(new object[]{true}, null, false, null));
+        }
+
         public override void LoginAsync(string username, string password) {
             if (LoginComplete != null) {
                 LoginComplete(new LoginCompletedEventArgs(new object[] { m_dummyAuthId }, null, false, null));
@@ -102,6 +110,24 @@ namespace SIPSorcery.Persistence
         public override void LogoutAsync() {
             if (LogoutComplete != null) {
                 LogoutComplete(new AsyncCompletedEventArgs(null, false, null));
+            }
+        }
+
+        public override void GetCustomerAsync(string username) {
+            if (GetCustomerComplete != null) {
+                GetCustomerComplete(new GetCustomerCompletedEventArgs(null, null, false, null));
+            }
+        }
+
+        public override void UpdateCustomerAsync(Customer customer) {
+            if (UpdateCustomerComplete != null) {
+                UpdateCustomerComplete(new AsyncCompletedEventArgs(null, false, null));
+            }
+        }
+
+        public override void UpdateCustomerPassword(string username, string oldPassword, string newPassword) {
+            if (UpdateCustomerPasswordComplete != null) {
+                UpdateCustomerPasswordComplete(new AsyncCompletedEventArgs(null, false, null));
             }
         }
 

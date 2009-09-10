@@ -23,6 +23,7 @@ create table customers
  executioncount int not null,				-- The current number of dialplan executions in progress.
  authorisedapps varchar(2048),				-- A semi-colon delimited list of privileged apps that this customer's dialplan are authorised to use.
  timezone varchar(128),
+ emailaddressconfirmed bool not null default false,
  inserted timestamp not null default now(),
  Primary Key(id),
  Unique(customerusername)
@@ -32,6 +33,7 @@ create table customers
 create table customersessions
 (
  id varchar(36) not null,
+ sessionid varchar(96) not null,
  customerusername varchar(32) not null,
  inserted timestamp not null default now(),
  expired bool not null default False,
@@ -203,7 +205,7 @@ create table cdr
  inserted timestamp not null default now(),
  direction varchar(3) not null,					-- In or Out with respect to the proxy.
  created timestamp not null,					-- Time the cdr was created by the proxy.
- dst varchar(128) not null,						-- The user portion of the destination URI.
+ dst varchar(128),								-- The user portion of the destination URI.
  dsthost varchar(128) not null,					-- The host portion of the destination URI.
  dsturi varchar(1024) not null,					-- The full destination URI.
  fromuser varchar(128),							-- The user portion of the From header URI.

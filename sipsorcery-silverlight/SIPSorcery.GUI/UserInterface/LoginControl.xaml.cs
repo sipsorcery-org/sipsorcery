@@ -73,6 +73,17 @@ namespace SIPSorcery
             }
         }
 
+        public void EnableNewAccounts() {
+            UIHelper.SetVisibility(m_newAccountCreate, Visibility.Visible);
+            UIHelper.SetVisibility(m_newAccountsDisabledMessage, Visibility.Collapsed);
+        }
+
+        public void DisableNewAccounts(string disabledMessage) {
+            UIHelper.SetVisibility(m_newAccountCreate, Visibility.Collapsed);
+            UIHelper.SetText(m_newAccountsDisabledMessage, disabledMessage);
+            UIHelper.SetVisibility(m_newAccountsDisabledMessage, Visibility.Visible);
+        }
+
         private void LoginTextBox_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == Key.Enter)

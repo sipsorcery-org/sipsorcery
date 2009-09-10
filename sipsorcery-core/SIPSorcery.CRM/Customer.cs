@@ -134,6 +134,9 @@ namespace SIPSorcery.CRM
         [Column(Storage = "_authorisedapps", Name = "authorisedapps", DbType = "character varying(2048)", CanBeNull = true)]
         public string AuthorisedApps { get; set; }
 
+        [Column(Storage = "_emailaddressconfirmed", Name = "emailaddressconfirmed", DbType = "bool", CanBeNull = false)]
+        public bool EmailAddressConfirmed { get; set; }
+
         public Customer() { }
 
         public static string ValidateAndClean(Customer customer) {
@@ -155,6 +158,9 @@ namespace SIPSorcery.CRM
             }
             else if (customer.EmailAddress.Trim().Length > MAX_FIELD_LENGTH) {
                 return "The email address length must be less than " + MAX_FIELD_LENGTH + ".";
+            }
+            else if (!Regex.Match(customer.EmailAddress, @"\S+@\S+\.\S+").Success) {
+                return "The email address was an invalid format.";
             }
             else if (customer.CustomerUsername.IsNullOrBlank()) {
                 return "A username must be specified.";
@@ -217,6 +223,7 @@ namespace SIPSorcery.CRM
                 ExecutionCount = (customerRow.Table.Columns.Contains("executioncount") && customerRow["executioncount"] != null) ? Convert.ToInt32(customerRow["executioncount"]) : 0;
                 MaxExecutionCount = (customerRow.Table.Columns.Contains("maxexecutioncount") && customerRow["maxexecutioncount"] != null) ? Convert.ToInt32(customerRow["maxexecutioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
                 AuthorisedApps = (customerRow.Table.Columns.Contains("authorisedapps") && customerRow["authorisedapps"] != null) ? customerRow["authorisedapps"] as string : null;
+                EmailAddressConfirmed = (customerRow.Table.Columns.Contains("emailaddressconfirmed") && customerRow["emailaddressconfirmed"] != null) ? Convert.ToBoolean(customerRow["emailaddressconfirmed"]) : true;
             }
             catch (Exception excp) {
                 logger.Error("Exception Customer Load. " + excp.Message);
@@ -261,7 +268,8 @@ namespace SIPSorcery.CRM
                 "  <suspended>" + Suspended + "</suspended>" + m_newLine +
                 "  <executioncount>" + ExecutionCount + "</executioncount>" + m_newLine +
                 "  <maxexecutioncount>" + MaxExecutionCount + "</maxexecutioncount>" + m_newLine +
-                "  <authorisedapps>" + AuthorisedApps + "</authorisedapps>" + m_newLine;
+                "  <authorisedapps>" + AuthorisedApps + "</authorisedapps>" + m_newLine +
+                "  <emailaddressconfirmed>" + EmailAddressConfirmed + "</emailaddressconfirmed>" + m_newLine;
 
              return customerXML;
          }

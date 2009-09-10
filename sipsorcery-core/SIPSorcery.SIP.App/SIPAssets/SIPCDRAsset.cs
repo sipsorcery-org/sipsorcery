@@ -68,7 +68,7 @@ namespace SIPSorcery.SIP.App {
             get { return CreatedUTC.AddMinutes(TimeZoneOffsetMinutes); }
         }
 
-        [Column(Storage = "_dst", Name = "dst", DbType = "character varying(128)", CanBeNull = false)]
+        [Column(Storage = "_dst", Name = "dst", DbType = "character varying(128)", CanBeNull = true)]
         [DataMember]
         public string Dst {
             get { return m_sipCDR.Destination.User; }

@@ -19,8 +19,12 @@ namespace SIPSorcery.Persistence
 {
     public delegate void MethodInvokerDelegate();
     public delegate void IsAliveCompleteDelegate(IsAliveCompletedEventArgs e);
+    public delegate void AreNewAccountsEnabledCompleteDelegate(AreNewAccountsEnabledCompletedEventArgs e);
     public delegate void LoginCompleteDelegate(LoginCompletedEventArgs e);
     public delegate void LogoutCompleteDelegate(AsyncCompletedEventArgs e);
+    public delegate void GetCustomerCompleteDelegate(GetCustomerCompletedEventArgs e);
+    public delegate void UpdateCustomerCompleteDelegate(AsyncCompletedEventArgs e);
+    public delegate void UpdateCustomerPasswordCompleteDelegate(AsyncCompletedEventArgs e);
     public delegate void GetSIPAccountsCountCompleteDelegate(GetSIPAccountsCountCompletedEventArgs e);
     public delegate void GetSIPAccountsCompleteDelegate(GetSIPAccountsCompletedEventArgs e);
     public delegate void AddSIPAccountCompleteDelegate(AddSIPAccountCompletedEventArgs e);
@@ -77,8 +81,12 @@ namespace SIPSorcery.Persistence
     public abstract class SIPSorceryPersistor
     {
         public abstract event IsAliveCompleteDelegate IsAliveComplete;
+        public abstract event AreNewAccountsEnabledCompleteDelegate AreNewAccountsEnabledComplete;
         public abstract event LoginCompleteDelegate LoginComplete;
         public abstract event LogoutCompleteDelegate LogoutComplete;
+        public abstract event GetCustomerCompleteDelegate GetCustomerComplete;
+        public abstract event UpdateCustomerCompleteDelegate UpdateCustomerComplete;
+        public abstract event UpdateCustomerPasswordCompleteDelegate UpdateCustomerPasswordComplete;
         public abstract event GetSIPAccountsCountCompleteDelegate GetSIPAccountsCountComplete;
         public abstract event GetSIPAccountsCompleteDelegate GetSIPAccountsComplete;
         public abstract event AddSIPAccountCompleteDelegate AddSIPAccountComplete;
@@ -109,8 +117,12 @@ namespace SIPSorcery.Persistence
         public abstract event MethodInvokerDelegate SessionExpired;
 
         public abstract void IsAliveAsync();
+        public abstract void AreNewAccountsEnabledAsync();
         public abstract void LoginAsync(string username, string password);
         public abstract void LogoutAsync();
+        public abstract void GetCustomerAsync(string username);
+        public abstract void UpdateCustomerAsync(Customer customer);
+        public abstract void UpdateCustomerPassword(string username, string oldPassword, string newPassword);
         public abstract void GetSIPAccountsCountAsync(string where);    
         public abstract void GetSIPAccountsAsync(string where, int offset, int count);
         public abstract void AddSIPAccountAsync(SIPAccount sipAccount);

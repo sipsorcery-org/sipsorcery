@@ -31,7 +31,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Data;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
@@ -42,7 +41,6 @@ using System.Threading;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorcery.SIP;
-using Heijden.DNS;
 using log4net;
 
 #if UNITTEST
@@ -51,26 +49,6 @@ using NUnit.Framework;
 
 namespace SIPSorcery.SIP.App
 {
-    public interface ISIPClientUserAgent {
-
-        string Owner { get; }
-        string AdminMemberId { get; }
-        UACInviteTransaction ServerTransaction { get; }
-        SIPDialogue SIPDialogue { get; }
-        SIPCallDescriptor CallDescriptor { get; }
-        bool IsUACAnswered { get; }
-
-        event SIPCallResponseDelegate CallTrying;
-        event SIPCallResponseDelegate CallRinging;
-        event SIPCallResponseDelegate CallAnswered;
-        event SIPCallFailedDelegate CallFailed;
-
-        void Call(SIPCallDescriptor sipCallDescriptor);
-        void Cancel();
-        void Hangup();
-        void Hungup(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest);
-    }
-
     public class SIPClientUserAgent : ISIPClientUserAgent
     {
         private const int DNS_LOOKUP_TIMEOUT = 5000;
@@ -557,6 +535,10 @@ namespace SIPSorcery.SIP.App
             inviteHeader.UserAgent = m_userAgent;
             inviteHeader.Routes = routeSet;
             inviteRequest.Header = inviteHeader;
+
+            if (!sipCallDescriptor.ProxySendFrom.IsNullOrBlank()) {
+                inviteHeader.ProxySendFrom = sipCallDescriptor.ProxySendFrom;
+            }
  
             SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, branchId);
             inviteRequest.Header.Vias.PushViaHeader(viaHeader);
@@ -567,15 +549,18 @@ namespace SIPSorcery.SIP.App
 
             try {
                 if (sipCallDescriptor.CustomHeaders != null && sipCallDescriptor.CustomHeaders.Count > 0) {
-                    foreach (DictionaryEntry customHeader in sipCallDescriptor.CustomHeaders) {
-                        string headerName = customHeader.Key as string;
-                        string headerValue = customHeader.Value as string;
+                    foreach (string customHeader in sipCallDescriptor.CustomHeaders) {
+                        //string headerName = customHeader.Key as string;
+                        //string headerValue = customHeader.Value as string;
 
-                        if (headerName == SIPHeaders.SIP_HEADER_USERAGENT) {
-                            inviteRequest.Header.UserAgent = headerValue;
+                        if (customHeader.IsNullOrBlank()) {
+                            continue;
+                        }
+                        else if (customHeader.Trim().StartsWith(SIPHeaders.SIP_HEADER_USERAGENT)) {
+                            inviteRequest.Header.UserAgent = customHeader.Substring(customHeader.IndexOf(":") + 1).Trim();
                         }
                         else {
-                            inviteRequest.Header.UnknownHeaders.Add(headerName + ": " + headerValue);
+                            inviteRequest.Header.UnknownHeaders.Add(customHeader);
                         }
                     }
                 }
@@ -597,6 +582,7 @@ namespace SIPSorcery.SIP.App
             cancelRequest.Header = cancelHeader;
             cancelHeader.CSeqMethod = SIPMethodsEnum.CANCEL;
             cancelHeader.Routes = inviteHeader.Routes;
+            cancelHeader.ProxySendFrom = inviteHeader.ProxySendFrom;
             cancelHeader.Vias = inviteHeader.Vias;
 
             return cancelRequest;
@@ -613,6 +599,7 @@ namespace SIPSorcery.SIP.App
 
             SIPHeader byeHeader = new SIPHeader(byeFromHeader, byeToHeader, cseq, inviteResponse.Header.CallId);
             byeHeader.CSeqMethod = SIPMethodsEnum.BYE;
+            byeHeader.ProxySendFrom = m_serverTransaction.TransactionRequest.Header.ProxySendFrom; ;
             byeRequest.Header = byeHeader;
 
             byeRequest.Header.Routes = (inviteResponse.Header.RecordRoutes != null) ? inviteResponse.Header.RecordRoutes.Reversed() : null;

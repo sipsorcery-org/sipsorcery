@@ -6,7 +6,7 @@
 // channel implementation different from a standard TCP SIP channel.
 // 
 // History:
-// 12 OCt 2008	Aaron Clauson	Created.
+// 12 Oct 2008	Aaron Clauson	Created.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -69,8 +69,7 @@ namespace SIPSorcery.SIP
             m_socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         }
 
-        public void Connect(IPEndPoint remoteEndPoint)
-        {
+        public void Connect(IPEndPoint remoteEndPoint) {
             m_remoteEndPoint = remoteEndPoint;
             SocketAsyncEventArgs socketConnectionArgs = new SocketAsyncEventArgs();
             socketConnectionArgs.RemoteEndPoint = m_remoteEndPoint;
@@ -79,33 +78,33 @@ namespace SIPSorcery.SIP
             m_socket.ConnectAsync(socketConnectionArgs);
         }
 
-        private void SocketConnect_Completed(object sender, SocketAsyncEventArgs e)
-        {
+        public void SetLocalSIPEndPoint(SIPEndPoint localSIPEndPoint) {
+            m_localSIPEndPoint = localSIPEndPoint;
+        }
+
+        private void SocketConnect_Completed(object sender, SocketAsyncEventArgs e) {
+
             m_isConnected = (e.SocketError == SocketError.Success);
 
-            if (m_isConnected)
-            {
+            if (m_isConnected) {
                 SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
                 receiveArgs.SetBuffer(m_socketBuffer, 0, MAX_SOCKET_BUFFER_SIZE);
                 receiveArgs.Completed += SocketRead_Completed;
                 m_socket.ReceiveAsync(receiveArgs);
             }
-            else
-            {
+            else {
                 throw new ApplicationException("Connection to " + m_remoteEndPoint + " failed.");
             }
         }
 
-        private void SocketRead_Completed(object sender, SocketAsyncEventArgs e)
-        {
+        private void SocketRead_Completed(object sender, SocketAsyncEventArgs e) {
+
             int bytesRead = e.BytesTransferred;
-            if (bytesRead > 0)
-            {
+            if (bytesRead > 0) {
                 byte[] buffer = new byte[bytesRead];
                 Array.Copy(m_socketBuffer, buffer, bytesRead);
 
-                if (SIPMessageReceived != null)
-                {
+                if (SIPMessageReceived != null) {
                     SIPMessageReceived(this, new SIPEndPoint(SIPProtocolsEnum.tcp, m_remoteEndPoint), buffer);
                 }
 
@@ -116,21 +115,18 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public void Send(string message)
-        {
+        public void Send(string message) {
             byte[] sendBuffer = Encoding.UTF8.GetBytes(message);
             SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
             sendArgs.SetBuffer(sendBuffer, 0, sendBuffer.Length);
             m_socket.SendAsync(sendArgs);
         }
 
-        public override void Send(IPEndPoint destinationEndPoint, string message)
-        {
+        public override void Send(IPEndPoint destinationEndPoint, string message) {
             Send(message);
         }
 
-        public override void Send(IPEndPoint destinationEndPoint, byte[] buffer)
-        {
+        public override void Send(IPEndPoint destinationEndPoint, byte[] buffer) {
             SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
             sendArgs.SetBuffer(buffer, 0, buffer.Length);
             m_socket.SendAsync(sendArgs);
@@ -140,8 +136,7 @@ namespace SIPSorcery.SIP
             throw new ApplicationException("This Send method is not available in the Silverlight SIP TCP channel, please use an alternative overload.");
         }
 
-        public override void Close()
-        {
+        public override void Close() {
             m_socket.Close();
         }
     }

@@ -22,16 +22,19 @@ namespace SIPSorcery.SIP.App {
 
         private static readonly string m_storageTypeKey = Persistence.PERSISTENCE_STORAGETYPE_KEY;
         private static readonly string m_connStrKey = Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
+        private static readonly string m_newCustomersAllowedLimitKey = "NewCustomersAllowedLimit";
 
         private static StorageTypes m_serverStorageType;
         private static string m_serverStorageConnStr;
-        private static string m_disabledProviderServerPattern; 
+        private static string m_disabledProviderServerPattern;
+        private static int m_newCustomersAllowedLimit;
 
         protected override object CreateBehavior() {
 
             try {
                 m_serverStorageType = (ConfigurationManager.AppSettings[m_storageTypeKey] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[m_storageTypeKey]) : StorageTypes.Unknown;
                 m_serverStorageConnStr = ConfigurationManager.AppSettings[m_connStrKey];
+                Int32.TryParse(ConfigurationManager.AppSettings[m_newCustomersAllowedLimitKey], out m_newCustomersAllowedLimit);
 
                 if (m_serverStorageType == StorageTypes.Unknown || m_serverStorageConnStr.IsNullOrBlank()) {
                     throw new ApplicationException("The Provisioning Web Service cannot start with no persistence settings specified.");
@@ -63,7 +66,8 @@ namespace SIPSorcery.SIP.App {
                     SIPAssetPersistorFactory.CreateSIPCDRPersistor(m_serverStorageType, m_serverStorageConnStr),
                     new CustomerSessionManager(m_serverStorageType, m_serverStorageConnStr),
                     new SIPDomainManager(m_serverStorageType, m_serverStorageConnStr),
-                     (e) => { logger.Debug(e.Message); } );
+                    (e) => { logger.Debug(e.Message); },
+                    m_newCustomersAllowedLimit);
             }
             catch (Exception excp) {
                 logger.Error("Exception InstanceProviderExtensionElement CreateBehavior. " + excp.Message);
@@ -89,6 +93,7 @@ namespace SIPSorcery.SIP.App {
         private CustomerSessionManager m_crmSessionManager;
         private SIPDomainManager m_sipDomainManager;
         private SIPMonitorLogDelegate m_logDelegate;
+        private int m_newCustomersAllowedLimit;
 
         public ProvisioningServiceInstanceProvider() {
         }
@@ -103,7 +108,8 @@ namespace SIPSorcery.SIP.App {
             SIPAssetPersistor<SIPCDRAsset> sipCDRPersistor,
             CustomerSessionManager crmSessionManager,
             SIPDomainManager sipDomainManager,
-            SIPMonitorLogDelegate log) {
+            SIPMonitorLogDelegate log,
+            int newCustomersAllowedLimit) {
 
             m_sipAccountPersistor = sipAccountPersistor;
             m_sipDialPlanPersistor = sipDialPlanPersistor;
@@ -116,6 +122,7 @@ namespace SIPSorcery.SIP.App {
             m_crmSessionManager = crmSessionManager;
             m_sipDomainManager = sipDomainManager;
             m_logDelegate = log;
+            m_newCustomersAllowedLimit = newCustomersAllowedLimit;
         }
 
         public object GetInstance(InstanceContext instanceContext) {
@@ -133,7 +140,8 @@ namespace SIPSorcery.SIP.App {
                 m_sipCDRPersistor,
                 m_crmSessionManager,
                 m_sipDomainManager,
-                m_logDelegate);
+                m_logDelegate,
+                m_newCustomersAllowedLimit);
         }
 
         public void ReleaseInstance(InstanceContext instanceContext, object instance) { }
