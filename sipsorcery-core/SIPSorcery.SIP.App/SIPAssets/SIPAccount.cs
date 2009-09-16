@@ -75,6 +75,8 @@ namespace SIPSorcery.SIP.App
         public const int USERNAME_MIN_LENGTH = 5;
         private const string BANNED_SIPACCOUNT_NAMES = "dispatcher";
 
+        public static readonly string SelectQuery = "select * from sipaccounts where sipusername = ?1 and sipdomain = ?2";
+
         // Only non-printable non-alphanumeric ASCII characters missing are ; \ and space. The semi-colon isn't accepted by 
         // Netgears and the space has the potential to create too much confusion with the users and \ with the system.
         public static readonly char[] NONAPLPHANUM_ALLOWED_PASSWORD_CHARS = new char[]{'!','"','$','%','&','(',')','*',
@@ -296,15 +298,14 @@ namespace SIPSorcery.SIP.App
             Load(sipAccountRow);
         }
 
-        public void Load(DataRow sipAccountRow)
-        {
-            try
-            {
+        public void Load(DataRow sipAccountRow) {
+            try {
                 m_id = (sipAccountRow.Table.Columns.Contains("id") && sipAccountRow["id"].ToString().Trim().Length > 0) ? sipAccountRow["id"] as string : Guid.NewGuid().ToString();
                 m_sipUsername = sipAccountRow["sipusername"] as string;
                 m_sipPassword = sipAccountRow["sippassword"] as string;
-                m_sipDomain = sipAccountRow["domain"] as string;
+                m_sipDomain = sipAccountRow["sipdomain"] as string;
                 m_owner = (sipAccountRow.Table.Columns.Contains("owner") && sipAccountRow["owner"] != null) ? sipAccountRow["owner"] as string : SIPUsername;
+                AdminMemberId = (sipAccountRow.Table.Columns.Contains("adminmemberid") && sipAccountRow["adminmemberid"] != null) ? sipAccountRow["adminmemberid"] as string : null;
                 m_sendNATKeepAlives = (sipAccountRow.Table.Columns.Contains("sendnatkeepalives") && sipAccountRow["sendnatkeepalives"] != null && sipAccountRow["sendnatkeepalives"] != DBNull.Value) ? Convert.ToBoolean(sipAccountRow["sendnatkeepalives"]) : false;
                 m_isIncomingOnly = (sipAccountRow.Table.Columns.Contains("isincomingonly") && sipAccountRow["isincomingonly"] != null && sipAccountRow["isincomingonly"] != DBNull.Value) ? Convert.ToBoolean(sipAccountRow["isincomingonly"]) : false;
                 m_outDialPlanName = (sipAccountRow.Table.Columns.Contains("outdialplanname") && sipAccountRow["outdialplanname"] != null && sipAccountRow["outdialplanname"].ToString().Trim().Length > 0) ? sipAccountRow["outdialplanname"] as string : null;
@@ -316,8 +317,7 @@ namespace SIPSorcery.SIP.App
                 m_networkId = (sipAccountRow.Table.Columns.Contains("networkid") && sipAccountRow["networkid"] != null) ? sipAccountRow["networkid"] as string : null;
                 m_ipAddressACL = (sipAccountRow.Table.Columns.Contains("ipaddressacl") && sipAccountRow["ipaddressacl"] != null) ? sipAccountRow["ipaddressacl"] as string : null;
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception SIPAccount Load. " + excp);
                 throw excp;
             }

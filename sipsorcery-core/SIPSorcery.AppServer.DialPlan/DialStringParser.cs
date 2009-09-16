@@ -301,6 +301,11 @@ namespace SIPSorcery.AppServer.DialPlan
                                 string localDomain = GetCanonicalDomain_External(callLegSIPURI.Host, false);
                                 if (localDomain != null) {
                                     SIPAccount calledSIPAccount = GetSIPAccount_External(s => s.SIPUsername == callLegSIPURI.User && s.SIPDomain == localDomain);
+                                    if (calledSIPAccount == null && callLegSIPURI.User.Contains(".")) {
+                                        // A full lookup failed. Now try a partial lookup if the incoming username is in a dotted domain name format.
+                                        string sipUsernameSuffix = callLegSIPURI.User.Substring(callLegSIPURI.User.LastIndexOf(".") + 1);
+                                        calledSIPAccount = GetSIPAccount_External(s => s.SIPUsername == sipUsernameSuffix && s.SIPDomain == localDomain);
+                                    }
                                     if (calledSIPAccount != null) {
                                         // An incoming dialplan won't be used if it's invoked from itself.
                                         if (calledSIPAccount.InDialPlanName.IsNullOrBlank() || (m_username == calledSIPAccount.Owner && dialplanName == calledSIPAccount.InDialPlanName)) {
@@ -323,7 +328,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                                 content = sipRequest.Body;
                                             }
 
-                                            SIPCallDescriptor loopbackCall = new SIPCallDescriptor(calledSIPAccount, fromHeader.ToString(), contentType, content);
+                                            SIPCallDescriptor loopbackCall = new SIPCallDescriptor(calledSIPAccount, callLegSIPURI.ToString(), fromHeader.ToString(), contentType, content);
                                             loopbackCall.ParseCallOptions(options);
                                             loopbackCall.MangleIPAddress = (PublicIPAddress != null) ? PublicIPAddress : SIPPacketMangler.GetRequestIPAddress(sipRequest);
                                             switchCalls.Add(loopbackCall);

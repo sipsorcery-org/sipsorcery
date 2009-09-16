@@ -111,7 +111,8 @@ namespace SIPSorcery.SIPRegistrationAgent
                     FireSIPMonitorEvent,
                     m_sipTransport,
                     m_outboundProxy,
-                    m_providerPersistor.Get,
+                    //m_providerPersistor.Get,
+                    m_providerPersistor.GetFromDirectQuery,
                     m_providerPersistor.Update,
                     m_bindingPersistor);
                 m_sipRegAgentCore.Start();

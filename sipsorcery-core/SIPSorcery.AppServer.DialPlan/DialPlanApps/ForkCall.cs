@@ -166,12 +166,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     }
 
                     SIPCallDescriptor callDescriptor = callDescriptors[index];
-                    if (callDescriptor.ToSIPAccount != null) {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "ForkCall commencing call leg to " + callDescriptor.ToSIPAccount.SIPUsername + "@" + callDescriptor.ToSIPAccount.SIPDomain + ".", m_username));
-                    }
-                    else {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "ForkCall commencing call leg to " + callDescriptor.Uri + ".", m_username));
-                    }
+                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "ForkCall commencing call leg to " + callDescriptor.Uri + ".", m_username));
                     ThreadPool.QueueUserWorkItem(delegate { StartNewCallAsync(callDescriptor); });
                 }
             }
@@ -208,12 +203,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     }
 
                     int delaySeconds = (callDescriptor.DelaySeconds > MAX_DELAY_SECONDS) ? MAX_DELAY_SECONDS : callDescriptor.DelaySeconds;
-                    if (callDescriptor.ToSIPAccount != null) {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Delaying call leg to " + callDescriptor.ToSIPAccount.SIPUsername + "@" + callDescriptor.ToSIPAccount.SIPDomain + " by " + delaySeconds + "s.", m_username));
-                    }
-                    else {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Delaying call leg to " + callDescriptor.Uri.ToString() + " by " + delaySeconds + "s.", m_username));
-                    }
+                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Delaying call leg to " + callDescriptor.Uri + " by " + delaySeconds + "s.", m_username));
                     callDescriptor.DelayMRE.WaitOne(delaySeconds * 1000);
                 }
 
@@ -229,7 +219,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         uacCall = new SIPClientUserAgent(m_sipTransport, m_outboundProxySocket, m_username, m_adminMemberId, m_statefulProxyLogEvent);
                     }
                     else {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Creating B2B call for " + callDescriptor.ToSIPAccount.SIPUsername + "@" + callDescriptor.ToSIPAccount.SIPDomain + ".", m_username));
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Creating B2B call for " + callDescriptor.Uri + ".", m_username));
                         uacCall = new SIPB2BUserAgent(m_statefulProxyLogEvent, QueueNewCall_External, m_sipTransport, m_username, m_adminMemberId);
                     }
 

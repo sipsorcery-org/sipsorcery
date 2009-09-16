@@ -69,6 +69,8 @@ namespace SIPSorcery.SIP.App
         public const int REGISTER_MINIMUM_EXPIRY = 60;            // The minimum interval a registration will be accepted for. Anything less than this interval will use this minimum value.
         public const int REGISTER_MAXIMUM_EXPIRY = 3600;
 
+        public static string SelectProvider = "select * from sipproviders where id = ?1";
+
         public static string DisallowedServerPatterns;            // If set will be used as a regex pattern to prevent certain strings being used in the Provider Server and RegisterServer fields.
 
         private static string m_newLine = AppState.NewLine;
@@ -424,30 +426,36 @@ namespace SIPSorcery.SIP.App
         }
 
         public void Load(DataRow providerRow) {
-            m_id = (providerRow.Table.Columns.Contains("id") && providerRow["id"] != DBNull.Value && providerRow["id"] != null) ? providerRow["id"] as string : Guid.NewGuid().ToString();
-            m_owner = providerRow["owner"] as string;
-            m_providerName = providerRow["providername"] as string;
-            m_providerUsername = providerRow["providerusername"] as string;
-            m_providerPassword = providerRow["providerpassword"] as string;
-            m_providerServer = SIPURI.ParseSIPURIRelaxed(providerRow["providerserver"] as string);
-            m_providerAuthUsername = (providerRow.Table.Columns.Contains("providerauthusername") && providerRow["providerauthusername"] != null) ? providerRow["providerauthusername"] as string : null;
-            m_providerOutboundProxy = (providerRow.Table.Columns.Contains("provideroutboundproxy") && providerRow["provideroutboundproxy"] != null) ? providerRow["provideroutboundproxy"] as string : null;
-            m_providerFrom = (providerRow.Table.Columns.Contains("providerfrom") && providerRow["providerfrom"] != null) ? providerRow["providerfrom"] as string : null;
-            m_customHeaders = (providerRow.Table.Columns.Contains("providercustom") && providerRow["providercustom"] != null) ? providerRow["providercustom"] as string : null;
-            m_registerContact = (providerRow.Table.Columns.Contains("registercontact") && providerRow["registercontact"] != DBNull.Value && providerRow["registercontact"] != null && providerRow["registercontact"].ToString().Length > 0) ? SIPURI.ParseSIPURIRelaxed(providerRow["registercontact"] as string) : null;
-            m_registerExpiry = (providerRow.Table.Columns.Contains("registerexpiry") && providerRow["registerexpiry"] != DBNull.Value && providerRow["registerexpiry"] != null) ? Convert.ToInt32(providerRow["registerexpiry"]) : REGISTER_DEFAULT_EXPIRY;
-            m_registerServer = (providerRow.Table.Columns.Contains("registerserver") && providerRow["registerserver"] != null) ? SIPURI.ParseSIPURIRelaxed(providerRow["registerserver"] as string) : null;
-            m_registerRealm = (providerRow.Table.Columns.Contains("registerrealm") && providerRow["registerrealm"] != null) ? providerRow["registerrealm"] as string : null;
-            m_registerEnabled = (providerRow.Table.Columns.Contains("registerenabled") && providerRow["registerenabled"] != DBNull.Value && providerRow["registerenabled"] != null) ? StorageLayer.ConvertToBoolean(providerRow["registerenabled"]) : false;
-            m_registerAdminEnabled = (providerRow.Table.Columns.Contains("registerenabledadmin") && providerRow["registerenabledadmin"] != DBNull.Value && providerRow["registerenabledadmin"] != null) ? StorageLayer.ConvertToBoolean(providerRow["registerenabledadmin"]) : true;
-            m_registerDisabledReason = (providerRow.Table.Columns.Contains("registerdisabledreason") && providerRow["registerdisabledreason"] != DBNull.Value && providerRow["registerdisabledreason"] != null) ? providerRow["registerdisabledreason"] as string : null;
-            m_lastUpdateUTC = (providerRow.Table.Columns.Contains("lastupdate") && providerRow["lastupdate"] != DBNull.Value && providerRow["lastupdate"] != null) ? Convert.ToDateTime(providerRow["lastupdate"]) : DateTime.Now;
-            m_insertedUTC = (providerRow.Table.Columns.Contains("inserted") && providerRow["inserted"] != DBNull.Value && providerRow["inserted"] != null) ? Convert.ToDateTime(providerRow["inserted"]) : DateTime.Now;
+            try {
+                m_id = (providerRow.Table.Columns.Contains("id") && providerRow["id"] != DBNull.Value && providerRow["id"] != null) ? providerRow["id"] as string : Guid.NewGuid().ToString();
+                m_owner = providerRow["owner"] as string;
+                m_providerName = providerRow["providername"] as string;
+                m_providerUsername = providerRow["providerusername"] as string;
+                m_providerPassword = providerRow["providerpassword"] as string;
+                m_providerServer = SIPURI.ParseSIPURIRelaxed(providerRow["providerserver"] as string);
+                m_providerAuthUsername = (providerRow.Table.Columns.Contains("providerauthusername") && providerRow["providerauthusername"] != null) ? providerRow["providerauthusername"] as string : null;
+                m_providerOutboundProxy = (providerRow.Table.Columns.Contains("provideroutboundproxy") && providerRow["provideroutboundproxy"] != null) ? providerRow["provideroutboundproxy"] as string : null;
+                m_providerFrom = (providerRow.Table.Columns.Contains("providerfrom") && providerRow["providerfrom"] != null) ? providerRow["providerfrom"] as string : null;
+                m_customHeaders = (providerRow.Table.Columns.Contains("providercustom") && providerRow["providercustom"] != null) ? providerRow["providercustom"] as string : null;
+                m_registerContact = (providerRow.Table.Columns.Contains("registercontact") && providerRow["registercontact"] != DBNull.Value && providerRow["registercontact"] != null && providerRow["registercontact"].ToString().Length > 0) ? SIPURI.ParseSIPURIRelaxed(providerRow["registercontact"] as string) : null;
+                m_registerExpiry = (providerRow.Table.Columns.Contains("registerexpiry") && providerRow["registerexpiry"] != DBNull.Value && providerRow["registerexpiry"] != null) ? Convert.ToInt32(providerRow["registerexpiry"]) : REGISTER_DEFAULT_EXPIRY;
+                m_registerServer = (providerRow.Table.Columns.Contains("registerserver") && providerRow["registerserver"] != null) ? SIPURI.ParseSIPURIRelaxed(providerRow["registerserver"] as string) : null;
+                m_registerRealm = (providerRow.Table.Columns.Contains("registerrealm") && providerRow["registerrealm"] != null) ? providerRow["registerrealm"] as string : null;
+                m_registerEnabled = (providerRow.Table.Columns.Contains("registerenabled") && providerRow["registerenabled"] != DBNull.Value && providerRow["registerenabled"] != null) ? StorageLayer.ConvertToBoolean(providerRow["registerenabled"]) : false;
+                m_registerAdminEnabled = (providerRow.Table.Columns.Contains("registerenabledadmin") && providerRow["registerenabledadmin"] != DBNull.Value && providerRow["registerenabledadmin"] != null) ? StorageLayer.ConvertToBoolean(providerRow["registerenabledadmin"]) : true;
+                m_registerDisabledReason = (providerRow.Table.Columns.Contains("registerdisabledreason") && providerRow["registerdisabledreason"] != DBNull.Value && providerRow["registerdisabledreason"] != null) ? providerRow["registerdisabledreason"] as string : null;
+                m_lastUpdateUTC = (providerRow.Table.Columns.Contains("lastupdate") && providerRow["lastupdate"] != DBNull.Value && providerRow["lastupdate"] != null) ? Convert.ToDateTime(providerRow["lastupdate"]) : DateTime.Now;
+                m_insertedUTC = (providerRow.Table.Columns.Contains("inserted") && providerRow["inserted"] != DBNull.Value && providerRow["inserted"] != null) ? Convert.ToDateTime(providerRow["inserted"]) : DateTime.Now;
 
-            if (m_registerContact == null && m_registerEnabled) {
-                m_registerEnabled = false;
-                m_registerDisabledReason = "No Contact URI was specified for the registration.";
-                logger.Warn("Registrations for provider " + m_providerName + " owned by " + m_owner + " have been disabled due to an empty or invalid Contact URI.");
+                if (m_registerContact == null && m_registerEnabled) {
+                    m_registerEnabled = false;
+                    m_registerDisabledReason = "No Contact URI was specified for the registration.";
+                    logger.Warn("Registrations for provider " + m_providerName + " owned by " + m_owner + " have been disabled due to an empty or invalid Contact URI.");
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception SIPProvider Load. " + excp.Message);
+                throw;
             }
         }
 

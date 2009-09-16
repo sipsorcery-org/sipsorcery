@@ -156,7 +156,8 @@ namespace SIPSorcery.SIPAppServer {
                 if (m_sipRegistrarEnabled) {
                     m_sipRegistrarDaemon = new SIPRegistrarDaemon(
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
-                        m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                        //m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                        m_sipSorceryPersistor.SIPAccountsPersistor.GetFromDirectQuery,
                         m_sipSorceryPersistor.SIPRegistrarBindingPersistor,
                         SIPRequestAuthenticator.AuthenticateSIPRequest);
                     m_sipRegistrarDaemon.Start();

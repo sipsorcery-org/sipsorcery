@@ -49,6 +49,8 @@ using System.Threading;
 using System.Xml;
 using DbLinq.Data.Linq;
 using SIPSorcery.Sys;
+using MySql.Data.MySqlClient;
+using Npgsql;
 using log4net;
 
 namespace SIPSorcery.Sys
@@ -68,8 +70,6 @@ namespace SIPSorcery.Sys
         public DBLinqAssetPersistor(StorageTypes storageType, string connectionString) {
             m_storageType = storageType;
             m_dbConnStr = connectionString;
-            //m_dbLinqDataContext = dbLinqDataContext;
-            //m_dbLinqTable = m_dbLinqDataContext.GetTable<T>();
         }
 
         public override T Add(T asset) {
@@ -290,6 +290,95 @@ namespace SIPSorcery.Sys
             {
                 logger.Error("Exception DBLinqAssetPersistor Get List (where for " + typeof(T).Name + "). " + excp.Message);
                 return null;
+            }
+        }
+
+        public override T GetFromDirectQuery(string sqlQuery, params IDbDataParameter[] sqlParameters) {
+            try {
+                IDataAdapter dbAdapter = GetAdapter(m_storageType, m_dbConnStr, sqlQuery, sqlParameters);
+
+                if (dbAdapter != null) {
+                    DataSet assetSet = new DataSet();
+                    dbAdapter.Fill(assetSet);
+                    if (assetSet != null && assetSet.Tables[0].Rows.Count == 1) {
+                        T asset = new T();
+                        asset.Load(assetSet.Tables[0].Rows[0]);
+                        return asset;
+                    }
+                    else if (assetSet != null && assetSet.Tables[0].Rows.Count > 1) {
+                        throw new ApplicationException("Query submitted to GetFromDirectQuery returned more than one row. SQL=" + sqlQuery + ".");
+                    }
+                }
+
+                return default(T);
+            }
+            catch (Exception excp) {
+                logger.Error("Exception DBLinqAssetPersistor GetDirect (" + typeof(T).Name + "). " + excp.Message);
+                return default(T);
+            }
+        }
+
+        public override List<T> GetListFromDirectQuery(string sqlQuery, params IDbDataParameter[] sqlParameters) {
+            try {
+                IDataAdapter dbAdapter = GetAdapter(m_storageType, m_dbConnStr, sqlQuery, sqlParameters);
+
+                if (dbAdapter != null) {
+                    DataSet assetSet = new DataSet();
+                    dbAdapter.Fill(assetSet);
+                    if (assetSet != null) {
+                        List<T> assets = new List<T>();
+
+                        foreach (DataRow row in assetSet.Tables[0].Rows) {
+                            T asset = new T();
+                            asset.Load(row);
+                            assets.Add(asset);
+                        }
+
+                        return assets;
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception excp) {
+                logger.Error("Exception DBLinqAssetPersistor GetListFromDirectQuery (" + typeof(T).Name + "). " + excp.Message);
+                return null;
+            }
+        }
+
+        private IDataAdapter GetAdapter(StorageTypes storageType, string dbConnStr, string commandText, params IDbDataParameter[] sqlParameters) {
+            try {
+                IDataAdapter dbAdapter = null;
+
+                if (storageType == StorageTypes.DBLinqMySQL) {
+                    using (MySqlConnection dbConn = new MySqlConnection(dbConnStr)) {
+                        dbConn.Open();
+                        MySqlCommand dbCommand = new MySqlCommand(commandText, dbConn);
+                        foreach (IDbDataParameter dbParameter in sqlParameters) {
+                            dbCommand.Parameters.Add(new MySqlParameter(dbParameter.ParameterName, dbParameter.Value));
+                        }
+                        dbAdapter = new MySqlDataAdapter(dbCommand);
+                    }
+                }
+                else if (storageType == StorageTypes.DBLinqPostgresql) {
+                    using (NpgsqlConnection dbConn = new NpgsqlConnection(dbConnStr)) {
+                        dbConn.Open();
+                        NpgsqlCommand dbCommand = new NpgsqlCommand(commandText, dbConn);
+                        foreach (IDbDataParameter dbParameter in sqlParameters) {
+                            dbCommand.Parameters.Add(new NpgsqlParameter(dbParameter.ParameterName, dbParameter.Value));
+                        }
+                        dbAdapter = new NpgsqlDataAdapter(dbCommand);
+                    }
+                }
+                else {
+                    throw new ApplicationException("DBLinqAssetPersistor GetAdapter does not support storage type of " + storageType + ".");
+                }
+
+                return dbAdapter;
+            }
+            catch (Exception excp) {
+                logger.Error("Exception DBLinqAssetPersistor GetAdapter (" + typeof(T).Name + "). " + excp.Message);
+                throw;
             }
         }
     }

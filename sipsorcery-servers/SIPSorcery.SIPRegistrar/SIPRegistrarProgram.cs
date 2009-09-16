@@ -58,7 +58,7 @@ namespace SIPSorcery.SIPRegistrar {
                     throw new NotImplementedException(m_sipRegistrarStorageType + " is not implemented for the SIP Registrar persistor.");
                 }
 
-                SIPRegistrarDaemon daemon = new SIPRegistrarDaemon(sipDomainManager.GetDomain, sipAccountsPersistor.Get, sipRegistrarBindingPersistor, SIPRequestAuthenticator.AuthenticateSIPRequest);
+                SIPRegistrarDaemon daemon = new SIPRegistrarDaemon(sipDomainManager.GetDomain, sipAccountsPersistor.GetFromDirectQuery, sipRegistrarBindingPersistor, SIPRequestAuthenticator.AuthenticateSIPRequest);
 
                 if (args != null && args.Length == 1 && args[0].StartsWith("-c")) {
                     Console.WriteLine("SIP Registrar starting");

@@ -91,8 +91,18 @@ namespace SIPSorcery.SIP.App
 
         public ManualResetEvent DelayMRE;       // If the call needs to be delayed DelaySeconds this MRE will be used.
 
-        public SIPCallDescriptor(SIPAccount toSIPAccount, string fromHeader, string contentType, string content) {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="toSIPAccount"></param>
+        /// <param name="uri">The uri can be different to the to SIP account if a dotted notation is used. For
+        /// example 1234.user@sipsorcery.com.</param>
+        /// <param name="fromHeader"></param>
+        /// <param name="contentType"></param>
+        /// <param name="content"></param>
+        public SIPCallDescriptor(SIPAccount toSIPAccount, string uri, string fromHeader, string contentType, string content) {
             ToSIPAccount = toSIPAccount;
+            Uri = uri ?? toSIPAccount.SIPUsername + "@" + toSIPAccount.SIPDomain;
             From = fromHeader;
             ContentType = contentType;
             Content = content;

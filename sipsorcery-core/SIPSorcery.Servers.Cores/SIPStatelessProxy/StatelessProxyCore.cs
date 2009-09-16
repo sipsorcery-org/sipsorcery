@@ -139,27 +139,6 @@ namespace SIPSorcery.Servers {
 
                 lock (this) {
                     scriptStartTime = DateTime.Now;
-                    //m_scriptScope.Execute(m_proxyScript);
-
-                    /*if (m_proxyScriptType == ProxyScriptEnum.Python)
-                    {
-                        m_pythonEngine.Globals["sys"] = m_proxyScriptHelper;
-                        m_pythonEngine.Globals["dispatcher"] = m_dispatcher;
-                        m_pythonEngine.Globals["localEndPoint"] = localSIPEndPoint;
-                        m_pythonEngine.Globals["channelName"] = m_sipTransport.FindSIPChannel(localSIPEndPoint).Name;
-                        m_pythonEngine.Globals["isreq"] = true;
-                        m_pythonEngine.Globals["req"] = sipRequest;
-                        m_pythonEngine.Globals["remoteEndPoint"] = remoteEndPoint;
-                        m_pythonEngine.Globals["summary"] = summaryStr;
-                        m_pythonEngine.Globals["proxyBranch"] = proxyBranch;
-                        m_pythonEngine.Globals["sipMethod"] = sipRequest.Method.ToString();
-                        m_pythonEngine.Globals["publicip"] = PublicIPAddress;
-
-                        m_compiledScript.Execute();
-                    }
-                    else
-                    {*/
-                    //m_scriptScope.ClearVariables();
 
                     m_compiledScript.DefaultScope.RemoveVariable("sys");
                     m_compiledScript.DefaultScope.RemoveVariable("localEndPoint");
@@ -173,7 +152,6 @@ namespace SIPSorcery.Servers {
 
                     m_compiledScript.DefaultScope.SetVariable("sys", m_proxyScriptHelper);
                     m_compiledScript.DefaultScope.SetVariable("localEndPoint", localSIPEndPoint);
-                    //m_compiledScript.DefaultScope.SetVariable("channelName", m_sipTransport.FindSIPChannel(localSIPEndPoint).Name);
                     m_compiledScript.DefaultScope.SetVariable("isreq", true);
                     m_compiledScript.DefaultScope.SetVariable("req", sipRequest);
                     m_compiledScript.DefaultScope.SetVariable("remoteEndPoint", remoteEndPoint);
@@ -182,9 +160,7 @@ namespace SIPSorcery.Servers {
                     m_compiledScript.DefaultScope.SetVariable("sipMethod", sipRequest.Method.ToString());
                     m_compiledScript.DefaultScope.SetVariable("publicip", PublicIPAddress);
 
-                    //m_compiledScript.Execute(m_scriptScope);
                     m_compiledScript.Execute();
-                    //}
                 }
 
                 double processingTime = DateTime.Now.Subtract(startTime).TotalMilliseconds;
@@ -241,38 +217,9 @@ namespace SIPSorcery.Servers {
                     }
                 }
 
-                /*string channelName = topVia.ViaParameters.Get(CHANNEL_NAME_KEY);
-                if (!channelName.IsNullOrBlank())
-                {
-                    SIPChannel sendFromChannel = m_sipTransport.FindSIPChannel(channelName.Trim());
-                    if (sendFromChannel != null)
-                    {
-                        sipResponse.LocalSIPEndPoint = sendFromChannel.SIPChannelEndPoint;
-                    }
-                }*/
-
                 lock (this) {
-                    //m_scriptScope.SetVariable("topVia", proxyVia);
-
                     scriptStartTime = DateTime.Now;
-                    //m_scriptScope.Execute(m_proxyScript);
-                    /*if (m_proxyScriptType == ProxyScriptEnum.Python)
-                    {
-                        m_pythonEngine.Globals["sys"] = m_proxyScriptHelper;
-                        m_pythonEngine.Globals["localEndPoint"] = localSIPEndPoint;
-                        m_pythonEngine.Globals["outSocket"] = outSocket;
-                        m_pythonEngine.Globals["isreq"] = false;
-                        m_pythonEngine.Globals["resp"] = sipResponse;
-                        m_pythonEngine.Globals["remoteEndPoint"] = remoteEndPoint;
-                        m_pythonEngine.Globals["summary"] = summaryStr;
-                        m_pythonEngine.Globals["sipMethod"] = sipResponse.Header.CSeqMethod.ToString();
-                        m_pythonEngine.Globals["topVia"] = topVia;
 
-                        m_pythonCompiledScript.Execute();
-                    }
-                    else
-                    {*/
-                    //m_scriptScope.ClearVariables();
                     m_compiledScript.DefaultScope.RemoveVariable("sys");
                     m_compiledScript.DefaultScope.RemoveVariable("isreq");
                     m_compiledScript.DefaultScope.RemoveVariable("localEndPoint");
@@ -293,10 +240,7 @@ namespace SIPSorcery.Servers {
                     m_compiledScript.DefaultScope.SetVariable("sipMethod", sipResponse.Header.CSeqMethod.ToString());
                     m_compiledScript.DefaultScope.SetVariable("topVia", topVia);
 
-                    //m_rubyCompiledScript.Execute(m_scriptScope);
-                    //m_compiledScript.Execute(m_scriptScope);
                     m_compiledScript.Execute();
-                    //}
                 }
 
                 double processingTime = DateTime.Now.Subtract(startTime).TotalMilliseconds;

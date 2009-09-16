@@ -203,7 +203,7 @@ namespace SIPSorcery.AppServer.DialPlan
             m_sipAccountPersistor = sipAccountPersistor;
             m_sipDialPlanPersistor = sipDialPlanPersistor;
             GetSIPAccountBindings_External = getSIPAccountBindings;
-            m_outboundProxySocket = outboundProxySocket;
+            m_outboundProxySocket = outboundProxySocket; 
 
             m_dialPlanContext.TraceLog.AppendLine("DialPlan=> Dialplan trace commenced at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff") + ".");
             m_dialPlanContext.CallCancelledByClient += ClientCallTerminated;

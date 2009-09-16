@@ -24,6 +24,8 @@ namespace SIPSorcery.CRM.Web {
         protected void Page_Load(object sender, EventArgs e) {
 
             try {
+                logger.Debug("CustomerEmailConfirmation request from " + this.Context.Request.UserHostAddress + " for " + this.Request.QueryString["id"] + ".");
+
                 string id = this.Request.QueryString["id"];
                 if (!id.IsNullOrBlank()) {
                     Guid customerId = new Guid(id);

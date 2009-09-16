@@ -65,6 +65,9 @@ namespace SIPSorcery.SIP.App
         public const string XML_ELEMENT_NAME = "sipproviderbinding";
         public const string REGAGENT_CONTACT_ID_KEY = "rinstance";
 
+        public static readonly string SelectBinding = "select * from sipproviderbindings where id = ?1";
+        public static readonly string SelectNextScheduledBinding = "select * from sipproviderbindings where nextregistrationtime <= ?1 order by nextregistrationtime asc limit 1";
+
         private static string m_newLine = AppState.NewLine;
         private static ILog logger = AppState.logger;
 
@@ -267,55 +270,50 @@ namespace SIPSorcery.SIP.App
         }
 
         public void Load(DataRow bindingRow) {
+            try {
+                m_id = (bindingRow.Table.Columns.Contains("id") && bindingRow["id"] != DBNull.Value && bindingRow["id"] != null) ? bindingRow["id"] as string : Guid.NewGuid().ToString();
+                m_providerId = bindingRow["providerid"] as string;
+                m_owner = bindingRow["owner"] as string;
+                AdminMemberId = bindingRow["adminmemberid"] as string;
+                m_isRegistered = (bindingRow.Table.Columns.Contains("isregistered") && bindingRow["isregistered"] != DBNull.Value && bindingRow["isregistered"] != null) ? Convert.ToBoolean(bindingRow["isregistered"]) : false;
 
-            m_id = (bindingRow.Table.Columns.Contains("id") && bindingRow["id"] != DBNull.Value && bindingRow["id"] != null) ? bindingRow["id"] as string : Guid.NewGuid().ToString();
-            m_providerId = bindingRow["providerid"] as string;
-            m_owner = bindingRow["owner"] as string;
-            AdminMemberId = bindingRow["adminmemberid"] as string;
-            m_isRegistered = (bindingRow.Table.Columns.Contains("isregistered") && bindingRow["isregistered"] != DBNull.Value && bindingRow["isregistered"] != null) ? Convert.ToBoolean(bindingRow["isregistered"]) : false;
-
-            if (bindingRow.Table.Columns.Contains("bindinguri") && bindingRow["bindinguri"] != DBNull.Value && bindingRow["bindinguri"] != null && !bindingRow["bindinguri"].ToString().IsNullOrBlank()) {
-                m_bindingURI = SIPURI.ParseSIPURI(bindingRow["bindinguri"] as string);
-            }
-            else {
-                logger.Warn("Could not load BindingURI for SIPProviderBinding with id=" + m_id + ".");
-            }
-
-            if (bindingRow.Table.Columns.Contains("bindingexpiry") && bindingRow["bindingexpiry"] != DBNull.Value && bindingRow["bindingexpiry"] != null && bindingRow["bindingexpiry"].ToString().Length > 0) {
-                Int32.TryParse(bindingRow["bindingexpiry"] as string, out m_bindingExpiry);
-            }
-
-            if (bindingRow.Table.Columns.Contains("contactheader") && bindingRow["contactheader"] != DBNull.Value && bindingRow["contactheader"] != null && !bindingRow["contactheader"].ToString().IsNullOrBlank()) {
-                ContactsList = SIPContactHeader.ParseContactHeader(bindingRow["contactheader"] as string);
-            }
-            else {
-                logger.Warn("Could not load ContactHeader for SIPProviderBinding with id=" + m_id + ".");
-            }
-
-            if (bindingRow.Table.Columns.Contains("cseq") && bindingRow["cseq"] != DBNull.Value && bindingRow["cseq"] != null && bindingRow["cseq"].ToString().Length > 0) {
-                int cseq = 0;
-                if (Int32.TryParse(bindingRow["cseq"] as string, out cseq)) {
-                    CSeq = cseq;
+                if (bindingRow.Table.Columns.Contains("bindinguri") && bindingRow["bindinguri"] != DBNull.Value && bindingRow["bindinguri"] != null && !bindingRow["bindinguri"].ToString().IsNullOrBlank()) {
+                    m_bindingURI = SIPURI.ParseSIPURI(bindingRow["bindinguri"] as string);
                 }
-            }
+                else {
+                    logger.Warn("Could not load BindingURI for SIPProviderBinding with id=" + m_id + ".");
+                }
 
-            if (bindingRow.Table.Columns.Contains("lastregistertime") && bindingRow["lastregistertime"] != DBNull.Value && bindingRow["lastregistertime"] != null && bindingRow["lastregistertime"].ToString().Length > 0) {
-                m_lastRegisterTimeUTC = Convert.ToDateTime(bindingRow["lastregistertime"]);
-            }
+                if (bindingRow.Table.Columns.Contains("bindingexpiry") && bindingRow["bindingexpiry"] != DBNull.Value && bindingRow["bindingexpiry"] != null) {
+                    m_bindingExpiry = Convert.ToInt32(bindingRow["bindingexpiry"]);
+                }
 
-            if (bindingRow.Table.Columns.Contains("lastregisterattempt") && bindingRow["lastregisterattempt"] != DBNull.Value && bindingRow["lastregisterattempt"] != null && bindingRow["lastregisterattempt"].ToString().Length > 0) {
-                m_lastRegisterAttemptUTC = Convert.ToDateTime(bindingRow["lastregisterattempt"]);
-            }
+                if (bindingRow.Table.Columns.Contains("cseq") && bindingRow["cseq"] != DBNull.Value && bindingRow["cseq"] != null && bindingRow["cseq"].ToString().Length > 0) {
+                    CSeq = Convert.ToInt32(bindingRow["cseq"]);
+                }
 
-            if (bindingRow.Table.Columns.Contains("nextregistrationtime") && bindingRow["nextregistrationtime"] != DBNull.Value && bindingRow["nextregistrationtime"] != null && bindingRow["nextregistrationtime"].ToString().Length > 0) {
-                m_nextRegistrationTimeUTC = Convert.ToDateTime(bindingRow["nextregistrationtime"]);
-            }
+                if (bindingRow.Table.Columns.Contains("lastregistertime") && bindingRow["lastregistertime"] != DBNull.Value && bindingRow["lastregistertime"] != null && bindingRow["lastregistertime"].ToString().Length > 0) {
+                    m_lastRegisterTimeUTC = Convert.ToDateTime(bindingRow["lastregistertime"]);
+                }
 
-            if (bindingRow.Table.Columns.Contains("registrarsipsocket") && bindingRow["registrarsipsocket"] != DBNull.Value && bindingRow["registrarsipsocket"] != null && bindingRow["registrarsipsocket"].ToString().Length > 0) {
-                RegistrarSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(bindingRow["registrarsipsocket"] as string);
-            }
+                if (bindingRow.Table.Columns.Contains("lastregisterattempt") && bindingRow["lastregisterattempt"] != DBNull.Value && bindingRow["lastregisterattempt"] != null && bindingRow["lastregisterattempt"].ToString().Length > 0) {
+                    m_lastRegisterAttemptUTC = Convert.ToDateTime(bindingRow["lastregisterattempt"]);
+                }
 
-            logger.Debug(" loaded SIPProviderBinding for " + Owner + " and " + ProviderName + " and binding " + BindingURI.ToString() + ".");
+                if (bindingRow.Table.Columns.Contains("nextregistrationtime") && bindingRow["nextregistrationtime"] != DBNull.Value && bindingRow["nextregistrationtime"] != null && bindingRow["nextregistrationtime"].ToString().Length > 0) {
+                    m_nextRegistrationTimeUTC = Convert.ToDateTime(bindingRow["nextregistrationtime"]);
+                }
+
+                if (bindingRow.Table.Columns.Contains("registrarsipsocket") && bindingRow["registrarsipsocket"] != DBNull.Value && bindingRow["registrarsipsocket"] != null && bindingRow["registrarsipsocket"].ToString().Length > 0) {
+                    RegistrarSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(bindingRow["registrarsipsocket"] as string);
+                }
+
+                //logger.Debug(" loaded SIPProviderBinding for " + Owner + " and " + ProviderName + " and binding " + BindingURI.ToString() + ".");
+            }
+            catch (Exception excp) {
+                logger.Error("Exception SIPProviderBinding Load. " + excp.Message);
+                throw excp;
+            }
         }
 
         public Dictionary<Guid, object> Load(XmlDocument dom) {

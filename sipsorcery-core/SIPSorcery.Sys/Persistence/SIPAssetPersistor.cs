@@ -38,7 +38,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-//using System.Data;
+using System.Data;
 using System.Linq;
 //using System.Linq.Dynamic;
 using System.Linq.Expressions;
@@ -58,6 +58,7 @@ namespace SIPSorcery.Sys
     public delegate T SIPAssetGetByIdDelegate<T>(Guid id);
     public delegate object SIPAssetGetPropertyByIdDelegate<T>(Guid id, string propertyName);
     public delegate T SIPAssetGetDelegate<T>(Expression<Func<T, bool>> where);
+    public delegate T SIPAssetGetFromDirectQueryDelegate<T>(string sqlQuery, params IDbDataParameter[] sqlParameters);
     public delegate int SIPAssetCountDelegate<T>(Expression<Func<T, bool>> where);
     public delegate List<T> SIPAssetGetListDelegate<T>(Expression<Func<T, bool>> where, string orderByField, int offset, int limit);
     public delegate T SIPAssetUpdateDelegate<T>(T asset);
@@ -110,6 +111,14 @@ namespace SIPSorcery.Sys
         }
 
         public virtual List<T> Get(Expression<Func<T, bool>> where,  string orderByField, int offset, int count) {
+            throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
+        }
+
+        public virtual T GetFromDirectQuery(string sqlQuery, params IDbDataParameter[] sqlParameters) {
+            throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
+        }
+
+        public virtual List<T> GetListFromDirectQuery(string sqlQuery, params IDbDataParameter[] sqlParameters) {
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         }
     }

@@ -80,6 +80,9 @@ namespace SIPSorcery.CRM
                         if (!customer.EmailAddressConfirmed) {
                             throw new ApplicationException("Your email address has not yet been confirmed.");
                         }
+                        else if (customer.Suspended) {
+                            throw new ApplicationException("Your account is suspended.");
+                        }
                         else {
                             logger.Debug("Login successful for " + username + ".");
 

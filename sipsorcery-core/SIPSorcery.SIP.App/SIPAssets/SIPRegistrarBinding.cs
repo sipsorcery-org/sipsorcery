@@ -84,6 +84,9 @@ namespace SIPSorcery.SIP.App
         public const int MAX_BINDING_LIFETIME = 3600;       // Bindings are currently not being expired once the expires time is reached and this is the maximum amount of time 
                                                             // a binding can stay valid for with probing before it is removed and the binding must be freshed with a REGISTER.
 
+        public static readonly string SelectBindingsQuery = "select * from sipregistrarbindings where sipaccountid = ?1";
+        public static readonly string SelectExpiredBindingsQuery = "select * from sipregistrarbindings where expirytime < ?1";
+
         private static string m_newLine = AppState.NewLine;
         private static ILog logger = AppState.GetLogger("sipregistrar");
 
@@ -311,19 +314,25 @@ namespace SIPSorcery.SIP.App
         }
 
         public void Load(DataRow row) {
-            Id = row["id"] as string;
-            SIPAccountId = row["sipaccountid"] as string;
-            SIPAccountName = row["sipaccountname"] as string;
-            Owner = row["owner"] as string;
-            AdminMemberId = row["adminmemberid"] as string;
-            m_contactURI = SIPURI.ParseSIPURI(row["contacturi"] as string);
-            m_mangledContactURI = SIPURI.ParseSIPURI(row["mangledcontacturi"] as string);
-            UserAgent = row["useragent"] as string;
-            Expiry = (!(row["expiry"] as string).IsNullOrBlank()) ? Convert.ToInt32(row["expiry"] as string) : 0;
-            RemoteSIPEndPoint = (!(row["remotesipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["remotesipsocket"] as string) : null;
-            m_proxySIPEndPoint = (!(row["proxysipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["proxysipsocket"] as string) : null;
-            m_registrarSIPEndPoint = (!(row["registrarsipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["registrarsipsocket"] as string) : null;
-            m_lastUpdateUTC = DateTime.Parse(row["lastupdate"] as string);
+            try {
+                Id = row["id"] as string;
+                SIPAccountId = row["sipaccountid"] as string;
+                SIPAccountName = row["sipaccountname"] as string;
+                Owner = row["owner"] as string;
+                AdminMemberId = row["adminmemberid"] as string;
+                UserAgent = row["useragent"] as string;
+                m_contactURI = SIPURI.ParseSIPURI(row["contacturi"] as string);
+                m_mangledContactURI = (!(row["mangledcontacturi"] as string).IsNullOrBlank()) ?SIPURI.ParseSIPURI(row["mangledcontacturi"] as string) : null;
+                Expiry = Convert.ToInt32(row["expiry"]);
+                RemoteSIPEndPoint = (!(row["remotesipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["remotesipsocket"] as string) : null;
+                m_proxySIPEndPoint = (!(row["proxysipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["proxysipsocket"] as string) : null;
+                m_registrarSIPEndPoint = (!(row["registrarsipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["registrarsipsocket"] as string) : null;
+                m_lastUpdateUTC = (DateTime)row["lastupdate"];
+            }
+            catch (Exception excp) {
+                logger.Error("Exception SIPRegistrarBinding Load. " + excp.Message);
+                throw;
+            }
         }
 
         public Dictionary<Guid, object> Load(XmlDocument dom) {
