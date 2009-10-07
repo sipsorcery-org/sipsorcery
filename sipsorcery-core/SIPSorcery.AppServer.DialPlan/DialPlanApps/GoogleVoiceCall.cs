@@ -49,10 +49,11 @@ namespace SIPSorcery.AppServer.DialPlan {
     
     public class GoogleVoiceCall {
 
+        private const string PRE_LOGIN_URL = "https://www.google.com/accounts/ServiceLogin";
         private const string LOGIN_URL = "https://www.google.com/accounts/ServiceLoginAuth?service=grandcentral";
         private const string VOICE_HOME_URL = "https://www.google.com/voice";
         private const string VOICE_CALL_URL = "https://www.google.com/voice/call/connect";
-        private const int WAIT_FOR_CALLBACK_TIMEOUT = 10;
+        private const int WAIT_FOR_CALLBACK_TIMEOUT = 30;
         private const int HTTP_REQUEST_TIMEOUT = 5;
 
         private static ILog logger = AppState.logger;
@@ -65,7 +66,7 @@ namespace SIPSorcery.AppServer.DialPlan {
         private SIPEndPoint m_outboundProxy;
 
         private string m_forwardingNumber;
-        private string m_fromURIUserToMatch;
+        private string m_fromURIUserRegexMatch;
         private ManualResetEvent m_waitForCallback = new ManualResetEvent(false);
         private ISIPServerUserAgent m_callbackCall;
 
@@ -77,8 +78,7 @@ namespace SIPSorcery.AppServer.DialPlan {
             SIPMonitorLogDelegate logDelegate, 
             string username,
             string adminMemberId,
-            SIPEndPoint outboundProxy
-            ) {
+            SIPEndPoint outboundProxy) {
 
             m_sipTransport = sipTransport;
             m_callManager = callManager;
@@ -103,10 +103,10 @@ namespace SIPSorcery.AppServer.DialPlan {
         /// <param name="body">The content of the SIP call into sipsorcery that created the Google Voice call. It is
         /// what will be sent in the Ok response to the initial incoming callback.</param>
         /// <returns>If successful the dialogue of the established call otherwsie null.</returns>
-        public SIPDialogue InitiateCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromUserToMatch, string contentType, string body) {
+        public SIPDialogue InitiateCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromUserRegexMatch, string contentType, string body) {
             try {
                 m_forwardingNumber = forwardingNumber;
-                m_fromURIUserToMatch = fromUserToMatch;
+                m_fromURIUserRegexMatch = fromUserRegexMatch;
 
                 if (CallProgress != null) {
                     CallProgress(SIPResponseStatusCodesEnum.Ringing, "Initiating Google Voice call", null, null, null);
@@ -132,7 +132,33 @@ namespace SIPSorcery.AppServer.DialPlan {
         private string Login(CookieContainer cookies, string emailAddress, string password) {
             try {
                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Logging into google.com for " + emailAddress + ".", m_username));
-                
+
+                // Fetch GALX
+                HttpWebRequest galxRequest = (HttpWebRequest)WebRequest.Create(PRE_LOGIN_URL);
+                galxRequest.ConnectionGroupName = "prelogin";
+                galxRequest.CookieContainer = cookies;
+
+                HttpWebResponse galxResponse = (HttpWebResponse)galxRequest.GetResponse();
+                if (galxResponse.StatusCode != HttpStatusCode.OK) {
+                    galxResponse.Close();
+                    throw new ApplicationException("Load of the Google Voice pre-login page failed with response " + galxResponse.StatusCode + ".");
+                }
+                else {
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice pre-login page loaded successfully.", m_username));
+                }
+
+                StreamReader galxReader = new StreamReader(galxResponse.GetResponseStream());
+                string galxResponseFromServer = galxReader.ReadToEnd();
+                galxResponse.Close();
+
+                Match galxMatch = Regex.Match(galxResponseFromServer, @"name=""GALX""\s+?value=""(?<galxvalue>.*?)""");
+                if (galxMatch.Success) {
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "GALX key " + galxMatch.Result("${galxvalue}") + " successfully retrieved.", m_username));
+                }
+                else {
+                    throw new ApplicationException("Could not find GALX key on your Google Voice pre-login page, callback cannot proceed.");
+                }
+
                 // Build login request.
                 string loginData = "Email=" + Uri.EscapeDataString(emailAddress) + "&Passwd=" + Uri.EscapeDataString(password);
                 HttpWebRequest loginRequest = (HttpWebRequest)WebRequest.Create(LOGIN_URL);
@@ -234,11 +260,15 @@ namespace SIPSorcery.AppServer.DialPlan {
 
         private bool MatchIncomingCall(ISIPServerUserAgent incomingCall) {
             try {
+                if (incomingCall.SIPAccount.Owner != m_username) {
+                    return false;
+                }
+
                 SIPHeader callHeader = incomingCall.CallRequest.Header;
                 bool matchedCall = false;
 
-                if (!m_fromURIUserToMatch.IsNullOrBlank()) {
-                    if (callHeader.From.FromURI.User == m_fromURIUserToMatch) {
+                if (!m_fromURIUserRegexMatch.IsNullOrBlank()) {
+                    if (Regex.Match(callHeader.From.FromURI.User, m_fromURIUserRegexMatch).Success) {
                         matchedCall = true;
                     }
                 }
