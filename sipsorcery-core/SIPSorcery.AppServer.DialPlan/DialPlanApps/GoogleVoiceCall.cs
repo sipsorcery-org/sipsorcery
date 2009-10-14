@@ -160,7 +160,7 @@ namespace SIPSorcery.AppServer.DialPlan {
                 }
 
                 // Build login request.
-                string loginData = "Email=" + Uri.EscapeDataString(emailAddress) + "&Passwd=" + Uri.EscapeDataString(password);
+                string loginData = "Email=" + Uri.EscapeDataString(emailAddress) + "&Passwd=" + Uri.EscapeDataString(password) + "&GALX=" + Uri.EscapeDataString(galxMatch.Result("${galxvalue}")); 
                 HttpWebRequest loginRequest = (HttpWebRequest)WebRequest.Create(LOGIN_URL);
                 loginRequest.CookieContainer = cookies;
                 loginRequest.ConnectionGroupName = "login";
