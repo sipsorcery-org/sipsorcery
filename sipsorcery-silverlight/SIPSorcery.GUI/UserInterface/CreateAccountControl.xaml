@@ -3,26 +3,26 @@
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:sys="clr-namespace:System;assembly=System" 
 	mc:Ignorable="d"
-	x:Class="SIPSorcery.CreateAccountControl"
-	d:DesignWidth="640" Width="450" Height="435">
+	x:Class="SIPSorcery.CreateAccountControl" Width="587" Height="465">
 
 	<Grid x:Name="LayoutRoot">
-		<TextBox x:Name="m_usernameTextBox" Text="" TextWrapping="Wrap" TabIndex="7" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,166,107,0" VerticalAlignment="Top"/>
+		<TextBox x:Name="m_usernameTextBox" Text="" TextWrapping="Wrap" TabIndex="7" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,166,244,0" VerticalAlignment="Top"/>
 		<TextBlock x:Name="m_usernameLabel" Height="16" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Username" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,166,0,0" VerticalAlignment="Top"/>
-		<TextBlock Height="16" Width="Auto" FontSize="11" Foreground="{StaticResource InfoTextBrush}" Text="Create New Account" TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,8,0,0" VerticalAlignment="Top"/>
+		<TextBlock Width="Auto" FontSize="13.333" Foreground="{StaticResource InfoTextBrush}" Text="Create New Account" TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,8,0,0" VerticalAlignment="Top"/>
 		<TextBlock x:Name="m_firstNameLabel" Height="16" Width="65.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="First Name" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,88,0,0" VerticalAlignment="Top"/>
-		<TextBox x:Name="m_firstNameTextBox" Text="" TextWrapping="Wrap" TabIndex="4" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,88,107,0" VerticalAlignment="Top"/>
+		<TextBox x:Name="m_firstNameTextBox" Text="" TextWrapping="Wrap" TabIndex="4" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,88,244,0" VerticalAlignment="Top"/>
 		<TextBlock x:Name="m_lastNameLabel" Height="16" Width="65.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Last Name" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,114,0,0" VerticalAlignment="Top"/>
-		<TextBox x:Name="m_lastNameTextBox" Text="" TextWrapping="Wrap" TabIndex="5" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,114,107,0" VerticalAlignment="Top"/>
-		<PasswordBox x:Name="m_passwordTextBox" TabIndex="8" TabNavigation="Local" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,192,107,0" VerticalAlignment="Top" Height="20"/>
+		<TextBox x:Name="m_lastNameTextBox" Text="" TextWrapping="Wrap" TabIndex="5" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,114,244,0" VerticalAlignment="Top"/>
+		<PasswordBox x:Name="m_passwordTextBox" TabIndex="8" TabNavigation="Local" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,192,244,0" VerticalAlignment="Top" Height="20"/>
 		<TextBlock x:Name="m_passwordLabel" Height="16" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Password" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,192,0,0" VerticalAlignment="Top"/>
 		<TextBlock x:Name="m_retypedPasswordLabel" Width="97.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Retype Password" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,218,0,0" VerticalAlignment="Top"/>
-		<PasswordBox x:Name="m_retypePasswordTextBox" TabIndex="9" TabNavigation="Local" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,0,107,197" Height="20" VerticalAlignment="Bottom"/>
-		<TextBox x:Name="m_emailAddressTextBox" Text="" TextWrapping="Wrap" TabIndex="6" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,140,107,0" VerticalAlignment="Top"/>
+		<PasswordBox x:Name="m_retypePasswordTextBox" TabIndex="9" TabNavigation="Local" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,218,244,227"/>
+		<TextBox x:Name="m_emailAddressTextBox" Text="" TextWrapping="Wrap" TabIndex="6" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,140,244,0" VerticalAlignment="Top"/>
 		<TextBlock x:Name="m_emailAddressLabel" Height="16" Width="81.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Email Address" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,140,0,0" VerticalAlignment="Top"/>
 		<TextBlock x:Name="m_securityQuestionLabel" Width="110.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Security Question" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,246,0,0" VerticalAlignment="Top" Height="16"/>
-		<ComboBox Margin="145,244,7,0" VerticalAlignment="Top" Height="25" x:Name="m_securityQuestionListBox" TabIndex="10" SelectedIndex="0">
+		<ComboBox Margin="145,244,144,0" VerticalAlignment="Top" Height="25" x:Name="m_securityQuestionListBox" TabIndex="10" SelectedIndex="0">
 			<TextBlock FontSize="11" Text="What is your mother's maiden name?" />
 			<TextBlock FontSize="11" Text="What is your favourite colour?" />
 			<TextBlock FontSize="11" Text="Which city were you born in?" />
@@ -30,7 +30,7 @@
 			<TextBlock FontSize="11" Text="Who is your favourite philosopher?" />
 		</ComboBox>
 		<TextBlock x:Name="m_securityAnswerLabel" Width="97.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Security Answer" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,275,0,0" Height="16" VerticalAlignment="Top"/>
-		<ComboBox Margin="145,327,7,0" VerticalAlignment="Top" Height="25" x:Name="m_countryListBox" TabIndex="13" SelectedIndex="14">
+		<ComboBox Margin="145,327,144,0" VerticalAlignment="Top" Height="25" x:Name="m_countryListBox" TabIndex="13" SelectedIndex="14">
 			<TextBlock FontSize="11" Text="Afghanistan" />
 			<TextBlock FontSize="11" Text="Albania" />
 			<TextBlock FontSize="11" Text="Algeria" />
@@ -289,11 +289,102 @@
 		</ComboBox>
 		<TextBlock x:Name="m_countryLabel" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Country" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,327,0,0" Height="16" VerticalAlignment="Top"/>
 		<TextBlock x:Name="m_cityLabel" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="City" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,301,0,0" Height="16" VerticalAlignment="Top"/>
-		<TextBox x:Name="m_cityTextBox" Text="" TextWrapping="Wrap" TabIndex="12" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,301,107,0" VerticalAlignment="Top"/>
-		<Button x:Name="m_createAccountButton" Height="22" Margin="145,394,212,0" VerticalAlignment="Top" Content="Create Account" Click="CreateCustomerButton_Click" TabIndex="15"/>
+		<TextBox x:Name="m_cityTextBox" Text="" TextWrapping="Wrap" TabIndex="12" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,301,244,0" VerticalAlignment="Top"/>
+		<Button x:Name="m_createAccountButton" Height="22" Margin="145,435,0,0" VerticalAlignment="Top" Content="Create Account" Click="CreateCustomerButton_Click" TabIndex="15" HorizontalAlignment="Left" Width="93"/>
 		<TextBlock Height="48" Margin="0,36,0,0" VerticalAlignment="Top" Text="" TextWrapping="Wrap" x:Name="m_statusTextBlock" Foreground="{StaticResource WarningTextBrush}" TextAlignment="Left" HorizontalAlignment="Center"/>
-		<TextBox x:Name="m_securityAnswerTextBox" Text="" TextWrapping="Wrap" TabIndex="11" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,275,107,0" VerticalAlignment="Top"/>
-		<TextBox x:Name="m_webSiteTextBox" Text="" TextWrapping="Wrap" TabIndex="14" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,358,107,0" VerticalAlignment="Top"/>
+		<TextBox x:Name="m_securityAnswerTextBox" Text="" TextWrapping="Wrap" TabIndex="11" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,275,244,0" VerticalAlignment="Top"/>
+		<TextBox x:Name="m_webSiteTextBox" Text="" TextWrapping="Wrap" TabIndex="14" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,358,244,0" VerticalAlignment="Top"/>
 		<TextBlock x:Name="m_webSiteLabel" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Web Site" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,358,0,0" Height="16" VerticalAlignment="Top"/>
+		<ComboBox Margin="145,384,47,0" VerticalAlignment="Top" Height="25" x:Name="m_timezoneListBox" TabIndex="13" SelectedIndex="31">
+			<TextBlock FontSize="11" Text="(GMT-12:00) International Date Line West"/>
+			<TextBlock FontSize="11" Text="(GMT-11:00) Midway Island, Samoa"/>
+			<TextBlock FontSize="11" Text="(GMT-10:00) Hawaii"/>
+			<TextBlock FontSize="11" Text="(GMT-09:00) Alaska"/>
+			<TextBlock FontSize="11" Text="(GMT-08:00) Pacific Time (US &amp; Canada)"/>
+			<TextBlock FontSize="11" Text="(GMT-08:00) Tijuana, Baja California"/>
+			<TextBlock FontSize="11" Text="(GMT-07:00) Arizona"/>
+			<TextBlock FontSize="11" Text="(GMT-07:00) Chihuahua, La Paz, Mazatlan"/>
+			<TextBlock FontSize="11" Text="(GMT-07:00) Mountain Time (US &amp; Canada)"/>
+			<TextBlock FontSize="11" Text="(GMT-06:00) Central America"/>
+			<TextBlock FontSize="11" Text="(GMT-06:00) Central Time (US &amp; Canada)"/>
+			<TextBlock FontSize="11" Text="(GMT-06:00) Guadalajara, Mexico City, Monterrey"/>
+			<TextBlock FontSize="11" Text="(GMT-06:00) Saskatchewan"/>
+			<TextBlock FontSize="11" Text="(GMT-05:00) Bogota, Lima, Quito, Rio Branco"/>
+			<TextBlock FontSize="11" Text="(GMT-05:00) Eastern Time (US &amp; Canada)"/>
+			<TextBlock FontSize="11" Text="(GMT-05:00) Indiana (East)"/>
+			<TextBlock FontSize="11" Text="(GMT-04:30) Caracas"/>
+			<TextBlock FontSize="11" Text="(GMT-04:00) Atlantic Time (Canada)"/>
+			<TextBlock FontSize="11" Text="(GMT-04:00) La Paz"/>
+			<TextBlock FontSize="11" Text="(GMT-04:00) Manaus"/>
+			<TextBlock FontSize="11" Text="(GMT-04:00) Santiago"/>
+			<TextBlock FontSize="11" Text="(GMT-03:30) Newfoundland"/>
+			<TextBlock FontSize="11" Text="(GMT-03:00) Brasilia"/>
+			<TextBlock FontSize="11" Text="(GMT-03:00) Buenos Aires"/>
+			<TextBlock FontSize="11" Text="(GMT-03:00) Georgetown"/>
+			<TextBlock FontSize="11" Text="(GMT-03:00) Greenland"/>
+			<TextBlock FontSize="11" Text="(GMT-03:00) Montevideo"/>
+			<TextBlock FontSize="11" Text="(GMT-02:00) Mid-Atlantic"/>
+			<TextBlock FontSize="11" Text="(GMT-01:00) Azores"/>
+			<TextBlock FontSize="11" Text="(GMT-01:00) Cape Verde Is."/>
+			<TextBlock FontSize="11" Text="(GMT) Casablanca"/>
+			<TextBlock FontSize="11" Text="(GMT) Greenwich Mean Time : Dublin, Edinburgh, Lisbon, London"/>
+			<TextBlock FontSize="11" Text="(GMT) Monrovia, Reykjavik"/>
+			<TextBlock FontSize="11" Text="(GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna"/>
+			<TextBlock FontSize="11" Text="(GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague"/>
+			<TextBlock FontSize="11" Text="(GMT+01:00) Brussels, Copenhagen, Madrid, Paris"/>
+			<TextBlock FontSize="11" Text="(GMT+01:00) Sarajevo, Skopje, Warsaw, Zagreb"/>
+			<TextBlock FontSize="11" Text="(GMT+01:00) West Central Africa"/>
+			<TextBlock FontSize="11" Text="(GMT+02:00) Amman"/>
+			<TextBlock FontSize="11" Text="(GMT+02:00) Athens, Bucharest, Istanbul"/>
+			<TextBlock FontSize="11" Text="(GMT+02:00) Beirut"/>
+			<TextBlock FontSize="11" Text="(GMT+02:00) Cairo"/>
+			<TextBlock FontSize="11" Text="(GMT+02:00) Harare, Pretoria"/>
+			<TextBlock FontSize="11" Text="(GMT+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius"/>
+			<TextBlock FontSize="11" Text="(GMT+02:00) Jerusalem"/>
+			<TextBlock FontSize="11" Text="(GMT+02:00) Minsk"/>
+			<TextBlock FontSize="11" Text="(GMT+02:00) Windhoek"/>
+			<TextBlock FontSize="11" Text="(GMT+03:00) Baghdad"/>
+			<TextBlock FontSize="11" Text="(GMT+03:00) Kuwait, Riyadh"/>
+			<TextBlock FontSize="11" Text="(GMT+03:00) Moscow, St. Petersburg, Volgograd"/>
+			<TextBlock FontSize="11" Text="(GMT+03:00) Nairobi"/>
+			<TextBlock FontSize="11" Text="(GMT+03:00) Tbilisi"/>
+			<TextBlock FontSize="11" Text="(GMT+03:30) Tehran"/>
+			<TextBlock FontSize="11" Text="(GMT+04:00) Abu Dhabi, Muscat"/>
+			<TextBlock FontSize="11" Text="(GMT+04:00) Baku"/>
+			<TextBlock FontSize="11" Text="(GMT+04:00) Port Louis"/>
+			<TextBlock FontSize="11" Text="(GMT+04:00) Yerevan"/>
+			<TextBlock FontSize="11" Text="(GMT+04:30) Kabul"/>
+			<TextBlock FontSize="11" Text="(GMT+05:00) Ekaterinburg"/>
+			<TextBlock FontSize="11" Text="(GMT+05:00) Islamabad, Karachi"/>
+			<TextBlock FontSize="11" Text="(GMT+05:00) Tashkent"/>
+			<TextBlock FontSize="11" Text="(GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi"/>
+			<TextBlock FontSize="11" Text="(GMT+05:30) Sri Jayawardenepura"/>
+			<TextBlock FontSize="11" Text="(GMT+05:45) Kathmandu"/>
+			<TextBlock FontSize="11" Text="(GMT+06:00) Almaty, Novosibirsk"/>
+			<TextBlock FontSize="11" Text="(GMT+06:00) Astana, Dhaka"/>
+			<TextBlock FontSize="11" Text="(GMT+06:30) Yangon (Rangoon)"/>
+			<TextBlock FontSize="11" Text="(GMT+07:00) Bangkok, Hanoi, Jakarta"/>
+			<TextBlock FontSize="11" Text="(GMT+07:00) Krasnoyarsk"/>
+			<TextBlock FontSize="11" Text="(GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi"/>
+			<TextBlock FontSize="11" Text="(GMT+08:00) Irkutsk, Ulaan Bataar"/>
+			<TextBlock FontSize="11" Text="(GMT+08:00) Kuala Lumpur, Singapore"/>
+			<TextBlock FontSize="11" Text="(GMT+08:00) Perth"/>
+			<TextBlock FontSize="11" Text="(GMT+08:00) Taipei"/>
+			<TextBlock FontSize="11" Text="(GMT+09:00) Osaka, Sapporo, Tokyo"/>
+			<TextBlock FontSize="11" Text="(GMT+09:00) Seoul"/>
+			<TextBlock FontSize="11" Text="(GMT+09:00) Yakutsk"/>
+			<TextBlock FontSize="11" Text="(GMT+09:30) Adelaide"/>
+			<TextBlock FontSize="11" Text="(GMT+09:30) Darwin"/>
+			<TextBlock FontSize="11" Text="(GMT+10:00) Brisbane"/>
+			<TextBlock FontSize="11" Text="(GMT+10:00) Canberra, Melbourne, Sydney"/>
+			<TextBlock FontSize="11" Text="(GMT+10:00) Guam, Port Moresby"/>
+			<TextBlock FontSize="11" Text="(GMT+10:00) Hobart"/>
+			<TextBlock FontSize="11" Text="(GMT+10:00) Vladivostok"/>
+			<TextBlock FontSize="11" Text="(GMT+11:00) Magadan, Solomon Is., New Caledonia"/>
+			<TextBlock FontSize="11" Text="(GMT+12:00) Auckland, Wellington"/>
+			<TextBlock FontSize="11" Text="(GMT+12:00) Fiji, Kamchatka, Marshall Is."/>
+			<TextBlock FontSize="11" Text="(GMT+13:00) Nuku'alofa"/>
+		</ComboBox>
+		<TextBlock x:Name="m_timezoneLabel" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Timezone" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,384,0,0" Height="16" VerticalAlignment="Top"/>
 	</Grid>
 </UserControl>

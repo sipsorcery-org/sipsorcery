@@ -20,6 +20,9 @@ namespace SIPSorcery
 	{
         private const string DEFAULT_HELP_URL = "https://www.sipsorcery.com/help.html";
         private const string DEFAULT_HELP_OPTIONS = "width=600,height=500,scrollbars=1";
+        private const int INITIAL_DISPLAY_EXTEND_SESSION = 2700000;     // Display the extend session button after 45 minutes initially.
+        private const int SUBSEQUENT_DISPLAY_EXTEND_SESSION = 3600000;  // Display the extend session button after 60 minutes subsequently.
+        private const int EXTEND_SESSION_INCREMENTS = 60;               // The number of minutes to extend the session by.
 
         public LogoutDelegate Logout_External;
 
@@ -34,6 +37,7 @@ namespace SIPSorcery
         private MonitoringConsole m_monitorConsole;
         private SIPSwitchboard m_switchboard;
         private CustomerSettingsControl m_customerSettings;
+        private Timer m_sessionTimer;
 
         private TextBlock m_selectedTextBlock = null;
 
@@ -58,9 +62,12 @@ namespace SIPSorcery
             m_owner = owner;
             m_monitorHost = monitorHost;
             m_monitorPort = monitorPort;
-
+            m_sessionTimer = new Timer(delegate { UIHelper.SetVisibility(m_extendSessionButton, Visibility.Visible); }, null, INITIAL_DISPLAY_EXTEND_SESSION, UInt32.MaxValue);
+ 
             this.m_activityPorgressBar.Visibility = Visibility.Collapsed;
             this.TabNavigation = KeyboardNavigationMode.Cycle;
+            this.m_extendSessionButton.Visibility = Visibility.Collapsed;
+            m_persistor.ExtendSessionComplete += ExtendSessionComplete;
 
             if (m_sipEventMonitorClient != null)
             {
@@ -92,13 +99,31 @@ namespace SIPSorcery
             m_switchboard.Visibility = Visibility.Collapsed;
             m_mainCanvas.Children.Add(m_switchboard);
 
-            m_customerSettings = new CustomerSettingsControl(LogActivityMessage, m_persistor, m_owner);
+            m_customerSettings = new CustomerSettingsControl(LogActivityMessage, Logout_External, m_persistor, m_owner);
             m_customerSettings.Visibility = Visibility.Collapsed;
             m_mainCanvas.Children.Add(m_customerSettings);
 
             SetActive(m_sipAccountManager);
             SetSelectedTextBlock(m_sipAccountsLink);
   		}
+
+        private void ExtendSessionComplete(System.ComponentModel.AsyncCompletedEventArgs e) {
+            try {
+                if (e.Error == null) {
+                    // Session was successfully extended, hide the button and reset the timer.
+                    UIHelper.SetVisibility(m_extendSessionButton, Visibility.Collapsed);
+                    m_sessionTimer = new Timer(delegate { UIHelper.SetVisibility(m_extendSessionButton, Visibility.Visible); }, null, SUBSEQUENT_DISPLAY_EXTEND_SESSION, UInt32.MaxValue);
+                }
+                else {
+                    // Session was not successfully extended, hide the button and DON'T reset the timer.
+                    UIHelper.SetVisibility(m_extendSessionButton, Visibility.Collapsed);
+                    LogActivityMessage(MessageLevelsEnum.Warn, e.Error.Message);
+                }
+            }
+            catch (Exception excp) {
+                LogActivityMessage(MessageLevelsEnum.Error, "Exception ExtendSessionComplete. " + excp.Message);
+            }
+        }
 
         private void UserControl_Loaded(object sender, System.Windows.RoutedEventArgs e)
         {
@@ -258,19 +283,6 @@ namespace SIPSorcery
             Logout_External(true);
         }
 
-        private void DeleteAccountLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) {
-            try {
-                MessageBoxResult confirmDelete = MessageBox.Show("Important! If you have active SIP Provider bindings you need to deactivate them BEFORE deleting your account.\nPress Ok to delete all your account details.", "Confirm Delete", MessageBoxButton.OKCancel);
-                if (confirmDelete == MessageBoxResult.OK) {
-                    m_persistor.DeleteCustomerComplete += (eargs) => { Logout_External(false); };
-                    m_persistor.DeleteCustomerAsync(m_owner);
-                }
-            }
-            catch (Exception excp) {
-                LogActivityMessage(MessageLevelsEnum.Error, "Exception deleting account. " + excp.Message);
-            }
-        }
-
         private void HelpLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) {
             try {
                 HtmlPage.Window.Navigate(new Uri(DEFAULT_HELP_URL), "SIPSorceryHelp", DEFAULT_HELP_OPTIONS);
@@ -284,19 +296,16 @@ namespace SIPSorcery
         /// Highlights the menu option links when clicked on.
         /// </summary>
         /// <param name="selectedTextBlock">The TextBlock the user clicked on.</param>
-        private void SetSelectedTextBlock(TextBlock selectedTextBlock)
-        {
-            if (m_selectedTextBlock != null)
-            {
-                m_selectedTextBlock.Foreground = new SolidColorBrush(Color.FromArgb(0xff, 0xA0, 0xF9, 0x27));
+        private void SetSelectedTextBlock(TextBlock selectedTextBlock) {
+            if (m_selectedTextBlock != null) {
+                UIHelper.SetTextBlockDisplayLevel(m_selectedTextBlock, MessageLevelsEnum.None);
                 m_selectedTextBlock.TextDecorations = TextDecorations.Underline;
             }
 
-            if (selectedTextBlock != null)
-            {
+            if (selectedTextBlock != null) {
+                UIHelper.SetTextBlockDisplayLevel(selectedTextBlock, MessageLevelsEnum.Selected);
+                selectedTextBlock.TextDecorations = null;
                 m_selectedTextBlock = selectedTextBlock;
-                m_selectedTextBlock.Foreground = new SolidColorBrush(Colors.Purple);
-                m_selectedTextBlock.TextDecorations = null;
             }
         }
 
@@ -335,6 +344,17 @@ namespace SIPSorcery
             SetActive(m_customerSettings);
             SetSelectedTextBlock(m_settingsLink);
             m_customerSettings.Load();
+        }
+
+        private void AboutLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            About about = new About();
+            about.Show();
+        }
+
+        private void ExtendSessionButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            m_persistor.ExtendSessionAsync(EXTEND_SESSION_INCREMENTS);
         }
 	}
 }

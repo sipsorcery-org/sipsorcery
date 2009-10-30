@@ -54,9 +54,16 @@
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.CRM\Customer.cs">
       <Link>Customer.cs</Link>
     </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.CRM\CustomerSession.cs">
+      <Link>CustomerSession.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
+      <Project>{6ED5020C-A823-4EA6-B01C-C505CE80E970}</Project>
+      <Name>SIPSorcery.Persistence</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
       <Project>{27E8B3BB-0C0F-473E-AFED-DCE76F73A65D}</Project>
       <Name>SIPSorcery.Sys</Name>

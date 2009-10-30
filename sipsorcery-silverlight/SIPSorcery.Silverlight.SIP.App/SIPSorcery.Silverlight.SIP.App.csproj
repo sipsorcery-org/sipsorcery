@@ -122,6 +122,10 @@
       <Project>{B9A3E915-302F-4433-8696-85368A5496B4}</Project>
       <Name>SIPSorcery.Net</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
+      <Project>{6ED5020C-A823-4EA6-B01C-C505CE80E970}</Project>
+      <Name>SIPSorcery.Persistence</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Silverlight.SIP\SIPSorcery.Silverlight.SIP.csproj">
       <Project>{F996B6D4-3731-44A5-A35A-A6CE4010BC64}</Project>
       <Name>SIPSorcery.Silverlight.SIP</Name>

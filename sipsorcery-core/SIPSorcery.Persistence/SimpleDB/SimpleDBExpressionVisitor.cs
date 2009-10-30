@@ -18,7 +18,7 @@ namespace SIPSorcery.Persistence {
         internal string Translate(Expression expression) {
             this.sb = new StringBuilder();
             this.Visit(expression);
-            return this.sb.ToString();
+            return this.sb.ToString().Trim();
         }
 
         private static Expression StripQuotes(Expression e) {
@@ -82,8 +82,9 @@ namespace SIPSorcery.Persistence {
         protected override Expression VisitUnary(UnaryExpression u) {
             switch (u.NodeType) {
                 case ExpressionType.Not:
+                    sb.Append("not (");
                     this.Visit(u.Operand);
-                    sb.Append(" = 'False' ");
+                    sb.Append(")");
                     break;
                 default:
                     throw new NotSupportedException(string.Format("The unary operator '{0}' is not supported by SimpleDB.", u.NodeType));
@@ -135,20 +136,26 @@ namespace SIPSorcery.Persistence {
                 sb.Append("null");
             }
             else {
-                switch (Type.GetTypeCode(c.Value.GetType())) {
-                    case TypeCode.DateTime:
-                        sb.Append("'");
-                        sb.Append(((DateTime)c.Value).ToString("o"));
-                        sb.Append("'");
-                        break;
-                    case TypeCode.Object:
-                        throw new NotSupportedException(string.Format("The constant for '{0}' is not supported SimpleDB.", c.Value));
-                    default:
-                        sb.Append("'");
-                        sb.Append(c.Value);
-                        sb.Append("'");
-                        break;
-                        break;
+                if (c.Value.GetType() == typeof(Guid)) {
+                    sb.Append("'");
+                    sb.Append(c.Value);
+                    sb.Append("'");
+                }
+                else {
+                    switch (Type.GetTypeCode(c.Value.GetType())) {
+                        case TypeCode.DateTime:
+                            sb.Append("'");
+                            sb.Append(((DateTime)c.Value).ToString("o"));
+                            sb.Append("'");
+                            break;
+                        case TypeCode.Object:
+                            throw new NotSupportedException(string.Format("The constant for '{0}' is not supported SimpleDB.", c.Value));
+                        default:
+                            sb.Append("'");
+                            sb.Append(c.Value);
+                            sb.Append("'");
+                            break;
+                    }
                 }
             }
             return c;
@@ -158,6 +165,9 @@ namespace SIPSorcery.Persistence {
             if (m.Expression != null && m.Expression.NodeType == ExpressionType.Parameter) {
                 if(IsPrimaryKey(m)) {
                     sb.Append("itemName()");
+                }
+                else if (GetMemberType(m) == typeof(Boolean)) {
+                    sb.Append(m.Member.Name.ToLower() + " = 'True'");
                 }
                 else {
                     sb.Append(m.Member.Name.ToLower());
@@ -189,6 +199,18 @@ namespace SIPSorcery.Persistence {
                 }
             }
             return false;
+        }
+
+        private Type GetMemberType(MemberExpression m) {
+            AttributeMappingSource mappingSource = new AttributeMappingSource();
+            MetaModel mapping = mappingSource.GetModel(m.Member.DeclaringType);
+            MetaTable table = mapping.GetTable(m.Member.DeclaringType);
+            foreach (MetaDataMember dataMember in table.RowType.PersistentDataMembers) {
+                if (dataMember.Name == m.Member.Name) {
+                    return dataMember.Type;
+                }
+            }
+            return null;
         }
     }
 }

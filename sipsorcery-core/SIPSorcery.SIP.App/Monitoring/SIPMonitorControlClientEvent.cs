@@ -79,7 +79,7 @@ namespace SIPSorcery.SIP.App
             EventType = eventType;
             Message = message;
             Username = username;
-            Created = DateTime.Now;
+            Created = DateTime.UtcNow;
         }
 
         public SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, string username, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint) {
@@ -90,7 +90,7 @@ namespace SIPSorcery.SIP.App
             EventType = eventType;
             Message = message;
             Username = username;
-            Created = DateTime.Now;
+            Created = DateTime.UtcNow;
             ServerEndPoint = localEndPoint;
             RemoteEndPoint = remoteEndPoint;
         }
@@ -106,7 +106,7 @@ namespace SIPSorcery.SIP.App
             ServerEndPoint = serverSocket;
             RemoteEndPoint = fromSocket;
             DestinationEndPoint = toSocket;
-            Created = DateTime.Now;
+            Created = DateTime.UtcNow;
         }
 
         public SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, SIPRequest sipRequest, SIPResponse sipResponse, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, SIPCallDirection callDirection)
@@ -119,7 +119,7 @@ namespace SIPSorcery.SIP.App
             Message = message;
             RemoteEndPoint = remoteEndPoint;
             ServerEndPoint = localEndPoint;
-            Created = DateTime.Now;
+            Created = DateTime.UtcNow;
 
             string dirn = (callDirection == SIPCallDirection.In) ? CALLDIRECTION_IN_STRING : CALLDIRECTION_OUT_STRING;
             if (sipRequest != null)

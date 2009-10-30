@@ -7,11 +7,12 @@ using System.Xml;
 namespace SIPSorcery.Persistence {
     
     public interface ISIPAsset {
-        string Id { get; set; }
+        Guid Id { get; set; }
 
 #if !SILVERLIGHT
         void Load(System.Data.DataRow row);
         Dictionary<Guid, object> Load(XmlDocument dom);
+        System.Data.DataTable GetTable();
 #endif
 
         string ToXML();

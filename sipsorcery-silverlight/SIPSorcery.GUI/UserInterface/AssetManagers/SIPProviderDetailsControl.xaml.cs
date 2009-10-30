@@ -87,7 +87,7 @@ namespace SIPSorcery
 
         private void PopulateDataFields(SIPProvider sipProvider)
         {
-            m_providerId.Text = sipProvider.Id;
+            m_providerId.Text = sipProvider.Id.ToString();
             m_providerName.Text = sipProvider.ProviderName;
             m_providerUsername.Text = sipProvider.ProviderUsername;
             m_providerPassword.Text = sipProvider.ProviderPassword;
@@ -162,8 +162,8 @@ namespace SIPSorcery
 
                 SIPProvider sipProvider = new SIPProvider(m_owner, providerName, providerUsername, providerPassword, providerServer, outboundProxy, providerFrom, customHeaders,
                         registerContact, registerExpiry, registerServer, authUsername, registerRealm, registerEnabled, true);
-                    sipProvider.InsertedUTC = DateTime.Now.ToUniversalTime();
-                    sipProvider.LastUpdateUTC = DateTime.Now.ToUniversalTime();
+                    sipProvider.Inserted = DateTime.UtcNow;
+                    sipProvider.LastUpdate = DateTime.UtcNow;
 
                 string validationError = SIPProvider.ValidateAndClean(sipProvider);
                 if (validationError != null) {

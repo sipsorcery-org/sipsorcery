@@ -142,12 +142,10 @@ namespace SIPSorcery.SIP
                     SIPURI ackURI = m_transactionRequest.URI;
                     if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0) {
                         ackURI = sipResponse.Header.Contact[0].ContactURI;
-                        if (!sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) {
+                        if (SIPTransport.IsPrivateAddress(ackURI.Host) && !sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) {
                             // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
-                            if (SIPTransport.IsPrivateAddress(ackURI.Host)) {
-                                SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom);
-                                ackURI.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();
-                            }
+                            SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom);
+                            ackURI.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();
                         }
                     }
 

@@ -24,7 +24,7 @@ create table customers
  authorisedapps varchar(2048),				-- A semi-colon delimited list of privileged apps that this customer's dialplan are authorised to use.
  timezone varchar(128),
  emailaddressconfirmed bool not null default false,
- inserted timestamp not null default now(),
+ inserted varchar(30) not null,
  Primary Key(id),
  Unique(customerusername)
 );
@@ -35,11 +35,12 @@ create table customersessions
  id varchar(36) not null,
  sessionid varchar(96) not null,
  customerusername varchar(32) not null,
- inserted timestamp not null default now(),
+ inserted varchar(30) not null,
  expired bool not null default False,
  ipaddress varchar(15),
+ timelimitminutes int not null default 60,
  Primary Key(id),
- Foreign Key(customerusername) references Customers(customerusername) on delete cascade
+ Foreign Key(customerusername) references customers(customerusername) on delete cascade
 );
 
 -- Maps to class SIPSorcery.SIP.App.SIPDomain.
@@ -49,7 +50,7 @@ create table sipdomains
  domain varchar(128) not null,			-- The domain name.
  aliaslist varchar(1024),				-- If not null indicates a semi-colon delimited list of aliases for the domain.
  owner varchar(32),						-- The username of the customer that owns the domain. If null it's a public domain.
- inserted timestamp not null default now(),
+ inserted varchar(30) not null,
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Unique(domain)
@@ -73,7 +74,7 @@ create table sipaccounts
  admindisabledreason varchar(256),
  networkid varchar(16),
  ipaddressacl varchar(256),
- inserted timestamp not null default now(),
+ inserted varchar(30) not null,
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Foreign Key(sipdomain) references sipdomains(domain) on update cascade,
@@ -95,8 +96,8 @@ create table sipregistrarbindings
  remotesipsocket varchar(64) not null,
  proxysipsocket varchar(64),
  registrarsipsocket varchar(64) not null,
- lastupdate timestamp not null default now(),
- expirytime timestamp not null,
+ lastupdate varchar(30) not null,
+ expirytime varchar(30) not null,
  Primary Key(id),
  Foreign Key(sipaccountid) references sipaccounts(id) on delete cascade on update cascade,
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade
@@ -123,10 +124,10 @@ create table sipproviders
  registerenabled bool not null default false,
  registeradminenabled bool not null default true,		-- This allows an admin to disable the registration and override the user.
  registerdisabledreason varchar(256),					-- If a registration has been disabled by the RegistrationAgent the reason will be specified here. Examples are 403 Forbidden responses.
- inserted timestamp not null default now(),
- lastupdate timestamp not null,
+ inserted varchar(30) not null,
+ lastupdate varchar(30) not null,
  Primary Key(id),
- Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade,
+ Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Unique(owner, providername)
 );
 
@@ -139,16 +140,16 @@ create table sipproviderbindings
  owner varchar(36) not null,
  adminmemberid varchar(32),
  registrationfailuremessage varchar(1024),
- nextregistrationtime timestamp not null default now(),
- lastregistertime timestamp null default null,
- lastregisterattempt timestamp null default null,
+ nextregistrationtime varchar(30) not null,
+ lastregistertime varchar(30) null default null,
+ lastregisterattempt varchar(30) null default null,
  isregistered bool not null default false,
  bindingexpiry int not null default 3600,
  bindinguri varchar(256) not null,
  registrarsipsocket varchar(256),
  cseq int not null,
  Primary Key(id),
- Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade,
+ Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Foreign Key(providerid) references sipproviders(id) on delete cascade on update cascade
 );
 
@@ -162,13 +163,13 @@ create table sipdialplans
  traceemailaddress varchar(256),
  dialplanscript varchar(30000),
  scripttypedescription varchar(12) not null default 'Ruby',		-- The type of script the dialplan has, supported values are: Asterisk, Ruby, Python and JScript.
- inserted timestamp not null default now(),
- lastupdate timestamp not null,
+ inserted varchar(30) not null,
+ lastupdate varchar(30) not null,
  maxexecutioncount int not null,								-- The mamimum number of simultaneous executions of the dialplan that are permitted.
  executioncount int not null,									-- The current number of dialplan executions in progress.
  authorisedapps varchar(2048),									-- A semi-colon delimited list of privileged apps that this dialplan is authorised to use.
  Primary Key(id),
- Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade,
+ Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Unique(owner, dialplanname)
 );
 
@@ -187,11 +188,12 @@ create table sipdialogues
  remotetarget varchar(256) not null,
  localuserfield varchar(512) not null,
  remoteuserfield varchar(512) not null,
+ proxysipsocket varchar(64),
  routeset varchar(512),
  cdrid varchar(36) not null,
  calldurationlimit int,
- inserted timestamp not null default now(),
- hangupat timestamp null default null,
+ inserted varchar(30) not null,
+ hangupat varchar(30) null default null,
  Primary Key(id),
  Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade
 );
@@ -202,9 +204,9 @@ create table cdr
  id varchar(36) not null,
  owner varchar(32),
  adminmemberid varchar(32),
- inserted timestamp not null default now(),
+ inserted varchar(30) not null,
  direction varchar(3) not null,					-- In or Out with respect to the proxy.
- created timestamp not null,					-- Time the cdr was created by the proxy.
+ created varchar(30) not null,					-- Time the cdr was created by the proxy.
  dst varchar(128),								-- The user portion of the destination URI.
  dsthost varchar(128) not null,					-- The host portion of the destination URI.
  dsturi varchar(1024) not null,					-- The full destination URI.
@@ -215,15 +217,15 @@ create table cdr
  localsocket varchar(64) not null,				-- The socket on the proxy used for the call.
  remotesocket varchar(64) not null,				-- The remote socket used for the call.
  bridgeid varchar(36),							-- If the call was involved in a bridge the id of it.
- inprogresstime timestamp null default null,	-- The time of the last info response for the call.
+ inprogresstime varchar(30) null default null,	-- The time of the last info response for the call.
  inprogressstatus int,							-- The SIP response status code of the last info response for the call.
  inprogressreason varchar(64),					-- The SIP response reason phrase of the last info response for the call.
  ringduration int,								-- Number of seconds the call was ringing for.
- answeredtime timestamp null default null,		-- The time the call was answered with a final response.
+ answeredtime varchar(30) null default null,	-- The time the call was answered with a final response.
  answeredstatus int,							-- The SIP response status code of the final response for the call.
  answeredreason varchar(64),					-- The SIP response reason phrase of the final response for the call.
  duration int,									-- Number of seconds the call was established for.
- hunguptime timestamp null default null,	    -- The time the call was hungup.
+ hunguptime varchar(30) null default null,	    -- The time the call was hungup.
  hungupreason varchar(64),						-- The SIP response Reason header on the BYE request if present.
  Primary Key(id)
 );

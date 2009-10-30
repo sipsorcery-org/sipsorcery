@@ -49,6 +49,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
 using System.Xml.Serialization;
+using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -82,31 +83,46 @@ namespace SIPSorcery.SIP.App
         private static string m_newLine = AppState.NewLine;
 
         [DataMember]
-        [Column(Storage = "_id", Name = "id", DbType = "character varying(36)", IsPrimaryKey = true, CanBeNull = false)]
-        public string Id { get; set; }
+        [Column(Name = "id", DbType = "StringFixedLength", IsPrimaryKey = true, CanBeNull = false)]
+        public Guid Id { get; set; }
 
         [DataMember]
-        [Column(Storage = "_domain", Name = "domain", DbType = "character varying(128)", CanBeNull = false)]
+        [Column(Name = "domain", DbType = "StringFixedLength", CanBeNull = false)]
         public string Domain {get; set;}
 
         [DataMember]
-        [Column(Storage = "_owner", Name = "owner", DbType = "character varying(32)", CanBeNull = true)]
+        [Column(Name = "owner", DbType = "StringFixedLength", CanBeNull = true)]
         public string Owner { get; set; }
-                
-        [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
-        public DateTime? InsertedUTC { get; set; }
 
-        [Column(Storage = "_aliaslist", Name = "aliaslist", DbType = "varchar(1024)", CanBeNull = true)]
-        public string AliasList
-        {
-            get
-            {
-                string aliasList = null;
-                Aliases.ForEach(a => aliasList += a + ALIAS_SEPERATOR_CHAR);
-                return aliasList;
+        private DateTime? m_inserted;
+        [Column(Name = "inserted", DbType = "StringFixedLength", CanBeNull = false)]
+        public DateTime? Inserted 
+        { 
+            get { return m_inserted;} 
+            set {
+                if (value != null) {
+                    m_inserted = value.Value.ToUniversalTime();
+                }
+                else {
+                    m_inserted = null;
+                }
             }
-            set
-            {
+        }
+
+        [Column(Name = "aliaslist", DbType = "StringFixedLength", CanBeNull = true)]
+        public string AliasList {
+            get {
+                if (Aliases != null && Aliases.Count > 0) {
+                    string aliasList = null;
+
+                    Aliases.ForEach(a => aliasList += a + ALIAS_SEPERATOR_CHAR);
+                    return aliasList;
+                }
+                else {
+                    return null;
+                }
+            }
+            set {
                 Aliases = ParseAliases(value);
             }
         }
@@ -118,11 +134,11 @@ namespace SIPSorcery.SIP.App
 
         public SIPDomain(string domain, string owner, List<string> aliases)
         {
-            Id = Guid.NewGuid().ToString();
+            Id = Guid.NewGuid();
             Domain = domain;
             Owner = owner;
             Aliases = aliases;
-            InsertedUTC = DateTime.Now.ToUniversalTime();
+            Inserted = DateTime.UtcNow;
         }
 
 #if !SILVERLIGHT
@@ -131,12 +147,22 @@ namespace SIPSorcery.SIP.App
             Load(row);
         }
 
+        public DataTable GetTable() {
+            DataTable table = new DataTable();
+            table.Columns.Add(new DataColumn("id", typeof(String)));
+            table.Columns.Add(new DataColumn("domain", typeof(String)));
+            table.Columns.Add(new DataColumn("owner", typeof(String)));
+            table.Columns.Add(new DataColumn("inserted", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("aliaslist", typeof(String)));
+            return table;
+        }
+
         public void Load(DataRow row) {
-            Id = (row.Table.Columns.Contains("id") && row["id"] != DBNull.Value) ? row["id"] as string : Guid.NewGuid().ToString();
+            Id = (row.Table.Columns.Contains("id") && row["id"] != DBNull.Value) ? new Guid(row["id"] as string) : Guid.NewGuid();
             Domain = row["domain"] as string;
             Owner = (row.Table.Columns.Contains("owner") && row["owner"] != DBNull.Value) ? row["owner"] as string : null;
             if (row.Table.Columns.Contains("inserted") & row["inserted"] != DBNull.Value) {
-                InsertedUTC = Convert.ToDateTime(row["inserted"]);
+                Inserted = Convert.ToDateTime(row["inserted"]);
             }
 
             string aliasList = (row.Table.Columns.Contains("aliaslist") & row["aliaslist"] != DBNull.Value) ? row["aliaslist"] as string : null;
@@ -151,7 +177,7 @@ namespace SIPSorcery.SIP.App
 
                 var xmlSIPDomains = from domain in sipDomainsDoc.Document.Descendants(XML_ELEMENT_NAME)
                                     select new SIPDomain() {
-                                        Id = Guid.NewGuid().ToString(),
+                                        Id = Guid.NewGuid(),
                                         Domain = domain.Element("domain").Value,
                                         Owner = (domain.Element("owner") != null) ? domain.Element("owner").Value : null,
                                         Aliases =
@@ -160,7 +186,7 @@ namespace SIPSorcery.SIP.App
                                     };
 
                 foreach (SIPDomain xmlSIPDomain in xmlSIPDomains) {
-                    sipDomains.Add(new Guid(xmlSIPDomain.Id), xmlSIPDomain);
+                    sipDomains.Add(xmlSIPDomain.Id, xmlSIPDomain);
                 }
 
                 return sipDomains;
@@ -184,10 +210,11 @@ namespace SIPSorcery.SIP.App
         }
 
           public string ToXMLNoParent() {
-              string sipDomainXML =
-                  "  <id>" + Id + "</id>" + m_newLine;
+            throw new NotImplementedException();
+              //string sipDomainXML =
+               //   "  <id>" + Id + "</id>" + m_newLine;
 
-              return sipDomainXML;
+              //return sipDomainXML;
           }
 
         public string GetXMLElementName() {

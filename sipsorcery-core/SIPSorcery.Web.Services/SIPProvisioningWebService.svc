@@ -1,0 +1,1 @@
+﻿<%@ ServiceHost Language="C#" Debug="true" Service="SIPSorcery.Web.Services.SIPProvisioningWebService" CodeBehind="SIPProvisioningWebService.svc.cs" %>

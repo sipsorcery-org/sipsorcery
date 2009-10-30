@@ -76,6 +76,10 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Amazon.SimpleDB, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\stable\Amazon.SimpleDB.dll</HintPath>
+    </Reference>
     <Reference Include="DbLinq, Version=0.19.0.0, Culture=neutral, PublicKeyToken=61e015a67077348b, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\DbLinq.dll</HintPath>
@@ -155,16 +159,7 @@
     <Compile Include="Net\IPSocket.cs" />
     <Compile Include="Net\NetServices.cs" />
     <Compile Include="Net\Utilities.cs" />
-    <Compile Include="Persistence\DBLinqAssetPersistor.cs" />
-    <Compile Include="Persistence\DBLinqContext.cs" />
-    <Compile Include="Persistence\DynamicLinq.cs" />
-    <Compile Include="Persistence\ISIPAsset.cs" />
-    <Compile Include="Persistence\SIPAssetPersistor.cs" />
-    <Compile Include="Persistence\SIPAssetXMLPersistor.cs" />
     <Compile Include="SafeXML.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Persistence\StorageLayer.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="TypeExtensions.cs" />

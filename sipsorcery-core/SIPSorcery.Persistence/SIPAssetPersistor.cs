@@ -56,6 +56,8 @@ using System.Data.Linq.Mapping;
 
 namespace SIPSorcery.Persistence
 {
+    public delegate void SetterDelegate(object instance, string propertyName, object value);
+
     public delegate void SIPAssetDelegate<T>(T asset);
     public delegate void SIPAssetsModifiedDelegate();
     public delegate void SIPAssetReloadedDelegate();
@@ -123,13 +125,13 @@ namespace SIPSorcery.Persistence
 
 #if !SILVERLIGHT
 
-        public virtual T GetFromDirectQuery(string sqlQuery, params IDbDataParameter[] sqlParameters) {
-            throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
-        }
+        //public virtual T GetFromDirectQuery(string sqlQuery, params IDbDataParameter[] sqlParameters) {
+        //    throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
+        //}
 
-        public virtual List<T> GetListFromDirectQuery(string sqlQuery, params IDbDataParameter[] sqlParameters) {
-            throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
-        }
+        //public virtual List<T> GetListFromDirectQuery(string sqlQuery, params IDbDataParameter[] sqlParameters) {
+         //   throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
+        //}
 
 #endif
     }

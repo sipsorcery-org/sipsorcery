@@ -44,7 +44,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.Sys;
-using DbLinq.Data.Linq;
+using SIPSorcery.Persistence;
 using log4net;
 
 namespace SIPSorcery.CRM
@@ -63,39 +63,35 @@ namespace SIPSorcery.CRM
                 }
                 return new SIPAssetXMLPersistor<Customer>(storageDescription + CUSTOMERS_XML_FILENAME);
             }
-            else if (storageType == StorageTypes.NHibernate)
-            {
-                //return new CustomerNHibernatePersistor(NHibernateHelper.OpenSession());
-                throw new ApplicationException(storageType + " is not supported as a CreateCustomerPersistor option.");
-            }
             else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql) {
                 //DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageDescription);
                 //dbLinqContext.Log = Console.Out;
                 return new DBLinqAssetPersistor<Customer>(storageType, storageDescription);
+            }
+            else if (storageType == StorageTypes.SimpleDBLinq) {
+                return new SimpleDBAssetPersistor<Customer>(storageDescription);
             }
             else {
                 throw new ApplicationException(storageType + " is not supported as a CreateCustomerPersistor option.");
             }
         }
 
-        public static SIPAssetPersistor<CustomerSession> CreateCustomerSessionPersistor(StorageTypes storageType, string storageDescription)
-        {
-            if (storageType == StorageTypes.XML)
-            {
+        public static SIPAssetPersistor<CustomerSession> CreateCustomerSessionPersistor(StorageTypes storageType, string storageDescription) {
+            if (storageType == StorageTypes.XML) {
                 return new SIPAssetXMLPersistor<CustomerSession>(storageDescription + CUSTOMER_SESSIONS_XML_FILENAME);
             }
-            else if (storageType == StorageTypes.NHibernate)
-            {
+            else if (storageType == StorageTypes.NHibernate) {
                 throw new ApplicationException(storageType + " is not supported as a CreateCustomerSessionPersistor option.");
             }
-            else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql)
-            {
+            else if (storageType == StorageTypes.DBLinqMySQL || storageType == StorageTypes.DBLinqPostgresql) {
                 //DataContext dbLinqContext = DBLinqContext.CreateDBLinqDataContext(storageType, storageDescription);
                 //dbLinqContext.Log = Console.Out;
                 return new DBLinqAssetPersistor<CustomerSession>(storageType, storageDescription);
             }
-            else
-            {
+            else if (storageType == StorageTypes.SimpleDBLinq) {
+                return new SimpleDBAssetPersistor<CustomerSession>(storageDescription);
+            }
+            else {
                 throw new ApplicationException(storageType + " is not supported as a CreateCustomerSessionPersistor option.");
             }
         }

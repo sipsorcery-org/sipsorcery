@@ -40,6 +40,7 @@ using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Xml;
+using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -51,14 +52,16 @@ namespace SIPSorcery.CRM.Web
     public class WebState : IConfigurationSectionHandler
     {
         private const string LOGGER_NAME = "crmweb";
+        private const string CUSTOMER_VALIDATION_RULES = "validationrules";
 
-        private static readonly string m_storageTypeKey = Persistence.PERSISTENCE_STORAGETYPE_KEY;
-        private static readonly string m_connStrKey = Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
+        private static readonly string m_storageTypeKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGETYPE_KEY;
+        private static readonly string m_connStrKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
 
         public static ILog logger;
 
         public static StorageTypes CRMStorageType;
         public static string CRMStorageConnStr;
+        public static Dictionary<string, string> ValidationRules = new Dictionary<string,string>();
 
         static WebState() {
             try {
@@ -81,6 +84,13 @@ namespace SIPSorcery.CRM.Web
                 if (CRMStorageType == StorageTypes.Unknown || CRMStorageConnStr.IsNullOrBlank()) {
                     logger.Error("The SIPSorcery.CRM.Web does not have any persistence settings configured.");
                 }
+
+                XmlNode validationRulesNode = (XmlNode)ConfigurationManager.GetSection(CUSTOMER_VALIDATION_RULES);
+                if (validationRulesNode != null) {
+                    foreach (XmlNode validationNode in validationRulesNode) {
+                         ValidationRules.Add(validationNode.SelectSingleNode("field").InnerText, validationNode.SelectSingleNode("rule").InnerText);
+                    }
+                }
             }
             catch (Exception excp) {
                 logger.Error("Exception WebState. " + excp.Message);
@@ -88,7 +98,7 @@ namespace SIPSorcery.CRM.Web
         }
 
         /// <summary>
-        /// Handler for processing the App.Config file and passing retrieving the proxy config node.
+        /// Handler for processing the App.Config file and passing retrieving any config nodes.
         /// </summary>
         public object Create(object parent, object context, XmlNode configSection) {
             return configSection;

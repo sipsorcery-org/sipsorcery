@@ -36,6 +36,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -43,6 +44,7 @@ using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
+using IronRuby;
 using Microsoft.Scripting.Hosting;
 using Microsoft.Scripting.Interpreter;
 
@@ -58,6 +60,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public Guid Id;
         public Thread DialPlanScriptThread;
+        public ScriptEngine DialPlanScriptEngine;
         public ScriptScope DialPlanScriptScope;
         public bool Complete;
         public DialPlanContext ExecutingDialPlanContext;
@@ -71,12 +74,25 @@ namespace SIPSorcery.AppServer.DialPlan
         public string LastFailureReason;
         public List<Interpreter> m_scriptInterpreters = new List<Interpreter>();
 
-        public DialPlanExecutingScript(ScriptScope scriptScope, SIPMonitorLogDelegate logDelegate)
+        public DialPlanExecutingScript(SIPMonitorLogDelegate logDelegate)
         {
+            Stopwatch createEngineSW = new Stopwatch();
+            Stopwatch createScopeSW = new Stopwatch();
+
             ScriptNumber = ++ScriptCounter % Int32.MaxValue;
             Id = Guid.NewGuid();
-            DialPlanScriptScope = scriptScope;
+            
+            createEngineSW.Start();
+            DialPlanScriptEngine = Ruby.CreateEngine();
+            createEngineSW.Stop();
+
+            createScopeSW.Start();
+            DialPlanScriptScope = DialPlanScriptEngine.CreateScope();
+            createScopeSW.Stop();
+
             LogDelegate = logDelegate;
+
+            LogDelegate(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Engine creation took " + createEngineSW.ElapsedMilliseconds + "ms, scope creation took " + createScopeSW.ElapsedMilliseconds + "ms.", null));
         }
 
         public void Initialise(DialPlanContext dialPlanContext)
@@ -89,7 +105,6 @@ namespace SIPSorcery.AppServer.DialPlan
             ExecutionError = null;
             LastFailureStatus = SIPResponseStatusCodesEnum.None;
             LastFailureReason = null;
-            //DialPlanScriptScope.ClearVariables();
         }
 
         /// <remarks>
@@ -109,15 +124,5 @@ namespace SIPSorcery.AppServer.DialPlan
                 logger.Warn("Exception DialPlanExecutingScript StopExecution. " + excp.Message);
             }
         }
-
-        /*public void Clear() {
-            logger.Debug("Clearing DialPlanExecutingScript on " + DialPlanScriptThread.Name + ".");
-            ExecutingDialPlanContext = null;
-            Owner = null;
-            Complete = false;
-            ExecutionError = null;
-            LastFailureStatus = SIPResponseStatusCodesEnum.None;
-            LastFailureReason = null;
-        }*/
     }
 }

@@ -41,12 +41,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.CRM;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -57,7 +59,7 @@ using NUnit.Framework;
 #endif
 
 namespace SIPSorcery.Servers
-{	   
+{
     /// <summary>
     /// Hosts client connections to the public sockets on the SIP Monitor Server and then mediates
     /// the events sent to each and commands received from those clients capable of sending commands.
@@ -92,6 +94,7 @@ namespace SIPSorcery.Servers
         private IPEndPoint[] m_machineEndPoints;         // Connections to these sockets are processed as machine users receiving one way event notifications.
         private static List<SIPMonitorControlClient> m_controlClients = new List<SIPMonitorControlClient>();    // List of connected human control clients.
         private static List<SIPMonitorMachineClient> m_machineClients = new List<SIPMonitorMachineClient>();    // List of connected machine clients.
+        private List<SIPMonitorClientConnection> m_clientConnections = new List<SIPMonitorClientConnection>();
 
         public SIPMonitorMediator(
            IPEndPoint[] controlClientEndPoints,
@@ -133,12 +136,12 @@ namespace SIPSorcery.Servers
 			{
                 // This socket is to listen for the events from SIP Servers.
                 m_udpEventListener = new UdpClient(m_eventListenerPort, AddressFamily.InterNetwork);
-				
+
                 // Start listening for connections from human control clients.
-                foreach (IPEndPoint controlClientEndPoint in m_controlClientEndPoints)
-                {
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(AcceptControlClients), controlClientEndPoint);
-                }
+                //foreach (IPEndPoint controlClientEndPoint in m_controlClientEndPoints)
+               // {
+                 //   ThreadPool.QueueUserWorkItem(new WaitCallback(AcceptControlClients), controlClientEndPoint);
+                //}
 
                 // Start listening for connections from machine clients.
                 if (m_machineEndPoints != null)
@@ -155,7 +158,7 @@ namespace SIPSorcery.Servers
                 {
                     byte[] buffer = m_udpEventListener.Receive(ref remoteEP);
 
-                    if (buffer != null && buffer.Length > 0 && (m_controlClients.Count > 0 || m_machineClients.Count > 0))
+                    if (buffer != null && buffer.Length > 0) //&& (m_controlClients.Count > 0 || m_machineClients.Count > 0))
                     {
                         SIPMonitorEvent sipMonitorEvent = SIPMonitorEvent.ParseEventCSV(Encoding.ASCII.GetString(buffer, 0, buffer.Length));
                         
@@ -163,10 +166,9 @@ namespace SIPSorcery.Servers
                         {
                             if (sipMonitorEvent.ClientType == SIPMonitorClientTypesEnum.ControlClient)
                             {
-                                if (m_controlClients.Count > 0)
-                                {
+                                //if (m_controlClients.Count > 0) {
                                     ProcessClientControlEvent((SIPMonitorControlClientEvent)sipMonitorEvent);
-                                }
+                                //}
                             }
                             else if (sipMonitorEvent.ClientType == SIPMonitorClientTypesEnum.Machine)
                             {
@@ -187,7 +189,7 @@ namespace SIPSorcery.Servers
 			}
 		}
 		
-		public void AcceptControlClients(object state)
+		/*public void AcceptControlClients(object state)
 		{
             try
             {
@@ -214,7 +216,7 @@ namespace SIPSorcery.Servers
             {
                 logger.Error("Exception ProxyMonitor AcceptClients. " + excp.Message);
             }
-		}
+		}*/
 
         private void AcceptMachineClients(object state)
         {
@@ -243,6 +245,16 @@ namespace SIPSorcery.Servers
             }
         }
 
+        public SIPMonitorClientConnection NewAuthenticatedClient(string username) {
+            Customer customer = GetCustomer_External(c => c.CustomerUsername == username);
+            SIPMonitorClientConnection clientConnection = new SIPMonitorClientConnection(username, customer.AdminId);
+            m_clientConnections.Add(clientConnection);
+            byte[] welcomeMessage = Encoding.ASCII.GetBytes("Welcome " + username + "\r\n");
+            clientConnection.OutStream.Write(welcomeMessage, 0, welcomeMessage.Length);
+            clientConnection.Start();
+            return clientConnection;
+        }
+
         /// <summary>
         /// Adds a new log client to the list. Can only be used for log file and email clients and since this call can only come
         /// from the owning process no authentication is necessary.
@@ -262,109 +274,75 @@ namespace SIPSorcery.Servers
                 m_controlClients.Remove(controlClient);
             }
         }
-		
-		private void ProcessClientControlEvent(SIPMonitorEvent monitorEvent)
-		{
-            try
-            {
-                List<SIPMonitorControlClient> removals = new List<SIPMonitorControlClient>();
-                
-                lock (m_controlClients)
-                {
-                    if (m_controlClients.Count > 0)
-                    {
-                        foreach (SIPMonitorControlClient client in m_controlClients)
-                        {
-                            if (client.Remove)
-                            {
-                                if (!removals.Contains(client))
-                                {
-                                    removals.Add(client);
-                                }
 
-                                continue;
-                            }
+        private void ProcessClientControlEvent(SIPMonitorEvent monitorEvent) {
+            try {
+
+                lock (m_controlClients) {
+                    //if (m_controlClients.Count > 0) {
+
+                        // Remove any disconnected clients.
+                        //m_controlClients.RemoveAll(client => client.Remove);
+
+                        //foreach (SIPMonitorControlClient client in m_controlClients) {
+                        foreach(SIPMonitorClientConnection client in m_clientConnections) {
+
+                            if (client.Filter != null && client.Filter.ShowSIPMonitorEvent(monitorEvent)) {
                             
-                            //logger.Debug("event=" + proxyEvent.EventType.ToString() + ", username= " + proxyEvent.Username);
-
-                            SIPMonitorFilter filter = client.Filter;
-                            if (filter != null && filter.ShowSIPMonitorEvent(monitorEvent))
-                            {
                                 string socketEventMessage = monitorEvent.EventType.ToString() + " " + monitorEvent.Created.ToString("HH:mm:ss:fff");
-
                                 // Special case for dialplan events and super user. Add the username of the event to the start of the monitor message.
-                                if (filter.Username == SIPMonitorFilter.WILDCARD && monitorEvent.Username != null)
-                                {
+                                if (client.Username == SIPMonitorFilter.WILDCARD && monitorEvent.Username != null) {
                                     socketEventMessage += " " + monitorEvent.Username;
                                 }
 
-                                if (monitorEvent.EventType == SIPMonitorEventTypesEnum.FullSIPTrace)
-                                {
+                                if (monitorEvent.EventType == SIPMonitorEventTypesEnum.FullSIPTrace) {
                                     socketEventMessage += ":\r\n" + monitorEvent.Message + "\r\n";
                                 }
-                                else
-                                {
+                                else {
                                     socketEventMessage += ": " + monitorEvent.Message + "\r\n";
                                 }
 
-                                byte[] socketEventBytes = Encoding.ASCII.GetBytes(socketEventMessage);
+                                byte[] messageBytes = Encoding.ASCII.GetBytes(socketEventMessage);
 
-                                if (client.ClientSocket != null)
-                                {
-                                    client.ClientSocket.Send(socketEventBytes);
+                                if (client.OutStream != null) {
+                                    client.OutStream.Write(messageBytes, 0, messageBytes.Length);
                                 }
-                                else if (client.FileStream != null)
-                                {
+
+                                /*if (client.ClientSocket != null) {
+                                    client.ClientSocket.Send(messageBytes);
+                                }
+                                else if (client.FileStream != null) {
                                     // Check the duration of the filelog has not been exceeded.
-                                    if (DateTime.Now.Subtract(client.Created).TotalMinutes > client.LogDurationMinutes)
-                                    {
+                                    if (DateTime.Now.Subtract(client.Created).TotalMinutes > client.LogDurationMinutes) {
                                         logger.Debug("Closing file log " + client.Filename + ".");
 
-                                        if (client.FileStream != null)
-                                        {
+                                        if (client.FileStream != null) {
                                             client.FileStream.Close();
                                         }
 
                                         client.Remove = true;
                                     }
-                                    else
-                                    {
-                                        if(client.FileStream.Length > MAX_LOGFILE_SIZE)
-                                        {
+                                    else {
+                                        if (client.FileStream.Length > MAX_LOGFILE_SIZE) {
                                             client.FileStream.SetLength(MAX_LOGFILE_SIZE);  // Truncate the file, oldest messages will be lost.
                                         }
 
-                                        client.FileStream.Write(socketEventBytes, 0, socketEventBytes.Length);
+                                        client.FileStream.Write(messageBytes, 0, messageBytes.Length);
                                         client.FileStream.Flush();
                                     }
                                 }
-                                else
-                                {
+                                else {
                                     client.Remove = true;
-                                }
+                                }*/
                             }
                         }
                     }
-                }
-
-                if (removals.Count > 0)
-                {
-                    lock (m_controlClients)
-                    {
-                        foreach (SIPMonitorControlClient removal in removals)
-                        {
-                            string clientIdentifier = (removal.ClientSocket != null) ? removal.ClientSocket.ToString() : removal.Filename;
-                            logger.Debug("Removing monitor client " + clientIdentifier + ".");
-                            m_controlClients.Remove(removal);
-                        }
-                    }
-                }
+                //}
             }
-            catch (Exception excp)
-            {
+            catch (Exception excp) {
                 logger.Error("Exception SIPMonitorMediator ProcessClientControlEvent. " + excp.Message);
             }
-		}
+        }
 
         private void ProcessMachineEvent(SIPMonitorMachineEvent machineEvent) {
             try {
@@ -446,10 +424,10 @@ namespace SIPSorcery.Servers
 
         /// <summary>
         /// Each client that connects gets its own thread that runs this method. The main job of the method is to authenticate the user, request
-        /// thier filter and then listen for keystrokes from the client actioning any control characters such as s and q.
+        /// their filter and then listen for keystrokes from the client actioning any control characters such as s and q.
         /// </summary>
         /// <param name="state">Not used.</param>
-		private void StartControlClient(object state)
+		/*private void StartControlClient(object state)
 		{
             Socket clientSocket = null;
 			IPEndPoint clientEndPoint = null;
@@ -549,7 +527,7 @@ namespace SIPSorcery.Servers
 
                 #endregion
             }
-		}
+		}*/
 
         private SIPMonitorFilter GetClientFilter(Socket clientSocket, Customer customer)
         {
@@ -638,7 +616,7 @@ namespace SIPSorcery.Servers
             return null;
         }
 
-        private Customer AuthenticateClient(Socket clientSocket)
+        /*private Customer AuthenticateClient(Socket clientSocket)
         {
             byte[] buffer = new byte[1024];
             int bytesRead = 1;
@@ -690,7 +668,7 @@ namespace SIPSorcery.Servers
             }
 
             return null;
-        }
+        }*/
 
         public void Stop()
         {

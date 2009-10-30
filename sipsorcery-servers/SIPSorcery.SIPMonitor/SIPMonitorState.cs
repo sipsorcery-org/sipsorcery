@@ -58,6 +58,7 @@ namespace SIPSorcery.SIPMonitor
         private const string SIPMONITOR_MACHINE_SOCKETS_NODE_NAME = "sipmonitormachinesockets";
         private const string SIPMONITOR_LOOPBACK_EVENTPORT_KEY = "MonitorLoopbackPort";
         private const string SIPMONITOR_SILVELRIGHT_POLICY_FILE_PATH = "SilverlightPolicyFilePath";
+        private const string NSSH_CONFIGURATION_FILE_PATH_KEY = "NSSHConfigurationFilePath";
 
         public static ILog logger;
 
@@ -66,6 +67,7 @@ namespace SIPSorcery.SIPMonitor
         public static readonly XmlNode MonitorMachineSocketsNode;
         public static readonly int MonitorLoopbackPort;
         public static readonly string SilverlightPolicyFilePath;
+        public static readonly string NSSHConfigurationFilePath;
 
         static SIPMonitorState()
         {
@@ -75,7 +77,6 @@ namespace SIPSorcery.SIPMonitor
 
                 try
                 {
-                    
                     log4net.Config.XmlConfigurator.Configure();
                     logger = log4net.LogManager.GetLogger(LOGGER_NAME);
                 }
@@ -89,14 +90,16 @@ namespace SIPSorcery.SIPMonitor
                 if (ConfigurationManager.GetSection(SIPMONITOR_CONFIGNODE_NAME) != null) {
                     m_sipMonitorConfigNode = (XmlNode)ConfigurationManager.GetSection(SIPMONITOR_CONFIGNODE_NAME);
                 }
-                else {
-                    throw new ApplicationException("The SIP Monitor could not be started, no " + SIPMONITOR_CONFIGNODE_NAME + " config node available.");
+                if (m_sipMonitorConfigNode == null) {
+                    logger.Warn("The SIP Monitor Agent " + SIPMONITOR_CONFIGNODE_NAME + " config node was not available, the agent will not be able to start.");
                 }
-
-                MonitorClientSocketsNode = m_sipMonitorConfigNode.SelectSingleNode(SIPMONITOR_CLIENT_SOCKETS_NODE_NAME);
-                MonitorMachineSocketsNode = m_sipMonitorConfigNode.SelectSingleNode(SIPMONITOR_MACHINE_SOCKETS_NODE_NAME);
-                Int32.TryParse(AppState.GetConfigNodeValue(m_sipMonitorConfigNode, SIPMONITOR_LOOPBACK_EVENTPORT_KEY), out MonitorLoopbackPort);
-                SilverlightPolicyFilePath = AppState.GetConfigNodeValue(m_sipMonitorConfigNode, SIPMONITOR_SILVELRIGHT_POLICY_FILE_PATH);
+                else {
+                    MonitorClientSocketsNode = m_sipMonitorConfigNode.SelectSingleNode(SIPMONITOR_CLIENT_SOCKETS_NODE_NAME);
+                    MonitorMachineSocketsNode = m_sipMonitorConfigNode.SelectSingleNode(SIPMONITOR_MACHINE_SOCKETS_NODE_NAME);
+                    Int32.TryParse(AppState.GetConfigNodeValue(m_sipMonitorConfigNode, SIPMONITOR_LOOPBACK_EVENTPORT_KEY), out MonitorLoopbackPort);
+                    SilverlightPolicyFilePath = AppState.GetConfigNodeValue(m_sipMonitorConfigNode, SIPMONITOR_SILVELRIGHT_POLICY_FILE_PATH);
+                    NSSHConfigurationFilePath = AppState.GetConfigNodeValue(m_sipMonitorConfigNode, NSSH_CONFIGURATION_FILE_PATH_KEY);
+                }
             }
             catch (Exception excp)
             {

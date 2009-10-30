@@ -62,7 +62,7 @@ namespace SIPSorcery.Servers
     public class SIPMonitorMachineClient
 	{
         public Guid MachineId = Guid.NewGuid();
-        public DateTime Created = DateTime.Now;
+        public DateTime Created = DateTime.UtcNow;
 
         public Socket ClientSocket = null;         // If non null indicates the monitor client socket is connected.
         public bool Remove = false;                // Set to true when the proxy client should be deactivated.

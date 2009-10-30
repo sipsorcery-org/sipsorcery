@@ -43,6 +43,7 @@ using System.Text;
 using System.Threading;
 using SIPSorcery.AppServer.DialPlan;
 using SIPSorcery.CRM;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;

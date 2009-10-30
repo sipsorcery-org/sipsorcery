@@ -2843,7 +2843,7 @@ namespace SIPSorcery.SIP
        
         public void SetDateHeader()
         {
-            Date = DateTime.Now.ToUniversalTime().ToString("ddd, dd MMM yyyy HH:mm:ss") + " GMT";
+            Date = DateTime.UtcNow.ToString("o");
         }
 
         public SIPHeader Copy()

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -32,7 +33,7 @@ namespace SIPSorcery.SIP.App {
         private List<AppServerEntry> m_appServerEntries = new List<AppServerEntry>();
         private AppServerEntry m_activeAppServerEntry;
 
-        private DateTime m_startCheckTime;
+        private Stopwatch m_startCheckTime = new Stopwatch();
 
         public AppServerDispatcher(SIPTransport sipTransport, XmlNode configNode) : base(sipTransport, configNode) {
             try {
@@ -73,7 +74,8 @@ namespace SIPSorcery.SIP.App {
 
                         logger.Debug("AppServerDispatcher executing.");
 
-                        m_startCheckTime = DateTime.Now;
+                        m_startCheckTime.Reset();
+                        m_startCheckTime.Start();
 
                         SIPClientUserAgent uac = new SIPClientUserAgent(m_sipTransport, null, null, null, LogMonitorEvent);
                         SIPCallDescriptor callDescriptor = new SIPCallDescriptor(null, null, m_activeAppServerEntry.AppServerURI.ToString(), null, null, null, null, null, SIPCallDirection.Out, null, null, null);
@@ -136,8 +138,9 @@ namespace SIPSorcery.SIP.App {
                     break;
                 }
             }
+            m_startCheckTime.Stop();
             logger.Debug("AppServerDispatcher execution count for " + m_activeAppServerEntry.AppServerURI.ToString() + " is " + executionCount + ".");
-            logger.Debug("AppServerDispatcher response took " + DateTime.Now.Subtract(m_startCheckTime).TotalMilliseconds.ToString("0.##") + "ms.");
+            logger.Debug("AppServerDispatcher response took " + m_startCheckTime.ElapsedMilliseconds + "ms.");
         }
 
         private void CallFailed(ISIPClientUserAgent uac, string errorMessage) {

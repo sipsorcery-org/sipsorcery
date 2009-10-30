@@ -54,10 +54,11 @@ namespace SIPSorcery.Persistence
 		Postgresql,
         MySQL,
 		XML,
-        NHibernate,
         DBLinqMySQL,
         DBLinqPostgresql,
         SimpleDBLinq,
+        SQLLinqMySQL,
+        SQLLinqPostgresql,
 	}
 
 	public class StorageTypesConverter

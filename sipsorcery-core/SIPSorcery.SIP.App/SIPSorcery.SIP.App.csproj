@@ -31,10 +31,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DbLinq, Version=0.18.0.0, Culture=neutral, PublicKeyToken=61e015a67077348b, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\DbLinq.dll</HintPath>
-    </Reference>
     <Reference Include="IronPython, Version=2.6.0.10, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\IronPython.dll</HintPath>
@@ -101,7 +97,6 @@
     <Compile Include="Monitoring\SIPMonitorEvent.cs" />
     <Compile Include="Monitoring\SIPMonitorMachineEvent.cs" />
     <Compile Include="SIPAssets\ISIPCallManager.cs" />
-    <Compile Include="SIPAssets\SIPAssetPersistorFactory.cs" />
     <Compile Include="SIPAssets\SIPCDRAsset.cs" />
     <Compile Include="SIPAssets\SIPDialogueAsset.cs" />
     <Compile Include="SIPAssets\SIPProviderBinding.cs" />
@@ -130,14 +125,6 @@
     <Compile Include="SIPUserAgents\SIPServerUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPCallDescriptor.cs" />
     <Compile Include="SIPUserAgents\SIPClientUserAgent.cs" />
-    <Compile Include="WCFServices\IProvisioningServiceAjax.cs" />
-    <Compile Include="WCFServices\CrossDomainWebService.cs" />
-    <Compile Include="WCFServices\IProvisioningService.cs" />
-    <Compile Include="WCFServices\ProvisioningServiceInstanceProvider.cs" />
-    <Compile Include="WCFServices\SilverlightFaultBehavior.cs" />
-    <Compile Include="WCFServices\SilverlightPolicyServer.cs" />
-    <Compile Include="WCFServices\SIPManagerWebService.cs" />
-    <Compile Include="WCFServices\SIPProvisioningWebService.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery.CRM\SIPSorcery.CRM.csproj">
@@ -147,6 +134,10 @@
     <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">
       <Project>{55898587-8456-40D4-BB88-C9FC8BD6BA9C}</Project>
       <Name>SIPSorcery.Net</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
+      <Project>{7194705F-5564-4040-BC8A-8FAD806F5408}</Project>
+      <Name>SIPSorcery.Persistence</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
       <Project>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</Project>
@@ -168,4 +159,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <PropertyGroup>
+    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build\SIPSorcery.SIP.App.dll" "c:\temp\sipsorcery\"</PostBuildEvent>
+  </PropertyGroup>
 </Project>

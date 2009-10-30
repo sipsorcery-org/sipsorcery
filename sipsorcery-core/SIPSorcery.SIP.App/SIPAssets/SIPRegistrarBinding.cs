@@ -45,6 +45,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
 using System.Xml.Serialization;
+using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -84,8 +85,8 @@ namespace SIPSorcery.SIP.App
         public const int MAX_BINDING_LIFETIME = 3600;       // Bindings are currently not being expired once the expires time is reached and this is the maximum amount of time 
                                                             // a binding can stay valid for with probing before it is removed and the binding must be freshed with a REGISTER.
 
-        public static readonly string SelectBindingsQuery = "select * from sipregistrarbindings where sipaccountid = ?1";
-        public static readonly string SelectExpiredBindingsQuery = "select * from sipregistrarbindings where expirytime < ?1";
+        //public static readonly string SelectBindingsQuery = "select * from sipregistrarbindings where sipaccountid = ?1";
+        //public static readonly string SelectExpiredBindingsQuery = "select * from sipregistrarbindings where expirytime < ?1";
 
         private static string m_newLine = AppState.NewLine;
         private static ILog logger = AppState.GetLogger("sipregistrar");
@@ -94,30 +95,30 @@ namespace SIPSorcery.SIP.App
 
         private static Dictionary<string, int> m_userAgentExpirys = new Dictionary<string, int>();  // Result of parsing user agent expiry values from the App.Config Xml Node.
 
-        [Column(Storage = "_id", Name = "id", DbType = "character varying(36)", IsPrimaryKey = true, CanBeNull = false)]
+        [Column(Name = "id", DbType = "StringFixedLength", IsPrimaryKey = true, CanBeNull = false)]
         [DataMember]
-        public string Id { get; set; }
+        public Guid Id { get; set; }
 
-        [Column(Storage = "_sipaccountid", Name = "sipaccountid", DbType = "character varying(36)", CanBeNull = false)]
-        public string SIPAccountId { get; set; }
+        [Column(Name = "sipaccountid", DbType = "StringFixedLength", CanBeNull = false)]
+        public Guid SIPAccountId { get; set; }
 
-        [Column(Storage = "_sipaccountname", Name = "sipaccountname", DbType = "character varying(160)", CanBeNull = false)]
+        [Column(Name = "sipaccountname", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
         public string SIPAccountName { get; set; }          // Used for informational purposes only, no matching done against it and should not be relied on. Use SIPAccountId instead.
 
-        [Column(Storage = "_owner", Name = "owner", DbType = "character varying(32)", CanBeNull = false)]
+        [Column(Name = "owner", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
         public string Owner { get; set; }
 
-        [Column(Storage = "_adminmemberid", Name = "adminmemberid", DbType = "character varying(32)", CanBeNull = true)]
+        [Column(Name = "adminmemberid", DbType = "StringFixedLength", CanBeNull = true)]
         public string AdminMemberId { get; private set; }    // If set it designates this asset as a belonging to a user with the matching adminid.
 
-        [Column(Storage = "_useragent", Name = "useragent", DbType = "character varying(1024)", CanBeNull = true)]
+        [Column(Name = "useragent", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
         public string UserAgent {get; set;}
 
         private SIPURI m_contactURI;
-        [Column(Storage = "_contacturi", Name = "contacturi", DbType = "character varying(1024)", CanBeNull = false)]
+        [Column(Storage = "m_contactURI", Name = "contacturi", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
         public string ContactURI
         {
@@ -131,7 +132,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private SIPURI m_mangledContactURI;
-        [Column(Storage = "_mangledcontacturi", Name = "mangledcontacturi", DbType = "character varying(1024)", CanBeNull = false)]
+        [Column(Storage = "m_mangledContactURI", Name = "mangledcontacturi", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
         public string MangledContactURI {
             get { return (m_mangledContactURI != null) ? m_mangledContactURI.ToString() : null; }
@@ -143,23 +144,23 @@ namespace SIPSorcery.SIP.App
             set { m_mangledContactURI = value; }
         }
 
-        private DateTime m_lastUpdateUTC = DateTime.Now.ToUniversalTime();
-        [Column(Storage = "_lastupdate", Name = "lastupdate", DbType = "timestamp", CanBeNull = false)]
+        private DateTime m_lastUpdate;
+        [Column(Storage = "m_lastUpdate", Name = "lastupdate", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
-        public DateTime LastUpdateUTC
+        public DateTime LastUpdate
         {
-            get { return m_lastUpdateUTC; }
-            set { m_lastUpdateUTC = value;  }        // Don't delete, required for WCF serialisation.
+            get { return m_lastUpdate; }
+            set { m_lastUpdate = value.ToUniversalTime();  }        
         }
 
         public DateTime LastUpdateLocal {
-            get { return LastUpdateUTC.AddMinutes(TimeZoneOffsetMinutes); }
+            get { return LastUpdate.AddMinutes(TimeZoneOffsetMinutes); }
         }
 
         [IgnoreDataMember]
         public SIPEndPoint RemoteSIPEndPoint;     // The socket the REGISTER request the binding was received on.
 
-        [Column(Storage = "_remotesipsocket", Name = "remotesipsocket", DbType = "character varying(64)", CanBeNull = false)]
+        [Column(Name = "remotesipsocket", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
         public string RemoteSIPSocket
         {
@@ -181,7 +182,7 @@ namespace SIPSorcery.SIP.App
         public int CSeq;
 
         private int m_expiry = 0;               // The expiry time in seconds for the binding.
-        [Column(Storage = "_expiry", Name = "expiry", DbType = "int", CanBeNull = false)]
+        [Column(Storage = "m_expiry", Name = "expiry", DbType = "Int32", CanBeNull = false)]
         [DataMember]
         public int Expiry {
             get {
@@ -192,12 +193,11 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        [Column(Storage = "_expirytime", Name = "expirytime", DbType = "timestamp", CanBeNull = false)]
-        public DateTime ExpiryTimeUTC {
+        [Column(Name = "expirytime", DbType = "StringFixedLength", CanBeNull = false)]
+        public DateTime ExpiryTime {
             get {
-                return m_lastUpdateUTC.AddSeconds(m_expiry);
+                return m_lastUpdate.AddSeconds(m_expiry);
             }
-            private set { }
         }
 
         [DataMember]
@@ -223,7 +223,7 @@ namespace SIPSorcery.SIP.App
             set { m_proxySIPEndPoint = value; }
         }
 
-        [Column(Storage = "_proxysipsocket", Name = "proxysipsocket", DbType = "character varying(64)", CanBeNull = true)]
+        [Column(Name = "proxysipsocket", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
         public string ProxySIPSocket
         {
@@ -245,7 +245,7 @@ namespace SIPSorcery.SIP.App
             get { return m_registrarSIPEndPoint; }
         }
 
-        [Column(Storage = "_registrarsipsocket", Name = "registrarsipsocket", DbType = "character varying(64)", CanBeNull = false)]
+        [Column(Name = "registrarsipsocket", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
         public string RegistrarSIPSocket {
             get { return (m_registrarSIPEndPoint != null) ? m_registrarSIPEndPoint.ToString() : null; }
@@ -279,7 +279,8 @@ namespace SIPSorcery.SIP.App
             SIPEndPoint registrarSIPEndPoint,
             int expiry) {
 
-            Id = Guid.NewGuid().ToString();
+            Id = Guid.NewGuid();
+            LastUpdate = DateTime.UtcNow;
             SIPAccountId = sipAccount.Id;
             SIPAccountName = sipAccount.SIPUsername + "@" + sipAccount.SIPDomain;
             Owner = sipAccount.Owner;
@@ -313,10 +314,29 @@ namespace SIPSorcery.SIP.App
             Load(row);
         }
 
+        public DataTable GetTable() {
+            DataTable table = new DataTable();
+            table.Columns.Add(new DataColumn("id", typeof(String)));
+            table.Columns.Add(new DataColumn("sipaccountid", typeof(String)));
+            table.Columns.Add(new DataColumn("owner", typeof(String)));
+            table.Columns.Add(new DataColumn("adminmemberid", typeof(String)));
+            table.Columns.Add(new DataColumn("sipaccountname", typeof(String)));
+            table.Columns.Add(new DataColumn("useragent", typeof(String)));
+            table.Columns.Add(new DataColumn("contacturi", typeof(String)));
+            table.Columns.Add(new DataColumn("mangledcontacturi", typeof(String)));
+            table.Columns.Add(new DataColumn("expiry", typeof(Int32)));
+            table.Columns.Add(new DataColumn("expirytime", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("remotesipsocket", typeof(String)));
+            table.Columns.Add(new DataColumn("proxysipsocket", typeof(String)));
+            table.Columns.Add(new DataColumn("registrarsipsocket", typeof(String)));
+            table.Columns.Add(new DataColumn("lastupdate", typeof(DateTime)));
+            return table;
+        }
+
         public void Load(DataRow row) {
             try {
-                Id = row["id"] as string;
-                SIPAccountId = row["sipaccountid"] as string;
+                Id = new Guid(row["id"] as string);
+                SIPAccountId = new Guid(row["sipaccountid"] as string);
                 SIPAccountName = row["sipaccountname"] as string;
                 Owner = row["owner"] as string;
                 AdminMemberId = row["adminmemberid"] as string;
@@ -327,7 +347,7 @@ namespace SIPSorcery.SIP.App
                 RemoteSIPEndPoint = (!(row["remotesipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["remotesipsocket"] as string) : null;
                 m_proxySIPEndPoint = (!(row["proxysipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["proxysipsocket"] as string) : null;
                 m_registrarSIPEndPoint = (!(row["registrarsipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["registrarsipsocket"] as string) : null;
-                m_lastUpdateUTC = (DateTime)row["lastupdate"];
+                LastUpdate = Convert.ToDateTime(row["lastupdate"]);
             }
             catch (Exception excp) {
                 logger.Error("Exception SIPRegistrarBinding Load. " + excp.Message);
@@ -346,7 +366,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void RefreshBinding(int expiry, SIPEndPoint remoteSIPEndPoint, SIPEndPoint proxySIPEndPoint, SIPEndPoint registrarSIPEndPoint)
         {
-            m_lastUpdateUTC = DateTime.Now.ToUniversalTime();
+            LastUpdate = DateTime.UtcNow;
             RemoteSIPEndPoint = remoteSIPEndPoint;
             m_proxySIPEndPoint = proxySIPEndPoint;
             m_registrarSIPEndPoint = registrarSIPEndPoint;
@@ -367,13 +387,13 @@ namespace SIPSorcery.SIP.App
 
         public string ToContactString()
         {
-            int secondsRemaining = Convert.ToInt32(ExpiryTimeUTC.Subtract(DateTime.Now.ToUniversalTime()).TotalSeconds % Int32.MaxValue);
+            int secondsRemaining = Convert.ToInt32(ExpiryTime.Subtract(DateTime.UtcNow).TotalSeconds % Int32.MaxValue);
             return "<" + m_contactURI.ToString() + ">;" + SIPContactHeader.EXPIRES_PARAMETER_KEY + "=" + secondsRemaining;
         }
 
         public string ToMangledContactString()
         {
-            int secondsRemaining = Convert.ToInt32(ExpiryTimeUTC.Subtract(DateTime.Now.ToUniversalTime()).TotalSeconds % Int32.MaxValue);
+            int secondsRemaining = Convert.ToInt32(ExpiryTime.Subtract(DateTime.UtcNow).TotalSeconds % Int32.MaxValue);
             return "<" + m_mangledContactURI.ToString() + ">;" + SIPContactHeader.EXPIRES_PARAMETER_KEY + "=" + secondsRemaining;
         }
 
@@ -403,7 +423,7 @@ namespace SIPSorcery.SIP.App
                 "   <remotesipsocket>" + RemoteSIPSocket + "</remotesipsocket>" + m_newLine +
                 "   <proxysipsocket>" + ProxySIPSocket + "</proxysipsocket>" + m_newLine +
                 "   <registrarsipsocket>" + RegistrarSIPSocket + "</registrarsipsocket>" + m_newLine +
-                "   <lastupdate>" + m_lastUpdateUTC.ToString("o") + "</lastupdate>" + m_newLine;
+                "   <lastupdate>" + m_lastUpdate.ToString("o") + "</lastupdate>" + m_newLine;
 
             return registrarBindingXML;
         }

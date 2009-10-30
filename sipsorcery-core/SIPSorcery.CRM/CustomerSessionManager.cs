@@ -37,17 +37,22 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Principal;
 using System.Text;
 using SIPSorcery.Sys;
+using SIPSorcery.Persistence;
 using log4net;
 
-namespace SIPSorcery.CRM
+namespace SIPSorcery.CRM 
 {
     public delegate CustomerSession AuthenticateCustomerDelegate(string username, string password, string ipAddress);
     public delegate CustomerSession AuthenticateTokenDelegate(string token);
     public delegate void ExpireTokenDelegate(string token);
 
     public class CustomerSessionManager {
+
+        public const string CUSTOMERS_XML_FILENAME = "customers.xml";
+        public const string CUSTOMER_SESSIONS_XML_FILENAME = "customersessions.xml";
 
         public const int SESSION_ID_STRING_LENGTH = 96;  // 384 bits of entropy.
 
@@ -62,8 +67,13 @@ namespace SIPSorcery.CRM
         }
 
         public CustomerSessionManager(StorageTypes storageType, string connectionString) {
-            m_customerPersistor = CustomerPersistorFactory.CreateCustomerPersistor(storageType, connectionString);
-            m_customerSessionPersistor = CustomerPersistorFactory.CreateCustomerSessionPersistor(storageType, connectionString);
+            m_customerPersistor = SIPAssetPersistorFactory<Customer>.CreateSIPAssetPersistor(storageType, connectionString, CUSTOMERS_XML_FILENAME);
+            m_customerSessionPersistor = SIPAssetPersistorFactory<CustomerSession>.CreateSIPAssetPersistor(storageType, connectionString, CUSTOMER_SESSIONS_XML_FILENAME);
+        }
+
+        public CustomerSessionManager(SIPAssetPersistor<Customer> customerPersistor, SIPAssetPersistor<CustomerSession> customerSessionPersistor) {
+            m_customerPersistor = customerPersistor;
+            m_customerSessionPersistor = customerSessionPersistor;
         }
 
         public CustomerSession Authenticate(string username, string password, string ipAddress) {
@@ -109,16 +119,15 @@ namespace SIPSorcery.CRM
                 CustomerSession customerSession = m_customerSessionPersistor.Get(s => s.SessionID == sessionId && !s.Expired);
                 //CustomerSession customerSession = m_customerSessionPersistor.Get(s => s.Id == sessionId);
 
-                if (customerSession != null)
-                {
-                    if (DateTime.Now.ToUniversalTime().Subtract(customerSession.InsertedUTC).TotalMinutes > CustomerSession.MAX_SESSION_LIFETIME_MINUTES)
-                    {
+                if (customerSession != null) {
+                    int sessionLengthMinutes = (int)DateTime.UtcNow.Subtract(customerSession.Inserted).TotalMinutes;
+                    logger.Debug("CustomerSession Inserted=" + customerSession.Inserted.ToString("o") + ", session length=" + sessionLengthMinutes + "mins.");
+                    if (sessionLengthMinutes > customerSession.TimeLimitMinutes || sessionLengthMinutes > CustomerSession.MAX_SESSION_LIFETIME_MINUTES) {
                         customerSession.Expired = true;
                         m_customerSessionPersistor.Update(customerSession);
                         return null;
                     }
-                    else
-                    {
+                    else {
                         //logger.Debug("Authentication token valid for " + sessionId + ".");
                         return customerSession;
                     }
@@ -146,6 +155,34 @@ namespace SIPSorcery.CRM
             }
             catch (Exception excp) {
                 logger.Error("Exception ExpireToken CustomerSessionManager. " + excp.Message);
+                throw;
+            }
+        }
+
+        public void ExtendSession(string sessionId, int minutes) {
+            try {
+                 CustomerSession customerSession = m_customerSessionPersistor.Get(s => s.SessionID == sessionId);
+                 if (customerSession != null) {
+                     if (customerSession.TimeLimitMinutes >= CustomerSession.MAX_SESSION_LIFETIME_MINUTES) {
+                         throw new ApplicationException("The session lifetime cannot be extended beyind " + CustomerSession.MAX_SESSION_LIFETIME_MINUTES + " minutes.");
+                     }
+                     else {
+                         if (customerSession.TimeLimitMinutes + minutes > CustomerSession.MAX_SESSION_LIFETIME_MINUTES) {
+                             customerSession.TimeLimitMinutes = CustomerSession.MAX_SESSION_LIFETIME_MINUTES;
+                         }
+                         else {
+                             customerSession.TimeLimitMinutes += minutes;
+                         }
+
+                         m_customerSessionPersistor.Update(customerSession);
+                     }
+                 }
+                 else {
+                     throw new ApplicationException("The session ID that was requested to extend does not exist.");
+                 }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception ExtendSession. " + excp.Message);
                 throw;
             }
         }

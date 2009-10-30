@@ -41,6 +41,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using SIPSorcery.Sys;
+using SIPSorcery.Persistence;
 using log4net;
 
 #if !SILVERLIGHT
@@ -71,70 +72,74 @@ namespace SIPSorcery.CRM
         private static ILog logger = AppState.logger;
         private static string m_newLine = AppState.NewLine;
 
-        [Column(Storage = "_id", Name = "id", DbType = "character varying(36)", IsPrimaryKey = true, CanBeNull = false)]
-        public string Id { get; set; }
+        [Column(Name = "id", DbType = "StringFixedLength", IsPrimaryKey = true, CanBeNull = false)]
+        public Guid Id { get; set; }
 
-        [Column(Storage = "_customerusername", Name = "customerusername", DbType = "character varying(32)", CanBeNull = false)]
+        [Column(Name = "customerusername", DbType = "StringFixedLength", CanBeNull = false)]
         public string CustomerUsername { get; set; }
 
-        [Column(Storage = "_customerpassword", Name = "customerpassword", DbType = "character varying(32)", CanBeNull = false)]
+        [Column(Name = "customerpassword", DbType = "StringFixedLength", CanBeNull = false)]
         public string CustomerPassword { get; set; }
 
-        [Column(Storage = "_emailaddress", Name = "emailaddress", DbType = "character varying(255)", CanBeNull = false)]
+        [Column(Name = "emailaddress", DbType = "StringFixedLength", CanBeNull = false)]
         public string EmailAddress { get; set; }
 
-        [Column(Storage = "_lastname", Name = "lastname", DbType = "character varying(64)")]
+        [Column(Name = "lastname", DbType = "StringFixedLength")]
         public string LastName { get; set; }
 
-        [Column(Storage = "_firstname", Name = "firstname", DbType = "character varying(64)")]
+        [Column(Name = "firstname", DbType = "StringFixedLength")]
         public string FirstName { get; set; }
 
-        [Column(Storage = "_city", Name = "city", DbType = "character varying(64)")]
+        [Column(Name = "city", DbType = "StringFixedLength")]
         public string City { get; set; }
 
-        [Column(Storage = "_country", Name = "country", DbType = "character varying(64)")]
+        [Column(Name = "country", DbType = "StringFixedLength")]
         public string Country { get; set; }
 
-        [Column(Storage = "_website", Name = "website", DbType = "character varying(256)")]
+        [Column(Name = "website", DbType = "StringFixedLength")]
         public string WebSite { get; set; }
 
-        [Column(Storage = "_active", Name = "active", DbType = "boolean", CanBeNull = false)]
+        [Column(Name = "active", DbType = "Boolean", CanBeNull = false)]
 	    public bool Active{get; set;}
 
-        [Column(Storage = "_suspended", Name = "suspended", DbType = "boolean", CanBeNull = false)]
+        [Column(Name = "suspended", DbType = "Boolean", CanBeNull = false)]
 	    public bool Suspended{get; set;}
 
-        [Column(Storage = "_securityquestion", Name = "securityquestion", DbType = "character varying(256)")]
+        [Column(Name = "securityquestion", DbType = "StringFixedLength")]
         public string SecurityQuestion { get; set; }
 
-        [Column(Storage = "_securityanswer", Name = "securityanswer", DbType = "character varying(256)")]
+        [Column(Name = "securityanswer", DbType = "StringFixedLength")]
         public string SecurityAnswer { get; set; }
 
-        [Column(Storage = "_createdfromipaddress", Name = "createdfromipaddress", DbType = "character varying(15)")]
+        [Column(Name = "createdfromipaddress", DbType = "StringFixedLength")]
         public string CreatedFromIPAddress { get; set; }
 
-        [Column(Storage = "_adminid", Name = "adminid", DbType = "character varying(32)", CanBeNull = true)]
+        [Column(Name = "adminid", DbType = "StringFixedLength", CanBeNull = true)]
         public string AdminId { get; set; }          // Like a whitelabelid. If set identifies this user as the administrative owner of all accounts that have the same value for their adminmemberid.
 
-        [Column(Storage = "_adminmemberid", Name = "adminmemberid", DbType = "character varying(32)", CanBeNull = true)]
+        [Column(Name = "adminmemberid", DbType = "StringFixedLength", CanBeNull = true)]
         public string AdminMemberId { get; set; }    // If set it designates this customer as a belonging to the administrative domain of the customer with the same adminid.
 
-        [Column(Storage = "_timezone", Name = "timezone", DbType = "character varying(128)", CanBeNull = true)]
+        [Column(Name = "timezone", DbType = "StringFixedLength", CanBeNull = true)]
         public string TimeZone { get; set; }
 
-        [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
-        public DateTime InsertedUTC { get; set; }
+        private DateTime m_inserted;
+        [Column(Name = "inserted", DbType = "StringFixedLength", CanBeNull = false)]
+        public DateTime Inserted {
+            get { return m_inserted; }
+            set { m_inserted = value.ToUniversalTime(); }
+        }
 
-        [Column(Storage = "_maxexecutioncount", Name = "maxexecutioncount", DbType = "integer", CanBeNull = false)]
+        [Column(Name = "maxexecutioncount", DbType = "Int32", CanBeNull = false)]
         public int MaxExecutionCount { get; set; }
 
-        [Column(Storage = "_executioncount", Name = "executioncount", DbType = "integer", CanBeNull = false)]
+        [Column(Name = "executioncount", DbType = "Int32", CanBeNull = false)]
         public int ExecutionCount { get; set; }
 
-        [Column(Storage = "_authorisedapps", Name = "authorisedapps", DbType = "character varying(2048)", CanBeNull = true)]
+        [Column(Name = "authorisedapps", DbType = "StringFixedLength", CanBeNull = true)]
         public string AuthorisedApps { get; set; }
 
-        [Column(Storage = "_emailaddressconfirmed", Name = "emailaddressconfirmed", DbType = "bool", CanBeNull = false)]
+        [Column(Name = "emailaddressconfirmed", DbType = "Boolean", CanBeNull = false)]
         public bool EmailAddressConfirmed { get; set; }
 
         public Customer() { }
@@ -202,9 +207,37 @@ namespace SIPSorcery.CRM
             Load(customerRow);
         }
 
+        public DataTable GetTable() {
+            DataTable table = new DataTable();
+            table.Columns.Add(new DataColumn("id", typeof(String)));
+            table.Columns.Add(new DataColumn("customerusername", typeof(String)));
+            table.Columns.Add(new DataColumn("customerpassword", typeof(String)));
+            table.Columns.Add(new DataColumn("emailaddress", typeof(String)));
+            table.Columns.Add(new DataColumn("adminid", typeof(String)));
+            table.Columns.Add(new DataColumn("adminmemberid", typeof(String)));
+            table.Columns.Add(new DataColumn("firstname", typeof(String)));
+            table.Columns.Add(new DataColumn("lastname", typeof(String)));
+            table.Columns.Add(new DataColumn("city", typeof(String)));
+            table.Columns.Add(new DataColumn("country", typeof(String)));
+            table.Columns.Add(new DataColumn("securityquestion", typeof(String)));
+            table.Columns.Add(new DataColumn("securityanswer", typeof(String)));
+            table.Columns.Add(new DataColumn("website", typeof(String)));
+            table.Columns.Add(new DataColumn("createdfromipaddress", typeof(String)));
+            table.Columns.Add(new DataColumn("inserted", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("active", typeof(Boolean)));
+            table.Columns.Add(new DataColumn("suspended", typeof(Boolean)));
+            table.Columns.Add(new DataColumn("ipaddress", typeof(String)));
+            table.Columns.Add(new DataColumn("executioncount", typeof(Int32)));
+            table.Columns.Add(new DataColumn("maxexecutioncount", typeof(Int32)));
+            table.Columns.Add(new DataColumn("authorisedapps", typeof(String)));
+            table.Columns.Add(new DataColumn("timezone", typeof(String)));
+            table.Columns.Add(new DataColumn("emailaddressconfirmed", typeof(Boolean)));
+            return table;
+        }
+
         public void Load(DataRow customerRow) {
             try {
-                Id = customerRow["id"] as string;
+                Id = new Guid(customerRow["id"] as string);
                 CustomerUsername = customerRow["customerusername"] as string;
                 CustomerPassword = customerRow["customerpassword"] as string;
                 EmailAddress = (customerRow.Table.Columns.Contains("emailaddress") && customerRow["emailaddress"] != null) ?  customerRow["emailaddress"] as string : null;
@@ -218,12 +251,13 @@ namespace SIPSorcery.CRM
                 SecurityAnswer = (customerRow.Table.Columns.Contains("securityanswer") && customerRow["securityanswer"] != null) ? customerRow["securityanswer"] as string : null;
                 WebSite = (customerRow.Table.Columns.Contains("website") && customerRow["website"] != null) ? customerRow["website"] as string : null;
                 CreatedFromIPAddress = (customerRow.Table.Columns.Contains("createdfromipaddress") && customerRow["createdfromipaddress"] != null) ? customerRow["createdfromipaddress"] as string : null;
-                InsertedUTC = (customerRow.Table.Columns.Contains("inserted") && customerRow["inserted"] != null) ? Convert.ToDateTime(customerRow["inserted"]) : DateTime.MinValue;
+                Inserted = (customerRow.Table.Columns.Contains("inserted") && customerRow["inserted"] != null) ? Convert.ToDateTime(customerRow["inserted"]) : DateTime.MinValue;
                 Suspended = (customerRow.Table.Columns.Contains("suspended") && customerRow["suspended"] != null) ? Convert.ToBoolean(customerRow["suspended"]) : false;
                 ExecutionCount = (customerRow.Table.Columns.Contains("executioncount") && customerRow["executioncount"] != null) ? Convert.ToInt32(customerRow["executioncount"]) : 0;
                 MaxExecutionCount = (customerRow.Table.Columns.Contains("maxexecutioncount") && customerRow["maxexecutioncount"] != null) ? Convert.ToInt32(customerRow["maxexecutioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
                 AuthorisedApps = (customerRow.Table.Columns.Contains("authorisedapps") && customerRow["authorisedapps"] != null) ? customerRow["authorisedapps"] as string : null;
                 EmailAddressConfirmed = (customerRow.Table.Columns.Contains("emailaddressconfirmed") && customerRow["emailaddressconfirmed"] != null) ? Convert.ToBoolean(customerRow["emailaddressconfirmed"]) : true;
+                TimeZone = (customerRow.Table.Columns.Contains("timezone") && customerRow["timezone"] != null) ? customerRow["timezone"] as string : null;
             }
             catch (Exception excp) {
                 logger.Error("Exception Customer Load. " + excp.Message);
@@ -263,7 +297,7 @@ namespace SIPSorcery.CRM
                 "  <securityquestion>" + SecurityQuestion + "</securityquestion>" + m_newLine +
                 "  <securityanswer>" + SafeXML.MakeSafeXML(SecurityAnswer) + "</securityanswer>" + m_newLine +
                 "  <createdfromipaddress>" + CreatedFromIPAddress + "</createdfromipaddress>" + m_newLine +
-                "  <inserted>" + InsertedUTC.ToString("dd MMM yyyy HH:mm:ss") + "</inserted>" + m_newLine +
+                "  <inserted>" + m_inserted.ToString("o") + "</inserted>" + m_newLine +
                 "  <active>" + Active + "</active>" + m_newLine +
                 "  <suspended>" + Suspended + "</suspended>" + m_newLine +
                 "  <executioncount>" + ExecutionCount + "</executioncount>" + m_newLine +

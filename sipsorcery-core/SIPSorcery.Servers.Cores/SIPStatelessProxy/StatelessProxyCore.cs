@@ -34,6 +34,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -114,8 +115,9 @@ namespace SIPSorcery.Servers {
         /// <param name="sipChannel"></param>
         private void GotRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) {
             try {
-                DateTime startTime = DateTime.Now;
-                DateTime scriptStartTime = DateTime.Now;
+                Stopwatch requestStopwatch = new Stopwatch();
+                Stopwatch scriptStopwatch = new Stopwatch();
+                requestStopwatch.Start();
 
                 // Calculate the proxy branch parameter for this request. The branch parameter has to be calculated so that INVITE's and CANCEL's generate the same branchid.
                 //string toTag = (sipRequest.Header.To != null) ? sipRequest.Header.To.ToTag : null;
@@ -136,10 +138,10 @@ namespace SIPSorcery.Servers {
                 string fromUser = (sipRequest.Header.From != null) ? sipRequest.Header.From.FromURI.User : null;
                 string toUser = (sipRequest.Header.To != null) ? sipRequest.Header.To.ToURI.User : null;
                 string summaryStr = "req " + sipRequest.Method + " from=" + fromUser + ", to=" + toUser + ", " + remoteEndPoint.ToString();
+                
+                scriptStopwatch.Start();
 
                 lock (this) {
-                    scriptStartTime = DateTime.Now;
-
                     m_compiledScript.DefaultScope.RemoveVariable("sys");
                     m_compiledScript.DefaultScope.RemoveVariable("localEndPoint");
                     m_compiledScript.DefaultScope.RemoveVariable("isreq");
@@ -163,10 +165,11 @@ namespace SIPSorcery.Servers {
                     m_compiledScript.Execute();
                 }
 
-                double processingTime = DateTime.Now.Subtract(startTime).TotalMilliseconds;
-                if (processingTime > 20) {
-                    double scriptTime = DateTime.Now.Subtract(scriptStartTime).TotalMilliseconds;
-                    logger.Debug("GotRequest processing time=" + processingTime.ToString("0.##") + "ms, script time=" + scriptTime.ToString("0.##") + ".");
+                scriptStopwatch.Stop();
+                requestStopwatch.Stop();
+
+                if (requestStopwatch.ElapsedMilliseconds > 20) {
+                    logger.Debug("GotRequest processing time=" + requestStopwatch.ElapsedMilliseconds + "ms, script time=" + scriptStopwatch.ElapsedMilliseconds + "ms.");
                 }
             }
             catch (SIPValidationException) {
@@ -194,8 +197,9 @@ namespace SIPSorcery.Servers {
         /// </summary>
         private void GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) {
             try {
-                DateTime startTime = DateTime.Now;
-                DateTime scriptStartTime = DateTime.Now;
+                Stopwatch responseStopwatch = new Stopwatch();
+                Stopwatch scriptStopwatch = new Stopwatch();
+                responseStopwatch.Start();
 
                 // Used in the proxy monitor messages only, plays no part in response processing.
                 string fromUser = (sipResponse.Header.From != null) ? sipResponse.Header.From.FromURI.User : null;
@@ -218,7 +222,7 @@ namespace SIPSorcery.Servers {
                 }
 
                 lock (this) {
-                    scriptStartTime = DateTime.Now;
+                    scriptStopwatch.Start();
 
                     m_compiledScript.DefaultScope.RemoveVariable("sys");
                     m_compiledScript.DefaultScope.RemoveVariable("isreq");
@@ -243,10 +247,11 @@ namespace SIPSorcery.Servers {
                     m_compiledScript.Execute();
                 }
 
-                double processingTime = DateTime.Now.Subtract(startTime).TotalMilliseconds;
-                if (processingTime > 20) {
-                    double scriptTime = DateTime.Now.Subtract(scriptStartTime).TotalMilliseconds;
-                    logger.Debug("GotResponse processing time=" + processingTime.ToString("0.##") + "ms, script time=" + scriptTime.ToString("0.##") + ".");
+                scriptStopwatch.Stop();
+                responseStopwatch.Stop();
+
+                if (responseStopwatch.ElapsedMilliseconds > 20) {
+                    logger.Debug("GotResponse processing time=" + responseStopwatch.ElapsedMilliseconds + "ms, script time=" + scriptStopwatch.ElapsedMilliseconds + "ms.");
                 }
             }
             catch (Exception excp) {

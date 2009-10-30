@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>..\Build\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;UNITTEST</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -34,18 +34,6 @@
     <Reference Include="Amazon.SimpleDB, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\Amazon.SimpleDB.dll</HintPath>
-    </Reference>
-    <Reference Include="DbLinq, Version=0.19.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\DbLinq.dll</HintPath>
-    </Reference>
-    <Reference Include="DbLinq.MySql, Version=0.19.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\DbLinq.MySql.dll</HintPath>
-    </Reference>
-    <Reference Include="DbLinq.PostgreSql, Version=0.19.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\DbLinq.PostgreSql.dll</HintPath>
     </Reference>
     <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -80,23 +68,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DBLinqAssetPersistor.cs" />
-    <Compile Include="DBLinqContext.cs" />
     <Compile Include="DynamicLinq.cs" />
     <Compile Include="ISIPAsset.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SimpleDB\Evaluator.cs" />
-    <Compile Include="SimpleDB\ExpressionVisitor.cs" />
-    <Compile Include="SimpleDB\ObjectReader.cs" />
-    <Compile Include="SimpleDB\ObjectMapper.cs" />
-    <Compile Include="SimpleDB\QueryProvider.cs" />
+    <Compile Include="LINQtoData\Evaluator.cs" />
+    <Compile Include="LINQtoData\ExpressionVisitor.cs" />
+    <Compile Include="SimpleDB\SimpleDBObjectReader.cs" />
+    <Compile Include="LINQtoData\ObjectMapper.cs" />
+    <Compile Include="LINQtoData\QueryProvider.cs" />
     <Compile Include="SimpleDB\SimpleDBExpressionVisitor.cs" />
     <Compile Include="SimpleDB\SimpleDBAssetPersistor.cs" />
-    <Compile Include="SimpleDB\SimpleDBQuery.cs" />
+    <Compile Include="LINQtoData\Query.cs" />
     <Compile Include="SimpleDB\SimpleDBQueryProvider.cs" />
-    <Compile Include="SimpleDB\TypeSystem.cs" />
+    <Compile Include="LINQtoData\TypeSystem.cs" />
     <Compile Include="SIPAssetPersistor.cs" />
+    <Compile Include="SIPAssetPersistorFactory.cs" />
     <Compile Include="SIPAssetXMLPersistor.cs" />
+    <Compile Include="SQL\SQLAssetPersistor.cs" />
+    <Compile Include="SQL\SQLExpressionVisitor.cs" />
+    <Compile Include="SQL\SQLQueryProvider.cs" />
+    <Compile Include="SQL\SQLObjectReader.cs" />
     <Compile Include="StorageLayer.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -113,4 +104,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <PropertyGroup>
+    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build\SIPSorcery.Persistence.dll" "c:\temp\sipsorcery\"</PostBuildEvent>
+  </PropertyGroup>
 </Project>

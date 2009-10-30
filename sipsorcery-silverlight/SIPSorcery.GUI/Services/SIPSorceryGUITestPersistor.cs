@@ -88,6 +88,8 @@ namespace SIPSorcery.Persistence
         public override event GetCDRsCompleteDelegate GetCDRsComplete;
         public override event CreateCustomerCompleteDelegate CreateCustomerComplete;
         public override event DeleteCustomerCompleteDelegate DeleteCustomerComplete;
+        public override event GetTimeZoneOffsetMinutesCompleteDelegate GetTimeZoneOffsetMinutesComplete;
+        public override event ExtendSessionCompleteDelegate ExtendSessionComplete;
 
         public override event MethodInvokerDelegate SessionExpired;
 
@@ -112,6 +114,10 @@ namespace SIPSorcery.Persistence
                 LogoutComplete(new AsyncCompletedEventArgs(null, false, null));
             }
         }
+
+        public override void ExtendSessionAsync(int minutes) { }
+
+        public override void GetTimeZoneOffsetMinutesAsync() { }
 
         public override void GetCustomerAsync(string username) {
             if (GetCustomerComplete != null) {

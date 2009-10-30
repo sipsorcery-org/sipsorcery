@@ -139,7 +139,7 @@ namespace SIPSorcery
                 }
             }
 
-            m_sipAccountId.Text = sipAccount.Id;
+            m_sipAccountId.Text = sipAccount.Id.ToString();
             m_sipAccountOwner.Text = sipAccount.Owner;
             m_sipAccountUsernameText.Text = sipAccount.SIPUsername;
             m_sipAccountPassword.Text = sipAccount.SIPPassword;
@@ -243,7 +243,7 @@ namespace SIPSorcery
                 sipAccount.IsIncomingOnly = isIncomingOnly;
                 sipAccount.NetworkId = networkId;
                 sipAccount.IPAddressACL = ipAddressACL;
-                sipAccount.InsertedUTC = DateTime.Now;
+                sipAccount.Inserted = DateTime.UtcNow;
 
                 string validationError = SIPAccount.ValidateAndClean(sipAccount);
                 if (validationError != null) {

@@ -29,11 +29,11 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-[assembly: AssemblyTitle("SIPSwitch Service")]
-[assembly: AssemblyDescription("A Windows Service for a Stateful SIP Proxy")]
+[assembly: AssemblyTitle("SIPSorcery.SIPAppServer")]
+[assembly: AssemblyDescription("SIP Sorcery SIP Application Server")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Blue Face")]
-[assembly: AssemblyProduct("SIPSwitch")]
+[assembly: AssemblyCompany("SIP Sorcery")]
+[assembly: AssemblyProduct("SIPSorcery.SIPAppServer")]
 [assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]		

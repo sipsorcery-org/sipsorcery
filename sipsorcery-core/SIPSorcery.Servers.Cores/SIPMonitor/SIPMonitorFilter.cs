@@ -94,84 +94,75 @@ namespace SIPSorcery.Servers
 
         public SIPMonitorFilter(string filter)
 		{
-			if(filter != null && filter.Trim().Length > 0)
+			if(!filter.IsNullOrBlank())
 			{
 				string[] filterItems = Regex.Split(filter, @"\s+and\s+");
 
-				if(filterItems != null && filterItems.Length > 0)
-				{
-					foreach(string filterItem in filterItems)
-					{
-						string[] filterPair = filterItem.Trim().Split(' ');
-						string filterName = filterPair[0];
-						string filterValue = filterPair[1];
-						
-						if(filterName == EVENTTYPE_FILTER_KEY)
-						{
-							if(filterValue != null && Regex.Match(filterValue, @"\d{1,2}").Success)
-							{
-								EventTypeId = Convert.ToInt32(filterValue);
-							}
-							else
-							{
-								EventFilterDescr = filterValue;
-							}
-						}
-                        else if (filterName == SERVERADDRESS_FILTER_KEY)
-                        {
-                            ServerIPAddress = filterValue;
-                        }
-                        else if (filterName == IPADDRESS_FILTER_KEY || filterName == IPADDRESSLONG_FILTER_KEY)
-						{
-							IPAddress = filterValue;
-						}
-						else if(filterName == USERNAME_FILTER_KEY)
-						{
-							Username = filterValue;
-						}
-                        else if (filterName == SIPREQUEST_FILTER_KEY)
-                        {
-                            SIPRequestFilter = filterValue;
-                        }
-                        else if (filterName == SERVERTYPE_FILTER_KEY)
-                        {
-                            if (filterValue != null && Regex.Match(filterValue, @"\d{1,2}").Success)
-                            {
-                                ServerTypeId = Convert.ToInt32(filterValue);
-                            }
-                        }
-                        else if (filterName == FILELOG_REQUEST_KEY)
-                        {
-                            if (filterValue != null)
-                            {
-                                FileLogname = filterValue;
-                            }
-                        }
-                        else if (filterName == FILELOG_MINUTESDURATION_KEY)
-                        {
-                            if (filterValue != null && Regex.Match(filterValue, @"\d").Success)
-                            {
-                                FileLogDuration = Convert.ToInt32(filterValue);
+                if (filterItems != null && filterItems.Length > 0) {
+                    foreach (string filterItem in filterItems) {
 
-                                if (FileLogDuration > MAX_FILEDURATION_MINUTES)
-                                {
-                                    FileLogDuration = MAX_FILEDURATION_MINUTES;
+                        string[] filterPair = filterItem.Trim().Split(' ');
+
+                        if (filterPair != null && filterPair.Length == 2) {
+                            string filterName = filterPair[0];
+                            string filterValue = filterPair[1];
+
+                            if (filterName == EVENTTYPE_FILTER_KEY) {
+                                if (filterValue != null && Regex.Match(filterValue, @"\d{1,2}").Success) {
+                                    EventTypeId = Convert.ToInt32(filterValue);
+                                }
+                                else {
+                                    EventFilterDescr = filterValue;
                                 }
                             }
-                        }
-                        else if (filterName == REGEX_FILTER_KEY)
-                        {
-                            if (filterValue != null)
-                            {
-                                RegexFilter = filterValue;
+                            else if (filterName == SERVERADDRESS_FILTER_KEY) {
+                                ServerIPAddress = filterValue;
+                            }
+                            else if (filterName == IPADDRESS_FILTER_KEY || filterName == IPADDRESSLONG_FILTER_KEY) {
+                                IPAddress = filterValue;
+                            }
+                            else if (filterName == USERNAME_FILTER_KEY) {
+                                Username = filterValue;
+                            }
+                            else if (filterName == SIPREQUEST_FILTER_KEY) {
+                                SIPRequestFilter = filterValue;
+                            }
+                            else if (filterName == SERVERTYPE_FILTER_KEY) {
+                                if (filterValue != null && Regex.Match(filterValue, @"\d{1,2}").Success) {
+                                    ServerTypeId = Convert.ToInt32(filterValue);
+                                }
+                            }
+                            else if (filterName == FILELOG_REQUEST_KEY) {
+                                if (filterValue != null) {
+                                    FileLogname = filterValue;
+                                }
+                            }
+                            else if (filterName == FILELOG_MINUTESDURATION_KEY) {
+                                if (filterValue != null && Regex.Match(filterValue, @"\d").Success) {
+                                    FileLogDuration = Convert.ToInt32(filterValue);
+
+                                    if (FileLogDuration > MAX_FILEDURATION_MINUTES) {
+                                        FileLogDuration = MAX_FILEDURATION_MINUTES;
+                                    }
+                                }
+                            }
+                            else if (filterName == REGEX_FILTER_KEY) {
+                                if (filterValue != null) {
+                                    RegexFilter = filterValue;
+                                }
+                            }
+                            else {
+                                throw new ApplicationException("Filter " + filterName + " not recgonised.");
                             }
                         }
-                        else
-                        {
-                            throw new ApplicationException("Filter " + filterName + " not recgonised.");
+                        else {
+                            throw new ApplicationException("Invalid item in filter: " + filterItem.Trim() + ".");
                         }
-					}
-				}
+                    }
+                }
+                else {
+                    throw new ApplicationException("Invalid filter format: " + filter + ".");
+                }
 			}
 		}
 

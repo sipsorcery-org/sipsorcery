@@ -218,8 +218,8 @@ namespace SIPSorcery.AppServer.DialPlan
                     if (!Directory.Exists(m_traceDirectory)) {
                         logger.Warn("Dial Plan trace could not be saved as trace directory " + m_traceDirectory + " does not exist.");
                     }
-                    else {
-                        ThreadPool.QueueUserWorkItem(CompleteTrace);
+                    else if(SendTrace){
+                        ThreadPool.QueueUserWorkItem(delegate { CompleteTrace(); });
                     }
                 }
             }
@@ -228,7 +228,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        private void CompleteTrace(object state) {
+        private void CompleteTrace() {
             try {
                 SIPMonitorEvent traceCompleteEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dialplan trace completed at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff") + ".", Owner);
                 TraceLog.AppendLine(traceCompleteEvent.EventType + "=> " + traceCompleteEvent.Message);

@@ -79,6 +79,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="UserInterface\About.xaml">
+      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UserInterface\AssetManagers\DialPlanDetailsControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -149,6 +153,9 @@
     <Compile Include="AssemblyState.cs" />
     <Compile Include="FunctionDelegates.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UserInterface\About.xaml.cs">
+      <DependentUpon>About.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserInterface\CallManager\SIPSwitchboard.xaml.cs">
       <DependentUpon>SIPSwitchboard.xaml</DependentUpon>
     </Compile>
@@ -260,6 +267,10 @@
     <ProjectReference Include="..\SIPSorcery.Messaging\SIPSorcery.Silverlight.Messaging.csproj">
       <Project>{9DE0DCC6-F4A7-4BCA-BD89-96F1D0C91151}</Project>
       <Name>SIPSorcery.Silverlight.Messaging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
+      <Project>{6ED5020C-A823-4EA6-B01C-C505CE80E970}</Project>
+      <Name>SIPSorcery.Persistence</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Silverlight.CRM\SIPSorcery.Silverlight.CRM.csproj">
       <Project>{FDC64126-97E7-4076-910B-E842F730CF3E}</Project>

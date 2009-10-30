@@ -42,6 +42,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
+using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -69,24 +70,24 @@ namespace SIPSorcery.SIP.App
         public const int REGISTER_MINIMUM_EXPIRY = 60;            // The minimum interval a registration will be accepted for. Anything less than this interval will use this minimum value.
         public const int REGISTER_MAXIMUM_EXPIRY = 3600;
 
-        public static string SelectProvider = "select * from sipproviders where id = ?1";
+        //public static string SelectProvider = "select * from sipproviders where id = ?1";
 
         public static string DisallowedServerPatterns;            // If set will be used as a regex pattern to prevent certain strings being used in the Provider Server and RegisterServer fields.
 
         private static string m_newLine = AppState.NewLine;
         private static ILog logger = AppState.logger;
 
-        private string m_id;
-        [Column(Storage = "_id", Name = "id", DbType = "character varying(36)", IsPrimaryKey = true, CanBeNull = false)]
+        private Guid m_id;
+        [Column(Storage = "m_id", Name = "id", DbType = "StringFixedLength", IsPrimaryKey = true, CanBeNull = false)]
         [DataMember]
-        public string Id
+        public Guid Id
         {
             get { return m_id; }
             set { m_id = value; }
         }
 
         private string m_owner;                         // The username of the account that owns this SIP provider configuration.
-        [Column(Storage = "_owner", Name = "owner", DbType = "character varying(32)", CanBeNull = false)]
+        [Column(Storage = "m_owner", Name = "owner", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
         public string Owner
         {
@@ -98,11 +99,11 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        [Column(Storage = "_adminmemberid", Name = "adminmemberid", DbType = "character varying(32)", CanBeNull = true)]
+        [Column(Name = "adminmemberid", DbType = "StringFixedLength", CanBeNull = true)]
         public string AdminMemberId { get; set; }    // If set it designates this asset as a belonging to a user with the matching adminid.
        
         private string m_providerName;
-        [Column(Storage = "_providername", Name = "providername", DbType = "character varying(50)", CanBeNull = false)]
+        [Column(Storage = "m_providerName", Name = "providername", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
         public string ProviderName
         {
@@ -115,7 +116,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_providerUsername;
-        [Column(Storage = "_providerusername", Name = "providerusername", DbType = "character varying(32)", CanBeNull = false)]
+        [Column(Storage = "m_providerUsername", Name = "providerusername", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
         public string ProviderUsername
         {
@@ -128,7 +129,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_providerPassword;
-        [Column(Storage = "_providerpassword", Name = "providerpassword", DbType = "character varying(32)", CanBeNull = true)]
+        [Column(Storage = "m_providerPassword", Name = "providerpassword", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
         public string ProviderPassword
         {
@@ -141,7 +142,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private SIPURI m_providerServer;
-        [Column(Storage = "_providerserver", Name = "providerserver", DbType = "character varying(256)", CanBeNull = false)]
+        [Column(Storage = "m_providerServer", Name = "providerserver", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
         public string ProviderServer
         {
@@ -154,7 +155,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_providerAuthUsername;             // An optional setting if authusername differs from username for authentication.
-        [Column(Storage = "_providerauthusername", Name = "providerauthusername", DbType = "character varying(32)", CanBeNull = true)]
+        [Column(Storage = "m_providerAuthUsername", Name = "providerauthusername", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
         public string ProviderAuthUsername
         {
@@ -167,7 +168,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_providerOutboundProxy;
-        [Column(Storage = "_provideroutboundproxy", Name = "provideroutboundproxy", DbType = "character varying(256)", CanBeNull = true)]
+        [Column(Storage = "m_providerOutboundProxy", Name = "provideroutboundproxy", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
         public string ProviderOutboundProxy
         {
@@ -180,7 +181,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_providerFrom;                     // If set determines how the From header will be set for calls to the SIP provider.
-        [Column(Storage = "_providerfrom", Name = "providerfrom", DbType = "character varying(256)", CanBeNull = true)]
+        [Column(Storage = "m_providerFrom", Name = "providerfrom", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
         public string ProviderFrom
         {
@@ -193,7 +194,7 @@ namespace SIPSorcery.SIP.App
         }    
 
         private string m_customHeaders;                  // An optional list of custom SIP headers that will be added to calls to the SIP provider.
-        [Column(Storage = "_customheaders", Name = "customheaders", DbType = "character varying(256)", CanBeNull = true)]
+        [Column(Storage = "m_customHeaders", Name = "customheaders", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
         public string CustomHeaders
         {
@@ -206,7 +207,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private SIPURI m_registerContact;
-        [Column(Storage = "_registercontact", Name = "registercontact", DbType = "character varying(256)", CanBeNull = true)]
+        [Column(Storage = "m_registerContact", Name = "registercontact", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
         public string RegisterContact
         {
@@ -219,7 +220,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private int m_registerExpiry = REGISTER_DEFAULT_EXPIRY;
-        [Column(Storage = "_registerexpiry", Name = "registerexpiry", DbType = "int", CanBeNull = true)]
+        [Column(Storage = "m_registerExpiry", Name = "registerexpiry", DbType = "Int32", CanBeNull = true)]
         [DataMember]
         public int RegisterExpiry
         {
@@ -232,7 +233,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private SIPURI m_registerServer;                    // If set this host address will be used for the Registrar server, if not set the ProviderServer is used.
-        [Column(Storage = "_registerserver", Name = "registerserver", DbType = "character varying(256)", CanBeNull = true)]
+        [Column(Storage = "m_registerServer", Name = "registerserver", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
         public string RegisterServer
         {
@@ -245,7 +246,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_registerRealm;                     // An optional setting if the register realm differs from the provider server.
-        [Column(Storage = "_registerrealm", Name = "registerrealm", DbType = "character varying(256)", CanBeNull = true)]
+        [Column(Storage = "m_registerRealm", Name = "registerrealm", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
         public string RegisterRealm
         {
@@ -258,7 +259,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private bool m_registerEnabled;                     // If the registration has been disabled this will be set to false.
-        [Column(Storage = "_registerenabled", Name = "registerenabled", DbType = "boolean", CanBeNull = false)]
+        [Column(Storage = "m_registerEnabled", Name = "registerenabled", DbType = "Boolean", CanBeNull = false)]
         [DataMember]
         public bool RegisterEnabled
         {
@@ -271,7 +272,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private bool m_registerAdminEnabled;                // This setting allows and administrator to override the user setting and disable a registration.
-        [Column(Storage = "_registeradminenabled", Name = "registeradminenabled", DbType = "boolean", CanBeNull = false)]
+        [Column(Storage = "m_registerAdminEnabled", Name = "registeradminenabled", DbType = "Boolean", CanBeNull = false)]
         [DataMember]
         public bool RegisterAdminEnabled
         {
@@ -288,7 +289,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_registerDisabledReason;            // If the registration agent disabled the registration it will set a reason.
-        [Column(Storage = "_registerdisabledreason", Name = "registerdisabledreason", DbType = "character varying(256)", CanBeNull = true)]
+        [Column(Storage = "m_registerDisabledReason", Name = "registerdisabledreason", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
         public string RegisterDisabledReason
         {
@@ -300,26 +301,26 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private DateTime m_lastUpdateUTC;
-        [Column(Storage = "_lastupdate", Name = "lastupdate", DbType = "timestamp", CanBeNull = true)]
+        private DateTime m_lastUpdate;
+        [Column(Storage = "m_lastUpdate", Name = "lastupdate", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
-        public DateTime LastUpdateUTC
+        public DateTime LastUpdate
         {
-            get { return m_lastUpdateUTC; }
+            get { return m_lastUpdate; }
             set
             {
-                m_lastUpdateUTC = value;
+                m_lastUpdate = value.ToUniversalTime();
                 NotifyPropertyChanged("LastUpdate");
             }
         }
 
-        private DateTime m_insertedUTC;
-        [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
+        private DateTime m_inserted;
+        [Column(Storage = "m_inserted", Name = "inserted", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
-        public DateTime InsertedUTC
+        public DateTime Inserted
         {
-            get { return m_insertedUTC; }
-            set { m_insertedUTC = value; }
+            get { return m_inserted; }
+            set { m_inserted = value.ToUniversalTime(); }
         }
 
         /// <summary>
@@ -352,7 +353,7 @@ namespace SIPSorcery.SIP.App
             bool registerEnabledAdmin)
         {
             m_owner = owner;
-            m_id = Guid.NewGuid().ToString();
+            m_id = Guid.NewGuid();
             m_providerName = name;
             m_providerUsername = username;
             m_providerPassword = password;
@@ -367,8 +368,8 @@ namespace SIPSorcery.SIP.App
             m_registerRealm = registerRealm;
             m_registerEnabled = registerEnabled;
             m_registerAdminEnabled = registerEnabledAdmin;
-            m_insertedUTC = DateTime.Now.ToUniversalTime();
-            m_lastUpdateUTC = DateTime.Now.ToUniversalTime();
+            Inserted = DateTime.UtcNow;
+            LastUpdate = DateTime.UtcNow;
 
             //if (m_registerContact != null)
             //{
@@ -425,10 +426,37 @@ namespace SIPSorcery.SIP.App
             Load(bindingRow);
         }
 
+        public DataTable GetTable() {
+            DataTable table = new DataTable();
+            table.Columns.Add(new DataColumn("id", typeof(String)));
+            table.Columns.Add(new DataColumn("owner", typeof(String)));
+            table.Columns.Add(new DataColumn("adminmemberid", typeof(String)));
+            table.Columns.Add(new DataColumn("providername", typeof(String)));
+            table.Columns.Add(new DataColumn("providerusername", typeof(String)));
+            table.Columns.Add(new DataColumn("providerpassword", typeof(String)));
+            table.Columns.Add(new DataColumn("providerserver", typeof(String)));
+            table.Columns.Add(new DataColumn("providerauthusername", typeof(String)));
+            table.Columns.Add(new DataColumn("provideroutboundproxy", typeof(String)));
+            table.Columns.Add(new DataColumn("providerfrom", typeof(String)));
+            table.Columns.Add(new DataColumn("providercustom", typeof(String)));
+            table.Columns.Add(new DataColumn("registercontact", typeof(String)));
+            table.Columns.Add(new DataColumn("registerexpiry", typeof(Int32)));
+            table.Columns.Add(new DataColumn("registerserver", typeof(String)));
+            table.Columns.Add(new DataColumn("registerrealm", typeof(String)));
+            table.Columns.Add(new DataColumn("registerenabled", typeof(Boolean)));
+            table.Columns.Add(new DataColumn("registeradminenabled", typeof(Boolean)));
+            table.Columns.Add(new DataColumn("registerdisabledreason", typeof(String)));
+            table.Columns.Add(new DataColumn("maxexecutioncount", typeof(Int32)));
+            table.Columns.Add(new DataColumn("inserted", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("lastupdate", typeof(DateTime)));
+            return table;
+        }
+
         public void Load(DataRow providerRow) {
             try {
-                m_id = (providerRow.Table.Columns.Contains("id") && providerRow["id"] != DBNull.Value && providerRow["id"] != null) ? providerRow["id"] as string : Guid.NewGuid().ToString();
+                m_id = (providerRow.Table.Columns.Contains("id") && providerRow["id"] != DBNull.Value && providerRow["id"] != null) ? new Guid(providerRow["id"] as string) : Guid.NewGuid();
                 m_owner = providerRow["owner"] as string;
+                AdminMemberId = providerRow["adminmemberid"] as string;
                 m_providerName = providerRow["providername"] as string;
                 m_providerUsername = providerRow["providerusername"] as string;
                 m_providerPassword = providerRow["providerpassword"] as string;
@@ -442,10 +470,10 @@ namespace SIPSorcery.SIP.App
                 m_registerServer = (providerRow.Table.Columns.Contains("registerserver") && providerRow["registerserver"] != null) ? SIPURI.ParseSIPURIRelaxed(providerRow["registerserver"] as string) : null;
                 m_registerRealm = (providerRow.Table.Columns.Contains("registerrealm") && providerRow["registerrealm"] != null) ? providerRow["registerrealm"] as string : null;
                 m_registerEnabled = (providerRow.Table.Columns.Contains("registerenabled") && providerRow["registerenabled"] != DBNull.Value && providerRow["registerenabled"] != null) ? StorageLayer.ConvertToBoolean(providerRow["registerenabled"]) : false;
-                m_registerAdminEnabled = (providerRow.Table.Columns.Contains("registerenabledadmin") && providerRow["registerenabledadmin"] != DBNull.Value && providerRow["registerenabledadmin"] != null) ? StorageLayer.ConvertToBoolean(providerRow["registerenabledadmin"]) : true;
+                m_registerAdminEnabled = (providerRow.Table.Columns.Contains("registeradminenabled") && providerRow["registeradminenabled"] != DBNull.Value && providerRow["registeradminenabled"] != null) ? StorageLayer.ConvertToBoolean(providerRow["registeradminenabled"]) : true;
                 m_registerDisabledReason = (providerRow.Table.Columns.Contains("registerdisabledreason") && providerRow["registerdisabledreason"] != DBNull.Value && providerRow["registerdisabledreason"] != null) ? providerRow["registerdisabledreason"] as string : null;
-                m_lastUpdateUTC = (providerRow.Table.Columns.Contains("lastupdate") && providerRow["lastupdate"] != DBNull.Value && providerRow["lastupdate"] != null) ? Convert.ToDateTime(providerRow["lastupdate"]) : DateTime.Now;
-                m_insertedUTC = (providerRow.Table.Columns.Contains("inserted") && providerRow["inserted"] != DBNull.Value && providerRow["inserted"] != null) ? Convert.ToDateTime(providerRow["inserted"]) : DateTime.Now;
+                LastUpdate = (providerRow.Table.Columns.Contains("lastupdate") && providerRow["lastupdate"] != DBNull.Value && providerRow["lastupdate"] != null) ? Convert.ToDateTime(providerRow["lastupdate"]) : DateTime.UtcNow;
+                Inserted = (providerRow.Table.Columns.Contains("inserted") && providerRow["inserted"] != DBNull.Value && providerRow["inserted"] != null) ? Convert.ToDateTime(providerRow["inserted"]) : DateTime.UtcNow;
 
                 if (m_registerContact == null && m_registerEnabled) {
                     m_registerEnabled = false;
@@ -483,6 +511,7 @@ namespace SIPSorcery.SIP.App
             string providerXML =
                 "   <id>" + m_id + "</id>" + m_newLine +
                 "   <owner>" + m_owner + "</owner>" + m_newLine +
+                "   <adminmemberid>" + AdminMemberId + "</adminmemberid>" + m_newLine +
                 "   <providername>" + m_providerName + "</providername>" + m_newLine +
                 "   <providerusername>" + m_providerUsername + "</providerusername>" + m_newLine +
                 "   <providerpassword>" + m_providerPassword + "</providerpassword>" + m_newLine +
@@ -498,8 +527,8 @@ namespace SIPSorcery.SIP.App
                 "   <registerenabled>" + m_registerEnabled + "</registerenabled>" + m_newLine +
                 "   <registerenabledadmin>" + m_registerAdminEnabled + "</registerenabledadmin>" + m_newLine +
                 "   <registerdisabledreason>" + SafeXML.MakeSafeXML(m_registerDisabledReason) + "</registerdisabledreason>" + m_newLine +
-                "   <inserted>" + m_insertedUTC.ToString("o") + "</inserted>" + m_newLine +
-                "   <lastupdate>" + m_lastUpdateUTC.ToString("o") + "</lastupdate>" + m_newLine;
+                "   <inserted>" + m_inserted.ToString("o") + "</inserted>" + m_newLine +
+                "   <lastupdate>" + m_lastUpdate.ToString("o") + "</lastupdate>" + m_newLine;
  
             return providerXML;
         }

@@ -35,9 +35,21 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="NSsh.Common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ecf84006eebd2227, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\NSsh\Trunk\NSsh\Output\Debug\NSsh.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="NSsh.Server, Version=1.0.0.0, Culture=neutral, PublicKeyToken=2e74657d17ee366c, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\NSsh\Trunk\NSsh\Output\Debug\NSsh.Server.dll</HintPath>
+    </Reference>
     <Reference Include="SIPSorcery.CRM, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.CRM.dll</HintPath>
+    </Reference>
+    <Reference Include="SIPSorcery.Persistence, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Persistence.dll</HintPath>
     </Reference>
     <Reference Include="SIPSorcery.Servers.Cores, Version=1.0.3377.17631, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -50,6 +62,10 @@
     <Reference Include="SIPSorcery.Sys, Version=1.0.0.12091, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Sys.dll</HintPath>
+    </Reference>
+    <Reference Include="SIPSorcery.Web.Services, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Web.Services.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />

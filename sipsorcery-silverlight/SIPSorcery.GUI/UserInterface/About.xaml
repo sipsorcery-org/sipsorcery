@@ -1,0 +1,18 @@
+﻿<basics:ChildWindow
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:basics="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	x:Class="SIPSorcery.About"
+	Title="About SIP Sorcery"
+	Width="400" Height="300" mc:Ignorable="d" FontSize="13.333">
+	<Grid x:Name="LayoutRoot" Background="Black">
+		<Grid.RowDefinitions>
+			<RowDefinition />
+			<RowDefinition Height="Auto" MinHeight="53" />
+		</Grid.RowDefinitions>
+
+		<Button x:Name="OKButton" Content="OK" Click="OKButton_Click" Height="23" Margin="0,8,0,22" Grid.Row="1" Width="75" HorizontalAlignment="Center" />
+		<TextBlock Margin="32,19,44,88" Foreground="{StaticResource NormalTextBrush}" TextWrapping="Wrap"><Run Text="This service has been "/><Run Text="bought to you by SIP Sorcery. For more information please visit www.sipsorcery.com."/></TextBlock>
+	</Grid>
+</basics:ChildWindow>

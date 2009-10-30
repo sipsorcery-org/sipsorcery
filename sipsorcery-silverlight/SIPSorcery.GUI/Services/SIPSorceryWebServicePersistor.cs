@@ -55,6 +55,8 @@ namespace SIPSorcery.Persistence {
         public override event GetCDRsCompleteDelegate GetCDRsComplete;
         public override event CreateCustomerCompleteDelegate CreateCustomerComplete;
         public override event DeleteCustomerCompleteDelegate DeleteCustomerComplete;
+        public override event GetTimeZoneOffsetMinutesCompleteDelegate GetTimeZoneOffsetMinutesComplete;
+        public override event ExtendSessionCompleteDelegate ExtendSessionComplete;
 
         public override event MethodInvokerDelegate SessionExpired = () => { };
 
@@ -103,6 +105,8 @@ namespace SIPSorcery.Persistence {
             m_provisioningServiceProxy.GetCDRsCompleted += GetCDRsCompleted;
             m_provisioningServiceProxy.CreateCustomerCompleted += CreateCustomerCompleted;
             m_provisioningServiceProxy.DeleteCustomerCompleted += DeleteCustomerCompleted;
+            m_provisioningServiceProxy.GetTimeZoneOffsetMinutesCompleted += GetTimeZoneOffsetMinutesCompleted;
+            m_provisioningServiceProxy.ExtendSessionCompleted += ExtendSessionCompleted;
         }
 
         private bool IsUnauthorised(Exception excp) {
@@ -152,6 +156,22 @@ namespace SIPSorcery.Persistence {
             LogoutComplete(e);
         }
 
+        public override void ExtendSessionAsync(int minutes) {
+            m_provisioningServiceProxy.ExtendSessionAsync(minutes);
+        }
+
+        private void ExtendSessionCompleted(object sender, AsyncCompletedEventArgs e) {
+            ExtendSessionComplete(e);
+        }
+
+        public override void GetTimeZoneOffsetMinutesAsync() {
+            m_provisioningServiceProxy.GetTimeZoneOffsetMinutesAsync();
+        }
+
+        private void GetTimeZoneOffsetMinutesCompleted(object sender, GetTimeZoneOffsetMinutesCompletedEventArgs e) {
+            GetTimeZoneOffsetMinutesComplete(e);
+        }
+
         public override void GetCustomerAsync(string username) {
             m_provisioningServiceProxy.GetCustomerAsync(username);
         }
@@ -160,7 +180,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if(GetCustomerComplete != null){
                 GetCustomerComplete(e);
             }
         }
@@ -173,7 +193,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (UpdateCustomerComplete != null) {
                 UpdateCustomerComplete(e);
             }
         }
@@ -186,7 +206,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if(UpdateCustomerPasswordComplete != null){
                 UpdateCustomerPasswordComplete(e);
             }
         }
@@ -195,7 +215,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if(GetSIPDomainsComplete != null){
                 GetSIPDomainsComplete(e);
             }
         }
@@ -210,7 +230,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetSIPAccountsCountComplete != null) {
                 GetSIPAccountsCountComplete(e);
             }
         }
@@ -223,7 +243,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetSIPAccountsComplete != null) {
                 GetSIPAccountsComplete(e);
             }
         }
@@ -236,7 +256,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (AddSIPAccountComplete != null) {
                 AddSIPAccountComplete(e);
             }
         }
@@ -249,7 +269,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (UpdateSIPAccountComplete != null) {
                 UpdateSIPAccountComplete(e);
             }
         }
@@ -262,7 +282,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (DeleteSIPAccountComplete != null) {
                 DeleteSIPAccountComplete(e);
             }
         }
@@ -279,7 +299,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetSIPProvidersCountComplete != null) {
                 GetSIPProvidersCountComplete(e);
             }
         }
@@ -292,7 +312,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetSIPProvidersComplete != null) {
                 GetSIPProvidersComplete(e);
             }
         }
@@ -305,7 +325,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (DeleteSIPProviderComplete != null) {
                 DeleteSIPProviderComplete(e);
             }
         }
@@ -318,7 +338,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (UpdateSIPProviderComplete != null) {
                 UpdateSIPProviderComplete(e);
             }
         }
@@ -331,7 +351,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (AddSIPProviderComplete != null) {
                 AddSIPProviderComplete(e);
             }
         }
@@ -344,7 +364,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetSIPProviderBindingsComplete != null) {
                 GetSIPProviderBindingsComplete(e);
             }
         }
@@ -357,7 +377,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetSIPProviderBindingsCountComplete != null) {
                 GetSIPProviderBindingsCountComplete(e);
             }
         }
@@ -370,7 +390,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetDialPlansCountComplete != null) {
                 GetDialPlansCountComplete(e);
             }
         }
@@ -383,7 +403,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetDialPlansComplete != null) {
                 GetDialPlansComplete(e);
             }
         }
@@ -400,7 +420,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (DeleteDialPlanComplete != null) {
                 DeleteDialPlanComplete(e);
             }
         }
@@ -413,7 +433,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (AddDialPlanComplete != null) {
                 AddDialPlanComplete(e);
             }
         }
@@ -426,7 +446,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (UpdateDialPlanComplete != null) {
                 UpdateDialPlanComplete(e);
             };
         }
@@ -445,7 +465,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetRegistrarBindingsComplete != null) {
                 GetRegistrarBindingsComplete(e);
             }
         }
@@ -458,7 +478,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetRegistrarBindingsCountComplete != null) {
                 GetRegistrarBindingsCountComplete(e);
             }
         }
@@ -471,7 +491,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetCallsCountComplete != null) {
                 GetCallsCountComplete(e);
             }
         }
@@ -484,7 +504,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetCallsComplete != null) {
                 GetCallsComplete(e);
             }
         }
@@ -497,7 +517,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetCDRsCountComplete != null) {
                 GetCDRsCountComplete(e);
             }
         }
@@ -510,7 +530,7 @@ namespace SIPSorcery.Persistence {
             if (IsUnauthorised(e.Error)) {
                 SessionExpired();
             }
-            else {
+            else if (GetCDRsComplete != null) {
                 GetCDRsComplete(e);
             }
         }
@@ -520,7 +540,9 @@ namespace SIPSorcery.Persistence {
         }
 
         private void CreateCustomerCompleted(object sender, AsyncCompletedEventArgs e) {
-            CreateCustomerComplete(e);
+            if (CreateCustomerComplete != null) {
+                CreateCustomerComplete(e);
+            }
         }
 
         public override void DeleteCustomerAsync(string customerUsername) {
@@ -528,7 +550,9 @@ namespace SIPSorcery.Persistence {
         }
 
         private void DeleteCustomerCompleted(object sender, AsyncCompletedEventArgs e) {
-            DeleteCustomerComplete(e);
+            if (DeleteCustomerComplete != null) {
+                DeleteCustomerComplete(e);
+            }
         }
     }
 }

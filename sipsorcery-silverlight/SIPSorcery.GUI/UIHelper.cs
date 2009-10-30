@@ -46,6 +46,7 @@ namespace SIPSorcery
         private static SolidColorBrush m_infoTextBrush;
         private static SolidColorBrush m_errorTextBrush;
         private static SolidColorBrush m_warnTextBrush;
+        private static SolidColorBrush m_selectedTextBrush;
 
         private static SilverlightHost m_silverlightHostControl = new SilverlightHost();
         private static Content m_browserContent = new Content();
@@ -164,6 +165,16 @@ namespace SIPSorcery
                 textBlock.Dispatcher.BeginInvoke(new SetColouredTextBlockDelegate(SetColouredText), textBlock, text, level);
             }
         }
+
+        public static void SetTextBlockDisplayLevel(TextBlock textBlock, MessageLevelsEnum level) {
+            if (textBlock.Dispatcher.CheckAccess()) {
+                textBlock.Foreground = GetBrushForMessageLevel(level);
+            }
+            else {
+                textBlock.Dispatcher.BeginInvoke(delegate { SetTextBlockDisplayLevel(textBlock, level); });
+            }
+        }
+
 
         public static void SetText(PasswordBox passwordBox, string text)
         {
@@ -306,6 +317,7 @@ namespace SIPSorcery
                m_infoTextBrush = AssemblyState.InfoTextBrush; 
                m_errorTextBrush = AssemblyState.ErrorTextBrush;
                m_warnTextBrush = AssemblyState.WarnTextBrush;
+               m_selectedTextBrush = AssemblyState.SelectedTextBrush;
            }
 
             if (level == MessageLevelsEnum.Error) {
@@ -316,6 +328,9 @@ namespace SIPSorcery
             }
             else if (level == MessageLevelsEnum.Monitor) {
                 brush = m_infoTextBrush;
+            }
+            else if (level == MessageLevelsEnum.Selected) {
+                brush = m_selectedTextBrush;
             }
             else {
                 brush = m_normalTextBrush;

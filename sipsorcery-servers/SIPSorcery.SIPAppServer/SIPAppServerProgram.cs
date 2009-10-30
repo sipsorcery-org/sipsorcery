@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using SIPSorcery.CRM;
 using SIPSorcery.Net;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.Sys;
 using log4net;
@@ -15,8 +16,8 @@ namespace SIPSorcery.SIPAppServer
 {
     class MainConsole
     {
-        private static readonly string m_storageTypeKey = Persistence.PERSISTENCE_STORAGETYPE_KEY;
-        private static readonly string m_connStrKey = Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
+        private static readonly string m_storageTypeKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGETYPE_KEY;
+        private static readonly string m_connStrKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
 
         private static ILog logger = AppState.logger;
 
@@ -34,6 +35,7 @@ namespace SIPSorcery.SIPAppServer
             {
                 m_serverStorageType = (ConfigurationManager.AppSettings[m_storageTypeKey] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[m_storageTypeKey]) : StorageTypes.Unknown;
                 m_serverStorageConnStr = ConfigurationManager.AppSettings[m_connStrKey];
+                bool monitorCalls = true;
 
                 if (m_serverStorageType == StorageTypes.Unknown || m_serverStorageConnStr.IsNullOrBlank())
                 {
@@ -52,9 +54,13 @@ namespace SIPSorcery.SIPAppServer
                     foreach (string arg in args) {
                         if (arg.StartsWith("-sip:")) {
                             sipSocket = arg.Substring(5);
+                            monitorCalls = false;
                         }
                         else if (arg.StartsWith("-cms:")) {
                             callManagerSvcAddress = arg.Substring(5);
+                        }
+                        else if (arg.StartsWith("-hangupcalls:")) {
+                            monitorCalls = Convert.ToBoolean(arg.Substring(13));
                         }
                     }
 
@@ -64,7 +70,7 @@ namespace SIPSorcery.SIPAppServer
                         daemon = new SIPAppServerDaemon(m_serverStorageType, m_serverStorageConnStr);
                     }
                     else {
-                        daemon = new SIPAppServerDaemon(m_serverStorageType, m_serverStorageConnStr, SIPEndPoint.ParseSIPEndPoint(sipSocket), callManagerSvcAddress);
+                        daemon = new SIPAppServerDaemon(m_serverStorageType, m_serverStorageConnStr, SIPEndPoint.ParseSIPEndPoint(sipSocket), callManagerSvcAddress, monitorCalls);
                     }
 
                     Thread daemonThread = new Thread(new ThreadStart(daemon.Start));

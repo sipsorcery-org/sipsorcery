@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 
@@ -12,11 +13,10 @@ namespace SIPSorcery.SIPRegistrationAgent {
 
     public class SIPRegAgentProgram {
 
-        public const string XML_SIPPROVIDERS_FILENAME = "sipproviders.xml";
-        public const string XML_PROVIDER_BINDINGS_FILENAME = "sipproviderbindings.xml";
-
-        private static readonly string m_storageTypeKey = Persistence.PERSISTENCE_STORAGETYPE_KEY;
-        private static readonly string m_connStrKey = Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
+        private static readonly string m_storageTypeKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGETYPE_KEY;
+        private static readonly string m_connStrKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
+        private static readonly string m_sipProvidersXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_SIPPROVIDERS_FILENAME;
+        private static readonly string m_sipProviderBindingsXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_PROVIDER_BINDINGS_FILENAME;
 
         private static ManualResetEvent m_regAgentUp = new ManualResetEvent(false);
 
@@ -32,27 +32,12 @@ namespace SIPSorcery.SIPRegistrationAgent {
                     throw new ApplicationException("The SIP Registration Agent cannot start with no persistence settings.");
                 }
 
-                SIPAssetPersistor<SIPProvider> sipProvidersPersistor = null;
-                SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor = null;
-
-                if (m_sipRegAgentStorageType == StorageTypes.XML) {
-
-                    if (!Directory.Exists(m_sipRegAgentStorageConnStr)) {
-                        throw new ApplicationException("Directory " + m_sipRegAgentStorageType + " does not exist for XML persistor.");
-                    }
-
-                    sipProvidersPersistor = SIPAssetPersistorFactory.CreateSIPProviderPersistor(StorageTypes.XML, m_sipRegAgentStorageConnStr + XML_SIPPROVIDERS_FILENAME);
-                    sipProviderBindingsPersistor = SIPAssetPersistorFactory.CreateSIPProviderBindingPersistor(StorageTypes.XML, m_sipRegAgentStorageConnStr + XML_PROVIDER_BINDINGS_FILENAME);
+                if (m_sipRegAgentStorageType == StorageTypes.XML && !Directory.Exists(m_sipRegAgentStorageConnStr)) {
+                    throw new ApplicationException("Directory " + m_sipRegAgentStorageConnStr + " does not exist for XML persistor.");
                 }
-                else if (m_sipRegAgentStorageType == StorageTypes.DBLinqMySQL || m_sipRegAgentStorageType == StorageTypes.DBLinqPostgresql) {
-                    sipProvidersPersistor = SIPAssetPersistorFactory.CreateSIPProviderPersistor(m_sipRegAgentStorageType, m_sipRegAgentStorageConnStr);
-                    sipProviderBindingsPersistor = SIPAssetPersistorFactory.CreateSIPProviderBindingPersistor(m_sipRegAgentStorageType, m_sipRegAgentStorageConnStr);
-                }
-                else {
-                    throw new NotImplementedException(m_sipRegAgentStorageType + " is not implemented for the SIP Registrar persistor.");
-                }
-                
-                //SynchroniseBindings(sipProvidersPersistor, sipProviderBindingsPersistor);
+
+                SIPAssetPersistor<SIPProvider> sipProvidersPersistor = SIPAssetPersistorFactory<SIPProvider>.CreateSIPAssetPersistor(m_sipRegAgentStorageType, m_sipRegAgentStorageConnStr, m_sipProvidersXMLFilename);
+                SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor = SIPAssetPersistorFactory<SIPProviderBinding>.CreateSIPAssetPersistor(m_sipRegAgentStorageType, m_sipRegAgentStorageConnStr, m_sipProviderBindingsXMLFilename); 
                 
                 SIPRegAgentDaemon daemon = new SIPRegAgentDaemon(sipProvidersPersistor, sipProviderBindingsPersistor);
 

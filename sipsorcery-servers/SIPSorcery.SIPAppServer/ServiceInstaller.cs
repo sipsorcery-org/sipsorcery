@@ -47,7 +47,7 @@ namespace SIPSorcery.SIPAppServer
 	[RunInstaller(true)]
 	public class ServiceInstaller : System.Configuration.Install.Installer
 	{
-        private const string DAEMON_NAME = "SIPSorcery App Server";
+        private const string DAEMON_NAME = "SIPSorcery Call Dispatcher";
 		
 		private System.ServiceProcess.ServiceProcessInstaller serviceProcessInstaller1;
 		private System.ServiceProcess.ServiceInstaller serviceInstaller1;

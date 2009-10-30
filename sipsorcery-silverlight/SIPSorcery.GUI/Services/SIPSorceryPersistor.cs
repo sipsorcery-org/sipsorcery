@@ -51,6 +51,8 @@ namespace SIPSorcery.Persistence
     public delegate void GetCDRsCompleteDelegate(GetCDRsCompletedEventArgs e);
     public delegate void CreateCustomerCompleteDelegate(AsyncCompletedEventArgs e);
     public delegate void DeleteCustomerCompleteDelegate(AsyncCompletedEventArgs e);
+    public delegate void GetTimeZoneOffsetMinutesCompleteDelegate(GetTimeZoneOffsetMinutesCompletedEventArgs e);
+    public delegate void ExtendSessionCompleteDelegate(AsyncCompletedEventArgs e);
     
     public enum SIPPersistorTypesEnum
     {
@@ -113,6 +115,8 @@ namespace SIPSorcery.Persistence
         public abstract event GetCDRsCompleteDelegate GetCDRsComplete;
         public abstract event CreateCustomerCompleteDelegate CreateCustomerComplete;
         public abstract event DeleteCustomerCompleteDelegate DeleteCustomerComplete;
+        public abstract event GetTimeZoneOffsetMinutesCompleteDelegate GetTimeZoneOffsetMinutesComplete;
+        public abstract event ExtendSessionCompleteDelegate ExtendSessionComplete;
 
         public abstract event MethodInvokerDelegate SessionExpired;
 
@@ -149,5 +153,7 @@ namespace SIPSorcery.Persistence
         public abstract void GetCDRsAsync(string whereExpressionn, int offset, int count);
         public abstract void CreateCustomerAsync(Customer customer);
         public abstract void DeleteCustomerAsync(string customerUsername);
+        public abstract void GetTimeZoneOffsetMinutesAsync();
+        public abstract void ExtendSessionAsync(int minutes);
     }
 }

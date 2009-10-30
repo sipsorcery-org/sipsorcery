@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using SIPSorcery.Sys;
+using SIPSorcery.Persistence;
 using log4net;
 
 namespace SIPSorcery.SIP.App {
@@ -44,7 +45,7 @@ namespace SIPSorcery.SIP.App {
                     }
                     else {
                         existingBinding.SetProviderFields(sipProvider);
-                        existingBinding.NextRegistrationTimeUTC = DateTime.Now.ToUniversalTime();
+                        existingBinding.NextRegistrationTime = DateTime.UtcNow;
                         m_bindingPersistor.Update(existingBinding);
                     }
                 }
@@ -53,7 +54,7 @@ namespace SIPSorcery.SIP.App {
                         if (existingBinding.IsRegistered) {
                             // Let the registration agent know the existing binding should be expired.
                             existingBinding.BindingExpiry = 0;
-                            existingBinding.NextRegistrationTimeUTC = DateTime.Now.ToUniversalTime();
+                            existingBinding.NextRegistrationTime = DateTime.UtcNow;
                             m_bindingPersistor.Update(existingBinding);
                         }
                         else {
@@ -76,7 +77,7 @@ namespace SIPSorcery.SIP.App {
                     if (existingBinding.IsRegistered) {
                         // Let the registration agent know the existing binding should be expired.
                         existingBinding.BindingExpiry = 0;
-                        existingBinding.NextRegistrationTimeUTC = DateTime.Now.ToUniversalTime();
+                        existingBinding.NextRegistrationTime = DateTime.UtcNow;
                         m_bindingPersistor.Update(existingBinding);
                     }
                     else {

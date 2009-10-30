@@ -63,7 +63,7 @@ namespace SIPSorcery.Servers
     public class SIPMonitorControlClient
 	{
         public Guid ClientId = Guid.NewGuid();
-        public DateTime Created = DateTime.Now;
+        public DateTime Created = DateTime.UtcNow;
         public SIPMonitorFilter Filter;
 
         public Socket ClientSocket = null;         // If non null indicates the proxy client is a telnet socket.

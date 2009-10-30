@@ -35,11 +35,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-//using System.Linq.Dynamic;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using SIPSorcery.Net;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -151,7 +151,10 @@ namespace SIPSorcery.AppServer.DialPlan
             string customContentType,
             string customContent,
             string callersNetworkId, 
-            string dialplanName)
+            string dialplanName,
+            string fromDisplayName,
+            string fromUsername,
+            string fromHost)
         {
             try
             {
@@ -175,7 +178,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         // Multi legged call (Script sys.Dial format).
                         //string providersString = (command.IndexOf(',') == -1) ? command : command.Substring(0, command.IndexOf(','));
-                        prioritisedCallList = ParseScriptDialString(sipRequest, command, customHeaders, customContentType, customContent, callersNetworkId, dialplanName);
+                        prioritisedCallList = ParseScriptDialString(sipRequest, command, customHeaders, customContentType, customContent, callersNetworkId, dialplanName, fromDisplayName, fromUsername, fromHost);
                     }
 
                     return prioritisedCallList;
@@ -269,7 +272,10 @@ namespace SIPSorcery.AppServer.DialPlan
             string customContentType,
             string customContent,
             string callersNetworkId, 
-            string dialplanName) {
+            string dialplanName,
+            string fromDisplayName,
+            string fromUsername,
+            string fromHost) {
             try {
                 Queue<List<SIPCallDescriptor>> callsQueue = new Queue<List<SIPCallDescriptor>>();
                 string[] followonLegs = command.Split(CALLLEG_FOLLOWON_SEPARATOR);
@@ -310,7 +316,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                         // An incoming dialplan won't be used if it's invoked from itself.
                                         if (calledSIPAccount.InDialPlanName.IsNullOrBlank() || (m_username == calledSIPAccount.Owner && dialplanName == calledSIPAccount.InDialPlanName)) {
                                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg is for local domain looking up bindings for " + callLegSIPURI.User + "@" + localDomain + " for call leg " + callLegDestination + ".", m_username));
-                                            switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, calledSIPAccount, customHeaders, customContentType, customContent, options, callersNetworkId));
+                                            switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, calledSIPAccount, customHeaders, customContentType, customContent, options, callersNetworkId, fromDisplayName, fromUsername, fromHost));
                                         }
                                         else {
                                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg is for local domain forwarding to incoming dialplan for " + callLegSIPURI.User + "@" + localDomain + ".", m_username));
@@ -330,6 +336,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                                             SIPCallDescriptor loopbackCall = new SIPCallDescriptor(calledSIPAccount, callLegSIPURI.ToString(), fromHeader.ToString(), contentType, content);
                                             loopbackCall.ParseCallOptions(options);
+                                            loopbackCall.SetGeneralFromHeaderFields(fromDisplayName, fromUsername, fromHost);
                                             loopbackCall.MangleIPAddress = (PublicIPAddress != null) ? PublicIPAddress : SIPPacketMangler.GetRequestIPAddress(sipRequest);
                                             switchCalls.Add(loopbackCall);
                                         }
@@ -340,7 +347,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                 }
                                 else {
                                     // Construct a call forward for a remote destination.
-                                    SIPCallDescriptor sipCallDescriptor = GetForwardsForExternalLeg(sipRequest, callLegSIPURI, customContentType, customContent);
+                                    SIPCallDescriptor sipCallDescriptor = GetForwardsForExternalLeg(sipRequest, callLegSIPURI, customContentType, customContent, fromDisplayName, fromUsername, fromHost);
 
                                     if (sipCallDescriptor != null) {
                                         // Add and provided custom headers to those already present in the call descriptor and overwrite if an existing
@@ -349,12 +356,6 @@ namespace SIPSorcery.AppServer.DialPlan
                                             foreach (string customHeader in customHeaders) {
                                                 string customHeaderValue = SubstituteRequestVars(sipRequest, customHeader);
                                                 sipCallDescriptor.CustomHeaders.Add(customHeaderValue);
-                                                /*if (sipCallDescriptor.CustomHeaders.Contains(customHeader.Key as string)) {
-                                                    sipCallDescriptor.CustomHeaders[customHeader.Key as string] = customHeaderValue;
-                                                }
-                                                else {
-                                                    sipCallDescriptor.CustomHeaders.Add(customHeader.Key as string, customHeaderValue);
-                                                }*/
                                             }
                                         }
 
@@ -380,8 +381,6 @@ namespace SIPSorcery.AppServer.DialPlan
                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg " + callToAdd.Uri.ToString() + " already added duplicate ignored.", m_username));
                         }
                     }
-                    
-                    //callsQueue.Enqueue(switchCalls);
                 }
 
                 return callsQueue;
@@ -406,7 +405,10 @@ namespace SIPSorcery.AppServer.DialPlan
             string customContentType,
             string customContent,
             string options,
-            string callersNetworkId) {
+            string callersNetworkId,
+            string fromDisplayName,
+            string fromUsername,
+            string fromHost) {
 
             List<SIPCallDescriptor> localUserSwitchCalls = new List<SIPCallDescriptor>();
 
@@ -436,20 +438,10 @@ namespace SIPSorcery.AppServer.DialPlan
                         if(!customContentType.IsNullOrBlank()) {
                             contentType = customContentType;
                         }
-                        //else if(sipRequest != null) {
-                        //    contentType = sipRequest.Header.ContentType;
-                        //}
-                      
+
                         if(!customContent.IsNullOrBlank()) {
                             content = customContent;
                         }
-                        /*else if (!callersNetworkId.IsNullOrBlank() && callersNetworkId == sipAccount.NetworkId) {
-                            mangleResponseSDP = false;
-                            content = sipRequest.Body;
-                        }
-                        else if (sipRequest != null) {
-                            content = MangleContent(sipRequest.Body, sipRequest.Header.ProxyReceivedFrom, sipAccount.SIPUsername + "@" + sipAccount.SIPDomain);
-                        }*/
 
                         IPAddress publicSDPAddress = (PublicIPAddress != null) ? PublicIPAddress : SIPPacketMangler.GetRequestIPAddress(sipRequest);
 
@@ -474,6 +466,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         if (sipAccount != null && !sipAccount.NetworkId.IsNullOrBlank() && sipAccount.NetworkId == callersNetworkId) {
                             switchCall.MangleResponseSDP = false;
                         }
+                        switchCall.SetGeneralFromHeaderFields(fromDisplayName, fromUsername, fromHost);
                         localUserSwitchCalls.Add(switchCall);
                     }
                 }
@@ -499,10 +492,13 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPRequest sipRequest, 
             SIPURI callLegURI,
             string customContentType,
-            string customContent) {
+            string customContent,
+            string fromDisplayName,
+            string fromUsername,
+            string fromHost) {
 
             try {
-                SIPCallDescriptor SIPCallDescriptor = null;
+                SIPCallDescriptor sipCallDescriptor = null;
 
                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Attempting to locate a provider for call leg: " + callLegURI.ToString() + ".", m_username));
                 bool providerFound = false;
@@ -547,7 +543,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                                 SIPFromHeader fromHeader = ParseFromHeaderOption(provider.ProviderFrom, sipRequest, provider.ProviderUsername, providerURI.Host);
 
-                                SIPCallDescriptor = new SIPCallDescriptor(
+                                sipCallDescriptor = new SIPCallDescriptor(
                                     provider.ProviderUsername,
                                     provider.ProviderPassword,
                                     providerURI.ToString(),
@@ -562,6 +558,12 @@ namespace SIPSorcery.AppServer.DialPlan
                                     publicSDPAddress);
 
                                 providerFound = true;
+
+                                if (provider.ProviderFrom.IsNullOrBlank()) {
+                                    // If there is already a custom From header set on the provider that overrides the general settings.
+                                    sipCallDescriptor.SetGeneralFromHeaderFields(fromDisplayName, fromUsername, fromHost);
+                                }
+
                                 break;
                             }
                             else {
@@ -578,7 +580,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     SIPFromHeader forwardedFromHeader = SIPFromHeader.ParseFromHeader(sipRequest.Header.From.ToString());
                     forwardedFromHeader.FromTag = null;
 
-                    SIPCallDescriptor = new SIPCallDescriptor(
+                    sipCallDescriptor = new SIPCallDescriptor(
                         m_anonymousUsername,
                         null,
                         callLegURI.ToString(),
@@ -591,9 +593,11 @@ namespace SIPSorcery.AppServer.DialPlan
                         contentType,
                         content,
                         publicSDPAddress);
+
+                    sipCallDescriptor.SetGeneralFromHeaderFields(fromDisplayName, fromUsername, fromHost);
                 }
 
-                return SIPCallDescriptor;
+                return sipCallDescriptor;
             }
             catch (Exception excp) {
                 logger.Error("Exception GetForwardsForExternalLeg. " + excp.Message);
@@ -775,8 +779,8 @@ namespace SIPSorcery.AppServer.DialPlan
                 SIPProvider provider = new SIPProvider("test", "blueface", "test", "password", SIPURI.ParseSIPURIRelaxed("sip.blueface.ie"), null, null, null, null, 3600, null, null, null, false, false);
                 providers.Add(provider);
 
-                DialStringParser dialStringParser = new DialStringParser(null, "test", providers, delegate {return null;}, null, (host) => { return null; });
-                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "blueface", null);
+                DialStringParser dialStringParser = new DialStringParser(null, "test", null, providers, delegate {return null;}, null, (host, wildcard) => { return null; }, null);
+                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "blueface", null, null, null, null, null);
 
                 Assert.IsNotNull(callQueue, "The call list should have contained a call.");
                 Assert.IsTrue(callQueue.Count == 1, "The call queue list should have contained one leg.");
@@ -806,8 +810,8 @@ namespace SIPSorcery.AppServer.DialPlan
                 SIPProvider provider = new SIPProvider("test", "blueface", "test", "password", SIPURI.ParseSIPURIRelaxed("sip.blueface.ie"), null, null, null, null, 3600, null, null, null, false, false);
                 providers.Add(provider);
 
-                DialStringParser dialStringParser = new DialStringParser(null, "test", providers, delegate { return null; }, null, (host) => { return null; });
-                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "303@blueface", null);
+                DialStringParser dialStringParser = new DialStringParser(null, "test", null, providers, delegate { return null; }, null, (host, wildcard) => { return null; }, null);
+                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "303@blueface", null, null, null, null, null);
 
                 Assert.IsNotNull(callQueue, "The call list should have contained a call.");
                 Assert.IsTrue(callQueue.Count == 1, "The call queue list should have contained one leg.");
@@ -837,8 +841,8 @@ namespace SIPSorcery.AppServer.DialPlan
                 SIPProvider provider = new SIPProvider("test", "blueface", "test", "password", SIPURI.ParseSIPURIRelaxed("sip.blueface.ie"), null, null, null, null, 3600, null, null, null, false, false);
                 providers.Add(provider);
 
-                DialStringParser dialStringParser = new DialStringParser(null, "test", providers, delegate { return null; }, null, (host) => { return null; });
-                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "303@noprovider", null);
+                DialStringParser dialStringParser = new DialStringParser(null, "test", null, providers, delegate { return null; }, null, (host, wildcard) => { return null; }, null);
+                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "303@noprovider", null, null, null, null, null);
 
                 Assert.IsNotNull(callQueue, "The call list should be returned.");
                 Assert.IsTrue(callQueue.Count == 1, "The call queue list should not have contained one leg.");
@@ -857,8 +861,8 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-                DialStringParser dialStringParser = new DialStringParser(null, "test", null, (where) => { return null; }, (where, offset, count, orderby) => { return null; }, (host) => { return host; });
-                Queue<List<SIPCallDescriptor>> callList = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, null, "aaron@local", null);
+                DialStringParser dialStringParser = new DialStringParser(null, "test", null,  null, (where) => { return null; }, (where, offset, count, orderby) => { return null; }, (host, wildcard) => { return host; }, null);
+                Queue<List<SIPCallDescriptor>> callList = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, null, "aaron@local", null, null, null, null, null);
 
                 Assert.IsTrue(callList.Dequeue().Count == 0, "No local contacts should have been returned.");
 
@@ -882,8 +886,8 @@ namespace SIPSorcery.AppServer.DialPlan
                 providers.Add(provider);
                 providers.Add(provider2);
 
-                DialStringParser dialStringParser = new DialStringParser(null, "test", providers, (where) => { return null; }, (where, offset, count, orderby) => { return null; }, (host) => { return null; });
-                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "provider1&provider2", null);
+                DialStringParser dialStringParser = new DialStringParser(null, "test", null, providers, (where) => { return null; }, (where, offset, count, orderby) => { return null; }, (host, wildcard) => { return null; }, null);
+                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "provider1&provider2", null, null, null, null, null);
 
                 Assert.IsNotNull(callQueue, "The call list should have contained a call.");
                 Assert.IsTrue(callQueue.Count == 1, "The call queue list should have contained one leg.");
@@ -913,8 +917,8 @@ namespace SIPSorcery.AppServer.DialPlan
                 providers.Add(provider);
                 providers.Add(provider2);
 
-                DialStringParser dialStringParser = new DialStringParser(null, "test", providers, (where) => { return null; }, (where, offset, count, orderby) => { return null; }, (host) => { return null; });
-                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "local&1234@provider2", null);
+                DialStringParser dialStringParser = new DialStringParser(null, "test", null, providers, (where) => { return null; }, (where, offset, count, orderby) => { return null; }, (host, wildcard) => { return null; }, null);
+                Queue<List<SIPCallDescriptor>> callQueue = dialStringParser.ParseDialString(DialPlanContextsEnum.Script, inviteRequest, "local&1234@provider2", null, null, null, null, null);
 
                 Assert.IsNotNull(callQueue, "The call list should have contained a call.");
                 Assert.IsTrue(callQueue.Count == 1, "The call queue list should have contained one leg.");

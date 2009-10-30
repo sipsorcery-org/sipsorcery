@@ -37,6 +37,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -55,6 +56,9 @@ namespace SIPSorcery.Persistence {
 
         public static DataContext CreateDBLinqDataContext(StorageTypes storageType, string connectionString) {
             DataContext dataContext = null;
+            //DbProviderFactory factory = DbProviderFactories.GetFactory(providerName);
+            //new MySql.Data.MySqlClient.MySqlClientFactory();
+            //DbProviderFactory factory = Npgsql.NpgsqlFactory.Instance;
             
             switch (storageType) {
                 case StorageTypes.DBLinqMySQL:

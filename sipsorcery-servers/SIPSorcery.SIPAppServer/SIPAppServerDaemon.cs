@@ -54,6 +54,7 @@ using System.Xml;
 using SIPSorcery.AppServer.DialPlan;
 using SIPSorcery.CRM;
 using SIPSorcery.Net;
+using SIPSorcery.Persistence;
 using SIPSorcery.Servers;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -62,6 +63,7 @@ using SIPSorcery.SIPProxy;
 using SIPSorcery.SIPRegistrar;
 using SIPSorcery.SIPRegistrationAgent;
 using SIPSorcery.Sys;
+using SIPSorcery.Web.Services;
 using log4net;
 
 namespace SIPSorcery.SIPAppServer {
@@ -108,22 +110,26 @@ namespace SIPSorcery.SIPAppServer {
         private string m_connectionString;
         private SIPEndPoint m_appServerEndPoint;
         private string m_callManagerServiceAddress;
+        private bool m_monitorCalls;                // if true this app server instance will monitor the sip dialogues table for expired calls to hangup.
 
         public SIPAppServerDaemon(StorageTypes storageType, string connectionString) {
             m_storageType = storageType;
             m_connectionString = connectionString;
+            m_monitorCalls = true;
         }
 
         public SIPAppServerDaemon(
             StorageTypes storageType, 
             string connectionString,
             SIPEndPoint appServerEndPoint,
-            string callManagerServiceAddress) {
+            string callManagerServiceAddress,
+            bool monitorCalls) {
 
             m_storageType = storageType;
             m_connectionString = connectionString;
             m_appServerEndPoint = appServerEndPoint;
             m_callManagerServiceAddress = callManagerServiceAddress;
+            m_monitorCalls = monitorCalls;
         }
 
         public void Start() {
@@ -137,15 +143,22 @@ namespace SIPSorcery.SIPAppServer {
 
                 if (m_sipProxyEnabled) {
                     m_sipProxyDaemon = new SIPProxyDaemon();
-                    m_sipProxyDaemon.PublicIPAddressUpdated += (ipAddress) => {
-                        if (ipAddress != null && (m_publicIPAddress == null || ipAddress.ToString() != m_publicIPAddress.ToString())) {
-                            m_publicIPAddress = ipAddress;
-                            DialStringParser.PublicIPAddress = ipAddress;
-                            DialPlanScriptHelper.PublicIPAddress = ipAddress;
-                        }
-                    };
-
                     m_sipProxyDaemon.Start();
+
+                    if (m_sipProxyDaemon.PublicIPAddress != null) {
+                        m_publicIPAddress = m_sipProxyDaemon.PublicIPAddress;
+                        DialStringParser.PublicIPAddress = m_sipProxyDaemon.PublicIPAddress;
+                        DialPlanScriptHelper.PublicIPAddress = m_sipProxyDaemon.PublicIPAddress;
+                    }
+                    else {
+                        m_sipProxyDaemon.PublicIPAddressUpdated += (ipAddress) => {
+                            if (ipAddress != null && (m_publicIPAddress == null || ipAddress.ToString() != m_publicIPAddress.ToString())) {
+                                m_publicIPAddress = ipAddress;
+                                DialStringParser.PublicIPAddress = ipAddress;
+                                DialPlanScriptHelper.PublicIPAddress = ipAddress;
+                            }
+                        };
+                    }
                 }
 
                 if (m_sipMonitorEnabled) {
@@ -156,8 +169,8 @@ namespace SIPSorcery.SIPAppServer {
                 if (m_sipRegistrarEnabled) {
                     m_sipRegistrarDaemon = new SIPRegistrarDaemon(
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
-                        //m_sipSorceryPersistor.SIPAccountsPersistor.Get,
-                        m_sipSorceryPersistor.SIPAccountsPersistor.GetFromDirectQuery,
+                        m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                        //m_sipSorceryPersistor.SIPAccountsPersistor.GetFromDirectQuery,
                         m_sipSorceryPersistor.SIPRegistrarBindingPersistor,
                         SIPRequestAuthenticator.AuthenticateSIPRequest);
                     m_sipRegistrarDaemon.Start();
@@ -243,7 +256,8 @@ namespace SIPSorcery.SIPAppServer {
                      m_sipSorceryPersistor.SIPProvidersPersistor.Get,
                      m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                      m_customerSessionManager.CustomerPersistor,
-                     m_traceDirectory);
+                     m_traceDirectory,
+                     m_monitorCalls);
                 m_callManager.Start();
 
                 if (m_sipCallDispatcherWorkersNode != null && !m_sipCallDispatcherScriptPath.IsNullOrBlank()) {

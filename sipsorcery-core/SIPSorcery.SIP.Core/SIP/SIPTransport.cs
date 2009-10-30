@@ -1093,6 +1093,7 @@ namespace SIPSorcery.SIP
         }
 
         private void SIPMessageReceived(SIPChannel sipChannel, SIPEndPoint remoteEndPoint, byte[] buffer) {
+            
             string erroneousSIPMessage = null;
 
             try {
@@ -1114,6 +1115,15 @@ namespace SIPSorcery.SIP
                         }
                         else {
                             erroneousSIPMessage = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
+                            if (erroneousSIPMessage.Trim().IsNullOrBlank()) {
+                                // A blank packet has been received. More than likely this is a NAT keep alive and can be disregarded.
+                                return;
+                            }
+                            else if(!erroneousSIPMessage.Contains("SIP")) {
+                                string message = (erroneousSIPMessage.Length > 256) ? erroneousSIPMessage.Substring(0, 256) : erroneousSIPMessage;
+                                FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, erroneousSIPMessage, SIPValidationFieldsEnum.NoSIPString);
+                            }
+
                             SIPMessage sipMessage = SIPMessage.ParseSIPMessage(buffer, sipChannel.SIPChannelEndPoint, remoteEndPoint);
 
                             if (sipMessage != null) {
@@ -1246,9 +1256,12 @@ namespace SIPSorcery.SIP
                                 }
                             }
                             else {
-                                if (UnrecognisedMessageReceived != null) {
-                                    UnrecognisedMessageReceived(sipChannel.SIPChannelEndPoint, remoteEndPoint, buffer);
-                                }
+                                string message = (erroneousSIPMessage.Length > 40) ? erroneousSIPMessage.Substring(0, 40) : erroneousSIPMessage;
+                                //logger.Warn("Unrecognised SIP message received from " + remoteEndPoint.ToString() + ". " + erroneousSIPMessage + ".");
+                                //if (UnrecognisedMessageReceived != null) {
+                                 //   UnrecognisedMessageReceived(sipChannel.SIPChannelEndPoint, remoteEndPoint, buffer);
+                                //}
+                                FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, erroneousSIPMessage, SIPValidationFieldsEnum.Unknown);
                             }
                         }
                     }

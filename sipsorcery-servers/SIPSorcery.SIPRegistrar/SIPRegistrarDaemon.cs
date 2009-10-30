@@ -42,6 +42,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Xml;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Servers;
@@ -65,21 +66,21 @@ namespace SIPSorcery.SIPRegistrar {
         private UdpClient m_natKeepAliveSender;
 
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
-        //private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
-        private SIPAssetGetFromDirectQueryDelegate<SIPAccount> GetSIPAccountFromQuery_External;
+        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
+        //private SIPAssetGetFromDirectQueryDelegate<SIPAccount> GetSIPAccountFromQuery_External;
         private SIPAssetPersistor<SIPRegistrarBinding> m_registrarBindingsPersistor;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;
        
         public SIPRegistrarDaemon(
             GetCanonicalDomainDelegate getDomain,
-            //SIPAssetGetDelegate<SIPAccount> getSIPAccount,
-            SIPAssetGetFromDirectQueryDelegate<SIPAccount> getSIPAccountFromQuery,
+            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            //SIPAssetGetFromDirectQueryDelegate<SIPAccount> getSIPAccountFromQuery,
             SIPAssetPersistor<SIPRegistrarBinding> registrarBindingsPersistor,
             SIPAuthenticateRequestDelegate sipRequestAuthenticator
             ) {
             GetCanonicalDomain_External = getDomain;
-            //GetSIPAccount_External = getSIPAccount;
-            GetSIPAccountFromQuery_External = getSIPAccountFromQuery;
+            GetSIPAccount_External = getSIPAccount;
+            //GetSIPAccountFromQuery_External = getSIPAccountFromQuery;
             m_registrarBindingsPersistor = registrarBindingsPersistor;
             SIPAuthenticateRequest_External = sipRequestAuthenticator;
         }
@@ -117,7 +118,7 @@ namespace SIPSorcery.SIPRegistrar {
                 m_registrarBindingsManager = new SIPRegistrarBindingsManager(FireSIPMonitorEvent, m_registrarBindingsPersistor, SendNATKeepAlive, m_maximumAccountBindings, userAgentConfigManager);
                 m_registrarBindingsManager.Start();
 
-                m_registrarCore = new RegistrarCore(m_sipTransport, m_registrarBindingsManager, GetSIPAccountFromQuery_External, GetCanonicalDomain_External, true, true, FireSIPMonitorEvent, userAgentConfigManager, SIPAuthenticateRequest_External);
+                m_registrarCore = new RegistrarCore(m_sipTransport, m_registrarBindingsManager, GetSIPAccount_External, GetCanonicalDomain_External, true, true, FireSIPMonitorEvent, userAgentConfigManager, SIPAuthenticateRequest_External);
                 m_sipTransport.SIPTransportRequestReceived += m_registrarCore.AddRegisterRequest;
 
                 logger.Debug("SIP Registrar successfully started.");

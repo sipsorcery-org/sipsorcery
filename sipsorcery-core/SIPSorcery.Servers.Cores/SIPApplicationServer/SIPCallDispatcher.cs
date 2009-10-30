@@ -45,6 +45,7 @@ namespace SIPSorcery.Servers {
             public Process WorkerProcess;
             public DateTime? LastStartAttempt;
             public DateTime? RestartTime;
+            public bool HasBeenKilled;
 
             public SIPCallDispatcherWorker(XmlNode xmlConfigNode) {
                 WorkerProcessPath = xmlConfigNode.SelectSingleNode("workerprocesspath").InnerText;
@@ -57,11 +58,26 @@ namespace SIPSorcery.Servers {
                 if (LastStartAttempt == null || DateTime.Now.Subtract(LastStartAttempt.Value).TotalSeconds > START_ATTEMPT_INTERVAL) {
                     LastStartAttempt = DateTime.Now;
                     RestartTime = null;
-                    ProcessStartInfo startInfo = new ProcessStartInfo(WorkerProcessPath, String.Format(WorkerProcessArgs, new object[] { AppServerEndpoint.ToString(), CallManagerAddress.ToString() }));
+                    HasBeenKilled = false;
+                    ProcessStartInfo startInfo = new ProcessStartInfo(WorkerProcessPath, String.Format(WorkerProcessArgs, new object[] { AppServerEndpoint.ToString(), CallManagerAddress.ToString(), "false" }));
                     startInfo.CreateNoWindow = true;
                     startInfo.UseShellExecute = false;
                     WorkerProcess = Process.Start(startInfo);
-                    logger.Debug("New call dispatcher worker process started on pid=" + WorkerProcess.Id + ".");
+                    dispatcherLogger.Debug("New call dispatcher worker process on " + AppServerEndpoint.ToString() + " started on pid=" + WorkerProcess.Id + ".");
+                }
+                else {
+                    dispatcherLogger.Debug("Interval of starts for call dispatcher worker process was too short, last restart " + DateTime.Now.Subtract(LastStartAttempt.Value).TotalSeconds.ToString("0.00") + "s ago.");
+                }
+            }
+
+            public void Kill() {
+                try {
+                    dispatcherLogger.Debug("Restarting worker process on pid=" + WorkerProcess.Id + ".");
+                    WorkerProcess.Kill();
+                    HasBeenKilled = true;
+                }
+                catch (Exception excp) {
+                    dispatcherLogger.Error("Exception SIPCallDispatcherWorker Kill. " + excp.Message);
                 }
             }
 
@@ -75,18 +91,23 @@ namespace SIPSorcery.Servers {
                     }
                 }
                 catch (Exception excp) {
-                    logger.Error("Exception SIPCallDispatcherWorker IsHealthy. " + excp.Message);
+                    dispatcherLogger.Error("Exception SIPCallDispatcherWorker IsHealthy. " + excp.Message);
                     return false;
                 }
             }
         }
 
         private const string WORKER_PROCESS_MONITOR_THREAD_NAME = "sipcalldispatcher-workermonitor";
+        private const string WORKER_PROCESS_PROBE_THREAD_NAME = "sipcalldispatcher-probe";
+
         private const int MAX_LIFETIME_SECONDS = 180;
         private const long MAX_PHYSICAL_MEMORY = 150000000; // Restart worker processes when they've used up 150MB of physical memory.
         private const int PROCESS_RESTART_DELAY = 33;
+        private const int CHECK_WORKER_MEMORY_PERIOD = 1000;
+        private const int PROBE_WORKER_CALL_PERIOD = 15000;
 
         private static ILog logger = AppState.logger;
+        private static ILog dispatcherLogger = AppState.GetLogger("sipcalldispatcher");
 
         private SIPMonitorLogDelegate SIPMonitorLogEvent_External;
         private SIPTransport m_sipTransport;
@@ -96,11 +117,13 @@ namespace SIPSorcery.Servers {
         private string m_dispatcherScriptPath;
         private ScriptLoader m_scriptLoader;
         private ServiceHost m_callManagerPassThruSvcHost;
+        private bool m_exit;
+        private string m_dispatcherUsername = SIPCallManager.DISPATCHER_SIPACCOUNT_NAME;
 
         private List<SIPCallDispatcherWorker> m_callDispatcherWorkers = new List<SIPCallDispatcherWorker>();
         private Dictionary<string, string> m_callIdEndPoints = new Dictionary<string, string>();    // [callid, dispatched endpoint].
         private Dictionary<string, DateTime> m_callIdAddedAt = new Dictionary<string, DateTime>();  // [callid, time added].
-        private List<string> m_workerSIPEndPoints = new List<string>();   // Allow quick lookups to determine whether a remote end point is that of a worker process.
+        private List<string> m_workerSIPEndPoints = new List<string>();                             // Allow quick lookups to determine whether a remote end point is that of a worker process.
 
         public SIPCallDispatcher(
             SIPMonitorLogDelegate logDelegate, 
@@ -139,10 +162,11 @@ namespace SIPSorcery.Servers {
                 SIPCallDispatcherWorker callDispatcherWorker = new SIPCallDispatcherWorker(callDispatcherWorkerNode);
                 m_callDispatcherWorkers.Add(callDispatcherWorker);
                 m_workerSIPEndPoints.Add(callDispatcherWorker.AppServerEndpoint.ToString());
-                logger.Debug(" SIPCallDispatcher worker added for " + callDispatcherWorker.AppServerEndpoint.ToString() + " and " + callDispatcherWorker.CallManagerAddress.ToString() + ".");
+                dispatcherLogger.Debug(" SIPCallDispatcher worker added for " + callDispatcherWorker.AppServerEndpoint.ToString() + " and " + callDispatcherWorker.CallManagerAddress.ToString() + ".");
             }
 
             ThreadPool.QueueUserWorkItem(delegate { SpawnWorkers(); });
+            ThreadPool.QueueUserWorkItem(delegate { ProbeWorkers(); });
         }
 
         private void SpawnWorkers() {
@@ -153,36 +177,102 @@ namespace SIPSorcery.Servers {
                     worker.StartProcess();
                }
                 
-                //int checks = 0;
-                while(true) {
-                    lock (m_callDispatcherWorkers) {
-                        foreach (SIPCallDispatcherWorker worker in m_callDispatcherWorkers) {
-                            if (worker.RestartTime != null) {
-                                if (worker.RestartTime < DateTime.Now) {
-                                    logger.Debug("Killing worker process on pid=" + worker.WorkerProcess.Id + ".");
-                                    worker.WorkerProcess.Kill();
+                while (!m_exit) {
+                    try {
+                        lock (m_callDispatcherWorkers) {
+                            foreach (SIPCallDispatcherWorker worker in m_callDispatcherWorkers) {
+                                if (worker.RestartTime != null) {
+                                    if (worker.RestartTime < DateTime.Now) {
+                                        dispatcherLogger.Debug("Restarting worker process on pid=" + worker.WorkerProcess.Id + ".");
+                                        if (!worker.HasBeenKilled) {
+                                            worker.Kill();
+                                        }
+                                        worker.StartProcess();
+                                    }
+                                }
+                                else if (!worker.IsHealthy()) {
                                     worker.StartProcess();
                                 }
-                            }
-                            else if (!worker.IsHealthy()) {
-                                worker.StartProcess();
-                            }
-                            else {
-                                worker.WorkerProcess.Refresh();
-                                if (worker.WorkerProcess.PrivateMemorySize64 >= MAX_PHYSICAL_MEMORY) {
-                                    logger.Debug("Worker process on pid=" + worker.WorkerProcess.Id + " has reached the memory limit, scheduling a restart.");
-                                    worker.RestartTime = DateTime.Now.AddSeconds(PROCESS_RESTART_DELAY);
+                                else {
+                                    worker.WorkerProcess.Refresh();
+                                    if (worker.WorkerProcess.PrivateMemorySize64 >= MAX_PHYSICAL_MEMORY) {
+                                        dispatcherLogger.Debug("Worker process on pid=" + worker.WorkerProcess.Id + " has reached the memory limit, scheduling a restart.");
+                                        worker.RestartTime = DateTime.Now.AddSeconds(PROCESS_RESTART_DELAY);
+                                    }
                                 }
                             }
                         }
                     }
-                    
-                    Thread.Sleep(1000);
+                    catch (Exception checkWorkersExcp) {
+                        dispatcherLogger.Error("Exception SIPCallDispatcher Checkin Workers. " + checkWorkersExcp.Message);
+                    }
+
+                    Thread.Sleep(CHECK_WORKER_MEMORY_PERIOD);
                 }
             }
             catch (Exception excp) {
-                logger.Error("Exception SIPCallDispatcher SpawnWorkers. " + excp.Message);
+                dispatcherLogger.Error("Exception SIPCallDispatcher SpawnWorkers. " + excp.Message);
             }
+        }
+
+        private void ProbeWorkers() {
+            try {
+
+                while (!m_exit) {
+
+                    try {
+                        SIPEndPoint activeWorkerEndPoint = GetFirstHealthyEndPoint();
+                        SIPCallDescriptor callDescriptor = new SIPCallDescriptor(m_dispatcherUsername, null, "sip:" + m_dispatcherUsername + "@" + activeWorkerEndPoint.SocketEndPoint.ToString(),
+                                "sip:" + m_dispatcherUsername + "@sipcalldispatcher", "sip:" + activeWorkerEndPoint.SocketEndPoint.ToString(), null, null, null, SIPCallDirection.Out, null, null, null);
+                        SIPClientUserAgent uac = new SIPClientUserAgent(m_sipTransport, null, null, null, null);
+                        uac.CallAnswered += DispatcherCallAnswered;
+                        uac.CallFailed += new SIPCallFailedDelegate(DispatcherCallFailed);
+                        uac.Call(callDescriptor);
+                    }
+                    catch (Exception probeExcp) {
+                        dispatcherLogger.Error("Exception SIPCallDispatcher Sending Probe. " + probeExcp.Message);
+                    }
+
+                    Thread.Sleep(PROBE_WORKER_CALL_PERIOD);
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception SIPCallDispatcher ProberWorkers. " + excp.Message);
+            }
+        }
+
+        private void DispatcherCallFailed(ISIPClientUserAgent uac, string errorMessage) {
+            try {
+                string workerSocket = SIPURI.ParseSIPURI(uac.CallDescriptor.Uri).Host;
+                dispatcherLogger.Debug("Dispatcher call to " + workerSocket + " failed " + errorMessage + ".");
+
+                // Find the worker for the failed end point.
+                SIPCallDispatcherWorker failedWorker = null;
+                lock (m_callDispatcherWorkers) {
+                    foreach (SIPCallDispatcherWorker worker in m_callDispatcherWorkers) {
+                        if (worker.AppServerEndpoint.SocketEndPoint.ToString() == workerSocket) {
+                            failedWorker = worker;
+                            break;
+                        }
+                    }
+                }
+
+                if (failedWorker != null) {
+                    dispatcherLogger.Debug("Scheduling immediate restart on worker process pid=" + failedWorker.WorkerProcess.Id + " due to failed probe.");
+                    failedWorker.RestartTime = DateTime.Now;
+                }
+            }
+            catch (Exception excp) {
+                dispatcherLogger.Error("Exception DispatcherCallFailed. " + excp.Message);
+            }
+        }
+
+        private void DispatcherCallAnswered(ISIPClientUserAgent uac, SIPResponse sipResponse) {
+            //logger.Debug("Dispatcher call answered, execution count = " + sipResponse.Header.UnknownHeaders[0] + ".");
+        }
+
+        public void Stop() {
+            m_exit = true;
         }
 
         public CallManagerServiceClient GetCallManagerClient() {
@@ -259,11 +349,6 @@ namespace SIPSorcery.Servers {
                 if (remoteEndPoint.ToString() == m_outboundProxy.ToString()) {
                     if (m_callIdEndPoints.ContainsKey(sipResponse.Header.CallId)) {
                         dispatchEndPoint = SIPEndPoint.ParseSIPEndPoint(m_callIdEndPoints[sipResponse.Header.CallId]);
-                        //logger.Debug("CallDispatcher response app server endpoint for " + sipResponse.Header.CallId + " is " + dispatchEndPoint.ToString() + ".");
-                        //if (dispatchEndPoint.ToString() == m_outboundProxy.ToString()) {
-                         //   logger.Error("The CallDispatcher returned a dispatcher endpoint of the outboundproxy for a response that came from the outbound proxy, callid=" + sipResponse.Header.CallId + ".");
-                         //   dispatchEndPoint = null;
-                        //}
                     }
                     else {
                         dispatchEndPoint = null;
@@ -271,8 +356,6 @@ namespace SIPSorcery.Servers {
                 }
 
                 if (dispatchEndPoint != null) {
-                    //logger.Debug("Dispatching " + sipResponse.StatusCode + " " + sipResponse.Header.CSeqMethod + " from " + remoteEndPoint + " to " + dispatchEndPoint.ToString() + ", topvia=" + sipResponse.Header.Vias.TopViaHeader.ToString() + ", callid=" + sipResponse.Header.CallId + ".");
-                    //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dispatching " + sipResponse.Header.CSeqMethod + " response to " + dispatchEndPoint.ToString() + ", callid=" + sipResponse.Header.CallId + ".", null));
                     m_sipTransport.SendResponse(dispatchEndPoint, sipResponse);
                 }
                 else {

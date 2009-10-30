@@ -110,15 +110,24 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private static SIPDNSLookupResult ResolveSIPService(string host)
-        {
-            return ResolveSIPService(SIPURI.ParseSIPURIRelaxed(host), true);
+        private static SIPDNSLookupResult ResolveSIPService(string host) {
+            try {
+                return ResolveSIPService(SIPURI.ParseSIPURIRelaxed(host), true);
+            }
+            catch (Exception excp) {
+                logger.Error("Exception ResolveSIPService (" + host + "). " + excp.Message);
+                throw;
+            }
         }
 
         private static SIPDNSLookupResult ResolveSIPService(SIPURI sipURI, bool synchronous)
         {
             try
             {
+                if (sipURI == null) {
+                    throw new ArgumentNullException("sipURI", "Cannot resolve SIP service on a null URI.");
+                }
+
                 string host = sipURI.Host;
                 int port = (sipURI.Scheme == SIPSchemesEnum.sip) ? m_defaultSIPPort : m_defaultSIPSPort;
                 bool explicitPort = false;
@@ -162,7 +171,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ResolveSIPService. " + excp.Message);
+                logger.Error("Exception ResolveSIPService. (" + sipURI.ToString() + ")" + excp.Message);
                 return new SIPDNSLookupResult(sipURI, excp.Message);
             }
         }

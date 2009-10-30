@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.ObjectModel;
 using System.Net;
 using System.Windows;
@@ -19,6 +20,7 @@ namespace SIPSorcery
         Error = 2,
         Warn = 3,
         Monitor = 4,
+        Selected = 5,
     }
 
     public enum ServiceConnectionStatesEnum
@@ -42,5 +44,6 @@ namespace SIPSorcery
         public static SolidColorBrush WarnTextBrush = (SolidColorBrush)Application.Current.Resources["WarningTextBrush"];
         public static SolidColorBrush InfoTextBrush = (SolidColorBrush)Application.Current.Resources["InfoTextBrush"];
         public static SolidColorBrush ErrorTextBrush = (SolidColorBrush)Application.Current.Resources["ErrorTextBrush"];
+        public static SolidColorBrush SelectedTextBrush = (SolidColorBrush)Application.Current.Resources["SelectedTextBrush"];
     }
 }

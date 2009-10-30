@@ -41,6 +41,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -55,6 +56,8 @@ namespace SIPSorcery.Servers
     public class SIPAppServerCore
 	{              
         private static ILog logger = AppState.GetLogger("appsvr");
+
+        private string m_dispatcherUsername = SIPCallManager.DISPATCHER_SIPACCOUNT_NAME;
 
         private SIPMonitorLogDelegate SIPMonitorLogEvent_External;              // Function to log messages from this core.
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
@@ -185,8 +188,13 @@ namespace SIPSorcery.Servers
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.NOTIFY) {
                     
-                    #region Process NOPTIFY requests.
+                    #region Process NOTIFY requests.
 
+                    if (sipRequest.Header.UnknownHeaders.Exists(s => s.Contains("Event: keep-alive"))) {
+                        // If this is a NOTIFY request that's being sent for NAT keep-alive purposes repond with Ok.
+                        SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        m_sipTransport.SendResponse(okResponse);
+                    }
                     if (GetCanonicalDomain_External(sipRequest.URI.Host, true) != null && !sipRequest.URI.User.IsNullOrBlank()) {
                         m_notifyManager.QueueNotification(sipRequest);
                     }
@@ -256,7 +264,14 @@ namespace SIPSorcery.Servers
                         // A check is made to see if the  call has originated from the same process as the one that it has been received on. 
                         // If so it is a loopback call. Typically loopback calls are used to get calls from one user to another user's dialplan.
                         //if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host) != null && !m_sipTransport.IsLocalSIPEndPoint(remoteEndPoint)) {
-                        if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host, false) != null) {
+                        if (sipRequest.URI.Host.StartsWith("127.0.0.1") && sipRequest.URI.User == m_dispatcherUsername) {
+                            // Incoming call from call dispatcher checking the call worker is still up and running.
+                            UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                            SIPServerUserAgent incomingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, sipRequest.URI.User, sipRequest.URI.Host, SIPCallDirection.In, null, null, null, uasTransaction);
+                            uasTransaction.NewCallReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(incomingCall); };
+                            uasTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+                        }
+                        else if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host, false) != null) {
 
                             // Call identified as outgoing call for application server serviced domain.
                             //string fromUser = sipRequest.Header.From.FromUserField.URI.User;

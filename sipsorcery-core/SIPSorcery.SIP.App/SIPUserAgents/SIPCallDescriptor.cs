@@ -61,6 +61,9 @@ namespace SIPSorcery.SIP.App
         public const string REDIRECT_MODE_OPTION_KEY = "rm";    // Dial string option to set the redirect mode of a call leg. Redirect mode refers to how 3xx responses to a call are handled.
         public const string CALL_DURATION_OPTION_KEY = "cd";    // Dial string option used to set the maximum duration of a call in seconds.
         public const string MANGLE_MODE_OPTION_KEY = "ma";      // Dial string option used to specify whether the SDP should be mangled. Default is true.
+        public const string FROM_DISPLAY_NAME_KEY = "fd";       // Dial string option to customise the From header display name on the call request.
+        public const string FROM_USERNAME_KEY = "fu";           // Dial string option to customise the From header SIP URI User on the call request.
+        public const string FROM_HOST_KEY = "fh";               // Dial string option to customise the From header SIP URI Host on the call request.
 
         private readonly static string m_defaultFromURI = SIPConstants.SIP_DEFAULT_FROMURI;
         private static char m_customHeadersSeparator = SIPProvider.CUSTOM_HEADERS_SEPARATOR;
@@ -86,6 +89,9 @@ namespace SIPSorcery.SIP.App
         public int CallDurationLimit;                   // If non-zero sets a limit on the duration of any call created with this descriptor.
         public bool MangleResponseSDP = true;           // If false indicates the response SDP should be left alone if it contains a private IP address.
         public IPAddress MangleIPAddress;               // If mangling is required on this call this address needs to be set as the one to mangle to.
+        public string FromDisplayName;
+        public string FromURIUsername;
+        public string FromURIHost;
 
         public SIPAccount ToSIPAccount;                 // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
 
@@ -136,6 +142,42 @@ namespace SIPSorcery.SIP.App
             MangleIPAddress = mangleIPAddress;
         }
 
+        public SIPFromHeader GetFromHeader() {
+            SIPFromHeader fromHeader = SIPFromHeader.ParseFromHeader(From);
+
+            if (!FromDisplayName.IsNullOrBlank()) {
+                fromHeader.FromName = FromDisplayName;
+            }
+            if (!FromURIUsername.IsNullOrBlank()) {
+                fromHeader.FromURI.User = FromURIUsername;
+            }
+            if (!FromURIHost.IsNullOrBlank()) {
+                fromHeader.FromURI.Host = FromURIHost;
+            }
+
+            return fromHeader;
+        }
+
+        /// <summary>
+        /// These setting do NOT override the ones from the call options.
+        /// </summary>
+        /// <param name="fromDisplayName"></param>
+        /// <param name="fromUsername"></param>
+        /// <param name="fromhost"></param>
+        public void SetGeneralFromHeaderFields(string fromDisplayName, string fromUsername, string fromHost) {
+            if (!fromDisplayName.IsNullOrBlank() && FromDisplayName == null) {
+                FromDisplayName = fromDisplayName.Trim();
+            }
+
+            if (!fromUsername.IsNullOrBlank() && FromURIUsername == null) {
+                FromURIUsername = fromUsername.Trim();
+            }
+
+            if (!fromHost.IsNullOrBlank() && FromURIHost == null) {
+                FromURIHost = fromHost.Trim();
+            }
+        }
+
         public void ParseCallOptions(string options)
         {
             if (!options.IsNullOrBlank())
@@ -171,10 +213,28 @@ namespace SIPSorcery.SIP.App
                     Int32.TryParse(callDurationMatch.Result("${callduration}"), out CallDurationLimit);
                 }
 
-                // Parse the mange option.
+                // Parse the mangle option.
                 Match mangleMatch = Regex.Match(options, MANGLE_MODE_OPTION_KEY + @"=(?<mangle>\w+)");
                 if (mangleMatch.Success) {
                     Boolean.TryParse(mangleMatch.Result("${mangle}"), out MangleResponseSDP);
+                }
+
+                // Parse the From header display name option.
+                Match fromDisplayNameMatch = Regex.Match(options, FROM_DISPLAY_NAME_KEY + @"=(?<displayname>.+?)(,|$)");
+                if (fromDisplayNameMatch.Success) {
+                    FromDisplayName = fromDisplayNameMatch.Result("${displayname}").Trim();
+                }
+
+                // Parse the From header URI username option.
+                Match fromUsernameNameMatch = Regex.Match(options, FROM_USERNAME_KEY + @"=(?<username>\w+)");
+                if (fromUsernameNameMatch.Success) {
+                    FromURIUsername = fromUsernameNameMatch.Result("${username}").Trim();
+                }
+
+                // Parse the From header URI host option.
+                Match fromURIHostMatch = Regex.Match(options, FROM_HOST_KEY + @"=(?<host>.+?)(,|$)");
+                if (fromURIHostMatch.Success) {
+                    FromURIHost = fromURIHostMatch.Result("${host}").Trim();
                 }
             }
         }
@@ -219,45 +279,5 @@ namespace SIPSorcery.SIP.App
 
             return customHeaderList;
         }
-
-        /*
-        public override bool Equals(object obj)
-        {
-            return base.Equals(obj);
-        }
-
-        public static bool operator ==(SIPCallDescriptor x, SIPCallDescriptor y)
-        {
-            if (x.Username == y.Username &&
-                x.Password == y.Password &&
-                x.Uri == y.Uri &&
-                x.From == y.From &&
-                x.To == y.To &&
-                x.RouteSet == y.RouteSet &&
-                x.CustomHeaders == y.CustomHeaders &&
-                x.AuthUsername == y.AuthUsername && 
-                x.CallDirection == y.CallDirection &&
-                x.ContentType == y.ContentType &&
-                x.Content == y.Content &&
-                x.DelaySeconds == y.DelaySeconds)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public static bool operator !=(SIPCallDescriptor x, SIPCallDescriptor y)
-        {
-            return !(x == y);
-        }
-
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
-         */
     }
 }

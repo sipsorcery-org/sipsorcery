@@ -107,7 +107,7 @@ namespace SIPSorcery.Persistence
                     throw new ArgumentException("SIP Asset with id " + sipAsset.Id.ToString() + " already exists.");
                 }
 
-                Guid id = new Guid(sipAsset.Id);
+                Guid id = sipAsset.Id;
 
                 lock (m_sipAssets) {
                     m_sipAssets.Add(id, sipAsset);
@@ -135,7 +135,7 @@ namespace SIPSorcery.Persistence
                     throw new ArgumentException("The SIP Asset cannot be empty for an Update.");
                 }
 
-                Guid id = new Guid(sipAsset.Id);
+                Guid id = sipAsset.Id;
 
                 if (m_sipAssets.ContainsKey(id)) {
 
@@ -193,7 +193,7 @@ namespace SIPSorcery.Persistence
 
                 logger.Debug("SIPAssetsXMLPersistor attempting to delete " + sipAsset.Id + " type " + sipAsset.GetType().ToString() + ".");
 
-                Guid id = new Guid(sipAsset.Id);
+                Guid id = sipAsset.Id;
 
                 T existingAsset = m_sipAssets[id];
 
@@ -465,7 +465,7 @@ namespace SIPSorcery.Persistence
                             T sipAsset = new T();
                             sipAsset.Load(row);
                             //logger.Debug(" loaded " + sipAsset.GetType().ToString() + " id " + sipAsset.GetId() + ".");
-                            assets.Add(new Guid(sipAsset.Id), sipAsset);
+                            assets.Add(sipAsset.Id, sipAsset);
                         }
                         catch (Exception excp) {
                             logger.Error("Exception loading SIP asset record in LoadAssetsFromXMLRecordSet. " + excp.Message);

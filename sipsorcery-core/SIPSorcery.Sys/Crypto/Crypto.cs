@@ -203,7 +203,7 @@ namespace SIPSorcery.Sys {
         }
 
         public static byte[] GetSHAHash(params string[] values) {
-            SHA1 sha = SHA1.Create();
+            SHA1 sha = new SHA1Managed();
             string plainText = null;
             foreach (string value in values) {
                 plainText += value;

@@ -49,6 +49,15 @@ namespace SIPSorcery.SIP.App
 	{
 		public const string LOGGER_NAME = "sipsorcery.sip.app";
 
+        public const string XML_DOMAINS_FILENAME = "sipdomains.xml";
+        public const string XML_SIPACCOUNTS_FILENAME = "sipaccounts.xml";
+        public const string XML_SIPPROVIDERS_FILENAME = "sipproviders.xml";
+        public const string XML_DIALPLANS_FILENAME = "sipdialplans.xml";
+        public const string XML_REGISTRAR_BINDINGS_FILENAME = "sipregistrarbindings.xml";
+        public const string XML_PROVIDER_BINDINGS_FILENAME = "sipproviderbindings.xml";
+        public const string XML_SIPDIALOGUES_FILENAME = "sipdialogues.xml";
+        public const string XML_SIPCDRS_FILENAME = "sipcdrs.xml";
+
 		public static ILog logger = null;
 
         static AssemblyState()

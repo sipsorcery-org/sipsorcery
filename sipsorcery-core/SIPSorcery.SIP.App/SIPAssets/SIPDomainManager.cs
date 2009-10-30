@@ -51,6 +51,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
 using System.Xml.Serialization;
+using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -72,6 +73,8 @@ namespace SIPSorcery.SIP.App
 
         private ILog logger = AppState.logger;
 
+        private static readonly string m_storageFileName = AssemblyState.XML_DOMAINS_FILENAME;
+
         private Dictionary<string, SIPDomain> m_domains = new Dictionary<string, SIPDomain>();  // Records the domains that are being maintained.
         private SIPAssetPersistor<SIPDomain> m_sipDomainPersistor;
         private SIPDomain m_wildCardDomain;
@@ -81,7 +84,7 @@ namespace SIPSorcery.SIP.App
 
         public SIPDomainManager(StorageTypes storageType, string storageConnectionStr)
         {
-            m_sipDomainPersistor = SIPAssetPersistorFactory.CreateSIPDomainPersistor(storageType, storageConnectionStr);
+            m_sipDomainPersistor = SIPAssetPersistorFactory<SIPDomain>.CreateSIPAssetPersistor(storageType, storageConnectionStr, m_storageFileName);
             m_sipDomainPersistor.Added += new SIPAssetDelegate<SIPDomain>(d => { LoadSIPDomains(); });
             m_sipDomainPersistor.Deleted += new SIPAssetDelegate<SIPDomain>(d => { LoadSIPDomains(); });
             m_sipDomainPersistor.Updated += new SIPAssetDelegate<SIPDomain>(d => { LoadSIPDomains(); });

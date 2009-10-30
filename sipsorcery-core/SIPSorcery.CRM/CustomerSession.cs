@@ -36,68 +36,95 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Linq;
-using System.Data.Linq.Mapping;
 using System.Linq;
 using System.Text;
 using System.Xml;
 using SIPSorcery.Sys;
+using SIPSorcery.Persistence;
 using log4net;
 
-namespace SIPSorcery.CRM
-{
+#if !SILVERLIGHT
+using System.Data;
+using System.Data.Linq;
+using System.Data.Linq.Mapping;
+#endif
+
+namespace SIPSorcery.CRM {
+
     [Table(Name = "customersessions")]
-    public class CustomerSession : ISIPAsset
-    {
+    public class CustomerSession : ISIPAsset {
+
         public const string XML_DOCUMENT_ELEMENT_NAME = "customersessions";
         public const string XML_ELEMENT_NAME = "customersession";
-        public const int MAX_SESSION_LIFETIME_MINUTES = 60;
+        public const int INITIAL_SESSION_LIFETIME_MINUTES = 60;             // 1 hour initially on a session lifetime.
+        public const int MAX_SESSION_LIFETIME_MINUTES = 600;                // 10 hour maximum on a session lifetime.
 
         private static ILog logger = AppState.logger;
         private static string m_newLine = AppState.NewLine;
 
-        [Column(Storage = "_id", Name = "id", DbType = "character varying(36)", IsPrimaryKey = true, CanBeNull = false)]
-        public string Id { get; set; }
+        [Column(Name = "id", DbType = "StringFixedLength", IsPrimaryKey = true, CanBeNull = false)]
+        public Guid Id { get; set; }
 
-        [Column(Storage = "_sessionid", Name = "sessionid", DbType = "character varying(96)", CanBeNull = false)]
+        [Column(Name = "sessionid", DbType = "StringFixedLength", CanBeNull = false)]
         public string SessionID { get; set; }
 
-        [Column(Storage = "_customerusername", Name = "customerusername", DbType = "character varying(32)", CanBeNull = false)]
-        public string CustomerUsername;
+        [Column(Name = "customerusername", DbType = "StringFixedLength", CanBeNull = false)]
+        public string CustomerUsername { get; set; }
 
-        [Column(Storage = "_inserted", Name = "inserted", DbType = "timestamp", CanBeNull = false)]
-        public DateTime InsertedUTC;
+        private DateTime m_inserted;
+        [Column(Name = "inserted", DbType = "StringFixedLength", CanBeNull = false)]
+        public DateTime Inserted {
+            get { return m_inserted; }
+            set { m_inserted = value.ToUniversalTime(); }
+        }
 
-        [Column(Storage = "_expired", Name = "expired", DbType = "boolean", CanBeNull = false)]
+        [Column(Name = "expired", DbType = "Boolean", CanBeNull = false)]
         public bool Expired { get; set; }
 
-        [Column(Storage = "_ipaddress", Name = "ipaddress", DbType = "character varying(15)", CanBeNull = false)]
-        public string IPAddress;
+        [Column(Name = "ipaddress", DbType = "StringFixedLength", CanBeNull = false)]
+        public string IPAddress { get; set; }
+
+        [Column(Name = "timelimitminutes", DbType = "Int32", CanBeNull = false)]
+        public int TimeLimitMinutes { get; set; }
 
         public CustomerSession() { }
 
-        public CustomerSession(Guid id, string sessionID, string customerUsername, string ipAddress)
-        {
-            Id = id.ToString();
+        public CustomerSession(Guid id, string sessionID, string customerUsername, string ipAddress) {
+            Id = id;
             SessionID = sessionID;
             CustomerUsername = customerUsername;
-            InsertedUTC = DateTime.Now.ToUniversalTime();
+            m_inserted = DateTime.UtcNow;
             IPAddress = ipAddress;
+            TimeLimitMinutes = INITIAL_SESSION_LIFETIME_MINUTES;
         }
 
-         public CustomerSession(DataRow customerSessionRow) {
+#if !SILVERLIGHT
+
+        public CustomerSession(DataRow customerSessionRow) {
             Load(customerSessionRow);
+        }
+
+        public DataTable GetTable() {
+            DataTable table = new DataTable();
+            table.Columns.Add(new DataColumn("id", typeof(String)));
+            table.Columns.Add(new DataColumn("sessionid", typeof(String)));
+            table.Columns.Add(new DataColumn("customerusername", typeof(String)));
+            table.Columns.Add(new DataColumn("inserted", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("expired", typeof(Boolean)));
+            table.Columns.Add(new DataColumn("ipaddress", typeof(String)));
+            table.Columns.Add(new DataColumn("timelimitminutes", typeof(Int32)));
+            return table;
         }
 
         public void Load(DataRow customerSessionRow) {
             try {
-                Id = customerSessionRow["id"] as string;
+                Id = new Guid(customerSessionRow["id"] as string);
                 SessionID = customerSessionRow["sessionid"] as string;
                 CustomerUsername = customerSessionRow["customerusername"] as string;
-                InsertedUTC = Convert.ToDateTime(customerSessionRow["inserted"]);
+                Inserted = Convert.ToDateTime(customerSessionRow["inserted"]);
                 Expired = Convert.ToBoolean(customerSessionRow["expired"]);
                 IPAddress = customerSessionRow["ipaddress"] as string;
+                TimeLimitMinutes = Convert.ToInt32(customerSessionRow["timelimitminutes"]);
             }
             catch (Exception excp) {
                 logger.Error("Exception CustomerSession Load. " + excp.Message);
@@ -105,13 +132,13 @@ namespace SIPSorcery.CRM
             }
         }
 
-        public Dictionary<Guid, object> Load(XmlDocument dom)
-        {
+        public Dictionary<Guid, object> Load(XmlDocument dom) {
             return SIPAssetXMLPersistor<CustomerSession>.LoadAssetsFromXMLRecordSet(dom);
         }
 
-        public string ToXML()
-        {
+#endif
+
+        public string ToXML() {
             string customerSessionXML =
                 "  <" + XML_ELEMENT_NAME + ">" + m_newLine +
                ToXMLNoParent() + m_newLine +
@@ -120,26 +147,24 @@ namespace SIPSorcery.CRM
             return customerSessionXML;
         }
 
-        public string ToXMLNoParent()
-        {
+        public string ToXMLNoParent() {
             string customerSessionXML =
                 "    <id>" + Id + "</id>" + m_newLine +
                 "    <sessionid>" + SessionID + "</sessionid>" + m_newLine +
                 "    <customerusername>" + CustomerUsername + "</customerusername>" + m_newLine +
-                "    <inserted>" + InsertedUTC.ToString("o") + "</inserted>" + m_newLine +
+                "    <inserted>" + m_inserted.ToString("o") + "</inserted>" + m_newLine +
                 "    <expired>" + Expired + "</expired>" + m_newLine +
-                "    <ipaddress>" + IPAddress + "</ipaddress>";
+                "    <ipaddress>" + IPAddress + "</ipaddress>" + m_newLine +
+                "    <timelimitminutes>" + TimeLimitMinutes + "</timelimitminutes>";
 
             return customerSessionXML;
         }
 
-        public string GetXMLElementName()
-        {
+        public string GetXMLElementName() {
             return XML_ELEMENT_NAME;
         }
 
-        public string GetXMLDocumentElementName()
-        {
+        public string GetXMLDocumentElementName() {
             return XML_DOCUMENT_ELEMENT_NAME;
         }
     }

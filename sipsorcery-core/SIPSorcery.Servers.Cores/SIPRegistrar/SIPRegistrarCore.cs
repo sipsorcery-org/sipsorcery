@@ -39,7 +39,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
@@ -47,6 +47,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
 using System.Xml.Serialization;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -104,18 +105,18 @@ namespace SIPSorcery.Servers
         private const string REGISTRAR_THREAD_NAME_PREFIX = "sipregistrar-core";
 		//private const int CACHE_EXPIRY_TIME = 10;			        // Time in minutes a SIP account can exist in the cache and use a previous registration before a new auth will be requested, balance with agressive NAT timeouts.
 															        // a random element is also used in conjunction with this to attempt to mitigate registration spikes.
-        //public const string PROXY_VIA_PARAMETER_NAME = "proxy";     // A proxy forwarding REGISTER requests will add a parameter with this name and a value of the socket it received the request on.
+        //public const string PROXY_VIA_PARAMETER_NAME = "proxy";   // A proxy forwarding REGISTER requests will add a parameter with this name and a value of the socket it received the request on.
 
 		private static ILog logger = AppState.GetLogger("sipregistrar");
 
         private string m_sipExpiresParameterKey = SIPContactHeader.EXPIRES_PARAMETER_KEY;
         private int m_minimumBindingExpiry = SIPRegistrarBindingsManager.MINIMUM_EXPIRY_SECONDS;
-        private string m_selectSIPAccountQuery = SIPAccount.SelectQuery;
+        //private string m_selectSIPAccountQuery = SIPAccount.SelectQuery;
 
         private SIPTransport m_sipTransport;
         private SIPRegistrarBindingsManager m_registrarBindingsManager;
-        //private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
-        private SIPAssetGetFromDirectQueryDelegate<SIPAccount> GetSIPAccountFromQuery_External;
+        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
+        //private SIPAssetGetFromDirectQueryDelegate<SIPAccount> GetSIPAccountFromQuery_External;
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
         private SIPAuthenticateRequestDelegate SIPRequestAuthenticator_External;
 
@@ -132,8 +133,8 @@ namespace SIPSorcery.Servers
         public RegistrarCore(
             SIPTransport sipTransport,
             SIPRegistrarBindingsManager registrarBindingsManager,
-            //SIPAssetGetDelegate<SIPAccount> getSIPAccount,
-            SIPAssetGetFromDirectQueryDelegate<SIPAccount> getSIPAccountFromQuery,
+            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            //SIPAssetGetFromDirectQueryDelegate<SIPAccount> getSIPAccountFromQuery,
             GetCanonicalDomainDelegate getCanonicalDomain,
             bool mangleUACContact,
             bool strictRealmHandling,
@@ -143,8 +144,8 @@ namespace SIPSorcery.Servers
 
             m_sipTransport = sipTransport;
             m_registrarBindingsManager = registrarBindingsManager;
-            //GetSIPAccount_External = getSIPAccount;
-            GetSIPAccountFromQuery_External = getSIPAccountFromQuery;
+            GetSIPAccount_External = getSIPAccount;
+            //GetSIPAccountFromQuery_External = getSIPAccountFromQuery;
             GetCanonicalDomain_External = getCanonicalDomain;
             m_mangleUACContact = mangleUACContact;
             m_strictRealmHandling = strictRealmHandling;
@@ -208,10 +209,11 @@ namespace SIPSorcery.Servers
                             }
 
                             if (registrarTransaction != null) {
-                                DateTime registerStartTime = DateTime.Now;
+                                Stopwatch registerStopwatch = new Stopwatch();
+                                registerStopwatch.Start();
                                 RegisterResultEnum result = Register(registrarTransaction);
-                                TimeSpan registerTime = DateTime.Now.Subtract(registerStartTime);
-                                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "register result=" + result.ToString() + ", time=" + registerTime.TotalMilliseconds.ToString("0") + "ms, user=" + registrarTransaction.TransactionRequest.Header.To.ToURI.User + ".", null));
+                                registerStopwatch.Stop();
+                                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "register result=" + result.ToString() + ", time=" + registerStopwatch.ElapsedMilliseconds + "ms, user=" + registrarTransaction.TransactionRequest.Header.To.ToURI.User + ".", null));
                             }
                         }
                         catch (Exception regExcp) {
@@ -259,9 +261,10 @@ namespace SIPSorcery.Servers
 
                 #endregion
 
-                //SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == toUser && s.SIPDomain == canonicalDomain);
-                SIPAccount sipAccount = GetSIPAccountFromQuery_External(m_selectSIPAccountQuery, new SqlParameter("1", toUser), new SqlParameter("?2", canonicalDomain));
-                DateTime startAuthTime = DateTime.Now;
+                SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == toUser && s.SIPDomain == canonicalDomain);
+                //SIPAccount sipAccount = GetSIPAccountFromQuery_External(m_selectSIPAccountQuery, new SqlParameter("1", toUser), new SqlParameter("2", canonicalDomain));
+                //Stopwatch authTimeStopwatch = new Stopwatch();
+                //authTimeStopwatch.Start();
                 SIPRequestAuthenticationResult authenticationResult = SIPRequestAuthenticator_External(registerTransaction.LocalSIPEndPoint, registerTransaction.RemoteEndPoint, sipRequest, sipAccount, FireProxyLogEvent);
                 //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Authentication time for " + addressOfRecord.ToString() + " took " + DateTime.Now.Subtract(startAuthTime).TotalMilliseconds.ToString("0") + "ms.", null));
 
@@ -284,7 +287,7 @@ namespace SIPSorcery.Servers
                     // Authenticated.
                     if (sipRequest.Header.Contact == null || sipRequest.Header.Contact.Count == 0) {
                         // No contacts header to update bindings with, return a list of the current bindings.
-                        List<SIPRegistrarBinding> bindings = m_registrarBindingsManager.GetBindings(new Guid(sipAccount.Id));
+                        List<SIPRegistrarBinding> bindings = m_registrarBindingsManager.GetBindings(sipAccount.Id);
                         //List<SIPContactHeader> contactsList = m_registrarBindingsManager.GetContactHeader(); // registration.GetContactHeader(true, null);
                         if (bindings != null) {
                             sipRequest.Header.Contact = GetContactHeader(bindings);
@@ -306,7 +309,8 @@ namespace SIPSorcery.Servers
                         SIPResponseStatusCodesEnum updateResult = SIPResponseStatusCodesEnum.Ok;
                         string updateMessage = null;
 
-                        DateTime startBindingUpdateTime = DateTime.Now;
+                        Stopwatch bindingStopwatch = new Stopwatch();
+                        bindingStopwatch.Start();
 
                         List<SIPRegistrarBinding> bindingsList = m_registrarBindingsManager.UpdateBinding(
                             sipAccount,
@@ -323,12 +327,13 @@ namespace SIPSorcery.Servers
                             out updateMessage);
 
                         int bindingExpiry = GetBindingExpiry(bindingsList, sipRequest.Header.Contact[0].ContactURI.ToString());
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding update time for " + toUser + "@" + canonicalDomain + " took " + DateTime.Now.Subtract(startBindingUpdateTime).TotalMilliseconds.ToString("0") + "ms.", null));
+                        bindingStopwatch.Stop();
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding update time for " + toUser + "@" + canonicalDomain + " took " + bindingStopwatch.ElapsedMilliseconds + "ms.", null));
 
                         if (updateResult == SIPResponseStatusCodesEnum.Ok) {
                             string proxySocketStr = (proxySIPEndPoint != null) ? " (proxy=" + proxySIPEndPoint.ToString() + ")" : null;
                             FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Registration successful for " + toUser + "@" + canonicalDomain + " from " + uacRemoteEndPoint + proxySocketStr + ", expiry " + bindingExpiry + "s.", toUser));
-                            FireProxyLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, toUser, uacRemoteEndPoint, sipAccount.Id));
+                            FireProxyLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, toUser, uacRemoteEndPoint, sipAccount.Id.ToString()));
 
                             // The standard states that the Ok response should contain the list of current bindings but that breaks some UAs. As a 
                             // compromise the list is returned with the Contact that UAC sent as the first one in the list.
@@ -397,8 +402,9 @@ namespace SIPSorcery.Servers
                 List<SIPContactHeader> contactHeaderList = new List<SIPContactHeader>();
 
                 foreach (SIPRegistrarBinding binding in bindings) {
-                    SIPContactHeader bindingContact = new SIPContactHeader(null, binding.MangledContactSIPURI);
-                    bindingContact.Expires = Convert.ToInt32(binding.ExpiryTimeUTC.Subtract(DateTime.Now.ToUniversalTime()).TotalSeconds % Int32.MaxValue);
+                    //SIPContactHeader bindingContact = new SIPContactHeader(null, binding.MangledContactSIPURI);
+                    SIPContactHeader bindingContact = new SIPContactHeader(null, binding.ContactSIPURI);
+                    bindingContact.Expires = Convert.ToInt32(binding.ExpiryTime.Subtract(DateTime.UtcNow).TotalSeconds % Int32.MaxValue);
                     contactHeaderList.Add(bindingContact);
                 }
 

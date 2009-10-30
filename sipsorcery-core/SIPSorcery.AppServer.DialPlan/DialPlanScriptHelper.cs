@@ -47,6 +47,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
 using SIPSorcery.Net;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -195,32 +196,35 @@ namespace SIPSorcery.AppServer.DialPlan
             m_sipRequest = sipRequest;
             m_callDirection = callDirection;
             m_dialPlanContext = dialPlanContext;
-            m_username = dialPlanContext.Owner;
-            m_adminMemberId = dialPlanContext.AdminMemberId;
-            m_sipProviders = dialPlanContext.SIPProviders;
             m_getCanonicalDomainDelegate = getCanonicalDomain;
             m_callManager = callManager;
             m_sipAccountPersistor = sipAccountPersistor;
             m_sipDialPlanPersistor = sipDialPlanPersistor;
             GetSIPAccountBindings_External = getSIPAccountBindings;
-            m_outboundProxySocket = outboundProxySocket; 
+            m_outboundProxySocket = outboundProxySocket;
 
-            m_dialPlanContext.TraceLog.AppendLine("DialPlan=> Dialplan trace commenced at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff") + ".");
-            m_dialPlanContext.CallCancelledByClient += ClientCallTerminated;
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount = null;
-            if (m_sipAccountPersistor != null) {
-                getSIPAccount = m_sipAccountPersistor.Get;
-            }
-            m_dialStringParser = new DialStringParser(m_sipTransport, m_dialPlanContext.Owner, m_dialPlanContext.SIPAccount, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate);
-            
-            foreach (string unknownHeader in m_sipRequest.Header.UnknownHeaders) {
-                if(!unknownHeader.IsNullOrBlank() && unknownHeader.StartsWith(SwitchboardApp.SWITCHBOARD_REMOTE_HEADER)) {
-                    m_dialPlanContext.CreateBridge_External = (uasDialogue, uacDialogue, owner) => {
-                        logger.Debug("Calling switchboardapp create bridge delegate.");
-                        uasDialogue.RemoteTarget = new SIPURI(uasDialogue.RemoteTarget.Scheme, SIPEndPoint.ParseSIPEndPoint(unknownHeader.Substring(unknownHeader.IndexOf(":") + 1).Trim()));
-                        CreateBridge_External(uasDialogue, uacDialogue, owner);
-                    };
-                    break;
+            if (m_dialPlanContext != null) {
+                m_username = dialPlanContext.Owner;
+                m_adminMemberId = dialPlanContext.AdminMemberId;
+                m_sipProviders = dialPlanContext.SIPProviders;
+
+                m_dialPlanContext.TraceLog.AppendLine("DialPlan=> Dialplan trace commenced at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff") + ".");
+                m_dialPlanContext.CallCancelledByClient += ClientCallTerminated;
+
+                SIPAssetGetDelegate<SIPAccount> getSIPAccount = null;
+                if (m_sipAccountPersistor != null) {
+                    getSIPAccount = m_sipAccountPersistor.Get;
+                }
+                m_dialStringParser = new DialStringParser(m_sipTransport, m_dialPlanContext.Owner, m_dialPlanContext.SIPAccount, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate);
+                foreach (string unknownHeader in m_sipRequest.Header.UnknownHeaders) {
+                    if (!unknownHeader.IsNullOrBlank() && unknownHeader.StartsWith(SwitchboardApp.SWITCHBOARD_REMOTE_HEADER)) {
+                        m_dialPlanContext.CreateBridge_External = (uasDialogue, uacDialogue, owner) => {
+                            logger.Debug("Calling switchboardapp create bridge delegate.");
+                            uasDialogue.RemoteTarget = new SIPURI(uasDialogue.RemoteTarget.Scheme, SIPEndPoint.ParseSIPEndPoint(unknownHeader.Substring(unknownHeader.IndexOf(":") + 1).Trim()));
+                            CreateBridge_External(uasDialogue, uacDialogue, owner);
+                        };
+                        break;
+                    }
                 }
             }
         }
@@ -346,10 +350,21 @@ namespace SIPSorcery.AppServer.DialPlan
                 };
 
                 try {
-                    Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, m_customSIPHeaders, m_customContentType, m_customContent, m_dialPlanContext.CallersNetworkId, m_dialPlanContext.SIPDialPlan.DialPlanName);
-                    if (m_customFromName != null || m_customFromUser != null || m_customFromHost != null) {
-                        UpdateCallQueueFromHeaders(callsQueue, m_customFromName, m_customFromUser, m_customFromHost);
-                    }
+                    Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(
+                        DialPlanContextsEnum.Script, 
+                        clientRequest, 
+                        data, 
+                        m_customSIPHeaders, 
+                        m_customContentType, 
+                        m_customContent, 
+                        m_dialPlanContext.CallersNetworkId, 
+                        m_dialPlanContext.SIPDialPlan.DialPlanName,
+                        m_customFromName,
+                        m_customFromUser,
+                        m_customFromHost);
+                    //if (m_customFromName != null || m_customFromUser != null || m_customFromHost != null) {
+                    //    UpdateCallQueueFromHeaders(callsQueue, m_customFromName, m_customFromUser, m_customFromHost);
+                    //}
                     List<SIPCallDescriptor>[] callListArray = callsQueue.ToArray();
                     foreach (List<SIPCallDescriptor> callList in callListArray) {
                         m_callInitialisationCount += callList.Count;
@@ -1180,7 +1195,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                         logger.Debug("ENUM rule: s/" + pattern + "/" + substitute + "/" + options);
 
-                        //if (Regex.Match(number, pattern).Success)
+                        if (Regex.Match(number, pattern).Success) {
                         //{
                         //    Log("enum substitute /" + number + "/" + pattern + "/" + substitute + "/");
                         //    return Regex.Replace(number, pattern, substitute);
@@ -1191,7 +1206,7 @@ namespace SIPSorcery.AppServer.DialPlan
                             string domainlessNumber = number.Substring(0, number.IndexOf('.'));
                             Log("enum substitute /" + domainlessNumber + "/" + pattern + "/" + substitute + "/");
                             return Regex.Replace(domainlessNumber, pattern, substitute);
-                        //}
+                        }
                     }
                     else
                     {
@@ -1343,5 +1358,49 @@ namespace SIPSorcery.AppServer.DialPlan
                 logger.Error("Exception FireProxyLogEvent DialPlanScriptHelper. " + excp.Message);
             }
         }
+
+        #region Unit testing.
+
+        #if UNITTEST
+
+        [TestFixture]
+		public class StatefulProxyCoreUnitTest
+		{
+            [TestFixtureSetUp]
+            public void Init() {
+                log4net.Config.BasicConfigurator.Configure();
+            }		
+
+            [TestFixtureTearDown]
+            public void Dispose()
+            { }
+                
+            [Test]
+			public void SampleTest()
+			{
+				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+				Assert.IsTrue(true, "True was false.");
+			}
+
+            /// <summary>
+            /// Tests applying an ENUM rule.
+            /// </summary>
+            [Test]
+            public void ApplyENUMRuleUnitTest() {
+                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                //DialPlanContext dialPlanContext = new DialPlanContext(null, null, null, null, null, null, null, null, null, Guid.Empty);
+                SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, "sip:1234@host.com");
+                DialPlanScriptHelper helper = new DialPlanScriptHelper(null, null, (e) => { Console.WriteLine(e.Message); }, null, request, SIPCallDirection.None, 
+                    null, null, null, null, null, null, null);
+                string result = helper.ENUMLookup("+18005551212.e164.org");
+                Console.WriteLine("lookup result=" + result + ".");
+                Assert.IsTrue(true, "True was false.");
+            }
+        }
+
+        #endif
+
+        #endregion
     }
 }

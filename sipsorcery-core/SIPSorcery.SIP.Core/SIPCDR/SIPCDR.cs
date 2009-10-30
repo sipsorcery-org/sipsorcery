@@ -90,8 +90,19 @@ namespace SIPSorcery.SIP {
         [DataMember]
         public string ProgressReasonPhrase { get; set; }
 
+        private DateTime? m_progressTime;
         [DataMember]
-        public DateTime? ProgressTime { get; set; }
+        public DateTime? ProgressTime {
+            get { return m_progressTime; }
+            set {
+                if (value != null) {
+                    m_progressTime = value.Value.ToUniversalTime();
+                }
+                else {
+                    m_progressTime = null;
+                }
+            }
+        }
 
         [DataMember]
         public int AnswerStatus { get; set; }
@@ -99,11 +110,33 @@ namespace SIPSorcery.SIP {
         [DataMember]
         public string AnswerReasonPhrase { get; set; }
 
+        private DateTime? m_answerTime;
         [DataMember]
-        public DateTime? AnswerTime { get; set; }
+        public DateTime? AnswerTime {
+            get { return m_answerTime; }
+            set {
+                if (value != null) {
+                    m_answerTime = value.Value.ToUniversalTime();
+                }
+                else {
+                    m_answerTime = null;
+                }
+            }
+        }
 
+        private DateTime? m_hangupTime;
         [DataMember]
-        public DateTime? HangupTime { get; set; }
+        public DateTime? HangupTime {
+            get { return m_hangupTime; }
+            set {
+                if (value != null) {
+                    m_hangupTime = value.Value.ToUniversalTime();
+                }
+                else {
+                    m_hangupTime = null;
+                }
+            }
+        }
 
         [DataMember]
         public string HangupReason { get; set; }
@@ -128,7 +161,7 @@ namespace SIPSorcery.SIP {
             SIPEndPoint localSIPEndPoint,
             SIPEndPoint remoteEndPoint) {
             CDRId = Guid.NewGuid();
-            Created = DateTime.Now;
+            Created = DateTime.UtcNow;
             CallDirection = callDirection;
             Destination = destination;
             From = from;
@@ -142,7 +175,7 @@ namespace SIPSorcery.SIP {
 
         public void Progress(SIPResponseStatusCodesEnum progressStatus, string progressReason) {
             InProgress = true;
-            ProgressTime = DateTime.Now;
+            ProgressTime = DateTime.UtcNow;
             ProgressStatus = (int)progressStatus;
             ProgressReasonPhrase = progressReason;
         }
@@ -150,7 +183,7 @@ namespace SIPSorcery.SIP {
         public void Answered(int answerStatusCode, SIPResponseStatusCodesEnum answerStatus, string answerReason) {
             try {
                 IsAnswered = true;
-                AnswerTime = DateTime.Now;
+                AnswerTime = DateTime.UtcNow;
                 AnswerStatus = (int)answerStatus;
                 AnswerReasonPhrase = answerReason;
 
@@ -188,7 +221,7 @@ namespace SIPSorcery.SIP {
         public void Hungup(string hangupReason) {
             try {
                 IsHungup = true;
-                HangupTime = DateTime.Now;
+                HangupTime = DateTime.UtcNow;
                 HangupReason = hangupReason;
 
                 HungupCDR(this);

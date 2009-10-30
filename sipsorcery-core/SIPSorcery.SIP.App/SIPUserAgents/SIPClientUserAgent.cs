@@ -525,7 +525,7 @@ namespace SIPSorcery.SIP.App
             SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, sipCallDescriptor.Uri);
             inviteRequest.LocalSIPEndPoint = localSIPEndPoint;
 
-            SIPHeader inviteHeader = new SIPHeader(SIPFromHeader.ParseFromHeader(sipCallDescriptor.From), SIPToHeader.ParseToHeader(sipCallDescriptor.To), 1, callId);
+            SIPHeader inviteHeader = new SIPHeader(sipCallDescriptor.GetFromHeader(), SIPToHeader.ParseToHeader(sipCallDescriptor.To), 1, callId);
 
             inviteHeader.From.FromTag = CallProperties.CreateNewTag();
 

@@ -28,7 +28,9 @@ namespace SIPSorcery
         private const int DEFAULT_PROVISIONING_WEBSERVICE_PORT = 8080;
         private const string DEFAULT_PROVISIONING_FILE = "provisioning.svc";
         private const string DEFAULT_MONITOR_HOST = "www.sipsorcery.com";
+        private const string ALTERNATE_MONITOR_HOST = "www.sipwizard.net";
         private const string DEFAULT_PROVISIONING_URL = "https://www.sipsorcery.com/provisioning.svc";
+        private const string ALTERNATE_PROVISIONING_URL = "https://www.sipwizard.net/provisioning.svc";
         private const string LOCALHOST_MONITOR_HOST = "localhost";
         private const string LOCALHOST_PROVISIONING_URL = "http://localhost:8080/provisioning.svc";
 
@@ -80,6 +82,10 @@ namespace SIPSorcery
                 if (server == LOCALHOST_MONITOR_HOST || Application.Current.Host.Source.Scheme == "file") {
                     m_sipMonitorHost = LOCALHOST_MONITOR_HOST;
                     m_provisioningServiceURL = LOCALHOST_PROVISIONING_URL;
+                }
+                else if (server == ALTERNATE_MONITOR_HOST) {
+                    m_sipMonitorHost = ALTERNATE_MONITOR_HOST;
+                    m_provisioningServiceURL = ALTERNATE_PROVISIONING_URL;
                 }
                 else if (server != DEFAULT_MONITOR_HOST) {
                     m_sipMonitorHost = server;
@@ -357,10 +363,6 @@ namespace SIPSorcery
                     m_sessionExpired = false;
                     m_authId = e.Result;
 
-                    //SIPCDRAsset.TimeZoneOffsetMinutes = 600;
-                    //SIPProviderBinding.TimeZoneOffsetMinutes = 600;
-                    //SIPRegistrarBinding.TimeZoneOffsetMinutes = 600;
-
 #if !BLEND
                     m_authorisedPersistor = SIPSorceryPersistorFactory.CreateSIPSorceryPersistor(SIPPersistorTypesEnum.WebService, m_provisioningServiceURL, m_authId);
 
@@ -373,6 +375,8 @@ namespace SIPSorcery
 #endif
                     m_authorisedPersistor.SessionExpired += SessionExpired;
                     m_authorisedPersistor.LogoutComplete += LogoutComplete;
+                    m_authorisedPersistor.GetTimeZoneOffsetMinutesComplete += GetTimeZoneOffsetMinutesComplete;
+                    m_authorisedPersistor.GetTimeZoneOffsetMinutesAsync();
 
                     m_loginControl.Clear();
                     m_createAccountControl.Clear();
@@ -394,6 +398,19 @@ namespace SIPSorcery
 
                     UpdateAppStatus();
                 }
+            }
+        }
+
+        private void GetTimeZoneOffsetMinutesComplete(GetTimeZoneOffsetMinutesCompletedEventArgs e) {
+            try {
+                if (e.Error == null) {
+                    SIPCDRAsset.TimeZoneOffsetMinutes = e.Result;
+                    SIPProviderBinding.TimeZoneOffsetMinutes = e.Result;
+                    SIPRegistrarBinding.TimeZoneOffsetMinutes = e.Result;
+                }
+            }
+            catch(Exception excp) {
+                m_userPage.LogActivityMessage(MessageLevelsEnum.Error, "Exception GetTimeZoneOffsetMinutes. " + excp.Message);
             }
         }
 
@@ -487,6 +504,11 @@ namespace SIPSorcery
                     UIHelper.SetText(m_appStatusMessage, "Could not parse URI from " + m_provisioningSvcTextBox.Text + ".");
                 }
             }
+        }
+
+        private void AboutLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+            About about = new About();
+            about.Show();
         }
     }
 }

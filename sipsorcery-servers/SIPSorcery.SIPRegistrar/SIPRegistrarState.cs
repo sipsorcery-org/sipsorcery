@@ -92,20 +92,23 @@ namespace SIPSorcery.SIPRegistrar
                 if (ConfigurationManager.GetSection(SIPREGISTRAR_CONFIGNODE_NAME) != null) {
                     m_sipRegistrarNode = (XmlNode)ConfigurationManager.GetSection(SIPREGISTRAR_CONFIGNODE_NAME);
                 }
+
+                if (m_sipRegistrarNode == null) {
+                    //throw new ApplicationException("The SIP Registrar could not be started, no " + SIPREGISTRAR_CONFIGNODE_NAME + " config node available.");
+                    logger.Warn("The SIP Registrar " + SIPREGISTRAR_CONFIGNODE_NAME + " config node was not available, the agent will not be able to start.");
+                }
                 else {
-                    throw new ApplicationException("The SIP Registrar could not be started, no " + SIPREGISTRAR_CONFIGNODE_NAME + " config node available.");
-                }
+                    SIPRegistrarSocketsNode = m_sipRegistrarNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
+                    if (SIPRegistrarSocketsNode == null) {
+                        throw new ApplicationException("The SIP Registrar could not be started, no " + SIPSOCKETS_CONFIGNODE_NAME + " node could be found.");
+                    }
 
-                SIPRegistrarSocketsNode = m_sipRegistrarNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
-                if (SIPRegistrarSocketsNode == null) {
-                    throw new ApplicationException("The SIP Registrar could not be started, no " + SIPSOCKETS_CONFIGNODE_NAME + " node could be found.");
-                }
-
-                UserAgentsConfigNode = m_sipRegistrarNode.SelectSingleNode(USERAGENTS_CONFIGNODE_NAME);
-                Int32.TryParse(AppState.GetConfigNodeValue(m_sipRegistrarNode, MONITOR_LOOPBACK_PORT_KEY), out MonitorLoopbackPort);
-                Int32.TryParse(AppState.GetConfigNodeValue(m_sipRegistrarNode, MAXIMUM_ACCOUNT_BINDINGS_KEY), out MaximumAccountBindings);
-                if (!AppState.GetConfigNodeValue(m_sipRegistrarNode, NATKEEPALIVE_RELAY_SOCKET).IsNullOrBlank()) {
-                    NATKeepAliveRelaySocket = IPSocket.ParseSocketString(AppState.GetConfigNodeValue(m_sipRegistrarNode, NATKEEPALIVE_RELAY_SOCKET));
+                    UserAgentsConfigNode = m_sipRegistrarNode.SelectSingleNode(USERAGENTS_CONFIGNODE_NAME);
+                    Int32.TryParse(AppState.GetConfigNodeValue(m_sipRegistrarNode, MONITOR_LOOPBACK_PORT_KEY), out MonitorLoopbackPort);
+                    Int32.TryParse(AppState.GetConfigNodeValue(m_sipRegistrarNode, MAXIMUM_ACCOUNT_BINDINGS_KEY), out MaximumAccountBindings);
+                    if (!AppState.GetConfigNodeValue(m_sipRegistrarNode, NATKEEPALIVE_RELAY_SOCKET).IsNullOrBlank()) {
+                        NATKeepAliveRelaySocket = IPSocket.ParseSocketString(AppState.GetConfigNodeValue(m_sipRegistrarNode, NATKEEPALIVE_RELAY_SOCKET));
+                    }
                 }
             }
             catch (Exception excp)

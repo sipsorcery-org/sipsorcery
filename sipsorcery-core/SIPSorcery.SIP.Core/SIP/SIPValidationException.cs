@@ -49,6 +49,7 @@ namespace SIPSorcery.SIP
         RouteHeader,
         ToHeader,
         ViaHeader,
+        NoSIPString,
     }
 
     public class SIPValidationException : Exception

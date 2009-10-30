@@ -13,7 +13,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2009 Aaron Clauson (aaronc@blueface.ie), Blue Face Ltd, Dublin, Ireland (www.blueface.ie)
+// Copyright (c) 2009 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery Ltd, London, UK (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -85,21 +85,22 @@ namespace SIPSorcery.Persistence
         private T Upsert(T asset) {
             PutAttributesRequest request = new PutAttributesRequest();
             request.DomainName = m_objectMapper.TableName;
-            request.ItemName = asset.Id;
+            request.ItemName = asset.Id.ToString();
             request.Attribute = new List<ReplaceableAttribute>();
             Dictionary<MetaDataMember, object> allPropertyValues = m_objectMapper.GetAllValues(asset);
 
             foreach (KeyValuePair<MetaDataMember, object> propertyValue in allPropertyValues) {
                 if (!propertyValue.Key.IsPrimaryKey) {
                     if (propertyValue.Value != null) {
-                        if (propertyValue.Key.Type == typeof(DateTime)) {
+                        request.Attribute.Add(new ReplaceableAttribute().WithReplace(true).WithName(propertyValue.Key.MappedName.ToLower()).WithValue(GetValue(propertyValue.Value)));
+                        /*if (propertyValue.Key.Type == typeof(DateTime) || propertyValue.Key.Type == typeof(Nullable<DateTime>)) {
                             //logger.Debug("Upsert adding attribute name=" + propertyValue.Key.Name.ToLower() + ", value=" + ((DateTime)propertyValue.Value).ToString("o") + ".");
-                            request.Attribute.Add(new ReplaceableAttribute().WithReplace(true).WithName(propertyValue.Key.Name.ToLower()).WithValue(((DateTime)propertyValue.Value).ToString("o")));
+                            request.Attribute.Add(new ReplaceableAttribute().WithReplace(true).WithName(propertyValue.Key.MappedName.ToLower()).WithValue(((DateTime)propertyValue.Value).ToString("o")));
                         }
                         else {
                             //logger.Debug("Upsert adding attribute name=" + propertyValue.Key.Name + ", value=" + propertyValue.Value.ToString() + ".");
-                            request.Attribute.Add(new ReplaceableAttribute().WithReplace(true).WithName(propertyValue.Key.Name.ToLower()).WithValue(propertyValue.Value.ToString()));
-                        }
+                            request.Attribute.Add(new ReplaceableAttribute().WithReplace(true).WithName(propertyValue.Key.MappedName.ToLower()).WithValue(propertyValue.Value.ToString()));
+                        }*/
                     }
                     //else {
                    //     request.Attribute.Add(new ReplaceableAttribute().WithReplace(true).WithName(propertyValue.Key.Name).WithValue(null));
@@ -111,7 +112,7 @@ namespace SIPSorcery.Persistence
 
             if (response.IsSetResponseMetadata()) {
                 ResponseMetadata responseMetadata = response.ResponseMetadata;
-                logger.Debug("Upsert response: " + responseMetadata.RequestId);
+                //logger.Debug("Upsert response for " + request.DomainName + ", id=" + request.ItemName + ", attributes=" + request.Attribute.Count + ": " + responseMetadata.RequestId);
             }
 
             return asset;
@@ -155,7 +156,7 @@ namespace SIPSorcery.Persistence
                 request.DomainName = m_objectMapper.TableName;
                 request.ItemName = id.ToString();
                 request.Attribute = new List<ReplaceableAttribute>();
-                request.Attribute.Add(new ReplaceableAttribute().WithReplace(true).WithName(propertyName).WithValue(value.ToString()));
+                request.Attribute.Add(new ReplaceableAttribute().WithReplace(true).WithName(propertyName.ToLower()).WithValue(GetValue(value)));
 
                 PutAttributesResponse response = m_simpleDBClient.PutAttributes(request);
 
@@ -174,7 +175,7 @@ namespace SIPSorcery.Persistence
             try {
                 DeleteAttributesRequest deleteRequest = new DeleteAttributesRequest();
                 deleteRequest.DomainName = m_objectMapper.TableName;
-                deleteRequest.ItemName = asset.Id;
+                deleteRequest.ItemName = asset.Id.ToString();
 
                 DeleteAttributesResponse response = m_simpleDBClient.DeleteAttributes(deleteRequest);
 
@@ -201,7 +202,7 @@ namespace SIPSorcery.Persistence
                     foreach (T item in items) {
                         DeleteAttributesRequest deleteRequest = new DeleteAttributesRequest();
                         deleteRequest.DomainName = m_objectMapper.TableName;
-                        deleteRequest.ItemName = item.Id;
+                        deleteRequest.ItemName = item.Id.ToString();
 
                         DeleteAttributesResponse response = m_simpleDBClient.DeleteAttributes(deleteRequest);
 
@@ -223,26 +224,39 @@ namespace SIPSorcery.Persistence
         }
 
         public override T Get(Guid id) {
-            return GetSimpleDBObject("select * from " + m_objectMapper.TableName + " where itemName() = '" + id.ToString() + "'");
+            try {
+                SelectRequest request = new SelectRequest();
+                request.SelectExpression = "select * from " + m_objectMapper.TableName + " where itemName() = '" + id + "'";
+                SelectResponse response = m_simpleDBClient.Select(request);
+                if (response.IsSetSelectResult() && response.SelectResult.Item.Count == 1) {
+                    SimpleDBObjectReader<T> objectReader = new SimpleDBObjectReader<T>(response.SelectResult, m_objectMapper.SetValue);
+                    return objectReader.First();
+                }
+                else if (response.IsSetSelectResult() && response.SelectResult.Item.Count == 1) {
+                    throw new ApplicationException("Multiple rows were returned for Get with id=" + id + ".");
+                }
+                else {
+                    return default(T);
+                }
+            }
+            catch (Exception excp) {
+                logger.Error("Exception SimpleDBAssetPersistor Get(for " + typeof(T).Name + "). " + excp.Message);
+                throw;
+            }
         }
 
         public override object GetProperty(Guid id, string propertyName) {
             try {
                 SelectRequest request = new SelectRequest();
-                request.SelectExpression = "select * from " + m_objectMapper.TableName + " where itemName() = '" + id.ToString() + "'";
+                request.SelectExpression = "select " + propertyName.ToLower() + " from " + m_objectMapper.TableName + " where itemName() = '" + id.ToString() + "'";
                 SelectResponse response = m_simpleDBClient.Select(request);
                 if (response.IsSetSelectResult()) {
-                    foreach (Amazon.SimpleDB.Model.Attribute attribute in response.SelectResult.Item[0].Attribute) {
-                        if (attribute.Name.ToLower() == propertyName.ToLower()) {
-                            return attribute.Value;
-                        }
-                    }
-                    throw new ApplicationException("Property " + propertyName + " not found for asset " + typeof(T).Name + ".");
+                    return response.SelectResult.Item[0].Attribute[0].Value;
                 }
                 return null;
             }
             catch (Exception excp) {
-                logger.Error("Exception SimpleDBAssetPersistor Get (id) (for " + typeof(T).Name + "). " + excp.Message);
+                logger.Error("Exception SimpleDBAssetPersistor GetProperty (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
@@ -295,6 +309,19 @@ namespace SIPSorcery.Persistence
                 else {
                     getList = from asset in assetList select asset;
                 }
+
+                if (!orderByField.IsNullOrBlank()) {
+                    simpleDBQueryProvider.OrderBy = orderByField;
+                }
+
+                //if (offset != 0) {
+                 //   simpleDBQueryProvider.Offset = offset;
+                //}
+
+                if (count != Int32.MaxValue) {
+                    simpleDBQueryProvider.Count = count;
+                }
+
                 return getList.ToList() ?? new List<T>();
             }
             catch (Exception excp) {
@@ -303,7 +330,21 @@ namespace SIPSorcery.Persistence
             }
         }
 
-        public override T GetFromDirectQuery(string sqlQuery, params IDbDataParameter[] sqlParameters) {
+        private string GetValue(object propertyValue) {
+            if (propertyValue == null) {
+                return null;
+            }
+            else {
+                if (propertyValue.GetType() == typeof(DateTime) || propertyValue.GetType() == typeof(Nullable<DateTime>)) {
+                    return ((DateTime)propertyValue).ToString("o");
+                }
+                else {
+                    return propertyValue.ToString();
+                }
+            }
+        }
+
+        /*public override T GetFromDirectQuery(string sqlQuery, params IDbDataParameter[] sqlParameters) {
             return GetSimpleDBObject(BuildSelectQuery(sqlQuery, sqlParameters));
         }
 
@@ -313,7 +354,7 @@ namespace SIPSorcery.Persistence
                 request.SelectExpression = BuildSelectQuery(sqlQuery, sqlParameters);
                 SelectResponse response = m_simpleDBClient.Select(request);
                 if (response.IsSetSelectResult() && response.SelectResult.Item.Count > 0) {
-                    ObjectReader<T> objectReader = new ObjectReader<T>(response.SelectResult, m_objectMapper.SetValue);
+                    SimpleDBObjectReader<T> objectReader = new SimpleDBObjectReader<T>(response.SelectResult, m_objectMapper.SetValue);
                     return objectReader.ToList();
                 }
                 else {
@@ -338,26 +379,7 @@ namespace SIPSorcery.Persistence
             }
             //logger.Debug(queryText);
             return queryText;
-        }
-
-        private T GetSimpleDBObject(string selectQuery) {
-            try {
-                SelectRequest request = new SelectRequest();
-                request.SelectExpression = selectQuery;
-                SelectResponse response = m_simpleDBClient.Select(request);
-                if (response.IsSetSelectResult() && response.SelectResult.Item.Count > 0) {
-                    ObjectReader<T> objectReader = new ObjectReader<T>(response.SelectResult, m_objectMapper.SetValue);
-                    return objectReader.First();
-                }
-                else {
-                    return default(T);
-                }
-            }
-            catch (Exception excp) {
-                logger.Error("Exception SimpleDBAssetPersistor GetSimpleDBObject (for " + typeof(T).Name + "). " + selectQuery + ". " + excp.Message);
-                throw;
-            }
-        }
+        }*/
     }
 
     #region Unit testing.
@@ -370,10 +392,14 @@ namespace SIPSorcery.Persistence
         [Table(Name="table")]
         private class MockSIPAsset : ISIPAsset {
 
-            private string m_id;
-            public string Id {
+            private Guid m_id;
+            public Guid Id {
                 get { return m_id; }
-                set { value = m_id; }
+                set { m_id = value; }
+            }
+
+            public DataTable GetTable() {
+                throw new NotImplementedException();
             }
 
             public void Load(DataRow row) {
@@ -412,7 +438,7 @@ namespace SIPSorcery.Persistence
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
         }
 
-        [Test]
+        /*[Test]
         public void BuildSingleParameterSelectQueryUnitTest() {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
             SimpleDBAssetPersistor<MockSIPAsset> persistor = new SimpleDBAssetPersistor<MockSIPAsset>(null, null);
@@ -429,7 +455,7 @@ namespace SIPSorcery.Persistence
             parameters[1] = new SqlParameter("2", "test");
             string selectQuery = persistor.BuildSelectQuery("select * from table where inserted < ?1 and name = ?2", parameters);
             Console.WriteLine(selectQuery);
-        }
+        }*/
     }
 
     #endif

@@ -141,6 +141,10 @@
       <Project>{55898587-8456-40D4-BB88-C9FC8BD6BA9C}</Project>
       <Name>SIPSorcery.Net</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
+      <Project>{7194705F-5564-4040-BC8A-8FAD806F5408}</Project>
+      <Name>SIPSorcery.Persistence</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
       <Project>{339648E6-3B61-4A27-B4A2-38A8216B1D7E}</Project>
       <Name>SIPSorcery.SIP.App</Name>
@@ -170,6 +174,7 @@
     <Compile Include="SIPApplicationServer\WCFServices\CallManagerPassThruService.cs" />
     <Compile Include="SIPApplicationServer\WCFServices\CallManagerPassThruServiceInstanceProvider.cs" />
     <Compile Include="SIPApplicationServer\WCFServices\ICallManagerServices.cs" />
+    <Compile Include="SIPMonitor\SIPMonitorClientConnection.cs" />
     <Compile Include="SIPMonitor\SIPMonitorMachineClient.cs" />
     <Compile Include="SIPMonitor\SIPMonitorControlClient.cs" />
     <Compile Include="SIPMonitor\SIPMonitorMediator.cs" />
@@ -195,7 +200,6 @@
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build\SIPSorcery.Servers.Cores.dll" "c:\temp\sipsorcery\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

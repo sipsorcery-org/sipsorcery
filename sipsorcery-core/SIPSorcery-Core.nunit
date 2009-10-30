@@ -5,6 +5,8 @@
     <assembly path="Build\SIPSorcery.SIP.App.dll" />
     <assembly path="Build\SIPSorcery.Sys.dll" />
     <assembly path="Build\SIPSorcery.Servers.Cores.dll" />
+    <assembly path="Build\SIPSorcery.Persistence.dll" />
+    <assembly path="Build\SIPSorcery.AppServer.DialPlan.dll" />
   </Config>
   <Config name="Release" binpathtype="Auto" />
 </NUnitProject>

@@ -6,14 +6,15 @@ using System.ServiceProcess;
 using System.Text;
 using System.Threading;
 using SIPSorcery.CRM;
+using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIPMonitor
 {
     class SIPMonitorProgram
     {
-        private static readonly string m_storageTypeKey = Persistence.PERSISTENCE_STORAGETYPE_KEY;
-        private static readonly string m_connStrKey = Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
+        private static readonly string m_storageTypeKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGETYPE_KEY;
+        private static readonly string m_connStrKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
 
         private static ManualResetEvent m_monitorUp = new ManualResetEvent(false);
 

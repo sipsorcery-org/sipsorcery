@@ -49,6 +49,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.CRM;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -85,7 +86,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
 		private static ILog logger = AppState.GetLogger("dialplanengine");
 
-        private ScriptEngine m_scriptEngine;
+        //private ScriptEngine m_scriptEngine;
         private List<DialPlanExecutingScript> m_runningScripts = new List<DialPlanExecutingScript>();
         private int m_dialPlanScriptContextsCreated;
         public bool StopScriptMonitoring = false;                    // Set to true to stop the thread keeping an eye on long running dial plan scripts.
@@ -120,10 +121,6 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPEndPoint outboundProxySocket,
             string rubyScriptCommonPath)
 		{
-            if (m_scriptEngine == null) {
-                InitialiseEngine();
-            }
-
             m_sipTransport = sipTransport;
             GetCanonicalDomainDelegate_External = getCanonicalDomain;
             LogDelegate_External = logDelegate;
@@ -135,25 +132,11 @@ namespace SIPSorcery.AppServer.DialPlan
             m_rubyScriptCommonPath = rubyScriptCommonPath;
 
             LoadRubyCommonScript();
+
+            Thread monitorScriptsThread = new Thread(new ThreadStart(MonitorScripts));
+            monitorScriptsThread.Name = MONITOR_THREAD_NAME;
+            monitorScriptsThread.Start();
 		}
-
-        private void InitialiseEngine() {
-            try {
-                Thread monitorScriptsThread = new Thread(new ThreadStart(MonitorScripts));
-                monitorScriptsThread.Name = MONITOR_THREAD_NAME;
-                monitorScriptsThread.Start();
-
-                m_scriptEngine = Ruby.CreateEngine();
-                //Interpreter.InterpreterCreated += new InterpreterCreatedDelegate(InterpreterCreated);
-
-                //ScriptRuntimeSetup setup = new ScriptRuntimeSetup();
-                //setup.LanguageSetups.Add(IronRuby.Ruby.CreateLanguageSetup());
-                //m_scriptRuntime = IronRuby.Ruby.CreateRuntime(setup);
-            }
-            catch (Exception excp) {
-                logger.Error("Exception InitialiseEngine. " + excp);
-            }
-        }
 
         public void Execute(
           DialPlanContext dialPlanContext,
@@ -213,7 +196,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         ForkCall.CallProgress += dialPlanContext.CallProgress;
                         ForkCall.CallFailed += dialPlanContext.CallFailed;
                         ForkCall.CallAnswered += dialPlanContext.CallAnswered;
-                        Queue<List<SIPCallDescriptor>> calls = dialStringParser.ParseDialString(DialPlanContextsEnum.Line, sipRequest, matchedCommand.Data, null, null, null, dialPlanContext.CallersNetworkId, dialPlanContext.SIPDialPlan.DialPlanName);
+                        Queue<List<SIPCallDescriptor>> calls = dialStringParser.ParseDialString(DialPlanContextsEnum.Line, sipRequest, matchedCommand.Data, null, null, null, dialPlanContext.CallersNetworkId, dialPlanContext.SIPDialPlan.DialPlanName, null, null, null);
                         ForkCall.Start(calls);
                     }
                     else
@@ -282,7 +265,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     if (ScriptCount < MAX_ALLOWED_SCRIPTSCOPES) {
                         m_dialPlanScriptContextsCreated++;
                         FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Creating DialPlanExecutingScript number " + m_dialPlanScriptContextsCreated + " for dialplan execution for script owned by " + dialPlanContext.Owner + ".", null));
-                        dialPlanExecutionScript = new DialPlanExecutingScript(m_scriptEngine.CreateScope(), FireProxyLogEvent);
+                        dialPlanExecutionScript = new DialPlanExecutingScript(FireProxyLogEvent);
                     }
                     else {
                          FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Running script limit of " + MAX_ALLOWED_SCRIPTSCOPES + " reached.", null));
@@ -293,10 +276,12 @@ namespace SIPSorcery.AppServer.DialPlan
                          }
                     }
 
-                    #region If a script scope was obtained create a new thread and execute the script otherwise the call is not processed.
-
                     if (dialPlanExecutionScript != null) {
                         dialPlanExecutionScript.Initialise(dialPlanContext);
+
+                        lock (m_runningScripts) {
+                            m_runningScripts.Add(dialPlanExecutionScript);
+                        }
 
                         SIPRequest scriptSIPRequest = sipRequest.Copy();
                         DialPlanScriptHelper planHelper = new DialPlanScriptHelper(
@@ -304,7 +289,7 @@ namespace SIPSorcery.AppServer.DialPlan
                             dialPlanExecutionScript,
                             FireProxyLogEvent,
                             createBridgeDelegate,
-                            scriptSIPRequest,
+                            sipRequest.Copy(),      // A different copy to the req object. Stops inadvertent changes in the dialplan.
                             callDirection,
                             dialPlanContext,
                             GetCanonicalDomainDelegate_External,
@@ -318,24 +303,15 @@ namespace SIPSorcery.AppServer.DialPlan
                         rubyScope.SetVariable(SCRIPT_REQUESTOBJECT_NAME, scriptSIPRequest);
                         rubyScope.SetVariable(SCRIPT_HELPEROBJECT_NAME, planHelper);
 
-                        if (new Guid(dialPlanContext.SIPDialPlan.Id) != Guid.Empty) {
-                            IncrementDialPlanExecutionCount(dialPlanContext.SIPDialPlan, dialPlanContext.CustomerId);
-                        }
+                        IncrementDialPlanExecutionCount(dialPlanContext.SIPDialPlan, dialPlanContext.CustomerId);
 
-                        //dialPlanExecutionScript.DialPlanScriptThread = new Thread(new ParameterizedThreadStart(ExecuteScript));
                         dialPlanExecutionScript.DialPlanScriptThread = new Thread(new ParameterizedThreadStart(delegate { ExecuteScript(dialPlanExecutionScript, dialPlanContext, planHelper, m_rubyScriptCommon + dialPlanContext.DialPlanScript); }));
-                        lock (m_runningScripts) {
-                            m_runningScripts.Add(dialPlanExecutionScript);
-                        }
                         dialPlanExecutionScript.DialPlanScriptThread.Start();
-                        //scriptThread.Start(new object[] { dialPlanExecutionScript, dialPlanContext, planHelper, m_rubyScriptCommon + dialPlanContext.DialPlanScript });
                     }
                     else {
                         FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Error processing call " + uas.CallRequest.URI.ToString() + " there were no script slots available, script could not be executed.", dialPlanContext.Owner));
                         dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.InternalServerError, "Dial plan script engine was overloaded", null);
                     }
-
-                    #endregion
                 }
                 else {
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A script dial plan was empty, execution cannot continue.", dialPlanContext.Owner));
@@ -359,7 +335,7 @@ namespace SIPSorcery.AppServer.DialPlan
             try {
                 Thread.CurrentThread.Name = "dialplanscript-" + executingScript.ScriptNumber;
                 FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution starting on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
-                m_scriptEngine.Execute(script, executingScript.DialPlanScriptScope);
+                executingScript.DialPlanScriptEngine.Execute(script, executingScript.DialPlanScriptScope);
 
                 //string[] scriptLines = Regex.Split(script, @"(\r\n|\r|\n)");
                 //foreach (string scriptLine in scriptLines) {
@@ -406,10 +382,12 @@ namespace SIPSorcery.AppServer.DialPlan
 
         private void IncrementDialPlanExecutionCount(SIPDialPlan dialPlan, Guid customerId) {
             try {
-                if (dialPlan != null && !dialPlan.Id.IsNullOrBlank() && new Guid(dialPlan.Id) != Guid.Empty) {
-                    int executionCount = Convert.ToInt32(m_dialPlanPersistor.GetProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName));
-                    logger.Debug("Incrementing dial plan execution count for " + dialPlan.DialPlanName + "@" + dialPlan.Owner + ", currently=" + executionCount + ".");
-                    m_dialPlanPersistor.UpdateProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName, executionCount + 1);
+                if (dialPlan != null) {
+                    if (dialPlan.Id != Guid.Empty) {
+                        int executionCount = Convert.ToInt32(m_dialPlanPersistor.GetProperty(dialPlan.Id, m_sipDialPlanExecutionCountPropertyName));
+                        logger.Debug("Incrementing dial plan execution count for " + dialPlan.DialPlanName + "@" + dialPlan.Owner + ", currently=" + executionCount + ".");
+                        m_dialPlanPersistor.UpdateProperty(dialPlan.Id, m_sipDialPlanExecutionCountPropertyName, executionCount + 1);
+                    }
 
                     if (customerId != Guid.Empty) {
                         int customerExecutionCount = Convert.ToInt32(m_customerPersistor.GetProperty(customerId, m_sipDialPlanExecutionCountPropertyName));
@@ -425,11 +403,13 @@ namespace SIPSorcery.AppServer.DialPlan
 
         private void DecrementDialPlanExecutionCount(SIPDialPlan dialPlan, Guid customerId) {
             try {
-                if (dialPlan != null && !dialPlan.Id.IsNullOrBlank() && new Guid(dialPlan.Id) != Guid.Empty) {
-                    int executionCount = Convert.ToInt32(m_dialPlanPersistor.GetProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName));
-                    logger.Debug("Decrementing dial plan execution count for " + dialPlan.DialPlanName + "@" + dialPlan.Owner + ", currently=" + executionCount + ".");
-                    executionCount = (executionCount > 0) ? executionCount - 1 : 0;
-                    m_dialPlanPersistor.UpdateProperty(new Guid(dialPlan.Id), m_sipDialPlanExecutionCountPropertyName, executionCount);
+                if (dialPlan != null) {
+                    if (dialPlan.Id != Guid.Empty) {
+                        int executionCount = Convert.ToInt32(m_dialPlanPersistor.GetProperty(dialPlan.Id, m_sipDialPlanExecutionCountPropertyName));
+                        logger.Debug("Decrementing dial plan execution count for " + dialPlan.DialPlanName + "@" + dialPlan.Owner + ", currently=" + executionCount + ".");
+                        executionCount = (executionCount > 0) ? executionCount - 1 : 0;
+                        m_dialPlanPersistor.UpdateProperty(dialPlan.Id, m_sipDialPlanExecutionCountPropertyName, executionCount);
+                    }
 
                     if (customerId != Guid.Empty) {
                         int customerExecutionCount = Convert.ToInt32(m_customerPersistor.GetProperty(customerId, m_sipDialPlanExecutionCountPropertyName));
@@ -501,7 +481,7 @@ namespace SIPSorcery.AppServer.DialPlan
                             }
                             finally {
                                 try {
-                                    if (new Guid(dialPlanContext.SIPDialPlan.Id) != Guid.Empty) {
+                                    if (dialPlanContext.SIPDialPlan.Id != Guid.Empty) {
                                         DecrementDialPlanExecutionCount(dialPlanContext.SIPDialPlan, dialPlanContext.CustomerId);
                                     }
 
@@ -631,7 +611,7 @@ namespace SIPSorcery.AppServer.DialPlan
 				";
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
 
                 Console.WriteLine("dst=" + dialPlanContext.m_commands[0].Destination + ", data=" + dialPlanContext.m_commands[0].Data + ".");
                 Console.WriteLine("dst=" + dialPlanContext.m_commands[1].Destination + ", data=" + dialPlanContext.m_commands[1].Data + ".");
@@ -660,7 +640,7 @@ namespace SIPSorcery.AppServer.DialPlan
 				";
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
 
                 Console.WriteLine("dst=" + dialPlanContext.m_commands[0].Destination + ", data=" + dialPlanContext.m_commands[0].Data + ".");
                 Console.WriteLine("dst=" + dialPlanContext.m_commands[1].Destination + ", data=" + dialPlanContext.m_commands[1].Data + ".");
@@ -684,7 +664,7 @@ namespace SIPSorcery.AppServer.DialPlan
 				";
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
 
                 Assert.IsTrue(dialPlanContext.m_commands.Count == 3, "The dial plan was not correctly parsed.");
                 Assert.IsTrue(dialPlanContext.m_commands[0].Operation == DialPlanOpsEnum.Equals, "Command 1 operation was incorrect.");
@@ -707,8 +687,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:3200@sip.mysipswitch.com"));
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
-                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(request);
 
                 Assert.IsTrue(dialPlanContext.m_commands.Count == 3, "The dial plan was not correctly parsed.");
                 Assert.IsNull(commandMatch, "The dial plan produced a match when it should not have.");
@@ -729,8 +709,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:3200@sip.mysipswitch.com"));
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
-                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(request);
 
                 Assert.IsTrue(dialPlanContext.m_commands.Count == 3, "The dial plan was not correctly parsed.");
                 Assert.IsTrue(commandMatch.Data == "anon, password, 2@sip.blueface.ie", "The dial plan command match was not correct.");
@@ -751,8 +731,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:3100@sip.mysipswitch.com"));
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
-                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(request);
 
                 Assert.IsTrue(dialPlanContext.m_commands.Count == 3, "The dial plan was not correctly parsed.");
                 Assert.IsTrue(commandMatch.Data == "anon, password, 3@sip.blueface.ie", "The dial plan command match was not correct.");
@@ -769,8 +749,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:300@sip.mysipswitch.com"));
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
-                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 
@@ -786,8 +766,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:310@sip.mysipswitch.com"));
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
-                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 
@@ -803,8 +783,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:320@sip.mysipswitch.com"));
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
-                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 
@@ -820,8 +800,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:380@sip.mysipswitch.com"));
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
-                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 
@@ -837,8 +817,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:360@sip.mysipswitch.com"));
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
-                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(request);
 
                 Assert.IsNull(commandMatch, "The dial plan should not have returned a match.");
 
@@ -854,8 +834,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:3802@sip.mysipswitch.com"));
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
-                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 
@@ -871,8 +851,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:3807@sip.mysipswitch.com"));
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
-                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(request);
 
                 Assert.IsNull(commandMatch, "The dial plan should not have returned a match.");
 
@@ -923,8 +903,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:380@sip.mysipswitch.com"));
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
-                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 
@@ -941,8 +921,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:380@sip.mysipswitch.com"));
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
-                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(request);
 
                 Assert.IsNull(commandMatch, "The dial plan should not have returned a match.");
 
@@ -959,8 +939,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPDialPlan dialPlan = new SIPDialPlan(null, null, null, testDialPlan, SIPDialPlanScriptTypesEnum.Asterisk);
                 SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI("sip:380@sip.mysipswitch.com"));
-                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null);
-                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(null, null, request);
+                DialPlanLineContext dialPlanContext = new DialPlanLineContext(null, null, null, null, null, dialPlan, null, null, null);
+                DialPlanCommand commandMatch = dialPlanContext.GetDialPlanMatch(request);
 
                 Assert.IsNotNull(commandMatch, "The dial plan should have returned a match.");
 

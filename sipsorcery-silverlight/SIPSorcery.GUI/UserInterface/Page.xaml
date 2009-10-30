@@ -18,6 +18,7 @@
 			<TextBox x:Name="m_provisioningSvcTextBox" Text="https://www.sipsorcery.com/provisioning.svc" TextWrapping="Wrap" Width="302" TabIndex="1" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" HorizontalAlignment="Left" Margin="82,49,0,0" VerticalAlignment="Top" Visibility="Collapsed"/>
 			<TextBlock Height="16" Width="69.853" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Set Service" TextWrapping="Wrap" TextDecorations="Underline" MouseLeftButtonUp="DisplaySetServiceTextBox" Cursor="Hand" HorizontalAlignment="Left" Margin="8,49,0,0" VerticalAlignment="Top" x:Name="m_setSvcLink" d:LayoutOverrides="Width" Visibility="Collapsed"/>
 			<TextBlock Height="16" Width="33.853" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Apply" TextWrapping="Wrap" TextDecorations="Underline" MouseLeftButtonUp="ApplySetService" Cursor="Hand" HorizontalAlignment="Left" Margin="388,49,0,0" x:Name="m_setSvcLinkApply" VerticalAlignment="Top" Visibility="Collapsed"/>
+			<TextBlock Cursor="Hand" x:Name="m_aboutLink" Foreground="{StaticResource NormalTextBrush}" Text="About" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="AboutLink_MouseLeftButtonUp" Margin="0,54,0,0" Height="15" VerticalAlignment="Top" HorizontalAlignment="Center"/>
 		</Grid>
 	</ScrollViewer>
 </UserControl>

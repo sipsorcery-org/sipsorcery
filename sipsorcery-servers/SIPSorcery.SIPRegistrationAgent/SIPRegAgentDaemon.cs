@@ -41,6 +41,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Xml;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Servers;
@@ -111,8 +112,8 @@ namespace SIPSorcery.SIPRegistrationAgent
                     FireSIPMonitorEvent,
                     m_sipTransport,
                     m_outboundProxy,
-                    //m_providerPersistor.Get,
-                    m_providerPersistor.GetFromDirectQuery,
+                    m_providerPersistor.Get,
+                    //m_providerPersistor.GetFromDirectQuery,
                     m_providerPersistor.Update,
                     m_bindingPersistor);
                 m_sipRegAgentCore.Start();

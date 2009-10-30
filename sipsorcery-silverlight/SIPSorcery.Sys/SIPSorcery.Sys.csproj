@@ -60,12 +60,6 @@
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.Sys\Net\IPSocket.cs">
       <Link>Net\IPSocket.cs</Link>
     </Compile>
-    <Compile Include="..\..\sipsorcery-core\SIPSorcery.Sys\Persistence\ISIPAsset.cs">
-      <Link>Persistence\ISIPAsset.cs</Link>
-    </Compile>
-    <Compile Include="..\..\sipsorcery-core\SIPSorcery.Sys\Persistence\SIPAssetPersistor.cs">
-      <Link>Persistence\SIPAssetPersistor.cs</Link>
-    </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.Sys\SafeXML.cs">
       <Link>SafeXML.cs</Link>
     </Compile>

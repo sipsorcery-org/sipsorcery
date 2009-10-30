@@ -23,6 +23,19 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         
         System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> EndGetCDRs(System.IAsyncResult result);
         
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/ExtendSession", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/ExtendSessionResponse" +
+            "")]
+        System.IAsyncResult BeginExtendSession(int minutes, System.AsyncCallback callback, object asyncState);
+        
+        void EndExtendSession(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetTimeZoneOffsetMinu" +
+            "tes", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetTimeZoneOffsetMinu" +
+            "tesResponse")]
+        System.IAsyncResult BeginGetTimeZoneOffsetMinutes(System.AsyncCallback callback, object asyncState);
+        
+        int EndGetTimeZoneOffsetMinutes(System.IAsyncResult result);
+        
         [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/IsAlive", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/IsAliveResponse")]
         System.IAsyncResult BeginIsAlive(System.AsyncCallback callback, object asyncState);
         
@@ -233,6 +246,25 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             get {
                 base.RaiseExceptionIfNecessary();
                 return ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset>)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "3.0.0.0")]
+    public partial class GetTimeZoneOffsetMinutesCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetTimeZoneOffsetMinutesCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public int Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((int)(this.results[0]));
             }
         }
     }
@@ -760,6 +792,18 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         
         private System.Threading.SendOrPostCallback onGetCDRsCompletedDelegate;
         
+        private BeginOperationDelegate onBeginExtendSessionDelegate;
+        
+        private EndOperationDelegate onEndExtendSessionDelegate;
+        
+        private System.Threading.SendOrPostCallback onExtendSessionCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetTimeZoneOffsetMinutesDelegate;
+        
+        private EndOperationDelegate onEndGetTimeZoneOffsetMinutesDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetTimeZoneOffsetMinutesCompletedDelegate;
+        
         private BeginOperationDelegate onBeginIsAliveDelegate;
         
         private EndOperationDelegate onEndIsAliveDelegate;
@@ -1007,6 +1051,10 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         
         public event System.EventHandler<GetCDRsCompletedEventArgs> GetCDRsCompleted;
         
+        public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> ExtendSessionCompleted;
+        
+        public event System.EventHandler<GetTimeZoneOffsetMinutesCompletedEventArgs> GetTimeZoneOffsetMinutesCompleted;
+        
         public event System.EventHandler<IsAliveCompletedEventArgs> IsAliveCompleted;
         
         public event System.EventHandler<AreNewAccountsEnabledCompletedEventArgs> AreNewAccountsEnabledCompleted;
@@ -1123,6 +1171,95 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
                         whereExpression,
                         offset,
                         count}, this.onEndGetCDRsDelegate, this.onGetCDRsCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginExtendSession(int minutes, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginExtendSession(minutes, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        void SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndExtendSession(System.IAsyncResult result) {
+            base.Channel.EndExtendSession(result);
+        }
+        
+        private System.IAsyncResult OnBeginExtendSession(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            int minutes = ((int)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginExtendSession(minutes, callback, asyncState);
+        }
+        
+        private object[] OnEndExtendSession(System.IAsyncResult result) {
+            ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndExtendSession(result);
+            return null;
+        }
+        
+        private void OnExtendSessionCompleted(object state) {
+            if ((this.ExtendSessionCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.ExtendSessionCompleted(this, new System.ComponentModel.AsyncCompletedEventArgs(e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void ExtendSessionAsync(int minutes) {
+            this.ExtendSessionAsync(minutes, null);
+        }
+        
+        public void ExtendSessionAsync(int minutes, object userState) {
+            if ((this.onBeginExtendSessionDelegate == null)) {
+                this.onBeginExtendSessionDelegate = new BeginOperationDelegate(this.OnBeginExtendSession);
+            }
+            if ((this.onEndExtendSessionDelegate == null)) {
+                this.onEndExtendSessionDelegate = new EndOperationDelegate(this.OnEndExtendSession);
+            }
+            if ((this.onExtendSessionCompletedDelegate == null)) {
+                this.onExtendSessionCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnExtendSessionCompleted);
+            }
+            base.InvokeAsync(this.onBeginExtendSessionDelegate, new object[] {
+                        minutes}, this.onEndExtendSessionDelegate, this.onExtendSessionCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetTimeZoneOffsetMinutes(System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetTimeZoneOffsetMinutes(callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetTimeZoneOffsetMinutes(System.IAsyncResult result) {
+            return base.Channel.EndGetTimeZoneOffsetMinutes(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetTimeZoneOffsetMinutes(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetTimeZoneOffsetMinutes(callback, asyncState);
+        }
+        
+        private object[] OnEndGetTimeZoneOffsetMinutes(System.IAsyncResult result) {
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetTimeZoneOffsetMinutes(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetTimeZoneOffsetMinutesCompleted(object state) {
+            if ((this.GetTimeZoneOffsetMinutesCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetTimeZoneOffsetMinutesCompleted(this, new GetTimeZoneOffsetMinutesCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetTimeZoneOffsetMinutesAsync() {
+            this.GetTimeZoneOffsetMinutesAsync(null);
+        }
+        
+        public void GetTimeZoneOffsetMinutesAsync(object userState) {
+            if ((this.onBeginGetTimeZoneOffsetMinutesDelegate == null)) {
+                this.onBeginGetTimeZoneOffsetMinutesDelegate = new BeginOperationDelegate(this.OnBeginGetTimeZoneOffsetMinutes);
+            }
+            if ((this.onEndGetTimeZoneOffsetMinutesDelegate == null)) {
+                this.onEndGetTimeZoneOffsetMinutesDelegate = new EndOperationDelegate(this.OnEndGetTimeZoneOffsetMinutes);
+            }
+            if ((this.onGetTimeZoneOffsetMinutesCompletedDelegate == null)) {
+                this.onGetTimeZoneOffsetMinutesCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetTimeZoneOffsetMinutesCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetTimeZoneOffsetMinutesDelegate, null, this.onEndGetTimeZoneOffsetMinutesDelegate, this.onGetTimeZoneOffsetMinutesCompletedDelegate, userState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
@@ -2708,6 +2845,30 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> EndGetCDRs(System.IAsyncResult result) {
                 object[] _args = new object[0];
                 System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> _result = ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset>)(base.EndInvoke("GetCDRs", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginExtendSession(int minutes, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = minutes;
+                System.IAsyncResult _result = base.BeginInvoke("ExtendSession", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public void EndExtendSession(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                base.EndInvoke("ExtendSession", _args, result);
+            }
+            
+            public System.IAsyncResult BeginGetTimeZoneOffsetMinutes(System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[0];
+                System.IAsyncResult _result = base.BeginInvoke("GetTimeZoneOffsetMinutes", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public int EndGetTimeZoneOffsetMinutes(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                int _result = ((int)(base.EndInvoke("GetTimeZoneOffsetMinutes", _args, result)));
                 return _result;
             }
             

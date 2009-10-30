@@ -42,6 +42,7 @@ using System.Net;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Xml;
+using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -65,38 +66,38 @@ namespace SIPSorcery.SIP.App
         public const string XML_ELEMENT_NAME = "sipproviderbinding";
         public const string REGAGENT_CONTACT_ID_KEY = "rinstance";
 
-        public static readonly string SelectBinding = "select * from sipproviderbindings where id = ?1";
-        public static readonly string SelectNextScheduledBinding = "select * from sipproviderbindings where nextregistrationtime <= ?1 order by nextregistrationtime asc limit 1";
+        //public static readonly string SelectBinding = "select * from sipproviderbindings where id = ?1";
+        //public static readonly string SelectNextScheduledBinding = "select * from sipproviderbindings where nextregistrationtime <= ?1 order by nextregistrationtime asc limit 1";
 
         private static string m_newLine = AppState.NewLine;
         private static ILog logger = AppState.logger;
 
         public static int TimeZoneOffsetMinutes;
 
-        private string m_id;
-        [Column(Storage = "_id", Name = "id", DbType = "character varying(36)", IsPrimaryKey = true, CanBeNull = false)]
+        private Guid m_id;
+        [Column(Storage = "m_id", Name = "id", DbType = "StringFixedLength", IsPrimaryKey = true, CanBeNull = false)]
         [DataMember]
-        public string Id
+        public Guid Id
         {
             get { return m_id; }
             set { m_id = value; }
         }
 
-        private string m_providerId;
-        [Column(Storage = "_providerid", Name = "providerid", DbType = "character varying(36)", CanBeNull = false)]
+        private Guid m_providerId;
+        [Column(Storage = "m_providerId", Name = "providerid", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
-        public string ProviderId
+        public Guid ProviderId
         {
             get { return m_providerId; }
             set { m_providerId = value; }
         }
 
         [DataMember]
-        [Column(Storage = "_providername", Name = "providername", DbType = "character varying(50)", CanBeNull = false)]
+        [Column(Name = "providername", DbType = "StringFixedLength", CanBeNull = false)]
         public string ProviderName { get; set; }
 
         private string m_owner;                             // The username of the account that owns this SIP provider configuration.
-        [Column(Storage = "_owner", Name = "owner", DbType = "character varying(32)", CanBeNull = false)]
+        [Column(Storage = "m_owner", Name = "owner", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
         public string Owner
         {
@@ -108,11 +109,11 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        [Column(Storage = "_adminmemberid", Name = "adminmemberid", DbType = "character varying(32)", CanBeNull = true)]
+        [Column(Name = "adminmemberid", DbType = "StringFixedLength", CanBeNull = true)]
         public string AdminMemberId { get; set; }    // If set it designates this asset as a belonging to a user with the matching adminid.
 
         private string m_registrationFailureMessage;         // Used to record why a registration failed if it does so.
-        [Column(Storage = "_registrationfailuremessage", Name = "registrationfailuremessage", DbType = "character varying(1024)", CanBeNull = true)]
+        [Column(Storage = "m_registrationFailureMessage", Name = "registrationfailuremessage", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
         public string RegistrationFailureMessage
         {
@@ -124,23 +125,28 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private DateTime? m_lastRegisterTimeUTC = null;
-        [Column(Storage = "_lastregistertime", Name = "lastregistertime", DbType = "timestamp", CanBeNull = true)]
+        private DateTime? m_lastRegisterTime = null;
+        [Column(Storage = "m_lastRegisterTime", Name = "lastregistertime", DbType = "StringFixedLength", CanBeNull = true)]
         [DataMember]
-        public DateTime? LastRegisterTimeUTC
+        public DateTime? LastRegisterTime
         {
-            get { return m_lastRegisterTimeUTC; }
+            get { return m_lastRegisterTime; }
             set
             {
-                m_lastRegisterTimeUTC = value;
+                if (value != null) {
+                    m_lastRegisterTime = value.Value.ToUniversalTime();
+                }
+                else {
+                    m_lastRegisterTime = null;
+                }
                 NotifyPropertyChanged("LastRegisterTime");
             }
         }
 
         public DateTime? LastRegisterTimeLocal {
             get {
-                if (LastRegisterTimeUTC != null) {
-                    return LastRegisterTimeUTC.Value.AddMinutes(TimeZoneOffsetMinutes);
+                if (LastRegisterTime != null) {
+                    return LastRegisterTime.Value.AddMinutes(TimeZoneOffsetMinutes);
                 }
                 else {
                     return null;
@@ -148,21 +154,26 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private DateTime? m_lastRegisterAttemptUTC = null;
+        private DateTime? m_lastRegisterAttempt = null;
         [DataMember]
-        [Column(Storage = "_lastregisterattempt", Name = "lastregisterattempt", DbType = "timestamp", CanBeNull = true)]
-        public DateTime? LastRegisterAttemptUTC {
-            get { return m_lastRegisterAttemptUTC; }
+        [Column(Storage = "m_lastRegisterAttempt", Name = "lastregisterattempt", DbType = "StringFixedLength", CanBeNull = true)]
+        public DateTime? LastRegisterAttempt {
+            get { return m_lastRegisterAttempt; }
             set {
-                m_lastRegisterAttemptUTC = value;
+                if (value != null) {
+                    m_lastRegisterAttempt = value.Value.ToUniversalTime();
+                }
+                else {
+                    m_lastRegisterAttempt = null;
+                }
                 NotifyPropertyChanged("LastRegisterAttempt");
             }
         }
 
         public DateTime? LastRegisterAttemptLocal {
             get {
-                if (LastRegisterAttemptUTC != null) {
-                    return LastRegisterAttemptUTC.Value.AddMinutes(TimeZoneOffsetMinutes);
+                if (LastRegisterAttempt != null) {
+                    return LastRegisterAttempt.Value.AddMinutes(TimeZoneOffsetMinutes);
                 }
                 else {
                     return null;
@@ -170,25 +181,24 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private DateTime m_nextRegistrationTimeUTC = DateTime.MaxValue;    // The time at which the next registration attempt should be sent.
-        [Column(Storage = "_nextregistrationtime", Name = "nextregistrationtime", DbType = "timestamp", CanBeNull = false)]
+        private DateTime m_nextRegistrationTime = DateTime.MaxValue;    // The time at which the next registration attempt should be sent.
+        [Column(Storage = "m_nextRegistrationTime", Name = "nextregistrationtime", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
-        public DateTime NextRegistrationTimeUTC
+        public DateTime NextRegistrationTime
         {
-            get { return m_nextRegistrationTimeUTC; }
-            set
-            {
-                m_nextRegistrationTimeUTC = value;
+            get { return m_nextRegistrationTime; }
+            set {
+                m_nextRegistrationTime = value.ToUniversalTime();
                 NotifyPropertyChanged("NextRegistrationTime");
             }
         }
 
         public DateTime NextRegistrationTimeLocal {
-            get {return NextRegistrationTimeUTC.AddMinutes(TimeZoneOffsetMinutes); }
+            get {return NextRegistrationTime.AddMinutes(TimeZoneOffsetMinutes); }
         }
 
         private bool m_isRegistered;
-        [Column(Storage = "_isregistered", Name = "isregistered", DbType = "boolean", CanBeNull = false)]
+        [Column(Storage = "m_isRegistered", Name = "isregistered", DbType = "Boolean", CanBeNull = false)]
         [DataMember]
         public bool IsRegistered
         {
@@ -201,7 +211,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private int m_bindingExpiry;
-        [Column(Storage = "_bindingexpiry", Name = "bindingexpiry", DbType = "int", CanBeNull = false)]
+        [Column(Storage = "m_bindingExpiry", Name = "bindingexpiry", DbType = "Int32", CanBeNull = false)]
         [DataMember]
         public int BindingExpiry
         {
@@ -214,7 +224,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private SIPURI m_bindingURI; // When registered this holds the binding being maintained by the agent, it's derived from the RegisterContact field but can have an additional parameter added.
-        [Column(Storage = "_bindinguri", Name = "bindinguri", DbType = "character varying(256)", CanBeNull = false)]
+        [Column(Storage = "m_bindingURI", Name = "bindinguri", DbType = "StringFixedLength", CanBeNull = false)]
         [DataMember]
         public string BindingURI {
             get { return (m_bindingURI != null) ? m_bindingURI.ToString() : null; }
@@ -227,13 +237,13 @@ namespace SIPSorcery.SIP.App
         }
 
         [DataMember]
-        [Column(Storage = "_registrarsipsocket", Name = "registrarsipsocket", DbType = "character varying(256)", CanBeNull = true)]
+        [Column(Name = "registrarsipsocket", DbType = "StringFixedLength", CanBeNull = true)]
         public string RegistrarSIPSocket {
             get { return (RegistrarSIPEndPoint != null) ? RegistrarSIPEndPoint.ToString() : null; }
             set { RegistrarSIPEndPoint = (!value.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(value) : null;}
         }
 
-        [Column(Storage = "_cseq", Name = "cseq", DbType = "int", CanBeNull = false)]
+        [Column(Name = "cseq", DbType = "Int32", CanBeNull = false)]
         public int CSeq { get; set; }                               // The SIP Header CSeq used in requests to the Registrar server
 
         public List<SIPContactHeader> ContactsList;                 // List of contacts reported back from the registrar server.
@@ -257,10 +267,10 @@ namespace SIPSorcery.SIP.App
         {
             SetProviderFields(sipProvider);
 
-            m_id = Guid.NewGuid().ToString();           
+            m_id = Guid.NewGuid();           
 
             // All set, let the Registration Agent know the binding is ready to be processed.
-            NextRegistrationTimeUTC = DateTime.Now.ToUniversalTime();
+            NextRegistrationTime = DateTime.UtcNow;
         }
         
 #if !SILVERLIGHT
@@ -269,10 +279,30 @@ namespace SIPSorcery.SIP.App
             Load(bindingRow);
         }
 
+        public DataTable GetTable() {
+            DataTable table = new DataTable();
+            table.Columns.Add(new DataColumn("id", typeof(String)));
+            table.Columns.Add(new DataColumn("providerid", typeof(String)));
+            table.Columns.Add(new DataColumn("providername", typeof(String)));
+            table.Columns.Add(new DataColumn("owner", typeof(String)));
+            table.Columns.Add(new DataColumn("adminmemberid", typeof(String)));
+            table.Columns.Add(new DataColumn("isregistered", typeof(Boolean)));
+            table.Columns.Add(new DataColumn("bindinguri", typeof(String)));
+            table.Columns.Add(new DataColumn("bindingexpiry", typeof(Int32)));
+            table.Columns.Add(new DataColumn("cseq", typeof(Int32)));
+            table.Columns.Add(new DataColumn("lastregistertime", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("lastregisterattempt", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("nextregistrationtime", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("registrarsipsocket", typeof(String)));
+            table.Columns.Add(new DataColumn("registrationfailuremessage", typeof(String)));
+            return table;
+        }
+
         public void Load(DataRow bindingRow) {
             try {
-                m_id = (bindingRow.Table.Columns.Contains("id") && bindingRow["id"] != DBNull.Value && bindingRow["id"] != null) ? bindingRow["id"] as string : Guid.NewGuid().ToString();
-                m_providerId = bindingRow["providerid"] as string;
+                m_id = (bindingRow.Table.Columns.Contains("id") && bindingRow["id"] != DBNull.Value && bindingRow["id"] != null) ? new Guid(bindingRow["id"] as string) : Guid.NewGuid();
+                m_providerId = new Guid(bindingRow["providerid"] as string);
+                ProviderName = bindingRow["providername"] as string;
                 m_owner = bindingRow["owner"] as string;
                 AdminMemberId = bindingRow["adminmemberid"] as string;
                 m_isRegistered = (bindingRow.Table.Columns.Contains("isregistered") && bindingRow["isregistered"] != DBNull.Value && bindingRow["isregistered"] != null) ? Convert.ToBoolean(bindingRow["isregistered"]) : false;
@@ -293,20 +323,22 @@ namespace SIPSorcery.SIP.App
                 }
 
                 if (bindingRow.Table.Columns.Contains("lastregistertime") && bindingRow["lastregistertime"] != DBNull.Value && bindingRow["lastregistertime"] != null && bindingRow["lastregistertime"].ToString().Length > 0) {
-                    m_lastRegisterTimeUTC = Convert.ToDateTime(bindingRow["lastregistertime"]);
+                    LastRegisterTime = Convert.ToDateTime(bindingRow["lastregistertime"]);
                 }
 
                 if (bindingRow.Table.Columns.Contains("lastregisterattempt") && bindingRow["lastregisterattempt"] != DBNull.Value && bindingRow["lastregisterattempt"] != null && bindingRow["lastregisterattempt"].ToString().Length > 0) {
-                    m_lastRegisterAttemptUTC = Convert.ToDateTime(bindingRow["lastregisterattempt"]);
+                    LastRegisterAttempt = Convert.ToDateTime(bindingRow["lastregisterattempt"]);
                 }
 
                 if (bindingRow.Table.Columns.Contains("nextregistrationtime") && bindingRow["nextregistrationtime"] != DBNull.Value && bindingRow["nextregistrationtime"] != null && bindingRow["nextregistrationtime"].ToString().Length > 0) {
-                    m_nextRegistrationTimeUTC = Convert.ToDateTime(bindingRow["nextregistrationtime"]);
+                    NextRegistrationTime = Convert.ToDateTime(bindingRow["nextregistrationtime"]);
                 }
 
                 if (bindingRow.Table.Columns.Contains("registrarsipsocket") && bindingRow["registrarsipsocket"] != DBNull.Value && bindingRow["registrarsipsocket"] != null && bindingRow["registrarsipsocket"].ToString().Length > 0) {
                     RegistrarSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(bindingRow["registrarsipsocket"] as string);
                 }
+
+                m_registrationFailureMessage = bindingRow["registrationfailuremessage"] as string; 
 
                 //logger.Debug(" loaded SIPProviderBinding for " + Owner + " and " + ProviderName + " and binding " + BindingURI.ToString() + ".");
             }
@@ -370,9 +402,9 @@ namespace SIPSorcery.SIP.App
 
         public string ToXMLNoParent()
         {
-            string lastRegisterTimeStr = (m_lastRegisterTimeUTC != null) ? m_lastRegisterTimeUTC.Value.ToString("o") : null;
-            string lastRegisterAttemptStr = (m_lastRegisterTimeUTC != null) ? m_lastRegisterAttemptUTC.Value.ToString("o") : null;
-            string nextRegistrationTimeStr = (m_nextRegistrationTimeUTC != DateTime.MaxValue) ? m_nextRegistrationTimeUTC.ToString("o") : null;
+            string lastRegisterTimeStr = (m_lastRegisterTime != null) ? m_lastRegisterTime.Value.ToString("o") : null;
+            string lastRegisterAttemptStr = (m_lastRegisterTime != null) ? m_lastRegisterAttempt.Value.ToString("o") : null;
+            string nextRegistrationTimeStr = (m_nextRegistrationTime != DateTime.MaxValue) ? m_nextRegistrationTime.ToString("o") : null;
             string bindingExpiryStr = (m_bindingExpiry > 0) ? m_bindingExpiry.ToString() : null;
             string bindingURIStr = (BindingURI != null) ? BindingURI.ToString() : null;
             string contactsListStr = null;
@@ -412,10 +444,8 @@ namespace SIPSorcery.SIP.App
             return XML_DOCUMENT_ELEMENT_NAME;
         }
 
-        private void NotifyPropertyChanged(string propertyName)
-        {
-            if (PropertyChanged != null)
-            {
+        private void NotifyPropertyChanged(string propertyName) {
+            if (PropertyChanged != null) {
                 PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
         }

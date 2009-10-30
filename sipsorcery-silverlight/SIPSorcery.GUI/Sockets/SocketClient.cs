@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using SIPSorcery.SIP.App;
@@ -39,7 +40,6 @@ namespace SIPSorcery.Sockets
         private EndPoint m_serverEndPoint;
         private Socket m_socket;
         private byte[] m_socketBuffer = new byte[MAX_SOCKET_BUFFER_SIZE];
-        //private string m_remoteSocket;
         private bool m_isConnected;
         public bool m_closeRequested;
 
@@ -51,7 +51,7 @@ namespace SIPSorcery.Sockets
         public void ConnectAsync()
         {
             Initialised = true;
-
+            
             m_socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             SocketAsyncEventArgs socketConnectionArgs = new SocketAsyncEventArgs();
             socketConnectionArgs.UserToken = m_serverEndPoint;

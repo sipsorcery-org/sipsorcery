@@ -49,6 +49,8 @@ namespace SIPSorcery
             UIHelper.SetVisibility(m_cityLabel, dataEntryVisibility);
             UIHelper.SetVisibility(m_countryLabel, dataEntryVisibility);
             UIHelper.SetVisibility(m_webSiteLabel, dataEntryVisibility);
+            UIHelper.SetVisibility(m_timezoneLabel, dataEntryVisibility);
+            UIHelper.SetVisibility(m_timezoneListBox, dataEntryVisibility);
         }
 
         private void CreateCustomerButton_Click(object sender, System.Windows.RoutedEventArgs e) {
@@ -56,7 +58,7 @@ namespace SIPSorcery
                 m_statusTextBlock.Text = String.Empty;
 
                 Customer customer = new Customer() {
-                    Id = Guid.NewGuid().ToString(),
+                    Id = Guid.NewGuid(),
                     FirstName = m_firstNameTextBox.Text.Trim(),
                     LastName = m_lastNameTextBox.Text.Trim(),
                     EmailAddress = m_emailAddressTextBox.Text.Trim(),
@@ -67,7 +69,8 @@ namespace SIPSorcery
                     City = m_cityTextBox.Text.Trim(),
                     Country = ((TextBlock)m_countryListBox.SelectedItem).Text,
                     WebSite = m_webSiteTextBox.Text.Trim(),
-                    InsertedUTC = DateTime.Now.ToUniversalTime()
+                    TimeZone = ((TextBlock)m_timezoneListBox.SelectedItem).Text,
+                    Inserted = DateTime.Now.ToUniversalTime()
                 };
 
                 string validationError = Customer.ValidateAndClean(customer);
@@ -123,6 +126,7 @@ namespace SIPSorcery
             UIHelper.SetText(m_webSiteTextBox, String.Empty);
             UIHelper.SetComboBoxSelectedId(m_securityQuestionListBox, 0);
             UIHelper.SetComboBoxSelectedId(m_countryListBox, 14);
+            UIHelper.SetComboBoxSelectedId(m_timezoneListBox, 31);
         }
 	}
 }

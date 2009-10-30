@@ -91,8 +91,7 @@ namespace SIPSorcery.Servers
         }
 
         /// <summary>
-        /// Forwards a SIP request through the Proxy. If the request enters and leaves on different sockets then two Via headers
-        /// will be added to allow the response to travel back along an identical path.
+        /// Forwards a SIP request through the Proxy.
         /// </summary>
         /// <param name="dstSIPEndPoint">The destination SIP socket to send the request to.</param>
         /// <param name="sipRequest">The SIP request to send.</param>
@@ -134,31 +133,30 @@ namespace SIPSorcery.Servers
         /// Forwards a SIP request through the Proxy. This method differs from the standard Send in that irrespective of whether the Proxy is
         /// receiving and sending on different sockets only a single Via header will ever be allowed on the request. It is then up to the
         /// response processing logic to determine from which Proxy socket to forward the request and to add back on the Via header for the 
-        /// end agent.
+        /// end agent. This method is only ever used for requests destined for EXTERNAL SIP end points. 
         /// </summary>
         /// <param name="dstSIPEndPoint">The destination SIP socket to send the request to.</param>
         /// <param name="sipRequest">The SIP request to send.</param>
         /// <param name="proxyBranch">The branchid to set on the Via header to be added for this forwarding leg.</param>
-        /// <param name="localSIPEndPoint">The proxy socket that the request should be sent from. If null the 
         /// default channel that matches the destination end point should be used.</param>
-        /// <param name="setContactToLocal">If true the Contact header URI will be overwritten with the URI of the
-        /// proxy socket the request is being sent from. This should only be used for INVITE requests.</param>
-        public void SendTransparent(SIPEndPoint dstSIPEndPoint, SIPRequest sipRequest, string proxyBranch, SIPEndPoint localSIPEndPoint, SIPURI contactURI, IPAddress publicIPAddress)
+        public void SendTransparent(SIPEndPoint dstSIPEndPoint, SIPRequest sipRequest, string proxyBranch, IPAddress publicIPAddress)
         {
-            if (dstSIPEndPoint == null)
-            {
+            if (dstSIPEndPoint == null) {
                 Log("Send was passed an emtpy destination for " + sipRequest.URI.ToString() + ", returning unresolvable.");
                 Respond(sipRequest, SIPResponseStatusCodesEnum.NotFound, "DNS lookup unresolvable");
                 return;
             }
 
-            if (!sipRequest.Header.ProxySendFrom.IsNullOrBlank() && localSIPEndPoint == null) {
+            // Determine the external SIP endpoint that the proxy will use to send this request.
+            SIPEndPoint localSIPEndPoint = null;
+            if (!sipRequest.Header.ProxySendFrom.IsNullOrBlank()) {
                 SIPChannel proxyChannel = m_sipTransport.FindSIPChannel(SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxySendFrom));
                 localSIPEndPoint = (proxyChannel != null) ? proxyChannel.SIPChannelEndPoint : null;
             }
-
             localSIPEndPoint = localSIPEndPoint ?? m_sipTransport.GetDefaultTransportContact(dstSIPEndPoint.SIPProtocol);
 
+            // Create the single Via header for the outgoing request. It uses the passed in branchid which has been taken from the
+            // request that's being forwarded. If this proxy is behind a NAT and the public IP is known that's also set on the Via.
             sipRequest.Header.Vias = new SIPViaSet();
             SIPViaHeader via = new SIPViaHeader(localSIPEndPoint, proxyBranch);
             if (publicIPAddress != null) {
@@ -166,27 +164,38 @@ namespace SIPSorcery.Servers
             }
             sipRequest.Header.Vias.PushViaHeader(via);
 
-            sipRequest.LocalSIPEndPoint = localSIPEndPoint;
-
-            if (contactURI != null && sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count > 0)
-            {
-                sipRequest.Header.Contact[0].ContactURI = contactURI;
+            // Set the Contact URI on the outgoing INVITE request depending on which SIP socket the request is being sent on and whether
+            // the request is going to an external network.
+            if (sipRequest.Method == SIPMethodsEnum.INVITE && publicIPAddress != null) {
+                if (publicIPAddress != null) {
+                    sipRequest.Header.Contact[0].ContactURI = new SIPURI(sipRequest.URI.Scheme, new SIPEndPoint(localSIPEndPoint.SIPProtocol, new IPEndPoint(publicIPAddress, localSIPEndPoint.SocketEndPoint.Port)));
+                }
+                else {
+                    sipRequest.Header.Contact[0].ContactURI = new SIPURI(sipRequest.URI.Scheme, localSIPEndPoint);
+                }              
             }
 
+            // Proxy sepecific headers that don't need to be seen by external UAs.
+            sipRequest.Header.ProxyReceivedOn = null;
+            sipRequest.Header.ProxyReceivedFrom = null;
+            sipRequest.Header.ProxySendFrom = null;
+            
+            sipRequest.LocalSIPEndPoint = localSIPEndPoint;
             m_sipTransport.SendRequest(dstSIPEndPoint, sipRequest);
         }
 
-        public void Send(SIPResponse sipResponse)
-        {
+        public void Send(SIPResponse sipResponse) {
             m_sipTransport.SendResponse(sipResponse);
         }
 
         public void Send(SIPResponse sipResponse, string localSIPEndPoint) {
-            Send(sipResponse, SIPEndPoint.ParseSIPEndPoint(localSIPEndPoint), null);
+            sipResponse.LocalSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(localSIPEndPoint);
+            m_sipTransport.SendResponse(sipResponse);
         }
 
         public void Send(SIPResponse sipResponse, SIPEndPoint localSIPEndPoint) {
-            Send(sipResponse, localSIPEndPoint, null);
+            sipResponse.LocalSIPEndPoint = localSIPEndPoint;
+            m_sipTransport.SendResponse(sipResponse);
         }
 
         /// <summary>
@@ -197,12 +206,17 @@ namespace SIPSorcery.Servers
         /// <param name="setContactURIToLocal">If true will set the Contact URI to the URI of the proxy socket the response
         /// is being sent from. This should only be used for INVITE responses where the contact header needs to be updated
         /// to make sure the correct proxy socket is used for in-dialogue requests.</param>
-        public void Send(SIPResponse sipResponse, SIPEndPoint localSIPEndPoint, SIPURI contactURI) {
+        public void Send(SIPResponse sipResponse, SIPEndPoint localSIPEndPoint, IPAddress publicIPAddress) {
             try {
                 sipResponse.LocalSIPEndPoint = localSIPEndPoint;
 
-                if (contactURI != null && sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0) {
-                    sipResponse.Header.Contact[0].ContactURI = contactURI;
+                if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.INVITE && sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0) {
+                   if (publicIPAddress != null) {
+                        sipResponse.Header.Contact[0].ContactURI = new SIPURI(sipResponse.Header.Contact[0].ContactURI.Scheme, new SIPEndPoint(localSIPEndPoint.SIPProtocol, new IPEndPoint(publicIPAddress, localSIPEndPoint.SocketEndPoint.Port)));
+                    }
+                    else {
+                        sipResponse.Header.Contact[0].ContactURI = new SIPURI(sipResponse.Header.Contact[0].ContactURI.Scheme, localSIPEndPoint);
+                    }
                 }
 
                 m_sipTransport.SendResponse(sipResponse);
@@ -219,19 +233,16 @@ namespace SIPSorcery.Servers
         /// <param name="localEndPoint"></param>
         /// <param name="remoteEndPoint"></param>
         /// <param name="sipRequest"></param>
-        public void Respond(SIPRequest sipRequest, SIPResponseStatusCodesEnum responseCode, string reasonPhrase)
-        {
+        public void Respond(SIPRequest sipRequest, SIPResponseStatusCodesEnum responseCode, string reasonPhrase) {
             SIPResponse response = SIPTransport.GetResponse(sipRequest, responseCode, reasonPhrase);
             m_sipTransport.SendResponse(response);
         }
 
-        public SIPEndPoint Resolve(SIPRequest sipRequest)
-        {
+        public SIPEndPoint Resolve(SIPRequest sipRequest) {
             return m_sipTransport.GetRequestEndPoint(sipRequest, null, false);
         }
 
-        public SIPEndPoint Resolve(SIPURI sipURI)
-        {
+        public SIPEndPoint Resolve(SIPURI sipURI) {
             return m_sipTransport.GetURIEndPoint(sipURI, false);
         }
 

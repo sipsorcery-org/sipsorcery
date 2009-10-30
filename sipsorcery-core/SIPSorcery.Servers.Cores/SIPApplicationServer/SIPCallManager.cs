@@ -37,11 +37,13 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Net;
 using System.Text;
 using System.Threading;
 using SIPSorcery.AppServer.DialPlan;
 using SIPSorcery.CRM;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -56,17 +58,19 @@ namespace SIPSorcery.Servers
         private const string PROCESS_CALLS_THREAD_NAME_PREFIX = "sipcallmanager-processcalls";
         private const int MAX_QUEUEWAIT_PERIOD = 4000;              // Maximum time to wait to check the new calls queue if no events are received.
         private const int MAX_NEWCALL_QUEUE = 10;                   // Maximum number of new calls that will be queued for processing.
-        private const string DISPATCHER_SIPACCOUNT_NAME = "dispatcher";
-        private const int MAX_CALLBACK_WAIT_SECONDS = 15;
+        public const string DISPATCHER_SIPACCOUNT_NAME = "dispatcher";
+        private const int MAX_CALLBACK_WAIT_SECONDS = 30;
 
         private static ILog logger = AppState.logger;
 
         private static string m_userAgentString = SIPConstants.SIP_USERAGENT_STRING;
         private static string m_remoteHangupCause = SIPConstants.SIP_REMOTEHANGUP_CAUSE;
+        //private static string m_selectHangupDialogues = SIPDialogueAsset.SelectHangupQuery;
 
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
         private string m_traceDirectory;
+        private bool m_monitorCalls;        // If true this call manager instance will monitor the sip dialogues table and hangup any expired calls.
         private bool m_stop;
         private SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
         private SIPAssetPersistor<SIPCDRAsset> m_sipCDRPersistor;
@@ -83,7 +87,6 @@ namespace SIPSorcery.Servers
         private Queue<ISIPServerUserAgent> m_newCalls = new Queue<ISIPServerUserAgent>();
         private AutoResetEvent m_newCallReady = new AutoResetEvent(false);
         private DialPlanEngine m_dialPlanEngine;
-        private SIPAccount m_dispatcherSIPAccount;                                                          // Special SIP account used to service requests from monitoring or dispatcher agents.
 
         private Dictionary<string, CallbackWaiter> m_waitingForCallbacks = new Dictionary<string, CallbackWaiter>();
 
@@ -100,7 +103,9 @@ namespace SIPSorcery.Servers
             SIPAssetGetListDelegate<SIPProvider> getSIPProviders,
             GetCanonicalDomainDelegate getCanonicalDomain,
             SIPAssetPersistor<Customer> customerPersistor,
-            string traceDirectory) {
+            string traceDirectory,
+            bool monitorCalls) {
+
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
             Log_External = logDelegate;
@@ -114,12 +119,13 @@ namespace SIPSorcery.Servers
             GetCanonicalDomain_External = getCanonicalDomain;
             m_customerPersistor = customerPersistor;
             m_traceDirectory = traceDirectory;
-
-            m_dispatcherSIPAccount = new SIPAccount(DISPATCHER_SIPACCOUNT_NAME, SIPDomainManager.DEFAULT_LOCAL_DOMAIN, DISPATCHER_SIPACCOUNT_NAME, null, null);
+            m_monitorCalls = monitorCalls;
         }
 
         public void Start() {
-            //ThreadPool.QueueUserWorkItem(delegate { MonitorCalls(); });
+            if (m_monitorCalls) {
+                ThreadPool.QueueUserWorkItem(delegate { MonitorCalls(); });
+            }
             ThreadPool.QueueUserWorkItem(delegate { ProcessNewCalls(PROCESS_CALLS_THREAD_NAME_PREFIX + "-1"); });
             ThreadPool.QueueUserWorkItem(delegate { ProcessNewCalls(PROCESS_CALLS_THREAD_NAME_PREFIX + "-2"); });
             ThreadPool.QueueUserWorkItem(delegate { ProcessNewCalls(PROCESS_CALLS_THREAD_NAME_PREFIX + "-3"); });
@@ -135,12 +141,13 @@ namespace SIPSorcery.Servers
             try {
                 Thread.CurrentThread.Name = MONITOR_CALLLIMITS_THREAD_NAME;
                 
-                DateTime utcNow = DateTime.Now.ToUniversalTime();
+                DateTime utcNow = DateTime.UtcNow;
 
                 while (!m_stop) {
                     try {
-                        utcNow = DateTime.Now.ToUniversalTime();
-                        SIPDialogueAsset expiredCall = m_sipDialoguePersistor.Get(d => d.HangupAtUTC <= utcNow);
+                        //utcNow = DateTime.Now.ToUniversalTime();
+                        SIPDialogueAsset expiredCall = m_sipDialoguePersistor.Get(d => d.HangupAt <= DateTime.UtcNow);
+                        //SIPDialogueAsset expiredCall = m_sipDialoguePersistor.GetFromDirectQuery(m_selectHangupDialogues, new SqlParameter("1", utcNow));
                         if (expiredCall != null) {
                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Hanging up expired call to " + expiredCall.RemoteTarget + " after " + expiredCall.CallDurationLimit + "s.", expiredCall.Owner));
                             expiredCall.SIPDialogue.Hangup(m_sipTransport, m_outboundProxy);
@@ -175,65 +182,73 @@ namespace SIPSorcery.Servers
 
                         if (newCall != null) {
 
-                                if (newCall.CallDirection == SIPCallDirection.In) {
+                            if (newCall.CallDirection == SIPCallDirection.In) {
 
-                                    // Check if this call is being waited for by a dialplan application.
-                                    CallbackWaiter matchingApp = null;
+                                if (newCall.CallRequest.URI.User == DISPATCHER_SIPACCOUNT_NAME) {
+                                    // This is a special system account used by monitoring or dispatcher agents that want to check
+                                    // the state of the application server.
+                                    newCall.NoCDR();
+                                    ProcessNewCall(newCall);
+                                }
+                                else {
+                                    bool loadInAccountResult = newCall.LoadSIPAccountForIncomingCall();
 
-                                    try {
-                                        if (m_waitingForCallbacks.Count > 0) {
-                                            List<CallbackWaiter> expiredWaiters = new List<CallbackWaiter>();
-                                            lock (m_waitingForCallbacks) {
-                                                foreach (CallbackWaiter waitingApp in m_waitingForCallbacks.Values) {
-                                                    if (DateTime.Now.Subtract(waitingApp.Added).TotalSeconds > MAX_CALLBACK_WAIT_SECONDS) {
-                                                        expiredWaiters.Add(waitingApp);
-                                                    }
-                                                    else {
-                                                        bool match = waitingApp.IsMyCall(newCall);
-                                                        if (match) {
-                                                            matchingApp = waitingApp;
-                                                            break;
+                                    if (loadInAccountResult && newCall.SIPAccount != null) {
+
+                                        #region Check if this call is being waited for by a dialplan application.
+
+                                        CallbackWaiter matchingApp = null;
+
+                                        try {
+                                            if (m_waitingForCallbacks.Count > 0) {
+                                                List<CallbackWaiter> expiredWaiters = new List<CallbackWaiter>();
+                                                lock (m_waitingForCallbacks) {
+                                                    foreach (CallbackWaiter waitingApp in m_waitingForCallbacks.Values) {
+                                                        if (DateTime.Now.Subtract(waitingApp.Added).TotalSeconds > MAX_CALLBACK_WAIT_SECONDS) {
+                                                            expiredWaiters.Add(waitingApp);
+                                                        }
+                                                        else {
+                                                            bool match = waitingApp.IsMyCall(newCall);
+                                                            if (match) {
+                                                                matchingApp = waitingApp;
+                                                                break;
+                                                            }
                                                         }
                                                     }
-                                                }
 
-                                                if (expiredWaiters.Count > 0) {
-                                                    foreach (CallbackWaiter expiredApp in expiredWaiters) {
-                                                        m_waitingForCallbacks.Remove(expiredApp.UniqueId);
+                                                    if (expiredWaiters.Count > 0) {
+                                                        foreach (CallbackWaiter expiredApp in expiredWaiters) {
+                                                            m_waitingForCallbacks.Remove(expiredApp.UniqueId);
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
-                                    }
-                                    catch (Exception callbackExcp) {
-                                        logger.Error("Exception ProcessNewCalls Checking Callbacks. " + callbackExcp.Message);
-                                    }
+                                        catch (Exception callbackExcp) {
+                                            logger.Error("Exception ProcessNewCalls Checking Callbacks. " + callbackExcp.Message);
+                                        }
 
-                                    if (matchingApp != null) {
-                                        lock (m_waitingForCallbacks) {
-                                            m_waitingForCallbacks.Remove(matchingApp.UniqueId);
+                                        #endregion
+
+                                        if (matchingApp != null) {
+                                            lock (m_waitingForCallbacks) {
+                                                m_waitingForCallbacks.Remove(matchingApp.UniqueId);
+                                            }
+                                        }
+                                        else {
+                                            ProcessNewCall(newCall);
                                         }
                                     }
                                     else {
-                                        if (newCall.CallRequest.URI.User == DISPATCHER_SIPACCOUNT_NAME) {
-                                            // This is a special system account used by monitoring or dispatcher agents that want to check
-                                            // the state of the application server.
-                                            newCall.NoCDR();
-                                            newCall.SIPAccount = m_dispatcherSIPAccount;
-                                            ProcessNewCall(newCall);
-                                        }
-                                        else if (newCall.LoadSIPAccountForIncomingCall()) {
-                                            ProcessNewCall(newCall);
-                                        }
-                                        else {
-                                            logger.Error("ProcessNewCalls could not load incoming SIP Account for " + newCall.CallRequest.URI.ToString() + ".");
-                                        }
+                                        logger.Error("ProcessNewCalls could not load incoming SIP Account for " + newCall.CallRequest.URI.ToString() + ".");
+                                        newCall.Reject(SIPResponseStatusCodesEnum.NotFound, null, null);
                                     }
                                 }
-                                else if (newCall.AuthenticateCall()) {
-                                    ProcessNewCall(newCall);
-                                }
                             }
+                            else if (newCall.AuthenticateCall()) {
+                                ProcessNewCall(newCall);
+                            }
+                        }
                     }
 
                     m_newCallReady.Reset();
@@ -266,37 +281,35 @@ namespace SIPSorcery.Servers
         }
 
         private void ProcessNewCall(ISIPServerUserAgent uas) {
-            //UASInviteTransaction inviteTransaction = uas.SIPTransaction;
-
-            try {
+             try {
                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call Manager processing new call on thread " + Thread.CurrentThread.Name + " for " + uas.CallRequest.URI.ToString() + ".", null));
 
                 SIPURI callURI = uas.CallRequest.URI;
                 SIPAccount sipAccount = uas.SIPAccount;
 
-                if (sipAccount != null) {
+                if (uas.CallDirection == SIPCallDirection.In && callURI.User == DISPATCHER_SIPACCOUNT_NAME) {
+                    // Create a pseudo-dialplan to process the dispatcher call.
+                    string pseudoScript =
+                        "sys.Log(\"Dispatcher Call.\")\n" +
+                        "sys.Respond(420, nil, \"DialPlanEngine-ExecutionCount: " + m_dialPlanEngine.ScriptCount + "\")\n";
+                    SIPDialPlan dispatcherDialPlan = new SIPDialPlan(null, null, null, pseudoScript, SIPDialPlanScriptTypesEnum.Ruby);
+                    dispatcherDialPlan.Id = Guid.Empty; // Prevents the increment and decrement on the execution counts.
+                    DialPlanScriptContext scriptContext = new DialPlanScriptContext(
+                            Log_External,
+                            m_sipTransport,
+                            CreateDialogueBridge,
+                            m_outboundProxy,
+                            uas,
+                            dispatcherDialPlan,
+                            null,
+                            m_traceDirectory,
+                            null,
+                            Guid.Empty);
+                    m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, null, this);
+                }
+                else if (sipAccount != null) {
 
-                    if (sipAccount.Id == m_dispatcherSIPAccount.Id) {
-                        // Create a pseudo-dialplan to process the dispatcher call.
-                        string pseudoScript = 
-                            "sys.Log(\"Dispatcher Call.\")\n" +
-                            "sys.Respond(420, nil, \"DialPlanEngine-ExecutionCount: " + m_dialPlanEngine.ScriptCount + "\")\n";
-                        SIPDialPlan dispatcherDialPlan = new SIPDialPlan(sipAccount.Owner, null, null, pseudoScript, SIPDialPlanScriptTypesEnum.Ruby);
-                        dispatcherDialPlan.Id = Guid.Empty.ToString(); // Prevents the increment and decrement on the execution counts.
-                        DialPlanScriptContext scriptContext = new DialPlanScriptContext(
-                                Log_External,
-                                m_sipTransport,
-                                CreateDialogueBridge,
-                                m_outboundProxy,
-                                uas,
-                                dispatcherDialPlan,
-                                null,
-                                m_traceDirectory,
-                                sipAccount.NetworkId,
-                                Guid.Empty);
-                        m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
-                    }
-                    else if (sipAccount.IsDisabled) {
+                    if (sipAccount.IsDisabled) {
                         Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " is disabled for " + uas.CallDirection + " call.", sipAccount.Owner));
                         uas.Reject(SIPResponseStatusCodesEnum.Forbidden, "SIP account disabled", null);
                     }
@@ -350,7 +363,7 @@ namespace SIPSorcery.Servers
                                         GetSIPProviders_External(p => p.Owner == sipAccount.Owner, null, 0, Int32.MaxValue),
                                         m_traceDirectory,
                                         (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.NetworkId : null,
-                                        new Guid(customer.Id));
+                                        customer.Id);
 
                                     if (!uas.IsUASAnswered) {
                                         m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
@@ -370,7 +383,7 @@ namespace SIPSorcery.Servers
                                 string pseudoScript = "sys.Dial(\"" + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + "\")\n";
                                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding incoming call for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " to " + bindings.Count + " bindings.", sipAccount.Owner));
                                 SIPDialPlan incomingDialPlan = new SIPDialPlan(sipAccount.Owner, null, null, pseudoScript, SIPDialPlanScriptTypesEnum.Ruby);
-                                incomingDialPlan.Id = Guid.Empty.ToString(); // Prevents the increment and decrement on the execution counts.
+                                incomingDialPlan.Id = Guid.Empty; // Prevents the increment and decrement on the execution counts.
                                 DialPlanScriptContext scriptContext = new DialPlanScriptContext(
                                         Log_External,
                                         m_sipTransport,
