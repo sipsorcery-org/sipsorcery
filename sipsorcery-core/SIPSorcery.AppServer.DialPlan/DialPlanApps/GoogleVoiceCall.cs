@@ -220,7 +220,7 @@ namespace SIPSorcery.AppServer.DialPlan {
                 m_callManager.AddWaitingApplication(callbackWaiter);
                 
                 string callData = "outgoingNumber=" + Uri.EscapeDataString(destinationNumber) + "&forwardingNumber=" + Uri.EscapeDataString(forwardingNumber) + 
-                    "&subscriberNumber=undefined&remember=0&_rnr_se=" + Uri.EscapeDataString(rnr);
+                    "&subscriberNumber=undefined&remember=0&_rnr_se=" + Uri.EscapeDataString(rnr) + "&phoneType=2";
                 logger.Debug("call data=" + callData + ".");
 
                 // Build the call request.
