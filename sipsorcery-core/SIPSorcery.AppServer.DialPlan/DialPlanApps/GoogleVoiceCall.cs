@@ -53,6 +53,8 @@ namespace SIPSorcery.AppServer.DialPlan {
         private const string LOGIN_URL = "https://www.google.com/accounts/ServiceLoginAuth?service=grandcentral";
         private const string VOICE_HOME_URL = "https://www.google.com/voice";
         private const string VOICE_CALL_URL = "https://www.google.com/voice/call/connect";
+        private const int MIN_CALLBACK_TIMEOUT = 3;
+        private const int MAX_CALLBACK_TIMEOUT = 60;
         private const int WAIT_FOR_CALLBACK_TIMEOUT = 30;
         private const int HTTP_REQUEST_TIMEOUT = 5;
 
@@ -103,7 +105,7 @@ namespace SIPSorcery.AppServer.DialPlan {
         /// <param name="body">The content of the SIP call into sipsorcery that created the Google Voice call. It is
         /// what will be sent in the Ok response to the initial incoming callback.</param>
         /// <returns>If successful the dialogue of the established call otherwsie null.</returns>
-        public SIPDialogue InitiateCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromUserRegexMatch, string contentType, string body) {
+        public SIPDialogue InitiateCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromUserRegexMatch, int phoneType, int waitForCallbackTimeout, string contentType, string body) {
             try {
                 m_forwardingNumber = forwardingNumber;
                 m_fromURIUserRegexMatch = fromUserRegexMatch;
@@ -116,7 +118,7 @@ namespace SIPSorcery.AppServer.DialPlan {
                 string rnr = Login(cookies, emailAddress, password);
                 if (!rnr.IsNullOrBlank()) {
                     Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call key " + rnr + " successfully retrieved for " + emailAddress + ", proceeding with callback.", m_username));
-                    return SendCallRequest(cookies, forwardingNumber, destinationNumber, rnr, contentType, body);
+                    return SendCallRequest(cookies, forwardingNumber, destinationNumber, rnr, phoneType, waitForCallbackTimeout, contentType, body);
                 }
                 else {
                     Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call key was not etrieved for " + emailAddress + " callback cannot proceed.", m_username));
@@ -214,13 +216,16 @@ namespace SIPSorcery.AppServer.DialPlan {
             }
         }
 
-        private SIPDialogue SendCallRequest(CookieContainer cookies, string forwardingNumber, string destinationNumber, string rnr, string contentType, string body) {
+        private SIPDialogue SendCallRequest(CookieContainer cookies, string forwardingNumber, string destinationNumber, string rnr, int phoneType, int waitForCallbackTimeout, string contentType, string body)
+        {
             try {
+                int callbackTimeout = (waitForCallbackTimeout < MIN_CALLBACK_TIMEOUT || waitForCallbackTimeout > MAX_CALLBACK_TIMEOUT) ? WAIT_FOR_CALLBACK_TIMEOUT : waitForCallbackTimeout;
+
                 CallbackWaiter callbackWaiter = new CallbackWaiter(CallbackWaiterEnum.GoogleVoice, forwardingNumber, MatchIncomingCall);
                 m_callManager.AddWaitingApplication(callbackWaiter);
                 
                 string callData = "outgoingNumber=" + Uri.EscapeDataString(destinationNumber) + "&forwardingNumber=" + Uri.EscapeDataString(forwardingNumber) + 
-                    "&subscriberNumber=undefined&remember=0&_rnr_se=" + Uri.EscapeDataString(rnr) + "&phoneType=2";
+                    "&subscriberNumber=undefined&remember=0&_rnr_se=" + Uri.EscapeDataString(rnr) + "&phoneType=" + phoneType;
                 logger.Debug("call data=" + callData + ".");
 
                 // Build the call request.
@@ -240,10 +245,11 @@ namespace SIPSorcery.AppServer.DialPlan {
                     throw new ApplicationException("The call request failed with a " + responseStatus + " response.");
                 }
                 else {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call to " + destinationNumber + " forwarding to " + forwardingNumber + " successfully initiated.", m_username));
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call to " + destinationNumber + " forwarding to " + forwardingNumber + " successfully initiated, callback timeout=" + callbackTimeout + "s.", m_username));
                 }
-                
-                if (m_waitForCallback.WaitOne(WAIT_FOR_CALLBACK_TIMEOUT * 1000)) {
+
+                if (m_waitForCallback.WaitOne(callbackTimeout * 1000))
+                {
                     Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call callback received.", m_username));
                     return m_callbackCall.Answer(contentType, body, null);
                 }
