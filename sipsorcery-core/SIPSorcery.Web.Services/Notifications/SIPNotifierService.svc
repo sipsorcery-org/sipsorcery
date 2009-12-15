@@ -1,0 +1,1 @@
+﻿<%@ ServiceHost Language="C#" Debug="true" Service="SIPSorcery.Web.Services.SIPNotifierService" CodeBehind="SIPNotifierService.svc.cs" %>

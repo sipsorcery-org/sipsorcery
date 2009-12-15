@@ -94,11 +94,19 @@ namespace SIPSorcery.SIP.App
 
         private void LoadSIPDomains()
         {
-            List<SIPDomain> sipDomains = m_sipDomainPersistor.Get(null, null, 0, Int32.MaxValue);
-            m_domains.Clear();
-            foreach (SIPDomain sipDomain in sipDomains)
+            try
             {
-                AddDomain(sipDomain);
+                List<SIPDomain> sipDomains = m_sipDomainPersistor.Get(null, null, 0, Int32.MaxValue);
+                m_domains.Clear();
+                foreach (SIPDomain sipDomain in sipDomains)
+                {
+                    AddDomain(sipDomain);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception LoadSIPDomains. " + excp.Message);
+                throw;
             }
         }
 

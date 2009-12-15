@@ -48,6 +48,7 @@
     <Reference Include="System.ServiceModel">
       <RequiredTargetFramework>3.0</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.ServiceModel.PollingDuplex, Version=2.0.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.ServiceModel.Web">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -63,19 +64,43 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="SIPProvisioningWebService.svc" />
+    <Content Include="Notifications\SIPNotifierService.svc" />
+    <Content Include="Provisioning\SIPProvisioningWebService.svc" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CallManager\CallManagerPassThruService.cs" />
+    <Compile Include="CallManager\CallManagerPassThruServiceInstanceProvider.cs" />
+    <Compile Include="CallManager\CallManagerServiceInstanceProvider.cs" />
+    <Compile Include="CallManager\CallManagerServiceProxy.cs" />
+    <Compile Include="CallManager\CallManagerServices.cs" />
+    <Compile Include="CallManager\ICallManagerServices.cs" />
+    <Compile Include="CallManager\ISIPCallDispatcher.cs" />
+    <Compile Include="Notifications\INotifications.cs" />
+    <Compile Include="Notifications\NotificationAsyncResult.cs" />
+    <Compile Include="Notifications\PullNotificationHeader.cs" />
+    <Compile Include="Notifications\SIPMonitorClientManagerHost.cs" />
+    <Compile Include="Notifications\SIPMonitorPublisherProxy.cs" />
+    <Compile Include="Notifications\SIPNotifierServiceInstanceProvider.cs" />
+    <Compile Include="Notifications\DuplexHeader.cs" />
+    <Compile Include="Notifications\IPollingDuplex.cs" />
+    <Compile Include="Notifications\IPubSub.cs" />
+    <Compile Include="Notifications\MakeConnection.cs" />
+    <Compile Include="Notifications\NotificationData.cs" />
+    <Compile Include="Notifications\PollingDuplexSession.cs" />
+    <Compile Include="Notifications\PollingDuplexSessionExtensions.cs" />
     <Compile Include="CrossDomainWebService.cs" />
-    <Compile Include="IProvisioningService.cs" />
-    <Compile Include="IProvisioningServiceREST.cs" />
-    <Compile Include="ProvisioningServiceInstanceProvider.cs" />
-    <Compile Include="SIPProvisioningWebService.svc.cs">
+    <Compile Include="Provisioning\IProvisioningService.cs" />
+    <Compile Include="Provisioning\IProvisioningServiceREST.cs" />
+    <Compile Include="Provisioning\ProvisioningServiceInstanceProvider.cs" />
+    <Compile Include="Notifications\SIPNotifierService.svc.cs">
+      <DependentUpon>SIPNotifierService.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Provisioning\SIPProvisioningWebService.svc.cs">
       <DependentUpon>SIPProvisioningWebService.svc</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SilverlightFaultBehavior.cs" />
+    <Compile Include="SIPSorcerySecurityHeader.cs" />
     <Compile Include="SilverlightPolicyServer.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -99,6 +124,9 @@
       <Project>{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}</Project>
       <Name>SIPSorcery.Sys</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -132,6 +160,7 @@
     </VisualStudio>
   </ProjectExtensions>
   <PropertyGroup>
-    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\SIPSorcery.Web.Services\bin\SIPSorcery.Web.Services.dll" "c:\temp\sipsorcery\"</PostBuildEvent>
+    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\SIPSorcery.Web.Services\bin\SIPSorcery.Web.Services.dll" "c:\temp\sipsorcery\"
+copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\SIPSorcery.Web.Services\bin\SIPSorcery.Web.Services.dll" C:\inetpub\wwwroot\bin\</PostBuildEvent>
   </PropertyGroup>
 </Project>

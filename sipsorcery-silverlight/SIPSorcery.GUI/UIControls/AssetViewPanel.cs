@@ -122,6 +122,10 @@ namespace SIPSorcery.UIControls
         private void MenuBar_PageLast()
         {
             m_listOffset = DisplayCount * (m_listTotal / DisplayCount);
+            if (m_listOffset >= m_listTotal)
+            {
+                m_listOffset -= DisplayCount;
+            }
             RefreshAsync();
         }
 

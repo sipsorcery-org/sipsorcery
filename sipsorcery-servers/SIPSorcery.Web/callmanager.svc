@@ -1,1 +1,1 @@
-<% @ServiceHost Service="SIPSorcery.Servers.CallManagerPassThruService" %>
+<% @ServiceHost Service="SIPSorcery.Web.Services.CallManagerPassThruService" %>

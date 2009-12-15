@@ -78,8 +78,6 @@ namespace SIPSorcery.SIP
             get { return m_localSIPEndPoint.ToString(); }
         }
 
-        public string Name;
-
         protected bool m_isReliable;    //If the underlying transport channel is reliable, such as TCP, this will be set to true;
         public bool IsReliable
         {

@@ -7,29 +7,22 @@ using System.Text;
 using System.Threading;
 using SIPSorcery.CRM;
 using SIPSorcery.Persistence;
+using SIPSorcery.Servers;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIPMonitor
 {
     class SIPMonitorProgram
     {
-        private static readonly string m_storageTypeKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGETYPE_KEY;
-        private static readonly string m_connStrKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
-
         private static ManualResetEvent m_monitorUp = new ManualResetEvent(false);
-
-        private static StorageTypes m_storageType;
-        private static string m_connStr;
 
         static void Main(string[] args)
         {
             try
             {
-                m_storageType = (ConfigurationManager.AppSettings[m_storageTypeKey] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[m_storageTypeKey]) : StorageTypes.Unknown;
-                m_connStr = ConfigurationManager.AppSettings[m_connStrKey];
+                SIPMonitorClientManager sipMonitorPublisher = new SIPMonitorClientManager();
 
-                CustomerSessionManager customerSessionManager = new CustomerSessionManager(m_storageType, m_connStr);
-                SIPMonitorDaemon daemon = new SIPMonitorDaemon(customerSessionManager);
+                SIPMonitorDaemon daemon = new SIPMonitorDaemon(sipMonitorPublisher);
 
                 if (args != null && args.Length == 1 && args[0].StartsWith("-c"))
                 {

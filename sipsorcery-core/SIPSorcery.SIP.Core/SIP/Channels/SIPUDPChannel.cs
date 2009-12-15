@@ -60,13 +60,6 @@ namespace SIPSorcery.SIP
 
         public SIPUDPChannel(IPEndPoint endPoint) {
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, endPoint);
-            base.Name = "u" + Crypto.GetRandomInt(4);
-            Initialise();
-        }
-
-        public SIPUDPChannel(IPEndPoint endPoint, string name) {
-            m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, endPoint);
-            base.Name = name;
             Initialise();
         }
 
@@ -75,7 +68,7 @@ namespace SIPSorcery.SIP
                 m_sipConn = new UdpClient(m_localSIPEndPoint.SocketEndPoint);
 
                 Thread listenThread = new Thread(new ThreadStart(Listen));
-                listenThread.Name = THREAD_NAME + Name;
+                listenThread.Name = THREAD_NAME + Crypto.GetRandomString(4);
                 listenThread.Start();
 
                 logger.Debug("SIPUDPChannel listener created " + m_localSIPEndPoint.SocketEndPoint + ".");

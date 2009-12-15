@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -16,8 +17,8 @@ namespace SIPSorcery.SIPAppServer
 {
     class MainConsole
     {
-        private static readonly string m_storageTypeKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGETYPE_KEY;
-        private static readonly string m_connStrKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
+        private static readonly string m_storageTypeKey = SIPSorceryConfiguration.PERSISTENCE_STORAGETYPE_KEY;
+        private static readonly string m_connStrKey = SIPSorceryConfiguration.PERSISTENCE_STORAGECONNSTR_KEY;
 
         private static ILog logger = AppState.logger;
 
@@ -33,6 +34,12 @@ namespace SIPSorcery.SIPAppServer
 
             try
             {
+                // Get DateTime.ToString() to use a format ot ToString("o") instead of ToString("G").
+                CultureInfo culture = (CultureInfo)CultureInfo.CurrentCulture.Clone();
+                culture.DateTimeFormat.ShortDatePattern = "yyyy-MM-dd";
+                culture.DateTimeFormat.LongTimePattern = "THH:mm:ss.fffffffzzz";
+                Thread.CurrentThread.CurrentCulture = culture;
+
                 m_serverStorageType = (ConfigurationManager.AppSettings[m_storageTypeKey] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[m_storageTypeKey]) : StorageTypes.Unknown;
                 m_serverStorageConnStr = ConfigurationManager.AppSettings[m_connStrKey];
                 bool monitorCalls = true;
@@ -54,7 +61,6 @@ namespace SIPSorcery.SIPAppServer
                     foreach (string arg in args) {
                         if (arg.StartsWith("-sip:")) {
                             sipSocket = arg.Substring(5);
-                            monitorCalls = false;
                         }
                         else if (arg.StartsWith("-cms:")) {
                             callManagerSvcAddress = arg.Substring(5);

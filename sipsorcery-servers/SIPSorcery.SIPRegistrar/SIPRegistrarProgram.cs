@@ -14,8 +14,8 @@ namespace SIPSorcery.SIPRegistrar {
 
     public class SIPRegistrarProgram {
 
-        private static readonly string m_storageTypeKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGETYPE_KEY;
-        private static readonly string m_connStrKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
+        private static readonly string m_storageTypeKey = SIPSorceryConfiguration.PERSISTENCE_STORAGETYPE_KEY;
+        private static readonly string m_connStrKey = SIPSorceryConfiguration.PERSISTENCE_STORAGECONNSTR_KEY;
         private static readonly string m_sipAccountsXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_SIPACCOUNTS_FILENAME;
         private static readonly string m_sipRegistrarBindingsXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_REGISTRAR_BINDINGS_FILENAME;
 

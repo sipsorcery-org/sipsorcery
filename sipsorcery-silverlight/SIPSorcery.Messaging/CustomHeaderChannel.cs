@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 
@@ -22,7 +23,7 @@ namespace SIPSorcery.Silverlight.Messaging
 
         #endregion
 
-        public CustomHeaderChannel(ChannelManagerBase channelManager, IRequestChannel innerChannel, IClientCustomHeader customHeader)
+        public CustomHeaderChannel(ChannelManagerBase channelManager, IRequestChannel innerChannel, IClientCustomHeader  customHeader)
             : base(channelManager)
         {
             this.m_innerChannel = innerChannel;

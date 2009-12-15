@@ -41,44 +41,6 @@ using NUnit.Framework;
 
 namespace SIPSorcery.Persistence
 {
-    public class Persistence {
-        public const string PERSISTENCE_STORAGETYPE_KEY = "PersistenceStorageType";
-        public const string PERSISTENCE_STORAGECONNSTR_KEY = "PersistenceConnStr";
-    }
-
-
-	public enum StorageTypes
-	{
-		Unknown,
-		MSSQL,
-		Postgresql,
-        MySQL,
-		XML,
-        DBLinqMySQL,
-        DBLinqPostgresql,
-        SimpleDBLinq,
-        SQLLinqMySQL,
-        SQLLinqPostgresql,
-	}
-
-	public class StorageTypesConverter
-	{
-		private static ILog logger = AppState.logger;
-		
-		public static StorageTypes GetStorageType(string storageType)
-		{
-			try
-			{
-				return (StorageTypes)Enum.Parse(typeof(StorageTypes), storageType, true);
-			}
-			catch
-			{
-				logger.Error("StorageTypesConverter " + storageType + " unknown.");
-				return StorageTypes.Unknown;
-			}
-		}
-	}
-
 	public class StorageLayer
 	{
 		public const string FILENAME_DATETIME_FORMAT = "ddMMMyy-HHmmss";

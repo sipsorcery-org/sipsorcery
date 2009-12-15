@@ -180,7 +180,10 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                Thread.CurrentThread.Name = THEAD_NAME + DateTime.Now.ToString("HHmmss") + "-" + Crypto.GetRandomString(3);
+                if (Thread.CurrentThread.Name == null) {
+                    Thread.CurrentThread.Name = THEAD_NAME + DateTime.Now.ToString("HHmmss") + "-" + Crypto.GetRandomString(3);
+                }
+
                 StartNewCallSync(callDescriptor);
             }
             catch (Exception excp)

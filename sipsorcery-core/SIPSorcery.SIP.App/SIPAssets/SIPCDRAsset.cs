@@ -28,127 +28,127 @@ namespace SIPSorcery.SIP.App {
 
         public static int TimeZoneOffsetMinutes;
 
-        [Column(Name = "id", DbType = "StringFixedLength", IsPrimaryKey = true, CanBeNull = false)]
+        [Column(Name = "id", DbType = "varchar(36)", IsPrimaryKey = true, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public Guid Id {
             get { return m_sipCDR.CDRId; }
             set { m_sipCDR.CDRId = value; }
         }
 
         [DataMember]
-        [Column(Name = "owner", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "owner", DbType = "varchar(32)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         public string Owner {
             get { return m_sipCDR.Owner; }
             set { m_sipCDR.Owner = value; }
         }
 
-        [Column(Name = "adminmemberid", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "adminmemberid", DbType = "varchar(32)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string AdminMemberId {
             get { return m_sipCDR.AdminMemberId; }
             set { m_sipCDR.AdminMemberId = value; }
         }
 
-        private DateTime m_inserted;
-        [Column(Name = "inserted", DbType = "StringFixedLength", CanBeNull = false)]
-        public DateTime Inserted {
-            get { return m_inserted; }
+        private DateTimeOffset m_inserted;
+        [Column(Name = "inserted", DbType = "datetimeoffset", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        public DateTimeOffset Inserted {
+            get { return m_inserted.ToUniversalTime(); }
             set { m_inserted = value.ToUniversalTime(); }
         }
 
-        [Column(Name = "direction", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "direction", DbType = "varchar(3)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string CallDirection {
             get { return m_sipCDR.CallDirection.ToString(); }
             set { m_sipCDR.CallDirection = (!value.IsNullOrBlank()) ? (SIPCallDirection)Enum.Parse(typeof(SIPCallDirection), value, true) : SIPCallDirection.None; }
         }
 
-        [Column(Name = "created", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "created", DbType = "datetimeoffset", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public DateTime Created {
-            get { return m_sipCDR.Created; }
+        public DateTimeOffset Created {
+            get { return m_sipCDR.Created.ToUniversalTime(); }
             set { m_sipCDR.Created = value.ToUniversalTime(); }
         }
 
-        public DateTime CreatedLocal {
+        public DateTimeOffset CreatedLocal {
             get { return Created.AddMinutes(TimeZoneOffsetMinutes); }
         }
 
-        [Column(Name = "dst", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "dst", DbType = "varchar(128)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string Dst {
             get { return m_sipCDR.Destination.User; }
             set { } // Set on DstURI.
         }
 
-        [Column(Name = "dsthost", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "dsthost", DbType = "varchar(128)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string DstHost {
             get { return m_sipCDR.Destination.Host; }
             set { } // Set on DstURI.
         }
 
-        [Column(Name = "dsturi", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "dsturi", DbType = "varchar(1024)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string DstURI {
             get { return m_sipCDR.Destination.ToString(); }
             set { m_sipCDR.Destination = (!value.IsNullOrBlank()) ? SIPURI.ParseSIPURI(value) : null; }
         }
 
-        [Column(Name = "fromuser", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "fromuser", DbType = "varchar(128)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string FromUser {
             get { return (m_sipCDR.From != null) ? m_sipCDR.From.FromURI.User : null; }
             set { } // Set on FromHeader.
         }
 
-        [Column(Name = "fromname", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "fromname", DbType = "varchar(128)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string FromName {
             get { return (m_sipCDR.From != null) ? m_sipCDR.From.FromName : null; }
             set { } // Set on FromHeader.
         }
 
-        [Column(Name = "fromheader", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "fromheader", DbType = "varchar(1024)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string FromHeader {
             get { return ( m_sipCDR.From != null) ? m_sipCDR.From.ToString() : null; }
             set { m_sipCDR.From = (!value.IsNullOrBlank()) ? SIPFromHeader.ParseFromHeader(value) : null; }
         }
 
-        [Column(Name = "callid", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "callid", DbType = "varchar(256)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string CallId {
             get { return m_sipCDR.CallId; }
             set { m_sipCDR.CallId = value; }
         }
 
-        [Column(Name = "localsocket", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "localsocket", DbType = "varchar(64)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string LocalSocket {
             get { return (m_sipCDR.LocalSIPEndPoint != null) ? m_sipCDR.LocalSIPEndPoint.ToString() : null; }
             set { m_sipCDR.LocalSIPEndPoint = (!value.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(value) : null; }
         }
 
-        [Column(Name = "remotesocket", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "remotesocket", DbType = "varchar(64)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string RemoteSocket {
             get { return (m_sipCDR.RemoteEndPoint != null) ? m_sipCDR.RemoteEndPoint.ToString() : null; }
             set { m_sipCDR.RemoteEndPoint = (!value.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(value) : null; }
         }
 
-        [Column(Name = "bridgeid", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "bridgeid", DbType = "varchar(36)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string BridgeId {
             get { return m_sipCDR.BridgeId.ToString(); }
             set { m_sipCDR.BridgeId = (!value.IsNullOrBlank()) ? new Guid(value) : Guid.Empty; }
         }
 
-        [Column(Name = "inprogresstime", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "inprogresstime", DbType = "datetimeoffset", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public DateTime? InProgressTime {
+        public DateTimeOffset? InProgressTime {
             get {
                 if (m_sipCDR.ProgressTime != null) {
-                    return m_sipCDR.ProgressTime.Value;
+                    return m_sipCDR.ProgressTime.Value.ToUniversalTime();
                 }
                 else {
                     return null;
@@ -164,33 +164,33 @@ namespace SIPSorcery.SIP.App {
             }
         }
 
-        [Column(Name = "inprogressstatus", DbType = "Int32", CanBeNull = true)]
+        [Column(Name = "inprogressstatus", DbType = "int", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public int InProgressStatus {
             get { return m_sipCDR.ProgressStatus; }
             set { m_sipCDR.ProgressStatus = value; }
         }
 
-        [Column(Name = "inprogressreason", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "inprogressreason", DbType = "varchar(64)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string InProgressReason {
             get { return m_sipCDR.ProgressReasonPhrase; }
             set { m_sipCDR.ProgressReasonPhrase = value; }
         }
 
-        [Column(Name = "ringduration", DbType = "Int32", CanBeNull = true)]
+        [Column(Name = "ringduration", DbType = "int", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public int RingDuration {
-            get { return (m_sipCDR.ProgressTime != null && m_sipCDR.AnswerTime != null) ? (int)m_sipCDR.AnswerTime.Value.Subtract(m_sipCDR.ProgressTime.Value).TotalSeconds : 0; }
+            get { return m_sipCDR.GetProgressDuration(); }
             set { }
         }
 
-        [Column(Name = "answeredtime", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "answeredtime", DbType = "datetimeoffset", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public DateTime? AnsweredTime {
+        public DateTimeOffset? AnsweredTime {
             get {
                 if (m_sipCDR.AnswerTime != null) {
-                    return m_sipCDR.AnswerTime.Value;
+                    return m_sipCDR.AnswerTime.Value.ToUniversalTime();
                 }
                 else {
                     return null;
@@ -206,7 +206,7 @@ namespace SIPSorcery.SIP.App {
             }
         }
 
-        public DateTime? AnsweredTimeLocal {
+        public DateTimeOffset? AnsweredTimeLocal {
             get {
                 if (AnsweredTime != null) {
                     return AnsweredTime.Value.AddMinutes(TimeZoneOffsetMinutes);
@@ -217,33 +217,33 @@ namespace SIPSorcery.SIP.App {
             }
         }
 
-        [Column(Name = "answeredstatus", DbType = "Int32", CanBeNull = true)]
+        [Column(Name = "answeredstatus", DbType = "int", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public int AnsweredStatus {
             get { return m_sipCDR.AnswerStatus; }
             set { m_sipCDR.AnswerStatus = value; }
         }
 
-        [Column(Name = "answeredreason", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "answeredreason", DbType = "varchar(64)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string AnsweredReason {
             get { return m_sipCDR.AnswerReasonPhrase; }
             set { m_sipCDR.AnswerReasonPhrase = value; }
         }
 
-        [Column(Name = "duration", DbType = "Int32", CanBeNull = true)]
+        [Column(Name = "duration", DbType = "int", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public int Duration {
-            get { return (m_sipCDR.HangupTime != null && m_sipCDR.AnswerTime != null) ? (int)m_sipCDR.HangupTime.Value.Subtract(m_sipCDR.AnswerTime.Value).TotalSeconds : 0; }
+            get { return m_sipCDR.GetAnsweredDuration(); }
             set { }
         }
 
-        [Column(Name = "hunguptime", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "hunguptime", DbType = "datetimeoffset", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public DateTime? HungupTime {
+        public DateTimeOffset? HungupTime {
             get {
                 if (m_sipCDR.HangupTime != null) {
-                    return m_sipCDR.HangupTime.Value;
+                    return m_sipCDR.HangupTime.Value.ToUniversalTime();
                 }
                 else {
                     return null;
@@ -259,7 +259,7 @@ namespace SIPSorcery.SIP.App {
             }
         }
 
-        public DateTime? HungupTimeLocal {
+        public DateTimeOffset? HungupTimeLocal {
             get {
                 if (HungupTime != null) {
                     return HungupTime.Value.AddMinutes(TimeZoneOffsetMinutes);
@@ -270,7 +270,7 @@ namespace SIPSorcery.SIP.App {
             }
         }
 
-        [Column(Name = "hungupreason", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "hungupreason", DbType = "varchar(64)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string HungupReason {
             get { return m_sipCDR.HangupReason; }
@@ -278,12 +278,12 @@ namespace SIPSorcery.SIP.App {
         }
 
         public SIPCDRAsset() {
-            Inserted = DateTime.UtcNow;
+            Inserted = DateTimeOffset.UtcNow;
             m_sipCDR = new SIPCDR();
         }
 
         public SIPCDRAsset(SIPCDR sipCDR) {
-            Inserted = DateTime.UtcNow;
+            Inserted = DateTimeOffset.UtcNow;
             m_sipCDR = sipCDR;
         }
 
@@ -298,9 +298,9 @@ namespace SIPSorcery.SIP.App {
             table.Columns.Add(new DataColumn("id", typeof(String)));
             table.Columns.Add(new DataColumn("owner", typeof(String)));
             table.Columns.Add(new DataColumn("adminmemberid", typeof(String)));
-            table.Columns.Add(new DataColumn("inserted", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("inserted", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("direction", typeof(String)));
-            table.Columns.Add(new DataColumn("created", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("created", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("dst", typeof(String)));
             table.Columns.Add(new DataColumn("dsturi", typeof(String)));
             table.Columns.Add(new DataColumn("dsthost", typeof(String)));
@@ -311,13 +311,13 @@ namespace SIPSorcery.SIP.App {
             table.Columns.Add(new DataColumn("localsocket", typeof(String)));
             table.Columns.Add(new DataColumn("remotesocket", typeof(String)));
             table.Columns.Add(new DataColumn("bridgeid", typeof(String)));
-            table.Columns.Add(new DataColumn("inprogresstime", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("inprogresstime", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("inprogressreason", typeof(String)));
             table.Columns.Add(new DataColumn("inprogressstatus", typeof(Int32)));
-            table.Columns.Add(new DataColumn("answeredtime", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("answeredtime", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("answeredreason", typeof(String)));
             table.Columns.Add(new DataColumn("answeredstatus", typeof(Int32)));
-            table.Columns.Add(new DataColumn("hunguptime", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("hunguptime", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("hungupreason", typeof(String)));
             table.Columns.Add(new DataColumn("ringduration", typeof(Int32)));
             table.Columns.Add(new DataColumn("duration", typeof(Int32)));
@@ -329,9 +329,9 @@ namespace SIPSorcery.SIP.App {
             m_sipCDR.CDRId = new Guid(cdrRow["id"] as string);
             m_sipCDR.Owner = cdrRow["owner"] as string;
             m_sipCDR.AdminMemberId = cdrRow["adminmemberid"] as string;
-            Inserted = Convert.ToDateTime(cdrRow["inserted"]);
+            Inserted = DateTimeOffset.Parse(cdrRow["inserted"] as string);
             m_sipCDR.CallDirection = (cdrRow["direction"] as string == SIPCallDirection.In.ToString()) ? SIPCallDirection.In : SIPCallDirection.Out;
-            Created = Convert.ToDateTime(cdrRow["created"]);
+            Created = DateTimeOffset.Parse(cdrRow["created"] as string);
             m_sipCDR.Destination = SIPURI.ParseSIPURI(cdrRow["dsturi"] as string);
             m_sipCDR.From = SIPFromHeader.ParseFromHeader(cdrRow["fromheader"] as string);
             m_sipCDR.CallId = cdrRow["callid"] as string;
@@ -339,7 +339,7 @@ namespace SIPSorcery.SIP.App {
             m_sipCDR.RemoteEndPoint = (!(cdrRow["remotesocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(cdrRow["remotesocket"] as string) : null;
             m_sipCDR.BridgeId = (!(cdrRow["bridgeid"] as string).IsNullOrBlank()) ? new Guid(cdrRow["bridgeid"] as string) : Guid.Empty;
             if (cdrRow["inprogresstime"] != DBNull.Value && cdrRow["inprogresstime"] != null) {
-                InProgressTime = Convert.ToDateTime(cdrRow["inprogresstime"]);
+                InProgressTime = DateTimeOffset.Parse(cdrRow["inprogresstime"] as string);
             }
             else {
                 InProgressTime = null;
@@ -347,7 +347,7 @@ namespace SIPSorcery.SIP.App {
             m_sipCDR.ProgressStatus = (cdrRow["inprogressstatus"] != null) ? Convert.ToInt32(cdrRow["inprogressstatus"]) : 0;
             m_sipCDR.ProgressReasonPhrase = cdrRow["inprogressreason"] as string;
             if (cdrRow["answeredtime"] != DBNull.Value && cdrRow["answeredtime"] != null) {
-                AnsweredTime = Convert.ToDateTime(cdrRow["answeredtime"]);
+                AnsweredTime = DateTimeOffset.Parse(cdrRow["answeredtime"] as string);
             }
             else {
                 AnsweredTime = null;
@@ -355,7 +355,7 @@ namespace SIPSorcery.SIP.App {
             m_sipCDR.AnswerStatus = (cdrRow["answeredstatus"] != DBNull.Value && cdrRow["answeredstatus"] != null) ? Convert.ToInt32(cdrRow["answeredstatus"]) : 0;
             m_sipCDR.AnswerReasonPhrase = cdrRow["answeredreason"] as string;
             if (cdrRow["hunguptime"] != DBNull.Value && cdrRow["hunguptime"] != null) {
-                HungupTime = Convert.ToDateTime(cdrRow["hunguptime"]);
+                HungupTime = DateTimeOffset.Parse(cdrRow["hunguptime"] as string);
             }
             else {
                 HungupTime = null;
@@ -384,17 +384,17 @@ namespace SIPSorcery.SIP.App {
         public string ToXMLNoParent() {
             string localSocketStr = (m_sipCDR.LocalSIPEndPoint != null) ? m_sipCDR.LocalSIPEndPoint.ToString() : null;
             string remoteSocketStr = (m_sipCDR.RemoteEndPoint != null) ? m_sipCDR.RemoteEndPoint.ToString() : null;
-            string progressTimeStr = (m_sipCDR.ProgressTime != null) ? m_sipCDR.ProgressTime.Value.ToString("o") : null;
-            string answerTimeStr = (m_sipCDR.AnswerTime != null) ? m_sipCDR.AnswerTime.Value.ToString("o") : null;
-            string hangupTimeStr = (m_sipCDR.HangupTime != null) ? m_sipCDR.HangupTime.Value.ToString("o") : null;
+            string progressTimeStr = (m_sipCDR.ProgressTime != null) ? m_sipCDR.ProgressTime.Value.ToString() : null;
+            string answerTimeStr = (m_sipCDR.AnswerTime != null) ? m_sipCDR.AnswerTime.Value.ToString() : null;
+            string hangupTimeStr = (m_sipCDR.HangupTime != null) ? m_sipCDR.HangupTime.Value.ToString() : null;
 
             string cdrXML =
                 "  <id>" + m_sipCDR.CDRId.ToString() + "</id>" + m_newLine +
                 "  <owner>" + m_sipCDR.Owner + "</owner>" + m_newLine +
                 "  <adminmemberid>" + m_sipCDR.Owner + "</adminmemberid>" + m_newLine +
                 "  <direction>" + m_sipCDR.CallDirection + "</direction>" + m_newLine +
-                "  <inserted>" + Inserted.ToString("o") + "</inserted>" + m_newLine +
-                "  <created>" + m_sipCDR.Created.ToString("dd MMM yyyy HH:mm:ss") + "</created>" + m_newLine +
+                "  <inserted>" + Inserted.ToString() + "</inserted>" + m_newLine +
+                "  <created>" + m_sipCDR.Created.ToString() + "</created>" + m_newLine +
                 "  <dsturi>" + SafeXML.MakeSafeXML(m_sipCDR.Destination.ToString()) + "</dsturi>" + m_newLine +
                 "  <from>" + SafeXML.MakeSafeXML(m_sipCDR.From.ToString()) + "</from>" + m_newLine +
                 "  <callid>" + m_sipCDR.CallId + "</callid>" + m_newLine +

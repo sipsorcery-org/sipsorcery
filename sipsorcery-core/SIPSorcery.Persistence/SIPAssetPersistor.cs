@@ -50,6 +50,7 @@ using log4net;
 
 #if !SILVERLIGHT
 using System.Data;
+using System.Data.Common;
 using System.Data.Linq;
 using System.Data.Linq.Mapping;
 #endif
@@ -132,6 +133,28 @@ namespace SIPSorcery.Persistence
         //public virtual List<T> GetListFromDirectQuery(string sqlQuery, params IDbDataParameter[] sqlParameters) {
          //   throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         //}
+
+        protected DbParameter GetParameter(DbProviderFactory dbProviderFactory, MetaDataMember member, object parameterValue, string parameterName)
+        {
+            DbParameter dbParameter = dbProviderFactory.CreateParameter();
+            dbParameter.ParameterName = parameterName;
+            dbParameter.DbType = EntityTypeConversionTable.LookupDbType(member.DbType);
+
+            if (parameterValue == null)
+            {
+                dbParameter.Value = null;
+            }
+            else if (member.Type == typeof(DateTimeOffset) || member.Type == typeof(Nullable<DateTimeOffset>))
+            {
+                dbParameter.Value = ((DateTimeOffset)parameterValue).ToString("o");
+            }
+            else
+            {
+                dbParameter.Value = parameterValue;
+            }
+
+            return dbParameter;
+        }
 
 #endif
     }

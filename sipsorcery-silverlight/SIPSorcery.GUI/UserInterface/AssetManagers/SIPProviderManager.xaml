@@ -12,7 +12,7 @@
 
 	<UserControl.Resources>
 		<sipsorcery:SIPURIConverter x:Key="SIPURIStringConverter" />
-		<sipsorcery:DateTimeConverter x:Key="DateTimeConverter" />
+		<sipsorcery:DateTimeOffsetConverter x:Key="DateTimeOffsetConverter" />
 	</UserControl.Resources>
 
 <StackPanel Height="Auto" x:Name="m_sipProvidersManagerGrid" Width="Auto" Background="#FF000000" ScrollViewer.VerticalScrollBarVisibility="Disabled">
@@ -124,19 +124,19 @@
 					<data:DataGridTextColumn 
 						Header="Last Register" 
 						Width="SizeToCells"
-						Binding="{Binding LastRegisterTimeLocal, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding LastRegisterTimeLocal, Converter={StaticResource DateTimeOffsetConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100"/>
 					<data:DataGridTextColumn 
 						Header="Last Attempt" 
 						Width="SizeToCells"
-						Binding="{Binding LastRegisterAttemptLocal, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding LastRegisterAttemptLocal, Converter={StaticResource DateTimeOffsetConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100"/>
 					<data:DataGridTextColumn 
 						Header="Next Attempt" 
 						Width="SizeToCells"
-						Binding="{Binding NextRegistrationTimeLocal, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding NextRegistrationTimeLocal, Converter={StaticResource DateTimeOffsetConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100"/>
 					<data:DataGridTextColumn 

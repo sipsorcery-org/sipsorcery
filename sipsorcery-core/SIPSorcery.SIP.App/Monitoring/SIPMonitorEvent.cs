@@ -58,10 +58,23 @@ namespace SIPSorcery.SIP.App
         Machine = 2,        // Connection from an application that will be sent events./
     }
 
+    public class SIPMonitorClientTypes
+    {
+        public static SIPMonitorClientTypesEnum GetSIPMonitorClientType(string eventTypeName)
+        {
+            return (SIPMonitorClientTypesEnum)Enum.Parse(typeof(SIPMonitorClientTypesEnum), eventTypeName, true);
+        }
+
+        public static SIPMonitorClientTypesEnum GetSIPMonitorClientTypeForId(int eventTypeId)
+        {
+            return (SIPMonitorClientTypesEnum)Enum.Parse(typeof(SIPMonitorClientTypesEnum), eventTypeId.ToString(), true);
+        }
+    }
+
     public enum SIPMonitorServerTypesEnum
 	{
 		Unknown = 0,
-		StatelessProxy = 1,
+		SIPProxy = 1,
 		Registrar = 2,
 		NATKeepAlive = 3,
 		NotifierAgent = 4,

@@ -91,7 +91,7 @@ namespace SIPSorcery.Persistence
                     int paramNumber = 1;
                     Dictionary<MetaDataMember, object> allPropertyValues = m_objectMapper.GetAllValues(asset);
                     foreach (KeyValuePair<MetaDataMember, object> propertyValue in allPropertyValues) {
-                        DbParameter dbParameter = GetParameter(propertyValue.Key, propertyValue.Value, paramNumber.ToString());
+                        DbParameter dbParameter = base.GetParameter(m_dbProviderFactory, propertyValue.Key, propertyValue.Value, paramNumber.ToString());
                         insertCommand.Parameters.Add(dbParameter);
 
                         insertQuery.Append(propertyValue.Key.MappedName + ",");
@@ -101,7 +101,7 @@ namespace SIPSorcery.Persistence
 
                     string insertCommandText = insertQuery.ToString().TrimEnd(',') + ") values " + parametersStr.ToString().TrimEnd(',') + ")";
 
-                    logger.Debug("SQLAssetPersistor insert SQL: " + insertCommandText + ".");
+                    //logger.Debug("SQLAssetPersistor insert SQL: " + insertCommandText + ".");
 
                     insertCommand.CommandText = insertCommandText;
                     insertCommand.ExecuteNonQuery();
@@ -134,7 +134,7 @@ namespace SIPSorcery.Persistence
                     Dictionary<MetaDataMember, object> allPropertyValues = m_objectMapper.GetAllValues(asset);
                     foreach (KeyValuePair<MetaDataMember, object> propertyValue in allPropertyValues) {
                         if (!propertyValue.Key.IsPrimaryKey) {
-                            DbParameter dbParameter = GetParameter(propertyValue.Key, propertyValue.Value, paramNumber.ToString());
+                            DbParameter dbParameter = base.GetParameter(m_dbProviderFactory, propertyValue.Key, propertyValue.Value, paramNumber.ToString());
                             updateCommand.Parameters.Add(dbParameter);
 
                             updateQuery.Append(propertyValue.Key.MappedName + "= ?" + paramNumber + ",");
@@ -144,7 +144,7 @@ namespace SIPSorcery.Persistence
 
                     string updateCommandText = updateQuery.ToString().TrimEnd(',') + " where id = '" + asset.Id + "'";
 
-                    logger.Debug("SQLAssetPersistor update SQL: " + updateCommandText + ".");
+                    //logger.Debug("SQLAssetPersistor update SQL: " + updateCommandText + ".");
 
                     updateCommand.CommandText = updateCommandText;
                     updateCommand.ExecuteNonQuery();
@@ -172,7 +172,7 @@ namespace SIPSorcery.Persistence
 
                     MetaDataMember member = m_objectMapper.GetMember(propertyName);
                     string parameterName = "1";
-                    DbParameter dbParameter = GetParameter(member, value, parameterName);
+                    DbParameter dbParameter = base.GetParameter(m_dbProviderFactory, member, value, parameterName);
                     updateCommand.Parameters.Add(dbParameter);
 
                     updateCommand.CommandText = "update " + m_objectMapper.TableName + " set " + propertyName + " = ?" + parameterName + " where id = '" + id + "'";
@@ -307,7 +307,8 @@ namespace SIPSorcery.Persistence
                 return getList.FirstOrDefault();
             }
             catch(Exception excp) {
-                logger.Error("Exception SQLAssetPersistor Get (where) (for " + typeof(T).Name + "). " + whereClause.ToString() + ". " + excp.Message);
+                string whereClauseStr = (whereClause != null) ? whereClause.ToString() + ". " : null;
+                logger.Error("Exception SQLAssetPersistor Get (where) (for " + typeof(T).Name + "). " + whereClauseStr + excp);
                 throw;
             }
         }
@@ -340,28 +341,10 @@ namespace SIPSorcery.Persistence
                 return getList.ToList() ?? new List<T>();
             }
             catch (Exception excp) {
-                logger.Error("Exception SQLAssetPersistor Get (list) (for " + typeof(T).Name + "). " + whereClause.ToString() + ". " + excp.Message);
+                string whereClauseStr = (whereClause != null) ? whereClause.ToString() + ". " : null;
+                logger.Error("Exception SQLAssetPersistor Get (list) (for " + typeof(T).Name + "). " + whereClauseStr + excp.Message);
                 throw;
             }
-        }
-
-        private DbParameter GetParameter(MetaDataMember member, object parameterValue, string parameterName) {
-
-            DbParameter dbParameter = m_dbProviderFactory.CreateParameter();
-            dbParameter.ParameterName = parameterName;
-            dbParameter.DbType = (DbType)Enum.Parse(typeof(DbType), member.DbType, true);
-
-            if (parameterValue == null) {
-                dbParameter.Value = null;
-            }
-            else if (member.Type == typeof(DateTime) || member.Type == typeof(Nullable<DateTime>)) {
-                dbParameter.Value = ((DateTime)parameterValue).ToString("o");
-            }
-            else {
-                dbParameter.Value = parameterValue;
-            }
-
-            return dbParameter;
         }
     }
 

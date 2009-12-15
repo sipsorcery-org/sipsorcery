@@ -152,7 +152,17 @@ namespace SIPSorcery.Persistence {
                             sb.Append("'");
                             break;
                         case TypeCode.Object:
-                            throw new NotSupportedException(string.Format("The constant for '{0}' is not supported by SQL.", c.Value));
+                            if (c.Value is DateTimeOffset)
+                            {
+                                sb.Append("'");
+                                sb.Append(((DateTimeOffset)c.Value).ToString("o"));
+                                sb.Append("'");
+                            }
+                            else
+                            {
+                                throw new NotSupportedException(string.Format("The constant for '{0}' is not supported by SQL.", c.Value));
+                            }
+                            break;
                         default:
                             sb.Append("'");
                             sb.Append(c.Value);

@@ -89,7 +89,7 @@ namespace SIPSorcery.SIP.App
         public static int TimeZoneOffsetMinutes;
 
         private Guid m_id;
-        [Column(Storage = "m_id", Name = "id", DbType = "StringFixedLength", IsPrimaryKey = true, CanBeNull = false)]
+        [Column(Name = "id", DbType = "varchar(36)", IsPrimaryKey = true, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public Guid Id
         {
@@ -98,7 +98,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_owner;                 // The username of the account that owns this SIP account.
-        [Column(Storage = "m_owner", Name = "owner", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "owner", DbType = "varchar(32)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string Owner
         {
@@ -110,11 +110,11 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        [Column(Name = "adminmemberid", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "adminmemberid", DbType = "varchar(32)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         public string AdminMemberId { get; set; }    // If set it designates this asset as a belonging to a user with the matching adminid.
 
         private string m_sipUsername;
-        [Column(Storage = "m_sipUsername", Name = "sipusername", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "sipusername", DbType = "varchar(32)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string SIPUsername
         {
@@ -127,7 +127,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_sipPassword;
-        [Column(Storage = "m_sipPassword", Name = "sippassword", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "sippassword", DbType = "varchar(32)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string SIPPassword
         {
@@ -140,7 +140,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_sipDomain;
-        [Column(Storage = "m_sipDomain", Name = "sipdomain", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "sipdomain", DbType = "varchar(128)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string SIPDomain
         {
@@ -153,7 +153,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private bool m_sendNATKeepAlives;
-        [Column(Storage = "m_sendNATKeepAlives", Name = "sendnatkeepalives", DbType = "Boolean", CanBeNull = false)]
+        [Column(Name = "sendnatkeepalives", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public bool SendNATKeepAlives
         {
@@ -166,7 +166,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private bool m_isIncomingOnly;          // For SIP accounts that can only be used to receive incoming calls.
-        [Column(Storage = "m_isIncomingOnly", Name = "isincomingonly", DbType = "Boolean", CanBeNull = false)]
+        [Column(Name = "isincomingonly", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public bool IsIncomingOnly
         {
@@ -179,7 +179,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_outDialPlanName;       // The dialplan that will be used for outgoing calls.
-        [Column(Storage = "m_outDialPlanName", Name = "outdialplanname", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "outdialplanname", DbType = "varchar(64)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string OutDialPlanName
         {
@@ -192,7 +192,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_inDialPlanName;        // The dialplan that will be used for incoming calls. If this field is empty incoming calls will be forwarded to the account's current bindings.
-        [Column(Storage = "m_inDialPlanName", Name = "indialplanname", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "indialplanname", DbType = "varchar(64)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string InDialPlanName
         {
@@ -205,7 +205,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private bool m_isUserDisabled;              // Allows owning user disabling of accounts.
-        [Column(Storage = "m_isUserDisabled", Name = "isuserdisabled", DbType = "Boolean", CanBeNull = false)]
+        [Column(Name = "isuserdisabled", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public bool IsUserDisabled
         {
@@ -219,7 +219,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private bool m_isAdminDisabled;              // Allows administrative disabling of accounts.
-        [Column(Storage = "m_isAdminDisabled", Name = "isadmindisabled", DbType = "Boolean", CanBeNull = false)]
+        [Column(Name = "isadmindisabled", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public bool IsAdminDisabled
         {
@@ -233,7 +233,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_adminDisabledReason;
-        [Column(Storage = "m_adminDisabledReason", Name = "admindisabledreason", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "admindisabledreason", DbType = "varchar(256)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string AdminDisabledReason
         {
@@ -246,7 +246,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_networkId;                 // SIP accounts with the ame network id will not have their Contact headers or SDP mangled for private IP address.
-        [Column(Storage = "m_networkId", Name = "networkid", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "networkid", DbType = "varchar(16)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string NetworkId
         {
@@ -259,7 +259,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_ipAddressACL;              // A regular expression that acts as an IP address Access Control List for SIP request authorisation.
-        [Column(Storage = "m_ipAddressACL", Name = "ipaddressacl", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "ipaddressacl", DbType = "varchar(256)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string IPAddressACL
         {
@@ -271,15 +271,15 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private DateTime m_inserted;
-        [Column(Storage = "m_inserted", Name = "inserted", DbType = "StringFixedLength", CanBeNull = false)]
+        private DateTimeOffset m_inserted;
+        [Column(Name = "inserted", DbType = "datetimeoffset", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public DateTime Inserted {
+        public DateTimeOffset Inserted {
             get { return m_inserted; }
             set { m_inserted = value.ToUniversalTime(); }
         }
 
-        public DateTime InsertedLocal {
+        public DateTimeOffset InsertedLocal {
             get { return Inserted.AddMinutes(TimeZoneOffsetMinutes); }
         }
 
@@ -313,7 +313,7 @@ namespace SIPSorcery.SIP.App
             table.Columns.Add(new DataColumn("admindisabledreason", typeof(String)));
             table.Columns.Add(new DataColumn("outdialplanname", typeof(String)));
             table.Columns.Add(new DataColumn("indialplanname", typeof(String)));
-            table.Columns.Add(new DataColumn("inserted", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("inserted", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("networkid", typeof(String)));
             table.Columns.Add(new DataColumn("ipaddressacl", typeof(String)));
             return table;
@@ -334,7 +334,7 @@ namespace SIPSorcery.SIP.App
                 m_isUserDisabled = (sipAccountRow.Table.Columns.Contains("isuserdisabled") && sipAccountRow["isuserdisabled"] != null && sipAccountRow["isuserdisabled"] != DBNull.Value) ? Convert.ToBoolean(sipAccountRow["isuserdisabled"]) : false;
                 m_isAdminDisabled = (sipAccountRow.Table.Columns.Contains("isadmindisabled") && sipAccountRow["isadmindisabled"] != null && sipAccountRow["isadmindisabled"] != DBNull.Value) ? Convert.ToBoolean(sipAccountRow["isadmindisabled"]) : false;
                 m_adminDisabledReason = (sipAccountRow.Table.Columns.Contains("admindisabledreason") && sipAccountRow["admindisabledreason"] != null) ? sipAccountRow["admindisabledreason"] as string : null;
-                Inserted = (sipAccountRow.Table.Columns.Contains("inserted") && sipAccountRow["inserted"] != null) ? Convert.ToDateTime(sipAccountRow["inserted"]) : DateTime.UtcNow;
+                m_inserted = (sipAccountRow.Table.Columns.Contains("inserted") && sipAccountRow["inserted"] != null) ? DateTimeOffset.Parse(sipAccountRow["inserted"] as string) : DateTimeOffset.UtcNow;
                 m_networkId = (sipAccountRow.Table.Columns.Contains("networkid") && sipAccountRow["networkid"] != null) ? sipAccountRow["networkid"] as string : null;
                 m_ipAddressACL = (sipAccountRow.Table.Columns.Contains("ipaddressacl") && sipAccountRow["ipaddressacl"] != null) ? sipAccountRow["ipaddressacl"] as string : null;
             }
@@ -360,7 +360,7 @@ namespace SIPSorcery.SIP.App
                 m_sipUsername = sipUsername;
                 m_sipPassword = sipPassword;
                 m_outDialPlanName = (outDialPlanName != null && outDialPlanName.Trim().Length > 0) ? outDialPlanName.Trim() : null;
-                m_inserted = DateTime.UtcNow;
+                m_inserted = DateTimeOffset.UtcNow;
             }
             catch (Exception excp)
             {

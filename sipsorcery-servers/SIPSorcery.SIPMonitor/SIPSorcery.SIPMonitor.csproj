@@ -35,14 +35,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="NSsh.Common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ecf84006eebd2227, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\NSsh\Trunk\NSsh\Output\Debug\NSsh.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="NSsh.Server, Version=1.0.0.0, Culture=neutral, PublicKeyToken=2e74657d17ee366c, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\NSsh\Trunk\NSsh\Output\Debug\NSsh.Server.dll</HintPath>
-    </Reference>
     <Reference Include="SIPSorcery.CRM, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.CRM.dll</HintPath>
@@ -72,6 +64,9 @@
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.ServiceModel">
+      <RequiredTargetFramework>3.0</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Xml.Linq">

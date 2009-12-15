@@ -46,7 +46,7 @@ namespace SIPSorcery.Sys
     {
         public const string ALL_LOCAL_IPADDRESSES_KEY = "*";
         public const string LINK_LOCAL_BLOCK_PREFIX = "169.254";    // Used by hosts attempting to acquire a DHCP address. See RFC 3330.
-        
+
         private static ILog logger = AppState.logger;
 
         public static List<IPAddress> GetLocalIPv4Addresses()
@@ -57,7 +57,7 @@ namespace SIPSorcery.Sys
             foreach (NetworkInterface adapter in adapters)
             {
                 IPInterfaceProperties adapterProperties = adapter.GetIPProperties();
-                
+
                 UnicastIPAddressInformationCollection localIPs = adapterProperties.UnicastAddresses;
                 foreach (UnicastIPAddressInformation localIP in localIPs)
                 {
@@ -70,6 +70,35 @@ namespace SIPSorcery.Sys
             }
 
             return localAddresses;
+        }
+
+        public static IPAddress GetDefaultIPv4Address()
+        {
+            var adapters = from adapter in NetworkInterface.GetAllNetworkInterfaces()
+                           where adapter.OperationalStatus == OperationalStatus.Up && adapter.Supports(NetworkInterfaceComponent.IPv4)
+                           && adapter.GetIPProperties().GatewayAddresses.Count > 0 &&
+                           adapter.GetIPProperties().GatewayAddresses[0].Address.ToString() != "0.0.0.0"
+                           select adapter;
+
+            if (adapters.Count() > 1)
+            {
+                throw new ApplicationException("The default IPv4 address could not be determined as there are two interfaces with gateways.");
+            }
+            else
+            {
+                UnicastIPAddressInformationCollection localIPs = adapters.First().GetIPProperties().UnicastAddresses;
+                foreach (UnicastIPAddressInformation localIP in localIPs)
+                {
+                    if (localIP.Address.AddressFamily == AddressFamily.InterNetwork &&
+                        !localIP.Address.ToString().StartsWith(LINK_LOCAL_BLOCK_PREFIX) &&
+                        !IPAddress.IsLoopback(localIP.Address))
+                    {
+                        return localIP.Address;
+                    }
+                }
+            }
+
+            return null;
         }
 
         public static List<IPEndPoint> GetLocalIPv4EndPoints(int port)
@@ -96,12 +125,15 @@ namespace SIPSorcery.Sys
                 logger.Debug("Parsing end point from socket string " + socketString + ".");
 
                 int port = IPSocket.ParsePortFromSocket(socketString);
-                if (socketString.StartsWith(ALL_LOCAL_IPADDRESSES_KEY)) {
-                    foreach (IPAddress ipAddress in localAddresses) {
+                if (socketString.StartsWith(ALL_LOCAL_IPADDRESSES_KEY))
+                {
+                    foreach (IPAddress ipAddress in localAddresses)
+                    {
                         endPoints.Add(new IPEndPoint(ipAddress, port));
                     }
                 }
-                else {
+                else
+                {
                     endPoints.Add(IPSocket.ParseSocketString(socketString));
                 }
             }

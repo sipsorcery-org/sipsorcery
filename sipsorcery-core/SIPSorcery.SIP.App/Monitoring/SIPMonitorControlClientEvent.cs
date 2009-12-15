@@ -45,6 +45,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
+using SIPSorcery.CRM;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -63,6 +64,8 @@ namespace SIPSorcery.SIP.App
         public const string SERIALISATION_PREFIX = "1";     // Prefix appended to the front of a serialised event to identify the type.
         private const string CALLDIRECTION_IN_STRING = "<-";
         private const string CALLDIRECTION_OUT_STRING = "->";
+
+        private static readonly string m_topLevelAdminID = Customer.TOPLEVEL_ADMIN_ID;
 				
         private SIPMonitorControlClientEvent()
         { 
@@ -205,6 +208,27 @@ namespace SIPSorcery.SIP.App
                 logger.Error("Exception SIPMonitorControlClientEvent ToCSV. " + excp.Message);
                 return null;
             }
+        }
+
+        public string ToConsoleString(string adminId)
+        {
+            string consoleString = EventType.ToString() + " " + Created.ToString("HH:mm:ss:fff");
+            // Special case for dialplan events and super user. Add the username of the event to the start of the monitor message.
+            if (adminId == m_topLevelAdminID && Username != null)
+            {
+                consoleString += " " + Username;
+            }
+
+            if (EventType == SIPMonitorEventTypesEnum.FullSIPTrace)
+            {
+                consoleString += ":\r\n" + Message + "\r\n";
+            }
+            else
+            {
+                consoleString += ": " + Message + "\r\n";
+            }
+
+            return consoleString;
         }
               
 		#region Unit testing.

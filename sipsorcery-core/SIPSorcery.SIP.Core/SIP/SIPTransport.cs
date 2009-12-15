@@ -108,7 +108,8 @@ namespace SIPSorcery.SIP
 
         private static readonly int m_t1 = SIPTimings.T1;         
         private static readonly int m_t2 = SIPTimings.T2;         
-        private static readonly int m_t6 = SIPTimings.T6;         
+        private static readonly int m_t6 = SIPTimings.T6;
+        private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static string m_looseRouteParameter = SIPConstants.SIP_LOOSEROUTER_PARAMETER;
         public static readonly SIPEndPoint Blackhole = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 0));   // Any SIP messages with this destination will be dropped.
 
@@ -1417,7 +1418,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="name">The name of the SIPChannel to find.</param>
         /// <returns>A matching SIPChannel if found otherwise null.</returns>
-        public SIPChannel FindSIPChannel(string name) {
+        /*public SIPChannel FindSIPChannel(string name) {
             if (name.IsNullOrBlank()) {
                 return null;
             }
@@ -1434,7 +1435,7 @@ namespace SIPSorcery.SIP
                     return null;
                 }
             }
-        }
+        }*/
 
         /// <summary>
         /// Returns the first SIPChannel found for the requested protocol.

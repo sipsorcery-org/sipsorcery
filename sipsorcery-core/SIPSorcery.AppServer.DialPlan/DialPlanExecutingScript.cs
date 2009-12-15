@@ -72,7 +72,7 @@ namespace SIPSorcery.AppServer.DialPlan
         public string ExecutionError;               // Set if there was an exception attempting to execute the script.
         public SIPResponseStatusCodesEnum LastFailureStatus;
         public string LastFailureReason;
-        public List<Interpreter> m_scriptInterpreters = new List<Interpreter>();
+        //public List<Interpreter> m_scriptInterpreters = new List<Interpreter>();
 
         public DialPlanExecutingScript(SIPMonitorLogDelegate logDelegate)
         {

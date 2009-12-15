@@ -22,4 +22,7 @@ namespace SIPSorcery
 
     public delegate List<string> GetDialPlanNamesDelegate(string owner);
     public delegate List<string> GetSIPDomainsDelegate(string owner);
+
+    public delegate void SIPMonitorMachineEventReceivedDelegate(SIPMonitorMachineEvent machineEvent);
+    public delegate void ServiceStatusChangeDelegate(ServiceConnectionStatesEnum serviceStatus, string statusMessage);
 }

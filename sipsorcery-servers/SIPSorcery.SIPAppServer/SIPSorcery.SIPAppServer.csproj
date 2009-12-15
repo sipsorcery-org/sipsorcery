@@ -8,7 +8,7 @@
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SIPSorcery.SIPAppServer</RootNamespace>
-    <AssemblyName>sipsorcery-calldispatcher</AssemblyName>
+    <AssemblyName>sipsorcery-appsvr</AssemblyName>
     <StartupObject>
     </StartupObject>
     <FileUpgradeFlags>
@@ -84,7 +84,7 @@
     </Reference>
     <Reference Include="SIPSorcery.Web.Services, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Web.Services.dll</HintPath>
+      <HintPath>..\..\sipsorcery-core\SIPSorcery.Web.Services\bin\SIPSorcery.Web.Services.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
@@ -160,9 +160,6 @@
     <Content Include="ExampleXMLConfig\sipaccounts.xml" />
     <Content Include="ExampleXMLConfig\sipproviders.xml" />
   </ItemGroup>
-  <ItemGroup>
-    <WCFMetadata Include="Service References\" />
-  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -171,4 +168,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <PropertyGroup>
+    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-servers\SIPSorcery.SIPAppServer\bin\debug\sipsorcery-appsvr.exe" "c:\temp\sipsorcery\"</PostBuildEvent>
+  </PropertyGroup>
 </Project>

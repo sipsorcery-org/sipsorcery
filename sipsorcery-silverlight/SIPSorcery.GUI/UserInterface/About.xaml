@@ -13,6 +13,6 @@
 		</Grid.RowDefinitions>
 
 		<Button x:Name="OKButton" Content="OK" Click="OKButton_Click" Height="23" Margin="0,8,0,22" Grid.Row="1" Width="75" HorizontalAlignment="Center" />
-		<TextBlock Margin="32,19,44,88" Foreground="{StaticResource NormalTextBrush}" TextWrapping="Wrap"><Run Text="This service has been "/><Run Text="bought to you by SIP Sorcery. For more information please visit www.sipsorcery.com."/></TextBlock>
+		<TextBlock Margin="32,19,44,88" Foreground="{StaticResource NormalTextBrush}" TextWrapping="Wrap" Text="This service has been brought to you by SIP Sorcery. For more information please visit www.sipsorcery.com."/>
 	</Grid>
 </basics:ChildWindow>

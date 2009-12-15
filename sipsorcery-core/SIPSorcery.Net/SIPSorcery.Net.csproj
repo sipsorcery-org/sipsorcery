@@ -107,10 +107,6 @@
     </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="ZedGraph, Version=5.0.1.41097, Culture=neutral, PublicKeyToken=02a83cbd123fcd60, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\stable\ZedGraph.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DNS\DNSManager.cs" />
@@ -184,6 +180,10 @@
     <Compile Include="STUN\STUNServer.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
+      <Project>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</Project>
+      <Name>SIPSorcery.SIP.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
       <Project>{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}</Project>
       <Name>SIPSorcery.Sys</Name>
@@ -193,7 +193,6 @@
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build\SIPSorcery.Net.dll" "c:\temp\sipsorcery\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

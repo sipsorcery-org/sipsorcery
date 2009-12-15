@@ -80,10 +80,10 @@ namespace SIPSorcery.SIP
     /// with missing branches then in theory it should be safe to proceed. It will be left up to the SIPTransaction
     /// class to reject any SIP requests that are missing the necessary branch.
     /// </remarks>
-	public class SIPViaHeader
-	{
+    public class SIPViaHeader
+    {
         private static ILog logger = AssemblyState.logger;
-		
+
         private static char m_paramDelimChar = ';';
         private static char m_hostDelimChar = ':';
 
@@ -91,10 +91,10 @@ namespace SIPSorcery.SIP
         private static string m_rportKey = SIPHeaderAncillary.SIP_HEADERANC_RPORT;
         private static string m_branchKey = SIPHeaderAncillary.SIP_HEADERANC_BRANCH;
 
-		public string Version;
+        public string Version;
         public SIPProtocolsEnum Transport;
-		public string Host;
-		public int Port = 0;
+        public string Host;
+        public int Port = 0;
         public string Branch
         {
             get
@@ -138,15 +138,15 @@ namespace SIPSorcery.SIP
                     return 0;
                 }
             }
-            set { ViaParameters.Set(m_rportKey, value.ToString()); } 
+            set { ViaParameters.Set(m_rportKey, value.ToString()); }
         }
 
         public SIPParameters ViaParameters = new SIPParameters(null, m_paramDelimChar);
-		
-		public string ContactAddress            // This the address placed into the Via header by the User Agent.
-		{
-			get
-			{
+
+        public string ContactAddress            // This the address placed into the Via header by the User Agent.
+        {
+            get
+            {
                 if (Port != 0)
                 {
                     return Host + ":" + Port;
@@ -155,8 +155,8 @@ namespace SIPSorcery.SIP
                 {
                     return Host;
                 }
-			}
-		}
+            }
+        }
 
         public string ReceivedFromAddress       // This is the socket the request was received on and is a combination of the Host and Received fields.
         {
@@ -189,17 +189,17 @@ namespace SIPSorcery.SIP
             }
         }
 
-		public SIPViaHeader()
-		{}
-		
-		public SIPViaHeader(string contactIPAddress, int contactPort, string branch)
-		{
+        public SIPViaHeader()
+        { }
+
+        public SIPViaHeader(string contactIPAddress, int contactPort, string branch)
+        {
             Version = SIPConstants.SIP_FULLVERSION_STRING;
             Transport = SIPProtocolsEnum.udp;
-			Host = contactIPAddress;
-			Port = contactPort;
-			Branch = branch;
-		}
+            Host = contactIPAddress;
+            Port = contactPort;
+            Branch = branch;
+        }
 
         public SIPViaHeader(string contactIPAddress, int contactPort, string branch, SIPProtocolsEnum protocol)
         {
@@ -247,19 +247,19 @@ namespace SIPSorcery.SIP
             Branch = branch;
         }
 
-		public static SIPViaHeader[] ParseSIPViaHeader(string viaHeaderStr)
-		{
+        public static SIPViaHeader[] ParseSIPViaHeader(string viaHeaderStr)
+        {
             List<SIPViaHeader> viaHeadersList = new List<SIPViaHeader>();
-			
-			if(!viaHeaderStr.IsNullOrBlank())
-			{
-				viaHeaderStr = viaHeaderStr.Trim();
 
-				// Multiple Via headers can be contained in a single line by separating them with a comma.
+            if (!viaHeaderStr.IsNullOrBlank())
+            {
+                viaHeaderStr = viaHeaderStr.Trim();
+
+                // Multiple Via headers can be contained in a single line by separating them with a comma.
                 string[] viaHeaders = SIPParameters.GetKeyValuePairsFromQuoted(viaHeaderStr, ',');
 
-				foreach(string viaHeaderStrItem in viaHeaders)
-				{
+                foreach (string viaHeaderStrItem in viaHeaders)
+                {
                     if (viaHeaderStrItem == null || viaHeaderStrItem.Trim().Length == 0)
                     {
                         throw new SIPValidationException(SIPValidationFieldsEnum.ViaHeader, "No Contact address.");
@@ -337,37 +337,37 @@ namespace SIPSorcery.SIP
                             viaHeadersList.Add(viaHeader);
                         }
                     }
-				}
-			}
+                }
+            }
 
-			if(viaHeadersList.Count > 0)
-			{
-				return viaHeadersList.ToArray();
-			}
-			else
-			{
+            if (viaHeadersList.Count > 0)
+            {
+                return viaHeadersList.ToArray();
+            }
+            else
+            {
                 throw new SIPValidationException(SIPValidationFieldsEnum.ViaHeader, "Via list was empty."); ;
-			}
-		}
-		
-		public new string ToString()
-		{
+            }
+        }
+
+        public new string ToString()
+        {
             // Removing the rport parameter if it is empty. This should not be necessary but a version of the Sipura firmware was rejecting 
             // INVITE requests with an empty rport parameter. Hopefully no UA's break because it's not there.
             if (ViaParameters.Has(m_rportKey) && (ViaParameters.Get(m_rportKey) == null || ViaParameters.Get(m_rportKey).Trim().Length == 0))
             {
                 ViaParameters.Remove(m_rportKey);
             }
-            
+
             string sipViaHeader = SIPHeaders.SIP_HEADER_VIA + ": " + this.Version + "/" + this.Transport.ToString().ToUpper() + " " + ContactAddress;
             sipViaHeader += (ViaParameters != null && ViaParameters.Count > 0) ? ViaParameters.ToString() : null;
-           
-			return sipViaHeader;
-		}
 
-		#region Unit testing.
+            return sipViaHeader;
+        }
 
-		#if UNITTEST
+        #region Unit testing.
+
+#if UNITTEST
 	
 		[TestFixture]
 		public class SIPViaHeaderUnitTest
@@ -611,10 +611,10 @@ namespace SIPSorcery.SIP
             }
 		}
 
-		#endif
+#endif
 
-		#endregion
-	}
+        #endregion
+    }
 
     /// <bnf>
     /// From            =  ( "From" / "f" ) HCOLON from-spec
@@ -630,28 +630,29 @@ namespace SIPSorcery.SIP
     /// The From header only has parameters, no headers. Parameters of from ...;name=value;name2=value2.
     /// Specific parameters: tag.
     /// </remarks>
-	public class SIPFromHeader
-	{
-		//public const string DEFAULT_FROM_NAME = SIPConstants.SIP_DEFAULT_USERNAME;
-		public const string DEFAULT_FROM_URI = SIPConstants.SIP_DEFAULT_FROMURI;
-		public const string PARAMETER_TAG = SIPHeaderAncillary.SIP_HEADERANC_TAG;
+    public class SIPFromHeader
+    {
+        //public const string DEFAULT_FROM_NAME = SIPConstants.SIP_DEFAULT_USERNAME;
+        public const string DEFAULT_FROM_URI = SIPConstants.SIP_DEFAULT_FROMURI;
+        public const string PARAMETER_TAG = SIPHeaderAncillary.SIP_HEADERANC_TAG;
 
-		public string FromName
-		{
-			get{ return m_userField.Name; }
-			set{ m_userField.Name = value; }
-		}
+        public string FromName
+        {
+            get { return m_userField.Name; }
+            set { m_userField.Name = value; }
+        }
 
-		public SIPURI FromURI
-		{
-			get{ return m_userField.URI; }
-			set{ m_userField.URI = value; }
-		}
+        public SIPURI FromURI
+        {
+            get { return m_userField.URI; }
+            set { m_userField.URI = value; }
+        }
 
-		public string FromTag
-		{
+        public string FromTag
+        {
             get { return FromParameters.Get(PARAMETER_TAG); }
-            set {            
+            set
+            {
                 if (value != null && value.Trim().Length > 0)
                 {
                     FromParameters.Set(PARAMETER_TAG, value);
@@ -664,7 +665,7 @@ namespace SIPSorcery.SIP
                     }
                 }
             }
-		}
+        }
 
         public SIPParameters FromParameters
         {
@@ -672,46 +673,46 @@ namespace SIPSorcery.SIP
             set { m_userField.Parameters = value; }
         }
 
-		private SIPUserField m_userField = new SIPUserField();
-		public SIPUserField FromUserField
-		{
-			get{ return m_userField; }
-			set{ m_userField = value; }
-		}
+        private SIPUserField m_userField = new SIPUserField();
+        public SIPUserField FromUserField
+        {
+            get { return m_userField; }
+            set { m_userField = value; }
+        }
 
-		private SIPFromHeader()
-		{}
+        private SIPFromHeader()
+        { }
 
-		public SIPFromHeader(string fromName, SIPURI fromURI, string fromTag)
-		{ 		
-			m_userField = new SIPUserField(fromName, fromURI, null);
+        public SIPFromHeader(string fromName, SIPURI fromURI, string fromTag)
+        {
+            m_userField = new SIPUserField(fromName, fromURI, null);
             FromTag = fromTag;
-		}
-	
+        }
+
         public static SIPFromHeader ParseFromHeader(string fromHeaderStr)
-		{
-			try
-			{
-				SIPFromHeader fromHeader = new SIPFromHeader();
-			
-				fromHeader.m_userField = SIPUserField.ParseSIPUserField(fromHeaderStr);
+        {
+            try
+            {
+                SIPFromHeader fromHeader = new SIPFromHeader();
 
-				return fromHeader;
-			}
-			catch
-			{
-				throw new SIPValidationException(SIPValidationFieldsEnum.FromHeader, "The SIP From header was invalid.");
-			}
-		}
+                fromHeader.m_userField = SIPUserField.ParseSIPUserField(fromHeaderStr);
 
-		public override string ToString()
-		{
+                return fromHeader;
+            }
+            catch
+            {
+                throw new SIPValidationException(SIPValidationFieldsEnum.FromHeader, "The SIP From header was invalid.");
+            }
+        }
+
+        public override string ToString()
+        {
             return m_userField.ToString();
-		}
-	
-		#region Unit testing.
+        }
 
-		#if UNITTEST
+        #region Unit testing.
+
+#if UNITTEST
 	
 		[TestFixture]
 		public class SIPFromHeaderUnitTest
@@ -840,16 +841,16 @@ namespace SIPSorcery.SIP
 			}
 		}
 
-		#endif
+#endif
 
-		#endregion
-	}
+        #endregion
+    }
 
-	/// <bnf>
-	/// To				=  ( "To" / "t" ) HCOLON ( name-addr / addr-spec ) *( SEMI to-param )
-	/// to-param		=  tag-param / generic-param
-	/// name-addr		=  [ display-name ] LAQUOT addr-spec RAQUOT
-	/// addr-spec		=  SIP-URI / SIPS-URI / absoluteURI
+    /// <bnf>
+    /// To				=  ( "To" / "t" ) HCOLON ( name-addr / addr-spec ) *( SEMI to-param )
+    /// to-param		=  tag-param / generic-param
+    /// name-addr		=  [ display-name ] LAQUOT addr-spec RAQUOT
+    /// addr-spec		=  SIP-URI / SIPS-URI / absoluteURI
     /// tag-param       =  "tag" EQUAL token
     /// generic-param   =  token [ EQUAL gen-value ]
     /// gen-value       =  token / host / quoted-string
@@ -858,26 +859,26 @@ namespace SIPSorcery.SIP
     /// The To header only has parameters, no headers. Parameters of from ...;name=value;name2=value2.
     /// Specific parameters: tag.
     /// </remarks>
-	public class SIPToHeader
-	{
-		public const string PARAMETER_TAG = SIPHeaderAncillary.SIP_HEADERANC_TAG;
-		
-		public string ToName
-		{
-			get{ return m_userField.Name; }
-			set{ m_userField.Name = value; }
-		}
+    public class SIPToHeader
+    {
+        public const string PARAMETER_TAG = SIPHeaderAncillary.SIP_HEADERANC_TAG;
 
-		public SIPURI ToURI
-		{
-			get{ return m_userField.URI; }
-			set{ m_userField.URI = value; }
-		}
+        public string ToName
+        {
+            get { return m_userField.Name; }
+            set { m_userField.Name = value; }
+        }
+
+        public SIPURI ToURI
+        {
+            get { return m_userField.URI; }
+            set { m_userField.URI = value; }
+        }
 
         public string ToTag
         {
             get { return ToParameters.Get(PARAMETER_TAG); }
-            set 
+            set
             {
                 if (value != null && value.Trim().Length > 0)
                 {
@@ -899,46 +900,46 @@ namespace SIPSorcery.SIP
             set { m_userField.Parameters = value; }
         }
 
-		private SIPUserField m_userField;
-		public SIPUserField ToUserField
-		{
-			get{ return m_userField; }
-			set{ m_userField = value; }
-		}
+        private SIPUserField m_userField;
+        public SIPUserField ToUserField
+        {
+            get { return m_userField; }
+            set { m_userField = value; }
+        }
 
-		private SIPToHeader()
-		{}
+        private SIPToHeader()
+        { }
 
-		public SIPToHeader(string toName, SIPURI toURI, string toTag)
-		{
-			m_userField = new SIPUserField(toName, toURI, null);
+        public SIPToHeader(string toName, SIPURI toURI, string toTag)
+        {
+            m_userField = new SIPUserField(toName, toURI, null);
             ToTag = toTag;
-		}
+        }
 
-		public static SIPToHeader ParseToHeader(string toHeaderStr)
-		{
-			try
-			{
-				SIPToHeader toHeader = new SIPToHeader();
+        public static SIPToHeader ParseToHeader(string toHeaderStr)
+        {
+            try
+            {
+                SIPToHeader toHeader = new SIPToHeader();
 
-				toHeader.m_userField = SIPUserField.ParseSIPUserField(toHeaderStr);
+                toHeader.m_userField = SIPUserField.ParseSIPUserField(toHeaderStr);
 
-				return toHeader;
-			}
-			catch
-			{
-				throw new SIPValidationException(SIPValidationFieldsEnum.ToHeader, "The SIP To header was invalid.");
-			}
-		}
+                return toHeader;
+            }
+            catch
+            {
+                throw new SIPValidationException(SIPValidationFieldsEnum.ToHeader, "The SIP To header was invalid.");
+            }
+        }
 
-		public override string ToString()
-		{
+        public override string ToString()
+        {
             return m_userField.ToString();
-		}
-		
-		#region Unit testing.
+        }
 
-		#if UNITTEST
+        #region Unit testing.
+
+#if UNITTEST
 	
 		[TestFixture]
 		public class SIPToHeaderUnitTest
@@ -1043,53 +1044,53 @@ namespace SIPSorcery.SIP
 			}
 		}
 
-		#endif
+#endif
 
-		#endregion
-	}
+        #endregion
+    }
 
-	/// <bnf>
-	/// Contact        =  ("Contact" / "m" ) HCOLON ( STAR / (contact-param *(COMMA contact-param)))
-	/// contact-param  =  (name-addr / addr-spec) *(SEMI contact-params)
-	/// name-addr      =  [ display-name ] LAQUOT addr-spec RAQUOT
-	/// addr-spec      =  SIP-URI / SIPS-URI / absoluteURI
-	/// display-name   =  *(token LWS)/ quoted-string
-	///
-	/// contact-params     =  c-p-q / c-p-expires / contact-extension
-	/// c-p-q              =  "q" EQUAL qvalue
-	/// c-p-expires        =  "expires" EQUAL delta-seconds
-	/// contact-extension  =  generic-param
-	/// delta-seconds      =  1*DIGIT
+    /// <bnf>
+    /// Contact        =  ("Contact" / "m" ) HCOLON ( STAR / (contact-param *(COMMA contact-param)))
+    /// contact-param  =  (name-addr / addr-spec) *(SEMI contact-params)
+    /// name-addr      =  [ display-name ] LAQUOT addr-spec RAQUOT
+    /// addr-spec      =  SIP-URI / SIPS-URI / absoluteURI
+    /// display-name   =  *(token LWS)/ quoted-string
+    ///
+    /// contact-params     =  c-p-q / c-p-expires / contact-extension
+    /// c-p-q              =  "q" EQUAL qvalue
+    /// c-p-expires        =  "expires" EQUAL delta-seconds
+    /// contact-extension  =  generic-param
+    /// delta-seconds      =  1*DIGIT
     /// generic-param  =  token [ EQUAL gen-value ]
     /// gen-value      =  token / host / quoted-string
-	/// </bnf>
+    /// </bnf>
     /// <remarks>
     /// The Contact header only has parameters, no headers. Parameters of from ...;name=value;name2=value2
     /// Specific parameters: q, expires.
     /// </remarks>
-	[DataContract]
+    [DataContract]
     public class SIPContactHeader
-	{
+    {
         public const string EXPIRES_PARAMETER_KEY = "expires";
         public const string QVALUE_PARAMETER_KEY = "q";
 
         private static ILog logger = AssemblyState.logger;
 
-        private static char[] m_nonStandardURIDelimChars = new char[]{'\n','\r',' '};	// Characters that can delimit a SIP URI, supposed to be > but it is sometimes missing.
+        private static char[] m_nonStandardURIDelimChars = new char[] { '\n', '\r', ' ' };	// Characters that can delimit a SIP URI, supposed to be > but it is sometimes missing.
 
-		public string RawHeader;
+        public string RawHeader;
 
-		public string ContactName
-		{
-			get{ return m_userField.Name; }
-			set{ m_userField.Name = value; }
-		}
+        public string ContactName
+        {
+            get { return m_userField.Name; }
+            set { m_userField.Name = value; }
+        }
 
-		public SIPURI ContactURI
-		{
-			get{ return m_userField.URI; }
-			set{ m_userField.URI = value; }
-		}
+        public SIPURI ContactURI
+        {
+            get { return m_userField.URI; }
+            set { m_userField.URI = value; }
+        }
 
         public SIPParameters ContactParameters
         {
@@ -1100,52 +1101,43 @@ namespace SIPSorcery.SIP
         // A value of -1 indicates the header did not contain an expires parameter setting.
         public int Expires
         {
-            get 
+            get
             {
+                int expires = -1;
+
                 if (ContactParameters.Has(EXPIRES_PARAMETER_KEY))
                 {
                     string expiresStr = ContactParameters.Get(EXPIRES_PARAMETER_KEY);
+                    Int32.TryParse(expiresStr, out  expires);
+                }
 
-                    try
-                    {
-                        return Convert.ToInt32(expiresStr);
-                    }
-                    catch(Exception excp)
-                    {
-                        logger.Error("Exception converting Expires header of " + expiresStr + " to Int32. " + excp.Message);
-                        return -1;
-                    }
-                }
-                else
-                {
-                    return -1;
-                }
+                return expires;
             }
-            set{ ContactParameters.Set(EXPIRES_PARAMETER_KEY, value.ToString()); }
+            set { ContactParameters.Set(EXPIRES_PARAMETER_KEY, value.ToString()); }
         }
         public string Q
         {
-            get{ return ContactParameters.Get(QVALUE_PARAMETER_KEY);}
-            set {ContactParameters.Set(QVALUE_PARAMETER_KEY, value);}
+            get { return ContactParameters.Get(QVALUE_PARAMETER_KEY); }
+            set { ContactParameters.Set(QVALUE_PARAMETER_KEY, value); }
         }
 
-		private SIPUserField m_userField;
+        private SIPUserField m_userField;
 
-		private SIPContactHeader()
-		{}
+        private SIPContactHeader()
+        { }
 
-		public SIPContactHeader(string contactName, SIPURI contactURI)
-		{
-			m_userField = new SIPUserField(contactName, contactURI, null);
-		}
+        public SIPContactHeader(string contactName, SIPURI contactURI)
+        {
+            m_userField = new SIPUserField(contactName, contactURI, null);
+        }
 
         public SIPContactHeader(SIPUserField contactUserField)
         {
             m_userField = contactUserField;
         }
-	
+
         public static List<SIPContactHeader> ParseContactHeader(string contactHeaderStr)
-		{
+        {
             try
             {
                 if (contactHeaderStr == null || contactHeaderStr.Trim().Length == 0)
@@ -1192,12 +1184,12 @@ namespace SIPSorcery.SIP
             {
                 throw sipValidationExcp;
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.Error("Exception ParseContactHeader. " + excp.Message);
                 throw new SIPValidationException(SIPValidationFieldsEnum.ContactHeader, "Contact header invalid.");
             }
-		}
+        }
 
         public static List<SIPContactHeader> CreateSIPContactList(SIPURI sipURI)
         {
@@ -1219,47 +1211,47 @@ namespace SIPSorcery.SIP
             else
             {
                 // Compare invaraiant parameters.
-                 string[] contact1Keys = contact1.ContactParameters.GetKeys();
+                string[] contact1Keys = contact1.ContactParameters.GetKeys();
 
-                 if (contact1Keys != null && contact1Keys.Length > 0)
-                 {
-                     foreach (string key in contact1Keys)
-                     {
-                         if (key == EXPIRES_PARAMETER_KEY || key == QVALUE_PARAMETER_KEY)
-                         {
-                             continue;
-                         }
-                         else if (contact1.ContactParameters.Get(key) != contact2.ContactParameters.Get(key))
-                         {
-                             return false;
-                         }
-                     }
-                 }
+                if (contact1Keys != null && contact1Keys.Length > 0)
+                {
+                    foreach (string key in contact1Keys)
+                    {
+                        if (key == EXPIRES_PARAMETER_KEY || key == QVALUE_PARAMETER_KEY)
+                        {
+                            continue;
+                        }
+                        else if (contact1.ContactParameters.Get(key) != contact2.ContactParameters.Get(key))
+                        {
+                            return false;
+                        }
+                    }
+                }
 
                 // Need to do the reverse as well
-                 string[] contact2Keys = contact2.ContactParameters.GetKeys();
+                string[] contact2Keys = contact2.ContactParameters.GetKeys();
 
-                 if (contact2Keys != null && contact2Keys.Length > 0)
-                 {
-                     foreach (string key in contact2Keys)
-                     {
-                         if (key == EXPIRES_PARAMETER_KEY || key == QVALUE_PARAMETER_KEY)
-                         {
-                             continue;
-                         }
-                         else if (contact2.ContactParameters.Get(key) != contact1.ContactParameters.Get(key))
-                         {
-                             return false;
-                         }
-                     }
-                 }
+                if (contact2Keys != null && contact2Keys.Length > 0)
+                {
+                    foreach (string key in contact2Keys)
+                    {
+                        if (key == EXPIRES_PARAMETER_KEY || key == QVALUE_PARAMETER_KEY)
+                        {
+                            continue;
+                        }
+                        else if (contact2.ContactParameters.Get(key) != contact1.ContactParameters.Get(key))
+                        {
+                            return false;
+                        }
+                    }
+                }
             }
 
             return true;
         }
-		
-		public override string ToString()
-		{
+
+        public override string ToString()
+        {
             if (m_userField.URI.Host == SIPConstants.SIP_REGISTER_REMOVEALL)
             {
                 return SIPConstants.SIP_REGISTER_REMOVEALL;
@@ -1268,14 +1260,14 @@ namespace SIPSorcery.SIP
             {
                 //if (m_userField.URI.Protocol == SIPProtocolsEnum.UDP)
                 //{
-                    return m_userField.ToString();
+                return m_userField.ToString();
                 //}
                 //else
                 //{
                 //    return m_userField.ToContactString();
                 //}
             }
-		}
+        }
 
         public SIPContactHeader CopyOf()
         {
@@ -1285,10 +1277,10 @@ namespace SIPSorcery.SIP
 
             return copy;
         }
-		
-		#region Unit testing.
 
-		#if UNITTEST
+        #region Unit testing.
+
+#if UNITTEST
 	
 		[TestFixture]
 		public class SIPContactHeaderUnitTest
@@ -1531,56 +1523,56 @@ namespace SIPSorcery.SIP
             }
 		}
 
-		#endif
+#endif
 
-		#endregion
-	}
+        #endregion
+    }
 
-	public class SIPAuthenticationHeader
-	{
+    public class SIPAuthenticationHeader
+    {
         public SIPAuthorisationDigest SIPDigest;
-		
-		//public string Realm;
-		//public string Nonce;
-		//public string Username;
-		//public string URI;
-		//public string Response;
 
-		private SIPAuthenticationHeader()
-		{
+        //public string Realm;
+        //public string Nonce;
+        //public string Username;
+        //public string URI;
+        //public string Response;
+
+        private SIPAuthenticationHeader()
+        {
             SIPDigest = new SIPAuthorisationDigest();
-		}
+        }
 
         public SIPAuthenticationHeader(SIPAuthorisationDigest sipDigest)
-		{
+        {
             SIPDigest = sipDigest;
-		}
+        }
 
         public SIPAuthenticationHeader(SIPAuthorisationHeadersEnum authorisationType, string realm, string nonce)
-		{
+        {
             SIPDigest = new SIPAuthorisationDigest(authorisationType);
             SIPDigest.Realm = realm;
             SIPDigest.Nonce = nonce;
-		}
+        }
 
         public static SIPAuthenticationHeader ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum authorizationType, string headerValue)
-		{
-			try
-			{
-				SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader();
+        {
+            try
+            {
+                SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader();
                 authHeader.SIPDigest = SIPAuthorisationDigest.ParseAuthorisationDigest(authorizationType, headerValue);
-				return authHeader;
-			}
-			catch
-			{
-				throw new ApplicationException("Error parsing SIP authentication header request, " + headerValue);
-			}
-		}
+                return authHeader;
+            }
+            catch
+            {
+                throw new ApplicationException("Error parsing SIP authentication header request, " + headerValue);
+            }
+        }
 
-		public override string ToString()
-		{
+        public override string ToString()
+        {
             if (SIPDigest != null)
-			{
+            {
                 string authHeader = null;
                 SIPAuthorisationHeadersEnum authorisationHeaderType = (SIPDigest.AuthorisationResponseType != SIPAuthorisationHeadersEnum.Unknown) ? SIPDigest.AuthorisationResponseType : SIPDigest.AuthorisationType;
 
@@ -1606,16 +1598,16 @@ namespace SIPSorcery.SIP
                 }
 
                 return authHeader + SIPDigest.ToString();
-			}
-			else
-			{
-				return null;
-			}
-		}
+            }
+            else
+            {
+                return null;
+            }
+        }
 
         #region Unit testing.
 
-		#if UNITTEST
+#if UNITTEST
 	
 		[TestFixture]
         public class SIPAuthenticationHeaderUnitTest
@@ -1645,7 +1637,7 @@ namespace SIPSorcery.SIP
 			}
         }
 
-        #endif
+#endif
 
         #endregion
     }
@@ -1671,70 +1663,70 @@ namespace SIPSorcery.SIP
     /// The Route and Record-Route headers only have parameters, no headers. Parameters of from ...;name=value;name2=value2
     /// There are no specific parameters.
     /// </remarks>
-	public class SIPRoute
-	{
-		private static string m_looseRouterParameter = SIPConstants.SIP_LOOSEROUTER_PARAMETER;
+    public class SIPRoute
+    {
+        private static string m_looseRouterParameter = SIPConstants.SIP_LOOSEROUTER_PARAMETER;
 
-		private static char[] m_angles = new char[]{'<', '>'};
-		
+        private static char[] m_angles = new char[] { '<', '>' };
+
         private SIPUserField m_userField;
 
-		public string Host
-		{
+        public string Host
+        {
             get { return m_userField.URI.Host; }
             set { m_userField.URI.Host = value; }
-		}
-	
-		public SIPURI URI
-		{
+        }
+
+        public SIPURI URI
+        {
             get { return m_userField.URI; }
-		}
+        }
 
-		public bool IsStrictRouter
-		{
+        public bool IsStrictRouter
+        {
             get { return !m_userField.URI.Parameters.Has(m_looseRouterParameter); }
-            set 
-             {
-                 if (value)
-                 {
-                     m_userField.URI.Parameters.Remove(m_looseRouterParameter);
-                 }
-                 else
-                 {
-                     m_userField.URI.Parameters.Set(m_looseRouterParameter, null);
-                 }
-             }
-		}
+            set
+            {
+                if (value)
+                {
+                    m_userField.URI.Parameters.Remove(m_looseRouterParameter);
+                }
+                else
+                {
+                    m_userField.URI.Parameters.Set(m_looseRouterParameter, null);
+                }
+            }
+        }
 
-		private SIPRoute()
-		{}
+        private SIPRoute()
+        { }
 
-		public SIPRoute(string host)
-		{
+        public SIPRoute(string host)
+        {
             if (host.IsNullOrBlank())
             {
                 throw new SIPValidationException(SIPValidationFieldsEnum.RouteHeader, "Cannot create a Route from an blank string.");
-            } 
+            }
 
             m_userField = SIPUserField.ParseSIPUserField(host);
-		}
+        }
 
         public SIPRoute(string host, bool looseRouter)
         {
             if (host.IsNullOrBlank())
             {
                 throw new SIPValidationException(SIPValidationFieldsEnum.RouteHeader, "Cannot create a Route from an blank string.");
-            } 
+            }
 
             m_userField = SIPUserField.ParseSIPUserField(host);
             this.IsStrictRouter = !looseRouter;
         }
 
-		public SIPRoute(SIPURI uri)
-		{
+        public SIPRoute(SIPURI uri)
+        {
             m_userField = new SIPUserField();
             m_userField.URI = uri;
-		}
+        }
 
         public SIPRoute(SIPURI uri, bool looseRouter)
         {
@@ -1743,8 +1735,8 @@ namespace SIPSorcery.SIP
             this.IsStrictRouter = !looseRouter;
         }
 
-		public static SIPRoute ParseSIPRoute(string route)
-		{
+        public static SIPRoute ParseSIPRoute(string route)
+        {
             if (route.IsNullOrBlank())
             {
                 throw new SIPValidationException(SIPValidationFieldsEnum.RouteHeader, "Cannot create a Route from an blank string.");
@@ -1761,27 +1753,28 @@ namespace SIPSorcery.SIP
             {
                 throw new SIPValidationException(SIPValidationFieldsEnum.RouteHeader, excp.Message);
             }
-		}
+        }
 
-		public override string ToString()
+        public override string ToString()
         {
             //if (m_userField.URI.Protocol == SIPProtocolsEnum.UDP)
             //{
-                return m_userField.ToString();
+            return m_userField.ToString();
             //}
             //else
             //{
-                //return m_userField.ToContactString();
+            //return m_userField.ToContactString();
             //}
-		}
+        }
 
-        public SIPEndPoint ToSIPEndPoint() {
+        public SIPEndPoint ToSIPEndPoint()
+        {
             return URI.ToSIPEndPoint();
         }
-		
-		#region Unit testing.
 
-		#if UNITTEST
+        #region Unit testing.
+
+#if UNITTEST
 	
 		[TestFixture]
 		public class SIPRouteHeaderUnitTest
@@ -1897,21 +1890,21 @@ namespace SIPSorcery.SIP
             }
 		}
 
-		#endif
+#endif
 
-		#endregion
-	}	
-	
-	public class SIPRouteSet
-	{
+        #endregion
+    }
+
+    public class SIPRouteSet
+    {
         private static ILog logger = AssemblyState.logger;
 
-		private List<SIPRoute> m_sipRoutes = new List<SIPRoute>();
-		
-		public int Length
-		{
-			get{ return m_sipRoutes.Count; }
-		}
+        private List<SIPRoute> m_sipRoutes = new List<SIPRoute>();
+
+        public int Length
+        {
+            get { return m_sipRoutes.Count; }
+        }
 
         public static SIPRouteSet ParseSIPRouteSet(string routeSet)
         {
@@ -1927,48 +1920,50 @@ namespace SIPSorcery.SIP
             return sipRouteSet;
         }
 
-        public SIPRoute GetAt(int index) {
+        public SIPRoute GetAt(int index)
+        {
             return m_sipRoutes[index];
         }
 
-        public void SetAt(int index, SIPRoute sipRoute) {
+        public void SetAt(int index, SIPRoute sipRoute)
+        {
             m_sipRoutes[index] = sipRoute;
         }
 
-		public SIPRoute TopRoute
-		{
-			get
-			{
-				if(m_sipRoutes != null && m_sipRoutes.Count > 0)
-				{	
-					return m_sipRoutes[0];
-				}
-				else
-				{
-					return null;
-				}
-			}
-		}
+        public SIPRoute TopRoute
+        {
+            get
+            {
+                if (m_sipRoutes != null && m_sipRoutes.Count > 0)
+                {
+                    return m_sipRoutes[0];
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
 
-		public SIPRoute BottomRoute
-		{
-			get
-			{
-				if(m_sipRoutes != null && m_sipRoutes.Count > 0)
-				{	
-					return m_sipRoutes[m_sipRoutes.Count-1];
-				}
-				else
-				{
-					return null;
-				}
-			}
-		}
+        public SIPRoute BottomRoute
+        {
+            get
+            {
+                if (m_sipRoutes != null && m_sipRoutes.Count > 0)
+                {
+                    return m_sipRoutes[m_sipRoutes.Count - 1];
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
 
-		public void PushRoute(SIPRoute route)
-		{
-			m_sipRoutes.Insert(0, route);
-		}
+        public void PushRoute(SIPRoute route)
+        {
+            m_sipRoutes.Insert(0, route);
+        }
 
         public void PushRoute(string host)
         {
@@ -1980,31 +1975,31 @@ namespace SIPSorcery.SIP
             m_sipRoutes.Insert(0, new SIPRoute(scheme + ":" + socket.ToString(), true));
         }
 
-		public void AddBottomRoute(SIPRoute route)
-		{
-			m_sipRoutes.Insert(m_sipRoutes.Count, route);
-		}
-	
-		public SIPRoute PopRoute()
-		{
-			SIPRoute route = null;
-			
-			if(m_sipRoutes.Count > 0)
-			{
-				route = m_sipRoutes[0];
-				m_sipRoutes.RemoveAt(0);
-			}
+        public void AddBottomRoute(SIPRoute route)
+        {
+            m_sipRoutes.Insert(m_sipRoutes.Count, route);
+        }
 
-			return route;
-		}
+        public SIPRoute PopRoute()
+        {
+            SIPRoute route = null;
 
-		public void RemoveBottomRoute()
-		{		
-			if(m_sipRoutes.Count > 0)
-			{
-				m_sipRoutes.RemoveAt(m_sipRoutes.Count-1);
-			};
-		}
+            if (m_sipRoutes.Count > 0)
+            {
+                route = m_sipRoutes[0];
+                m_sipRoutes.RemoveAt(0);
+            }
+
+            return route;
+        }
+
+        public void RemoveBottomRoute()
+        {
+            if (m_sipRoutes.Count > 0)
+            {
+                m_sipRoutes.RemoveAt(m_sipRoutes.Count - 1);
+            };
+        }
 
         public SIPRouteSet Reversed()
         {
@@ -2040,25 +2035,25 @@ namespace SIPSorcery.SIP
                 }
             }
         }
-			
-		public new string ToString()
-		{
-			string routeStr = null;
-			
-			if(m_sipRoutes != null && m_sipRoutes.Count > 0)
-			{
-				for(int routeIndex=0; routeIndex<m_sipRoutes.Count; routeIndex++)
-				{
-					routeStr += (routeStr != null) ? "," + m_sipRoutes[routeIndex].ToString() :  m_sipRoutes[routeIndex].ToString();
-				}
-			}
 
-			return routeStr;
-		}
+        public new string ToString()
+        {
+            string routeStr = null;
 
-       #region Unit testing.
+            if (m_sipRoutes != null && m_sipRoutes.Count > 0)
+            {
+                for (int routeIndex = 0; routeIndex < m_sipRoutes.Count; routeIndex++)
+                {
+                    routeStr += (routeStr != null) ? "," + m_sipRoutes[routeIndex].ToString() : m_sipRoutes[routeIndex].ToString();
+                }
+            }
 
-		#if UNITTEST
+            return routeStr;
+        }
+
+        #region Unit testing.
+
+#if UNITTEST
 	
 		[TestFixture]
 		public class RouteSetUnitTest
@@ -2094,57 +2089,42 @@ namespace SIPSorcery.SIP
             }
         }
 
-        #endif
+#endif
 
-       #endregion
+        #endregion
     }
 
-	public class SIPViaSet
-	{
-		private int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
-		private static string m_CRLF = SIPConstants.CRLF;
+    public class SIPViaSet
+    {
+        private int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
+        private static string m_CRLF = SIPConstants.CRLF;
 
         private List<SIPViaHeader> m_viaHeaders = new List<SIPViaHeader>();
 
-		public int Length
-		{
-			get{ return m_viaHeaders.Count; }
-		}
+        public int Length
+        {
+            get { return m_viaHeaders.Count; }
+        }
 
         public List<SIPViaHeader> Via
-		{
-			get
-			{
+        {
+            get
+            {
                 return m_viaHeaders;
-			}
-			set
-			{
-				m_viaHeaders = value;
-			}
-		}
-		
-		public SIPViaHeader TopViaHeader
-		{
-			get
-			{
-				if(m_viaHeaders != null && m_viaHeaders.Count > 0)
-				{	
-					return m_viaHeaders[0];
-				}
-				else
-				{
-					return null;
-				}
-			}
-		}
+            }
+            set
+            {
+                m_viaHeaders = value;
+            }
+        }
 
-        public SIPViaHeader BottomViaHeader
+        public SIPViaHeader TopViaHeader
         {
             get
             {
                 if (m_viaHeaders != null && m_viaHeaders.Count > 0)
                 {
-                    return m_viaHeaders[m_viaHeaders.Count-1];
+                    return m_viaHeaders[0];
                 }
                 else
                 {
@@ -2153,65 +2133,80 @@ namespace SIPSorcery.SIP
             }
         }
 
-		/// <summary>
-		/// Pops top Via header off the array.
-		/// </summary>
-		public SIPViaHeader PopTopViaHeader()
-		{
-			SIPViaHeader topHeader = m_viaHeaders[0];
-			m_viaHeaders.RemoveAt(0);
+        public SIPViaHeader BottomViaHeader
+        {
+            get
+            {
+                if (m_viaHeaders != null && m_viaHeaders.Count > 0)
+                {
+                    return m_viaHeaders[m_viaHeaders.Count - 1];
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
 
-			return topHeader;
-		}
-		
-		public void AddBottomViaHeader(SIPViaHeader viaHeader)
-		{
-			m_viaHeaders.Add(viaHeader);
-		}
-		
-		public void UpateTopViaHeader(IPEndPoint msgRcvdEndPoint)
-		{
-			// Update the IP Address and port that this request was received on.
-			SIPViaHeader topViaHeader = this.TopViaHeader;
+        /// <summary>
+        /// Pops top Via header off the array.
+        /// </summary>
+        public SIPViaHeader PopTopViaHeader()
+        {
+            SIPViaHeader topHeader = m_viaHeaders[0];
+            m_viaHeaders.RemoveAt(0);
+
+            return topHeader;
+        }
+
+        public void AddBottomViaHeader(SIPViaHeader viaHeader)
+        {
+            m_viaHeaders.Add(viaHeader);
+        }
+
+        public void UpateTopViaHeader(IPEndPoint msgRcvdEndPoint)
+        {
+            // Update the IP Address and port that this request was received on.
+            SIPViaHeader topViaHeader = this.TopViaHeader;
 
             if (msgRcvdEndPoint.Address.ToString() != topViaHeader.Host)
-			{
-				topViaHeader.ReceivedFromIPAddress = msgRcvdEndPoint.Address.ToString();
-			}
+            {
+                topViaHeader.ReceivedFromIPAddress = msgRcvdEndPoint.Address.ToString();
+            }
 
-			if((topViaHeader.Port == 0 &&	msgRcvdEndPoint.Port != m_defaultSIPPort) ||
+            if ((topViaHeader.Port == 0 && msgRcvdEndPoint.Port != m_defaultSIPPort) ||
                 (topViaHeader.Port != 0 && topViaHeader.Port != msgRcvdEndPoint.Port))
-			{
-				topViaHeader.ReceivedFromPort = msgRcvdEndPoint.Port;
-			}
-		}
+            {
+                topViaHeader.ReceivedFromPort = msgRcvdEndPoint.Port;
+            }
+        }
 
-		/// <summary>
-		/// Pushes a new Via header onto the top of the array.
-		/// </summary>
-		public void PushViaHeader(SIPViaHeader viaHeader)
-		{
-			m_viaHeaders.Insert(0, viaHeader);
-		}
+        /// <summary>
+        /// Pushes a new Via header onto the top of the array.
+        /// </summary>
+        public void PushViaHeader(SIPViaHeader viaHeader)
+        {
+            m_viaHeaders.Insert(0, viaHeader);
+        }
 
-		public new string ToString()
-		{
-			string viaStr = null;
-			
-			if(m_viaHeaders != null && m_viaHeaders.Count > 0)
-			{
-				for(int viaIndex=0; viaIndex<m_viaHeaders.Count; viaIndex++)
-				{
-					viaStr += (m_viaHeaders[viaIndex]).ToString() + m_CRLF;
-				}
-			}
+        public new string ToString()
+        {
+            string viaStr = null;
 
-			return viaStr;
-		}
+            if (m_viaHeaders != null && m_viaHeaders.Count > 0)
+            {
+                for (int viaIndex = 0; viaIndex < m_viaHeaders.Count; viaIndex++)
+                {
+                    viaStr += (m_viaHeaders[viaIndex]).ToString() + m_CRLF;
+                }
+            }
 
-       	#region Unit testing.
+            return viaStr;
+        }
 
-		#if UNITTEST
+        #region Unit testing.
+
+#if UNITTEST
 	
 		[TestFixture]
 		public class SIPViaHeaderUnitTest
@@ -2277,34 +2272,35 @@ namespace SIPSorcery.SIP
             }
         }
 
-        #endif
+#endif
 
         #endregion
     }
-	
-	/// <bnf>
-    /// header  =  "header-name" HCOLON header-value *(COMMA header-value)
-	/// field-name: field-value CRLF
-	/// </bnf>
-	public class SIPHeader
-	{
-		public const int DEFAULT_CSEQ = 100;
 
-        private static ILog logger = AssemblyState.logger;		
-		private static string m_CRLF = SIPConstants.CRLF;
-	
-		// Core SIP headers.
+    /// <bnf>
+    /// header  =  "header-name" HCOLON header-value *(COMMA header-value)
+    /// field-name: field-value CRLF
+    /// </bnf>
+    public class SIPHeader
+    {
+        public const int DEFAULT_CSEQ = 100;
+
+        private static ILog logger = AssemblyState.logger;
+        private static string m_CRLF = SIPConstants.CRLF;
+
+        // Core SIP headers.
         public string Accept;
         public SIPAuthenticationHeader AuthenticationHeader;
-		public string CallId;
+        public string CallId;
         public List<SIPContactHeader> Contact = new List<SIPContactHeader>();
         public int ContentLength = 0;
         public string ContentType;
         public int CSeq = -1;
-		public SIPMethodsEnum CSeqMethod;
+        public SIPMethodsEnum CSeqMethod;
         public string Date;
         public int Expires = -1;
-		public SIPFromHeader From;
+        public SIPFromHeader From;
+        public int MinExpires = -1;
         public int MaxForwards = SIPConstants.DEFAULT_MAX_FORWARDS;
         public string ProxyRequire;
         public string Reason;
@@ -2316,13 +2312,13 @@ namespace SIPSorcery.SIP
         public string Server;
         public string Supported;
         public string Timestamp;
-		public SIPToHeader To;
-		public string UserAgent;
+        public SIPToHeader To;
+        public string UserAgent;
         public SIPViaSet Vias = new SIPViaSet();
 
-		// Non-core SIP headers from RFC 3265 SIP Event Package.
-		public string Event;
-		public string SubscriptionState;
+        // Non-core SIP headers from RFC 3265 SIP Event Package.
+        public string Event;
+        public string SubscriptionState;
 
         // Non-core custom SIP headers used to allow a SIP Proxy to communicate network info to internal server agents.
         public string ProxyReceivedOn;
@@ -2332,7 +2328,7 @@ namespace SIPSorcery.SIP
         public List<string> UnknownHeaders = new List<string>();	// Holds any unrecognised headers.
 
         public SIPHeader()
-		{}
+        { }
 
         public SIPHeader(string fromHeader, string toHeader, int cseq, string callId)
         {
@@ -2363,12 +2359,12 @@ namespace SIPSorcery.SIP
             }
 
             Initialise(contactList, from, to, cseq, callId);
-        }	
+        }
 
-		public SIPHeader(List<SIPContactHeader> contactList, SIPFromHeader from, SIPToHeader to, int cseq, string callId)
-		{
+        public SIPHeader(List<SIPContactHeader> contactList, SIPFromHeader from, SIPToHeader to, int cseq, string callId)
+        {
             Initialise(contactList, from, to, cseq, callId);
-		}
+        }
 
         private void Initialise(List<SIPContactHeader> contact, SIPFromHeader from, SIPToHeader to, int cseq, string callId)
         {
@@ -2401,62 +2397,62 @@ namespace SIPSorcery.SIP
                 CSeq = DEFAULT_CSEQ;
             }
         }
-		
-		public static string[] SplitHeaders(string message)
-		{
-			// SIP headers can be extended across lines if the first character of the next line is at least on whitespace character.
-			message = Regex.Replace(message, m_CRLF + @"\s+", " ", RegexOptions.Singleline);
 
-			// Some user agents couldn't get the \r\n bit right.
-			message = Regex.Replace(message, "\r ",  m_CRLF, RegexOptions.Singleline);
-			
-			return Regex.Split(message, m_CRLF);
-		}
+        public static string[] SplitHeaders(string message)
+        {
+            // SIP headers can be extended across lines if the first character of the next line is at least on whitespace character.
+            message = Regex.Replace(message, m_CRLF + @"\s+", " ", RegexOptions.Singleline);
 
-		public static SIPHeader ParseSIPHeaders(string[] headersCollection)
-		{
-			try
-			{
-				SIPHeader sipHeader = new SIPHeader();
-				sipHeader.MaxForwards = -1;		// This allows detection of whether this header is present or not.
-				string lastHeader = null;
-						
-				for(int lineIndex = 0; lineIndex<headersCollection.Length; lineIndex++)
-				{
-					string headerLine = headersCollection[lineIndex];
+            // Some user agents couldn't get the \r\n bit right.
+            message = Regex.Replace(message, "\r ", m_CRLF, RegexOptions.Singleline);
 
-					if(headerLine.IsNullOrBlank())
-					{
-						// No point processing blank headers.
-						continue;
-					}
-					
-					string headerName = null;
-					string headerValue = null;
-					
-					// If the first character of a line is whitespace it's a contiuation of the previous line.
-					if(headerLine.StartsWith(" "))
-					{
-						headerName = lastHeader;
-						headerValue = headerLine.Trim();
-					}
-					else
-					{
+            return Regex.Split(message, m_CRLF);
+        }
+
+        public static SIPHeader ParseSIPHeaders(string[] headersCollection)
+        {
+            try
+            {
+                SIPHeader sipHeader = new SIPHeader();
+                sipHeader.MaxForwards = -1;		// This allows detection of whether this header is present or not.
+                string lastHeader = null;
+
+                for (int lineIndex = 0; lineIndex < headersCollection.Length; lineIndex++)
+                {
+                    string headerLine = headersCollection[lineIndex];
+
+                    if (headerLine.IsNullOrBlank())
+                    {
+                        // No point processing blank headers.
+                        continue;
+                    }
+
+                    string headerName = null;
+                    string headerValue = null;
+
+                    // If the first character of a line is whitespace it's a contiuation of the previous line.
+                    if (headerLine.StartsWith(" "))
+                    {
+                        headerName = lastHeader;
+                        headerValue = headerLine.Trim();
+                    }
+                    else
+                    {
                         headerLine = headerLine.Trim();
                         int delimiterIndex = headerLine.IndexOf(SIPConstants.HEADER_DELIMITER_CHAR);
 
                         if (delimiterIndex == -1)
-						{
-							logger.Warn("Invalid SIP header, ignoring, " + headerLine + ".");
-							continue;
-						}
+                        {
+                            logger.Warn("Invalid SIP header, ignoring, " + headerLine + ".");
+                            continue;
+                        }
 
                         headerName = headerLine.Substring(0, delimiterIndex).Trim();
                         headerValue = headerLine.Substring(delimiterIndex + 1).Trim();
-					}
+                    }
 
-					try
-					{
+                    try
+                    {
                         string headerNameLower = headerName.ToLower();
 
                         #region Via
@@ -2519,6 +2515,15 @@ namespace SIPSorcery.SIP
                             if (!Int32.TryParse(headerValue, out sipHeader.Expires))
                             {
                                 logger.Warn("The Expires value was not a valid integer, " + headerLine + ".");
+                            }
+                        }
+                        #endregion
+                        #region Min-Expires
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_MINEXPIRES.ToLower())
+                        {
+                            if (!Int32.TryParse(headerValue, out sipHeader.MinExpires))
+                            {
+                                logger.Warn("The Min-Expires value was not a valid integer, " + headerLine + ".");
                             }
                         }
                         #endregion
@@ -2686,23 +2691,27 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Proxy-ReceivedFrom.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM.ToLower()) {
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM.ToLower())
+                        {
                             sipHeader.ProxyReceivedFrom = headerValue;
                         }
                         #endregion
                         #region Proxy-ReceivedOn.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON.ToLower()) {
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON.ToLower())
+                        {
                             sipHeader.ProxyReceivedOn = headerValue;
                         }
                         #endregion
                         #region Proxy-SendFrom.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_SENDFROM.ToLower()) {
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_SENDFROM.ToLower())
+                        {
                             sipHeader.ProxySendFrom = headerValue;
                         }
                         #endregion
                         #region Supported
                         else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_SUPPORTED.ToLower() ||
-                            headerNameLower == SIPHeaders.SIP_HEADER_SUPPORTED.ToLower()) {
+                            headerNameLower == SIPHeaders.SIP_HEADER_SUPPORTED.ToLower())
+                        {
                             sipHeader.Supported = headerValue;
                         }
                         #endregion
@@ -2712,58 +2721,58 @@ namespace SIPSorcery.SIP
                             sipHeader.UnknownHeaders.Add(headerLine);
                         }
 
-						lastHeader = headerName;
-					}
-					catch(Exception parseExcp)
-					{
-						logger.Error("Error parsing SIP header " + headerLine + ". " + parseExcp.Message);
-						throw new SIPValidationException(SIPValidationFieldsEnum.Headers, "Unknown error parsing Header.");
-					}
-				}
+                        lastHeader = headerName;
+                    }
+                    catch (Exception parseExcp)
+                    {
+                        logger.Error("Error parsing SIP header " + headerLine + ". " + parseExcp.Message);
+                        throw new SIPValidationException(SIPValidationFieldsEnum.Headers, "Unknown error parsing Header.");
+                    }
+                }
 
                 sipHeader.Validate();
 
-				return sipHeader;
-			}
-			catch(SIPValidationException)
-			{
-				throw;
-			}
-			catch(Exception excp)
-			{
-				logger.Error("Exception ParseSIPHeaders. " + excp.Message);
-				throw new SIPValidationException(SIPValidationFieldsEnum.Headers, "Unknown error parsing Headers.");
-			}
-		}
+                return sipHeader;
+            }
+            catch (SIPValidationException)
+            {
+                throw;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception ParseSIPHeaders. " + excp.Message);
+                throw new SIPValidationException(SIPValidationFieldsEnum.Headers, "Unknown error parsing Headers.");
+            }
+        }
 
-		/// <summary>
-		/// Puts the SIP headers together into a string ready for transmission.
-		/// </summary>
-		/// <returns>String representing the SIP headers.</returns>
-		public new string ToString()
-		{
-			try
-			{
-				StringBuilder headersBuilder = new StringBuilder();
+        /// <summary>
+        /// Puts the SIP headers together into a string ready for transmission.
+        /// </summary>
+        /// <returns>String representing the SIP headers.</returns>
+        public new string ToString()
+        {
+            try
+            {
+                StringBuilder headersBuilder = new StringBuilder();
 
-				headersBuilder.Append(Vias.ToString());
+                headersBuilder.Append(Vias.ToString());
 
-				string cseqField = null;
-				if(this.CSeq != 0)
-				{
-					cseqField = (this.CSeqMethod != SIPMethodsEnum.NONE) ? this.CSeq + " " + this.CSeqMethod.ToString() : this.CSeq.ToString();
-				}
+                string cseqField = null;
+                if (this.CSeq != 0)
+                {
+                    cseqField = (this.CSeqMethod != SIPMethodsEnum.NONE) ? this.CSeq + " " + this.CSeqMethod.ToString() : this.CSeq.ToString();
+                }
 
-				headersBuilder.Append( (To != null) ? SIPHeaders.SIP_HEADER_TO + ": " + this.To.ToString() + m_CRLF : null );
-				headersBuilder.Append( (From != null) ? SIPHeaders.SIP_HEADER_FROM + ": " + this.From.ToString()  + m_CRLF : null );
-				headersBuilder.Append( (CallId != null) ? SIPHeaders.SIP_HEADER_CALLID + ": " + this.CallId + m_CRLF : null );
-				headersBuilder.Append( (CSeq > 0) ? SIPHeaders.SIP_HEADER_CSEQ + ": " + cseqField  + m_CRLF : null );
+                headersBuilder.Append((To != null) ? SIPHeaders.SIP_HEADER_TO + ": " + this.To.ToString() + m_CRLF : null);
+                headersBuilder.Append((From != null) ? SIPHeaders.SIP_HEADER_FROM + ": " + this.From.ToString() + m_CRLF : null);
+                headersBuilder.Append((CallId != null) ? SIPHeaders.SIP_HEADER_CALLID + ": " + this.CallId + m_CRLF : null);
+                headersBuilder.Append((CSeq > 0) ? SIPHeaders.SIP_HEADER_CSEQ + ": " + cseqField + m_CRLF : null);
 
                 #region Appending Contact header.
 
                 if (Contact != null && Contact.Count == 1)
                 {
-                     headersBuilder.Append(SIPHeaders.SIP_HEADER_CONTACT + ": " + Contact[0].ToString() + m_CRLF);
+                    headersBuilder.Append(SIPHeaders.SIP_HEADER_CONTACT + ": " + Contact[0].ToString() + m_CRLF);
                 }
                 else if (Contact != null && Contact.Count > 1)
                 {
@@ -2790,60 +2799,61 @@ namespace SIPSorcery.SIP
 
                 #endregion
 
-                headersBuilder.Append( (MaxForwards >= 0) ? SIPHeaders.SIP_HEADER_MAXFORWARDS + ": " + this.MaxForwards + m_CRLF : null );
-				headersBuilder.Append( (Routes != null && Routes.Length > 0) ? SIPHeaders.SIP_HEADER_ROUTE + ": " + Routes.ToString() + m_CRLF : null);
-				headersBuilder.Append( (RecordRoutes != null && RecordRoutes.Length > 0) ? SIPHeaders.SIP_HEADER_RECORDROUTE + ": " + RecordRoutes.ToString() + m_CRLF : null);
-				headersBuilder.Append( (UserAgent != null && UserAgent.Trim().Length != 0) ? SIPHeaders.SIP_HEADER_USERAGENT + ": " + this.UserAgent + m_CRLF : null );
-				headersBuilder.Append( (Expires != -1) ? SIPHeaders.SIP_HEADER_EXPIRES + ": " + this.Expires + m_CRLF : null );
-				headersBuilder.Append( (Accept != null) ? SIPHeaders.SIP_HEADER_ACCEPT + ": " + this.Accept + m_CRLF : null);
-                headersBuilder.Append( (AuthenticationHeader != null) ? AuthenticationHeader.ToString() + m_CRLF : null);
-                headersBuilder.Append( (Server != null && Server.Trim().Length != 0) ? SIPHeaders.SIP_HEADER_SERVER + ": " + this.Server + m_CRLF : null);
+                headersBuilder.Append((MaxForwards >= 0) ? SIPHeaders.SIP_HEADER_MAXFORWARDS + ": " + this.MaxForwards + m_CRLF : null);
+                headersBuilder.Append((Routes != null && Routes.Length > 0) ? SIPHeaders.SIP_HEADER_ROUTE + ": " + Routes.ToString() + m_CRLF : null);
+                headersBuilder.Append((RecordRoutes != null && RecordRoutes.Length > 0) ? SIPHeaders.SIP_HEADER_RECORDROUTE + ": " + RecordRoutes.ToString() + m_CRLF : null);
+                headersBuilder.Append((UserAgent != null && UserAgent.Trim().Length != 0) ? SIPHeaders.SIP_HEADER_USERAGENT + ": " + this.UserAgent + m_CRLF : null);
+                headersBuilder.Append((Expires != -1) ? SIPHeaders.SIP_HEADER_EXPIRES + ": " + this.Expires + m_CRLF : null);
+                headersBuilder.Append((MinExpires != -1) ? SIPHeaders.SIP_HEADER_MINEXPIRES + ": " + this.MinExpires + m_CRLF : null);
+                headersBuilder.Append((Accept != null) ? SIPHeaders.SIP_HEADER_ACCEPT + ": " + this.Accept + m_CRLF : null);
+                headersBuilder.Append((AuthenticationHeader != null) ? AuthenticationHeader.ToString() + m_CRLF : null);
+                headersBuilder.Append((Server != null && Server.Trim().Length != 0) ? SIPHeaders.SIP_HEADER_SERVER + ": " + this.Server + m_CRLF : null);
                 headersBuilder.Append(SIPHeaders.SIP_HEADER_CONTENTLENGTH + ": " + this.ContentLength + m_CRLF);
                 if (this.ContentType != null && this.ContentType.Trim().Length > 0)
                 {
                     headersBuilder.Append(SIPHeaders.SIP_HEADER_CONTENTTYPE + ": " + this.ContentType + m_CRLF);
                 }
 
-				// Non-core SIP headers.
-				headersBuilder.Append( (Event != null) ? SIPHeaders.SIP_HEADER_EVENT + ": " + Event + m_CRLF : null );
-				headersBuilder.Append( (SubscriptionState != null) ? SIPHeaders.SIP_HEADER_SUBSCRIPTIONSTATE + ": " + SubscriptionState + m_CRLF : null );
-                headersBuilder.Append( (Date != null) ? SIPHeaders.SIP_HEADER_DATE + ": " + Date + m_CRLF : null);
-                headersBuilder.Append( (Timestamp != null) ? SIPHeaders.SIP_HEADER_TIMESTAMP + ": " + Timestamp + m_CRLF : null);
-                headersBuilder.Append( (ReferTo != null) ? SIPHeaders.SIP_HEADER_REFERTO + ": " + ReferTo + m_CRLF : null);
-                headersBuilder.Append( (ReferredBy != null) ? SIPHeaders.SIP_HEADER_REFERREDBY + ": " + ReferredBy + m_CRLF : null);
-                headersBuilder.Append( (Require != null) ? SIPHeaders.SIP_HEADER_REQUIRE + ": " + Require + m_CRLF : null);
-                headersBuilder.Append( (Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);
-                headersBuilder.Append( (Supported != null) ? SIPHeaders.SIP_HEADER_SUPPORTED + ": " + Supported + m_CRLF : null);
-                headersBuilder.Append( (ProxyReceivedFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM + ": " + ProxyReceivedFrom + m_CRLF : null);
-                headersBuilder.Append( (ProxyReceivedOn != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON + ": " + ProxyReceivedOn + m_CRLF : null);
-                headersBuilder.Append( (ProxySendFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_SENDFROM + ": " + ProxySendFrom + m_CRLF : null);
+                // Non-core SIP headers.
+                headersBuilder.Append((Event != null) ? SIPHeaders.SIP_HEADER_EVENT + ": " + Event + m_CRLF : null);
+                headersBuilder.Append((SubscriptionState != null) ? SIPHeaders.SIP_HEADER_SUBSCRIPTIONSTATE + ": " + SubscriptionState + m_CRLF : null);
+                headersBuilder.Append((Date != null) ? SIPHeaders.SIP_HEADER_DATE + ": " + Date + m_CRLF : null);
+                headersBuilder.Append((Timestamp != null) ? SIPHeaders.SIP_HEADER_TIMESTAMP + ": " + Timestamp + m_CRLF : null);
+                headersBuilder.Append((ReferTo != null) ? SIPHeaders.SIP_HEADER_REFERTO + ": " + ReferTo + m_CRLF : null);
+                headersBuilder.Append((ReferredBy != null) ? SIPHeaders.SIP_HEADER_REFERREDBY + ": " + ReferredBy + m_CRLF : null);
+                headersBuilder.Append((Require != null) ? SIPHeaders.SIP_HEADER_REQUIRE + ": " + Require + m_CRLF : null);
+                headersBuilder.Append((Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);
+                headersBuilder.Append((Supported != null) ? SIPHeaders.SIP_HEADER_SUPPORTED + ": " + Supported + m_CRLF : null);
+                headersBuilder.Append((ProxyReceivedFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM + ": " + ProxyReceivedFrom + m_CRLF : null);
+                headersBuilder.Append((ProxyReceivedOn != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON + ": " + ProxyReceivedOn + m_CRLF : null);
+                headersBuilder.Append((ProxySendFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_SENDFROM + ": " + ProxySendFrom + m_CRLF : null);
 
-				// Unknown SIP headers
-				foreach(string unknownHeader in UnknownHeaders)
-				{
-					headersBuilder.Append(unknownHeader + m_CRLF);
-				}
-				
-				return headersBuilder.ToString();
-			}
-			catch(Exception excp)
-			{
-				logger.Error("Exception SIPHeader ToString. " + excp.Message);
-				throw excp;
-			}
-		}
+                // Unknown SIP headers
+                foreach (string unknownHeader in UnknownHeaders)
+                {
+                    headersBuilder.Append(unknownHeader + m_CRLF);
+                }
+
+                return headersBuilder.ToString();
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPHeader ToString. " + excp.Message);
+                throw excp;
+            }
+        }
 
         private void Validate()
-		{
-            if(Vias == null || Vias.Length == 0)
-			{
+        {
+            if (Vias == null || Vias.Length == 0)
+            {
                 throw new SIPValidationException(SIPValidationFieldsEnum.ViaHeader, "Invalid header, no Via.");
-			}
-		}
-       
+            }
+        }
+
         public void SetDateHeader()
         {
-            Date = DateTime.UtcNow.ToString("o");
+            Date = DateTime.UtcNow.ToString("ddd, dd MMM yyyy HH:mm:ss ") + "GMT";
         }
 
         public SIPHeader Copy()
@@ -2853,9 +2863,9 @@ namespace SIPSorcery.SIP
             return ParseSIPHeaders(sipHeaders);
         }
 
-		#region Unit testing.
+        #region Unit testing.
 
-		#if UNITTEST
+#if UNITTEST
 	
 		[TestFixture]
 		public class SIPHeaderUnitTest
@@ -3104,8 +3114,8 @@ namespace SIPSorcery.SIP
             }
 		}
 
-		#endif
+#endif
 
-		#endregion
-	}
+        #endregion
+    }
 }

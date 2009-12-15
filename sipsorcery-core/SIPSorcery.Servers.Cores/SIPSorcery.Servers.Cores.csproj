@@ -125,6 +125,7 @@
     <Reference Include="System.ServiceModel.Web">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.Xml">
@@ -161,28 +162,24 @@
       <Project>{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}</Project>
       <Name>SIPSorcery.Sys</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Web.Services\SIPSorcery.Web.Services.csproj">
+      <Project>{5D73FBAC-897F-4FEA-BAF9-61823545FE70}</Project>
+      <Name>SIPSorcery.Web.Services</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="SIPApplicationServer\SIPCallDispatcher.cs" />
+    <Compile Include="SIPWatchTower\SIPAppServerManager.cs" />
     <Compile Include="SIPApplicationServer\SIPNotifyManager.cs" />
-    <Compile Include="SIPApplicationServer\WCFServices\CallManagerServiceInstanceProvider.cs" />
-    <Compile Include="SIPApplicationServer\WCFServices\CallManagerServiceProxy.cs" />
-    <Compile Include="SIPApplicationServer\WCFServices\CallManagerServices.cs" />
-    <Compile Include="SIPApplicationServer\WCFServices\CallManagerPassThruService.cs" />
-    <Compile Include="SIPApplicationServer\WCFServices\CallManagerPassThruServiceInstanceProvider.cs" />
-    <Compile Include="SIPApplicationServer\WCFServices\ICallManagerServices.cs" />
-    <Compile Include="SIPMonitor\SIPMonitorClientConnection.cs" />
-    <Compile Include="SIPMonitor\SIPMonitorMachineClient.cs" />
-    <Compile Include="SIPMonitor\SIPMonitorControlClient.cs" />
+    <Compile Include="SIPMonitor\SIPMonitorClientManager.cs" />
     <Compile Include="SIPMonitor\SIPMonitorMediator.cs" />
     <Compile Include="SIPMonitor\SIPMonitorEventWriter.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="SIPMonitor\SIPMonitorFilter.cs" />
-    <Compile Include="SIPStatelessProxy\NATKeepAliveRelay.cs" />
+    <Compile Include="SIPProxy\NATKeepAliveRelay.cs" />
+    <Compile Include="SIPProxy\SIPProxyDispatcher.cs" />
     <Compile Include="SIPRegistrar\SIPRegistrarBindingsManager.cs" />
     <Compile Include="SIPRegistrar\SIPUserAgentConfiguration.cs" />
     <Compile Include="SIPRegistrar\SIPRegistrarCore.cs" />
@@ -191,8 +188,8 @@
     <Compile Include="SIPApplicationServer\SIPAppServerCore.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="SIPStatelessProxy\StatelessProxyScriptHelper.cs" />
-    <Compile Include="SIPStatelessProxy\StatelessProxyCore.cs">
+    <Compile Include="SIPProxy\SIPProxyScriptFacade.cs" />
+    <Compile Include="SIPProxy\SIPProxyCore.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

@@ -13,8 +13,8 @@ namespace SIPSorcery.SIPRegistrationAgent {
 
     public class SIPRegAgentProgram {
 
-        private static readonly string m_storageTypeKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGETYPE_KEY;
-        private static readonly string m_connStrKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
+        private static readonly string m_storageTypeKey = SIPSorceryConfiguration.PERSISTENCE_STORAGETYPE_KEY;
+        private static readonly string m_connStrKey = SIPSorceryConfiguration.PERSISTENCE_STORAGECONNSTR_KEY;
         private static readonly string m_sipProvidersXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_SIPPROVIDERS_FILENAME;
         private static readonly string m_sipProviderBindingsXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_PROVIDER_BINDINGS_FILENAME;
 

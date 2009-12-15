@@ -363,7 +363,7 @@ namespace SIPSorcery.SoftPhone
                 m_uac.CallRinging += CallRinging;
                 m_uac.CallAnswered += CallAnswered;
                 m_uac.CallFailed += CallFailed;
-                SIPCallDescriptor callDescriptor = new SIPCallDescriptor("anonymous", null, callURI, null, null, null, null, null, SIPCallDirection.Out, null, null, true);
+                SIPCallDescriptor callDescriptor = new SIPCallDescriptor("anonymous", null, callURI, null, null, null, null, null, SIPCallDirection.Out, null, null);
                 m_uac.Call(callDescriptor);
             //}
         }

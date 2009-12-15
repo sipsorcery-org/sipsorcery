@@ -62,29 +62,25 @@ namespace SIPSorcery.CRM {
         private static ILog logger = AppState.logger;
         private static string m_newLine = AppState.NewLine;
 
-        [Column(Name = "id", DbType = "StringFixedLength", IsPrimaryKey = true, CanBeNull = false)]
+        [Column(Name = "id", DbType = "varchar(36)", IsPrimaryKey = true, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public Guid Id { get; set; }
 
-        [Column(Name = "sessionid", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "sessionid", DbType = "varchar(96)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public string SessionID { get; set; }
 
-        [Column(Name = "customerusername", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "customerusername", DbType = "varchar(32)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public string CustomerUsername { get; set; }
 
-        private DateTime m_inserted;
-        [Column(Name = "inserted", DbType = "StringFixedLength", CanBeNull = false)]
-        public DateTime Inserted {
-            get { return m_inserted; }
-            set { m_inserted = value.ToUniversalTime(); }
-        }
+        [Column(Name = "inserted", DbType = "datetimeoffset", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        public DateTimeOffset Inserted { get; set; }
 
-        [Column(Name = "expired", DbType = "Boolean", CanBeNull = false)]
+        [Column(Name = "expired", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public bool Expired { get; set; }
 
-        [Column(Name = "ipaddress", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "ipaddress", DbType = "varchar(15)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public string IPAddress { get; set; }
 
-        [Column(Name = "timelimitminutes", DbType = "Int32", CanBeNull = false)]
+        [Column(Name = "timelimitminutes", DbType = "int", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public int TimeLimitMinutes { get; set; }
 
         public CustomerSession() { }
@@ -93,7 +89,7 @@ namespace SIPSorcery.CRM {
             Id = id;
             SessionID = sessionID;
             CustomerUsername = customerUsername;
-            m_inserted = DateTime.UtcNow;
+            Inserted = DateTimeOffset.UtcNow;
             IPAddress = ipAddress;
             TimeLimitMinutes = INITIAL_SESSION_LIFETIME_MINUTES;
         }
@@ -121,7 +117,7 @@ namespace SIPSorcery.CRM {
                 Id = new Guid(customerSessionRow["id"] as string);
                 SessionID = customerSessionRow["sessionid"] as string;
                 CustomerUsername = customerSessionRow["customerusername"] as string;
-                Inserted = Convert.ToDateTime(customerSessionRow["inserted"]);
+                Inserted = DateTimeOffset.Parse(customerSessionRow["inserted"] as string);
                 Expired = Convert.ToBoolean(customerSessionRow["expired"]);
                 IPAddress = customerSessionRow["ipaddress"] as string;
                 TimeLimitMinutes = Convert.ToInt32(customerSessionRow["timelimitminutes"]);
@@ -152,7 +148,7 @@ namespace SIPSorcery.CRM {
                 "    <id>" + Id + "</id>" + m_newLine +
                 "    <sessionid>" + SessionID + "</sessionid>" + m_newLine +
                 "    <customerusername>" + CustomerUsername + "</customerusername>" + m_newLine +
-                "    <inserted>" + m_inserted.ToString("o") + "</inserted>" + m_newLine +
+                "    <inserted>" + Inserted.ToString() + "</inserted>" + m_newLine +
                 "    <expired>" + Expired + "</expired>" + m_newLine +
                 "    <ipaddress>" + IPAddress + "</ipaddress>" + m_newLine +
                 "    <timelimitminutes>" + TimeLimitMinutes + "</timelimitminutes>";

@@ -76,21 +76,17 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Amazon.SimpleDB, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Castle.Core, Version=1.0.3.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\Amazon.SimpleDB.dll</HintPath>
+      <HintPath>..\..\stable\Castle.Core.dll</HintPath>
     </Reference>
-    <Reference Include="DbLinq, Version=0.19.0.0, Culture=neutral, PublicKeyToken=61e015a67077348b, processorArchitecture=MSIL">
+    <Reference Include="Castle.MicroKernel, Version=1.0.3.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\DbLinq.dll</HintPath>
+      <HintPath>..\..\stable\Castle.MicroKernel.dll</HintPath>
     </Reference>
-    <Reference Include="DbLinq.MySql, Version=0.19.0.0, Culture=neutral, PublicKeyToken=61e015a67077348b, processorArchitecture=MSIL">
+    <Reference Include="Castle.Windsor, Version=1.0.3.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\DbLinq.MySql.dll</HintPath>
-    </Reference>
-    <Reference Include="DbLinq.PostgreSql, Version=0.19.0.0, Culture=neutral, PublicKeyToken=61e015a67077348b, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\DbLinq.PostgreSql.dll</HintPath>
+      <HintPath>..\..\stable\Castle.Windsor.dll</HintPath>
     </Reference>
     <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -142,6 +138,7 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="SIPSorceryConfiguration.cs" />
     <Compile Include="Net\ByteBufferInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -162,6 +159,7 @@
     <Compile Include="SafeXML.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="StorageTypes.cs" />
     <Compile Include="TypeExtensions.cs" />
     <Compile Include="WebServices\XMLServiceResultStruct.cs" />
   </ItemGroup>
@@ -169,7 +167,7 @@
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build\SIPSorcery.Sys.dll" "c:\temp\sipsorcery\"
+copy  "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build\SIPSorcery.Sys.dll" C:\inetpub\wwwroot\bin\</PostBuildEvent>
   </PropertyGroup>
 </Project>

@@ -43,7 +43,7 @@ namespace SIPSorcery
 
         private string m_owner;
         private string m_sipCallsWhere;     // Used when filtering is enabled.
-        private string m_sipCDRsWhere = "AnsweredStatus != 401 and AnsweredStatus != 407";      // Used when filtering is enabled.
+        private string m_sipCDRsWhere = "AnsweredStatus != 401 && AnsweredStatus != 407";      // Used when filtering is enabled.
 
         public bool Initialised;
         private bool m_initialLoadComplete;

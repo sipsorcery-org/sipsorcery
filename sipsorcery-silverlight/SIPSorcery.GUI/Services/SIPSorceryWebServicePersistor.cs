@@ -2,19 +2,14 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net;
+using System.Net.Browser;
 using System.ServiceModel;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Ink;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Shapes;
+using System.ServiceModel.Channels;
 using SIPSorcery.CRM;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Silverlight.Messaging;
 using SIPSorcery.SIPSorceryProvisioningClient;
+using SIPSorcery.Web.Services;
 
 namespace SIPSorcery.Persistence {
 
@@ -23,6 +18,7 @@ namespace SIPSorcery.Persistence {
         private static int MAX_WCF_MESSAGE_SIZE = 1000000;   // Limit messages to 1MB.
 
         public override event IsAliveCompleteDelegate IsAliveComplete;
+        public override event TestExceptionCompleteDelegate TestExceptionComplete;
         public override event AreNewAccountsEnabledCompleteDelegate AreNewAccountsEnabledComplete;
         public override event LoginCompleteDelegate LoginComplete;
         public override event LogoutCompleteDelegate LogoutComplete;
@@ -63,9 +59,11 @@ namespace SIPSorcery.Persistence {
         private ProvisioningServiceClient m_provisioningServiceProxy;
 
         public SIPSorceryWebServicePersistor(string serverURL, string authid) {
-            //BasicHttpBinding binding = new BasicHttpBinding();
+
             BasicHttpSecurityMode securitymode = (serverURL.StartsWith("https")) ? BasicHttpSecurityMode.Transport : BasicHttpSecurityMode.None;
-            BasicHttpCustomHeaderBinding binding = new BasicHttpCustomHeaderBinding(new SecurityHeader(authid), securitymode);
+            SIPSorcerySecurityHeader securityHeader = new SIPSorcerySecurityHeader(authid);
+            SIPSorceryCustomHeader sipSorceryHeader = new SIPSorceryCustomHeader(new List<MessageHeader>(){securityHeader});
+            BasicHttpCustomHeaderBinding binding = new BasicHttpCustomHeaderBinding(sipSorceryHeader, securitymode);
             binding.MaxReceivedMessageSize = MAX_WCF_MESSAGE_SIZE;
             
             EndpointAddress address = new EndpointAddress(serverURL);
@@ -73,6 +71,7 @@ namespace SIPSorcery.Persistence {
 
             // Provisioning web service delegates.
             m_provisioningServiceProxy.IsAliveCompleted += IsAliveCompleted;
+            m_provisioningServiceProxy.TestExceptionCompleted += TestExceptionCompleted;
             m_provisioningServiceProxy.AreNewAccountsEnabledCompleted += AreNewAccountsEnabledCompleted;
             m_provisioningServiceProxy.LoginCompleted += LoginCompleted;
             m_provisioningServiceProxy.LogoutCompleted += LogoutCompleted;
@@ -110,12 +109,12 @@ namespace SIPSorcery.Persistence {
         }
 
         private bool IsUnauthorised(Exception excp) {
-            if (excp != null && excp.GetType() == typeof(RawFaultException)) {
+            /*if (excp != null && excp.GetType() == typeof(RawFaultException)) {
                 RawFaultException rawExcp = (RawFaultException)excp;
                 if (rawExcp.FaultType == typeof(UnauthorizedAccessException)) {
                     return true;
                 }
-            }
+            }*/
             return false;
         }
 
@@ -129,6 +128,16 @@ namespace SIPSorcery.Persistence {
             }
             else {
                 IsAliveComplete(e);
+            }
+        }
+
+        public override void TestExceptionAsync() {
+            m_provisioningServiceProxy.TestExceptionAsync();
+        }
+
+        private void TestExceptionCompleted(object sender, AsyncCompletedEventArgs e) {
+            if (TestExceptionComplete != null) {
+                TestExceptionComplete(e);
             }
         }
 

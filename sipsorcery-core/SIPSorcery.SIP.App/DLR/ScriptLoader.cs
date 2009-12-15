@@ -7,14 +7,17 @@ using log4net;
 using SIPSorcery.Sys;
 using Microsoft.Scripting.Hosting;
 
-namespace SIPSorcery.SIP.App {
+namespace SIPSorcery.SIP.App
+{
 
     /// <summary>
     /// Loads a script file, compiles it and watches it for any changes.
     /// </summary>
-    public class ScriptLoader {
+    public class ScriptLoader
+    {
 
-        private enum ScriptTypesEnum {
+        private enum ScriptTypesEnum
+        {
             None = 0,
             Python = 1,
             Ruby = 2,
@@ -35,65 +38,94 @@ namespace SIPSorcery.SIP.App {
 
         public ScriptLoader(
             SIPMonitorLogDelegate monitorLogger,
-            string scriptPath) {
+            string scriptPath)
+        {
 
-            try {
+            try
+            {
                 m_monitorLogger = monitorLogger ?? m_monitorLogger;
                 m_scriptPath = scriptPath;
 
                 // File system watcher needs a fully qualified path.
-                if (!m_scriptPath.Contains(Path.DirectorySeparatorChar.ToString())) {
+                if (!m_scriptPath.Contains(Path.DirectorySeparatorChar.ToString()))
+                {
                     m_scriptPath = Environment.CurrentDirectory + Path.DirectorySeparatorChar + m_scriptPath;
                 }
 
-                if (!File.Exists(m_scriptPath)) {
+                if (!File.Exists(m_scriptPath))
+                {
                     throw new ApplicationException("Cannot load script file was not found at " + m_scriptPath + ".");
                 }
-               
+
                 FileSystemWatcher runtimeWatcher = new FileSystemWatcher(Path.GetDirectoryName(m_scriptPath), Path.GetFileName(m_scriptPath));
                 runtimeWatcher.Changed += new FileSystemEventHandler(ScriptChanged);
                 runtimeWatcher.EnableRaisingEvents = true;
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception ScriptLoader (ctor). " + excp.Message);
                 throw excp;
             }
         }
 
-        public CompiledCode GetCompiledScript() {
-            try {
-                string tempPath = Path.GetDirectoryName(m_scriptPath) + Path.DirectorySeparatorChar + Path.GetFileName(m_scriptPath) + ".tmp";
-                File.Copy(m_scriptPath, tempPath, true);
+        public CompiledCode GetCompiledScript()
+        {
+            try
+            {
+                m_scriptText = GetText();
 
-                StreamReader sr = new StreamReader(tempPath);
-                m_scriptText = sr.ReadToEnd();
-                sr.Close();
-
-                if (m_scriptText.IsNullOrBlank()) {
+                if (m_scriptText.IsNullOrBlank())
+                {
                     throw new ApplicationException("Cannot load script, file was empty " + m_scriptPath + ".");
                 }
 
                 // Configure script engine.
                 ScriptTypesEnum scriptType = GetScriptType(m_scriptPath);
 
-                if (scriptType == ScriptTypesEnum.Python) {
+                if (scriptType == ScriptTypesEnum.Python)
+                {
                     logger.Debug("Compiling IronPython script file from " + m_scriptPath + ".");
                     ScriptRuntime scriptRuntime = IronPython.Hosting.Python.CreateRuntime();
                     ScriptScope scriptScope = scriptRuntime.CreateScope("IronPython");
                     return scriptScope.Engine.CreateScriptSourceFromString(m_scriptText).Compile();
                 }
-                else if (scriptType == ScriptTypesEnum.Ruby) {
+                else if (scriptType == ScriptTypesEnum.Ruby)
+                {
                     logger.Debug("Compiling IronRuby script file from " + m_scriptPath + ".");
                     ScriptRuntime scriptRuntime = IronRuby.Ruby.CreateRuntime();
                     ScriptScope scriptScope = scriptRuntime.CreateScope("IronRuby");
                     return scriptScope.Engine.CreateScriptSourceFromString(m_scriptText).Compile();
                 }
-                else {
+                else
+                {
                     throw new ApplicationException("ScriptLoader could not compile script, unrecognised proxy script type " + scriptType + ".");
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception GetCompiledScript. " + excp.Message);
+                throw;
+            }
+        }
+
+        public string GetText()
+        {
+            try
+            {
+                string tempPath = Path.GetDirectoryName(m_scriptPath) + Path.DirectorySeparatorChar + Path.GetFileName(m_scriptPath) + ".tmp";
+                File.Copy(m_scriptPath, tempPath, true);
+
+                using (StreamReader sr = new StreamReader(tempPath))
+                {
+                    m_scriptText = sr.ReadToEnd();
+                    sr.Close();
+                }
+
+                return m_scriptText;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception GetText. " + excp.Message);
                 throw;
             }
         }
@@ -107,7 +139,8 @@ namespace SIPSorcery.SIP.App {
                     m_lastScriptChange = DateTime.Now;  // Prevent double re-loads. The file changed event fires twice when a file is saved.
                     logger.Debug("Script file changed " + m_scriptPath + ".");
 
-                    if (ScriptFileChanged != null) {
+                    if (ScriptFileChanged != null)
+                    {
                         ScriptFileChanged(sender, e);
                     }
                 }
@@ -118,10 +151,12 @@ namespace SIPSorcery.SIP.App {
             }
         }
 
-        private ScriptTypesEnum GetScriptType(string scriptFileName) {
+        private ScriptTypesEnum GetScriptType(string scriptFileName)
+        {
             string extension = Path.GetExtension(scriptFileName);
 
-            switch (extension) {
+            switch (extension)
+            {
                 case PYTHON_SCRIPT_EXTENSION:
                     return ScriptTypesEnum.Python;
                 case RUBY_SCRIPT_EXTENSION:

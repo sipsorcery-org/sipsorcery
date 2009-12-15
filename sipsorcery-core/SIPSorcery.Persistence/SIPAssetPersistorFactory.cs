@@ -49,26 +49,47 @@ using log4net;
 
 namespace SIPSorcery.Persistence
 {
-    public class SIPAssetPersistorFactory<T> where T : class, ISIPAsset, new() {
+    public class SIPAssetPersistorFactory<T> where T : class, ISIPAsset, new()
+    {
+        private static ILog logger = AppState.logger;
 
-        public static SIPAssetPersistor<T> CreateSIPAssetPersistor(StorageTypes storageType, string storageConnectionStr, string filename) {
-            if (storageType == StorageTypes.XML) {
-                if (!storageConnectionStr.EndsWith(@"\")) {
-                    storageConnectionStr += @"\";
+        public static SIPAssetPersistor<T> CreateSIPAssetPersistor(StorageTypes storageType, string storageConnectionStr, string filename)
+        {
+            try
+            {
+                if (storageType == StorageTypes.XML)
+                {
+                    if (!storageConnectionStr.EndsWith(@"\"))
+                    {
+                        storageConnectionStr += @"\";
+                    }
+                    return new SIPAssetXMLPersistor<T>(storageConnectionStr + filename);
                 }
-                return new SIPAssetXMLPersistor<T>(storageConnectionStr + filename);
+                else if (storageType == StorageTypes.SQLLinqMySQL)
+                {
+                    return new SQLAssetPersistor<T>(MySql.Data.MySqlClient.MySqlClientFactory.Instance, storageConnectionStr);
+                }
+                else if (storageType == StorageTypes.SQLLinqPostgresql)
+                {
+                    return new SQLAssetPersistor<T>(Npgsql.NpgsqlFactory.Instance, storageConnectionStr);
+                }
+                else if (storageType == StorageTypes.SimpleDBLinq)
+                {
+                    return new SimpleDBAssetPersistor<T>(storageConnectionStr);
+                }
+                else if (storageType == StorageTypes.SQLLinqMSSQL)
+                {
+                    return new MSSQLAssetPersistor<T>(System.Data.SqlClient.SqlClientFactory.Instance, storageConnectionStr);
+                }
+                else
+                {
+                    throw new ApplicationException(storageType + " is not supported as a CreateSIPAssetPersistor option.");
+                }
             }
-            else if (storageType == StorageTypes.SQLLinqMySQL) {
-                return new SQLAssetPersistor<T>(MySql.Data.MySqlClient.MySqlClientFactory.Instance, storageConnectionStr);
-            }
-            else if( storageType == StorageTypes.SQLLinqPostgresql) {
-                return new SQLAssetPersistor<T>(Npgsql.NpgsqlFactory.Instance, storageConnectionStr);
-            }
-            else if (storageType == StorageTypes.SimpleDBLinq) {
-                return new SimpleDBAssetPersistor<T>(storageConnectionStr);
-            }
-            else {
-                throw new ApplicationException(storageType + " is not supported as a CreateSIPAssetPersistor option.");
+            catch (Exception excp)
+            {
+                logger.Error("Exception CreateSIPAssetPersistor for " + storageType + ". " + excp.Message);
+                throw;
             }
         }
     }

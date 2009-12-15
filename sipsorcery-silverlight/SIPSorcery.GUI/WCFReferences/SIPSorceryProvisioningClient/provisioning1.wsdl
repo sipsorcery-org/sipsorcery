@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:tns="http://www.sipsorcery.com/provisioning" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" targetNamespace="http://www.sipsorcery.com/provisioning" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.sipsorcery.com/provisioning/Imports">
+      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning.svc?xsd=xsd0" namespace="http://www.sipsorcery.com/provisioning" />
+      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning.svc?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning.svc?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/SIPSorcery.SIP.App" />
+      <xsd:import schemaLocation="http://suzannes-pc:8080/provisioning.svc?xsd=xsd3" namespace="http://schemas.datacontract.org/2004/07/SIPSorcery.CRM" />
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="IProvisioningService_GetCDRsCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetCDRsCount" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetCDRsCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetCDRsCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetCDRs_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetCDRs" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetCDRs_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetCDRsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_ExtendSession_InputMessage">
+    <wsdl:part name="parameters" element="tns:ExtendSession" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_ExtendSession_OutputMessage">
+    <wsdl:part name="parameters" element="tns:ExtendSessionResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetTimeZoneOffsetMinutes_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetTimeZoneOffsetMinutes" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetTimeZoneOffsetMinutes_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetTimeZoneOffsetMinutesResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_IsAlive_InputMessage">
+    <wsdl:part name="parameters" element="tns:IsAlive" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_IsAlive_OutputMessage">
+    <wsdl:part name="parameters" element="tns:IsAliveResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_TestException_InputMessage">
+    <wsdl:part name="parameters" element="tns:TestException" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_TestException_OutputMessage">
+    <wsdl:part name="parameters" element="tns:TestExceptionResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_AreNewAccountsEnabled_InputMessage">
+    <wsdl:part name="parameters" element="tns:AreNewAccountsEnabled" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_AreNewAccountsEnabled_OutputMessage">
+    <wsdl:part name="parameters" element="tns:AreNewAccountsEnabledResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_CreateCustomer_InputMessage">
+    <wsdl:part name="parameters" element="tns:CreateCustomer" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_CreateCustomer_OutputMessage">
+    <wsdl:part name="parameters" element="tns:CreateCustomerResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_DeleteCustomer_InputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteCustomer" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_DeleteCustomer_OutputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteCustomerResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_Login_InputMessage">
+    <wsdl:part name="parameters" element="tns:Login" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_Login_OutputMessage">
+    <wsdl:part name="parameters" element="tns:LoginResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_Logout_InputMessage">
+    <wsdl:part name="parameters" element="tns:Logout" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_Logout_OutputMessage">
+    <wsdl:part name="parameters" element="tns:LogoutResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetCustomer_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetCustomer" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetCustomer_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetCustomerResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_UpdateCustomer_InputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateCustomer" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_UpdateCustomer_OutputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateCustomerResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_UpdateCustomerPassword_InputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateCustomerPassword" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_UpdateCustomerPassword_OutputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateCustomerPasswordResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPDomains_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPDomains" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPDomains_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPDomainsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPAccountsCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPAccountsCount" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPAccountsCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPAccountsCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPAccounts_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPAccounts" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPAccounts_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPAccountsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_AddSIPAccount_InputMessage">
+    <wsdl:part name="parameters" element="tns:AddSIPAccount" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_AddSIPAccount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:AddSIPAccountResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_UpdateSIPAccount_InputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateSIPAccount" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_UpdateSIPAccount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateSIPAccountResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_DeleteSIPAccount_InputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteSIPAccount" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_DeleteSIPAccount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteSIPAccountResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPRegistrarBindingsCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPRegistrarBindingsCount" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPRegistrarBindingsCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPRegistrarBindingsCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPRegistrarBindings_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPRegistrarBindings" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPRegistrarBindings_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPRegistrarBindingsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPProvidersCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProvidersCount" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPProvidersCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProvidersCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPProviders_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProviders" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPProviders_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProvidersResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_AddSIPProvider_InputMessage">
+    <wsdl:part name="parameters" element="tns:AddSIPProvider" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_AddSIPProvider_OutputMessage">
+    <wsdl:part name="parameters" element="tns:AddSIPProviderResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_UpdateSIPProvider_InputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateSIPProvider" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_UpdateSIPProvider_OutputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateSIPProviderResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_DeleteSIPProvider_InputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteSIPProvider" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_DeleteSIPProvider_OutputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteSIPProviderResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPProviderBindingsCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProviderBindingsCount" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPProviderBindingsCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProviderBindingsCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPProviderBindings_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProviderBindings" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetSIPProviderBindings_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetSIPProviderBindingsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetDialPlansCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetDialPlansCount" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetDialPlansCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetDialPlansCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetDialPlans_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetDialPlans" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetDialPlans_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetDialPlansResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_AddDialPlan_InputMessage">
+    <wsdl:part name="parameters" element="tns:AddDialPlan" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_AddDialPlan_OutputMessage">
+    <wsdl:part name="parameters" element="tns:AddDialPlanResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_UpdateDialPlan_InputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateDialPlan" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_UpdateDialPlan_OutputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateDialPlanResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_DeleteDialPlan_InputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteDialPlan" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_DeleteDialPlan_OutputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteDialPlanResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetCallsCount_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetCallsCount" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetCallsCount_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetCallsCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetCalls_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetCalls" />
+  </wsdl:message>
+  <wsdl:message name="IProvisioningService_GetCalls_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetCallsResponse" />
+  </wsdl:message>
+  <wsdl:portType name="IProvisioningService">
+    <wsdl:operation name="GetCDRsCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRsCount" message="tns:IProvisioningService_GetCDRsCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRsCountResponse" message="tns:IProvisioningService_GetCDRsCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetCDRs">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRs" message="tns:IProvisioningService_GetCDRs_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRsResponse" message="tns:IProvisioningService_GetCDRs_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="ExtendSession">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/ExtendSession" message="tns:IProvisioningService_ExtendSession_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/ExtendSessionResponse" message="tns:IProvisioningService_ExtendSession_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetTimeZoneOffsetMinutes">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetTimeZoneOffsetMinutes" message="tns:IProvisioningService_GetTimeZoneOffsetMinutes_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetTimeZoneOffsetMinutesResponse" message="tns:IProvisioningService_GetTimeZoneOffsetMinutes_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="IsAlive">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/IsAlive" message="tns:IProvisioningService_IsAlive_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/IsAliveResponse" message="tns:IProvisioningService_IsAlive_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="TestException">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/TestException" message="tns:IProvisioningService_TestException_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/TestExceptionResponse" message="tns:IProvisioningService_TestException_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="AreNewAccountsEnabled">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AreNewAccountsEnabled" message="tns:IProvisioningService_AreNewAccountsEnabled_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AreNewAccountsEnabledResponse" message="tns:IProvisioningService_AreNewAccountsEnabled_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="CreateCustomer">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/CreateCustomer" message="tns:IProvisioningService_CreateCustomer_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/CreateCustomerResponse" message="tns:IProvisioningService_CreateCustomer_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteCustomer">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteCustomer" message="tns:IProvisioningService_DeleteCustomer_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteCustomerResponse" message="tns:IProvisioningService_DeleteCustomer_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="Login">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/Login" message="tns:IProvisioningService_Login_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/LoginResponse" message="tns:IProvisioningService_Login_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="Logout">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/Logout" message="tns:IProvisioningService_Logout_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/LogoutResponse" message="tns:IProvisioningService_Logout_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetCustomer">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCustomer" message="tns:IProvisioningService_GetCustomer_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCustomerResponse" message="tns:IProvisioningService_GetCustomer_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateCustomer">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateCustomer" message="tns:IProvisioningService_UpdateCustomer_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateCustomerResponse" message="tns:IProvisioningService_UpdateCustomer_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateCustomerPassword">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateCustomerPassword" message="tns:IProvisioningService_UpdateCustomerPassword_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateCustomerPasswordResponse" message="tns:IProvisioningService_UpdateCustomerPassword_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPDomains">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPDomains" message="tns:IProvisioningService_GetSIPDomains_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPDomainsResponse" message="tns:IProvisioningService_GetSIPDomains_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPAccountsCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPAccountsCount" message="tns:IProvisioningService_GetSIPAccountsCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPAccountsCountResponse" message="tns:IProvisioningService_GetSIPAccountsCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPAccounts">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPAccounts" message="tns:IProvisioningService_GetSIPAccounts_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPAccountsResponse" message="tns:IProvisioningService_GetSIPAccounts_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="AddSIPAccount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AddSIPAccount" message="tns:IProvisioningService_AddSIPAccount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AddSIPAccountResponse" message="tns:IProvisioningService_AddSIPAccount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateSIPAccount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateSIPAccount" message="tns:IProvisioningService_UpdateSIPAccount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateSIPAccountResponse" message="tns:IProvisioningService_UpdateSIPAccount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteSIPAccount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteSIPAccount" message="tns:IProvisioningService_DeleteSIPAccount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteSIPAccountResponse" message="tns:IProvisioningService_DeleteSIPAccount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPRegistrarBindingsCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPRegistrarBindingsCount" message="tns:IProvisioningService_GetSIPRegistrarBindingsCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPRegistrarBindingsCountResponse" message="tns:IProvisioningService_GetSIPRegistrarBindingsCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPRegistrarBindings">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPRegistrarBindings" message="tns:IProvisioningService_GetSIPRegistrarBindings_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPRegistrarBindingsResponse" message="tns:IProvisioningService_GetSIPRegistrarBindings_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPProvidersCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProvidersCount" message="tns:IProvisioningService_GetSIPProvidersCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProvidersCountResponse" message="tns:IProvisioningService_GetSIPProvidersCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPProviders">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProviders" message="tns:IProvisioningService_GetSIPProviders_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProvidersResponse" message="tns:IProvisioningService_GetSIPProviders_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="AddSIPProvider">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AddSIPProvider" message="tns:IProvisioningService_AddSIPProvider_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AddSIPProviderResponse" message="tns:IProvisioningService_AddSIPProvider_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateSIPProvider">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateSIPProvider" message="tns:IProvisioningService_UpdateSIPProvider_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateSIPProviderResponse" message="tns:IProvisioningService_UpdateSIPProvider_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteSIPProvider">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteSIPProvider" message="tns:IProvisioningService_DeleteSIPProvider_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteSIPProviderResponse" message="tns:IProvisioningService_DeleteSIPProvider_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPProviderBindingsCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProviderBindingsCount" message="tns:IProvisioningService_GetSIPProviderBindingsCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProviderBindingsCountResponse" message="tns:IProvisioningService_GetSIPProviderBindingsCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSIPProviderBindings">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProviderBindings" message="tns:IProvisioningService_GetSIPProviderBindings_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetSIPProviderBindingsResponse" message="tns:IProvisioningService_GetSIPProviderBindings_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDialPlansCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetDialPlansCount" message="tns:IProvisioningService_GetDialPlansCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetDialPlansCountResponse" message="tns:IProvisioningService_GetDialPlansCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDialPlans">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetDialPlans" message="tns:IProvisioningService_GetDialPlans_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetDialPlansResponse" message="tns:IProvisioningService_GetDialPlans_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="AddDialPlan">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AddDialPlan" message="tns:IProvisioningService_AddDialPlan_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AddDialPlanResponse" message="tns:IProvisioningService_AddDialPlan_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateDialPlan">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateDialPlan" message="tns:IProvisioningService_UpdateDialPlan_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateDialPlanResponse" message="tns:IProvisioningService_UpdateDialPlan_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteDialPlan">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteDialPlan" message="tns:IProvisioningService_DeleteDialPlan_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteDialPlanResponse" message="tns:IProvisioningService_DeleteDialPlan_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetCallsCount">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsCount" message="tns:IProvisioningService_GetCallsCount_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsCountResponse" message="tns:IProvisioningService_GetCallsCount_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetCalls">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCalls" message="tns:IProvisioningService_GetCalls_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsResponse" message="tns:IProvisioningService_GetCalls_OutputMessage" />
+    </wsdl:operation>
+  </wsdl:portType>
+</wsdl:definitions>

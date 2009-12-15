@@ -31,11 +31,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="IronPython, Version=2.6.0.10, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="IronPython, Version=2.6.10920.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\IronPython.dll</HintPath>
     </Reference>
-    <Reference Include="IronRuby, Version=0.6.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="IronRuby, Version=0.9.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\IronRuby.dll</HintPath>
     </Reference>
@@ -43,11 +43,15 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Scripting, Version=0.9.6.10, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Dynamic, Version=0.9.6.20, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\stable\Microsoft.Dynamic.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Scripting, Version=0.9.6.20, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\Microsoft.Scripting.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Scripting.Core, Version=0.9.6.10, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Scripting.Core, Version=0.9.6.20, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\Microsoft.Scripting.Core.dll</HintPath>
     </Reference>
@@ -83,18 +87,16 @@
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="ZedGraph, Version=5.0.1.41097, Culture=neutral, PublicKeyToken=02a83cbd123fcd60, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\ZedGraph.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="AssemblyState.cs" />
     <Compile Include="DLR\ScriptLoader.cs" />
-    <Compile Include="Instrumentation\SIPTransportMetricsGraphAgent.cs" />
+    <Compile Include="Monitoring\ISIPMonitorPublisher.cs" />
+    <Compile Include="Monitoring\SIPMonitorClientSession.cs" />
     <Compile Include="Monitoring\SIPMonitorControlClientEvent.cs" />
     <Compile Include="Monitoring\SIPMonitorEvent.cs" />
+    <Compile Include="Monitoring\SIPMonitorFilter.cs" />
     <Compile Include="Monitoring\SIPMonitorMachineEvent.cs" />
     <Compile Include="SIPAssets\ISIPCallManager.cs" />
     <Compile Include="SIPAssets\SIPCDRAsset.cs" />
@@ -109,6 +111,7 @@
     <Compile Include="SIPAssets\SIPProviderBindingSynchroniser.cs" />
     <Compile Include="SIPAssets\SIPRegistrarBinding.cs" />
     <Compile Include="SIPAppFunctionDelegates.cs" />
+    <Compile Include="SIPCallDispatcherFile.cs" />
     <Compile Include="SIPDispatcherJob\AppServerDispatcher.cs" />
     <Compile Include="SIPDispatcherJob\SIPDispatcherJobLoader.cs" />
     <Compile Include="SIPDispatcherJob\SIPDispatcherJobFactory.cs" />
@@ -160,6 +163,7 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build\SIPSorcery.SIP.App.dll" "c:\temp\sipsorcery\"</PostBuildEvent>
+    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build\SIPSorcery.SIP.App.dll" "c:\temp\sipsorcery\"
+copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build\SIPSorcery.SIP.App.dll" C:\inetpub\wwwroot\bin\</PostBuildEvent>
   </PropertyGroup>
 </Project>

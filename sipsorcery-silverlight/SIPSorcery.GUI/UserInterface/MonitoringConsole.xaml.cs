@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.ServiceModel;
 using System.Text;
 using System.Threading;
 using System.Windows;
@@ -12,24 +13,32 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using SIPSorcery.Silverlight.Messaging;
+using SIPSorcery.Silverlight.Services;
 using SIPSorcery.SIP.App;
-using SIPSorcery.Sockets;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery
 {
-	public partial class MonitoringConsole : UserControl
-	{
+    public partial class MonitoringConsole : UserControl
+    {
         private const int MAX_MONITORING_TEXT_LENGTH = 20000;
 
+        private static readonly string m_defaultFilter = SIPSorceryNotificationClient.DEFAULT_FILTER;
+        //private static readonly string m_closeSessionPrefix = NotificationData.CLOSE_SESSION_PREFIX;   // If a notification with this is received it means there has been an error and the notification connection must be closed.
         private readonly SolidColorBrush m_textBoxFocusedBackground = new SolidColorBrush(Colors.White);
 
         private ActivityMessageDelegate LogActivityMessage_External;
 
         public bool Initialised { get; private set; }
 
-        private SocketClient m_sipConsoleClient;
-        private DnsEndPoint m_sipConsoleEndPoint;
+        //private SocketClient m_sipConsoleClient;
+        //private DnsEndPoint m_sipConsoleEndPoint;
+        private SIPSorceryNotificationClient m_sipNotifierClient;
+        private string m_controlfilter;
         private string m_owner;
+        private string m_authID;
+        private string m_notificationsURL;
 
         private string m_monitorHost;
         private int m_monitorPort;
@@ -42,59 +51,100 @@ namespace SIPSorcery
 
         public MonitoringConsole()
         {
-            InitializeComponent();;
+            InitializeComponent();
         }
 
         public MonitoringConsole(
-            ActivityMessageDelegate logActivityMessage, 
-            string owner, 
-            string host, 
-            int port)
-		{
-			InitializeComponent();
+            ActivityMessageDelegate logActivityMessage,
+            SIPSorceryNotificationClient notificationsClient)
+        {
+            InitializeComponent();
 
             LogActivityMessage_External = logActivityMessage;
-            m_owner = owner;
-            m_monitorHost = host;
-            m_monitorPort = port;
-            
-            m_sipConsoleEndPoint = new DnsEndPoint(m_monitorHost, m_monitorPort);
-            m_sipConsoleClient = new SocketClient(m_sipConsoleEndPoint);
-            m_sipConsoleClient.SocketDataReceived += new SocketDataReceivedDelegate(SIPConsoleClient_MonitorEventReceived);
-            m_sipConsoleClient.SocketConnectionChange += new SocketConnectionChangeDelegate(SIPConsoleClient_MonitorConnectionChange);
+            m_sipNotifierClient = notificationsClient;
+            m_sipNotifierClient.ControlEventReceived += (eventStr) => { AppendMonitorText(eventStr); };
+            //m_owner = owner;
+            //m_authID = authId;
+            //m_notificationsURL = notificationsURL;
+            //m_monitorHost = host;
+            //m_monitorPort = port;
+
+            //m_sipConsoleEndPoint = new DnsEndPoint(m_monitorHost, m_monitorPort);
+            //m_sipConsoleClient = new SocketClient(m_sipConsoleEndPoint);
+            //m_sipConsoleClient.SocketDataReceived += new SocketDataReceivedDelegate(SIPConsoleClient_MonitorEventReceived);
+            //m_sipConsoleClient.SocketConnectionChange += new SocketConnectionChangeDelegate(SIPConsoleClient_MonitorConnectionChange);
 
             UIHelper.SetVisibility(m_closeSocketButton, Visibility.Collapsed);
             UIHelper.SetVisibility(m_connectSocketButton, Visibility.Visible);
-		}
+        }
 
         public void Close()
         {
-            try
+            m_sipNotifierClient.CloseControlSession();
+            ConsoleNotificationsClosed();
+
+            /*try
             {
-                if (m_isConnected)
+                if (m_sipNotifierClient != null)
                 {
-                    m_sipConsoleClient.Close();
+                    m_sipNotifierClient.Closed -= ConsoleNotificationsClosed;
+                    m_sipNotifierClient.Subscribe(null);
+                    m_sipNotifierClient.Close();
+                    m_sipNotifierClient = null;
                 }
             }
             catch (Exception excp)
             {
-                LogActivityMessage_External(MessageLevelsEnum.Error, "Exception Close DialPlanManager. " + excp.Message);
+                LogActivityMessage_External(MessageLevelsEnum.Error, "Exception closing console notification channel. " + excp.Message);
             }
+            finally
+            {
+                UIHelper.SetVisibility(m_closeSocketButton, Visibility.Collapsed);
+                UIHelper.SetVisibility(m_connectSocketButton, Visibility.Visible);
+                UIHelper.SetIsEnabled(m_commandEntryTextBox, true);
+                m_isConnected = false;
+            }*/
         }
 
         private void ConnectSocket(object state)
         {
-
 #if !BLEND
-            LogActivityMessage_External(MessageLevelsEnum.Info, "Attempting to connect to " + m_monitorHost + ":" + m_monitorPort + ".");
-            m_sipConsoleClient.ConnectAsync();
+
+            /* m_sipNotifierClient = new PollingDuplexClient(PollingClientDebugMessage, m_authID, m_notificationsURL);
+            m_sipNotifierClient.NotificationReceived += (notification) => { AppendMonitorText(notification); };
+            m_sipNotifierClient.Closed += () =>
+            {
+                if (m_sipNotifierClient != null)
+                {
+                    LogActivityMessage_External(MessageLevelsEnum.Warn, "Console monitor notification channel closed at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + ".");
+                }
+                ConsoleNotificationsClosed();
+            };
+            m_sipNotifierClient.Subscribe(m_controlfilter);
+
+            UIHelper.SetVisibility(m_closeSocketButton, Visibility.Visible);
+            UIHelper.SetVisibility(m_connectSocketButton, Visibility.Collapsed);
+            m_isConnected = true;*/
 #else
             LogActivityMessage_External(MessageLevelsEnum.Warn, "The monitor console is disabled in this test version.");
 #endif
 
         }
 
-        private void SIPConsoleClient_MonitorConnectionChange(SocketConnectionStatus connectionState)
+        private void PollingClientDebugMessage(string message)
+        {
+            LogActivityMessage_External(MessageLevelsEnum.Monitor, message);
+        }
+
+        private void ConsoleNotificationsClosed()
+        {
+            m_isConnected = false;
+            UIHelper.SetVisibility(m_closeSocketButton, Visibility.Collapsed);
+            UIHelper.SetVisibility(m_connectSocketButton, Visibility.Visible);
+            UIHelper.SetIsEnabled(m_commandEntryTextBox, true);
+        }
+
+        /*private void SIPConsoleClient_MonitorConnectionChange(SocketConnectionStatus connectionState)
         {
             m_monitorStatusMessage = connectionState.Message;
             m_monitorStatus = connectionState.ConnectionStatus;
@@ -102,19 +152,19 @@ namespace SIPSorcery
 
             if (m_monitorStatus == ServiceConnectionStatesEnum.Ok)
             {
-                LogActivityMessage_External(MessageLevelsEnum.Info, "Connection to " + m_sipConsoleEndPoint + " established.");
+                //LogActivityMessage_External(MessageLevelsEnum.Info, "Connection to " + m_sipConsoleEndPoint + " established.");
                 UIHelper.SetVisibility(m_closeSocketButton, Visibility.Visible);
                 UIHelper.SetVisibility(m_connectSocketButton, Visibility.Collapsed);
                 m_isConnected = true;
             }
             else
             {
-                LogActivityMessage_External(MessageLevelsEnum.Info, "Connection to " + m_sipConsoleEndPoint + " closed.");
+                //LogActivityMessage_External(MessageLevelsEnum.Info, "Connection to " + m_sipConsoleEndPoint + " closed.");
                 UIHelper.SetVisibility(m_closeSocketButton, Visibility.Collapsed);
                 UIHelper.SetVisibility(m_connectSocketButton, Visibility.Visible);
                 m_isConnected = false;
             }
-        }
+        }*/
 
         private void SIPConsoleClient_MonitorEventReceived(byte[] data, int bytesRead)
         {
@@ -128,15 +178,7 @@ namespace SIPSorcery
                 if (e.Key == Key.Enter)
                 {
                     string command = m_commandEntryTextBox.Text;
-
-                    if (command != null && command.Trim().Length > 0)
-                    {
-                        m_commandEntryTextBox.Text = String.Empty;
-                        AppendMonitorText(command);
-                        
-                        byte[] sendBuffer = Encoding.UTF8.GetBytes(command + "\n");
-                        m_sipConsoleClient.Send(sendBuffer);
-                    }
+                    ConnectConsole(command);
                 }
             }
             catch (Exception excp)
@@ -147,31 +189,37 @@ namespace SIPSorcery
 
         private void CloseButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            if (m_isConnected)
-            {
-                try
-                {
-                    m_sipConsoleClient.Close();
-                }
-                catch (Exception excp)
-                {
-                    LogActivityMessage_External(MessageLevelsEnum.Error, "Exception CloseSocket. " + excp.Message);
-                }
-                finally
-                {
-                    m_isConnected = false;
-                    UIHelper.SetVisibility(m_closeSocketButton, Visibility.Collapsed);
-                    UIHelper.SetVisibility(m_connectSocketButton, Visibility.Visible);
-                }
-            }
+            Close();
         }
 
         private void ConnectButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            if (!m_isConnected)
+            string filterText = m_commandEntryTextBox.Text;
+            ConnectConsole(filterText);
+        }
+
+        private void ConnectConsole(string filterText)
+        {
+            try
             {
+                if (filterText.IsNullOrBlank())
+                {
+                    filterText = m_defaultFilter;
+                }
+
+                SIPMonitorFilter filter = new SIPMonitorFilter(filterText);
+                m_controlfilter = filterText.Trim();
+                UIHelper.SetIsEnabled(m_commandEntryTextBox, false);
+                LogActivityMessage_External(MessageLevelsEnum.Monitor, "Requesting notifications with filter=" + filterText.Trim() + " at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + ".");
+
                 UIHelper.SetVisibility(m_connectSocketButton, Visibility.Collapsed);
-                ThreadPool.QueueUserWorkItem(new WaitCallback(ConnectSocket), null);
+                UIHelper.SetVisibility(m_closeSocketButton, Visibility.Visible);
+                m_sipNotifierClient.SetControlFilter(m_controlfilter);
+            }
+            catch (Exception filterExp)
+            {
+                LogActivityMessage_External(MessageLevelsEnum.Warn, "Invalid filter. " + filterExp.Message);
+                ConsoleNotificationsClosed();
             }
         }
 
@@ -180,10 +228,10 @@ namespace SIPSorcery
             m_monitoringEventsTextBox.Text = String.Empty;
             m_monitoringText.Remove(0, m_monitoringText.Length);
         }
-           
+
         private void AppendMonitorText(string message)
         {
-            if(message == null || message.Trim().Length == 0)
+            if (message == null || message.Trim().Length == 0)
             {
                 return;
             }
@@ -191,7 +239,7 @@ namespace SIPSorcery
             {
                 if (m_monitoringText.Length + message.Length > MAX_MONITORING_TEXT_LENGTH)
                 {
-                    m_monitoringText.Remove(0, message.Length); 
+                    m_monitoringText.Remove(0, message.Length);
                 }
 
                 m_monitoringText.Append(message);
@@ -214,5 +262,5 @@ namespace SIPSorcery
             m_existingTextBoxBackground = m_commandEntryTextBox.Background;
             m_commandEntryTextBox.Background = m_textBoxFocusedBackground;
         }
-	}
+    }
 }

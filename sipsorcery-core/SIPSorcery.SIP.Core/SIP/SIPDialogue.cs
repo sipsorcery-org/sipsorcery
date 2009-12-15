@@ -60,6 +60,7 @@ namespace SIPSorcery.SIP {
 
         protected static string m_CRLF = SIPConstants.CRLF;
         protected static string m_sipVersion = SIPConstants.SIP_VERSION_STRING;
+        private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
 
         public Guid Id { get; set; }                                // Id for persistence, NOT used for SIP call purposes.
         public string Owner { get; set; }                           // In cases where ownership needs to be set on the dialogue this value can be used. Does not have any effect on the operation of the dialogue and is for info only.
@@ -222,9 +223,19 @@ namespace SIPSorcery.SIP {
 
         public void Hangup(SIPTransport sipTransport, SIPEndPoint outboundProxy) {
             try {
-                SIPEndPoint localEndPoint = (outboundProxy != null) ? sipTransport.GetDefaultSIPEndPoint(outboundProxy.SIPProtocol) : sipTransport.GetDefaultSIPEndPoint(GetRemoteTargetProtocol());
+                SIPEndPoint byeOutboundProxy = null;
+                if (!ProxySendFrom.IsNullOrBlank())
+                {
+                    byeOutboundProxy = new SIPEndPoint(new IPEndPoint(SIPEndPoint.ParseSIPEndPoint(ProxySendFrom).SocketEndPoint.Address, m_defaultSIPPort));
+                }
+                else if (outboundProxy != null)
+                {
+                    byeOutboundProxy = outboundProxy;
+                }
+
+                SIPEndPoint localEndPoint = (byeOutboundProxy != null) ? sipTransport.GetDefaultSIPEndPoint(byeOutboundProxy.SIPProtocol) : sipTransport.GetDefaultSIPEndPoint(GetRemoteTargetProtocol());
                 SIPRequest byeRequest = GetByeRequest(localEndPoint);
-                SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(byeRequest, sipTransport.GetRequestEndPoint(byeRequest, outboundProxy, true), localEndPoint, outboundProxy);
+                SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(byeRequest, sipTransport.GetRequestEndPoint(byeRequest, byeOutboundProxy, true), localEndPoint, byeOutboundProxy);
                 byeTransaction.SendReliableRequest();
             }
             catch (Exception excp) {

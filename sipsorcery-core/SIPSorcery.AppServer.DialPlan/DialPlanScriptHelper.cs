@@ -40,6 +40,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Configuration;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -68,7 +69,7 @@ namespace SIPSorcery.AppServer.DialPlan
     /// </summary>
     public class DialPlanScriptHelper
     {
-        private const int DEFAULT_CREATECALL_RINGTIME = 60;     
+        private const int DEFAULT_CREATECALL_RINGTIME = 60;
         private const int ENUM_LOOKUP_TIMEOUT = 5;              // Default timeout in seconds for ENUM lookups.
         private const string DEFAULT_LOCAL_DOMAIN = "local";
         private const int MAX_BYTES_WEB_GET = 1024;             // The maximum number of bytes that will be read from the response stream in the WebGet application.
@@ -82,6 +83,8 @@ namespace SIPSorcery.AppServer.DialPlan
         private const int MAX_DATA_ENTRIES_PER_USER = 100;
         private const int MAX_CALLS_ALLOWED = 20;       // The maximum number of outgoing call requests that will be allowed per dialplan execution.
         private const int MAX_CALLBACKS_ALLOWED = 3;    // The maximum number of callback method calls that will be alowed per dialplan instance.
+        private const int WEBGET_MAXIMUM_TIMEOUT = 300; // The maximum number of seconds a web get can be set to wait for a response.
+        private const int DEFAULT_GOOGLEVOICE_PHONETYPE = 2;
 
         private static int m_maxRingTime = SIPTimings.MAX_RING_TIME;
 
@@ -102,7 +105,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private SIPEndPoint m_outboundProxySocket;                                      // If this app forwards calls via an outbound proxy this value will be set.
         private List<string> m_customSIPHeaders = new List<string>();                   // Allows a dialplan user to add or customise SIP headers for forwarded requests.
         private string m_customContent;                                                 // If set will be used by the Dial command as the INVITE body on forwarded requests.
-        private string m_customContentType;  
+        private string m_customContentType;
         private string m_customFromName;
         private string m_customFromUser;
         private string m_customFromHost;
@@ -110,19 +113,21 @@ namespace SIPSorcery.AppServer.DialPlan
         private DialStringParser m_dialStringParser;
         private bool m_clientCallCancelled;
         private ManualResetEvent m_waitForCallCompleted;
-              
+
         // Deprecated, use LastFailureReason.
         public string LastFailureMessage
         {
             get { return LastFailureReason; }
         }
-        
+
         // The error message from the first call leg on the final dial attempt used when the call fails to provide a reason.
-        public string LastFailureReason {
+        public string LastFailureReason
+        {
             get { return m_executingScript.LastFailureReason; }
             set { m_executingScript.LastFailureReason = value; }
         }
-        public SIPResponseStatusCodesEnum LastFailureStatus {
+        public SIPResponseStatusCodesEnum LastFailureStatus
+        {
             get { return m_executingScript.LastFailureStatus; }
             set { m_executingScript.LastFailureStatus = value; }
         }
@@ -164,12 +169,15 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public static IPAddress PublicIPAddress;    // If the app server is behind a NAT then it can set this address to be used in mangled SDP.
 
-        static DialPlanScriptHelper() {
-            try {
+        static DialPlanScriptHelper()
+        {
+            try
+            {
                 m_userDataDBType = (ConfigurationManager.AppSettings[USERDATA_DBTYPE_KEY] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[USERDATA_DBTYPE_KEY]) : StorageTypes.Unknown;
                 m_userDataDBConnStr = ConfigurationManager.AppSettings[USERDATA_DBCONNSTR_KEY];
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception DialPlanScriptHelper (static ctor). " + excp.Message);
             }
         }
@@ -188,7 +196,8 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPAssetPersistor<SIPDialPlan> sipDialPlanPersistor,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPAccountBindings,
             SIPEndPoint outboundProxySocket
-            ) {
+            )
+        {
             m_sipTransport = sipTransport;
             m_executingScript = executingScript;
             m_dialPlanLogDelegate = logDelegate;
@@ -203,7 +212,8 @@ namespace SIPSorcery.AppServer.DialPlan
             GetSIPAccountBindings_External = getSIPAccountBindings;
             m_outboundProxySocket = outboundProxySocket;
 
-            if (m_dialPlanContext != null) {
+            if (m_dialPlanContext != null)
+            {
                 m_username = dialPlanContext.Owner;
                 m_adminMemberId = dialPlanContext.AdminMemberId;
                 m_sipProviders = dialPlanContext.SIPProviders;
@@ -212,13 +222,17 @@ namespace SIPSorcery.AppServer.DialPlan
                 m_dialPlanContext.CallCancelledByClient += ClientCallTerminated;
 
                 SIPAssetGetDelegate<SIPAccount> getSIPAccount = null;
-                if (m_sipAccountPersistor != null) {
+                if (m_sipAccountPersistor != null)
+                {
                     getSIPAccount = m_sipAccountPersistor.Get;
                 }
                 m_dialStringParser = new DialStringParser(m_sipTransport, m_dialPlanContext.Owner, m_dialPlanContext.SIPAccount, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate);
-                foreach (string unknownHeader in m_sipRequest.Header.UnknownHeaders) {
-                    if (!unknownHeader.IsNullOrBlank() && unknownHeader.StartsWith(SwitchboardApp.SWITCHBOARD_REMOTE_HEADER)) {
-                        m_dialPlanContext.CreateBridge_External = (uasDialogue, uacDialogue, owner) => {
+                foreach (string unknownHeader in m_sipRequest.Header.UnknownHeaders)
+                {
+                    if (!unknownHeader.IsNullOrBlank() && unknownHeader.StartsWith(SwitchboardApp.SWITCHBOARD_REMOTE_HEADER))
+                    {
+                        m_dialPlanContext.CreateBridge_External = (uasDialogue, uacDialogue, owner) =>
+                        {
                             logger.Debug("Calling switchboardapp create bridge delegate.");
                             uasDialogue.RemoteTarget = new SIPURI(uasDialogue.RemoteTarget.Scheme, SIPEndPoint.ParseSIPEndPoint(unknownHeader.Substring(unknownHeader.IndexOf(":") + 1).Trim()));
                             CreateBridge_External(uasDialogue, uacDialogue, owner);
@@ -234,24 +248,30 @@ namespace SIPSorcery.AppServer.DialPlan
         /// is not called in it or from it.
         /// </remarks>
         /// <param name="cancelCause"></param>
-        private void ClientCallTerminated(CallCancelCause cancelCause) {
-            try {
+        private void ClientCallTerminated(CallCancelCause cancelCause)
+        {
+            try
+            {
                 m_clientCallCancelled = true;
 
                 Log("Dialplan call was terminated by client side due to " + cancelCause + ".");
 
-                if (m_currentCall != null) {
+                if (m_currentCall != null)
+                {
                     m_currentCall.CancelNotRequiredCallLegs(cancelCause);
                 }
 
-                if (m_waitForCallCompleted != null) {
+                if (m_waitForCallCompleted != null)
+                {
                     m_waitForCallCompleted.Set();
                 }
-                else {
+                else
+                {
                     m_executingScript.StopExecution();
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception ClientCallTerminated. " + excp.Message);
             }
         }
@@ -304,21 +324,26 @@ namespace SIPSorcery.AppServer.DialPlan
             string data,
             int ringTimeout,
             int answeredCallLimit,
-            SIPRequest clientRequest) {
+            SIPRequest clientRequest)
+        {
 
-            if (m_dialPlanContext.IsAnswered) {
+            if (m_dialPlanContext.IsAnswered)
+            {
                 Log("The call has already been answered the Dial command was not processed.");
                 return DialPlanAppResult.AlreadyAnswered;
             }
-            else if (data.IsNullOrBlank()) {
+            else if (data.IsNullOrBlank())
+            {
                 Log("The dial string cannot be empty when calling Dial.");
                 return DialPlanAppResult.Error;
             }
-            else if (m_callInitialisationCount > MAX_CALLS_ALLOWED) {
+            else if (m_callInitialisationCount > MAX_CALLS_ALLOWED)
+            {
                 Log("You have exceeded the maximum allowed calls for a dialplan execution.");
                 return DialPlanAppResult.Error;
             }
-            else {
+            else
+            {
                 Log("Commencing Dial with: " + data + ".");
 
                 DialPlanAppResult result = DialPlanAppResult.Unknown;
@@ -329,17 +354,20 @@ namespace SIPSorcery.AppServer.DialPlan
                 string answeredContentType = null;
                 string answeredBody = null;
                 SIPDialogue answeredDialogue = null;
+                int numberLegs = 0;
                 LastDialled = new List<SIPTransaction>();
 
                 m_currentCall = new ForkCall(m_sipTransport, FireProxyLogEvent, m_callManager.QueueNewCall, Username, m_adminMemberId, LastDialled, m_outboundProxySocket);
                 m_currentCall.CallProgress += m_dialPlanContext.CallProgress;
-                m_currentCall.CallFailed += (status, reason, headers) => {
+                m_currentCall.CallFailed += (status, reason, headers) =>
+                {
                     LastFailureStatus = status;
                     LastFailureReason = reason;
                     result = DialPlanAppResult.Failed;
                     m_waitForCallCompleted.Set();
                 };
-                m_currentCall.CallAnswered += (status, reason, toTag, headers, contentType, body, dialogue) => {
+                m_currentCall.CallAnswered += (status, reason, toTag, headers, contentType, body, dialogue) =>
+                {
                     answeredStatus = status;
                     answeredReason = reason;
                     answeredContentType = contentType;
@@ -349,15 +377,16 @@ namespace SIPSorcery.AppServer.DialPlan
                     m_waitForCallCompleted.Set();
                 };
 
-                try {
+                try
+                {
                     Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(
-                        DialPlanContextsEnum.Script, 
-                        clientRequest, 
-                        data, 
-                        m_customSIPHeaders, 
-                        m_customContentType, 
-                        m_customContent, 
-                        m_dialPlanContext.CallersNetworkId, 
+                        DialPlanContextsEnum.Script,
+                        clientRequest,
+                        data,
+                        m_customSIPHeaders,
+                        m_customContentType,
+                        m_customContent,
+                        m_dialPlanContext.CallersNetworkId,
                         m_dialPlanContext.SIPDialPlan.DialPlanName,
                         m_customFromName,
                         m_customFromUser,
@@ -366,31 +395,46 @@ namespace SIPSorcery.AppServer.DialPlan
                     //    UpdateCallQueueFromHeaders(callsQueue, m_customFromName, m_customFromUser, m_customFromHost);
                     //}
                     List<SIPCallDescriptor>[] callListArray = callsQueue.ToArray();
-                    foreach (List<SIPCallDescriptor> callList in callListArray) {
-                        m_callInitialisationCount += callList.Count;
-                    }
-                    if (m_callInitialisationCount > MAX_CALLS_ALLOWED) {
-                        Log("You have exceeded the maximum allowed calls for a dialplan execution.");
+                    callsQueue.ToList().ForEach((list) => numberLegs += list.Count);
+
+                    if (numberLegs == 0)
+                    {
+                        Log("The dial string did not result in any call legs.");
                         return DialPlanAppResult.Error;
+                    }
+                    else
+                    {
+                        m_callInitialisationCount += numberLegs;
+                        if (m_callInitialisationCount > MAX_CALLS_ALLOWED)
+                        {
+                            Log("You have exceeded the maximum allowed calls for a dialplan execution.");
+                            return DialPlanAppResult.Error;
+                        }
                     }
 
                     m_currentCall.Start(callsQueue);
 
                     // Wait for an answer.
-                    if (ringTimeout <= 0 || ringTimeout * 1000 > m_maxRingTime) {
+                    if (ringTimeout <= 0 || ringTimeout * 1000 > m_maxRingTime)
+                    {
                         ringTimeout = m_maxRingTime;
                     }
-                    else  {
+                    else
+                    {
                         ringTimeout = ringTimeout * 1000;
                     }
                     ExtendScriptTimeout(ringTimeout + DEFAULT_CREATECALL_RINGTIME);
                     DateTime startTime = DateTime.Now;
 
-                    if (m_waitForCallCompleted.WaitOne(ringTimeout, false)) {
-                        if (!m_clientCallCancelled) {
-                            if (result == DialPlanAppResult.Answered) {
+                    if (m_waitForCallCompleted.WaitOne(ringTimeout, false))
+                    {
+                        if (!m_clientCallCancelled)
+                        {
+                            if (result == DialPlanAppResult.Answered)
+                            {
                                 // The call limit duration is only used if there hasn't already been a per leg duration set on the call.
-                                if (answeredCallLimit > 0 && answeredDialogue.CallDurationLimit == 0) {
+                                if (answeredCallLimit > 0 && answeredDialogue.CallDurationLimit == 0)
+                                {
                                     answeredDialogue.CallDurationLimit = answeredCallLimit;
                                 }
 
@@ -402,25 +446,30 @@ namespace SIPSorcery.AppServer.DialPlan
                             }
                         }
                     }
-                    else {
-                        if (!m_clientCallCancelled) {
+                    else
+                    {
+                        if (!m_clientCallCancelled)
+                        {
                             // Call timed out.
                             m_currentCall.CancelNotRequiredCallLegs(CallCancelCause.TimedOut);
                             result = DialPlanAppResult.TimedOut;
                         }
                     }
 
-                    if (m_clientCallCancelled) {
+                    if (m_clientCallCancelled)
+                    {
                         Log("Dial command was halted by cancellation of client call after " + DateTime.Now.Subtract(startTime).TotalSeconds.ToString("#.00") + "s.");
                         m_executingScript.StopExecution();
                     }
 
                     return result;
                 }
-                catch (ThreadAbortException) {
+                catch (ThreadAbortException)
+                {
                     return DialPlanAppResult.Unknown;
                 }
-                catch (Exception excp) {
+                catch (Exception excp)
+                {
                     logger.Error("Exception DialPlanScriptHelper Dial. " + excp.Message);
                     return DialPlanAppResult.Error;
                 }
@@ -448,16 +497,19 @@ namespace SIPSorcery.AppServer.DialPlan
         public void Callback(string dest1, string dest2, int delaySeconds)
         {
             m_callbackRequests++;
-            if (m_callbackRequests > MAX_CALLBACKS_ALLOWED) {
+            if (m_callbackRequests > MAX_CALLBACKS_ALLOWED)
+            {
                 Log("You have exceeded the maximum allowed callbacks for a dialplan execution.");
             }
-            else {
+            else
+            {
                 CallbackApp callbackApp = new CallbackApp(m_sipTransport, m_callManager, m_dialStringParser, FireProxyLogEvent, m_username, m_adminMemberId, m_outboundProxySocket);
                 ThreadPool.QueueUserWorkItem(delegate { callbackApp.Callback(dest1, dest2, delaySeconds); });
             }
         }
 
-        public void Respond(int statusCode, string reason) {
+        public void Respond(int statusCode, string reason)
+        {
             Respond(statusCode, reason, null);
         }
 
@@ -467,32 +519,41 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="statusCode"></param>
         /// <param name="reason"></param>
         /// <param name="customerHeaders">Optional list of pipe '|' delimited custom headers.</param>
-        public void Respond(int statusCode, string reason, string customHeaders) {
-            try {
-                if (m_dialPlanContext.IsAnswered) {
+        public void Respond(int statusCode, string reason, string customHeaders)
+        {
+            try
+            {
+                if (m_dialPlanContext.IsAnswered)
+                {
                     Log("The call has already been answered the Respond command was not processed.");
                 }
-                else if (statusCode >= 200 && statusCode < 300) {
+                else if (statusCode >= 200 && statusCode < 300)
+                {
                     Log("Respond cannot be used for 2xx responses.");
                 }
-                else {
+                else
+                {
                     string[] customHeadersList = null;
-                    if (!customHeaders.IsNullOrBlank()) {
+                    if (!customHeaders.IsNullOrBlank())
+                    {
                         customHeadersList = customHeaders.Split('|');
                     }
 
                     SIPResponseStatusCodesEnum status = SIPResponseStatusCodes.GetStatusTypeForCode(statusCode);
-                    if (statusCode >= 300) {
+                    if (statusCode >= 300)
+                    {
                         m_dialPlanContext.CallFailed(status, reason, customHeadersList);
                         m_executingScript.StopExecution();
                     }
-                    else if (statusCode < 200) {
+                    else if (statusCode < 200)
+                    {
                         m_dialPlanContext.CallProgress(status, reason, customHeadersList, null, null);
                     }
                 }
             }
             catch (ThreadAbortException) { }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 Log("Exception Respond. " + excp.Message);
             }
         }
@@ -564,25 +625,31 @@ namespace SIPSorcery.AppServer.DialPlan
         /// </summary>
         public bool IsAvailable(string username, string domain)
         {
-            try {
+            try
+            {
                 string canonicalDomain = m_getCanonicalDomainDelegate(domain, false);
-                if (canonicalDomain.IsNullOrBlank()) {
+                if (canonicalDomain.IsNullOrBlank())
+                {
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The " + domain + " is not a serviced domain.", Username));
                     return false;
                 }
-                else {
+                else
+                {
                     SIPAccount sipAccount = m_sipAccountPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain);
-                    if (sipAccount == null) {
+                    if (sipAccount == null)
+                    {
                         FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in IsAvailable for " + username + "@" + canonicalDomain + ".", Username));
                         return false;
                     }
-                    else {
+                    else
+                    {
                         SIPRegistrarBinding[] bindings = GetBindings(username, canonicalDomain);
                         return (bindings != null && bindings.Length > 0);
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 Log("Exception IsAvailable. " + excp.Message);
                 return false;
             }
@@ -593,7 +660,8 @@ namespace SIPSorcery.AppServer.DialPlan
         /// </summary>
         /// <param name="username">The SIP account username to check for.</param>
         /// <returns>Returns true if the SIP account exists, false otherwise.</returns>
-        public bool DoesSIPAccountExist(string username) {
+        public bool DoesSIPAccountExist(string username)
+        {
             return DoesSIPAccountExist(username, DEFAULT_LOCAL_DOMAIN);
         }
 
@@ -603,12 +671,15 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="username">The SIP account username to check for.</param>
         /// <param name="domain">The SIP domain to check for the account in.</param>
         /// <returns>Returns true if the SIP account exists, false otherwise.</returns>
-        public bool DoesSIPAccountExist(string username, string domain) {
+        public bool DoesSIPAccountExist(string username, string domain)
+        {
             string canonicalDomain = m_getCanonicalDomainDelegate(domain, false);
-            if (!canonicalDomain.IsNullOrBlank()) {
+            if (!canonicalDomain.IsNullOrBlank())
+            {
                 return (m_sipAccountPersistor.Count(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain) > 0);
             }
-            else {
+            else
+            {
                 return false;
             }
         }
@@ -631,27 +702,34 @@ namespace SIPSorcery.AppServer.DialPlan
             try
             {
                 string canonicalDomain = m_getCanonicalDomainDelegate(domain, false);
-                if (canonicalDomain.IsNullOrBlank()) {
+                if (canonicalDomain.IsNullOrBlank())
+                {
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The " + domain + " is not a serviced domain.", Username));
                     return null;
                 }
-                else {
+                else
+                {
                     SIPAccount sipAccount = m_sipAccountPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == domain);
-                    if (sipAccount == null) {
+                    if (sipAccount == null)
+                    {
                         FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in GetBindings for " + username + "@" + domain + ".", Username));
                         return null;
                     }
-                    else if (sipAccount.Owner != m_username) {
+                    else if (sipAccount.Owner != m_username)
+                    {
                         FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "You are not authorised to call GetBindings for " + username + "@" + domain + ".", Username));
                         return null;
                     }
-                    else {
+                    else
+                    {
                         List<SIPRegistrarBinding> bindings = GetSIPAccountBindings_External(s => s.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
 
-                        if (bindings != null) {
+                        if (bindings != null)
+                        {
                             return bindings.ToArray();
                         }
-                        else {
+                        else
+                        {
                             return null;
                         }
                     }
@@ -663,7 +741,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 return null;
             }
         }
-        
+
         /// <summary>
         /// Adds a name value pair to the custom SIP headers list. The custom headers will be added to any forwarded call requests.
         /// </summary>
@@ -698,13 +776,16 @@ namespace SIPSorcery.AppServer.DialPlan
         /// If present removes a SIP header from the list of custom headers.
         /// </summary>
         /// <param name="headerName">The name of the SIP header to remove.</param>
-        public void RemoveCustomSIPHeader(string headerName) {
+        public void RemoveCustomSIPHeader(string headerName)
+        {
 
-            if (!headerName.IsNullOrBlank() && m_customSIPHeaders.Contains(headerName.Trim())) {
+            if (!headerName.IsNullOrBlank() && m_customSIPHeaders.Contains(headerName.Trim()))
+            {
                 m_customSIPHeaders.Remove(headerName.Trim());
                 Log("Custom SIP header " + headerName.Trim() + " successfully removed.");
             }
-            else {
+            else
+            {
                 Log("Custom SIP header " + headerName.Trim() + " was not in the list.");
             }
         }
@@ -712,7 +793,8 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <summary>
         /// Clears all the custom SIP header values from the list.
         /// </summary>
-        public void ClearCustomSIPHeaders() {
+        public void ClearCustomSIPHeaders()
+        {
             m_customSIPHeaders.Clear();
         }
 
@@ -720,9 +802,11 @@ namespace SIPSorcery.AppServer.DialPlan
         /// Dumps the currently stored custom SIP headers to the console or monitoring screen to allow
         /// users to troubleshoot.
         /// </summary>
-        public void PrintCustomSIPHeaders() {
+        public void PrintCustomSIPHeaders()
+        {
             Log("Custom SIP Header List:");
-            foreach (string customHeader in m_customSIPHeaders) {
+            foreach (string customHeader in m_customSIPHeaders)
+            {
                 Log(" " + customHeader);
             }
         }
@@ -756,7 +840,8 @@ namespace SIPSorcery.AppServer.DialPlan
         /// Sets the custom body that will override the incoming request body for forwarded INVITE requests.
         /// </summary>
         /// <param name="body">The custom body that will be sent in forwarded INVITE requests.</param>
-        public void SetCustomContent(string content) {
+        public void SetCustomContent(string content)
+        {
             m_customContent = content;
         }
 
@@ -764,7 +849,8 @@ namespace SIPSorcery.AppServer.DialPlan
         /// Sets the custom body that will override the incoming request body for forwarded INVITE requests.
         /// </summary>
         /// <param name="body">The custom body that will be sent in forwarded INVITE requests.</param>
-        public void SetCustomContent(string contentType, string content) {
+        public void SetCustomContent(string contentType, string content)
+        {
             m_customContentType = contentType;
             m_customContent = content;
         }
@@ -772,7 +858,8 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <summary>
         /// Clears the custom body so that the incoming request body will again be used on forwarded requests.
         /// </summary>
-        public void ClearCustomBody() {
+        public void ClearCustomBody()
+        {
             m_customContentType = null;
             m_customContent = null;
         }
@@ -780,8 +867,10 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <summary>
         /// Attempts to send a gTalk IM to the specified account.
         /// </summary>
-        public void GTalk(string username, string password, string sendToUser, string message) {
-            try {
+        public void GTalk(string username, string password, string sendToUser, string message)
+        {
+            try
+            {
                 XmppClientConnection xmppCon = new XmppClientConnection();
                 xmppCon.Password = password;
                 xmppCon.Username = username;
@@ -799,34 +888,51 @@ namespace SIPSorcery.AppServer.DialPlan
                 xmppCon.OnLogin += new ObjectHandler((sender) => waitForConnect.Set());
                 xmppCon.Open();
 
-                if (waitForConnect.WaitOne(5000, false)) {
+                if (waitForConnect.WaitOne(5000, false))
+                {
                     Log("Connected to gTalk for " + username + "@gmail.com.");
                     xmppCon.Send(new Message(new Jid(sendToUser + "@gmail.com"), MessageType.chat, message));
                     // Give the message time to be sent.
                     Thread.Sleep(1000);
                 }
-                else {
+                else
+                {
                     Log("Connection to gTalk for " + username + " timed out.");
                 }
 
                 xmppCon.Close();
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception GTalk. " + excp.Message);
                 Log("Exception GTalk. " + excp.Message);
             }
         }
 
-        public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, bool notUsed) {
-            GoogleVoiceCall(emailAddress, password, forwardingNumber, destinationNumber, null);
+        //public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, bool notUsed)
+        //{
+        //    GoogleVoiceCall(emailAddress, password, forwardingNumber, destinationNumber, null, DEFAULT_GOOGLEVOICE_PHONETYPE, 0);
+        //}
+
+        public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber)
+        {
+            GoogleVoiceCall(emailAddress, password, forwardingNumber, destinationNumber, null, DEFAULT_GOOGLEVOICE_PHONETYPE, 0);
         }
 
-        public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber) {
-            GoogleVoiceCall(emailAddress, password, forwardingNumber, destinationNumber, null);
+        public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromURIUserToMatch)
+        {
+            GoogleVoiceCall(emailAddress, password, forwardingNumber, destinationNumber, fromURIUserToMatch, DEFAULT_GOOGLEVOICE_PHONETYPE, 0);
         }
 
-        public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromURIUserToMatch) {
-            try {
+        public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromURIUserToMatch, int phoneType)
+        {
+            GoogleVoiceCall(emailAddress, password, forwardingNumber, destinationNumber, fromURIUserToMatch, phoneType, 0);
+        }
+
+        public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromURIUserToMatch, int phoneType, int waitForCallbackTimeout)
+        {
+            try
+            {
                 DateTime startTime = DateTime.Now;
 
                 ExtendScriptTimeout(DEFAULT_CREATECALL_RINGTIME);
@@ -836,33 +942,42 @@ namespace SIPSorcery.AppServer.DialPlan
                 string content = m_sipRequest.Body;
                 IPAddress requestSDPAddress = (PublicIPAddress != null) ? PublicIPAddress : SIPPacketMangler.GetRequestIPAddress(m_sipRequest);
 
-                IPEndPoint sdpEndPoint = SDP.GetSDPRTPEndPoint(content);
-                if (sdpEndPoint != null) {
-                    if (!SIPTransport.IsPrivateAddress(sdpEndPoint.Address.ToString())) {
+                IPEndPoint sdpEndPoint = (content.IsNullOrBlank()) ? null : SDP.GetSDPRTPEndPoint(content);
+                if (sdpEndPoint != null)
+                {
+                    if (!SIPTransport.IsPrivateAddress(sdpEndPoint.Address.ToString()))
+                    {
                         Log("SDP on GoogleVoiceCall call had public IP not mangled, RTP socket " + sdpEndPoint.ToString() + ".");
                     }
-                    else {
+                    else
+                    {
                         bool wasSDPMangled = false;
-                        if (requestSDPAddress != null) {
-                            if (sdpEndPoint != null) {
+                        if (requestSDPAddress != null)
+                        {
+                            if (sdpEndPoint != null)
+                            {
                                 content = SIPPacketMangler.MangleSDP(content, requestSDPAddress.ToString(), out wasSDPMangled);
                             }
                         }
 
-                        if (wasSDPMangled) {
+                        if (wasSDPMangled)
+                        {
                             Log("SDP on GoogleVoiceCall call had RTP socket mangled from " + sdpEndPoint.ToString() + " to " + requestSDPAddress.ToString() + ":" + sdpEndPoint.Port + ".");
                         }
-                        else if (sdpEndPoint != null) {
+                        else if (sdpEndPoint != null)
+                        {
                             Log("SDP on GoogleVoiceCall could not be mangled, using original RTP socket of " + sdpEndPoint.ToString() + ".");
                         }
                     }
                 }
-                else {
+                else
+                {
                     Log("SDP RTP socket on GoogleVoiceCall call could not be determined.");
                 }
 
-                SIPDialogue answeredDialogue = googleCall.InitiateCall(emailAddress, password, forwardingNumber, destinationNumber, fromURIUserToMatch, m_sipRequest.Header.ContentType, content);
-                if (answeredDialogue != null) {
+                SIPDialogue answeredDialogue = googleCall.InitiateCall(emailAddress, password, forwardingNumber, destinationNumber, fromURIUserToMatch, phoneType, waitForCallbackTimeout, m_sipRequest.Header.ContentType, content);
+                if (answeredDialogue != null)
+                {
                     m_dialPlanContext.CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, null, answeredDialogue.ContentType, answeredDialogue.RemoteSDP, answeredDialogue);
 
                     // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
@@ -870,8 +985,9 @@ namespace SIPSorcery.AppServer.DialPlan
                     m_executingScript.StopExecution();
                 }
             }
-            catch (ThreadAbortException) {  }
-            catch (Exception excp) {
+            catch (ThreadAbortException) { }
+            catch (Exception excp)
+            {
                 Log("Exception on GoogleVoiceCall. " + excp.Message);
             }
         }
@@ -882,30 +998,61 @@ namespace SIPSorcery.AppServer.DialPlan
         /// </summary>
         /// <param name="url">The URL of the server to call.</param>
         /// <returns>The first 1024 bytes read from the response.</returns>
-        public string WebGet(string url) {
-            try {
-                if(!url.IsNullOrBlank()) {
-                    using(WebClient webClient = new WebClient()) {
+        public string WebGet(string url, int timeout)
+        {
+           Timer cancelTimer = null;
 
-                        Log("WebGet attempting to read from " + url + ".");
-                        
-                            System.IO.Stream responseStream = webClient.OpenRead(url);
-                        if (responseStream != null) {
-                            byte[] buffer = new byte[MAX_BYTES_WEB_GET];
-                            int bytesRead = responseStream.Read(buffer, 0, MAX_BYTES_WEB_GET);
-                            responseStream.Close();
-                            return Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                        }
-                    }
-                }
+           try
+           {
+               if (!url.IsNullOrBlank())
+               {
+                   using (WebClient webClient = new WebClient())
+                   {
 
-                return null;
-            }
-            catch (Exception excp) {
-                logger.Error("Exception WebGet. " + excp.Message);
-                Log("Error in WebGet for " + url + ".");
-                return null;
-            }
+                       if (timeout > 0)
+                       {
+                           timeout = (timeout > WEBGET_MAXIMUM_TIMEOUT) ? timeout = WEBGET_MAXIMUM_TIMEOUT : timeout;
+                           cancelTimer = new Timer(delegate
+                               {
+                                   Log("WebGet to " + url + " timed out after " + timeout + " seconds.");
+                                   webClient.CancelAsync();
+                               },
+                               null, timeout * 1000, Timeout.Infinite);
+                       }
+
+                       Log("WebGet attempting to read from " + url + ".");
+
+                       System.IO.Stream responseStream = webClient.OpenRead(url);
+                       if (responseStream != null)
+                       {
+                           byte[] buffer = new byte[MAX_BYTES_WEB_GET];
+                           int bytesRead = responseStream.Read(buffer, 0, MAX_BYTES_WEB_GET);
+                           responseStream.Close();
+                           return Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                       }
+                   }
+               }
+
+               return null;
+           }
+           catch (Exception excp)
+           {
+               logger.Error("Exception WebGet. " + excp.Message);
+               Log("Error in WebGet for " + url + ".");
+               return null;
+           }
+           finally
+           {
+               if (cancelTimer != null)
+               {
+                   cancelTimer.Dispose();
+               }
+           }
+        }
+
+        public string WebGet(string url)
+        {
+            return WebGet(url, 0);
         }
 
         /// <summary>
@@ -915,43 +1062,55 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="to">The list of addressees to send the email to. Limited to a maximum of ALLOWED_ADDRESSES_PER_EMAIL.</param>
         /// <param name="subject">The email subject. Limited to a maximum length of MAX_EMAIL_SUBJECT_LENGTH.</param>
         /// <param name="body">The email body. Limited to a maximum length of MAX_EMAIL_BODY_LENGTH.</param>
-        public void Email(string to, string subject, string body) {
-            try {
-                if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "email")) {
+        public void Email(string to, string subject, string body)
+        {
+            try
+            {
+                if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "email"))
+                {
                     Log("You are not authorised to use the Email application, please contact admin@sipsorcery.com.");
                 }
-                else if (m_emailCount >= ALLOWED_EMAILS_PER_EXECUTION) {
+                else if (m_emailCount >= ALLOWED_EMAILS_PER_EXECUTION)
+                {
                     Log("The maximum number of emails have been sent for this dialplan execution, email not sent.");
                 }
-                else {
-                    if (to.IsNullOrBlank()) {
+                else
+                {
+                    if (to.IsNullOrBlank())
+                    {
                         Log("The To field was blank, email not be sent.");
                     }
-                    else if (subject.IsNullOrBlank()) {
+                    else if (subject.IsNullOrBlank())
+                    {
                         Log("The Subject field was blank, email not be sent.");
                     }
-                    else if (body.IsNullOrBlank()) {
+                    else if (body.IsNullOrBlank())
+                    {
                         Log("The Body was empty, email not be sent.");
                     }
-                    else {
+                    else
+                    {
                         string[] addressees = to.Split(';');
-                        if (addressees.Length > ALLOWED_ADDRESSES_PER_EMAIL) {
+                        if (addressees.Length > ALLOWED_ADDRESSES_PER_EMAIL)
+                        {
                             Log("The number of Email addressees is to high, only the first " + ALLOWED_ADDRESSES_PER_EMAIL + " will be used.");
                             to = null;
-                            for (int index = 0; index < ALLOWED_ADDRESSES_PER_EMAIL; index++) {
+                            for (int index = 0; index < ALLOWED_ADDRESSES_PER_EMAIL; index++)
+                            {
                                 to += addressees[index] + ";";
                             }
                         }
 
                         m_emailCount++;
-                        subject = (subject.Length >  MAX_EMAIL_SUBJECT_LENGTH) ? subject.Substring(0, MAX_EMAIL_SUBJECT_LENGTH) : subject;
+                        subject = (subject.Length > MAX_EMAIL_SUBJECT_LENGTH) ? subject.Substring(0, MAX_EMAIL_SUBJECT_LENGTH) : subject;
                         body = (body.Length > MAX_EMAIL_BODY_LENGTH) ? body.Substring(0, MAX_EMAIL_BODY_LENGTH) : body;
                         SIPSorcery.Sys.Email.SendEmail(to, EMAIL_FROM_ADDRESS, subject, body);
                         Log("Email sent to " + to + " with subject of \"" + subject + "\".");
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception Email. " + excp.Message);
                 Log("Error sending Email to " + to + " with subject of \"" + subject + "\".");
             }
@@ -961,74 +1120,94 @@ namespace SIPSorcery.AppServer.DialPlan
         /// Gets the number of currently active calls for the dial plan owner.
         /// </summary>
         /// <returns>The number of active calls or -1 if there is an error.</returns>
-        public int GetCurrentCallCount() {
+        public int GetCurrentCallCount()
+        {
             return m_callManager.GetCurrentCallCount(m_username);
         }
 
-        public void DBWrite(string key, string value) {
-            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank()) {
+        public void DBWrite(string key, string value)
+        {
+            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
+            {
                 Log("DBWrite failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
             }
-            else {
+            else
+            {
                 DBWrite(m_userDataDBType, m_userDataDBConnStr, key, value);
             }
         }
 
-        public void DBWrite(string dbType, string dbConnStr, string key, string value) {
+        public void DBWrite(string dbType, string dbConnStr, string key, string value)
+        {
             StorageTypes storageType = GetStorageType(dbType);
-            if (storageType != StorageTypes.Unknown) {
+            if (storageType != StorageTypes.Unknown)
+            {
                 DBWrite(storageType, dbConnStr, key, value);
             }
         }
 
-        private void DBWrite(StorageTypes storageType, string dbConnStr, string key, string value) {
-            try {
+        private void DBWrite(StorageTypes storageType, string dbConnStr, string key, string value)
+        {
+            try
+            {
                 StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
-                
-                Dictionary<string, object> parameters = new Dictionary<string,object>();
+
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("dataowner", m_username);
                 int ownerKeyCount = Convert.ToInt32(storageLayer.ExecuteScalar("select count(*) from dialplandata where dataowner = @dataowner", parameters));
-               
-                if (ownerKeyCount == MAX_DATA_ENTRIES_PER_USER) {
+
+                if (ownerKeyCount == MAX_DATA_ENTRIES_PER_USER)
+                {
                     Log("DBWrite failed, you have reached the maximum number of database entries allowed.");
                 }
-                else {
+                else
+                {
                     parameters.Add("datakey", key);
                     int count = Convert.ToInt32(storageLayer.ExecuteScalar("select count(*) from dialplandata where datakey = @datakey and dataowner = @dataowner", parameters));
                     parameters.Add("datavalue", value);
-                    
-                    if (count == 0) {
+
+                    if (count == 0)
+                    {
                         storageLayer.ExecuteNonQuery(storageType, dbConnStr, "insert into dialplandata (dataowner, datakey, datavalue) values (@dataowner, @datakey, @datavalue)", parameters);
                     }
-                    else {
+                    else
+                    {
                         storageLayer.ExecuteNonQuery(storageType, dbConnStr, "update dialplandata set datavalue = @datavalue where dataowner = @dataowner and datakey = @datakey", parameters);
                     }
                     Log("DBWrite sucessful for datakey \"" + key + "\".");
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 Log("Exception DBWrite. " + excp.Message);
             }
         }
 
-        public void DBDelete(string key) {
-            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank()) {
+        public void DBDelete(string key)
+        {
+            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
+            {
                 Log("DBDelete failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
             }
-            else {
+            else
+            {
                 DBDelete(m_userDataDBType, m_userDataDBConnStr, key);
             }
         }
 
-        public void DBDelete(string dbType, string dbConnStr, string key) {
+        public void DBDelete(string dbType, string dbConnStr, string key)
+        {
             StorageTypes storageType = GetStorageType(dbType);
-            if (storageType != StorageTypes.Unknown) {
+            if (storageType != StorageTypes.Unknown)
+            {
                 DBDelete(storageType, dbConnStr, key);
             }
         }
 
-        private void DBDelete(StorageTypes storageType, string dbConnStr, string key) {
-            try {
+        private void DBDelete(StorageTypes storageType, string dbConnStr, string key)
+        {
+            try
+            {
                 StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
 
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
@@ -1037,53 +1216,68 @@ namespace SIPSorcery.AppServer.DialPlan
                 storageLayer.ExecuteNonQuery(storageType, dbConnStr, "delete from dialplandata where dataowner = @dataowner and datakey = @datakey", parameters);
                 Log("DBDelete sucessful for datakey \"" + key + "\".");
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 Log("Exception DBDelete. " + excp.Message);
             }
         }
 
-        public void DBExecuteNonQuery(string dbType, string dbConnStr, string query) {
-            try {
-                if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "dbexecutenonquery")) {
+        public void DBExecuteNonQuery(string dbType, string dbConnStr, string query)
+        {
+            try
+            {
+                if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "dbexecutenonquery"))
+                {
                     Log("You are not authorised to use the DBExecuteNonQuery application, please contact admin@sipsorcery.com.");
                 }
-                else {
-                     StorageTypes storageType = GetStorageType(dbType);
-                     if (storageType != StorageTypes.Unknown) {
-                         StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
-                         storageLayer.ExecuteNonQuery(storageType, dbConnStr, query);
-                         Log("DBExecuteNonQuery successful for " + query + ".");
-                     }
-                     else {
-                         Log("Exception DBExecuteNonQuery did not recognise database type " + dbType + ".");
-                     }
+                else
+                {
+                    StorageTypes storageType = GetStorageType(dbType);
+                    if (storageType != StorageTypes.Unknown)
+                    {
+                        StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
+                        storageLayer.ExecuteNonQuery(storageType, dbConnStr, query);
+                        Log("DBExecuteNonQuery successful for " + query + ".");
+                    }
+                    else
+                    {
+                        Log("Exception DBExecuteNonQuery did not recognise database type " + dbType + ".");
+                    }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 Log("Exception DBExecuteNonQuery. " + excp.Message);
             }
         }
 
-        public string DBRead(string key) {
-            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank()) {
+        public string DBRead(string key)
+        {
+            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
+            {
                 Log("DBRead failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
                 return null;
             }
-            else {
+            else
+            {
                 return DBRead(m_userDataDBType, m_userDataDBConnStr, key);
             }
         }
 
-        public string DBRead(string dbType, string dbConnStr, string key) {
+        public string DBRead(string dbType, string dbConnStr, string key)
+        {
             StorageTypes storageType = GetStorageType(dbType);
-            if (storageType != StorageTypes.Unknown) {
+            if (storageType != StorageTypes.Unknown)
+            {
                 return DBRead(storageType, dbConnStr, key);
             }
             return null;
         }
 
-        private string DBRead(StorageTypes storageType, string dbConnStr, string key) {
-            try {
+        private string DBRead(StorageTypes storageType, string dbConnStr, string key)
+        {
+            try
+            {
                 StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
 
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
@@ -1093,39 +1287,48 @@ namespace SIPSorcery.AppServer.DialPlan
                 Log("DBRead sucessful for datakey \"" + key + "\", value=" + result + ".");
                 return result;
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 Log("Exception DBRead. " + excp.Message);
                 return null;
             }
         }
 
-        public string DBExecuteScalar(string dbType, string dbConnStr, string query) {
-            try {
-                if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "dbexecutescalar")) {
+        public string DBExecuteScalar(string dbType, string dbConnStr, string query)
+        {
+            try
+            {
+                if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "dbexecutescalar"))
+                {
                     Log("You are not authorised to use the DBExecuteScalar application, please contact admin@sipsorcery.com.");
                     return null;
                 }
-                else {
+                else
+                {
                     StorageTypes storageType = GetStorageType(dbType);
-                    if (storageType != StorageTypes.Unknown) {
+                    if (storageType != StorageTypes.Unknown)
+                    {
                         StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
                         string result = storageLayer.ExecuteScalar(storageType, dbConnStr, query) as string;
                         Log("DBExecuteScalar successful result=" + result + ".");
                         return result;
                     }
-                    else {
+                    else
+                    {
                         Log("Exception DBExecuteScalar did not recognise database type " + dbType + ".");
                         return null;
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 Log("Exception DBExecuteScalar. " + excp.Message);
                 return null;
             }
         }
 
-        public void Switchboard() {
+        public void Switchboard()
+        {
             ExtendScriptTimeout(30);
             SIPAccount sipAccount = m_sipAccountPersistor.Get(s => s.SIPUsername == "switchboard" && s.SIPDomain == "sipsorcery.com");
             List<SIPRegistrarBinding> bindings = GetSIPAccountBindings_External(s => s.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
@@ -1133,18 +1336,23 @@ namespace SIPSorcery.AppServer.DialPlan
             switchboardApp.SendToSwitchboard(m_sipRequest, bindings[0]);
         }
 
-        private StorageTypes GetStorageType(string dbType) {
-            if (dbType.IsNullOrBlank()) {
+        private StorageTypes GetStorageType(string dbType)
+        {
+            if (dbType.IsNullOrBlank())
+            {
                 Log("The database type was empty for DBWrite or DBRead.");
                 return StorageTypes.Unknown;
             }
-            else if(Regex.Match(dbType, "mysql", RegexOptions.IgnoreCase).Success) {
+            else if (Regex.Match(dbType, "mysql", RegexOptions.IgnoreCase).Success)
+            {
                 return StorageTypes.MySQL;
             }
-            else if (Regex.Match(dbType, "(pgsql|postgres)", RegexOptions.IgnoreCase).Success) {
+            else if (Regex.Match(dbType, "(pgsql|postgres)", RegexOptions.IgnoreCase).Success)
+            {
                 return StorageTypes.Postgresql;
             }
-            else {
+            else
+            {
                 Log("Database type " + dbType + " is not supported in DBWrite and DBRead.");
                 return StorageTypes.Unknown;
             }
@@ -1181,7 +1389,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     }
                 }
 
-                if (priorityRecord != null && priorityRecord.Rule != null && Regex.Match(priorityRecord.Rule, "!.+!.+!").Success) 
+                if (priorityRecord != null && priorityRecord.Rule != null && Regex.Match(priorityRecord.Rule, "!.+!.+!").Success)
                 {
                     //logger.Debug("rule=" + priorityRecord.Rule + ".");
                     Match match = Regex.Match(priorityRecord.Rule, "!(?<pattern>.+?)!(?<substitute>.+?)!(?<options>.*)");
@@ -1194,18 +1402,28 @@ namespace SIPSorcery.AppServer.DialPlan
                         string options = match.Result("${options}");
 
                         logger.Debug("ENUM rule: s/" + pattern + "/" + substitute + "/" + options);
+                        string domainlessNumber = number.Substring(0, number.IndexOf('.'));
 
-                        if (Regex.Match(number, pattern).Success) {
-                        //{
-                        //    Log("enum substitute /" + number + "/" + pattern + "/" + substitute + "/");
-                        //    return Regex.Replace(number, pattern, substitute);
-                        //}
-                        //else
-                        //{
+                        Regex enumRegex = new Regex(pattern);
+
+                        if (enumRegex.Match(domainlessNumber).Success)
+                        {
+                            //{
+                            //    Log("enum substitute /" + number + "/" + pattern + "/" + substitute + "/");
+                            //    return Regex.Replace(number, pattern, substitute);
+                            //}
+                            //else
+                            //{
                             // Remove the domain from number and match.
-                            string domainlessNumber = number.Substring(0, number.IndexOf('.'));
+
                             Log("enum substitute /" + domainlessNumber + "/" + pattern + "/" + substitute + "/");
                             return Regex.Replace(domainlessNumber, pattern, substitute);
+                        }
+                        else if (enumRegex.Match("+" + domainlessNumber).Success)
+                        {
+                            // Remove the domain from number and match.
+                            Log("enum substitute /+" + domainlessNumber + "/" + pattern + "/" + substitute + "/");
+                            return Regex.Replace("+" + domainlessNumber, pattern, substitute);
                         }
                     }
                     else
@@ -1243,8 +1461,8 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    number = number.Trim().Trim(new char[] { '+', '0' });
-                    Match match = Regex.Match(number, @"(?<number>\d+)\.(?<domain>.+)");
+                    //number = number.Trim().Trim(new char[] { '+', '0' });
+                    Match match = Regex.Match(number, @"(?<number>[^\.]+)\.(?<domain>.+)");
                     if (match.Success)
                     {
                         char[] enumNumber = match.Result("${number}").ToCharArray();
@@ -1270,7 +1488,8 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        private void ExtendScriptTimeout(int seconds) {
+        public void ExtendScriptTimeout(int seconds)
+        {
             m_executingScript.EndTime = DateTime.Now.AddSeconds(seconds + DialPlanExecutingScript.MAX_SCRIPTPROCESSING_SECONDS);
         }
 
@@ -1315,25 +1534,33 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="authorisedApps">A semi-colon delimited list of authorised applications for this dialplan.</param>
         /// <param name="applicationName">The name of the dialplan application checking for authorisation.</param>
         /// <returns>True if authorised, false otherwise.</returns>
-        private bool IsAppAuthorised(string authorisedApps, string applicationName) {
-            try {
-                if (authorisedApps.IsNullOrBlank() || applicationName.IsNullOrBlank()) {
+        private bool IsAppAuthorised(string authorisedApps, string applicationName)
+        {
+            try
+            {
+                if (authorisedApps.IsNullOrBlank() || applicationName.IsNullOrBlank())
+                {
                     return false;
                 }
-                else if (authorisedApps == SIPDialPlan.ALL_APPS_AUTHORISED) {
+                else if (authorisedApps == SIPDialPlan.ALL_APPS_AUTHORISED)
+                {
                     return true;
                 }
-                else {
+                else
+                {
                     string[] authorisedAppsSplit = authorisedApps.Split(';');
-                    foreach (string app in authorisedAppsSplit) {
-                        if (!app.IsNullOrBlank() && app.Trim().ToLower() == applicationName.Trim().ToLower()) {
+                    foreach (string app in authorisedAppsSplit)
+                    {
+                        if (!app.IsNullOrBlank() && app.Trim().ToLower() == applicationName.Trim().ToLower())
+                        {
                             return true;
                         }
                     }
                     return false;
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception IsAppAuthorised. " + excp.Message);
                 return false;
             }
@@ -1361,7 +1588,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
         #region Unit testing.
 
-        #if UNITTEST
+#if UNITTEST
 
         [TestFixture]
 		public class StatefulProxyCoreUnitTest
@@ -1399,7 +1626,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        #endif
+#endif
 
         #endregion
     }

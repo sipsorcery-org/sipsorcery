@@ -125,7 +125,7 @@ namespace SIPSorcery.SIP.App {
         public void Call(SIPCallDescriptor sipCallDescriptor) {
             try {
                 m_uacCallDescriptor = sipCallDescriptor;
-                SIPRequest uacInviteRequest = GetInviteRequest(m_uacCallDescriptor.Uri, sipCallDescriptor.From);
+                SIPRequest uacInviteRequest = GetInviteRequest(m_uacCallDescriptor.Uri, sipCallDescriptor.GetFromHeader());
                 if (sipCallDescriptor.MangleResponseSDP && sipCallDescriptor.MangleIPAddress != null) {
                     uacInviteRequest.Header.ProxyReceivedFrom = sipCallDescriptor.MangleIPAddress.ToString();
                 }
@@ -317,12 +317,12 @@ namespace SIPSorcery.SIP.App {
             }
         }
 
-        private SIPRequest GetInviteRequest(string callURI, string fromHeader) {
+        private SIPRequest GetInviteRequest(string callURI, SIPFromHeader fromHeader) {
             
             SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI(callURI));
             inviteRequest.LocalSIPEndPoint = m_blackhole;
 
-            SIPHeader inviteHeader = new SIPHeader(SIPFromHeader.ParseFromHeader(fromHeader), new SIPToHeader(null, inviteRequest.URI, null), 1, CallProperties.CreateNewCallId());
+            SIPHeader inviteHeader = new SIPHeader(fromHeader, new SIPToHeader(null, inviteRequest.URI, null), 1, CallProperties.CreateNewCallId());
 
             inviteHeader.From.FromTag = CallProperties.CreateNewTag();
 

@@ -84,14 +84,11 @@ namespace SIPSorcery.SIPAppServer {
         private string m_currentDirectory = SIPAppServerState.CurrentDirectory;
         private string m_rubyScriptCommonPath = SIPAppServerState.RubyScriptCommonPath;
         private SIPEndPoint m_outboundProxy = SIPAppServerState.OutboundProxy;
-        private XmlNode m_sipCallDispatcherWorkersNode = SIPAppServerState.SIPCallDispatcherWorkersNode;
-        private string m_sipCallDispatcherScriptPath = SIPAppServerState.SIPCallDispatcherScriptPath;
 
         private SIPSorceryPersistor m_sipSorceryPersistor;
         private SIPMonitorEventWriter m_monitorEventWriter;
         private SIPAppServerCore m_appServerCore;
         private SIPCallManager m_callManager;
-        private SIPCallDispatcher m_callDispatcher;
         private SIPNotifyManager m_notifyManager;
         private SIPProxyDaemon m_sipProxyDaemon;
         private SIPMonitorDaemon m_sipMonitorDaemon;
@@ -103,14 +100,16 @@ namespace SIPSorcery.SIPAppServer {
         private ServiceHost m_accessPolicyHost;
         private ServiceHost m_sipProvisioningHost;
         private ServiceHost m_callManagerSvcHost;
+        private ServiceHost m_sipNotificationsHost;
         private CustomerSessionManager m_customerSessionManager;
+        private ISIPMonitorPublisher m_sipMonitorPublisher;
         private IPAddress m_publicIPAddress;
 
         private StorageTypes m_storageType;
         private string m_connectionString;
         private SIPEndPoint m_appServerEndPoint;
         private string m_callManagerServiceAddress;
-        private bool m_monitorCalls;                // if true this app server instance will monitor the sip dialogues table for expired calls to hangup.
+        private bool m_monitorCalls;                // If true this app server instance will monitor the sip dialogues table for expired calls to hangup.
 
         public SIPAppServerDaemon(StorageTypes storageType, string connectionString) {
             m_storageType = storageType;
@@ -162,7 +161,8 @@ namespace SIPSorcery.SIPAppServer {
                 }
 
                 if (m_sipMonitorEnabled) {
-                    m_sipMonitorDaemon = new SIPMonitorDaemon(m_customerSessionManager);
+                    m_sipMonitorPublisher = new SIPMonitorClientManager();
+                    m_sipMonitorDaemon = new SIPMonitorDaemon(m_sipMonitorPublisher);
                     m_sipMonitorDaemon.Start();
                 }
 
@@ -260,15 +260,6 @@ namespace SIPSorcery.SIPAppServer {
                      m_monitorCalls);
                 m_callManager.Start();
 
-                if (m_sipCallDispatcherWorkersNode != null && !m_sipCallDispatcherScriptPath.IsNullOrBlank()) {
-                    m_callDispatcher = new SIPCallDispatcher(
-                        FireSIPMonitorEvent,
-                        m_sipTransport,
-                        m_sipCallDispatcherWorkersNode,
-                        m_outboundProxy,
-                        m_sipCallDispatcherScriptPath);
-                }
-
                 m_notifyManager = new SIPNotifyManager(
                     m_sipTransport,
                     m_outboundProxy,
@@ -284,7 +275,6 @@ namespace SIPSorcery.SIPAppServer {
                     m_sipSorceryPersistor.SIPAccountsPersistor.Get,
                     FireSIPMonitorEvent,
                     m_callManager,
-                    m_callDispatcher,
                     m_notifyManager,
                     SIPRequestAuthenticator.AuthenticateSIPRequest,
                     m_outboundProxy);
@@ -365,8 +355,22 @@ namespace SIPSorcery.SIPAppServer {
                     logger.Warn("Exception starting CallManager hosted service. " + excp.Message);
                 }
 
-                // Initialise random number to save delay on first SIP request.
-                ThreadPool.QueueUserWorkItem(delegate { Crypto.GetRandomString(); });
+                if (m_sipMonitorPublisher != null)
+                {
+                    try
+                    {
+                        SIPNotifierService notifierService = new SIPNotifierService(m_sipMonitorPublisher, m_customerSessionManager);
+                        m_sipNotificationsHost = new ServiceHost(notifierService);
+
+                        m_sipNotificationsHost.Open();
+
+                        logger.Debug("SIPNotificationsService hosted service successfully started on " + m_sipNotificationsHost.BaseAddresses[0].AbsoluteUri + ".");
+                    }
+                    catch (Exception excp)
+                    {
+                        logger.Warn("Exception starting SIPNotificationsService hosted service. " + excp.Message);
+                    }
+                }
             }
             catch (Exception excp) {
                 logger.Error("Exception SIPAppServerDaemon Start. " + excp.Message);
@@ -391,6 +395,11 @@ namespace SIPSorcery.SIPAppServer {
 
                 if (m_callManagerSvcHost != null) {
                     m_callManagerSvcHost.Close();
+                }
+
+                if (m_sipNotificationsHost != null)
+                {
+                    m_sipNotificationsHost.Close();
                 }
 
                 if (m_callManager != null) {

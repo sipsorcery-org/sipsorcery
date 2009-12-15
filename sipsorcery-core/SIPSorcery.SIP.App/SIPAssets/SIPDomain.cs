@@ -83,46 +83,54 @@ namespace SIPSorcery.SIP.App
         private static string m_newLine = AppState.NewLine;
 
         [DataMember]
-        [Column(Name = "id", DbType = "StringFixedLength", IsPrimaryKey = true, CanBeNull = false)]
+        [Column(Name = "id", DbType = "varchar(36)", IsPrimaryKey = true, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public Guid Id { get; set; }
 
         [DataMember]
-        [Column(Name = "domain", DbType = "StringFixedLength", CanBeNull = false)]
-        public string Domain {get; set;}
+        [Column(Name = "domain", DbType = "varchar(128)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        public string Domain { get; set; }
 
         [DataMember]
-        [Column(Name = "owner", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "owner", DbType = "varchar(32)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         public string Owner { get; set; }
 
-        private DateTime? m_inserted;
-        [Column(Name = "inserted", DbType = "StringFixedLength", CanBeNull = false)]
-        public DateTime? Inserted 
-        { 
-            get { return m_inserted;} 
-            set {
-                if (value != null) {
+        private DateTimeOffset? m_inserted;
+        [Column(Name = "inserted", DbType = "datetimeoffset", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        public DateTimeOffset? Inserted
+        {
+            get { return m_inserted; }
+            set
+            {
+                if (value != null)
+                {
                     m_inserted = value.Value.ToUniversalTime();
                 }
-                else {
+                else
+                {
                     m_inserted = null;
                 }
             }
         }
 
-        [Column(Name = "aliaslist", DbType = "StringFixedLength", CanBeNull = true)]
-        public string AliasList {
-            get {
-                if (Aliases != null && Aliases.Count > 0) {
+        [Column(Name = "aliaslist", DbType = "varchar(1024)", CanBeNull = true)]
+        public string AliasList
+        {
+            get
+            {
+                if (Aliases != null && Aliases.Count > 0)
+                {
                     string aliasList = null;
 
                     Aliases.ForEach(a => aliasList += a + ALIAS_SEPERATOR_CHAR);
                     return aliasList;
                 }
-                else {
+                else
+                {
                     return null;
                 }
             }
-            set {
+            set
+            {
                 Aliases = ParseAliases(value);
             }
         }
@@ -143,40 +151,47 @@ namespace SIPSorcery.SIP.App
 
 #if !SILVERLIGHT
 
-        public SIPDomain(DataRow row) {
+        public SIPDomain(DataRow row)
+        {
             Load(row);
         }
 
-        public DataTable GetTable() {
+        public DataTable GetTable()
+        {
             DataTable table = new DataTable();
             table.Columns.Add(new DataColumn("id", typeof(String)));
             table.Columns.Add(new DataColumn("domain", typeof(String)));
             table.Columns.Add(new DataColumn("owner", typeof(String)));
-            table.Columns.Add(new DataColumn("inserted", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("inserted", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("aliaslist", typeof(String)));
             return table;
         }
 
-        public void Load(DataRow row) {
+        public void Load(DataRow row)
+        {
             Id = (row.Table.Columns.Contains("id") && row["id"] != DBNull.Value) ? new Guid(row["id"] as string) : Guid.NewGuid();
             Domain = row["domain"] as string;
             Owner = (row.Table.Columns.Contains("owner") && row["owner"] != DBNull.Value) ? row["owner"] as string : null;
-            if (row.Table.Columns.Contains("inserted") & row["inserted"] != DBNull.Value) {
-                Inserted = Convert.ToDateTime(row["inserted"]);
+            if (row.Table.Columns.Contains("inserted") & row["inserted"] != DBNull.Value)
+            {
+                Inserted = DateTimeOffset.Parse(row["inserted"] as string);
             }
 
             string aliasList = (row.Table.Columns.Contains("aliaslist") & row["aliaslist"] != DBNull.Value) ? row["aliaslist"] as string : null;
             Aliases = ParseAliases(aliasList);
         }
 
-        public Dictionary<Guid, object> Load(XmlDocument dom) {
-            try {
+        public Dictionary<Guid, object> Load(XmlDocument dom)
+        {
+            try
+            {
                 Dictionary<Guid, object> sipDomains = new Dictionary<Guid, object>();
 
                 XDocument sipDomainsDoc = XDocument.Parse(dom.OuterXml);
 
                 var xmlSIPDomains = from domain in sipDomainsDoc.Document.Descendants(XML_ELEMENT_NAME)
-                                    select new SIPDomain() {
+                                    select new SIPDomain()
+                                    {
                                         Id = Guid.NewGuid(),
                                         Domain = domain.Element("domain").Value,
                                         Owner = (domain.Element("owner") != null) ? domain.Element("owner").Value : null,
@@ -185,13 +200,15 @@ namespace SIPSorcery.SIP.App
                                              select alias.Value).ToList()
                                     };
 
-                foreach (SIPDomain xmlSIPDomain in xmlSIPDomains) {
+                foreach (SIPDomain xmlSIPDomain in xmlSIPDomains)
+                {
                     sipDomains.Add(xmlSIPDomain.Id, xmlSIPDomain);
                 }
 
                 return sipDomains;
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPDomain Load. " + excp.Message);
                 throw;
             }
@@ -209,19 +226,18 @@ namespace SIPSorcery.SIP.App
             return sipDomainXML;
         }
 
-          public string ToXMLNoParent() {
+        public string ToXMLNoParent()
+        {
             throw new NotImplementedException();
-              //string sipDomainXML =
-               //   "  <id>" + Id + "</id>" + m_newLine;
+        }
 
-              //return sipDomainXML;
-          }
-
-        public string GetXMLElementName() {
+        public string GetXMLElementName()
+        {
             return XML_ELEMENT_NAME;
         }
 
-        public string GetXMLDocumentElementName() {
+        public string GetXMLDocumentElementName()
+        {
             return XML_DOCUMENT_ELEMENT_NAME;
         }
 

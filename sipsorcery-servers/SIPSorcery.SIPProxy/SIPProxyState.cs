@@ -57,6 +57,7 @@ namespace SIPSorcery.SIPProxy
 
         private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
         private const string PROXY_SCRIPTPATH_KEY = "ProxyScriptPath";
+        private const string PROXY_APPSERVER_ENDPOINTS_PATH_KEY = "AppServerEndPointsPath";
         private const string PROXY_LOOPBACK_PORT_KEY = "MonitorLoopbackPort";
         private const string PROXY_NATKEEPALIVESOCKET_KEY = "NATKeepAliveSocket";
         private const string PROXY_STUNSERVERHOSTNAME_KEY = "STUNServerHostname";
@@ -67,10 +68,11 @@ namespace SIPSorcery.SIPProxy
         private static readonly XmlNode m_sipProxyNode;
         public static readonly XmlNode SIPProxySocketsNode;       
         public static readonly string ProxyScriptPath;
+        public static readonly string AppServerEndPointsPath;
         public static readonly int MonitorLoopbackPort;
         public static readonly IPEndPoint NATKeepAliveSocket;
         public static readonly string STUNServerHostname;
-        public static readonly string PublicIPAddress;          // Should only be set if operaintg on a static public IP otherwise use the STUN client.
+        public static readonly string PublicIPAddress;          // Should only be set if operating on a static public IP otherwise use the STUN client.
 
         static SIPProxyState()
         {
@@ -91,6 +93,7 @@ namespace SIPSorcery.SIPProxy
                 }
 
                 ProxyScriptPath =  AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_SCRIPTPATH_KEY);
+                AppServerEndPointsPath = AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_APPSERVER_ENDPOINTS_PATH_KEY);
                 if (!AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_NATKEEPALIVESOCKET_KEY).IsNullOrBlank()) {
                     NATKeepAliveSocket = IPSocket.ParseSocketString(AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_NATKEEPALIVESOCKET_KEY));
                 }

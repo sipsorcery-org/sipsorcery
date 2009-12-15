@@ -58,12 +58,12 @@ namespace SIPSorcery.Persistence {
                     queryString += " order by " + OrderBy;
                 }
 
-                if (Offset != 0) {
-                    queryString += " offset " + Offset;
-                }
-
                 if (Count != Int32.MaxValue) {
                     queryString += " limit " + Count;
+                }
+
+                if (Offset != 0) {
+                    queryString += " offset " + Offset;
                 }
 
                 //logger.Debug(queryString);

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Net;
+using System.Net.Browser;
 using System.Reflection;
+using System.ServiceModel;
 using System.Text;
 using System.Threading;
 using System.Windows;
@@ -15,28 +17,31 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Persistence;
+using SIPSorcery.Silverlight.Messaging;
 using SIPSorcery.Sockets;
 using SIPSorcery.Sys;
 using SIPSorcery.SIPSorceryProvisioningClient;
 
 namespace SIPSorcery
-{  
-	public partial class Page : UserControl
-	{
+{
+    public partial class Page : UserControl
+    {
         private const int REINITIALISE_WAIT_PERIOD = 10000;
         private const int DEFAULT_WEB_PORT = 80;
         private const int DEFAULT_PROVISIONING_WEBSERVICE_PORT = 8080;
         private const string DEFAULT_PROVISIONING_FILE = "provisioning.svc";
+        private const string DEFAULT_NOTIFICATIONS_FILE = "notificationspull.svc";
         private const string DEFAULT_MONITOR_HOST = "www.sipsorcery.com";
         private const string ALTERNATE_MONITOR_HOST = "www.sipwizard.net";
-        private const string DEFAULT_PROVISIONING_URL = "https://www.sipsorcery.com/provisioning.svc";
-        private const string ALTERNATE_PROVISIONING_URL = "https://www.sipwizard.net/provisioning.svc";
         private const string LOCALHOST_MONITOR_HOST = "localhost";
-        private const string LOCALHOST_PROVISIONING_URL = "http://localhost:8080/provisioning.svc";
+        private const string DEFAULT_PROVISIONING_HOST = "https://www.sipsorcery.com/";
+        private const string ALTERNATE_PROVISIONING_HOST = "https://www.sipwizard.net/";
+        private const string LOCALHOST_PROVISIONING_HOST = "http://localhost:8080/";
 
         private string m_dummyOwner = SIPSorceryGUITestPersistor.DUMMY_OWNER;
 
-        private string m_provisioningServiceURL = DEFAULT_PROVISIONING_URL;
+        private string m_provisioningServiceURL;
+        private string m_notificationsServiceURL;
         private string m_sipMonitorHost = DEFAULT_MONITOR_HOST;
         private int m_sipControlMonitorPort = 4502;
         private int m_sipMachineMonitorPort = 4503;
@@ -44,7 +49,7 @@ namespace SIPSorcery
 
         private SIPSorceryPersistor m_unauthorisedPersistor;
         private SIPSorceryPersistor m_authorisedPersistor;
-        private SocketClient m_sipEventMonitorClient;
+        //private SocketClient m_sipEventMonitorClient;
         private ServiceConnectionStatesEnum m_persistorStatus = ServiceConnectionStatesEnum.Initialising;
         private string m_persistorStatusMessage = "Initialising...";
         private ServiceConnectionStatesEnum m_monitorStatus = ServiceConnectionStatesEnum.Initialising;
@@ -69,6 +74,7 @@ namespace SIPSorcery
             m_appStatusMessage.Text = "Initialising...";
             //m_loginControl.Visibility = Visibility.Collapsed;
             m_loginControl.CreateNewAccountClicked += CreateNewAccountClicked;
+            m_loginControl.Login_External = LoginAsync;
 
             //int hostPort = Application.Current.Host.Source.Port;
             //if (hostPort == DEFAULT_WEB_PORT || hostPort == 0)
@@ -78,38 +84,53 @@ namespace SIPSorcery
 
             string server = Application.Current.Host.Source.DnsSafeHost;
 
-            try {
-                if (server == LOCALHOST_MONITOR_HOST || Application.Current.Host.Source.Scheme == "file") {
+            try
+            {
+                if (server == LOCALHOST_MONITOR_HOST || Application.Current.Host.Source.Scheme == "file")
+                {
                     m_sipMonitorHost = LOCALHOST_MONITOR_HOST;
-                    m_provisioningServiceURL = LOCALHOST_PROVISIONING_URL;
+                    m_provisioningServiceURL = LOCALHOST_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;
+                    m_notificationsServiceURL = LOCALHOST_PROVISIONING_HOST + DEFAULT_NOTIFICATIONS_FILE;
                 }
-                else if (server == ALTERNATE_MONITOR_HOST) {
+                else if (server == ALTERNATE_MONITOR_HOST)
+                {
                     m_sipMonitorHost = ALTERNATE_MONITOR_HOST;
-                    m_provisioningServiceURL = ALTERNATE_PROVISIONING_URL;
+                    m_provisioningServiceURL = ALTERNATE_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;
+                    m_notificationsServiceURL = ALTERNATE_PROVISIONING_HOST + DEFAULT_NOTIFICATIONS_FILE;
                 }
-                else if (server != DEFAULT_MONITOR_HOST) {
+                else if (server != DEFAULT_MONITOR_HOST)
+                {
                     m_sipMonitorHost = server;
                     m_provisioningServiceURL = Application.Current.Host.Source.Scheme + "://" + server + ":" + DEFAULT_PROVISIONING_WEBSERVICE_PORT + "/" + DEFAULT_PROVISIONING_FILE;
+                    m_notificationsServiceURL = Application.Current.Host.Source.Scheme + "://" + server + ":" + DEFAULT_PROVISIONING_WEBSERVICE_PORT + "/" + DEFAULT_NOTIFICATIONS_FILE;
+                }
+                else
+                {
+                    m_sipMonitorHost = DEFAULT_MONITOR_HOST;
+                    m_provisioningServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;
+                    m_notificationsServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_NOTIFICATIONS_FILE;
                 }
             }
-            catch {
+            catch
+            {
                 m_sipMonitorHost = DEFAULT_MONITOR_HOST;
-                m_provisioningServiceURL = DEFAULT_PROVISIONING_URL;
+                m_provisioningServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;
+                m_notificationsServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_NOTIFICATIONS_FILE;
             }
 
-            if (server != DEFAULT_MONITOR_HOST) {
+            if (server != DEFAULT_MONITOR_HOST)
+            {
                 m_setSvcLink.Visibility = Visibility.Visible;
                 m_provisioningSvcTextBox.Text = m_provisioningServiceURL;
             }
 
+            // Use the Silverlight network stack so that SOAP faults can get through.
+            HttpWebRequest.RegisterPrefix(m_provisioningServiceURL, WebRequestCreator.ClientHttp);
+            HttpWebRequest.RegisterPrefix(m_notificationsServiceURL, WebRequestCreator.ClientHttp);
+
             ThreadPool.QueueUserWorkItem(delegate { Initialise(); });
 
             //UIHelper.SetPluginDimensions(LayoutRoot.RenderSize.Width, LayoutRoot.RenderSize.Height);
-        }
-
-        private void CreateNewAccountClicked() {
-            m_createAccountControl.Visibility = (m_createAccountControl.Visibility == Visibility.Collapsed) ? Visibility.Visible : Visibility.Collapsed;
-            m_logo.Visibility = (m_createAccountControl.Visibility == Visibility.Collapsed) ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void Initialise()
@@ -123,16 +144,40 @@ namespace SIPSorcery
             //ThreadPool.QueueUserWorkItem(new WaitCallback(m_sipMonitorDisplay.RunHitPointSimulation), null);
 #endif
 
+            m_unauthorisedPersistor.TestExceptionComplete += TestExceptionComplete;
             m_unauthorisedPersistor.IsAliveComplete += PersistorIsAliveComplete;
             m_unauthorisedPersistor.AreNewAccountsEnabledComplete += AreNewAccountsEnabledComplete;
             m_unauthorisedPersistor.LoginComplete += LoginComplete;
             m_unauthorisedPersistor.CreateCustomerComplete += CreateCustomerComplete;
-            m_loginControl.Login_External = LoginAsync;
             m_createAccountControl.CreateCustomer_External = m_unauthorisedPersistor.CreateCustomerAsync;
-            //m_createAccountControl.Login_External = LoginAsync;
-            m_createAccountControl.SetDataEntryEnabled(true);
+            UIHelper.SetVisibility(m_createAccountControl, Visibility.Collapsed);
 
             InitialiseServices(0);
+        }
+
+        private void CreateNewAccountClicked()
+        {
+            m_createAccountControl.Visibility = (m_createAccountControl.Visibility == Visibility.Collapsed) ? Visibility.Visible : Visibility.Collapsed;
+            m_logo.Visibility = (m_createAccountControl.Visibility == Visibility.Collapsed) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void TestExceptionComplete(System.ComponentModel.AsyncCompletedEventArgs e)
+        {
+            try
+            {
+                if (e.Error != null)
+                {
+                    m_persistorStatus = ServiceConnectionStatesEnum.Error;
+                    m_persistorStatusMessage = "Test Exception raw fault result: " + e.Error.Message;
+                    UpdateAppStatus();
+                }
+            }
+            catch (Exception excp)
+            {
+                m_persistorStatus = ServiceConnectionStatesEnum.Error;
+                m_persistorStatusMessage = "Test Exception catch result: " + excp.Message;
+                UpdateAppStatus();
+            }
         }
 
         /// <summary>
@@ -141,20 +186,23 @@ namespace SIPSorcery
         /// </summary>
         private void InitialiseServices(int millisecondsDelay)
         {
-            if (!m_provisioningInitialisationInProgress) {
-
+            if (!m_provisioningInitialisationInProgress)
+            {
                 m_provisioningInitialisationInProgress = true;
                 m_monitorInitialisationInProgress = true;
 
-                if (millisecondsDelay > 0) {
+                if (millisecondsDelay > 0)
+                {
                     Thread.Sleep(millisecondsDelay);
                 }
 
-                try {
+                try
+                {
+                    //m_unauthorisedPersistor.TestExceptionAsync();
                     m_unauthorisedPersistor.IsAliveAsync();
-                    m_unauthorisedPersistor.AreNewAccountsEnabledAsync();
                 }
-                catch (Exception provExcp) {
+                catch (Exception provExcp)
+                {
                     m_persistorStatusMessage = provExcp.Message;
                     m_persistorStatus = ServiceConnectionStatesEnum.Error;
                     UpdateAppStatus();
@@ -164,8 +212,6 @@ namespace SIPSorcery
 
         private void UpdateAppStatus()
         {
-            //bool reinitialisationRequired = false;
-
             if (m_persistorStatus == ServiceConnectionStatesEnum.Error)
             {
                 UIHelper.SetFill(m_appStatusIcon, Colors.Red);
@@ -173,83 +219,39 @@ namespace SIPSorcery
 
                 if (m_userPage != null)
                 {
-                    m_userPage.SetAppStatusIconColour(Colors.Red);
-                    m_userPage.SetAppStatusMessage(m_persistorStatusMessage);
+                    m_userPage.SetProvisioningStatusIconColour(Colors.Red);
+                    m_userPage.SetProvisioningStatusMessage(m_persistorStatusMessage);
                 }
-
-                //reinitialisationRequired = true;
             }
             else if (m_persistorStatus == ServiceConnectionStatesEnum.Ok)
             {
-                /*if (m_userPage == null || m_authId == null)
+                UIHelper.SetFill(m_appStatusIcon, Colors.Green);
+                if (m_provisioningServiceURL == DEFAULT_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE)
                 {
-                    UIHelper.SetVisibility(m_loginControl, Visibility.Visible);
+                    UIHelper.SetText(m_appStatusMessage, "Provisioning service ok.");
+                }
+                else
+                {
+                    UIHelper.SetText(m_appStatusMessage, "Provisioning service ok.\n" + m_provisioningServiceURL + ".");
                 }
 
-                if (m_monitorStatus == ServiceConnectionStatesEnum.Error)
+                if (m_userPage != null)
                 {
-                    UIHelper.SetFill(m_appStatusIcon, Colors.Orange);
-                    UIHelper.SetText(m_appStatusMessage, m_monitorStatusMessage);
-
-                    if (m_userPage != null)
+                    m_userPage.SetProvisioningStatusIconColour(Colors.Green);
+                    if (m_provisioningServiceURL == DEFAULT_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE)
                     {
-                        m_userPage.SetAppStatusIconColour(Colors.Orange);
-                        m_userPage.SetAppStatusMessage(m_monitorStatusMessage);
+                        m_userPage.SetProvisioningStatusMessage("Provisioning service ok.");
                     }
-
-                    //reinitialisationRequired = true;
-                }
-                else */
-                if (m_monitorStatus == ServiceConnectionStatesEnum.Ok)
-                {
-                    UIHelper.SetFill(m_appStatusIcon, Colors.Green);
-                    if (m_provisioningServiceURL == DEFAULT_PROVISIONING_URL) {
-                        UIHelper.SetText(m_appStatusMessage, "Ready (auto refresh enabled)");
-                    }
-                    else {
-                        UIHelper.SetText(m_appStatusMessage, "Connected " + m_provisioningServiceURL + ".");
-                    }
-                    UIHelper.SetFocus(m_loginControl);
-
-                    if (m_userPage != null)
+                    else
                     {
-                        m_userPage.SetAppStatusIconColour(Colors.Green);
-                        if (m_provisioningServiceURL == DEFAULT_PROVISIONING_URL) {
-                            m_userPage.SetAppStatusMessage("Ready (auto refresh enabled)");  
-                        }
-                        else {
-                            m_userPage.SetAppStatusMessage("Ready (auto refresh enabled) " + m_sipMonitorHost + ".");
-                        }
+                        m_userPage.SetProvisioningStatusMessage("Provisioning service ok: " + m_provisioningServiceURL + ".");
                     }
                 }
                 else
                 {
-                    UIHelper.SetFill(m_appStatusIcon, Colors.Green);
-                    if (m_provisioningServiceURL == DEFAULT_PROVISIONING_URL) {
-                        UIHelper.SetText(m_appStatusMessage, "Ready");
-                    }
-                    else {
-                        UIHelper.SetText(m_appStatusMessage, "Ready\n" + m_provisioningServiceURL + ".");
-                    }
-                    UIHelper.SetFocus(m_loginControl);
-
-                    if (m_userPage != null)
-                    {
-                        m_userPage.SetAppStatusIconColour(Colors.Green);
-                        if (m_provisioningServiceURL == DEFAULT_PROVISIONING_URL) {
-                            m_userPage.SetAppStatusMessage("Ready");
-                        }
-                        else {
-                            m_userPage.SetAppStatusMessage("Ready " + m_sipMonitorHost + ".");
-                        }
-                    }
+                    m_unauthorisedPersistor.AreNewAccountsEnabledAsync();
                 }
             }
-
-            //if (reinitialisationRequired && !m_monitorInitialisationInProgress && !m_provisioningInitialisationInProgress)
-            //{
-            //    ThreadPool.QueueUserWorkItem(new WaitCallback(InitialiseServices), REINITIALISE_WAIT_PERIOD);
-            //}
         }
 
         private void PersistorIsAliveComplete(IsAliveCompletedEventArgs e)
@@ -280,16 +282,22 @@ namespace SIPSorcery
             }
         }
 
-        private void AreNewAccountsEnabledComplete(AreNewAccountsEnabledCompletedEventArgs e) {
-            try {
-                if (e.Result) {
+        private void AreNewAccountsEnabledComplete(AreNewAccountsEnabledCompletedEventArgs e)
+        {
+            try
+            {
+                if (e.Result)
+                {
                     m_loginControl.EnableNewAccounts();
+                    m_createAccountControl.SetDataEntryEnabled(true);
                 }
-                else {
-                    m_loginControl.DisableNewAccounts("New accounts disabled. Please monitor sipsorcery.wordpress.com.");
+                else
+                {
+                    m_loginControl.DisableNewAccounts("New accounts disabled. Please check sipsorcery.wordpress.com for further details.");
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 string exceptionMessage = (excp.Message.Length > 100) ? excp.Message.Substring(0, 100) : excp.Message;
                 m_loginControl.DisableNewAccounts(exceptionMessage);
             }
@@ -297,16 +305,18 @@ namespace SIPSorcery
 
         private void SIPEventMonitorClient_MonitorConnectionChange(SocketConnectionStatus connectionState)
         {
-            try {
+            try
+            {
                 m_monitorStatusMessage = connectionState.Message;
                 m_monitorStatus = connectionState.ConnectionStatus;
                 m_monitorInitialisationInProgress = false;
                 UpdateAppStatus();
 
-                // Send the authentication token so the mahcine socket gets matched to the user.
-                m_sipEventMonitorClient.Send(Encoding.UTF8.GetBytes(m_authId));
+                // Send the authentication token so the machine socket gets matched to the user.
+                //m_sipEventMonitorClient.Send(Encoding.UTF8.GetBytes(m_authId));
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 m_userPage.LogActivityMessage(MessageLevelsEnum.Error, "Error setting machine socket token, auto refreshes disabled.");
             }
         }
@@ -327,7 +337,7 @@ namespace SIPSorcery
         }
 
         private void LoginAsync(string username, string password)
-        {  
+        {
 #if !BLEND
             m_owner = username;
 #else
@@ -340,22 +350,26 @@ namespace SIPSorcery
         {
             if (e.Error != null)
             {
-              m_loginControl.WriteLoginMessage("Error logging in. " + e.Error.Message);
+                m_loginControl.WriteLoginMessage("Error logging in. " + e.Error.Message);
             }
             else
             {
                 if (e.Result == null)
                 {
-                   m_loginControl.WriteLoginMessage("Login failed.");
+                    m_loginControl.WriteLoginMessage("Login failed.");
                 }
                 else
                 {
+                    // Set the screen back to the initial state so it's ready for a logout.
                     //UIHelper.SetVisibility(m_appStatusCanvas, Visibility.Collapsed);
                     //UIHelper.SetVisibility(m_loginControl, Visibility.Collapsed);
                     //UIHelper.SetVisibility(m_sipMonitorDisplay, Visibility.Collapsed);
                     UIHelper.SetText(m_appStatusMessage, "Initialising...");
                     UIHelper.SetFill(m_appStatusIcon, Colors.Blue);
-                    
+                    m_loginControl.DisableNewAccounts(null);
+                    UIHelper.SetVisibility(m_provisioningSvcTextBox, Visibility.Collapsed);
+                    UIHelper.SetVisibility(m_setSvcLinkApply, Visibility.Collapsed);
+
                     //UIHelper.RemoveChild(m_topCanvas, m_appStatusCanvas);
                     //UIHelper.RemoveChild(m_topCanvas, m_loginControl);
                     //UIHelper.RemoveChild(m_topCanvas, m_sipMonitorDisplay);
@@ -366,10 +380,9 @@ namespace SIPSorcery
 #if !BLEND
                     m_authorisedPersistor = SIPSorceryPersistorFactory.CreateSIPSorceryPersistor(SIPPersistorTypesEnum.WebService, m_provisioningServiceURL, m_authId);
 
-                    m_sipEventMonitorClient = new SocketClient(m_machineMonitorEndPoint);
-                    //m_sipEventMonitorClient = new SocketClient(new IPEndPoint(IPAddress.Parse("127.0.0.1"), m_sipMachineMonitorPort));
-                    m_sipEventMonitorClient.SocketDataReceived += SIPEventMonitorClient_MonitorEventReceived;
-                    m_sipEventMonitorClient.SocketConnectionChange += SIPEventMonitorClient_MonitorConnectionChange;
+                    //m_sipEventMonitorClient = new SocketClient(m_machineMonitorEndPoint);
+                    //m_sipEventMonitorClient.SocketDataReceived += SIPEventMonitorClient_MonitorEventReceived;
+                    //m_sipEventMonitorClient.SocketConnectionChange += SIPEventMonitorClient_MonitorConnectionChange;
 #else
                     m_authorisedPersistor = SIPSorceryPersistorFactory.CreateSIPSorceryPersistor(SIPPersistorTypesEnum.GUITest, m_provisioningServiceURL, m_authId);
 #endif
@@ -379,134 +392,179 @@ namespace SIPSorcery
                     m_authorisedPersistor.GetTimeZoneOffsetMinutesAsync();
 
                     m_loginControl.Clear();
+                    m_loginControl.DisableNewAccounts(null);
                     m_createAccountControl.Clear();
                     UIHelper.SetVisibility(m_createAccountControl, Visibility.Collapsed);
 
-                    m_userPage = new UserPage(m_authorisedPersistor, m_sipEventMonitorClient, LogoutAsync, m_owner, m_sipMonitorHost, m_sipControlMonitorPort);
+                    m_userPage = new UserPage(m_authorisedPersistor, LogoutAsync, m_owner, m_authId, m_notificationsServiceURL);
                     m_mainPageBorder.Content = m_userPage;
 
-                    if (m_sipEventMonitorClient != null) {
-                        try {
+                    /*if (m_sipEventMonitorClient != null)
+                    {
+                        try
+                        {
                             m_sipEventMonitorClient.ConnectAsync();
                         }
-                        catch (Exception monExcp) {
+                        catch (Exception monExcp)
+                        {
                             m_monitorStatusMessage = monExcp.Message;
                             m_monitorStatus = ServiceConnectionStatesEnum.Error;
                             m_userPage.LogActivityMessage(MessageLevelsEnum.Warn, "Wasn't able to connect to monitoring socket, automatic refreshes are disabled.");
                         }
-                    }
+                    }*/
 
                     UpdateAppStatus();
                 }
             }
         }
 
-        private void GetTimeZoneOffsetMinutesComplete(GetTimeZoneOffsetMinutesCompletedEventArgs e) {
-            try {
-                if (e.Error == null) {
+        private void GetTimeZoneOffsetMinutesComplete(GetTimeZoneOffsetMinutesCompletedEventArgs e)
+        {
+            try
+            {
+                if (e.Error == null)
+                {
                     SIPCDRAsset.TimeZoneOffsetMinutes = e.Result;
                     SIPProviderBinding.TimeZoneOffsetMinutes = e.Result;
                     SIPRegistrarBinding.TimeZoneOffsetMinutes = e.Result;
                 }
             }
-            catch(Exception excp) {
+            catch (Exception excp)
+            {
                 m_userPage.LogActivityMessage(MessageLevelsEnum.Error, "Exception GetTimeZoneOffsetMinutes. " + excp.Message);
             }
         }
 
-        private void SessionExpired() {
-            try {
+        private void SessionExpired()
+        {
+            try
+            {
                 m_sessionExpired = true;
                 m_userPage.LogActivityMessage(MessageLevelsEnum.Warn, "Session has expired, please re-login.");
 
-                if (m_sipEventMonitorClient != null) {
+                /*if (m_sipEventMonitorClient != null)
+                {
                     m_sipEventMonitorClient.Close();
                     m_monitorStatus = ServiceConnectionStatesEnum.None;
+                }*/
+
+                if (m_userPage != null)
+                {
+                    m_userPage.ShutdownNotifications();
                 }
 
                 UpdateAppStatus();
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 m_userPage.LogActivityMessage(MessageLevelsEnum.Error, "Exception SessionExpired. " + excp.Message);
             }
         }
 
-        private void LogoutAsync(bool sendServerLogout) {
-            try {
+        private void LogoutAsync(bool sendServerLogout)
+        {
+            try
+            {
                 this.TabNavigation = KeyboardNavigationMode.Cycle;
                 m_mainPageBorder.Content = m_topCanvas;
 
-                if (sendServerLogout) {
+                if (sendServerLogout)
+                {
                     m_authorisedPersistor.LogoutAsync();
                 }
 
                 m_authId = null;
                 m_sessionExpired = true;
+                m_userPage = null;
 
-                if (m_sipEventMonitorClient != null) {
+                /*if (m_sipEventMonitorClient != null)
+                {
                     m_sipEventMonitorClient.Close();
                     m_monitorStatus = ServiceConnectionStatesEnum.None;
-                }
+                }*/
 
                 UpdateAppStatus();
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 m_userPage.LogActivityMessage(MessageLevelsEnum.Error, "Exception LogoutAsync. " + excp.Message);
             }
         }
 
-        private void LogoutComplete(System.ComponentModel.AsyncCompletedEventArgs e) {
-            try {
-                try {
-                    if (e.Error == null) {
+        private void LogoutComplete(System.ComponentModel.AsyncCompletedEventArgs e)
+        {
+            try
+            {
+                try
+                {
+                    if (e.Error == null)
+                    {
                         m_loginControl.WriteLoginMessage(String.Empty);
                     }
-                    else {
+                    else
+                    {
                         throw e.Error;
                     }
                 }
-                catch (Exception excp) {
+                catch (Exception excp)
+                {
                     string excpMessage = (excp.InnerException != null) ? excp.InnerException.Message : excp.Message;
-                    m_loginControl.WriteLoginMessage("Error logging out. " + excpMessage);
+                    //m_loginControl.WriteLoginMessage("Error logging out. " + excpMessage);
                 }
             }
-            finally {
-                if (m_sipEventMonitorClient != null) {
-                    m_sipEventMonitorClient.Close();
-                }
+            finally
+            {
+                //if (m_sipEventMonitorClient != null)
+                //{
+                //    m_sipEventMonitorClient.Close();
+                //}
 
                 ThreadPool.QueueUserWorkItem(delegate { Initialise(); });
             }
         }
 
-        private void CreateCustomerComplete(System.ComponentModel.AsyncCompletedEventArgs e) {
-            if (e.Error == null) {
+        private void CreateCustomerComplete(System.ComponentModel.AsyncCompletedEventArgs e)
+        {
+            if (e.Error == null)
+            {
                 m_loginControl.DisableNewAccounts(null);
             }
             m_createAccountControl.CustomerCreated(e);
         }
 
-        private void DisplaySetServiceTextBox(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+        private void DisplaySetServiceTextBox(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
             m_provisioningSvcTextBox.Visibility = (m_provisioningSvcTextBox.Visibility == Visibility.Visible) ? Visibility.Collapsed : Visibility.Visible;
             m_setSvcLinkApply.Visibility = m_provisioningSvcTextBox.Visibility;
         }
 
-        private void ApplySetService(object sender, System.Windows.Input.MouseButtonEventArgs e) {
-            if (!m_provisioningSvcTextBox.Text.IsNullOrBlank()) {
+        private void ApplySetService(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (!m_provisioningSvcTextBox.Text.IsNullOrBlank())
+            {
                 Uri uriResult = null;
-                if (Uri.TryCreate(m_provisioningSvcTextBox.Text, UriKind.Absolute, out uriResult)) {
+                if (Uri.TryCreate(m_provisioningSvcTextBox.Text, UriKind.Absolute, out uriResult))
+                {
                     m_provisioningServiceURL = uriResult.ToString();
+                    m_notificationsServiceURL = uriResult.Scheme + "://" + uriResult.Host + ":" + uriResult.Port + "/" + DEFAULT_NOTIFICATIONS_FILE;
                     m_sipMonitorHost = uriResult.Host;
+
+                    // Use the Silverlight network stack so that SOAP faults can get through.
+                    HttpWebRequest.RegisterPrefix(m_provisioningServiceURL, WebRequestCreator.ClientHttp);
+                    HttpWebRequest.RegisterPrefix(m_notificationsServiceURL, WebRequestCreator.ClientHttp);
+
                     UIHelper.SetText(m_appStatusMessage, "Attempting to connect to " + m_provisioningServiceURL + ".");
                     Initialise();
                 }
-                else {
+                else
+                {
                     UIHelper.SetText(m_appStatusMessage, "Could not parse URI from " + m_provisioningSvcTextBox.Text + ".");
                 }
             }
         }
 
-        private void AboutLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+        private void AboutLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
             About about = new About();
             about.Show();
         }

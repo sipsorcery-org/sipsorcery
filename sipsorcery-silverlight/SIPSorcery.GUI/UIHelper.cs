@@ -51,6 +51,16 @@ namespace SIPSorcery
         private static SilverlightHost m_silverlightHostControl = new SilverlightHost();
         private static Content m_browserContent = new Content();
 
+        /*public static string InvokeIfNecessary(UIElement element, Func<string> action) {
+            if (element.Dispatcher.CheckAccess()) {
+                return action();
+            }
+            else {
+                return (string)element.Dispatcher.BeginInvoke(delegate { result = action(); });
+                
+            }
+        }*/
+
         public static void SetVisibility(UIElement element, Visibility visibility)
         {
             if (element.Dispatcher.CheckAccess())
@@ -111,6 +121,18 @@ namespace SIPSorcery
             }
         }
 
+        public static void SetText(ToolTip toolTip, string text)
+        {
+            if (toolTip.Dispatcher.CheckAccess())
+            {
+                toolTip.Content = text;
+            }
+            else
+            {
+                toolTip.Dispatcher.BeginInvoke(delegate { SetText(toolTip, text); });
+            }
+        }
+
         public static void AppendText(TextBlock textBlock, string text)
         {
             if (textBlock.Dispatcher.CheckAccess())
@@ -125,7 +147,7 @@ namespace SIPSorcery
 
         public static void AppendToActivityLog(ScrollViewer scrollViewer, TextBlock textBlock, MessageLevelsEnum level, string text)
         {
-            if (textBlock.Dispatcher.CheckAccess())
+            if (scrollViewer.Dispatcher.CheckAccess())
             {
                 Run activityRun = new Run();
                 activityRun.Text = text;
@@ -137,7 +159,7 @@ namespace SIPSorcery
             }
             else
             {
-                textBlock.Dispatcher.BeginInvoke(new AppendToActivityLogDelegate(AppendToActivityLog), scrollViewer, textBlock, level, text);
+                scrollViewer.Dispatcher.BeginInvoke(new AppendToActivityLogDelegate(AppendToActivityLog), scrollViewer, textBlock, level, text);
             }
         }
 

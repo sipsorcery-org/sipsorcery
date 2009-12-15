@@ -97,7 +97,7 @@ namespace SIPSorcery
         }
     }
     
-    public class DateTimeConverter : IValueConverter
+    /*public class DateTimeConverter : IValueConverter
     {
         public object Convert(object value,
                            Type targetType,
@@ -120,6 +120,32 @@ namespace SIPSorcery
                                   CultureInfo culture)
         {
             return DateTime.Parse(value.ToString());
+        }
+    }*/
+
+    public class DateTimeOffsetConverter : IValueConverter
+    {
+        public object Convert(object value,
+                           Type targetType,
+                           object parameter,
+                           CultureInfo culture)
+        {
+            if (value != null)
+            {
+                return ((DateTimeOffset)value).ToString("dd MMM yyyy HH:mm:ss");
+            }
+            else
+            {
+                return String.Empty;
+            }
+        }
+
+        public object ConvertBack(object value,
+                                  Type targetType,
+                                  object parameter,
+                                  CultureInfo culture)
+        {
+            return DateTimeOffset.Parse(value.ToString());
         }
     }
 }

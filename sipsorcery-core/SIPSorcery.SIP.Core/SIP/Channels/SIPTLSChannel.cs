@@ -64,49 +64,38 @@ namespace SIPSorcery.SIP
         private Dictionary<IPEndPoint, SIPConnection> m_connectedSockets = new Dictionary<IPEndPoint, SIPConnection>();
         private List<IPEndPoint> m_connectingSockets = new List<IPEndPoint>(); // List of connecting sockets to avoid SIP re-transmits initiating multiple connect attempts.
 
-        private string m_certificatePath;
+        //private string m_certificatePath;
         private X509Certificate2 m_serverCertificate;
 
-        public SIPTLSChannel(string certificateFileName, IPEndPoint endPoint) {
-            m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tls, endPoint);
-            m_isReliable = true;
-            m_isTLS = true;
-            m_certificatePath = certificateFileName;
-            base.Name = "s" + Crypto.GetRandomInt(4);
-            Initialise();
-        }
+        public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint) {
+            
+            if (serverCertificate == null) {
+                throw new ArgumentNullException("serverCertificate", "An X509 certificate must be supplied for a SIP TLS channel.");
+            }
 
-        public SIPTLSChannel(string certificateFileName, IPEndPoint endPoint, string name) {
+            if (endPoint == null) {
+                throw new ArgumentNullException("endPoint", "An IP end point must be supplied for a SIP TLS channel.");
+            }
+
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tls, endPoint);
             m_isReliable = true;
             m_isTLS = true;
-            m_certificatePath = certificateFileName;
-            base.Name = name;
+            //m_certificatePath = certificateFileName;
+            ///base.Name = "s" + Crypto.GetRandomInt(4);
+            m_serverCertificate = serverCertificate;
             Initialise();
         }
 
         private void Initialise() {
             try {
-                if (m_certificatePath.IsNullOrBlank()) {
-                    logger.Warn("SIPTLSChannel could not start listener on " + m_localSIPEndPoint.SocketEndPoint + " as no certificate path was specified.");
-                }
-                else {
-                    m_tlsServerListener = new TcpListener(m_localSIPEndPoint.SocketEndPoint);
-                    m_tlsServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                    //m_serverCertificate = X509Certificate.CreateFromCertFile(certificateFileName);
-                    //m_serverCertificate = X509Certificate2.CreateFromCertFile(certificateFileName);
-                    m_serverCertificate = new X509Certificate2(m_certificatePath, String.Empty);
-                    DisplayCertificateChain(m_serverCertificate);
-                    bool verifyCert = m_serverCertificate.Verify();
-                    //m_serverCertificate = getServerCert();
-                    logger.Debug("Server Certificate loaded, Subject=" + m_serverCertificate.Subject + ", valid=" + verifyCert + ".");
+                m_tlsServerListener = new TcpListener(m_localSIPEndPoint.SocketEndPoint);
+                m_tlsServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
-                    Thread listenThread = new Thread(new ThreadStart(AcceptConnections));
-                    listenThread.Name = THREAD_NAME + Name;
-                    listenThread.Start();
+                Thread listenThread = new Thread(new ThreadStart(AcceptConnections));
+                listenThread.Name = THREAD_NAME + Crypto.GetRandomString(4);
+                listenThread.Start();
 
-                    logger.Debug("SIP TLS Channel listener created " + m_localSIPEndPoint.SocketEndPoint + ".");
-                }
+                logger.Debug("SIP TLS Channel listener created " + m_localSIPEndPoint.SocketEndPoint + ".");
             }
             catch (Exception excp) {
                 logger.Error("Exception SIPTLSChannel Initialise. " + excp.Message);

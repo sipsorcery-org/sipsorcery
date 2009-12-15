@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReferenceGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ID="db054f8a-c3e2-42bd-937f-956b3d44a0fe" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+  <ClientOptions>
+    <GenerateAsynchronousMethods>true</GenerateAsynchronousMethods>
+    <EnableDataBinding>true</EnableDataBinding>
+    <ExcludedTypes />
+    <ImportXmlTypes>false</ImportXmlTypes>
+    <GenerateInternalTypes>false</GenerateInternalTypes>
+    <GenerateMessageContracts>false</GenerateMessageContracts>
+    <NamespaceMappings />
+    <CollectionMappings>
+      <CollectionMapping TypeName="System.Collections.Generic.List`1" Category="List" />
+    </CollectionMappings>
+    <GenerateSerializableTypes>false</GenerateSerializableTypes>
+    <Serializer>Auto</Serializer>
+    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferencedAssemblies />
+    <ReferencedDataContractTypes />
+    <ServiceContractMappings />
+  </ClientOptions>
+  <MetadataSources>
+    <MetadataSource Address="http://localhost/notifications.svc" Protocol="http" SourceId="1" />
+  </MetadataSources>
+  <Metadata>
+    <MetadataFile FileName="notifications.xsd" MetadataType="Schema" ID="97e570d8-2da4-491f-864e-4e945ef5fc1f" SourceId="1" SourceUrl="http://suzannes-pc/notifications.svc?xsd=xsd2" />
+    <MetadataFile FileName="notifications.wsdl" MetadataType="Wsdl" ID="18cd049e-0bf0-467e-9374-939106b0878f" SourceId="1" SourceUrl="http://suzannes-pc/notifications.svc?wsdl=wsdl0" />
+    <MetadataFile FileName="SIPNotifierService.wsdl" MetadataType="Wsdl" ID="4352a3c0-fd8c-4a42-a2de-111ef6ac45d0" SourceId="1" SourceUrl="http://suzannes-pc/notifications.svc?wsdl" />
+    <MetadataFile FileName="notifications1.xsd" MetadataType="Schema" ID="12948c09-5b41-44ad-b134-465a389e3464" SourceId="1" SourceUrl="http://suzannes-pc/notifications.svc?xsd=xsd1" />
+    <MetadataFile FileName="notifications.disco" MetadataType="Disco" ID="ab20d303-f7f8-40c8-9b2b-bb2b613732f6" SourceId="1" SourceUrl="http://suzannes-pc/notifications.svc?disco" />
+    <MetadataFile FileName="notifications2.xsd" MetadataType="Schema" ID="d929edad-1d38-4090-9b28-9b5bc51240ab" SourceId="1" SourceUrl="http://suzannes-pc/notifications.svc?xsd=xsd0" />
+  </Metadata>
+  <Extensions>
+    <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
+    <ExtensionFile FileName="configuration.svcinfo" Name="configuration.svcinfo" />
+  </Extensions>
+</ReferenceGroup>

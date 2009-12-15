@@ -76,6 +76,14 @@ namespace SIPSorcery.CRM
             m_customerSessionPersistor = customerSessionPersistor;
         }
 
+        public CustomerSessionManager(SIPSorceryConfiguration sipSorceryConfig)
+        {
+            StorageTypes storageType = sipSorceryConfig.PersistenceStorageType;
+            string connectionString = sipSorceryConfig.PersistenceConnStr;
+            m_customerPersistor = SIPAssetPersistorFactory<Customer>.CreateSIPAssetPersistor(storageType, connectionString, CUSTOMERS_XML_FILENAME);
+            m_customerSessionPersistor = SIPAssetPersistorFactory<CustomerSession>.CreateSIPAssetPersistor(storageType, connectionString, CUSTOMER_SESSIONS_XML_FILENAME);
+        }
+
         public CustomerSession Authenticate(string username, string password, string ipAddress) {
             try {
                 if (username.IsNullOrBlank() || password.IsNullOrBlank()) {
@@ -120,8 +128,8 @@ namespace SIPSorcery.CRM
                 //CustomerSession customerSession = m_customerSessionPersistor.Get(s => s.Id == sessionId);
 
                 if (customerSession != null) {
-                    int sessionLengthMinutes = (int)DateTime.UtcNow.Subtract(customerSession.Inserted).TotalMinutes;
-                    logger.Debug("CustomerSession Inserted=" + customerSession.Inserted.ToString("o") + ", session length=" + sessionLengthMinutes + "mins.");
+                    int sessionLengthMinutes = (int)DateTimeOffset.UtcNow.Subtract(customerSession.Inserted).TotalMinutes;
+                    //logger.Debug("CustomerSession Inserted=" + customerSession.Inserted.ToString("o") + ", session length=" + sessionLengthMinutes + "mins.");
                     if (sessionLengthMinutes > customerSession.TimeLimitMinutes || sessionLengthMinutes > CustomerSession.MAX_SESSION_LIFETIME_MINUTES) {
                         customerSession.Expired = true;
                         m_customerSessionPersistor.Update(customerSession);

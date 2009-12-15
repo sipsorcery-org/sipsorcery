@@ -23,5 +23,11 @@ namespace SIPSorcery.Sys {
         public string DbType;
         public bool IsPrimaryKey;
         public bool CanBeNull;
+        public UpdateCheck UpdateCheck;
+    }
+
+    public enum UpdateCheck
+    {
+        Never = 0
     }
 }

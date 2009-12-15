@@ -80,7 +80,7 @@ namespace SIPSorcery.SIP.App
         public static int TimeZoneOffsetMinutes;
         
         private Guid m_id;                  // Dial plan id used by the system. This is the database primary key and is not important for XML.
-        [Column(Storage = "m_id", Name = "id", DbType = "StringFixedLength", IsPrimaryKey = true, CanBeNull = false)]
+        [Column(Name = "id", DbType = "varchar(36)", IsPrimaryKey = true, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public Guid Id
         {
@@ -89,7 +89,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_owner;                     // The username of the dialplan owner.
-        [Column(Storage = "m_owner", Name = "owner", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "owner", DbType = "varchar(32)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string Owner
         {
@@ -101,11 +101,11 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        [Column(Name = "adminmemberid", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "adminmemberid", DbType = "varchar(32)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         public string AdminMemberId { get; set; }    // If set it designates this asset as a belonging to a user with the matching adminid.
 
         private string m_dialPlanName;              // The name of the dialplan assigned by the owner, owner/name combinations must be unique
-        [Column(Storage = "m_dialPlanName", Name = "dialplanname", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "dialplanname", DbType = "varchar(64)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string DialPlanName {
             get { return m_dialPlanName; }
@@ -116,7 +116,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_traceEmailAddress;         // Optional email address to send dialplan traces to. if empty traces will not be used.
-        [Column(Storage = "m_traceEmailAddress", Name = "traceemailaddress", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "traceemailaddress", DbType = "varchar(256)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string TraceEmailAddress
         {
@@ -129,7 +129,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_dialPlanScript;            // The string representing the dialplan script (or asterisk extension lines).
-        [Column(Storage = "m_dialPlanScript", Name = "dialplanscript", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "dialplanscript", DbType = "varchar(8000)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string DialPlanScript
         {
@@ -142,7 +142,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private string m_scriptTypeDescription;     // Silverlight can't handle enum types across WCF boundaries.
-        [Column(Storage = "m_scriptTypeDescription", Name = "scripttypedescription", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "scripttypedescription", DbType = "varchar(12)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string ScriptTypeDescription
         {
@@ -159,10 +159,10 @@ namespace SIPSorcery.SIP.App
             get { return SIPDialPlanScriptTypes.GetSIPDialPlanScriptType(m_scriptTypeDescription); }
         }
 
-        private DateTime m_lastUpdate;
-        [Column(Storage = "m_lastUpdate", Name = "lastupdate", DbType = "StringFixedLength", CanBeNull = true)]
+        private DateTimeOffset m_lastUpdate;
+        [Column(Name = "lastupdate", DbType = "datetimeoffset", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public DateTime LastUpdate
+        public DateTimeOffset LastUpdate
         {
             get { return m_lastUpdate; }
             set
@@ -172,25 +172,25 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public DateTime LastUpdateLocal {
+        public DateTimeOffset LastUpdateLocal {
             get { return LastUpdate.AddMinutes(TimeZoneOffsetMinutes); }
         }
 
-        private DateTime m_inserted;
-        [Column(Storage = "m_inserted", Name = "inserted", DbType = "StringFixedLength", CanBeNull = false)]
+        private DateTimeOffset m_inserted;
+        [Column(Name = "inserted", DbType = "datetimeoffset", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public DateTime Inserted {
+        public DateTimeOffset Inserted {
             get { return m_inserted; }
             set { m_inserted = value.ToUniversalTime(); }
         }
 
-        public DateTime InsertedLocal {
+        public DateTimeOffset InsertedLocal {
             get { return Inserted.AddMinutes(TimeZoneOffsetMinutes); }
         }
 
         private int m_maxExecutionCount = DEFAULT_MAXIMUM_EXECUTION_COUNT;
         [DataMember]
-        [Column(Storage = "m_maxExecutionCount", Name = "maxexecutioncount", DbType = "Int32", CanBeNull = false)]
+        [Column(Name = "maxexecutioncount", DbType = "int", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public int MaxExecutionCount
         {
             get { return m_maxExecutionCount; }
@@ -199,7 +199,7 @@ namespace SIPSorcery.SIP.App
 
         private int m_executionCount;
         [DataMember]
-        [Column(Storage = "m_executionCount", Name = "executioncount", DbType = "Int32", CanBeNull = false)]
+        [Column(Name = "executioncount", DbType = "int", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public int ExecutionCount
         {
             get { return m_executionCount; }
@@ -208,7 +208,7 @@ namespace SIPSorcery.SIP.App
 
         private string m_authorisedApps;     // A semi-colon delimited list of privileged apps that this dialplan is authorised to use.
         [DataMember]
-        [Column(Storage = "m_authorisedApps", Name = "authorisedapps", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "authorisedapps", DbType = "varchar(2048)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         public string AuthorisedApps {
             get { return m_authorisedApps; }
             set {
@@ -229,8 +229,8 @@ namespace SIPSorcery.SIP.App
             m_traceEmailAddress = traceEmailAddress;
             m_dialPlanScript = script;
             m_scriptTypeDescription = scriptType.ToString();
-            Inserted = DateTime.UtcNow;
-            LastUpdate = DateTime.UtcNow;
+            Inserted = DateTimeOffset.UtcNow;
+            LastUpdate = DateTimeOffset.UtcNow;
         }
 
 #if !SILVERLIGHT
@@ -251,8 +251,8 @@ namespace SIPSorcery.SIP.App
             table.Columns.Add(new DataColumn("maxexecutioncount", typeof(Int32)));
             table.Columns.Add(new DataColumn("executioncount", typeof(Int32)));
             table.Columns.Add(new DataColumn("authorisedapps", typeof(String)));
-            table.Columns.Add(new DataColumn("inserted", typeof(DateTime)));
-            table.Columns.Add(new DataColumn("lastupdate", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("inserted", typeof(DateTimeOffset)));
+            table.Columns.Add(new DataColumn("lastupdate", typeof(DateTimeOffset)));
             return table;
         }
 
@@ -264,12 +264,12 @@ namespace SIPSorcery.SIP.App
                 m_dialPlanName = (dialPlanRow["dialplanname"] != null && dialPlanRow["dialplanname"].ToString().Trim().Length > 0) ? dialPlanRow["dialplanname"].ToString().Trim() : null;
                 m_traceEmailAddress = (dialPlanRow.Table.Columns.Contains("traceemailaddress") && dialPlanRow["traceemailaddress"] != null) ? dialPlanRow["traceemailaddress"] as string : null;
                 m_dialPlanScript = (dialPlanRow["dialplanscript"] as string).Trim();
-                m_scriptTypeDescription = (dialPlanRow.Table.Columns.Contains("scripttype") && dialPlanRow["scripttype"] != null) ? SIPDialPlanScriptTypes.GetSIPDialPlanScriptType(dialPlanRow["scripttype"] as string).ToString() : SIPDialPlanScriptTypesEnum.Ruby.ToString();
+                m_scriptTypeDescription = (dialPlanRow.Table.Columns.Contains("scripttypedescription") && dialPlanRow["scripttypedescription"] != null) ? SIPDialPlanScriptTypes.GetSIPDialPlanScriptType(dialPlanRow["scripttypedescription"] as string).ToString() : SIPDialPlanScriptTypesEnum.Ruby.ToString();
                 m_maxExecutionCount = (dialPlanRow.Table.Columns.Contains("maxexecutioncount") && dialPlanRow["maxexecutioncount"] != null) ? Convert.ToInt32(dialPlanRow["maxexecutioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
                 m_executionCount = (dialPlanRow.Table.Columns.Contains("executioncount") && dialPlanRow["executioncount"] != null) ? Convert.ToInt32(dialPlanRow["executioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
                 m_authorisedApps = (dialPlanRow.Table.Columns.Contains("authorisedapps") && dialPlanRow["authorisedapps"] != null) ? dialPlanRow["authorisedapps"] as string : null;
-                Inserted = (dialPlanRow.Table.Columns.Contains("inserted")&& dialPlanRow["inserted"] != null && dialPlanRow["inserted"] != DBNull.Value) ? Inserted = Convert.ToDateTime(dialPlanRow["inserted"]) : DateTime.UtcNow;
-                LastUpdate = (dialPlanRow.Table.Columns.Contains("lastupdate") && dialPlanRow["lastupdate"] != null && dialPlanRow["lastupdate"] != DBNull.Value) ? Convert.ToDateTime(dialPlanRow["lastupdate"]) : DateTime.UtcNow;
+                Inserted = (dialPlanRow.Table.Columns.Contains("inserted")&& dialPlanRow["inserted"] != null && dialPlanRow["inserted"] != DBNull.Value) ? DateTimeOffset.Parse(dialPlanRow["inserted"] as string) : DateTimeOffset.UtcNow;
+                LastUpdate = (dialPlanRow.Table.Columns.Contains("lastupdate") && dialPlanRow["lastupdate"] != null && dialPlanRow["lastupdate"] != DBNull.Value) ? DateTimeOffset.Parse(dialPlanRow["lastupdate"] as string) : DateTimeOffset.UtcNow;
             }
             catch (Exception excp) {
                 logger.Error("Exception DialPlan Load. " + excp);
@@ -306,8 +306,8 @@ namespace SIPSorcery.SIP.App
                 "    <maxexecutioncount>" + m_maxExecutionCount + "</maxexecutioncount>" + m_newLine +
                 "    <executioncount>" + m_executionCount + "</executioncount>" + m_newLine +
                 "    <authorisedapps>" + m_authorisedApps + "</authorisedapps>" + m_newLine +
-                "    <inserted>" + m_inserted.ToString("o") + "</inserted>" + m_newLine +
-                "    <lastupdate>" + m_lastUpdate.ToString("o") + "</lastupdate>" + m_newLine;
+                "    <inserted>" + m_inserted.ToString() + "</inserted>" + m_newLine +
+                "    <lastupdate>" + m_lastUpdate.ToString() + "</lastupdate>" + m_newLine;
 
             return dialPlanXML;
         }

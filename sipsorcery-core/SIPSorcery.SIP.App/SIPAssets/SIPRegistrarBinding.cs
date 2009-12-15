@@ -83,7 +83,7 @@ namespace SIPSorcery.SIP.App
         public const string XML_DOCUMENT_ELEMENT_NAME = "sipregistrarbindings";
         public const string XML_ELEMENT_NAME = "sipregistrarbinding";
         public const int MAX_BINDING_LIFETIME = 3600;       // Bindings are currently not being expired once the expires time is reached and this is the maximum amount of time 
-                                                            // a binding can stay valid for with probing before it is removed and the binding must be freshed with a REGISTER.
+        // a binding can stay valid for with probing before it is removed and the binding must be freshed with a REGISTER.
 
         //public static readonly string SelectBindingsQuery = "select * from sipregistrarbindings where sipaccountid = ?1";
         //public static readonly string SelectExpiredBindingsQuery = "select * from sipregistrarbindings where expirytime < ?1";
@@ -95,30 +95,30 @@ namespace SIPSorcery.SIP.App
 
         private static Dictionary<string, int> m_userAgentExpirys = new Dictionary<string, int>();  // Result of parsing user agent expiry values from the App.Config Xml Node.
 
-        [Column(Name = "id", DbType = "StringFixedLength", IsPrimaryKey = true, CanBeNull = false)]
+        [Column(Name = "id", DbType = "varchar(36)", IsPrimaryKey = true, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public Guid Id { get; set; }
 
-        [Column(Name = "sipaccountid", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "sipaccountid", DbType = "varchar(36)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public Guid SIPAccountId { get; set; }
 
-        [Column(Name = "sipaccountname", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "sipaccountname", DbType = "varchar(160)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string SIPAccountName { get; set; }          // Used for informational purposes only, no matching done against it and should not be relied on. Use SIPAccountId instead.
 
-        [Column(Name = "owner", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "owner", DbType = "varchar(32)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string Owner { get; set; }
 
-        [Column(Name = "adminmemberid", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "adminmemberid", DbType = "varchar(32)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         public string AdminMemberId { get; private set; }    // If set it designates this asset as a belonging to a user with the matching adminid.
 
-        [Column(Name = "useragent", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "useragent", DbType = "varchar(1024)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public string UserAgent {get; set;}
+        public string UserAgent { get; set; }
 
         private SIPURI m_contactURI;
-        [Column(Storage = "m_contactURI", Name = "contacturi", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "contacturi", DbType = "varchar(767)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string ContactURI
         {
@@ -126,53 +126,60 @@ namespace SIPSorcery.SIP.App
             set { m_contactURI = (!value.IsNullOrBlank()) ? SIPURI.ParseSIPURI(value) : null; }
         }
 
-        public SIPURI ContactSIPURI {
+        public SIPURI ContactSIPURI
+        {
             get { return m_contactURI; }
             set { m_contactURI = value; }
         }
 
         private SIPURI m_mangledContactURI;
-        [Column(Storage = "m_mangledContactURI", Name = "mangledcontacturi", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "mangledcontacturi", DbType = "varchar(767)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public string MangledContactURI {
+        public string MangledContactURI
+        {
             get { return (m_mangledContactURI != null) ? m_mangledContactURI.ToString() : null; }
             set { m_mangledContactURI = (!value.IsNullOrBlank()) ? SIPURI.ParseSIPURI(value) : null; }
         }
 
-        public SIPURI MangledContactSIPURI {
+        public SIPURI MangledContactSIPURI
+        {
             get { return m_mangledContactURI; }
             set { m_mangledContactURI = value; }
         }
 
-        private DateTime m_lastUpdate;
-        [Column(Storage = "m_lastUpdate", Name = "lastupdate", DbType = "StringFixedLength", CanBeNull = false)]
+        private DateTimeOffset m_lastUpdate;
+        [Column(Name = "lastupdate", DbType = "datetimeoffset", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public DateTime LastUpdate
+        public DateTimeOffset LastUpdate
         {
             get { return m_lastUpdate; }
-            set { m_lastUpdate = value.ToUniversalTime();  }        
+            set { m_lastUpdate = value.ToUniversalTime(); }
         }
 
-        public DateTime LastUpdateLocal {
+        public DateTimeOffset LastUpdateLocal
+        {
             get { return LastUpdate.AddMinutes(TimeZoneOffsetMinutes); }
         }
 
         [IgnoreDataMember]
         public SIPEndPoint RemoteSIPEndPoint;     // The socket the REGISTER request the binding was received on.
 
-        [Column(Name = "remotesipsocket", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "remotesipsocket", DbType = "varchar(64)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string RemoteSIPSocket
         {
             get { return (RemoteSIPEndPoint != null) ? RemoteSIPEndPoint.ToString() : null; }
-            set {
-                if (value.IsNullOrBlank()) {
+            set
+            {
+                if (value.IsNullOrBlank())
+                {
                     RemoteSIPEndPoint = null;
                 }
-                else {
+                else
+                {
                     RemoteSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(value);
                 }
-            }  
+            }
         }
 
         [IgnoreDataMember]
@@ -182,32 +189,41 @@ namespace SIPSorcery.SIP.App
         public int CSeq;
 
         private int m_expiry = 0;               // The expiry time in seconds for the binding.
-        [Column(Storage = "m_expiry", Name = "expiry", DbType = "Int32", CanBeNull = false)]
+        [Column(Name = "expiry", DbType = "int", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public int Expiry {
-            get {
+        public int Expiry
+        {
+            get
+            {
                 return m_expiry;
             }
-            set {
+            set
+            {
                 m_expiry = value;
             }
         }
 
-        [Column(Name = "expirytime", DbType = "StringFixedLength", CanBeNull = false)]
-        public DateTime ExpiryTime {
-            get {
+        [Column(Name = "expirytime", DbType = "datetimeoffset", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        public DateTimeOffset ExpiryTime
+        {
+            get
+            {
                 return m_lastUpdate.AddSeconds(m_expiry);
             }
+            set { }     // The expiry time is stored in the database for info. It is calculated from expiry and lastudpate and does not need a setter.
         }
 
         [DataMember]
         public string Q         // The Q value on the on the Contact header to indicate relative priority among bindings for the same address of record.
         {
-            get {
-                if (m_contactURI.Parameters != null) {
+            get
+            {
+                if (m_contactURI.Parameters != null)
+                {
                     return m_contactURI.Parameters.Get(SIPContactHeader.QVALUE_PARAMETER_KEY);
                 }
-                else {
+                else
+                {
                     return null;
                 }
             }
@@ -223,19 +239,22 @@ namespace SIPSorcery.SIP.App
             set { m_proxySIPEndPoint = value; }
         }
 
-        [Column(Name = "proxysipsocket", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "proxysipsocket", DbType = "varchar(64)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string ProxySIPSocket
         {
             get { return (m_proxySIPEndPoint != null) ? m_proxySIPEndPoint.ToString() : null; }
-            set {
-                if (value.IsNullOrBlank()) {
+            set
+            {
+                if (value.IsNullOrBlank())
+                {
                     ProxySIPEndPoint = null;
                 }
-                else {
+                else
+                {
                     ProxySIPEndPoint = SIPEndPoint.ParseSIPEndPoint(value);
                 }
-            }   
+            }
         }
 
         private SIPEndPoint m_registrarSIPEndPoint;
@@ -245,15 +264,19 @@ namespace SIPSorcery.SIP.App
             get { return m_registrarSIPEndPoint; }
         }
 
-        [Column(Name = "registrarsipsocket", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "registrarsipsocket", DbType = "varchar(64)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public string RegistrarSIPSocket {
+        public string RegistrarSIPSocket
+        {
             get { return (m_registrarSIPEndPoint != null) ? m_registrarSIPEndPoint.ToString() : null; }
-            set {
-                if (value.IsNullOrBlank()) {
+            set
+            {
+                if (value.IsNullOrBlank())
+                {
                     m_registrarSIPEndPoint = null;
                 }
-                else {
+                else
+                {
                     m_registrarSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(value);
                 }
             }
@@ -277,8 +300,8 @@ namespace SIPSorcery.SIP.App
             SIPEndPoint remoteSIPEndPoint,
             SIPEndPoint proxySIPEndPoint,
             SIPEndPoint registrarSIPEndPoint,
-            int expiry) {
-
+            int expiry)
+        {
             Id = Guid.NewGuid();
             LastUpdate = DateTime.UtcNow;
             SIPAccountId = sipAccount.Id;
@@ -295,7 +318,8 @@ namespace SIPSorcery.SIP.App
             m_registrarSIPEndPoint = registrarSIPEndPoint;
 
             //if (SIPTransport.IsPrivateAddress(sipRequest.Header.Contact[0].ContactURI.Host) && m_mangleUACContact)
-            if (Regex.Match(m_mangledContactURI.Host, @"(\d+\.){3}\d+").Success) {
+            if (Regex.Match(m_mangledContactURI.Host, @"(\d+\.){3}\d+").Success)
+            {
                 // The Contact URI Host is used by registrars as the contact socket for the user so it needs to be changed to reflect the socket
                 // the intial request was received on in order to work around NAT. It's no good just relying on private addresses as a lot of User Agents
                 // determine their public IP but NOT their public port so they send the wrong port in the Contact header.
@@ -310,11 +334,13 @@ namespace SIPSorcery.SIP.App
 
 #if !SILVERLIGHT
 
-        public SIPRegistrarBinding(DataRow row) {
+        public SIPRegistrarBinding(DataRow row)
+        {
             Load(row);
         }
 
-        public DataTable GetTable() {
+        public DataTable GetTable()
+        {
             DataTable table = new DataTable();
             table.Columns.Add(new DataColumn("id", typeof(String)));
             table.Columns.Add(new DataColumn("sipaccountid", typeof(String)));
@@ -325,16 +351,18 @@ namespace SIPSorcery.SIP.App
             table.Columns.Add(new DataColumn("contacturi", typeof(String)));
             table.Columns.Add(new DataColumn("mangledcontacturi", typeof(String)));
             table.Columns.Add(new DataColumn("expiry", typeof(Int32)));
-            table.Columns.Add(new DataColumn("expirytime", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("expirytime", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("remotesipsocket", typeof(String)));
             table.Columns.Add(new DataColumn("proxysipsocket", typeof(String)));
             table.Columns.Add(new DataColumn("registrarsipsocket", typeof(String)));
-            table.Columns.Add(new DataColumn("lastupdate", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("lastupdate", typeof(DateTimeOffset)));
             return table;
         }
 
-        public void Load(DataRow row) {
-            try {
+        public void Load(DataRow row)
+        {
+            try
+            {
                 Id = new Guid(row["id"] as string);
                 SIPAccountId = new Guid(row["sipaccountid"] as string);
                 SIPAccountName = row["sipaccountname"] as string;
@@ -342,20 +370,22 @@ namespace SIPSorcery.SIP.App
                 AdminMemberId = row["adminmemberid"] as string;
                 UserAgent = row["useragent"] as string;
                 m_contactURI = SIPURI.ParseSIPURI(row["contacturi"] as string);
-                m_mangledContactURI = (!(row["mangledcontacturi"] as string).IsNullOrBlank()) ?SIPURI.ParseSIPURI(row["mangledcontacturi"] as string) : null;
+                m_mangledContactURI = (!(row["mangledcontacturi"] as string).IsNullOrBlank()) ? SIPURI.ParseSIPURI(row["mangledcontacturi"] as string) : null;
                 Expiry = Convert.ToInt32(row["expiry"]);
                 RemoteSIPEndPoint = (!(row["remotesipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["remotesipsocket"] as string) : null;
                 m_proxySIPEndPoint = (!(row["proxysipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["proxysipsocket"] as string) : null;
                 m_registrarSIPEndPoint = (!(row["registrarsipsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(row["registrarsipsocket"] as string) : null;
-                LastUpdate = Convert.ToDateTime(row["lastupdate"]);
+                LastUpdate = DateTimeOffset.Parse(row["lastupdate"] as string);
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPRegistrarBinding Load. " + excp.Message);
                 throw;
             }
         }
 
-        public Dictionary<Guid, object> Load(XmlDocument dom) {
+        public Dictionary<Guid, object> Load(XmlDocument dom)
+        {
             return SIPAssetXMLPersistor<SIPRegistrarBinding>.LoadAssetsFromXMLRecordSet(dom);
         }
 
@@ -366,15 +396,16 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void RefreshBinding(int expiry, SIPEndPoint remoteSIPEndPoint, SIPEndPoint proxySIPEndPoint, SIPEndPoint registrarSIPEndPoint)
         {
-            LastUpdate = DateTime.UtcNow;
+            LastUpdate = DateTimeOffset.UtcNow;
             RemoteSIPEndPoint = remoteSIPEndPoint;
             m_proxySIPEndPoint = proxySIPEndPoint;
             m_registrarSIPEndPoint = registrarSIPEndPoint;
             RemovalReason = SIPBindingRemovalReason.Unknown;
             m_expiry = expiry;
 
-                //if (SIPTransport.IsPrivateAddress(sipRequest.Header.Contact[0].ContactURI.Host) && m_mangleUACContact)
-            if (Regex.Match(m_mangledContactURI.Host, @"(\d+\.){3}\d+").Success) {
+            //if (SIPTransport.IsPrivateAddress(sipRequest.Header.Contact[0].ContactURI.Host) && m_mangleUACContact)
+            if (Regex.Match(m_mangledContactURI.Host, @"(\d+\.){3}\d+").Success)
+            {
                 // The Contact URI Host is used by registrars as the contact socket for the user so it needs to be changed to reflect the socket
                 // the intial request was received on in order to work around NAT. It's no good just relying on private addresses as a lot of User Agents
                 // determine their public IP but NOT their public port so they send the wrong port in the Contact header.
@@ -397,7 +428,8 @@ namespace SIPSorcery.SIP.App
             return "<" + m_mangledContactURI.ToString() + ">;" + SIPContactHeader.EXPIRES_PARAMETER_KEY + "=" + secondsRemaining;
         }
 
-        public string ToXML() {
+        public string ToXML()
+        {
             string providerXML =
                 " <" + XML_ELEMENT_NAME + ">" + m_newLine +
                 ToXMLNoParent() +
@@ -406,7 +438,8 @@ namespace SIPSorcery.SIP.App
             return providerXML;
         }
 
-        public string ToXMLNoParent() {
+        public string ToXMLNoParent()
+        {
             string contactURIStr = (m_contactURI != null) ? m_contactURI.ToString() : null;
             string mangledContactURIStr = (m_mangledContactURI != null) ? m_mangledContactURI.ToString() : null;
 
@@ -423,21 +456,26 @@ namespace SIPSorcery.SIP.App
                 "   <remotesipsocket>" + RemoteSIPSocket + "</remotesipsocket>" + m_newLine +
                 "   <proxysipsocket>" + ProxySIPSocket + "</proxysipsocket>" + m_newLine +
                 "   <registrarsipsocket>" + RegistrarSIPSocket + "</registrarsipsocket>" + m_newLine +
-                "   <lastupdate>" + m_lastUpdate.ToString("o") + "</lastupdate>" + m_newLine;
+                "   <lastupdate>" + m_lastUpdate.ToString("o") + "</lastupdate>" + m_newLine +
+                "   <expirytime>" + ExpiryTime.ToString("o") + "</expirytime>" + m_newLine;
 
             return registrarBindingXML;
         }
 
-        public string GetXMLElementName() {
+        public string GetXMLElementName()
+        {
             return XML_ELEMENT_NAME;
         }
 
-        public string GetXMLDocumentElementName() {
+        public string GetXMLDocumentElementName()
+        {
             return XML_DOCUMENT_ELEMENT_NAME;
         }
 
-        private void NotifyPropertyChanged(string propertyName) {
-            if (PropertyChanged != null) {
+        private void NotifyPropertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null)
+            {
                 PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
         }

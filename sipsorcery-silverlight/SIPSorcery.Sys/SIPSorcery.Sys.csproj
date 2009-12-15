@@ -71,6 +71,7 @@
     <Compile Include="Crypto\Md5.cs" />
     <Compile Include="DummyDBLinqAttributes.cs" />
     <Compile Include="ILog.cs" />
+    <Compile Include="MethodInvoker.cs" />
     <Compile Include="Net\DNS\DNSManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SortedList.cs" />

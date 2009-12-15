@@ -24,6 +24,14 @@ namespace SIPSorcery.Sys
             return false;
         }
 
+        public static long GetEpoch(this DateTime dateTime)
+        {
+            var unixTime = dateTime.ToUniversalTime() -
+                new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            return Convert.ToInt64(unixTime.TotalSeconds);
+        }
+
         #region Unit Testing.
 
         #if UNITTEST

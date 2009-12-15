@@ -18,6 +18,17 @@
                     maxReceivedMessageSize="2147483647">
                     <security mode="None" />
                 </binding>
+                <binding name="BasicHttpBinding_INotifications" hostNameComparisonMode="StrongWildcard"
+                    maxBufferSize="2147483647" maxReceivedMessageSize="2147483647"
+                    messageEncoding="Text" textEncoding="utf-8" transferMode="Buffered">
+                    <readerQuotas maxDepth="0" maxStringContentLength="0" maxArrayLength="0"
+                        maxBytesPerRead="0" maxNameTableCharCount="0" />
+                    <security mode="None">
+                        <transport clientCredentialType="None" proxyCredentialType="None"
+                            realm="" />
+                        <message clientCredentialType="UserName" algorithmSuite="Default" />
+                    </security>
+                </binding>
             </basicHttpBinding>
             <customBinding>
                 <binding name="ProvisioningServiceSoap12">
@@ -52,6 +63,9 @@
                 binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_IProvisioningService2"
                 contract="SIPSorceryProvisioningClient.IProvisioningService"
                 name="BasicHttpBinding_IProvisioningService2" />
+            <endpoint address="http://suzannes-pc/notifications.svc" binding="basicHttpBinding"
+                bindingConfiguration="BasicHttpBinding_INotifications" contract="SIPSorceryNotificationService.INotifications"
+                name="BasicHttpBinding_INotifications" />
         </client>
     </system.serviceModel>
 </configuration>

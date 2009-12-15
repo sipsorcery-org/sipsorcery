@@ -319,6 +319,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                             switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, calledSIPAccount, customHeaders, customContentType, customContent, options, callersNetworkId, fromDisplayName, fromUsername, fromHost));
                                         }
                                         else {
+                                            // An incoming call for a SIP account that has an incoming dialplan specified.
                                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg is for local domain forwarding to incoming dialplan for " + callLegSIPURI.User + "@" + localDomain + ".", m_username));
                                             string sipUsername = (m_sipAccount != null) ? m_sipAccount.SIPUsername : m_username;
                                             string sipDomain = (m_sipAccount != null) ? m_sipAccount.SIPDomain : GetCanonicalDomain_External(SIPDomainManager.DEFAULT_LOCAL_DOMAIN, false);
@@ -335,9 +336,9 @@ namespace SIPSorcery.AppServer.DialPlan
                                             }
 
                                             SIPCallDescriptor loopbackCall = new SIPCallDescriptor(calledSIPAccount, callLegSIPURI.ToString(), fromHeader.ToString(), contentType, content);
-                                            loopbackCall.ParseCallOptions(options);
                                             loopbackCall.SetGeneralFromHeaderFields(fromDisplayName, fromUsername, fromHost);
                                             loopbackCall.MangleIPAddress = (PublicIPAddress != null) ? PublicIPAddress : SIPPacketMangler.GetRequestIPAddress(sipRequest);
+                                            loopbackCall.ParseCallOptions(options);
                                             switchCalls.Add(loopbackCall);
                                         }
                                     }

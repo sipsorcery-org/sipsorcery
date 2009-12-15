@@ -14,8 +14,16 @@
 			<TextBlock Cursor="Hand" x:Name="m_sipProvidersLink" Width="76" Foreground="{StaticResource NormalTextBrush}" Text="SIP Providers" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="SIPProvidersLink_MouseLeftButtonUp" HorizontalAlignment="Left" Margin="85.079,0,0,0" Height="15" VerticalAlignment="Bottom"/>
 			<TextBlock Cursor="Hand" x:Name="m_logoutLink" Width="41" Foreground="{StaticResource NormalTextBrush}" Text="Logout" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="LogoutLink_MouseLeftButtonUp" HorizontalAlignment="Right" Margin="0,0,10,0" Height="15" VerticalAlignment="Bottom"/>
 			<TextBlock Cursor="Hand" x:Name="m_monitorLink" Width="44" Text="Console" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="MonitorLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="257.079,0,0,0" Foreground="{StaticResource NormalTextBrush}"/>
-			<TextBlock Height="16" Width="394.5" Text="Persistor service connection message" TextWrapping="Wrap" Foreground="{StaticResource NormalTextBrush}" x:Name="m_appStatusMessage" HorizontalAlignment="Left" Margin="21,0,0,0" VerticalAlignment="Top" d:LayoutOverrides="Height"/>
-			<Ellipse Height="12" Width="12" Fill="#FF2000FF" Stroke="#FF000000" x:Name="m_appStatusIcon" HorizontalAlignment="Left" Margin="5,2,0,0" VerticalAlignment="Top" d:LayoutOverrides="Width, Height"/>
+			<Ellipse Height="12" Width="12" Fill="#FF2000FF" Stroke="#FF000000" x:Name="m_provisioningStatusIcon" HorizontalAlignment="Left" Margin="5,2,0,0" VerticalAlignment="Top" d:LayoutOverrides="Width, Height" Cursor="Hand">
+				<ToolTipService.ToolTip>
+					<ToolTip x:Name="m_provisioningStatusMessage" Content="Provisioning service status" />
+				</ToolTipService.ToolTip>
+			</Ellipse>
+			<Ellipse Height="12" Width="12" Fill="#FF2000FF" Stroke="#FF000000" x:Name="m_notificationsStatusIcon" HorizontalAlignment="Left" Margin="25,2,0,0" VerticalAlignment="Top" d:LayoutOverrides="Width, Height" Cursor="Hand">
+				<ToolTipService.ToolTip>
+					<ToolTip x:Name="m_notificationsStatusMessage" Content="Notifications service status" />
+				</ToolTipService.ToolTip>
+			</Ellipse>
 			<TextBlock Cursor="Hand" x:Name="m_callsLink" Width="29" Foreground="{StaticResource NormalTextBrush}" Text="Calls" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="CallsLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="224.079,0,0,0"/>
 			<TextBlock Cursor="Hand" x:Name="m_switchboardLink" Width="70" Foreground="{StaticResource NormalTextBrush}" Text="Switchboard" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="SwitchboardLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="305,0,0,0" Visibility="Collapsed"/>
 			<Image Margin="0,0,0,-181" Source="../Images/small_logo.png" Stretch="None" VerticalAlignment="Top" HorizontalAlignment="Center"/>

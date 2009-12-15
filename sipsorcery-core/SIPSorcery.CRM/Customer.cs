@@ -72,74 +72,70 @@ namespace SIPSorcery.CRM
         private static ILog logger = AppState.logger;
         private static string m_newLine = AppState.NewLine;
 
-        [Column(Name = "id", DbType = "StringFixedLength", IsPrimaryKey = true, CanBeNull = false)]
+        [Column(Name = "id", DbType = "varchar(36)", IsPrimaryKey = true, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public Guid Id { get; set; }
 
-        [Column(Name = "customerusername", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "customerusername", DbType = "varchar(32)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public string CustomerUsername { get; set; }
 
-        [Column(Name = "customerpassword", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "customerpassword", DbType = "varchar(32)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public string CustomerPassword { get; set; }
 
-        [Column(Name = "emailaddress", DbType = "StringFixedLength", CanBeNull = false)]
+        [Column(Name = "emailaddress", DbType = "varchar(255)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public string EmailAddress { get; set; }
 
-        [Column(Name = "lastname", DbType = "StringFixedLength")]
+        [Column(Name = "lastname", DbType = "varchar(64)", UpdateCheck = UpdateCheck.Never)]
         public string LastName { get; set; }
 
-        [Column(Name = "firstname", DbType = "StringFixedLength")]
+        [Column(Name = "firstname", DbType = "varchar(64)", UpdateCheck = UpdateCheck.Never)]
         public string FirstName { get; set; }
 
-        [Column(Name = "city", DbType = "StringFixedLength")]
+        [Column(Name = "city", DbType = "varchar(64)", UpdateCheck = UpdateCheck.Never)]
         public string City { get; set; }
 
-        [Column(Name = "country", DbType = "StringFixedLength")]
+        [Column(Name = "country", DbType = "varchar(64)", UpdateCheck = UpdateCheck.Never)]
         public string Country { get; set; }
 
-        [Column(Name = "website", DbType = "StringFixedLength")]
+        [Column(Name = "website", DbType = "varchar(256)", UpdateCheck = UpdateCheck.Never)]
         public string WebSite { get; set; }
 
-        [Column(Name = "active", DbType = "Boolean", CanBeNull = false)]
+        [Column(Name = "active", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
 	    public bool Active{get; set;}
 
-        [Column(Name = "suspended", DbType = "Boolean", CanBeNull = false)]
+        [Column(Name = "suspended", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
 	    public bool Suspended{get; set;}
 
-        [Column(Name = "securityquestion", DbType = "StringFixedLength")]
+        [Column(Name = "securityquestion", DbType = "varchar(1024)", UpdateCheck = UpdateCheck.Never)]
         public string SecurityQuestion { get; set; }
 
-        [Column(Name = "securityanswer", DbType = "StringFixedLength")]
+        [Column(Name = "securityanswer", DbType = "varchar(256)", UpdateCheck = UpdateCheck.Never)]
         public string SecurityAnswer { get; set; }
 
-        [Column(Name = "createdfromipaddress", DbType = "StringFixedLength")]
+        [Column(Name = "createdfromipaddress", DbType = "varchar(15)", UpdateCheck = UpdateCheck.Never)]
         public string CreatedFromIPAddress { get; set; }
 
-        [Column(Name = "adminid", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "adminid", DbType = "varchar(32)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         public string AdminId { get; set; }          // Like a whitelabelid. If set identifies this user as the administrative owner of all accounts that have the same value for their adminmemberid.
 
-        [Column(Name = "adminmemberid", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "adminmemberid", DbType = "varchar(32)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         public string AdminMemberId { get; set; }    // If set it designates this customer as a belonging to the administrative domain of the customer with the same adminid.
 
-        [Column(Name = "timezone", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "timezone", DbType = "varchar(128)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         public string TimeZone { get; set; }
 
-        private DateTime m_inserted;
-        [Column(Name = "inserted", DbType = "StringFixedLength", CanBeNull = false)]
-        public DateTime Inserted {
-            get { return m_inserted; }
-            set { m_inserted = value.ToUniversalTime(); }
-        }
+        [Column(Name = "inserted", DbType = "datetimeoffset", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        public DateTimeOffset Inserted { get; set; }
 
-        [Column(Name = "maxexecutioncount", DbType = "Int32", CanBeNull = false)]
+        [Column(Name = "maxexecutioncount", DbType = "int", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public int MaxExecutionCount { get; set; }
 
-        [Column(Name = "executioncount", DbType = "Int32", CanBeNull = false)]
+        [Column(Name = "executioncount", DbType = "int", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public int ExecutionCount { get; set; }
 
-        [Column(Name = "authorisedapps", DbType = "StringFixedLength", CanBeNull = true)]
+        [Column(Name = "authorisedapps", DbType = "varchar(2048)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         public string AuthorisedApps { get; set; }
 
-        [Column(Name = "emailaddressconfirmed", DbType = "Boolean", CanBeNull = false)]
+        [Column(Name = "emailaddressconfirmed", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public bool EmailAddressConfirmed { get; set; }
 
         public Customer() { }
@@ -251,7 +247,7 @@ namespace SIPSorcery.CRM
                 SecurityAnswer = (customerRow.Table.Columns.Contains("securityanswer") && customerRow["securityanswer"] != null) ? customerRow["securityanswer"] as string : null;
                 WebSite = (customerRow.Table.Columns.Contains("website") && customerRow["website"] != null) ? customerRow["website"] as string : null;
                 CreatedFromIPAddress = (customerRow.Table.Columns.Contains("createdfromipaddress") && customerRow["createdfromipaddress"] != null) ? customerRow["createdfromipaddress"] as string : null;
-                Inserted = (customerRow.Table.Columns.Contains("inserted") && customerRow["inserted"] != null) ? Convert.ToDateTime(customerRow["inserted"]) : DateTime.MinValue;
+                Inserted = (customerRow.Table.Columns.Contains("inserted") && customerRow["inserted"] != null) ? DateTimeOffset.Parse(customerRow["inserted"] as string) : DateTimeOffset.MinValue;
                 Suspended = (customerRow.Table.Columns.Contains("suspended") && customerRow["suspended"] != null) ? Convert.ToBoolean(customerRow["suspended"]) : false;
                 ExecutionCount = (customerRow.Table.Columns.Contains("executioncount") && customerRow["executioncount"] != null) ? Convert.ToInt32(customerRow["executioncount"]) : 0;
                 MaxExecutionCount = (customerRow.Table.Columns.Contains("maxexecutioncount") && customerRow["maxexecutioncount"] != null) ? Convert.ToInt32(customerRow["maxexecutioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
@@ -297,7 +293,7 @@ namespace SIPSorcery.CRM
                 "  <securityquestion>" + SecurityQuestion + "</securityquestion>" + m_newLine +
                 "  <securityanswer>" + SafeXML.MakeSafeXML(SecurityAnswer) + "</securityanswer>" + m_newLine +
                 "  <createdfromipaddress>" + CreatedFromIPAddress + "</createdfromipaddress>" + m_newLine +
-                "  <inserted>" + m_inserted.ToString("o") + "</inserted>" + m_newLine +
+                "  <inserted>" + Inserted.ToString() + "</inserted>" + m_newLine +
                 "  <active>" + Active + "</active>" + m_newLine +
                 "  <suspended>" + Suspended + "</suspended>" + m_newLine +
                 "  <executioncount>" + ExecutionCount + "</executioncount>" + m_newLine +

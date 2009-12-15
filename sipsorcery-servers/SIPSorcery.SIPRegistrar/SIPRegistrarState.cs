@@ -78,13 +78,12 @@ namespace SIPSorcery.SIPRegistrar
 
                 try
                 {
-                    
                     log4net.Config.XmlConfigurator.Configure();
                     logger = log4net.LogManager.GetLogger(LOGGER_NAME);
                 }
                 catch (Exception logExcp)
                 {
-                    Console.WriteLine("Exception SIPProxyState Configure Logging. " + logExcp.Message);
+                    Console.WriteLine("Exception SIPRegistrarState Configure Logging. " + logExcp.Message);
                 }
 
                 #endregion

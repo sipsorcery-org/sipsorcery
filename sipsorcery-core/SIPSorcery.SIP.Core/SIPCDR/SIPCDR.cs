@@ -42,10 +42,12 @@ using log4net;
 using System.Data;
 #endif
 
-namespace SIPSorcery.SIP {
+namespace SIPSorcery.SIP
+{
     public delegate void CDRReadyDelegate(SIPCDR cdr);                // Used to inform CDR handlers when a CDR has been udpated.
 
-    public enum SIPCallDirection {
+    public enum SIPCallDirection
+    {
         None = 0,
         In = 1,
         Out = 2,
@@ -55,7 +57,8 @@ namespace SIPSorcery.SIP {
     /// Call detail record for a SIP call.
     /// </summary>
     [DataContract]
-    public class SIPCDR {
+    public class SIPCDR
+    {
         private static ILog logger = AppState.logger;
         private static string m_newLine = AppState.NewLine;
 
@@ -73,7 +76,7 @@ namespace SIPSorcery.SIP {
         public string AdminMemberId { get; set; }
 
         [DataMember]
-        public DateTime Created { get; set; }
+        public DateTimeOffset Created { get; set; }
 
         [DataMember]
         public SIPCallDirection CallDirection { get; set; }
@@ -90,15 +93,19 @@ namespace SIPSorcery.SIP {
         [DataMember]
         public string ProgressReasonPhrase { get; set; }
 
-        private DateTime? m_progressTime;
+        private DateTimeOffset? m_progressTime;
         [DataMember]
-        public DateTime? ProgressTime {
+        public DateTimeOffset? ProgressTime
+        {
             get { return m_progressTime; }
-            set {
-                if (value != null) {
+            set
+            {
+                if (value != null)
+                {
                     m_progressTime = value.Value.ToUniversalTime();
                 }
-                else {
+                else
+                {
                     m_progressTime = null;
                 }
             }
@@ -110,29 +117,37 @@ namespace SIPSorcery.SIP {
         [DataMember]
         public string AnswerReasonPhrase { get; set; }
 
-        private DateTime? m_answerTime;
+        private DateTimeOffset? m_answerTime;
         [DataMember]
-        public DateTime? AnswerTime {
+        public DateTimeOffset? AnswerTime
+        {
             get { return m_answerTime; }
-            set {
-                if (value != null) {
+            set
+            {
+                if (value != null)
+                {
                     m_answerTime = value.Value.ToUniversalTime();
                 }
-                else {
+                else
+                {
                     m_answerTime = null;
                 }
             }
         }
 
-        private DateTime? m_hangupTime;
+        private DateTimeOffset? m_hangupTime;
         [DataMember]
-        public DateTime? HangupTime {
+        public DateTimeOffset? HangupTime
+        {
             get { return m_hangupTime; }
-            set {
-                if (value != null) {
+            set
+            {
+                if (value != null)
+                {
                     m_hangupTime = value.Value.ToUniversalTime();
                 }
-                else {
+                else
+                {
                     m_hangupTime = null;
                 }
             }
@@ -159,9 +174,10 @@ namespace SIPSorcery.SIP {
             SIPFromHeader from,
             string callId,
             SIPEndPoint localSIPEndPoint,
-            SIPEndPoint remoteEndPoint) {
+            SIPEndPoint remoteEndPoint)
+        {
             CDRId = Guid.NewGuid();
-            Created = DateTime.UtcNow;
+            Created = DateTimeOffset.UtcNow;
             CallDirection = callDirection;
             Destination = destination;
             From = from;
@@ -173,23 +189,27 @@ namespace SIPSorcery.SIP {
             IsHungup = false;
         }
 
-        public void Progress(SIPResponseStatusCodesEnum progressStatus, string progressReason) {
+        public void Progress(SIPResponseStatusCodesEnum progressStatus, string progressReason)
+        {
             InProgress = true;
-            ProgressTime = DateTime.UtcNow;
+            ProgressTime = DateTimeOffset.UtcNow;
             ProgressStatus = (int)progressStatus;
             ProgressReasonPhrase = progressReason;
         }
 
-        public void Answered(int answerStatusCode, SIPResponseStatusCodesEnum answerStatus, string answerReason) {
-            try {
+        public void Answered(int answerStatusCode, SIPResponseStatusCodesEnum answerStatus, string answerReason)
+        {
+            try
+            {
                 IsAnswered = true;
-                AnswerTime = DateTime.UtcNow;
+                AnswerTime = DateTimeOffset.UtcNow;
                 AnswerStatus = (int)answerStatus;
                 AnswerReasonPhrase = answerReason;
 
                 NewCDR(this);
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPCDR Answered. " + excp.Message);
             }
         }
@@ -218,25 +238,30 @@ namespace SIPSorcery.SIP {
             }
         }
 
-        public void Hungup(string hangupReason) {
-            try {
+        public void Hungup(string hangupReason)
+        {
+            try
+            {
                 IsHungup = true;
-                HangupTime = DateTime.UtcNow;
+                HangupTime = DateTimeOffset.UtcNow;
                 HangupReason = hangupReason;
 
                 HungupCDR(this);
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPCDR Hungup. " + excp.Message);
             }
         }
 
-        public double GetProgressDuration() {
-            return (ProgressTime != null && AnswerTime != null) ? AnswerTime.Value.Subtract(ProgressTime.Value).TotalSeconds : 0;
+        public int GetProgressDuration()
+        {
+            return (ProgressTime != null && AnswerTime != null) ? Convert.ToInt32(AnswerTime.Value.Subtract(ProgressTime.Value).TotalSeconds) : 0;
         }
 
-        public double GetAnsweredDuration() {
-            return (AnswerTime != null && HangupTime != null) ? HangupTime.Value.Subtract(AnswerTime.Value).TotalSeconds : 0;
+        public int GetAnsweredDuration()
+        {
+            return (AnswerTime != null && HangupTime != null) ? Convert.ToInt32(HangupTime.Value.Subtract(AnswerTime.Value).TotalSeconds) : 0;
         }
     }
 }

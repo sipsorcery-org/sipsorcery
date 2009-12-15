@@ -11,7 +11,7 @@
 				<TextBlock Height="30" Width="240.565" Canvas.Left="24" Text="Persistor service connection message" TextWrapping="Wrap" Foreground="#FFA0F927" x:Name="m_appStatusMessage" Canvas.Top="4"/>
 				<Ellipse Height="12" Width="12" Canvas.Left="8" Fill="#FF00FFFD" Stroke="#FF000000" Canvas.Top="6" x:Name="m_appStatusIcon"/>
 			</Canvas>
-			<SIPSorcery:CreateAccountControl x:Name="m_createAccountControl" Visibility="Collapsed"/>
+			<SIPSorcery:CreateAccountControl x:Name="m_createAccountControl" VerticalAlignment="Top" Margin="0,120,0,0" HorizontalAlignment="Center" Visibility="Collapsed"/>
 			<Image Height="Auto" Width="Auto" Source="../Images/wizard-logo.png" Stretch="None" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="m_logo"/>
 			<Image Height="40" HorizontalAlignment="Center" VerticalAlignment="Top" Width="185" Source="../Images/small_logo.png" Stretch="Fill"/>
 			<TextBlock Height="22" HorizontalAlignment="Left" Margin="21,8,0,0" VerticalAlignment="Top" Width="376" Text="" TextWrapping="Wrap" Foreground="#FF85DB02" x:Name="m_versionTextBlock"/>

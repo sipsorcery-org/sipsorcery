@@ -52,11 +52,17 @@
     <Reference Include="System.Windows.Browser" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\AssemblyState.cs">
+      <Link>AssemblyState.cs</Link>
+    </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\Monitoring\SIPMonitorControlClientEvent.cs">
       <Link>Monitoring\SIPMonitorControlClientEvent.cs</Link>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\Monitoring\SIPMonitorEvent.cs">
       <Link>Monitoring\SIPMonitorEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\Monitoring\SIPMonitorFilter.cs">
+      <Link>Monitoring\SIPMonitorFilter.cs</Link>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\Monitoring\SIPMonitorMachineEvent.cs">
       <Link>Monitoring\SIPMonitorMachineEvent.cs</Link>
@@ -125,6 +131,10 @@
     <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
       <Project>{6ED5020C-A823-4EA6-B01C-C505CE80E970}</Project>
       <Name>SIPSorcery.Persistence</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Silverlight.CRM\SIPSorcery.Silverlight.CRM.csproj">
+      <Project>{FDC64126-97E7-4076-910B-E842F730CF3E}</Project>
+      <Name>SIPSorcery.Silverlight.CRM</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Silverlight.SIP\SIPSorcery.Silverlight.SIP.csproj">
       <Project>{F996B6D4-3731-44A5-A35A-A6CE4010BC64}</Project>

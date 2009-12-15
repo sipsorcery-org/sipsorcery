@@ -208,7 +208,7 @@ namespace SIPSorcery.Net
 
         public RTPSink(IPAddress localAddress, ArrayList inUsePorts)
 		{
-            m_udpListener = null; // RandomUDPListener.CreateRandomUDPListener(localAddress, RTP_PORTRANGE_START, RTP_PORTRANGE_END, inUsePorts, out m_localEndPoint);
+            m_udpListener = NetServices.CreateRandomUDPListener(localAddress, RTP_PORTRANGE_START, RTP_PORTRANGE_END, inUsePorts, out m_localEndPoint);
 
             int typeOfService = TYPEOFSERVICE_RTPSEND;
             // If a setting has been supplied in the config file use that.

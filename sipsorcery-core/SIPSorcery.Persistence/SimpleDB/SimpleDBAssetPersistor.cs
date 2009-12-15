@@ -292,7 +292,8 @@ namespace SIPSorcery.Persistence
                 return getList.FirstOrDefault();
             }
             catch(Exception excp) {
-                logger.Error("Exception SimpleDBAssetPersistor Get (where) (for " + typeof(T).Name + "). " + whereClause.ToString() + ". " + excp.Message);
+                string whereClauseStr = (whereClause != null) ? whereClause.ToString() + ". " : null;
+                logger.Error("Exception SimpleDBAssetPersistor Get (where) (for " + typeof(T).Name + "). " + whereClauseStr + excp.Message);
                 throw;
             }
         }
@@ -325,7 +326,8 @@ namespace SIPSorcery.Persistence
                 return getList.ToList() ?? new List<T>();
             }
             catch (Exception excp) {
-                logger.Error("Exception SimpleDBAssetPersistor Get (list) (for " + typeof(T).Name + "). " + whereClause.ToString() + ". " + excp.Message);
+                string whereClauseStr = (whereClause != null) ? whereClause.ToString() + ". " : null;
+                logger.Error("Exception SimpleDBAssetPersistor Get (list) (for " + typeof(T).Name + "). " + whereClauseStr + excp.Message);
                 throw;
             }
         }

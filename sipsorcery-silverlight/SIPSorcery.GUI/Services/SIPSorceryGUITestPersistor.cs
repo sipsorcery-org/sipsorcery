@@ -56,6 +56,7 @@ namespace SIPSorcery.Persistence
         private static ObservableCollection<SIPProvider> m_sipProviderBindings = new ObservableCollection<SIPProvider>();
 
         public override event IsAliveCompleteDelegate IsAliveComplete;
+        public override event TestExceptionCompleteDelegate TestExceptionComplete;
         public override event AreNewAccountsEnabledCompleteDelegate AreNewAccountsEnabledComplete;
         public override event LoginCompleteDelegate LoginComplete;
         public override event LogoutCompleteDelegate LogoutComplete;
@@ -97,6 +98,10 @@ namespace SIPSorcery.Persistence
             if (IsAliveComplete != null) {
                 IsAliveComplete(new IsAliveCompletedEventArgs(new object[] { true }, null, false, null));
             }
+        }
+
+        public override void TestExceptionAsync() {
+            throw new NotImplementedException();
         }
 
         public override void AreNewAccountsEnabledAsync() {

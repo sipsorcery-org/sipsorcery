@@ -152,7 +152,7 @@
      </p>
      
      <p>      
-     <span style="color: Blue"><b>GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromUserToMatch)</b></span>
+     <span style="color: Blue"><b>GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromUserToMatch, int phoneType, int callbackTimeout)</b></span>
      <br />
      Places an outbound call via the Google Voice service. The application works by initiating a callback with the a HTTP request with Google Voice.
      The incoming call leg of the callback is then matched to the call leg that initiated the sipsorcery dial plan execution. 
@@ -163,7 +163,14 @@
      - The <b>fromUserToMatch</b> is used to match the incoming callback to the SIP call that initiated the dial plan execution. By specifying this field
        sipsorcery will look at the From URI user, in a SIP From header of From: "Joe Bloggs" &lt;sip:12345678@somehost.com&gt; the From URI user is 12345678,
        to match the calls. The fromUserToMatch can be left blank in which case the match will assume Gizmo is the incoming call provider and will perform
-       the macth by looking for an X-GoogleVoice: true header and a SIP To URI user equal to the forwardingNumber.
+       the match by looking for an X-GoogleVoice: true header and a SIP To URI user equal to the forwardingNumber.
+     - The <b>phone type</b> used by GoogleVoice. If not specified defaults to (Mobile=2):<br />
+       1 - Home<br />
+       2 - Mobile<br />
+       3 - Work<br />
+       7 - Gizmo <br />
+     - The <b>callback timeout</b> in seconds which is the amount of time the sipsorcery dialplan will wait for the GoogleVoice callback before giving up and
+       continuing with the next dialplan command. The timeout must be between 5 and 60s and if not specified a default value of 30s is used.
      </p>
      
  </body>

@@ -12,7 +12,7 @@
 
 	<UserControl.Resources>
 		<sipsorcery:SIPURIConverter x:Key="SIPURIStringConverter" />
-		<sipsorcery:DateTimeConverter x:Key="DateTimeConverter" />
+		<sipsorcery:DateTimeOffsetConverter x:Key="DateTimeOffsetConverter" />
 	</UserControl.Resources>
 
 	<StackPanel Height="Auto" x:Name="m_sipAccountManagerGrid" Width="Auto" Background="#FF000000" ScrollViewer.VerticalScrollBarVisibility="Disabled">
@@ -53,7 +53,7 @@
 					<data:DataGridTextColumn 
 						Header="Call Date" 
 						Width="SizeToCells"
-						Binding="{Binding Path=CreatedLocal, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding Path=CreatedLocal, Converter={StaticResource DateTimeOffsetConverter}}" 
 						IsReadOnly="True"
 						MinWidth="200"/>
 					<data:DataGridTextColumn 
@@ -75,9 +75,15 @@
 						IsReadOnly="True"
 						MinWidth="150" />
 					<data:DataGridTextColumn 
+						Header="From" 
+						Width="SizeToCells"
+						Binding="{Binding Path=FromHeader}" 
+						IsReadOnly="True"
+						MinWidth="150" />
+					<data:DataGridTextColumn 
 						Header="AnsweredTime" 
 						Width="SizeToCells"
-						Binding="{Binding Path=AnsweredTimeLocal, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding Path=AnsweredTimeLocal, Converter={StaticResource DateTimeOffsetConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100" />
 					<data:DataGridTextColumn 
@@ -95,7 +101,7 @@
 					<data:DataGridTextColumn 
 						Header="Hungup" 
 						Width="SizeToCells"
-						Binding="{Binding Path=HungupTimeLocal, Converter={StaticResource DateTimeConverter}}" 
+						Binding="{Binding Path=HungupTimeLocal, Converter={StaticResource DateTimeOffsetConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100" />
 				</data:DataGrid.Columns>

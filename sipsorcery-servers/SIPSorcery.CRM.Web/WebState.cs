@@ -54,8 +54,8 @@ namespace SIPSorcery.CRM.Web
         private const string LOGGER_NAME = "crmweb";
         private const string CUSTOMER_VALIDATION_RULES = "validationrules";
 
-        private static readonly string m_storageTypeKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGETYPE_KEY;
-        private static readonly string m_connStrKey = SIPSorcery.Persistence.Persistence.PERSISTENCE_STORAGECONNSTR_KEY;
+        private static readonly string m_storageTypeKey = SIPSorceryConfiguration.PERSISTENCE_STORAGETYPE_KEY;
+        private static readonly string m_connStrKey = SIPSorceryConfiguration.PERSISTENCE_STORAGECONNSTR_KEY;
 
         public static ILog logger;
 

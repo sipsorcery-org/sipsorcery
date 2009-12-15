@@ -165,6 +165,7 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_EXPIRES = "Expires";
 		public const string SIP_HEADER_FROM = "From";
         public const string SIP_HEADER_MAXFORWARDS = "Max-Forwards";
+        public const string SIP_HEADER_MINEXPIRES = "Min-Expires";
         public const string SIP_HEADER_PROXYAUTHENTICATION = "Proxy-Authenticate";
         public const string SIP_HEADER_PROXYAUTHORIZATION = "Proxy-Authorization";
         public const string SIP_HEADER_REASON = "Reason";

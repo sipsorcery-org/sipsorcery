@@ -63,14 +63,6 @@ namespace SIPSorcery.SIP
 
         public SIPTCPChannel(IPEndPoint endPoint) {
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tcp, endPoint);
-            base.Name = "t" + Crypto.GetRandomInt(4);
-            m_isReliable = true;
-            Initialise();
-        }
-
-        public SIPTCPChannel(IPEndPoint endPoint, string name) {
-            m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tcp, endPoint);
-            base.Name = name;
             m_isReliable = true;
             Initialise();
         }
@@ -81,7 +73,7 @@ namespace SIPSorcery.SIP
                 m_tcpServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
                 Thread listenThread = new Thread(new ThreadStart(AcceptConnections));
-                listenThread.Name = THREAD_NAME + Name;
+                listenThread.Name = THREAD_NAME + Crypto.GetRandomString(4);
                 listenThread.Start();
 
                 logger.Debug("SIP TCP Channel listener created " + m_localSIPEndPoint.SocketEndPoint + ".");
