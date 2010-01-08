@@ -55,7 +55,7 @@
 						Width="SizeToCells"
 						Binding="{Binding Path=CreatedLocal, Converter={StaticResource DateTimeOffsetConverter}}" 
 						IsReadOnly="True"
-						MinWidth="200"/>
+						MinWidth="150"/>
 					<data:DataGridTextColumn 
 		                    Header="Owner" 
 		                    Width="SizeToCells"
@@ -63,11 +63,11 @@
 							IsReadOnly="True"
 							MinWidth="80" />
 					<data:DataGridTextColumn 
-		                    Header="Direction" 
+		                    Header="Dirn" 
 		                    Width="SizeToCells"
 		                    Binding="{Binding Path=CallDirection}" 
 							IsReadOnly="True"
-							MinWidth="80" />
+							MinWidth="40" />
 					<data:DataGridTextColumn 
 						Header="Destination" 
 						Width="SizeToCells"
@@ -75,11 +75,29 @@
 						IsReadOnly="True"
 						MinWidth="150" />
 					<data:DataGridTextColumn 
+						Header="Duration" 
+						Width="SizeToCells"
+						Binding="{Binding Path=Duration}" 
+						IsReadOnly="True"
+						MinWidth="60" />
+					<data:DataGridTextColumn 
 						Header="From" 
 						Width="SizeToCells"
 						Binding="{Binding Path=FromHeader}" 
 						IsReadOnly="True"
 						MinWidth="150" />
+					<data:DataGridTextColumn 
+						Header="Status" 
+						Width="SizeToCells"
+						Binding="{Binding Path=AnsweredStatus}" 
+						IsReadOnly="True"
+						MinWidth="60" />
+					<data:DataGridTextColumn 
+						Header="Ans. Reason" 
+						Width="SizeToCells"
+						Binding="{Binding Path=AnsweredReason}" 
+						IsReadOnly="True"
+						MinWidth="100" />
 					<data:DataGridTextColumn 
 						Header="AnsweredTime" 
 						Width="SizeToCells"
@@ -87,17 +105,11 @@
 						IsReadOnly="True"
 						MinWidth="100" />
 					<data:DataGridTextColumn 
-						Header="Status" 
+						Header="Hungup Reason" 
 						Width="SizeToCells"
-						Binding="{Binding Path=AnsweredStatus}" 
+						Binding="{Binding Path=HungupReason}" 
 						IsReadOnly="True"
-						MinWidth="80" />
-					<data:DataGridTextColumn 
-						Header="Answer Reason" 
-						Width="SizeToCells"
-						Binding="{Binding Path=AnsweredReason}" 
-						IsReadOnly="True"
-						MinWidth="150" />
+						MinWidth="130" />
 					<data:DataGridTextColumn 
 						Header="Hungup" 
 						Width="SizeToCells"

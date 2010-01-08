@@ -39,12 +39,20 @@ using System.Threading;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.SIP {
-
-    public enum SIPDialogueStateEnum {
+namespace SIPSorcery.SIP
+{
+    public enum SIPDialogueStateEnum
+    {
         Unknown = 0,
         Early = 1,
         Confirmed = 2,
+    }
+
+    public enum SIPDialogueTransferModesEnum
+    {
+        PassThru = 0,   // REFER requests will be treated as an in-dialogue request and passed through to user agents.
+        NotAllowed = 1, // REFER requests will be blocked.
+        Allowed = 2,    // REFER requests will be processed by the server receiving the request.
     }
 
     /// <summary>
@@ -55,7 +63,8 @@ namespace SIPSorcery.SIP {
     /// from the UAS. In practice it's been noted that is a UAS (initial UAS) sends an in-dialogue request with a CSeq less than the
     /// UAC's CSeq it can cause problems. To avoid this issue when generating requests the remote CSeq is always used.
     /// </remarks>
-    public class SIPDialogue {
+    public class SIPDialogue
+    {
         protected static ILog logger = AssemblyState.logger;
 
         protected static string m_CRLF = SIPConstants.CRLF;
@@ -76,14 +85,41 @@ namespace SIPSorcery.SIP {
         public string DialogueId { get; set; }
         public Guid CDRId { get; set; }                             // Call detail record for call the dialogue belongs to.
         public string ContentType { get; private set; }             // The content type on the request or response that created this dialogue. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
-        public string SDP { get; private set; }                     // The sessions description protocol payload. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
-        public string RemoteSDP { get; private set; }               // The sessions description protocol payload from the remote end. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
+        public string SDP { get; set; }                             // The sessions description protocol payload. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
+        public string RemoteSDP { get; set; }                       // The sessions description protocol payload from the remote end. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
         public Guid BridgeId { get; set; }                          // If this dialogue gets bridged by a higher level application server the id for the bridge can be stored here.                   
         public int CallDurationLimit { get; set; }                  // If non-zero indicates the dialogue established should only be permitted to stay up for this many seconds.
         public string ProxySendFrom { get; set; }                   // If set this is the socket the upstream proxy received the call on.
+        public SIPDialogueTransferModesEnum TransferMode { get; set; }  // Specifies how the dialogue will handle REFER requests (transfers).
+
+        public string DialogueName
+        {
+            get
+            {
+                string dialogueName = "L(??)";
+                if (LocalUserField != null && !LocalUserField.URI.User.IsNullOrBlank())
+                {
+                    dialogueName = "L(" + LocalUserField.URI.ToString() + ")";
+                }
+
+                dialogueName += "-";
+
+                if (RemoteUserField != null && !RemoteUserField.URI.User.IsNullOrBlank())
+                {
+                    dialogueName += "R(" + RemoteUserField.URI.ToString() + ")";
+                }
+                else
+                {
+                    dialogueName += "R(??)";
+                }
+
+                return dialogueName;
+            }
+        }
 
         private DateTime m_inserted;
-        public DateTime Inserted {
+        public DateTime Inserted
+        {
             get { return m_inserted; }
             set { m_inserted = value.ToUniversalTime(); }
         }
@@ -105,7 +141,8 @@ namespace SIPSorcery.SIP {
             string owner,
             string adminMemberId,
             string sdp,
-            string remoteSDP) {
+            string remoteSDP)
+        {
 
             Id = Guid.NewGuid();
             DialogueId = GetDialogueId(callId, localTag, remoteTag);
@@ -134,8 +171,8 @@ namespace SIPSorcery.SIP {
         public SIPDialogue(
             UASInviteTransaction uasInviteTransaction,
             string owner,
-            string adminMemberId) {
-
+            string adminMemberId)
+        {
             Id = Guid.NewGuid();
 
             CallId = uasInviteTransaction.TransactionRequest.Header.CallId;
@@ -157,11 +194,14 @@ namespace SIPSorcery.SIP {
 
             RemoteTarget = new SIPURI(uasInviteTransaction.TransactionRequest.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(uasInviteTransaction.RemoteEndPoint.ToString()));
             ProxySendFrom = uasInviteTransaction.TransactionRequest.Header.ProxyReceivedOn;
-            if (uasInviteTransaction.TransactionRequest.Header.Contact != null && uasInviteTransaction.TransactionRequest.Header.Contact.Count > 0) {
+            if (uasInviteTransaction.TransactionRequest.Header.Contact != null && uasInviteTransaction.TransactionRequest.Header.Contact.Count > 0)
+            {
                 RemoteTarget = uasInviteTransaction.TransactionRequest.Header.Contact[0].ContactURI.CopyOf();
-                if (!uasInviteTransaction.TransactionRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) {
+                if (!uasInviteTransaction.TransactionRequest.Header.ProxyReceivedFrom.IsNullOrBlank())
+                {
                     // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
-                    if (SIPTransport.IsPrivateAddress(RemoteTarget.Host)) {
+                    if (SIPTransport.IsPrivateAddress(RemoteTarget.Host))
+                    {
                         SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(uasInviteTransaction.TransactionRequest.Header.ProxyReceivedFrom);
                         RemoteTarget.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();
                     }
@@ -177,8 +217,8 @@ namespace SIPSorcery.SIP {
         public SIPDialogue(
           UACInviteTransaction uacInviteTransaction,
           string owner,
-          string adminMemberId) {
-
+          string adminMemberId)
+        {
             Id = Guid.NewGuid();
 
             CallId = uacInviteTransaction.TransactionRequest.Header.CallId;
@@ -201,11 +241,14 @@ namespace SIPSorcery.SIP {
             // Set the dialogue remote target and take care of mangling if an upstream proxy has indicated it's required.
             RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(uacInviteTransaction.RemoteEndPoint.ToString()));
             ProxySendFrom = uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedOn;
-            if (uacInviteTransaction.TransactionFinalResponse.Header.Contact != null && uacInviteTransaction.TransactionFinalResponse.Header.Contact.Count > 0) {
+            if (uacInviteTransaction.TransactionFinalResponse.Header.Contact != null && uacInviteTransaction.TransactionFinalResponse.Header.Contact.Count > 0)
+            {
                 RemoteTarget = uacInviteTransaction.TransactionFinalResponse.Header.Contact[0].ContactURI.CopyOf();
-                if (!uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) {
+                if (!uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedFrom.IsNullOrBlank())
+                {
                     // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
-                    if (SIPTransport.IsPrivateAddress(RemoteTarget.Host)) {
+                    if (SIPTransport.IsPrivateAddress(RemoteTarget.Host))
+                    {
                         SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedFrom);
                         RemoteTarget.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();
                     }
@@ -213,18 +256,26 @@ namespace SIPSorcery.SIP {
             }
         }
 
-        public static string GetDialogueId(string callId, string localTag, string remoteTag) {
+        public static string GetDialogueId(string callId, string localTag, string remoteTag)
+        {
             return Crypto.GetSHAHashAsString(callId + localTag + remoteTag);
         }
 
-        public static string GetDialogueId(SIPHeader sipHeader) {
+        public static string GetDialogueId(SIPHeader sipHeader)
+        {
             return Crypto.GetSHAHashAsString(sipHeader.CallId + sipHeader.To.ToTag + sipHeader.From.FromTag);
         }
 
-        public void Hangup(SIPTransport sipTransport, SIPEndPoint outboundProxy) {
-            try {
+        public void Hangup(SIPTransport sipTransport, SIPEndPoint outboundProxy)
+        {
+            try
+            {
                 SIPEndPoint byeOutboundProxy = null;
-                if (!ProxySendFrom.IsNullOrBlank())
+                if (outboundProxy != null && IPAddress.IsLoopback(outboundProxy.SocketEndPoint.Address))
+                {
+                    byeOutboundProxy = outboundProxy;
+                }
+                else if (!ProxySendFrom.IsNullOrBlank())
                 {
                     byeOutboundProxy = new SIPEndPoint(new IPEndPoint(SIPEndPoint.ParseSIPEndPoint(ProxySendFrom).SocketEndPoint.Address, m_defaultSIPPort));
                 }
@@ -238,18 +289,21 @@ namespace SIPSorcery.SIP {
                 SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(byeRequest, sipTransport.GetRequestEndPoint(byeRequest, byeOutboundProxy, true), localEndPoint, byeOutboundProxy);
                 byeTransaction.SendReliableRequest();
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPDialogue Hangup. " + excp.Message);
                 throw;
             }
         }
 
-        private SIPProtocolsEnum GetRemoteTargetProtocol() {
+        private SIPProtocolsEnum GetRemoteTargetProtocol()
+        {
             SIPURI dstURI = (RouteSet == null) ? RemoteTarget : RouteSet.TopRoute.URI;
             return dstURI.Protocol;
         }
 
-        private SIPRequest GetByeRequest(SIPEndPoint localSIPEndPoint) {
+        private SIPRequest GetByeRequest(SIPEndPoint localSIPEndPoint)
+        {
             SIPRequest byeRequest = new SIPRequest(SIPMethodsEnum.BYE, RemoteTarget);
             SIPFromHeader byeFromHeader = SIPFromHeader.ParseFromHeader(LocalUserField.ToString());
             SIPToHeader byeToHeader = SIPToHeader.ParseToHeader(RemoteUserField.ToString());

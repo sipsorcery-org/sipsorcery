@@ -152,7 +152,7 @@ namespace SIPSorcery.SIP
 
 		public new string ToString()
 		{
-			string reasonPhrase = (ReasonPhrase != null && ReasonPhrase.Trim().Length != 0) ? " " + ReasonPhrase : null;
+			string reasonPhrase = (!ReasonPhrase.IsNullOrBlank()) ? " " + ReasonPhrase : null;
 
 			string message = 
 				SIPVersion + " " + StatusCode + reasonPhrase + m_CRLF +

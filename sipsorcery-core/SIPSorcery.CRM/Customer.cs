@@ -299,7 +299,7 @@ namespace SIPSorcery.CRM
                 "  <executioncount>" + ExecutionCount + "</executioncount>" + m_newLine +
                 "  <maxexecutioncount>" + MaxExecutionCount + "</maxexecutioncount>" + m_newLine +
                 "  <authorisedapps>" + AuthorisedApps + "</authorisedapps>" + m_newLine +
-                "  <emailaddressconfirmed>" + EmailAddressConfirmed + "</emailaddressconfirmed>" + m_newLine;
+                "  <emailaddressconfirmed>" + EmailAddressConfirmed + "</emailaddressconfirmed>";
 
              return customerXML;
          }

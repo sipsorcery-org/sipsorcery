@@ -113,7 +113,7 @@ namespace SIPSorcery.SIP.App
                     {
                         if (appServerEntry.Value == USEALWAYS_APPSERVER_PRIORITY)
                         {
-                            logger.Debug("GetAppServer returning " + appServerEntry.Key + ".");
+                            //logger.Debug("GetAppServer returning " + appServerEntry.Key + ".");
                             return SIPEndPoint.ParseSIPEndPoint(appServerEntry.Key);
                         }
                     }

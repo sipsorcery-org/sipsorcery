@@ -491,7 +491,7 @@ namespace SIPSorcery.Servers
                             m_natKeepAliveJobs.Remove(removeJob);
                         }
 
-                        logger.Debug(natKeepAliveCount + " NAT keep-alives sent, time taken " + DateTime.Now.Subtract(natKeepAliveStart).TotalMilliseconds.ToString("0") + "ms.");
+                        //logger.Debug(natKeepAliveCount + " NAT keep-alives sent, time taken " + DateTime.Now.Subtract(natKeepAliveStart).TotalMilliseconds.ToString("0") + "ms.");
                         //FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Timing, "NATKeepAlive run took " + DateTime.Now.Subtract(natKeepAliveStart).TotalMilliseconds.ToString("0") + "ms.", null));
                     }
                     catch (Exception sendExcp)

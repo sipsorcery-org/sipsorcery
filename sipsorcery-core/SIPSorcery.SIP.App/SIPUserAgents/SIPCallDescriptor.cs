@@ -51,8 +51,17 @@ namespace SIPSorcery.SIP.App
     public enum SIPCallRedirectModesEnum
     {
         None = 0,
-        Add = 1,
-        Replace = 2,
+        Add = 1,        // (option=a)
+        Replace = 2,    // (option=r)
+    }
+
+    public enum SIPCallTransferModesEnum
+    {
+        NotAllowed = 0, // (option=n) REFER requests will be blocked.
+        PassThru = 1,   // (option=p) Default. REFER requests will be treated as an in-dialogue request and passed through to user agents.
+        Caller = 2,     // (option=o) Only the caller can initiate transfers.
+        Callee = 3,     // (option=d) Only the callee can initiate transfers.
+        Both = 4,       // (option=b) Either end of the call can initiate a transfer.
     }
 
     public class SIPCallDescriptor
@@ -64,6 +73,7 @@ namespace SIPSorcery.SIP.App
         public const string FROM_DISPLAY_NAME_KEY = "fd";       // Dial string option to customise the From header display name on the call request.
         public const string FROM_USERNAME_KEY = "fu";           // Dial string option to customise the From header SIP URI User on the call request.
         public const string FROM_HOST_KEY = "fh";               // Dial string option to customise the From header SIP URI Host on the call request.
+        public const string TRANSFER_MODE_OPTION_KEY = "tr";    // Dial string option to dictate how REFER (transfer) requests will be handled.
 
         private readonly static string m_defaultFromURI = SIPConstants.SIP_DEFAULT_FROMURI;
         private static char m_customHeadersSeparator = SIPProvider.CUSTOM_HEADERS_SEPARATOR;
@@ -92,6 +102,7 @@ namespace SIPSorcery.SIP.App
         public string FromDisplayName;
         public string FromURIUsername;
         public string FromURIHost;
+        public SIPCallTransferModesEnum TransferMode = SIPCallTransferModesEnum.PassThru;   // Determines how the call (dialogues) created by this descriptor will handle transfers (REFER requests).
 
         public SIPAccount ToSIPAccount;                 // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
 
@@ -233,8 +244,36 @@ namespace SIPSorcery.SIP.App
 
                 // Parse the From header URI host option.
                 Match fromURIHostMatch = Regex.Match(options, FROM_HOST_KEY + @"=(?<host>.+?)(,|$)");
-                if (fromURIHostMatch.Success) {
+                if (fromURIHostMatch.Success)
+                {
                     FromURIHost = fromURIHostMatch.Result("${host}").Trim();
+                }
+                
+                // Parse the Transfer behaviour option.
+                Match transferMatch = Regex.Match(options, TRANSFER_MODE_OPTION_KEY + @"=(?<transfermode>.+?)(,|$)");
+                if (transferMatch.Success)
+                {
+                    string transferMode = transferMatch.Result("${transfermode}");
+                    if (transferMode == "n" || transferMode == "N")
+                    {
+                        TransferMode = SIPCallTransferModesEnum.NotAllowed;
+                    }
+                    else if (transferMode == "p" || transferMode == "P")
+                    {
+                        TransferMode = SIPCallTransferModesEnum.PassThru;
+                    }
+                    else if (transferMode == "o" || transferMode == "O")
+                    {
+                        TransferMode = SIPCallTransferModesEnum.Caller;
+                    }
+                    else if (transferMode == "d" || transferMode == "D")
+                    {
+                        TransferMode = SIPCallTransferModesEnum.Callee;
+                    }
+                    else if (transferMode == "b" || transferMode == "B")
+                    {
+                        TransferMode = SIPCallTransferModesEnum.Both;
+                    }
                 }
             }
         }

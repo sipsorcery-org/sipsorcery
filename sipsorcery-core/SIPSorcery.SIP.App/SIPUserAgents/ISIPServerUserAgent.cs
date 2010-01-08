@@ -48,6 +48,7 @@ namespace SIPSorcery.SIP.App {
         bool IsB2B { get; }
         SIPRequest CallRequest { get; }
         bool IsUASAnswered { get; }
+        string Owner { get; }
 
         event SIPUASDelegate CallCancelled;
         event SIPUASDelegate NoRingTimeout;

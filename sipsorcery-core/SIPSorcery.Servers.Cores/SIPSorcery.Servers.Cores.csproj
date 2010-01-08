@@ -171,6 +171,7 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="SIPApplicationServer\SIPDialogueManager.cs" />
     <Compile Include="SIPWatchTower\SIPAppServerManager.cs" />
     <Compile Include="SIPApplicationServer\SIPNotifyManager.cs" />
     <Compile Include="SIPMonitor\SIPMonitorClientManager.cs" />

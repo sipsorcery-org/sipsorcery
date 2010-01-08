@@ -70,10 +70,12 @@ namespace SIPSorcery.SSHServer
 
         private ISshService m_sshService;
         private CustomerSessionManager m_customerSessionManager;
+        private ISIPMonitorPublisher m_sipMonitorPublisher;
 
-        public SSHServerDaemon(CustomerSessionManager customerSessionManager)
+        public SSHServerDaemon(CustomerSessionManager customerSessionManager, ISIPMonitorPublisher sipMonitorPublisher)
         {
             m_customerSessionManager = customerSessionManager;
+            m_sipMonitorPublisher = sipMonitorPublisher;
         }
 
         public void Start()
@@ -130,6 +132,10 @@ namespace SIPSorcery.SSHServer
 
             // SIPSorcery specific registrations.
             Dependency.RegisterInstance<CustomerSessionManager>("CustomerSessionManager", m_customerSessionManager);
+            if (m_sipMonitorPublisher != null)
+            {
+                Dependency.RegisterInstance<ISIPMonitorPublisher>("ISIPMonitorPublisher", m_sipMonitorPublisher);
+            }
         }
     }
 }

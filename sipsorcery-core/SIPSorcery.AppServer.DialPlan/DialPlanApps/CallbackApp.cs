@@ -162,7 +162,7 @@ namespace SIPSorcery.AppServer.DialPlan
             ForkCall call = new ForkCall(m_sipTransport, Log_External, m_callManager.QueueNewCall, m_username, m_adminMemberId, null, m_outboundProxy);
             call.CallProgress += (s, r, h, t, b) => { Log("Progress response of " + s + " received on CallBack Dial" + "."); };
             call.CallFailed += (s, r, h) => { waitForCallCompleted.Set(); };
-            call.CallAnswered += (s, r, toTag, h, t, b, d) => { answeredDialogue = d; waitForCallCompleted.Set(); };
+            call.CallAnswered += (s, r, toTag, h, t, b, d, transferMode) => { answeredDialogue = d; waitForCallCompleted.Set(); };
 
             try {
                 Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, null, null, null, null, null, null, null, null);

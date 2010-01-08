@@ -202,14 +202,20 @@ namespace SIPSorcery.SIP
                     {
                         if (transaction.TransactionType == SIPTransactionTypesEnum.Invite)
                         {
-                            if (transaction.TransactionState == SIPTransactionStatesEnum.Confirmed && (DateTime.Now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6))
+                            if (transaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
                             {
                                 // Need to wait until the transaction timeout period is reached in case any ACK re-transmits are received.
-                                expiredTransactionIds.Add(transaction.TransactionId);
+                                if (DateTime.Now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
+                                {
+                                    expiredTransactionIds.Add(transaction.TransactionId);
+                                }
                             }
-                            if (transaction.TransactionState == SIPTransactionStatesEnum.Completed && (DateTime.Now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6))
+                            else if (transaction.TransactionState == SIPTransactionStatesEnum.Completed)
                             {
-                                expiredTransactionIds.Add(transaction.TransactionId);
+                                if (DateTime.Now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
+                                {
+                                    expiredTransactionIds.Add(transaction.TransactionId);
+                                }
                             }
                             else if (transaction.HasTimedOut)
                             {

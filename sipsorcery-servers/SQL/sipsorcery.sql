@@ -162,7 +162,7 @@ create table sipdialplans
  adminmemberid varchar(32),
  dialplanname varchar(64) not null default 'default',			-- Name the owner has assigned to the dialplan to allow them to choose between their different ones.
  traceemailaddress varchar(256),
- dialplanscript varchar(30000),
+ dialplanscript varchar(8000),
  scripttypedescription varchar(12) not null default 'Ruby',		-- The type of script the dialplan has, supported values are: Asterisk, Ruby, Python and JScript.
  inserted datetimeoffset not null,
  lastupdate datetimeoffset not null,
@@ -195,6 +195,9 @@ create table sipdialogues
  calldurationlimit int,
  inserted datetimeoffset not null,
  hangupat datetimeoffset null default null,
+ transfermode varchar(16),
+ sdp varchar(2048),
+ remotesdp varchar(2048),
  Primary Key(id),
  Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade
 );

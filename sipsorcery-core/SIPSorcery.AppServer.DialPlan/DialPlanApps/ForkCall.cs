@@ -67,13 +67,13 @@ namespace SIPSorcery.AppServer.DialPlan
         private event SIPMonitorLogDelegate m_statefulProxyLogEvent;           // Used to send log messages back to the application server core.
         private QueueNewCallDelegate QueueNewCall_External;
 
-        private string m_username;                          // The call owner.
+        private string m_username;                              // The call owner.
         private string m_adminMemberId;
-        private SIPEndPoint m_outboundProxySocket;          // If this app forwards calls via an outbound proxy this value will be set.
+        private SIPEndPoint m_outboundProxySocket;              // If this app forwards calls via an outbound proxy this value will be set.
         private SIPResponseStatusCodesEnum m_lastFailureStatus; // If the call fails the first leg that returns an error will be used as the reason on the error response.
         private string m_lastFailureReason;
 
-        private bool m_callAnswered;                        // Set to true once the first Ok response has been received from a forwarded call leg.
+        private bool m_callAnswered;                            // Set to true once the first Ok response has been received from a forwarded call leg.
         private bool m_commandCancelled;
         private ISIPClientUserAgent m_answeredUAC;
 
@@ -308,8 +308,30 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_callAnswered = true;
                         m_answeredUAC = answeredUAC;
 
+                        SIPDialogueTransferModesEnum uasTransferMode = SIPDialogueTransferModesEnum.PassThru;
+                        if (m_answeredUAC.CallDescriptor.TransferMode == SIPCallTransferModesEnum.NotAllowed)
+                        {
+                            answeredUAC.SIPDialogue.TransferMode = SIPDialogueTransferModesEnum.NotAllowed;
+                            uasTransferMode = SIPDialogueTransferModesEnum.NotAllowed;
+                        }
+                        else if (m_answeredUAC.CallDescriptor.TransferMode == SIPCallTransferModesEnum.Caller)
+                        {
+                            answeredUAC.SIPDialogue.TransferMode = SIPDialogueTransferModesEnum.NotAllowed;
+                            uasTransferMode = SIPDialogueTransferModesEnum.Allowed;
+                        }
+                        else if (m_answeredUAC.CallDescriptor.TransferMode == SIPCallTransferModesEnum.Callee)
+                        {
+                            answeredUAC.SIPDialogue.TransferMode = SIPDialogueTransferModesEnum.Allowed;
+                            uasTransferMode = SIPDialogueTransferModesEnum.NotAllowed;
+                        }
+                        else if(m_answeredUAC.CallDescriptor.TransferMode == SIPCallTransferModesEnum.Both)
+                        {
+                            answeredUAC.SIPDialogue.TransferMode = SIPDialogueTransferModesEnum.Allowed;
+                            uasTransferMode = SIPDialogueTransferModesEnum.Allowed;
+                        }
+
                         if (CallAnswered != null) {
-                            CallAnswered(answeredResponse.Status, answeredResponse.ReasonPhrase, null, null, answeredResponse.Header.ContentType, answeredResponse.Body, answeredUAC.SIPDialogue);
+                            CallAnswered(answeredResponse.Status, answeredResponse.ReasonPhrase, null, null, answeredResponse.Header.ContentType, answeredResponse.Body, answeredUAC.SIPDialogue, uasTransferMode);
                         }
 
                         // Cancel/hangup and other calls on this leg that are still around.

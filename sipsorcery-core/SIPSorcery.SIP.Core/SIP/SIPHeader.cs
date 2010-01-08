@@ -2290,31 +2290,52 @@ namespace SIPSorcery.SIP
 
         // Core SIP headers.
         public string Accept;
+        public string AcceptEncoding;
+        public string AcceptLanguage;
+        public string AlertInfo;
+        public string Allow;
+        public string AuthenticationInfo;
         public SIPAuthenticationHeader AuthenticationHeader;
         public string CallId;
+        public string CallInfo;
         public List<SIPContactHeader> Contact = new List<SIPContactHeader>();
-        public int ContentLength = 0;
+        public string ContentDisposition;
+        public string ContentEncoding;
+        public string ContentLanguage;
         public string ContentType;
+        public int ContentLength = 0;
         public int CSeq = -1;
         public SIPMethodsEnum CSeqMethod;
         public string Date;
+        public string ErrorInfo;
         public int Expires = -1;
         public SIPFromHeader From;
+        public string InReplyTo;
         public int MinExpires = -1;
         public int MaxForwards = SIPConstants.DEFAULT_MAX_FORWARDS;
+        public string MIMEVersion;
+        public string Organization;
+        public string Priority;
         public string ProxyRequire;
         public string Reason;
         public SIPRouteSet RecordRoutes = new SIPRouteSet();
-        public string ReferTo;
-        public string ReferredBy;
+        public string ReplyTo;
         public string Require;
+        public string RetryAfter;
         public SIPRouteSet Routes = new SIPRouteSet();
         public string Server;
+        public string Subject;
         public string Supported;
         public string Timestamp;
         public SIPToHeader To;
+        public string Unsupported;
         public string UserAgent;
         public SIPViaSet Vias = new SIPViaSet();
+        public string Warning;
+
+        // Non-core SIP headers from RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
+        public string ReferTo;
+        public string ReferredBy;
 
         // Non-core SIP headers from RFC 3265 SIP Event Package.
         public string Event;
@@ -2667,9 +2688,17 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Refer-To.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REFERTO.ToLower())
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REFERTO.ToLower() ||
+                            headerNameLower == SIPHeaders.SIP_COMPACTHEADER_REFERTO)
                         {
-                            sipHeader.ReferTo = headerValue;
+                            if (sipHeader.ReferTo == null)
+                            {
+                                sipHeader.ReferTo = headerValue;
+                            }
+                            else
+                            {
+                                throw new SIPValidationException(SIPValidationFieldsEnum.ReferToHeader, "Only a single Refer-To header is permitted.");
+                            }
                         }
                         #endregion
                         #region Referred-By.
@@ -2713,6 +2742,126 @@ namespace SIPSorcery.SIP
                             headerNameLower == SIPHeaders.SIP_HEADER_SUPPORTED.ToLower())
                         {
                             sipHeader.Supported = headerValue;
+                        }
+                        #endregion
+                        #region Authentication-Info
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_AUTHENTICATIONINFO)
+                        {
+                            sipHeader.AuthenticationInfo = headerValue;
+                        }
+                        #endregion
+                        #region Accept-Encoding
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ACCEPTENCODING)
+                        {
+                            sipHeader.AcceptEncoding = headerValue;
+                        }
+                        #endregion
+                        #region Accept-Language
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ACCEPTLANGUAGE)
+                        {
+                            sipHeader.AcceptLanguage = headerValue;
+                        }
+                        #endregion
+                        #region Alert-Info
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALERTINFO)
+                        {
+                            sipHeader.AlertInfo = headerValue;
+                        }
+                        #endregion
+                        #region Allow
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALLOW)
+                        {
+                            sipHeader.Allow = headerValue;
+                        }
+                        #endregion
+                        #region Call-Info
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CALLINFO)
+                        {
+                            sipHeader.CallInfo = headerValue;
+                        }
+                        #endregion
+                        #region Content-Disposition
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CONTENT_DISPOSITION)
+                        {
+                            sipHeader.ContentDisposition = headerValue;
+                        }
+                        #endregion
+                        #region Content-Encoding
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CONTENT_ENCODING)
+                        {
+                            sipHeader.ContentEncoding = headerValue;
+                        }
+                        #endregion
+                        #region Content-Language
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CONTENT_LANGUAGE)
+                        {
+                            sipHeader.ContentLanguage = headerValue;
+                        }
+                        #endregion
+                        #region Error-Info
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ERROR_INFO)
+                        {
+                            sipHeader.ErrorInfo = headerValue;
+                        }
+                        #endregion
+                        #region In-Reply-To
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_IN_REPLY_TO)
+                        {
+                            sipHeader.InReplyTo = headerValue;
+                        }
+                        #endregion
+                        #region MIME-Version
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_MIME_VERSION)
+                        {
+                            sipHeader.MIMEVersion = headerValue;
+                        }
+                        #endregion
+                        #region Organization
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ORGANIZATION)
+                        {
+                            sipHeader.Organization = headerValue;
+                        }
+                        #endregion
+                        #region Priority
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PRIORITY)
+                        {
+                            sipHeader.Priority = headerValue;
+                        }
+                        #endregion
+                        #region Proxy-Require
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_REQUIRE)
+                        {
+                            sipHeader.ProxyRequire = headerValue;
+                        }
+                        #endregion
+                        #region Reply-To
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REPLY_TO)
+                        {
+                            sipHeader.ReplyTo = headerValue;
+                        }
+                        #endregion
+                        #region Retry-After
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_RETRY_AFTER)
+                        {
+                            sipHeader.RetryAfter = headerValue;
+                        }
+                        #endregion
+                        #region Subject
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SUBJECT)
+                        {
+                            sipHeader.Subject = headerValue;
+                        }
+                        #endregion
+                        #region Unsupported
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_UNSUPPORTED)
+                        {
+                            sipHeader.Unsupported = headerValue;
+                        }
+                        #endregion
+                        #region Warning
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_WARNING)
+                        {
+                            sipHeader.Warning = headerValue;
                         }
                         #endregion
 
@@ -2806,8 +2955,31 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((Expires != -1) ? SIPHeaders.SIP_HEADER_EXPIRES + ": " + this.Expires + m_CRLF : null);
                 headersBuilder.Append((MinExpires != -1) ? SIPHeaders.SIP_HEADER_MINEXPIRES + ": " + this.MinExpires + m_CRLF : null);
                 headersBuilder.Append((Accept != null) ? SIPHeaders.SIP_HEADER_ACCEPT + ": " + this.Accept + m_CRLF : null);
+                headersBuilder.Append((AcceptEncoding != null) ? SIPHeaders.SIP_HEADER_ACCEPTENCODING + ": " + this.AcceptEncoding + m_CRLF : null);
+                headersBuilder.Append((AcceptLanguage != null) ? SIPHeaders.SIP_HEADER_ACCEPTLANGUAGE + ": " + this.AcceptLanguage + m_CRLF : null);
+                headersBuilder.Append((Allow != null) ? SIPHeaders.SIP_HEADER_ALLOW + ": " + this.Allow + m_CRLF : null);
+                headersBuilder.Append((AlertInfo != null) ? SIPHeaders.SIP_HEADER_ALERTINFO + ": " + this.AlertInfo + m_CRLF : null);
+                headersBuilder.Append((AuthenticationInfo != null) ? SIPHeaders.SIP_HEADER_AUTHENTICATIONINFO + ": " + this.AuthenticationInfo + m_CRLF : null);
                 headersBuilder.Append((AuthenticationHeader != null) ? AuthenticationHeader.ToString() + m_CRLF : null);
+                headersBuilder.Append((CallInfo != null) ? SIPHeaders.SIP_HEADER_CALLINFO + ": " + this.CallInfo + m_CRLF : null);
+                headersBuilder.Append((ContentDisposition != null) ? SIPHeaders.SIP_HEADER_CONTENT_DISPOSITION + ": " + this.ContentDisposition + m_CRLF : null);
+                headersBuilder.Append((ContentEncoding != null) ? SIPHeaders.SIP_HEADER_CONTENT_ENCODING + ": " + this.ContentEncoding + m_CRLF : null);
+                headersBuilder.Append((ContentLanguage != null) ? SIPHeaders.SIP_HEADER_CONTENT_LANGUAGE + ": " + this.ContentLanguage + m_CRLF : null);
+                headersBuilder.Append((Date != null) ? SIPHeaders.SIP_HEADER_DATE + ": " + Date + m_CRLF : null);
+                headersBuilder.Append((ErrorInfo != null) ? SIPHeaders.SIP_HEADER_ERROR_INFO + ": " + this.ErrorInfo + m_CRLF : null);
+                headersBuilder.Append((InReplyTo != null) ? SIPHeaders.SIP_HEADER_IN_REPLY_TO + ": " + this.InReplyTo + m_CRLF : null);
+                headersBuilder.Append((Organization != null) ? SIPHeaders.SIP_HEADER_ORGANIZATION + ": " + this.Organization + m_CRLF : null);
+                headersBuilder.Append((Priority != null) ? SIPHeaders.SIP_HEADER_PRIORITY + ": " + Priority + m_CRLF : null);
+                headersBuilder.Append((ProxyRequire != null) ? SIPHeaders.SIP_HEADER_PROXY_REQUIRE + ": " + this.ProxyRequire + m_CRLF : null);
+                headersBuilder.Append((ReplyTo != null) ? SIPHeaders.SIP_HEADER_REPLY_TO + ": " + this.ReplyTo + m_CRLF : null);
+                headersBuilder.Append((Require != null) ? SIPHeaders.SIP_HEADER_REQUIRE + ": " + Require + m_CRLF : null);
+                headersBuilder.Append((RetryAfter != null) ? SIPHeaders.SIP_HEADER_RETRY_AFTER + ": " + this.RetryAfter + m_CRLF : null);
                 headersBuilder.Append((Server != null && Server.Trim().Length != 0) ? SIPHeaders.SIP_HEADER_SERVER + ": " + this.Server + m_CRLF : null);
+                headersBuilder.Append((Subject != null) ? SIPHeaders.SIP_HEADER_SUBJECT + ": " + Subject + m_CRLF : null);
+                headersBuilder.Append((Supported != null) ? SIPHeaders.SIP_HEADER_SUPPORTED + ": " + Supported + m_CRLF : null);
+                headersBuilder.Append((Timestamp != null) ? SIPHeaders.SIP_HEADER_TIMESTAMP + ": " + Timestamp + m_CRLF : null);
+                headersBuilder.Append((Unsupported != null) ? SIPHeaders.SIP_HEADER_UNSUPPORTED + ": " + Unsupported + m_CRLF : null);
+                headersBuilder.Append((Warning != null) ? SIPHeaders.SIP_HEADER_WARNING + ": " + Warning + m_CRLF : null);
                 headersBuilder.Append(SIPHeaders.SIP_HEADER_CONTENTLENGTH + ": " + this.ContentLength + m_CRLF);
                 if (this.ContentType != null && this.ContentType.Trim().Length > 0)
                 {
@@ -2817,13 +2989,9 @@ namespace SIPSorcery.SIP
                 // Non-core SIP headers.
                 headersBuilder.Append((Event != null) ? SIPHeaders.SIP_HEADER_EVENT + ": " + Event + m_CRLF : null);
                 headersBuilder.Append((SubscriptionState != null) ? SIPHeaders.SIP_HEADER_SUBSCRIPTIONSTATE + ": " + SubscriptionState + m_CRLF : null);
-                headersBuilder.Append((Date != null) ? SIPHeaders.SIP_HEADER_DATE + ": " + Date + m_CRLF : null);
-                headersBuilder.Append((Timestamp != null) ? SIPHeaders.SIP_HEADER_TIMESTAMP + ": " + Timestamp + m_CRLF : null);
                 headersBuilder.Append((ReferTo != null) ? SIPHeaders.SIP_HEADER_REFERTO + ": " + ReferTo + m_CRLF : null);
                 headersBuilder.Append((ReferredBy != null) ? SIPHeaders.SIP_HEADER_REFERREDBY + ": " + ReferredBy + m_CRLF : null);
-                headersBuilder.Append((Require != null) ? SIPHeaders.SIP_HEADER_REQUIRE + ": " + Require + m_CRLF : null);
                 headersBuilder.Append((Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);
-                headersBuilder.Append((Supported != null) ? SIPHeaders.SIP_HEADER_SUPPORTED + ": " + Supported + m_CRLF : null);
                 headersBuilder.Append((ProxyReceivedFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM + ": " + ProxyReceivedFrom + m_CRLF : null);
                 headersBuilder.Append((ProxyReceivedOn != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON + ": " + ProxyReceivedOn + m_CRLF : null);
                 headersBuilder.Append((ProxySendFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_SENDFROM + ": " + ProxySendFrom + m_CRLF : null);

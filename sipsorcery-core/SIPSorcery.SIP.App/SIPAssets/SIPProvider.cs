@@ -547,8 +547,8 @@ namespace SIPSorcery.SIP.App
                 "   <registerenabled>" + m_registerEnabled + "</registerenabled>" + m_newLine +
                 "   <registerenabledadmin>" + m_registerAdminEnabled + "</registerenabledadmin>" + m_newLine +
                 "   <registerdisabledreason>" + SafeXML.MakeSafeXML(m_registerDisabledReason) + "</registerdisabledreason>" + m_newLine +
-                "   <inserted>" + m_inserted.ToString() + "</inserted>" + m_newLine +
-                "   <lastupdate>" + m_lastUpdate.ToString() + "</lastupdate>" + m_newLine;
+                "   <inserted>" + m_inserted.ToString("o") + "</inserted>" + m_newLine +
+                "   <lastupdate>" + m_lastUpdate.ToString("o") + "</lastupdate>" + m_newLine;
 
             return providerXML;
         }

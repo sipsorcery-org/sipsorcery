@@ -244,6 +244,7 @@ namespace SIPSorcery.SIP.App
                         if (m_serverTransaction.CDR != null)
                         {
                             m_serverTransaction.CDR.Owner = Owner;
+                            m_serverTransaction.CDR.AdminMemberId = AdminMemberId;
                         }
 
                         m_serverTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
@@ -352,7 +353,6 @@ namespace SIPSorcery.SIP.App
                 }
                 else if (m_callCancelled)
                 {
-
                     #region Call has been cancelled, hangup.
 
                     if (m_hungupOnCancel)

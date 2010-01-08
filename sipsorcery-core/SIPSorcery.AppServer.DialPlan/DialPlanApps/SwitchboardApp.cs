@@ -100,7 +100,7 @@ namespace SIPSorcery.AppServer.DialPlan {
         }
          
         private void UACTransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) {
-            m_dialPlanContext.CallAnswered(sipResponse.Status, sipResponse.ReasonPhrase, sipResponse.Header.To.ToTag, null, sipResponse.Header.ContentType, sipResponse.Body, null);
+            m_dialPlanContext.CallAnswered(sipResponse.Status, sipResponse.ReasonPhrase, sipResponse.Header.To.ToTag, null, sipResponse.Header.ContentType, sipResponse.Body, null, SIPDialogueTransferModesEnum.NotAllowed);
             m_waitForAnswer.Set();
         }
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using log4net;
 using SIPSorcery.Sys;
 using Microsoft.Scripting.Hosting;
@@ -112,7 +113,7 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                string tempPath = Path.GetDirectoryName(m_scriptPath) + Path.DirectorySeparatorChar + Path.GetFileName(m_scriptPath) + ".tmp";
+                /*string tempPath = Path.GetDirectoryName(m_scriptPath) + Path.DirectorySeparatorChar + Path.GetFileName(m_scriptPath) + ".tmp";
                 File.Copy(m_scriptPath, tempPath, true);
 
                 using (StreamReader sr = new StreamReader(tempPath))
@@ -121,7 +122,15 @@ namespace SIPSorcery.SIP.App
                     sr.Close();
                 }
 
-                return m_scriptText;
+                return m_scriptText;*/
+
+                return File.ReadAllText(m_scriptPath);
+            }
+            catch (IOException excp)
+            {
+                logger.Warn("IOException GetText (wait for 0.5s and try again). " + excp.Message);
+                Thread.Sleep(500);
+                return File.ReadAllText(m_scriptPath);
             }
             catch (Exception excp)
             {

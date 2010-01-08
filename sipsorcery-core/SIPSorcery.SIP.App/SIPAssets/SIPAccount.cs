@@ -464,7 +464,7 @@ namespace SIPSorcery.SIP.App
                 "  <owner>" + m_owner + "</owner>" + m_newLine +
                 "  <sipusername>" + m_sipUsername + "</sipusername>" + m_newLine +
                 "  <sippassword>" + m_sipPassword + "</sippassword>" + m_newLine +
-                "  <domain>" + m_sipDomain + "</domain>" + m_newLine +
+                "  <sipdomain>" + m_sipDomain + "</sipdomain>" + m_newLine +
                 "  <sendnatkeepalives>" + m_sendNATKeepAlives + "</sendnatkeepalives>" + m_newLine +
                 "  <isincomingonly>" + m_isIncomingOnly + "</isincomingonly>" + m_newLine +
                 "  <outdialplanname>" + m_outDialPlanName + "</outdialplanname>" + m_newLine +

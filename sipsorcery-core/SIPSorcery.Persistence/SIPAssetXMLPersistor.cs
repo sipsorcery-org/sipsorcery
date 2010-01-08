@@ -89,7 +89,7 @@ namespace SIPSorcery.Persistence
                 LoadSIPAssetsFromXML(sipAssetDOM);
             }
             catch (Exception excp) {
-                logger.Error("Exception loading XML from " + m_xmlAssetFilePath + ". " + excp.Message);
+                logger.Error("Exception loading XML from " + m_xmlAssetFilePath + " (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
@@ -123,7 +123,7 @@ namespace SIPSorcery.Persistence
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPAssetXMLPersistor Add. " + excp.Message);
+                logger.Error("Exception SIPAssetXMLPersistor Add (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
          }
@@ -152,7 +152,7 @@ namespace SIPSorcery.Persistence
                     return m_sipAssets[id];
                 }
                 else {
-                    throw new ApplicationException("Could not update SIP Asset with id " + sipAsset.Id + " for type " + sipAsset.GetType().ToString() + ", no existing asset found.");
+                    throw new ApplicationException("Could not update SIP Asset with id " + sipAsset.Id + " (for " + typeof(T).Name + "), no existing asset found.");
                 }
             }
             catch (Exception excp) {
@@ -180,7 +180,7 @@ namespace SIPSorcery.Persistence
                 }
             }
             catch (Exception excp) {
-                logger.Error("Exception DBLinqAssetPersistor Update (for " + typeof(T).Name + "). " + excp.Message);
+                logger.Error("Exception SIPAssetXMLPersistor Update (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
@@ -191,7 +191,7 @@ namespace SIPSorcery.Persistence
                     throw new ArgumentException("The SIP Asset cannot be empty for Delete.");
                 }
 
-                logger.Debug("SIPAssetsXMLPersistor attempting to delete " + sipAsset.Id + " type " + sipAsset.GetType().ToString() + ".");
+                //logger.Debug("SIPAssetsXMLPersistor attempting to delete " + sipAsset.Id + " type " + sipAsset.GetType().ToString() + ".");
 
                 Guid id = sipAsset.Id;
 
@@ -217,7 +217,7 @@ namespace SIPSorcery.Persistence
                 logger.Warn(appExcp.Message);
             }
             catch (Exception excp) {
-                logger.Error("Exception Delete. " + excp.Message);
+                logger.Error("Exception Delete (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
@@ -237,7 +237,7 @@ namespace SIPSorcery.Persistence
                 }
             }
             catch (Exception excp) {
-                logger.Error("Exception SIPAssetXMLPersistor Delete (batch). " + excp.Message);
+                logger.Error("Exception SIPAssetXMLPersistor Delete (batch) (for " + typeof(T).Name + "). " + excp.Message);
             }
         }
 
@@ -251,7 +251,7 @@ namespace SIPSorcery.Persistence
                     return m_sipAssets[id];
                 }
                 else {
-                    logger.Debug("Could not locate a SIP Asset for id " + id.ToString() + ".");
+                    logger.Debug("Could not locate a " +  typeof(T).Name + " SIP Asset for id " + id.ToString() + ".");
                     return default(T);
                 }
             }
@@ -273,7 +273,7 @@ namespace SIPSorcery.Persistence
                     }
                 }
                 else {
-                    logger.Debug("Could not locate a SIP Asset for id " + id.ToString() + ".");
+                    logger.Debug("Could not locate a " + typeof(T).Name + " SIP Asset for id " + id.ToString() + ".");
                     return null;
                 }
             }
@@ -289,7 +289,7 @@ namespace SIPSorcery.Persistence
                 }
             }
             catch (Exception excp) {
-                logger.Error("Exception SIPAssetXMLPersistor Count. " + excp.Message);
+                logger.Error("Exception SIPAssetXMLPersistor Count (for " + typeof(T).Name + "). " + excp.Message);
                 throw excp;
             }
         }
@@ -299,7 +299,7 @@ namespace SIPSorcery.Persistence
                 return m_sipAssets.Values.Where(a => whereClause.Compile()(a)).FirstOrDefault();
             }
             catch (Exception excp) {
-                logger.Error("Exception SIPAssetXMLPersistor Get. " + excp.Message);
+                logger.Error("Exception SIPAssetXMLPersistor Get (for " + typeof(T).Name + "). " + excp.Message);
                 return default(T);
             }
         }
@@ -341,7 +341,7 @@ namespace SIPSorcery.Persistence
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPAssetXMLPersistor Get. " + excp.Message);
+                logger.Error("Exception SIPAssetXMLPersistor Get (for " + typeof(T).Name + "). " + excp.Message);
                 return null;
             }
         }
@@ -468,14 +468,15 @@ namespace SIPSorcery.Persistence
                             assets.Add(sipAsset.Id, sipAsset);
                         }
                         catch (Exception excp) {
-                            logger.Error("Exception loading SIP asset record in LoadAssetsFromXMLRecordSet. " + excp.Message);
+                            logger.Error("Exception loading SIP asset record in LoadAssetsFromXMLRecordSet (" + (new T()).GetType().ToString() +"). " + excp.Message);
                         }
                     }
 
                     logger.Debug(" " + assets.Count + " " + (new T()).GetType().ToString() + " assets loaded from XML record set.");
                 }
                 else {
-                    logger.Warn("The XML supplied to LoadAssetsFromXMLRecordSet for asset type " + (new T()).GetType().ToString() + " did not contain any assets.");
+                    //logger.Warn("The XML supplied to LoadAssetsFromXMLRecordSet for asset type " + (new T()).GetType().ToString() + " did not contain any assets.");
+                    logger.Debug(" no " + (new T()).GetType().ToString() + " assets loaded from XML record set.");
                 }
 
                 xmlReader.Close();

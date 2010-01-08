@@ -23,8 +23,6 @@ namespace SIPSorcery.SIP.App {
 
         private static string m_newLine = AppState.NewLine;
 
-        //public static readonly string SelectHangupQuery = "select * from sipdialogues where hangupat <= ?1";
-
         [IgnoreDataMember]
         public SIPDialogue SIPDialogue;
 
@@ -151,6 +149,34 @@ namespace SIPSorcery.SIP.App {
             set { }     // The hangup time is stored in the database for info. It is calculated from inserted and calldurationlimit and does not need a setter.
         }
 
+        [DataMember]
+        [Column(Name = "transfermode", DbType = "varchar(16)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        public string TransferMode
+        {
+            get { return SIPDialogue.TransferMode.ToString(); }
+            set
+            {
+                if (!value.IsNullOrBlank())
+                {
+                    SIPDialogue.TransferMode = (SIPDialogueTransferModesEnum)Enum.Parse(typeof(SIPDialogueTransferModesEnum), value, true);
+                }
+            }
+        }
+ 
+        [Column(Name = "sdp", DbType = "varchar(2048)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        public string SDP
+        {
+            get { return SIPDialogue.SDP; }
+            set { SIPDialogue.SDP = value; }
+        }
+
+        [Column(Name = "remotesdp", DbType = "varchar(2048)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        public string RemoteSDP
+        {
+            get { return SIPDialogue.RemoteSDP; }
+            set { SIPDialogue.RemoteSDP = value; }
+        }
+
         public SIPDialogueAsset() {
             SIPDialogue = new SIPDialogue();
         }
@@ -207,6 +233,9 @@ namespace SIPSorcery.SIP.App {
             SIPDialogue.CDRId = new Guid(row["cdrid"] as string);
             SIPDialogue.CallDurationLimit = (row["calldurationlimit"] != null && row["calldurationlimit"] != DBNull.Value) ? Convert.ToInt32(row["calldurationlimit"]) : 0;
             Inserted = DateTimeOffset.Parse(row["inserted"] as string);
+            TransferMode = row["transfermode"] as string;
+            SDP = row["sdp"] as string;
+            RemoteSDP = row["remotesdp"] as string;
         }
 
         public Dictionary<Guid, object> Load(XmlDocument dom) {
@@ -241,10 +270,14 @@ namespace SIPSorcery.SIP.App {
                  "  <localuserfield>" + SafeXML.MakeSafeXML(SIPDialogue.LocalUserField.ToString()) + "</localuserfield>" + m_newLine +
                  "  <remoteuserfield>" + SafeXML.MakeSafeXML(SIPDialogue.RemoteUserField.ToString()) + "</remoteuserfield>" + m_newLine +
                  "  <routeset>" + SafeXML.MakeSafeXML(RouteSet) + "</routeset>" + m_newLine +
+                 "  <proxysipsocket>" + SafeXML.MakeSafeXML(ProxySIPSocket) + "</proxysipsocket>" + m_newLine +
                  "  <cdrid>" + SIPDialogue.CDRId + "</cdrid>" + m_newLine +
                  "  <calldurationlimit>" + SIPDialogue.CallDurationLimit + "</calldurationlimit>" + m_newLine +
                  "  <inserted>" + Inserted.ToString() + "</inserted>" + m_newLine +
-                 "  <hangupat>" + hanupAtStr + "</hangupat>" + m_newLine;
+                 "  <hangupat>" + hanupAtStr + "</hangupat>" + m_newLine +
+                 "  <transfermode>" + TransferMode + "</transfermode>" + m_newLine +
+                 "  <sdp>" + SafeXML.MakeSafeXML(SDP) + "</sdp>" + m_newLine +
+                 "  <remotesdp>" + SafeXML.MakeSafeXML(RemoteSDP) + "</remotesdp>" + m_newLine;
 
             return dialogueXML;
         }

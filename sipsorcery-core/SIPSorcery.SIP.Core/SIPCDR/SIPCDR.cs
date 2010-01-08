@@ -62,9 +62,9 @@ namespace SIPSorcery.SIP
         private static ILog logger = AppState.logger;
         private static string m_newLine = AppState.NewLine;
 
-        public static event CDRReadyDelegate NewCDR = c => { };
-        public static event CDRReadyDelegate HungupCDR = c => { };
-        public static event CDRReadyDelegate CancelledCDR = c => { };
+        public static event CDRReadyDelegate CDRCreated = c => { };
+        public static event CDRReadyDelegate CDRAnswered = c => { };
+        public static event CDRReadyDelegate CDRHungup = c => { };
 
         [DataMember]
         public Guid CDRId { get; set; }
@@ -206,7 +206,7 @@ namespace SIPSorcery.SIP
                 AnswerStatus = (int)answerStatus;
                 AnswerReasonPhrase = answerReason;
 
-                NewCDR(this);
+                CDRAnswered(this);
             }
             catch (Exception excp)
             {
@@ -218,7 +218,8 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                CancelledCDR(this);
+                HangupReason = "Client cancelled";
+                CDRAnswered(this);
             }
             catch (Exception excp)
             {
@@ -230,7 +231,8 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                NewCDR(this);
+                HangupReason = "Timed out";
+                CDRAnswered(this);
             }
             catch (Exception excp)
             {
@@ -246,7 +248,7 @@ namespace SIPSorcery.SIP
                 HangupTime = DateTimeOffset.UtcNow;
                 HangupReason = hangupReason;
 
-                HungupCDR(this);
+                CDRHungup(this);
             }
             catch (Exception excp)
             {

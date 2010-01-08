@@ -24,6 +24,7 @@ namespace SIPSorcery.SSHServer
         private static ILog logger = AppState.logger;
 
         private SIPMonitorPublisherProxy m_publisherWCFProxy;
+        private ISIPMonitorPublisher m_publisher;
         private string m_notificationsAddress;
         private string m_notificationsSessionID;
         private bool m_firstNotificationSent;     // The first notification always be the filter description and gets special treatment.
@@ -44,7 +45,20 @@ namespace SIPSorcery.SSHServer
             Username = customer.CustomerUsername;
             AdminId = customer.AdminId;
             m_notificationsAddress = Guid.NewGuid().ToString();
-            InitialiseProxy();
+
+            try
+            {
+                m_publisher = Dependency.Resolve<ISIPMonitorPublisher>();
+            }
+            catch (ApplicationException appExcp)
+            {
+                logger.Debug("Unable to resolve ISIPMonitorPublisher. " + appExcp.Message);
+            }
+
+            if (m_publisher == null)
+            {
+                InitialiseProxy();
+            }
 
             WriteWelcomeMessage(customer);
             OutStream.Write(Encoding.ASCII.GetBytes(FILTER_COMMAND_PROMPT));
@@ -81,6 +95,7 @@ namespace SIPSorcery.SSHServer
             InstanceContext callbackContext = new InstanceContext(this);
             m_publisherWCFProxy = new SIPMonitorPublisherProxy(callbackContext);
             ((ICommunicationObject)m_publisherWCFProxy).Faulted += PublisherWCFProxyChannelFaulted;
+            m_publisher = m_publisherWCFProxy;
         }
 
         /// <summary>
@@ -123,6 +138,7 @@ namespace SIPSorcery.SSHServer
                 InstanceContext callbackContext = new InstanceContext(this);
                 m_publisherWCFProxy = new SIPMonitorPublisherProxy(callbackContext);
                 ((ICommunicationObject)m_publisherWCFProxy).Faulted += PublisherWCFProxyChannelFaulted;
+                m_publisher = m_publisherWCFProxy;
             }
             catch (Exception excp)
             {
@@ -148,7 +164,7 @@ namespace SIPSorcery.SSHServer
                 string sessionID;
                 string sessionError;
 
-                List<string> notifications = m_publisherWCFProxy.GetNotifications(m_notificationsAddress, out sessionID, out sessionError);
+                List<string> notifications = m_publisher.GetNotifications(m_notificationsAddress, out sessionID, out sessionError);
 
                 while (sessionError == null && notifications != null && notifications.Count > 0)
                 {
@@ -166,7 +182,7 @@ namespace SIPSorcery.SSHServer
                         }
                     }
 
-                    notifications = m_publisherWCFProxy.GetNotifications(m_notificationsAddress, out sessionID, out sessionError);
+                    notifications = m_publisher.GetNotifications(m_notificationsAddress, out sessionID, out sessionError);
                 }
 
                 if (sessionError != null)
@@ -176,7 +192,14 @@ namespace SIPSorcery.SSHServer
                 else 
                 {
                     //logger.Debug("Registering listener for address " + m_notificationsAddress + ".");
-                    m_publisherWCFProxy.RegisterListener(m_notificationsAddress);
+                    if (m_publisherWCFProxy != null)
+                    {
+                        m_publisher.RegisterListener(m_notificationsAddress);
+                    }
+                    else
+                    {
+                        m_publisher.RegisterListener(m_notificationsAddress, NotificationReady);
+                    }
                 }
             }
             catch (Exception excp)
@@ -220,7 +243,6 @@ namespace SIPSorcery.SSHServer
 
                 while (!HasClosed)
                 {
-
                     byte[] inBuffer = new byte[1024];
                     int bytesRead = InStream.Read(inBuffer, 0, 1024);
 
@@ -232,7 +254,7 @@ namespace SIPSorcery.SSHServer
                         break;
                     }
 
-                    //logger.Debug("input character received=" + inputChar + " (" + ((int)inputChar) + ")");
+                    //logger.Debug("ssh input received=" + Encoding.ASCII.GetString(inBuffer, 0, bytesRead));
 
                     // Process any recognised commands.
                     if (inBuffer[0] == 0x03)
@@ -298,7 +320,7 @@ namespace SIPSorcery.SSHServer
                         {
                             // Stop events.
                             logger.Debug("Closing session " + m_notificationsSessionID + ".");
-                            m_publisherWCFProxy.CloseSession(m_notificationsAddress, m_notificationsSessionID);
+                            m_publisher.CloseSession(m_notificationsAddress, m_notificationsSessionID);
                             m_firstNotificationSent = false;
                             m_notificationsSessionID = null;
                             OutStream.Write(Encoding.ASCII.GetBytes(CRLF + FILTER_COMMAND_PROMPT));
@@ -348,7 +370,7 @@ namespace SIPSorcery.SSHServer
         {
             try
             {
-                m_notificationsSessionID = m_publisherWCFProxy.Subscribe(Username, AdminId, m_notificationsAddress, SIPMonitorClientTypesEnum.ControlClient.ToString(), command);
+                m_notificationsSessionID = m_publisher.Subscribe(Username, AdminId, m_notificationsAddress, SIPMonitorClientTypesEnum.ControlClient.ToString(), command);
                 GetNotifications();
             }
             catch (ApplicationException appExcp)

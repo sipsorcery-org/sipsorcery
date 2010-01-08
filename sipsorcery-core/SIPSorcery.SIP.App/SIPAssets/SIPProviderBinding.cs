@@ -325,15 +325,15 @@ namespace SIPSorcery.SIP.App
                     CSeq = Convert.ToInt32(bindingRow["cseq"]);
                 }
 
-                if (bindingRow.Table.Columns.Contains("lastregistertime") && bindingRow["lastregistertime"] != DBNull.Value && bindingRow["lastregistertime"] != null && bindingRow["lastregistertime"].ToString().Length > 0) {
+                if (bindingRow.Table.Columns.Contains("lastregistertime") && bindingRow["lastregistertime"] != DBNull.Value && bindingRow["lastregistertime"] != null && !(bindingRow["lastregistertime"] as string).IsNullOrBlank()) {
                     LastRegisterTime = DateTimeOffset.Parse(bindingRow["lastregistertime"] as string);
                 }
 
-                if (bindingRow.Table.Columns.Contains("lastregisterattempt") && bindingRow["lastregisterattempt"] != DBNull.Value && bindingRow["lastregisterattempt"] != null && bindingRow["lastregisterattempt"].ToString().Length > 0) {
+                if (bindingRow.Table.Columns.Contains("lastregisterattempt") && bindingRow["lastregisterattempt"] != DBNull.Value && bindingRow["lastregisterattempt"] != null && !(bindingRow["lastregisterattempt"] as string).IsNullOrBlank()) {
                     LastRegisterAttempt = DateTimeOffset.Parse(bindingRow["lastregisterattempt"] as string);
                 }
 
-                if (bindingRow.Table.Columns.Contains("nextregistrationtime") && bindingRow["nextregistrationtime"] != DBNull.Value && bindingRow["nextregistrationtime"] != null && bindingRow["nextregistrationtime"].ToString().Length > 0) {
+                if (bindingRow.Table.Columns.Contains("nextregistrationtime") && bindingRow["nextregistrationtime"] != DBNull.Value && bindingRow["nextregistrationtime"] != null && !(bindingRow["nextregistrationtime"] as string).IsNullOrBlank()) {
                     NextRegistrationTime = DateTimeOffset.Parse(bindingRow["nextregistrationtime"] as string);
                 }
 

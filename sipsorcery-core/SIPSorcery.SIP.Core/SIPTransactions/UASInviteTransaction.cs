@@ -195,9 +195,9 @@ namespace SIPSorcery.SIP
                     logger.Warn("A request was made to cancel transaction " + TransactionId + " that was not in the calling, trying or proceeding states, state=" + TransactionState + ".");
                 }
 
-                if (CDR != null) {
-                    CDR.Cancelled();
-                }
+                //if (CDR != null) {
+                //    CDR.Cancelled();
+                //}
             }
             catch (Exception excp) {
                 logger.Error("Exception UASInviteTransaction CancelCall. " + excp.Message);

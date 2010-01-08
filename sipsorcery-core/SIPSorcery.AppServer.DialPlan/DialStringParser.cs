@@ -313,7 +313,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                         calledSIPAccount = GetSIPAccount_External(s => s.SIPUsername == sipUsernameSuffix && s.SIPDomain == localDomain);
                                     }
                                     if (calledSIPAccount != null) {
-                                        // An incoming dialplan won't be used if it's invoked from itself.
+                                         // An incoming dialplan won't be used if it's invoked from itself.
                                         if (calledSIPAccount.InDialPlanName.IsNullOrBlank() || (m_username == calledSIPAccount.Owner && dialplanName == calledSIPAccount.InDialPlanName)) {
                                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg is for local domain looking up bindings for " + callLegSIPURI.User + "@" + localDomain + " for call leg " + callLegDestination + ".", m_username));
                                             switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, calledSIPAccount, customHeaders, customContentType, customContent, options, callersNetworkId, fromDisplayName, fromUsername, fromHost));

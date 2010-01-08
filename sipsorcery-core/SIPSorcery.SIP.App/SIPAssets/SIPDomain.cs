@@ -172,7 +172,7 @@ namespace SIPSorcery.SIP.App
             Id = (row.Table.Columns.Contains("id") && row["id"] != DBNull.Value) ? new Guid(row["id"] as string) : Guid.NewGuid();
             Domain = row["domain"] as string;
             Owner = (row.Table.Columns.Contains("owner") && row["owner"] != DBNull.Value) ? row["owner"] as string : null;
-            if (row.Table.Columns.Contains("inserted") & row["inserted"] != DBNull.Value)
+            if (row.Table.Columns.Contains("inserted") & row["inserted"] != DBNull.Value && !(row["inserted"] as string).IsNullOrBlank())
             {
                 Inserted = DateTimeOffset.Parse(row["inserted"] as string);
             }
@@ -194,7 +194,7 @@ namespace SIPSorcery.SIP.App
                                     {
                                         Id = Guid.NewGuid(),
                                         Domain = domain.Element("domain").Value,
-                                        Owner = (domain.Element("owner") != null) ? domain.Element("owner").Value : null,
+                                        Owner = (domain.Element("owner") != null && !domain.Element("owner").Value.IsNullOrBlank()) ? domain.Element("owner").Value : null,
                                         Aliases =
                                             (from alias in domain.Element("sipdomainaliases").Descendants("domainalias")
                                              select alias.Value).ToList()

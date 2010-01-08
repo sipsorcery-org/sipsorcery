@@ -4,7 +4,7 @@
     <owner>username</owner>
     <sipusername>username</sipusername>
     <sippassword>password</sippassword>
-    <domain>mydomain</domain>
+    <sipdomain>localhost</sipdomain>
     <sendnatkeepalives>True</sendnatkeepalives>
     <isincomingonly>False</isincomingonly>
     <outdialplanname>default</outdialplanname>

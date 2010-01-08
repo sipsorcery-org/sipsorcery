@@ -31,7 +31,7 @@ namespace SIPSorcery.SSHServer
                 m_connStr = ConfigurationManager.AppSettings[m_connStrKey];
 
                 CustomerSessionManager customerSessionManager = new CustomerSessionManager(m_storageType, m_connStr);
-                SSHServerDaemon daemon = new SSHServerDaemon(customerSessionManager);
+                SSHServerDaemon daemon = new SSHServerDaemon(customerSessionManager, null);
 
                 if (args != null && args.Length == 1 && args[0].StartsWith("-c"))
                 {

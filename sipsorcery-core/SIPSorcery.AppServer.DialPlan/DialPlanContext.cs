@@ -14,7 +14,7 @@ namespace SIPSorcery.AppServer.DialPlan
     public delegate void CallCancelledDelegate(CallCancelCause cancelCause);
     public delegate void CallProgressDelegate(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody);
     public delegate void CallFailedDelegate(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders);
-    public delegate void CallAnsweredDelegate(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string toTag, string[] customHeaders, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue);
+    public delegate void CallAnsweredDelegate(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string toTag, string[] customHeaders, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum uasTransferMode);
 
     public enum DialPlanAppResult
     {
@@ -149,13 +149,14 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        public void CallAnswered(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string toTag, string[] customHeaders, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue) {
+        public void CallAnswered(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string toTag, string[] customHeaders, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum uasTransferMode) {
             try {
                 if (!m_isAnswered) {
                     m_isAnswered = true;
                     Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Answering client call with a response status of " + (int)answeredStatus + ".", Owner));
 
                     SIPDialogue uasDialogue = m_sipServerUserAgent.Answer(answeredContentType, answeredBody, toTag, answeredDialogue);
+                    uasDialogue.TransferMode = uasTransferMode;
 
                     if (!m_sipServerUserAgent.IsB2B && answeredDialogue != null) {
                         if (uasDialogue != null) {

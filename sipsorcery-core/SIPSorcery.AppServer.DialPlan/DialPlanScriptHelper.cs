@@ -354,6 +354,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 string answeredContentType = null;
                 string answeredBody = null;
                 SIPDialogue answeredDialogue = null;
+                SIPDialogueTransferModesEnum uasTransferMode = SIPDialogueTransferModesEnum.PassThru;
                 int numberLegs = 0;
                 LastDialled = new List<SIPTransaction>();
 
@@ -366,13 +367,14 @@ namespace SIPSorcery.AppServer.DialPlan
                     result = DialPlanAppResult.Failed;
                     m_waitForCallCompleted.Set();
                 };
-                m_currentCall.CallAnswered += (status, reason, toTag, headers, contentType, body, dialogue) =>
+                m_currentCall.CallAnswered += (status, reason, toTag, headers, contentType, body, dialogue, transferMode) =>
                 {
                     answeredStatus = status;
                     answeredReason = reason;
                     answeredContentType = contentType;
                     answeredBody = body;
                     answeredDialogue = dialogue;
+                    uasTransferMode = transferMode;
                     result = DialPlanAppResult.Answered;
                     m_waitForCallCompleted.Set();
                 };
@@ -438,7 +440,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                     answeredDialogue.CallDurationLimit = answeredCallLimit;
                                 }
 
-                                m_dialPlanContext.CallAnswered(answeredStatus, answeredReason, null, null, answeredContentType, answeredBody, answeredDialogue);
+                                m_dialPlanContext.CallAnswered(answeredStatus, answeredReason, null, null, answeredContentType, answeredBody, answeredDialogue, uasTransferMode);
 
                                 // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
                                 Log("Dial command was successfully answered in " + DateTime.Now.Subtract(startTime).TotalSeconds.ToString("0.00") + "s.");
@@ -978,7 +980,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 SIPDialogue answeredDialogue = googleCall.InitiateCall(emailAddress, password, forwardingNumber, destinationNumber, fromURIUserToMatch, phoneType, waitForCallbackTimeout, m_sipRequest.Header.ContentType, content);
                 if (answeredDialogue != null)
                 {
-                    m_dialPlanContext.CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, null, answeredDialogue.ContentType, answeredDialogue.RemoteSDP, answeredDialogue);
+                    m_dialPlanContext.CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, null, answeredDialogue.ContentType, answeredDialogue.RemoteSDP, answeredDialogue, SIPDialogueTransferModesEnum.PassThru);
 
                     // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
                     Log("Google Voice Call was successfully answered in " + DateTime.Now.Subtract(startTime).TotalSeconds.ToString("0.00") + "s.");

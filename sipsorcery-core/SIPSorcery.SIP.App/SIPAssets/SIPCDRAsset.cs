@@ -338,7 +338,8 @@ namespace SIPSorcery.SIP.App {
             m_sipCDR.LocalSIPEndPoint = (!(cdrRow["localsocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(cdrRow["localsocket"] as string) : null;
             m_sipCDR.RemoteEndPoint = (!(cdrRow["remotesocket"] as string).IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(cdrRow["remotesocket"] as string) : null;
             m_sipCDR.BridgeId = (!(cdrRow["bridgeid"] as string).IsNullOrBlank()) ? new Guid(cdrRow["bridgeid"] as string) : Guid.Empty;
-            if (cdrRow["inprogresstime"] != DBNull.Value && cdrRow["inprogresstime"] != null) {
+            if (cdrRow["inprogresstime"] != DBNull.Value && cdrRow["inprogresstime"] != null && !(cdrRow["inprogresstime"] as string).IsNullOrBlank())
+            {
                 InProgressTime = DateTimeOffset.Parse(cdrRow["inprogresstime"] as string);
             }
             else {
@@ -346,7 +347,8 @@ namespace SIPSorcery.SIP.App {
             }
             m_sipCDR.ProgressStatus = (cdrRow["inprogressstatus"] != null) ? Convert.ToInt32(cdrRow["inprogressstatus"]) : 0;
             m_sipCDR.ProgressReasonPhrase = cdrRow["inprogressreason"] as string;
-            if (cdrRow["answeredtime"] != DBNull.Value && cdrRow["answeredtime"] != null) {
+            if (cdrRow["answeredtime"] != DBNull.Value && cdrRow["answeredtime"] != null && !(cdrRow["answeredtime"] as string).IsNullOrBlank())
+            {
                 AnsweredTime = DateTimeOffset.Parse(cdrRow["answeredtime"] as string);
             }
             else {
@@ -354,7 +356,8 @@ namespace SIPSorcery.SIP.App {
             }
             m_sipCDR.AnswerStatus = (cdrRow["answeredstatus"] != DBNull.Value && cdrRow["answeredstatus"] != null) ? Convert.ToInt32(cdrRow["answeredstatus"]) : 0;
             m_sipCDR.AnswerReasonPhrase = cdrRow["answeredreason"] as string;
-            if (cdrRow["hunguptime"] != DBNull.Value && cdrRow["hunguptime"] != null) {
+            if (cdrRow["hunguptime"] != DBNull.Value && cdrRow["hunguptime"] != null && !(cdrRow["hunguptime"] as string).IsNullOrBlank())
+            {
                 HungupTime = DateTimeOffset.Parse(cdrRow["hunguptime"] as string);
             }
             else {
@@ -384,19 +387,19 @@ namespace SIPSorcery.SIP.App {
         public string ToXMLNoParent() {
             string localSocketStr = (m_sipCDR.LocalSIPEndPoint != null) ? m_sipCDR.LocalSIPEndPoint.ToString() : null;
             string remoteSocketStr = (m_sipCDR.RemoteEndPoint != null) ? m_sipCDR.RemoteEndPoint.ToString() : null;
-            string progressTimeStr = (m_sipCDR.ProgressTime != null) ? m_sipCDR.ProgressTime.Value.ToString() : null;
-            string answerTimeStr = (m_sipCDR.AnswerTime != null) ? m_sipCDR.AnswerTime.Value.ToString() : null;
-            string hangupTimeStr = (m_sipCDR.HangupTime != null) ? m_sipCDR.HangupTime.Value.ToString() : null;
+            string progressTimeStr = (m_sipCDR.ProgressTime != null) ? m_sipCDR.ProgressTime.Value.ToString("o") : null;
+            string answerTimeStr = (m_sipCDR.AnswerTime != null) ? m_sipCDR.AnswerTime.Value.ToString("o") : null;
+            string hangupTimeStr = (m_sipCDR.HangupTime != null) ? m_sipCDR.HangupTime.Value.ToString("o") : null;
 
             string cdrXML =
                 "  <id>" + m_sipCDR.CDRId.ToString() + "</id>" + m_newLine +
                 "  <owner>" + m_sipCDR.Owner + "</owner>" + m_newLine +
-                "  <adminmemberid>" + m_sipCDR.Owner + "</adminmemberid>" + m_newLine +
+                "  <adminmemberid>" + m_sipCDR.AdminMemberId + "</adminmemberid>" + m_newLine +
                 "  <direction>" + m_sipCDR.CallDirection + "</direction>" + m_newLine +
-                "  <inserted>" + Inserted.ToString() + "</inserted>" + m_newLine +
-                "  <created>" + m_sipCDR.Created.ToString() + "</created>" + m_newLine +
+                "  <inserted>" + Inserted.ToString("o") + "</inserted>" + m_newLine +
+                "  <created>" + m_sipCDR.Created.ToString("o") + "</created>" + m_newLine +
                 "  <dsturi>" + SafeXML.MakeSafeXML(m_sipCDR.Destination.ToString()) + "</dsturi>" + m_newLine +
-                "  <from>" + SafeXML.MakeSafeXML(m_sipCDR.From.ToString()) + "</from>" + m_newLine +
+                "  <fromheader>" + SafeXML.MakeSafeXML(m_sipCDR.From.ToString()) + "</fromheader>" + m_newLine +
                 "  <callid>" + m_sipCDR.CallId + "</callid>" + m_newLine +
                 "  <localsocket>" + localSocketStr + "</localsocket>" + m_newLine +
                 "  <remotesocket>" + remoteSocketStr + "</remotesocket>" + m_newLine +

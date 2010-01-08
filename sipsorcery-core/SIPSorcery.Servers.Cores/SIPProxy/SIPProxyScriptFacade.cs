@@ -113,7 +113,7 @@ namespace SIPSorcery.Servers
                 return;
             }
 
-            localSIPEndPoint = localSIPEndPoint ?? m_sipTransport.GetDefaultTransportContact(dstSIPEndPoint.SIPProtocol);
+            localSIPEndPoint = localSIPEndPoint ?? m_sipTransport.GetDefaultSIPEndPoint(dstSIPEndPoint);
 
             // If the request is being forwarded on a different proxy socket to the one it was received on then two Via headers
             // need to be added, one for the proxy socket the request was received on and one for the socket it is being sent on.
@@ -158,7 +158,7 @@ namespace SIPSorcery.Servers
                 SIPChannel proxyChannel = m_sipTransport.FindSIPChannel(SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxySendFrom));
                 localSIPEndPoint = (proxyChannel != null) ? proxyChannel.SIPChannelEndPoint : null;
             }
-            localSIPEndPoint = localSIPEndPoint ?? m_sipTransport.GetDefaultTransportContact(dstSIPEndPoint.SIPProtocol);
+            localSIPEndPoint = localSIPEndPoint ?? m_sipTransport.GetDefaultSIPEndPoint(dstSIPEndPoint);
 
             // Create the single Via header for the outgoing request. It uses the passed in branchid which has been taken from the
             // request that's being forwarded. If this proxy is behind a NAT and the public IP is known that's also set on the Via.
@@ -251,7 +251,7 @@ namespace SIPSorcery.Servers
         }
 
         public SIPEndPoint Resolve(SIPRequest sipRequest) {
-            return m_sipTransport.GetURIEndPoint(sipRequest.URI, false);
+            return m_sipTransport.GetRequestEndPoint(sipRequest, null, true);
         }
 
         public SIPEndPoint Resolve(SIPURI sipURI) {

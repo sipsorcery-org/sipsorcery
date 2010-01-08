@@ -62,6 +62,7 @@ using SIPSorcery.SIPMonitor;
 using SIPSorcery.SIPProxy;
 using SIPSorcery.SIPRegistrar;
 using SIPSorcery.SIPRegistrationAgent;
+using SIPSorcery.SSHServer;
 using SIPSorcery.Sys;
 using SIPSorcery.Web.Services;
 using log4net;
@@ -78,6 +79,7 @@ namespace SIPSorcery.SIPAppServer {
         private static bool m_sipMonitorEnabled = (ConfigurationManager.GetSection(SIPMonitorState.SIPMONITOR_CONFIGNODE_NAME) != null);
         private static bool m_sipRegistrarEnabled = (ConfigurationManager.GetSection(SIPRegistrarState.SIPREGISTRAR_CONFIGNODE_NAME) != null);
         private static bool m_sipRegAgentEnabled = (ConfigurationManager.GetSection(SIPRegAgentState.SIPREGAGENT_CONFIGNODE_NAME) != null);
+        private static bool m_sshServerEnabled = (ConfigurationManager.GetSection(SSHServerState.SSHSERVER_CONFIGNODE_NAME) != null);
         
         private static int m_monitorEventLoopbackPort = SIPAppServerState.MonitorLoopbackPort;
         private string m_traceDirectory = SIPAppServerState.TraceDirectory;
@@ -89,6 +91,7 @@ namespace SIPSorcery.SIPAppServer {
         private SIPMonitorEventWriter m_monitorEventWriter;
         private SIPAppServerCore m_appServerCore;
         private SIPCallManager m_callManager;
+        private SIPDialogueManager m_sipDialogueManager;
         private SIPNotifyManager m_notifyManager;
         private SIPProxyDaemon m_sipProxyDaemon;
         private SIPMonitorDaemon m_sipMonitorDaemon;
@@ -170,7 +173,6 @@ namespace SIPSorcery.SIPAppServer {
                     m_sipRegistrarDaemon = new SIPRegistrarDaemon(
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                         m_sipSorceryPersistor.SIPAccountsPersistor.Get,
-                        //m_sipSorceryPersistor.SIPAccountsPersistor.GetFromDirectQuery,
                         m_sipSorceryPersistor.SIPRegistrarBindingPersistor,
                         SIPRequestAuthenticator.AuthenticateSIPRequest);
                     m_sipRegistrarDaemon.Start();
@@ -184,6 +186,12 @@ namespace SIPSorcery.SIPAppServer {
                     m_sipRegAgentDaemon.Start();
                 }
 
+                if (m_sshServerEnabled)
+                {
+                    SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, m_sipMonitorPublisher);
+                    daemon.Start();
+                }
+
                 #region Initialise the SIP Application Server and its logging mechanisms including CDRs.
 
                 logger.Debug("Initiating SIP Application Server Agent.");
@@ -194,9 +202,9 @@ namespace SIPSorcery.SIPAppServer {
                 }
 
                 if (m_sipSorceryPersistor != null && m_sipSorceryPersistor.SIPCDRPersistor != null) {
-                    SIPCDR.NewCDR += m_sipSorceryPersistor.QueueCDR;
-                    SIPCDR.HungupCDR += m_sipSorceryPersistor.QueueCDR;
-                    SIPCDR.CancelledCDR += m_sipSorceryPersistor.QueueCDR;
+                    SIPCDR.CDRCreated += m_sipSorceryPersistor.QueueCDR;
+                    SIPCDR.CDRAnswered += m_sipSorceryPersistor.QueueCDR;
+                    SIPCDR.CDRHungup += m_sipSorceryPersistor.QueueCDR;
                 }
 
                 #region Initialise the SIPTransport layers.
@@ -243,10 +251,18 @@ namespace SIPSorcery.SIPAppServer {
                     m_outboundProxy,
                     m_rubyScriptCommonPath);
 
+                m_sipDialogueManager = new SIPDialogueManager(
+                    m_sipTransport,
+                     m_outboundProxy,
+                     FireSIPMonitorEvent,
+                     m_sipSorceryPersistor.SIPDialoguePersistor,
+                     m_sipSorceryPersistor.SIPCDRPersistor);
+
                 m_callManager = new SIPCallManager(
                      m_sipTransport,
                      m_outboundProxy,
                      FireSIPMonitorEvent,
+                     m_sipDialogueManager,
                      m_sipSorceryPersistor.SIPDialoguePersistor,
                      m_sipSorceryPersistor.SIPCDRPersistor,
                      m_dialPlanEngine,
@@ -256,6 +272,7 @@ namespace SIPSorcery.SIPAppServer {
                      m_sipSorceryPersistor.SIPProvidersPersistor.Get,
                      m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                      m_customerSessionManager.CustomerPersistor,
+                     m_sipSorceryPersistor.SIPDialPlanPersistor,
                      m_traceDirectory,
                      m_monitorCalls);
                 m_callManager.Start();
@@ -275,6 +292,7 @@ namespace SIPSorcery.SIPAppServer {
                     m_sipSorceryPersistor.SIPAccountsPersistor.Get,
                     FireSIPMonitorEvent,
                     m_callManager,
+                    m_sipDialogueManager,
                     m_notifyManager,
                     SIPRequestAuthenticator.AuthenticateSIPRequest,
                     m_outboundProxy);
@@ -473,25 +491,29 @@ namespace SIPSorcery.SIPAppServer {
         private void LogSIPRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest) {
             string message = "App Svr Received: " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
             //logger.Debug("as: request in " + sipRequest.Method + " " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + ", callid=" + sipRequest.Header.CallId + ".");
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, sipRequest.Header.From.FromURI.User, localSIPEndPoint, endPoint));
+            string fromUser = (sipRequest.Header.From != null && sipRequest.Header.From.FromURI != null) ? sipRequest.Header.From.FromURI.User : "Error on From header";
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
         private void LogSIPRequestOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest) {
             string message = "App Svr Sent: " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
             //logger.Debug("as: request out " + sipRequest.Method + " " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + ", callid=" + sipRequest.Header.CallId + ".");
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, sipRequest.Header.From.FromURI.User, localSIPEndPoint, endPoint));
+            string fromUser = (sipRequest.Header.From != null && sipRequest.Header.From.FromURI != null) ? sipRequest.Header.From.FromURI.User : "Error on From header";
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
         private void LogSIPResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse) {
             string message = "App Svr Received: " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
             //logger.Debug("as: response in " + sipResponse.Header.CSeqMethod + " " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + ", callid=" + sipResponse.Header.CallId + ".");
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, sipResponse.Header.From.FromURI.User, localSIPEndPoint, endPoint));
+            string fromUser = (sipResponse.Header.From != null && sipResponse.Header.From.FromURI != null) ? sipResponse.Header.From.FromURI.User : "Error on From header";
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
         private void LogSIPResponseOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse) {
             string message = "App Svr Sent: " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
             //logger.Debug("as: response out " + sipResponse.Header.CSeqMethod + " " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + ", callid=" + sipResponse.Header.CallId + ".");
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, sipResponse.Header.From.FromURI.User, localSIPEndPoint, endPoint));
+            string fromUser = (sipResponse.Header.From != null && sipResponse.Header.From.FromURI != null) ? sipResponse.Header.From.FromURI.User : "Error on From header";
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
         private void LogSIPBadRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, string sipMessage, SIPValidationFieldsEnum errorField) {

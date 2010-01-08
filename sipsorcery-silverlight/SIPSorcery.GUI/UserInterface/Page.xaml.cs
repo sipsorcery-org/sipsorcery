@@ -339,7 +339,7 @@ namespace SIPSorcery
         private void LoginAsync(string username, string password)
         {
 #if !BLEND
-            m_owner = username;
+            m_owner = username.ToLower();
 #else
             m_owner = m_dummyOwner;
 #endif

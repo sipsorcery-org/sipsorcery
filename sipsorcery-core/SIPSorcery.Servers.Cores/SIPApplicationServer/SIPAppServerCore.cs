@@ -58,6 +58,7 @@ namespace SIPSorcery.Servers
         private static ILog logger = AppState.GetLogger("appsvr");
 
         private string m_dispatcherUsername = SIPCallManager.DISPATCHER_SIPACCOUNT_NAME;
+        private static string m_referReplacesParameter = SIPHeaderAncillary.SIP_REFER_REPLACES;
 
         private SIPMonitorLogDelegate SIPMonitorLogEvent_External;              // Function to log messages from this core.
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
@@ -67,6 +68,7 @@ namespace SIPSorcery.Servers
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
         private SIPCallManager m_callManager;
+        private SIPDialogueManager m_sipDialogueManager;
         private SIPNotifyManager m_notifyManager;
 
         public SIPAppServerCore(
@@ -75,6 +77,7 @@ namespace SIPSorcery.Servers
             SIPAssetGetDelegate<SIPAccount> getSIPAccount,
             SIPMonitorLogDelegate proxyLog,
             SIPCallManager callManager,
+            SIPDialogueManager sipDialogueManager,
             SIPNotifyManager notifyManager,
             SIPAuthenticateRequestDelegate sipAuthenticateRequest,
             SIPEndPoint outboundProxy)
@@ -83,6 +86,7 @@ namespace SIPSorcery.Servers
             {
                 m_sipTransport = sipTransport;
                 m_callManager = callManager;
+                m_sipDialogueManager = sipDialogueManager;
                 m_notifyManager = notifyManager;
 
                 m_sipTransport.SIPTransportRequestReceived += GotRequest;
@@ -120,7 +124,7 @@ namespace SIPSorcery.Servers
                     sipRequest.Method == SIPMethodsEnum.MESSAGE || sipRequest.Method == SIPMethodsEnum.NOTIFY || sipRequest.Method == SIPMethodsEnum.REFER)
                     && sipRequest.Header.From != null && sipRequest.Header.From.FromTag != null && sipRequest.Header.To != null && sipRequest.Header.To.ToTag != null)
                 {
-                    dialogue = m_callManager.GetDialogue(sipRequest, remoteEndPoint);
+                    dialogue = m_sipDialogueManager.GetDialogue(sipRequest);
                 }
 
                 if (dialogue != null && sipRequest.Method != SIPMethodsEnum.ACK)
@@ -137,7 +141,7 @@ namespace SIPSorcery.Servers
                         byeTransaction.SendFinalResponse(byeResponse);
 
                         // Let the CallManager know so the forwarded leg of the call can be hung up.
-                        m_callManager.CallHungup(dialogue, sipRequest.Header.Reason);
+                        m_sipDialogueManager.CallHungup(dialogue, sipRequest.Header.Reason);
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.INVITE)
                     {
@@ -145,7 +149,7 @@ namespace SIPSorcery.Servers
                         SIPResponse tryingResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
                         reInviteTransaction.SendInformationalResponse(tryingResponse);
                         reInviteTransaction.CDR = null;     // Don't want CDR's on re-INVITEs.
-                        m_callManager.ForwardInDialogueRequest(dialogue, reInviteTransaction, localSIPEndPoint, remoteEndPoint);
+                        m_sipDialogueManager.ForwardInDialogueRequest(dialogue, reInviteTransaction, localSIPEndPoint, remoteEndPoint);
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.MESSAGE)
                     {
@@ -153,35 +157,57 @@ namespace SIPSorcery.Servers
                         SIPNonInviteTransaction messageTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
                         SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         messageTransaction.SendFinalResponse(okResponse);
-
-                        // ToDo the request must be authenticated before passing to the dialplan.
-                        /*if(dialogue.Owner != null)
-                        {
-                            // Break back into the user's dial plan.
-                            DialPlan userDialPlan = GetDialPlan_External(dialogue.Owner, dialogue.OwnerDomain);
-                            if (userDialPlan != null)
-                            {
-                                //userDialPlan.ProcessNonInviteRequest(FireProxyLogEvent, m_callManager, localEndPoint, remoteEndPoint, sipRequest);
-                            }
-                        }*/
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.REFER)
                     {
-                        SIPNonInviteTransaction referTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                        m_callManager.Transfer(dialogue, referTransaction);
+                        #region Process in-dialogue REFER requests.
+
+                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER received on dialogue " + dialogue.DialogueName + ", transfer mode is " + dialogue.TransferMode + ".", dialogue.Owner));
+
+                        if (sipRequest.Header.ReferTo.IsNullOrBlank())
+                        {
+                            // A REFER request must have a Refer-To header.
+                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Bad REFER request, no Refer-To header.", dialogue.Owner));
+                            SIPResponse invalidResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadRequest, "Missing mandatory Refer-To header");
+                            m_sipTransport.SendResponse(invalidResponse);
+                        }
+                        else
+                        {
+                            if (dialogue.TransferMode == SIPDialogueTransferModesEnum.NotAllowed)
+                            {
+                                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER rejected due to dialogue permissions.", dialogue.Owner));
+                                SIPResponse declineTransferResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Transfers are disabled on dialogue");
+                                m_sipTransport.SendResponse(declineTransferResponse);
+                            }
+                            else if (Regex.Match(sipRequest.Header.ReferTo, m_referReplacesParameter).Success)
+                            {
+                                // Attended transfers are allowed unless explicitly blocked. Attended transfers are not dangerous 
+                                // as no new call is created and it's the same as a re-invite.
+                                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER received, attended transfer, Referred-By=" + sipRequest.Header.ReferredBy + ".", dialogue.Owner));
+                                SIPNonInviteTransaction referTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                                m_sipDialogueManager.ProcessRefer(dialogue, referTransaction, localSIPEndPoint, remoteEndPoint);
+                            }
+                            else
+                            {
+                                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER received, blind transfer, Refer-To=" + sipRequest.Header.ReferTo + ", Referred-By=" + sipRequest.Header.ReferredBy + ".", dialogue.Owner));
+                                SIPNonInviteTransaction passThruTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                                m_sipDialogueManager.ForwardInDialogueRequest(dialogue, passThruTransaction, localSIPEndPoint, remoteEndPoint);
+                            }
+                        }
+
+                        #endregion
                     }
                     else
                     {
                         // This is a request on an established call forward through to the other end, no further action required.
                         SIPNonInviteTransaction passThruTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                        m_callManager.ForwardInDialogueRequest(dialogue, passThruTransaction, localSIPEndPoint, remoteEndPoint);
+                        m_sipDialogueManager.ForwardInDialogueRequest(dialogue, passThruTransaction, localSIPEndPoint, remoteEndPoint);
                     }
 
                     #endregion
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.NOTIFY)
                 {
-
                     #region Process NOTIFY requests.
 
                     if (sipRequest.Header.UnknownHeaders.Exists(s => s.Contains("Event: keep-alive")))
@@ -246,26 +272,20 @@ namespace SIPSorcery.Servers
 
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "AppServerCore INVITE received, uri=" + sipRequest.URI.ToString() + ", cseq=" + sipRequest.Header.CSeq + ".", null));
 
-                    // A check is made to see if the  call has originated from the same process as the one that it has been received on. 
-                    // If so it is a loopback call. Typically loopback calls are used to get calls from one user to another user's dialplan.
-                    //if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host) != null && !m_sipTransport.IsLocalSIPEndPoint(remoteEndPoint)) {
-                    if (sipRequest.URI.Host.StartsWith("127.0.0.1") && sipRequest.URI.User == m_dispatcherUsername)
+                    if (sipRequest.URI.User == m_dispatcherUsername)
                     {
-                        // Incoming call from call dispatcher checking the call worker is still up and running.
+                        // Incoming call from monitoring process checking the application server is still running.
                         UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                        uasTransaction.CDR = null;
                         SIPServerUserAgent incomingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, sipRequest.URI.User, sipRequest.URI.Host, SIPCallDirection.In, null, null, null, uasTransaction);
+                        incomingCall.NoCDR();
                         uasTransaction.NewCallReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(incomingCall); };
                         uasTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
                     }
                     else if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host, false) != null)
                     {
                         // Call identified as outgoing call for application server serviced domain.
-                        //string fromUser = sipRequest.Header.From.FromUserField.URI.User;
                         string fromDomain = GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host, false);
-                        //SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == fromUser && s.SIPDomain == fromDomain);
-                        //string owner = (sipAccount != null) ? sipAccount.Owner : "unknown";
-                        //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New outgoing call to " + sipRequest.URI.ToString() + " (cseq=" + sipRequest.Header.CSeq + ").", owner));
-
                         UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
                         SIPServerUserAgent outgoingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, fromUser, fromDomain, SIPCallDirection.Out, GetSIPAccount_External, SIPRequestAuthenticator.AuthenticateSIPRequest, FireProxyLogEvent, uasTransaction);
                         uasTransaction.NewCallReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(outgoingCall); };
@@ -276,10 +296,6 @@ namespace SIPSorcery.Servers
                         // Call identified as incoming call for application server serviced domain.
                         string uriUser = sipRequest.URI.User;
                         string uriDomain = GetCanonicalDomain_External(sipRequest.URI.Host, true);
-                        // SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == uriUser && s.SIPDomain == uriDomain);
-                        //string owner = (sipAccount != null) ? sipAccount.Owner : "unknown";
-
-                        //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New incoming call to " + sipRequest.URI.ToString() + ".", owner));
                         UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
                         SIPServerUserAgent incomingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, uriUser, uriDomain, SIPCallDirection.In, GetSIPAccount_External, null, FireProxyLogEvent, uasTransaction);
                         uasTransaction.NewCallReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(incomingCall); };

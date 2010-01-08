@@ -31,6 +31,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using SIPSorcery.Sys;
 
 #if UNITTEST
 using NUnit.Framework;
@@ -51,14 +52,14 @@ namespace SIPSorcery.SIP
 		public const int SIP_MAXIMUM_LENGTH = 2048;							// Any SIP messages over this size will generate an error.
         public const string SIP_USERAGENT_STRING = "www.sipsorcery.com";
         public const string SIP_SERVER_STRING = "www.sipsorcery.com";
-		public const string SIP_REQUEST_REGEX = @"^\w+ .* SIP/.*";			// bnf:	Request-Line  =  Method SP Request-URI SP SIP-Version CRLF
-		public const string SIP_RESPONSE_REGEX = @"^SIP/.* \d{3}";			// bnf: Status-Line  =  SIP-Version SP Status-Code SP Reason-Phrase CRLF
+		public const string SIP_REQUEST_REGEX = @"^\w+ .* SIP/.*";			// bnf:	Request-Line = Method SP Request-URI SP SIP-Version CRLF
+		public const string SIP_RESPONSE_REGEX = @"^SIP/.* \d{3}";			// bnf: Status-Line = SIP-Version SP Status-Code SP Reason-Phrase CRLF
 		public const string SIP_BRANCH_MAGICCOOKIE = "z9hG4bK";
 		public const string SIP_DEFAULT_USERNAME = "Anonymous";
 		public const string SIP_DEFAULT_FROMURI = "sip:thisis@anonymous.invalid";
 		public const string SIP_REGISTER_REMOVEALL = "*";					// The value in a REGISTER request id a UA wishes to remove all REGISTER bindings.
 		public const string SIP_LOOSEROUTER_PARAMETER = "lr";
-        public const string SIP_REMOTEHANGUP_CAUSE = "remote end hungup";
+        public const string SIP_REMOTEHANGUP_CAUSE = "remote end hungup";      
         public const char HEADER_DELIMITER_CHAR = ':';
 
 		public const int DEFAULT_MAX_FORWARDS = 70;
@@ -73,6 +74,9 @@ namespace SIPSorcery.SIP
 
 		public const string MWI_CONTENT_TYPE = "application/simple-message-summary";
         public const string NAT_SENDKEEPALIVES_VALUE = "y";
+
+        public const string SIP_REFER_NOTIFY_EVENT = "refer";                   // The value that must be set for the Event header on a NOTIFY request when processing a REFER (RFC 3515).
+        public const string SIP_REFER_NOTIFY_CONTENTTYPE = "message/sipfrag";   // The content type that must be set for a NOTIFY request when processing a REFER (RFC 3515).
 	}
 
 	public enum SIPMessageTypesEnum
@@ -155,31 +159,49 @@ namespace SIPSorcery.SIP
 	{
 		// SIP Header Keys.
         public const string SIP_HEADER_ACCEPT = "Accept";
+        public const string SIP_HEADER_ACCEPTENCODING = "Accept-Encoding";
+        public const string SIP_HEADER_ACCEPTLANGUAGE = "Accept-Language";
+        public const string SIP_HEADER_ALERTINFO = "Alert-Info";
+        public const string SIP_HEADER_ALLOW = "Allow";
+        public const string SIP_HEADER_AUTHENTICATIONINFO = "Authentication-Info";
         public const string SIP_HEADER_AUTHORIZATION = "Authorization";
 		public const string SIP_HEADER_CALLID = "Call-ID";
+        public const string SIP_HEADER_CALLINFO = "Call-Info";
         public const string SIP_HEADER_CONTACT = "Contact";
+        public const string SIP_HEADER_CONTENT_DISPOSITION = "Content-Disposition";
+        public const string SIP_HEADER_CONTENT_ENCODING = "Content-Encoding";
+        public const string SIP_HEADER_CONTENT_LANGUAGE = "Content-Language";
         public const string SIP_HEADER_CONTENTLENGTH = "Content-Length";
         public const string SIP_HEADER_CONTENTTYPE = "Content-Type";
 		public const string SIP_HEADER_CSEQ = "CSeq";
         public const string SIP_HEADER_DATE = "Date";
+        public const string SIP_HEADER_ERROR_INFO = "Error-Info";
         public const string SIP_HEADER_EXPIRES = "Expires";
 		public const string SIP_HEADER_FROM = "From";
+        public const string SIP_HEADER_IN_REPLY_TO = "In-Reply-To";
         public const string SIP_HEADER_MAXFORWARDS = "Max-Forwards";
         public const string SIP_HEADER_MINEXPIRES = "Min-Expires";
+        public const string SIP_HEADER_MIME_VERSION = "MIME-Version";
+        public const string SIP_HEADER_ORGANIZATION = "Organization";
+        public const string SIP_HEADER_PRIORITY = "Priority";
         public const string SIP_HEADER_PROXYAUTHENTICATION = "Proxy-Authenticate";
         public const string SIP_HEADER_PROXYAUTHORIZATION = "Proxy-Authorization";
+        public const string SIP_HEADER_PROXY_REQUIRE = "Proxy-Require";
         public const string SIP_HEADER_REASON = "Reason";
         public const string SIP_HEADER_RECORDROUTE = "Record-Route";
-        public const string SIP_HEADER_REFERREDBY = "Referred-By";
-        public const string SIP_HEADER_REFERTO = "Refer-To";
+        public const string SIP_HEADER_REPLY_TO = "Reply-To";
         public const string SIP_HEADER_REQUIRE = "Require";
+        public const string SIP_HEADER_RETRY_AFTER = "Retry-After";
         public const string SIP_HEADER_ROUTE = "Route";
         public const string SIP_HEADER_SERVER = "Server";
+        public const string SIP_HEADER_SUBJECT = "Subject";
         public const string SIP_HEADER_SUPPORTED = "Supported";
         public const string SIP_HEADER_TIMESTAMP = "Timestamp";
 		public const string SIP_HEADER_TO = "To";
+        public const string SIP_HEADER_UNSUPPORTED = "Unsupported";
         public const string SIP_HEADER_USERAGENT = "User-Agent";
 		public const string SIP_HEADER_VIA = "Via";
+        public const string SIP_HEADER_WARNING = "Warning";
         public const string SIP_HEADER_WWWAUTHENTICATE = "WWW-Authenticate";
 
 		// SIP Compact Header Keys.
@@ -193,6 +215,11 @@ namespace SIPSorcery.SIP
         public const string SIP_COMPACTHEADER_SUPPORTED = "k";
         public const string SIP_COMPACTHEADER_SUBJECT = "s";
 
+        // SIP Header extensions from RFC 3515 "The Session Initiation Protocol (SIP) Refer Method".
+        public const string SIP_HEADER_REFERREDBY = "Referred-By";
+        public const string SIP_HEADER_REFERTO = "Refer-To";
+        public const string SIP_COMPACTHEADER_REFERTO = "r";
+
 		// SIP Header Extensions for SIP Event Package RFC 3265.
 		public const string SIP_HEADER_EVENT = "Event";
 		public const string SIP_HEADER_SUBSCRIPTIONSTATE = "Subscription-State";
@@ -205,11 +232,18 @@ namespace SIPSorcery.SIP
 
 	public class SIPHeaderAncillary
 	{
+        // Header parameters used in the core SIP protocol.
 		public const string SIP_HEADERANC_TAG = "tag";
-		public const string SIP_HEADERANC_RPORT = "rport";
 		public const string SIP_HEADERANC_BRANCH = "branch";
 		public const string SIP_HEADERANC_RECEIVED = "received";
         public const string SIP_HEADERANC_TRANSPORT = "transport";
+
+        // Via header parameter, documented in RFC 3581 "An Extension to the Session Initiation Protocol (SIP) 
+        // for Symmetric Response Routing".
+        public const string SIP_HEADERANC_RPORT = "rport";
+
+        // SIP header parameter from RFC 3515 "The Session Initiation Protocol (SIP) Refer Method".
+        public const string SIP_REFER_REPLACES = "Replaces";
 	}
 
 	/// <summary>
@@ -248,7 +282,7 @@ namespace SIPSorcery.SIP
 		SUBSCRIBE = 10,
 		PUBLISH = 11,
 		PING = 13,
-		REFER = 14,
+		REFER = 14,         // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
         MESSAGE = 15,
 	}
 
@@ -281,7 +315,8 @@ namespace SIPSorcery.SIP
 		
 		// Success
 		Ok = 200,
-		
+        Accepted = 202,     // Extensions from RFC 3515 The Session Initiation Protocol (SIP) Refer Method.
+
 		// Redirection
         MultipleChoices = 300,
         MovedPermanently = 301,
@@ -391,9 +426,10 @@ namespace SIPSorcery.SIP
         public static string SIPEscapeString(string unescapedString)
         {
             string result = unescapedString;
-            if (result != null && result.Trim().Length > 0)
+            if (!result.IsNullOrBlank())
             {
                 result = result.Replace(";", "%3B");
+                result = result.Replace("=", "%3D");
             }
             return result;
         }
@@ -401,9 +437,10 @@ namespace SIPSorcery.SIP
         public static string SIPUnescapeString(string escapedString)
         {
             string result = escapedString;
-            if (result != null && result.Trim().Length > 0)
+            if (!result.IsNullOrBlank())
             {
                 result = result.Replace("%3B", ";");
+                result = result.Replace("%3D", "=");
             }
             return result;
         }

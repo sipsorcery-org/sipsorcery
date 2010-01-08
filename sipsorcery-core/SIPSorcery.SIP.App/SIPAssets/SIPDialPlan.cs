@@ -306,8 +306,8 @@ namespace SIPSorcery.SIP.App
                 "    <maxexecutioncount>" + m_maxExecutionCount + "</maxexecutioncount>" + m_newLine +
                 "    <executioncount>" + m_executionCount + "</executioncount>" + m_newLine +
                 "    <authorisedapps>" + m_authorisedApps + "</authorisedapps>" + m_newLine +
-                "    <inserted>" + m_inserted.ToString() + "</inserted>" + m_newLine +
-                "    <lastupdate>" + m_lastUpdate.ToString() + "</lastupdate>" + m_newLine;
+                "    <inserted>" + m_inserted.ToString("o") + "</inserted>" + m_newLine +
+                "    <lastupdate>" + m_lastUpdate.ToString("o") + "</lastupdate>" + m_newLine;
 
             return dialPlanXML;
         }

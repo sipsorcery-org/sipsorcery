@@ -4,64 +4,74 @@ from SIPSorcery.SIP import *
 
 m_registrarSocket = "udp:127.0.0.1:5001"
 m_regAgentSocket = "udp:127.0.0.1:5002"
-m_proxySocketInternal = "udp:127.0.0.1:5060"
-m_appServerSocket = "udp:127.0.0.1:5065"
+m_proxySocketForRegisters = "udp:127.0.0.1:5060"
+m_proxySocketInternal = "udp:1192.168.1.12:5060"
 
 if isreq:
   
   #===== SIP Request Processing =====
 
-  #sys.Log("req " + summary)
+  sys.Log("req " + summary)
   req.Header.MaxForwards = req.Header.MaxForwards - 1
   
-  if sipMethod == "REGISTER":
-    if remoteEndPoint.ToString() == m_regAgentSocket:
-      # A couple of registrars get confused with multiple Via headers in a REGISTER request.
-      # To get around that use the branch from the reg agent as the branch in a request that only has one Via.
-      branch = req.Header.Vias.PopTopViaHeader().Branch
+  if remoteEndPoint.SocketEndPoint.ToString().StartsWith("x.x.x.x"):
+    sys.Respond(req, SIPResponseStatusCodesEnum.NotAcceptable, "Traffic levels too high - BANNED")
 
-      # The registration agent has indicated where it wants the REGISTER request sent to by adding a Route header.
-      # Remove the header in case it confuses the SIP Registrar the REGISTER is being sent to.
-      destRegistrar = req.Header.Routes.PopRoute().ToSIPEndPoint()
-      src = sys.GetDefaultSIPEndPoint(destRegistrar.SIPProtocol)
-      req.Header.Routes = None
-      sys.SendTransparent(destRegistrar, req, branch, src, None, publicip)
-          
-    else:
-      req.Header.ProxyReceivedOn = localEndPoint.ToString()
-      req.Header.ProxyReceivedFrom = remoteEndPoint.ToString()
-      sys.Send(m_registrarSocket, req, proxyBranch, m_proxySocketInternal)
-    
-  elif sipMethod == "SUBSCRIBE":
-    sys.Respond(req, SIPResponseStatusCodesEnum.MethodNotAllowed, None)
- 
+  #elif req.Header.From != None and req.Header.From.FromURI != None and req.Header.From.FromURI.User = "badboy":
+  #  sys.Respond(req, SIPResponseStatusCodesEnum.NotAcceptable, "Traffic levels too high - BANNED")
+  
   else:
-    if remoteEndPoint.ToString().StartsWith("udp:127.0.0.1"):
-      # Request from a SIP Application server for an external UA.
-      dest = sys.Resolve(req)
-      if dest == None:
-        if sipMethod != "ACK":
-          sys.Respond(req, SIPResponseStatusCodesEnum.DoesNotExistAnywhere, "Host " + req.URI.Host + " unresolvable")
-      else:
-        contactURI = None
-        if sipMethod == "INVITE":
-          if not dest.SocketEndPoint.Address.ToString().StartsWith("10."):
-            # Request is for an external UA, use public IP.
-            contactURI = SIPURI(req.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(publicip.ToString()))
-          else:
-            # Request is for same private network as the proxy, don't use external public IP.
-            contactURI = SIPURI(req.URI.Scheme, sys.GetDefaultSIPEndPoint(dest.SIPProtocol))
-        src = sys.GetDefaultSIPEndPoint(dest.SIPProtocol)
+  
+    if sipMethod == "REGISTER":
+      if remoteEndPoint.ToString() == m_regAgentSocket:
+        # A couple of registrars get confused with multiple Via headers in a REGISTER request.
+        # To get around that use the branch from the reg agent as the branch in a request that only has one Via.
         branch = req.Header.Vias.PopTopViaHeader().Branch
-        if not dest.SocketEndPoint.Address.ToString().StartsWith("10."):
-          sys.SendTransparent(dest, req, branch, src, contactURI, publicip)
-        else:
-          sys.SendTransparent(dest, req, branch, src, contactURI, None)
+
+        # The registration agent has indicated where it wants the REGISTER request sent to by adding a Route header.
+        # Remove the header in case it confuses the SIP Registrar the REGISTER is being sent to.
+        destRegistrar = req.Header.Routes.PopRoute().ToSIPEndPoint()
+        req.Header.Routes = None
+        sys.SendTransparent(destRegistrar, req, branch, publicip)
+          
+      else:
+        req.Header.ProxyReceivedOn = localEndPoint.ToString()
+        req.Header.ProxyReceivedFrom = remoteEndPoint.ToString()
+        sys.Send(m_registrarSocket, req, proxyBranch, m_proxySocketForRegisters)
+    
+    elif sipMethod == "SUBSCRIBE":
+      sys.Respond(req, SIPResponseStatusCodesEnum.MethodNotAllowed, None)
+
     else:
-      # Request from an external UA for a SIP Application Server
-      req.Header.ProxyReceivedOn = localEndPoint.ToString()
-      req.Header.ProxyReceivedFrom = remoteEndPoint.ToString()
-      sys.Send(m_appServerSocket, req, proxyBranch, m_proxySocketInternal)
+      if IsFromAppServer:
+        dest = sys.Resolve(req)
+        if dest == None:
+          if sipMethod != "ACK":
+            sys.Respond(req, SIPResponseStatusCodesEnum.DoesNotExistAnywhere, "Host " + req.URI.Host + " unresolvable")
+        else:
+          branch = req.Header.Vias.PopTopViaHeader().Branch
+          sys.SendTransparent(dest, req, branch, publicip)
+
+      else:
+
+        dispatcherEndPoint = sys.DispatcherLookup(req)
+
+        if dispatcherEndPoint != None:
+          sys.Log("Dispatching request " + req.Method.ToString() + " to " + dispatcherEndPoint.ToString())
+          sys.Send(dispatcherEndPoint, req, proxyBranch, m_proxySocketInternal)
+
+        else:
+
+          if sipMethod == "INVITE":
+            req.Header.ProxyReceivedOn = localEndPoint.ToString()
+            req.Header.ProxyReceivedFrom = remoteEndPoint.ToString()
+
+
+          appServer = sys.GetAppServer()
+          if appServer != None:
+            sys.Send(appServer.ToString(), req, proxyBranch, m_proxySocketInternal)
+          else:
+            sys.Respond(req, SIPResponseStatusCodesEnum.BadGateway, "No sipsorcery app servers available")
 
   #===== End SIP Request Processing =====
 
@@ -69,7 +79,7 @@ else:
 
   #===== SIP Response Processing =====
 
-  #sys.Log("resp " + summary)
+  sys.Log("resp " + summary)
  
   if sipMethod == "REGISTER" and remoteEndPoint.ToString() == m_registrarSocket:
     # REGISTER response from SIP Registrar.
@@ -80,25 +90,31 @@ else:
   elif sipMethod == "REGISTER":
     # REGISTER response for SIP Registration Agent.
     resp.Header.Vias.PushViaHeader(SIPViaHeader(SIPEndPoint.ParseSIPEndPoint(m_regAgentSocket), topVia.Branch))  
-    sys.Send(resp, SIPEndPoint.ParseSIPEndPoint(m_proxySocketInternal))
+    sys.Send(resp, SIPEndPoint.ParseSIPEndPoint(m_proxySocketForRegisters))
 
-  elif remoteEndPoint.ToString().StartsWith("udp:127.0.0.1"):
+  elif IsFromAppServer:
     # Responses from SIP Application Servers for external UAs.    
     if sipMethod == "INVITE":
-      if not outSocket.SocketEndPoint.Address.ToString().StartsWith("10."):
-        # INVITE response from an SIP Application Server, need to set the Contact URI to the proxy socket for the protocol.
-        contactURI = SIPURI(resp.Header.To.ToURI.Scheme, SIPEndPoint.ParseSIPEndPoint(publicip.ToString()))
-      else:
-        contactURI = SIPURI(resp.Header.To.ToURI.Scheme, sys.GetDefaultSIPEndPoint(resp.Header.Vias.TopViaHeader.Transport))
-      sys.Send(resp, outSocket, contactURI)
+      # INVITE response from a SIP Application Server destined for external network.
+      sys.Send(resp, outSocket, publicip)
     else:
       sys.Send(resp, outSocket)
 
   else: 
     # Responses from external UAs for SIP Application Servers.
+
+    dstEndPoint = sys.GetAppServer()
+
+    dispatcherEndPoint = sys.DispatcherLookup(branch, resp.Header.CSeqMethod)
+
+    if dispatcherEndPoint != None:
+      sys.Log("Dispatching response " + resp.Header.CSeqMethod.ToString() + " to " + dispatcherEndPoint.ToString())
+      dstEndPoint = dispatcherEndPoint.ToString()
+
     resp.Header.ProxyReceivedOn = localEndPoint.ToString()
     resp.Header.ProxyReceivedFrom = remoteEndPoint.ToString()
-    resp.Header.Vias.PushViaHeader(SIPViaHeader(SIPEndPoint.ParseSIPEndPoint(m_appServerSocket), topVia.Branch))  
+    resp.Header.Vias.PushViaHeader(SIPViaHeader(SIPEndPoint.ParseSIPEndPoint(dstEndPoint), topVia.Branch))  
     sys.Send(resp, SIPEndPoint.ParseSIPEndPoint(m_proxySocketInternal))
         
   #===== End SIP Response Processing =====
+

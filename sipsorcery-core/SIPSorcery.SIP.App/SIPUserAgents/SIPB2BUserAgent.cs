@@ -104,7 +104,7 @@ namespace SIPSorcery.SIP.App {
         // UAS and UAC field.
         private SIPDialogue m_sipDialogue;
         public SIPDialogue SIPDialogue { get { return m_sipDialogue; } }
-        private SIPAccount m_destinationSIPAccount;
+        //private SIPAccount m_destinationSIPAccount;
         
         public SIPB2BUserAgent(
             SIPMonitorLogDelegate logDelegate,
@@ -138,6 +138,7 @@ namespace SIPSorcery.SIP.App {
                 m_uacTransaction = m_sipTransport.CreateUACTransaction(uacInviteRequest, m_blackhole, m_blackhole, null);
                 if (m_uacTransaction.CDR != null) {
                     m_uacTransaction.CDR.Owner = m_uacOwner;
+                    m_uacTransaction.CDR.AdminMemberId = m_uacAdminMemberId;
                 }
 
                 //uacTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
@@ -152,9 +153,8 @@ namespace SIPSorcery.SIP.App {
                 uasInviteRequest.RemoteSIPEndPoint = m_blackhole;
                 uasInviteRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                 m_uasTransaction = m_sipTransport.CreateUASTransaction(uasInviteRequest, m_blackhole, m_blackhole, null);
-                if (m_uasTransaction.CDR != null) {
-                    m_uasTransaction.CDR.Owner = sipCallDescriptor.ToSIPAccount.Owner;
-                }
+
+                SetOwner(sipCallDescriptor.ToSIPAccount.Owner, sipCallDescriptor.ToSIPAccount.AdminMemberId);
                 //m_uasTransaction.TransactionTraceMessage += TransactionTraceMessage;
                 //m_uasTransaction.UASInviteTransactionTimedOut += ClientTimedOut;
                 //m_uasTransaction.UASInviteTransactionCancelled += (t) => { };
@@ -289,11 +289,16 @@ namespace SIPSorcery.SIP.App {
 
         public void NoCDR() {
             m_uasTransaction.CDR = null;
+            m_uacTransaction.CDR = null;
         }
 
         public void SetOwner(string owner, string adminMemberId) {
-            m_uacOwner = owner;
-            m_uacAdminMemberId = adminMemberId;
+
+            if (m_uasTransaction.CDR != null)
+            {
+                m_uasTransaction.CDR.Owner = owner;
+                m_uasTransaction.CDR.AdminMemberId = adminMemberId;
+            }
         }
 
 

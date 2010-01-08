@@ -154,7 +154,7 @@ namespace SIPSorcery.Servers
 
                 if (notificationReady != null)
                 {
-                    logger.Debug("SIPMonitorClientManager Firing notification available callback for address " + notificationAddress + ".");
+                    //logger.Debug("SIPMonitorClientManager Firing notification available callback for address " + notificationAddress + ".");
 
                     try
                     {
@@ -316,7 +316,7 @@ namespace SIPSorcery.Servers
         {
             try
             {
-                logger.Debug("RegisterListener for address " + address + ".");
+                //logger.Debug("RegisterListener for address " + address + ".");
 
                 if (notificationsReady == null)
                 {

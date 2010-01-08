@@ -114,7 +114,7 @@ namespace SIPSorcery.Servers
                      where entry.Value < DateTime.Now.AddSeconds(MAX_LIFETIME_SECONDS * -1)
                      select entry).ToList().ForEach((entry) =>
                      {
-                         logger.Debug("SIPProxyDispatcher removing expired transactionid=" + entry.Key + ".");
+                         //logger.Debug("SIPProxyDispatcher removing expired transactionid=" + entry.Key + ".");
                          m_transactionEndPoints.Remove(entry.Key);
                          m_transactionIDAddedAt.Remove(entry.Key);
                      });
