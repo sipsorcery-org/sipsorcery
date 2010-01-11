@@ -49,8 +49,10 @@ using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.SIPProxy {
-    public class SIPProxyDaemon {
+namespace SIPSorcery.SIPProxy
+{
+    public class SIPProxyDaemon
+    {
         private const string STUN_CLIENT_THREAD_NAME = "sipproxy-stunclient";
 
         private ILog logger = AppState.logger;
@@ -77,20 +79,25 @@ namespace SIPSorcery.SIPProxy {
 
         public SIPProxyDaemon() { }
 
-        public void Start() {
-            try {
+        public void Start()
+        {
+            try
+            {
                 logger.Debug("SIP Proxy daemon starting...");
 
                 // Pre-flight checks.
-                if (!File.Exists(m_proxyRuntimeScriptPath)) {
+                if (!File.Exists(m_proxyRuntimeScriptPath))
+                {
                     throw new ApplicationException("The proxy cannot start without a runtime script. Path " + m_proxyRuntimeScriptPath + " could not be loaded.");
                 }
-                else if (m_sipProxySocketsNode == null || m_sipProxySocketsNode.ChildNodes.Count == 0) {
+                else if (m_sipProxySocketsNode == null || m_sipProxySocketsNode.ChildNodes.Count == 0)
+                {
                     throw new ApplicationException("The proxy cannot start without at least one socket specified to listen on, please check config file.");
                 }
 
                 // Send events from this process to the monitoring socket.
-                if (m_monitorPort != 0) {
+                if (m_monitorPort != 0)
+                {
                     // Events will be sent by the monitor channel to the loopback interface and this port.
                     m_monitorEventWriter = new SIPMonitorEventWriter(m_monitorPort);
                     logger.Debug(" SIP Proxy monitor sender initialised for 127.0.0.1:" + m_monitorPort + ".");
@@ -104,11 +111,13 @@ namespace SIPSorcery.SIPProxy {
                 // Create the SIP stateless proxy core.
                 m_statelessProxyCore = new SIPProxyCore(FireSIPMonitorEvent, m_sipTransport, m_proxyRuntimeScriptPath, m_appServerEndPointsPath);
 
-                if (!m_publicIPAddressStr.IsNullOrBlank()) {
+                if (!m_publicIPAddressStr.IsNullOrBlank())
+                {
                     PublicIPAddress = IPAddress.Parse(m_publicIPAddressStr);
                     m_statelessProxyCore.PublicIPAddress = PublicIPAddress;
                 }
-                else if (!m_stunServerHostname.IsNullOrBlank()) {
+                else if (!m_stunServerHostname.IsNullOrBlank())
+                {
                     // If a STUN server hostname has been specified start the STUN client thread.
                     ThreadPool.QueueUserWorkItem(delegate { StartSTUNClient(); });
                 }
@@ -121,22 +130,26 @@ namespace SIPSorcery.SIPProxy {
                 m_sipTransport.SIPBadRequestInTraceEvent += LogSIPBadRequestIn;
                 m_sipTransport.SIPBadResponseInTraceEvent += LogSIPBadResponseIn;
 
-                if (m_natKeepAliveSocket != null) {
+                if (m_natKeepAliveSocket != null)
+                {
                     m_natKeepAliveRelay = new NATKeepAliveRelay(m_sipTransport, m_natKeepAliveSocket, FireSIPMonitorEvent);
                 }
 
                 logger.Debug("SIP Proxy daemon successfully started.");
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPProxyDaemon Start. " + excp.Message);
             }
         }
 
-        public List<SIPEndPoint> GetListeningSIPEndPoints() {
+        public List<SIPEndPoint> GetListeningSIPEndPoints()
+        {
             return m_sipTransport.GetListeningSIPEndPoints();
         }
 
-        private void StartSTUNServer(IPEndPoint primaryEndPoint, IPEndPoint secondaryEndPoint, SIPTransport sipTransport) {
+        private void StartSTUNServer(IPEndPoint primaryEndPoint, IPEndPoint secondaryEndPoint, SIPTransport sipTransport)
+        {
             STUNListener secondarySTUNListener = new STUNListener(secondaryEndPoint);   // This end point is only for secondary STUN messages.
             STUNSendMessageDelegate primarySend = (dst, buffer) => { m_sipTransport.SendRaw(m_sipTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp), new SIPEndPoint(dst), buffer); };
             m_stunServer = new STUNServer(primaryEndPoint, primarySend, secondaryEndPoint, secondarySTUNListener.Send);
@@ -148,39 +161,50 @@ namespace SIPSorcery.SIPProxy {
             logger.Debug("STUN server successfully initialised.");
         }
 
-        private void StartNATKeepAliveRelay(SIPTransport sipTransport, IPEndPoint natKeepAliveSocket, SIPMonitorLogDelegate logDelegate) {
-            if (natKeepAliveSocket != null) {
+        private void StartNATKeepAliveRelay(SIPTransport sipTransport, IPEndPoint natKeepAliveSocket, SIPMonitorLogDelegate logDelegate)
+        {
+            if (natKeepAliveSocket != null)
+            {
                 m_natKeepAliveRelay = new NATKeepAliveRelay(sipTransport, natKeepAliveSocket, logDelegate);
                 logger.Debug("NAT keep-alive relay created on " + natKeepAliveSocket + ".");
             }
-            else {
+            else
+            {
                 logger.Warn("The NATKeepAliveRelay cannot be started with an empty socket.");
             }
         }
 
-        private void StartSTUNClient() {
-            try {
+        private void StartSTUNClient()
+        {
+            try
+            {
                 Thread.CurrentThread.Name = STUN_CLIENT_THREAD_NAME;
 
                 logger.Debug("SIPProxyDaemon STUN client started.");
 
-                while (!m_stop) {
-                    try {
+                while (!m_stop)
+                {
+                    try
+                    {
                         IPAddress publicIP = STUNClient.GetPublicIPAddress(m_stunServerHostname);
-                        if (publicIP != null) {
+                        if (publicIP != null)
+                        {
                             //logger.Debug("The STUN client was able to determine the public IP address as " + publicIP.ToString() + ".");
                             m_statelessProxyCore.PublicIPAddress = publicIP;
                         }
-                        else {
+                        else
+                        {
                             // logger.Debug("The STUN client could not determine the public IP address.");
                             m_statelessProxyCore.PublicIPAddress = null;
                         }
 
-                        if (PublicIPAddressUpdated != null) {
+                        if (PublicIPAddressUpdated != null)
+                        {
                             PublicIPAddressUpdated(publicIP);
                         }
                     }
-                    catch (Exception getAddrExcp) {
+                    catch (Exception getAddrExcp)
+                    {
                         logger.Error("Exception StartSTUNClient GetPublicIPAddress. " + getAddrExcp.Message);
                     }
 
@@ -190,24 +214,29 @@ namespace SIPSorcery.SIPProxy {
 
                 logger.Warn("SIPProxyDaemon STUN client thread stopped.");
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception StartSTUNClient. " + excp.Message);
             }
         }
 
-        public void Stop() {
-            try {
+        public void Stop()
+        {
+            try
+            {
                 logger.Debug("SIP Proxy daemon stopping...");
 
                 m_stop = true;
                 m_stunClientMRE.Set();
 
-                if (m_natKeepAliveRelay != null) {
+                if (m_natKeepAliveRelay != null)
+                {
                     logger.Debug("Stopping NAT Keep-Alive Relay.");
                     m_natKeepAliveRelay.Shutdown();
                 }
 
-                if (m_stunServer != null) {
+                if (m_stunServer != null)
+                {
                     logger.Debug("Stopping STUN server.");
                     m_stunServer.Stop();
                 }
@@ -217,17 +246,22 @@ namespace SIPSorcery.SIPProxy {
 
                 logger.Debug("SIP Proxy daemon stopped.");
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPProxyDaemon Stop. " + excp.Message);
             }
         }
 
         #region Logging.
 
-        private void FireSIPMonitorEvent(SIPMonitorEvent sipMonitorEvent) {
-            try {
-                if (sipMonitorEvent != null) {
-                    if (m_monitorEventWriter != null && sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.SIPTransaction) {
+        private void FireSIPMonitorEvent(SIPMonitorEvent sipMonitorEvent)
+        {
+            try
+            {
+                if (sipMonitorEvent != null)
+                {
+                    if (m_monitorEventWriter != null && sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.SIPTransaction)
+                    {
                         m_monitorEventWriter.Send(sipMonitorEvent);
                     }
 
@@ -236,68 +270,80 @@ namespace SIPSorcery.SIPProxy {
                         sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.Timing &&
                         sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.UnrecognisedMessage &&
                         sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.NATKeepAliveRelay &&
-                        sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.BadSIPMessage && 
-                        sipMonitorEvent.GetType() != typeof(SIPMonitorMachineEvent)) {
+                        sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.BadSIPMessage &&
+                        sipMonitorEvent.GetType() != typeof(SIPMonitorMachineEvent))
+                    {
                         logger.Debug("pr: " + sipMonitorEvent.Message);
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception FireSIPMonitorEvent. " + excp.Message);
             }
         }
 
-        private void LogSIPRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest) {
+        private void LogSIPRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest)
+        {
             string message = "Proxy Request Received: " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
             //logger.Debug("pr: request in " + sipRequest.Method + " " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + ", callid=" + sipRequest.Header.CallId + ".");
             string fromUser = (sipRequest.Header.From != null && sipRequest.Header.From.FromURI != null) ? sipRequest.Header.From.FromURI.User : "Error on From header";
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
-        private void LogSIPRequestOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest) {
+        private void LogSIPRequestOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest)
+        {
             string message = "Proxy Request Sent: " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
             //logger.Debug("pr: request out " + sipRequest.Method + " " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + ", callid=" + sipRequest.Header.CallId + ".");
             string fromUser = (sipRequest.Header.From != null && sipRequest.Header.From.FromURI != null) ? sipRequest.Header.From.FromURI.User : "Error on From header";
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
-        private void LogSIPResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse) {
+        private void LogSIPResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse)
+        {
             string message = "Proxy Response Received: " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
             //logger.Debug("pr: response in " + sipResponse.Header.CSeqMethod + " " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + ", callid=" + sipResponse.Header.CallId + ".");
             string fromUser = (sipResponse.Header.From != null && sipResponse.Header.From.FromURI != null) ? sipResponse.Header.From.FromURI.User : "Error on From header";
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
-        private void LogSIPResponseOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse) {
+        private void LogSIPResponseOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse)
+        {
             string message = "Proxy Response Sent: " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
             //logger.Debug("pr: response out " + sipResponse.Header.CSeqMethod + " " + localSIPEndPoint.ToString() + "->" + endPoint.ToString()+ ", callid=" + sipResponse.Header.CallId + ".");
             string fromUser = (sipResponse.Header.From != null && sipResponse.Header.From.FromURI != null) ? sipResponse.Header.From.FromURI.User : "Error on From header";
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
-        private void LogPrimarySTUNRequestReceived(IPEndPoint localSIPEndPoint, IPEndPoint remoteEndPoint, byte[] buffer, int bufferLength) {
+        private void LogPrimarySTUNRequestReceived(IPEndPoint localSIPEndPoint, IPEndPoint remoteEndPoint, byte[] buffer, int bufferLength)
+        {
             SIPMonitorEvent stunEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.STUNPrimary, "Primary STUN request received from " + remoteEndPoint + ".", null);
             FireSIPMonitorEvent(stunEvent);
         }
 
-        private void LogSecondarySTUNRequestReceived(IPEndPoint localSIPEndPoint, IPEndPoint remoteEndPoint, byte[] buffer, int bufferLength) {
+        private void LogSecondarySTUNRequestReceived(IPEndPoint localSIPEndPoint, IPEndPoint remoteEndPoint, byte[] buffer, int bufferLength)
+        {
             SIPMonitorEvent stunEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.STUNSecondary, "Secondary STUN request recevied from " + remoteEndPoint + ".", null);
             FireSIPMonitorEvent(stunEvent);
         }
 
-        private void LogSIPBadResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint remotePoint, string message, SIPValidationFieldsEnum errorField) {
-            string errorMessage = "Proxy Bad Response In: " + localSIPEndPoint.ToString() + "<-" + remotePoint.ToString() + ". " + errorField + ".";
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, errorMessage + "\r\n" + message, null));
-            if (errorField != SIPValidationFieldsEnum.Unknown) {
-                FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.BadSIPMessage, errorMessage, null));
+        private void LogSIPBadResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint remotePoint, string message, SIPValidationFieldsEnum errorField, string rawMessage)
+        {
+            string errorMessage = "Proxy Bad Response In: " + localSIPEndPoint.ToString() + "<-" + remotePoint.ToString() + ". " + errorField + ". " + message;
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.BadSIPMessage, errorMessage, null));
+            if (rawMessage != null)
+            {
+                FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, errorMessage + "\r\n" + rawMessage, null));
             }
         }
 
-        private void LogSIPBadRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint remotePoint, string message, SIPValidationFieldsEnum errorField) {
-            string errorMessage = "Proxy Bad Request In: " + localSIPEndPoint.ToString() + "<-" + remotePoint.ToString() + ". " + errorField + ".";
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, errorMessage + "\r\n" + message, null));
-            if (errorField != SIPValidationFieldsEnum.Unknown) {
-                FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.BadSIPMessage, errorMessage, null));
+        private void LogSIPBadRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint remotePoint, string message, SIPValidationFieldsEnum errorField, string rawMessage)
+        {
+            string errorMessage = "Proxy Bad Request In: " + localSIPEndPoint.ToString() + "<-" + remotePoint.ToString() + ". " + errorField + ". " + message;
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.BadSIPMessage, errorMessage, null));
+            if (rawMessage != null)
+            {
+                FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, errorMessage + "\r\n" + rawMessage, null));
             }
         }
 

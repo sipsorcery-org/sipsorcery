@@ -72,27 +72,17 @@ namespace SIPSorcery.AppServer.DialPlan
         public string ExecutionError;               // Set if there was an exception attempting to execute the script.
         public SIPResponseStatusCodesEnum LastFailureStatus;
         public string LastFailureReason;
-        //public List<Interpreter> m_scriptInterpreters = new List<Interpreter>();
 
         public DialPlanExecutingScript(SIPMonitorLogDelegate logDelegate)
         {
-            Stopwatch createEngineSW = new Stopwatch();
-            Stopwatch createScopeSW = new Stopwatch();
-
             ScriptNumber = ++ScriptCounter % Int32.MaxValue;
             Id = Guid.NewGuid();
             
-            createEngineSW.Start();
             DialPlanScriptEngine = Ruby.CreateEngine();
-            createEngineSW.Stop();
 
-            createScopeSW.Start();
             DialPlanScriptScope = DialPlanScriptEngine.CreateScope();
-            createScopeSW.Stop();
 
             LogDelegate = logDelegate;
-
-            LogDelegate(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Engine creation took " + createEngineSW.ElapsedMilliseconds + "ms, scope creation took " + createScopeSW.ElapsedMilliseconds + "ms.", null));
         }
 
         public void Initialise(DialPlanContext dialPlanContext)

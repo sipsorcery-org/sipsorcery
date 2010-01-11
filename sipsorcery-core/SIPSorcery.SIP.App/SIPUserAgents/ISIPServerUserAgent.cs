@@ -57,8 +57,8 @@ namespace SIPSorcery.SIP.App {
         bool LoadSIPAccountForIncomingCall();
         bool AuthenticateCall();
         void Progress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody);
-        SIPDialogue Answer(string contentType, string body, SIPDialogue answeredDialogue);
-        SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogue answeredDialogue);
+        SIPDialogue Answer(string contentType, string body, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode);
+        SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode);
         void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders);
         void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI);
         void Hangup();

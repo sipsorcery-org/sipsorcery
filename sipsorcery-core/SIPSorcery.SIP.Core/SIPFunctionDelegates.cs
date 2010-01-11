@@ -47,10 +47,8 @@ namespace SIPSorcery.SIP
     // SIP Transport delegates.
     public delegate void SIPTransportRequestDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest);
     public delegate void SIPTransportResponseDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse);
-    public delegate void SIPTransportSIPBadRequestMessageDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remotePoint, string message, SIPValidationFieldsEnum errorField);
-    public delegate void SIPTransportSIPBadResponseMessageDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remotePoint, string message, SIPValidationFieldsEnum errorField);
+    public delegate void SIPTransportSIPBadMessageDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remotePoint, string message, SIPValidationFieldsEnum errorField, string rawMessage);
     public delegate void STUNRequestReceivedDelegate(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] buffer, int bufferLength);
-    public delegate void UnrecognisedMessageReceivedDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer);
     public delegate SIPEndPoint ResolveSIPEndPointDelegate(SIPURI uri, bool synchronous);
 
     // SIP Transaction delegates.

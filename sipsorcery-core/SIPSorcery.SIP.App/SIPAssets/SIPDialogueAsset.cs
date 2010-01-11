@@ -44,11 +44,11 @@ namespace SIPSorcery.SIP.App {
             set { SIPDialogue.AdminMemberId = value; }
         }
 
-        [Column(Name = "dialogueid", DbType = "varchar(256)", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
-        public string DialogueId {
-            get { return SIPDialogue.DialogueId; }
-            set { SIPDialogue.DialogueId = value; }
-        }
+        //[Column(Name = "dialogueid", DbType = "varchar(256)", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        //public string DialogueId {
+         //   get { return SIPDialogue.DialogueId; }
+        //    set { SIPDialogue.DialogueId = value; }
+        //}
 
         [Column(Name = "localtag", DbType = "varchar(64)", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public string LocalTag {
@@ -196,7 +196,7 @@ namespace SIPSorcery.SIP.App {
             table.Columns.Add(new DataColumn("id", typeof(String)));
             table.Columns.Add(new DataColumn("owner", typeof(String)));
             table.Columns.Add(new DataColumn("adminmemberid", typeof(String)));
-            table.Columns.Add(new DataColumn("dialogueid", typeof(String)));
+            //table.Columns.Add(new DataColumn("dialogueid", typeof(String)));
             table.Columns.Add(new DataColumn("localtag", typeof(String)));
             table.Columns.Add(new DataColumn("remotetag", typeof(String)));
             table.Columns.Add(new DataColumn("localuserfield", typeof(String)));
@@ -219,7 +219,7 @@ namespace SIPSorcery.SIP.App {
             SIPDialogue.Id = new Guid(row["id"] as string);
             SIPDialogue.Owner = row["owner"] as string;
             SIPDialogue.AdminMemberId = row["adminmemberid"] as string;
-            SIPDialogue.DialogueId = row["dialogueid"] as string;
+            //SIPDialogue.DialogueId = row["dialogueid"] as string;
             SIPDialogue.LocalTag = row["localtag"] as string;
             SIPDialogue.RemoteTag = row["remotetag"] as string;
             SIPDialogue.LocalUserField = SIPUserField.ParseSIPUserField(row["localuserfield"] as string);
@@ -260,7 +260,7 @@ namespace SIPSorcery.SIP.App {
                  "  <id>" + SIPDialogue.Id + "</id>" + m_newLine +
                  "  <owner>" + SIPDialogue.Owner + "</owner>" + m_newLine +
                  "  <adminmemberid>" + SIPDialogue.AdminMemberId + "</adminmemberid>" + m_newLine +
-                 "  <dialogueid>" + SIPDialogue.DialogueId + "</dialogueid>" + m_newLine +
+                 //"  <dialogueid>" + SIPDialogue.DialogueId + "</dialogueid>" + m_newLine +
                  "  <localtag>" + SIPDialogue.LocalTag + "</localtag>" + m_newLine +
                  "  <remotetag>" + SIPDialogue.RemoteTag + "</remotetag>" + m_newLine +
                  "  <callid>" + SIPDialogue.CallId + "</callid>" + m_newLine +

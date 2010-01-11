@@ -171,7 +171,8 @@ namespace SIPSorcery.Servers
 
             // Set the Contact URI on the outgoing INVITE request depending on which SIP socket the request is being sent on and whether
             // the request is going to an external network.
-            if (sipRequest.Method == SIPMethodsEnum.INVITE && publicIPAddress != null) {
+            if (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count == 1)
+            {
                 if (publicIPAddress != null) {
                     sipRequest.Header.Contact[0].ContactURI = new SIPURI(sipRequest.URI.Scheme, new SIPEndPoint(localSIPEndPoint.SIPProtocol, new IPEndPoint(publicIPAddress, localSIPEndPoint.SocketEndPoint.Port)));
                 }
@@ -222,7 +223,7 @@ namespace SIPSorcery.Servers
             try {
                 sipResponse.LocalSIPEndPoint = localSIPEndPoint;
 
-                if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.INVITE && sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0) {
+                if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count == 1) {
                    if (publicIPAddress != null) {
                         sipResponse.Header.Contact[0].ContactURI = new SIPURI(sipResponse.Header.Contact[0].ContactURI.Scheme, new SIPEndPoint(localSIPEndPoint.SIPProtocol, new IPEndPoint(publicIPAddress, localSIPEndPoint.SocketEndPoint.Port)));
                     }

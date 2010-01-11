@@ -56,6 +56,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
         private SIPMonitorLogDelegate Log_External;
         public DialogueBridgeCreatedDelegate CreateBridge_External;
+        private DecrementDialPlanExecutionCountDelegate DecrementDialPlanExecutionCount_External;
 
         private SIPTransport m_sipTransport;
         private ISIPServerUserAgent m_sipServerUserAgent;
@@ -111,6 +112,7 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPMonitorLogDelegate monitorLogDelegate,
             SIPTransport sipTransport,
             DialogueBridgeCreatedDelegate createBridge,
+            DecrementDialPlanExecutionCountDelegate decrementDialPlanCountDelegate,
             SIPEndPoint outboundProxy,
             ISIPServerUserAgent sipServerUserAgent,
             SIPDialPlan dialPlan,
@@ -121,6 +123,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
             Log_External = monitorLogDelegate;
             CreateBridge_External = createBridge;
+            DecrementDialPlanExecutionCount_External = decrementDialPlanCountDelegate;
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
             m_sipServerUserAgent = sipServerUserAgent;
@@ -155,8 +158,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     m_isAnswered = true;
                     Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Answering client call with a response status of " + (int)answeredStatus + ".", Owner));
 
-                    SIPDialogue uasDialogue = m_sipServerUserAgent.Answer(answeredContentType, answeredBody, toTag, answeredDialogue);
-                    uasDialogue.TransferMode = uasTransferMode;
+                    SIPDialogue uasDialogue = m_sipServerUserAgent.Answer(answeredContentType, answeredBody, toTag, answeredDialogue, uasTransferMode);
 
                     if (!m_sipServerUserAgent.IsB2B && answeredDialogue != null) {
                         if (uasDialogue != null) {
@@ -175,6 +177,11 @@ namespace SIPSorcery.AppServer.DialPlan
             catch (Exception excp) {
                 logger.Error("Exception DialPlanContext CallAnswered. " + excp.Message);
             }
+        }
+
+        public void DecrementDialPlanExecutionCount()
+        {
+            DecrementDialPlanExecutionCount_External(m_dialPlan, CustomerId);
         }
 
         /// <summary>

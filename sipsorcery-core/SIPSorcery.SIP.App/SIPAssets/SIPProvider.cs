@@ -473,7 +473,7 @@ namespace SIPSorcery.SIP.App
             {
                 m_id = (providerRow.Table.Columns.Contains("id") && providerRow["id"] != DBNull.Value && providerRow["id"] != null) ? new Guid(providerRow["id"] as string) : Guid.NewGuid();
                 m_owner = providerRow["owner"] as string;
-                AdminMemberId = providerRow["adminmemberid"] as string;
+                AdminMemberId = (providerRow.Table.Columns.Contains("adminmemberid") && providerRow["adminmemberid"] != null) ? providerRow["adminmemberid"] as string : null;
                 m_providerName = providerRow["providername"] as string;
                 m_providerUsername = providerRow["providerusername"] as string;
                 m_providerPassword = providerRow["providerpassword"] as string;

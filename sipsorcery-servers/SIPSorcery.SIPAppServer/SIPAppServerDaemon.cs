@@ -236,7 +236,6 @@ namespace SIPSorcery.SIPAppServer {
                 m_sipTransport.SIPResponseOutTraceEvent += LogSIPResponseOut;
                 m_sipTransport.SIPBadRequestInTraceEvent += LogSIPBadRequestIn;
                 m_sipTransport.SIPBadResponseInTraceEvent += LogSIPBadResponseIn;
-                m_sipTransport.UnrecognisedMessageReceived += UnrecognisedMessageReceived;
 
                 #endregion
 
@@ -247,7 +246,6 @@ namespace SIPSorcery.SIPAppServer {
                     m_sipSorceryPersistor.SIPAccountsPersistor,
                     m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
                     m_sipSorceryPersistor.SIPDialPlanPersistor,
-                    m_customerSessionManager.CustomerPersistor,
                     m_outboundProxy,
                     m_rubyScriptCommonPath);
 
@@ -516,38 +514,22 @@ namespace SIPSorcery.SIPAppServer {
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
-        private void LogSIPBadRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, string sipMessage, SIPValidationFieldsEnum errorField) {
-            string message = "App Svr Bad Request Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + ", " + errorField;
-            string fullMessage = "App Svr Bad Request Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + ", " + errorField + "\r\n" + sipMessage;
-            LogSIPBadMessage(message, fullMessage);
-        }
-
-        private void LogSIPBadResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, string sipMessage, SIPValidationFieldsEnum errorField) {
-            string message = "App Svr Bad Response Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + ", " + errorField;
-            string fullMessage = "App Svr Bad Response Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + ", " + errorField + "\r\n" + sipMessage;
-            LogSIPBadMessage(message, fullMessage);
-        }
-
-        private void LogSIPBadMessage(string message, string fullTraceMessage) {
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.BadSIPMessage, message, null));
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, fullTraceMessage, null));
-        }
-
-        private void UnrecognisedMessageReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint fromEndPoint, byte[] buffer) {
-            int bufferLength = (buffer != null) ? buffer.Length : 0;
-            string msg = null;
-
-            if (bufferLength > 0) {
-                if (buffer.Length > 128) {
-                    msg = " =>" + Encoding.ASCII.GetString(buffer, 0, 128) + "...<=";
-                }
-                else {
-                    msg = " =>" + Encoding.ASCII.GetString(buffer) + "<=";
-                }
+        private void LogSIPBadRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, string sipMessage, SIPValidationFieldsEnum errorField, string rawMessage) {
+            string errorMessage = "App Svr Bad Request Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + ", " + errorField + ". " + sipMessage;
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.BadSIPMessage, errorMessage, null));
+            if (rawMessage != null)
+            {
+                FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, errorMessage + "\r\n" + rawMessage, null));
             }
+        }
 
-            SIPMonitorEvent unrecgMsgEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.UnrecognisedMessage, "Unrecognised packet received from " + fromEndPoint.ToString() + " on " + localSIPEndPoint.ToString() + ", bytes=" + bufferLength + " " + msg + ".", null);
-            FireSIPMonitorEvent(unrecgMsgEvent);
+        private void LogSIPBadResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, string sipMessage, SIPValidationFieldsEnum errorField, string rawMessage) {
+            string errorMessage = "App Svr Bad Response Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + ", " + errorField + ". " + sipMessage;
+            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.BadSIPMessage, errorMessage, null));
+            if (rawMessage != null)
+            {
+                FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, errorMessage + "\r\n" + rawMessage, null));
+            }
         }
 
         #endregion

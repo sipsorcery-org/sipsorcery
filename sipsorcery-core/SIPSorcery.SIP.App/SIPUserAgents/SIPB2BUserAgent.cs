@@ -236,11 +236,12 @@ namespace SIPSorcery.SIP.App {
             }
         }
 
-        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogue answeredDialogue) {
-            return Answer(contentType, body, answeredDialogue);
+        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode) {
+            return Answer(contentType, body, answeredDialogue, transferMode);
         }
 
-        public SIPDialogue Answer(string contentType, string body, SIPDialogue answeredDialogue) {
+        public SIPDialogue Answer(string contentType, string body, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode)
+        {
             try {
                 logger.Debug("SIPB2BUserAgent Answer.");
                 m_sipDialogue = answeredDialogue;

@@ -180,7 +180,6 @@ create table sipdialogues
  id varchar(36) not null,
  owner varchar(32) not null,
  adminmemberid varchar(32),
- dialogueid varchar(256) not null,
  localtag varchar(64) not null,
  remotetag varchar(64) not null,
  callid varchar(128) not null,
@@ -249,6 +248,6 @@ create table dialplandata
 (
   dataowner varchar(32)not null,
   datakey varchar(64) not null,
-  datavalue varchar(1024) not null,
-  Unique(dataowner, datakey)
+  datavalue varchar(1024) not null
+  Primary Key(dataowner, datakey)
 );

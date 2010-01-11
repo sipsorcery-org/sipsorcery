@@ -82,7 +82,7 @@ namespace SIPSorcery.SIP
         public string RemoteTag { get; set; }
         public int CSeq { get; set; }                               // CSeq being used by the remote UA for sending requests.
         public SIPURI RemoteTarget { get; set; }                    // This will be the Contact URI in the INVITE request or in the 2xx INVITE response and is where subsequent dialogue requests should be sent.
-        public string DialogueId { get; set; }
+        //public string DialogueId { get; set; }
         public Guid CDRId { get; set; }                             // Call detail record for call the dialogue belongs to.
         public string ContentType { get; private set; }             // The content type on the request or response that created this dialogue. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
         public string SDP { get; set; }                             // The sessions description protocol payload. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
@@ -145,7 +145,7 @@ namespace SIPSorcery.SIP
         {
 
             Id = Guid.NewGuid();
-            DialogueId = GetDialogueId(callId, localTag, remoteTag);
+            //DialogueId = GetDialogueId(callId, localTag, remoteTag);
 
             CallId = callId;
             RouteSet = routeSet;
@@ -190,7 +190,7 @@ namespace SIPSorcery.SIP
             RemoteSDP = uasInviteTransaction.TransactionRequest.Body;
             Inserted = DateTime.UtcNow;
 
-            DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
+            //DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
 
             RemoteTarget = new SIPURI(uasInviteTransaction.TransactionRequest.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(uasInviteTransaction.RemoteEndPoint.ToString()));
             ProxySendFrom = uasInviteTransaction.TransactionRequest.Header.ProxyReceivedOn;
@@ -236,7 +236,7 @@ namespace SIPSorcery.SIP
             RemoteSDP = uacInviteTransaction.TransactionFinalResponse.Body;
             Inserted = DateTime.UtcNow;
 
-            DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
+            //DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
 
             // Set the dialogue remote target and take care of mangling if an upstream proxy has indicated it's required.
             RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(uacInviteTransaction.RemoteEndPoint.ToString()));
@@ -256,7 +256,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public static string GetDialogueId(string callId, string localTag, string remoteTag)
+        /*public static string GetDialogueId(string callId, string localTag, string remoteTag)
         {
             return Crypto.GetSHAHashAsString(callId + localTag + remoteTag);
         }
@@ -264,7 +264,7 @@ namespace SIPSorcery.SIP
         public static string GetDialogueId(SIPHeader sipHeader)
         {
             return Crypto.GetSHAHashAsString(sipHeader.CallId + sipHeader.To.ToTag + sipHeader.From.FromTag);
-        }
+        }*/
 
         public void Hangup(SIPTransport sipTransport, SIPEndPoint outboundProxy)
         {

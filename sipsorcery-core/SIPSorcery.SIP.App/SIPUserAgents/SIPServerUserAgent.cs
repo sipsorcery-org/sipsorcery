@@ -327,12 +327,12 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public SIPDialogue Answer(string contentType, string body, SIPDialogue answeredDialogue)
+        public SIPDialogue Answer(string contentType, string body, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode)
         {
-            return Answer(contentType, body, null, answeredDialogue);
+            return Answer(contentType, body, null, answeredDialogue, transferMode);
         }
 
-        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogue answeredDialogue)
+        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode)
         {
             try
             {
@@ -362,6 +362,7 @@ namespace SIPSorcery.SIP.App
                     // NOTE the Record-Route header does not get reversed for this Route set!! Since the Route set is being used from the server end NOT
                     // the client end a reversal will generate a Route set in the wrong order.
                     m_sipDialogue = new SIPDialogue(m_uasTransaction, m_owner, m_adminMemberId);
+                    m_sipDialogue.TransferMode = transferMode;
 
                     return m_sipDialogue;
                 }

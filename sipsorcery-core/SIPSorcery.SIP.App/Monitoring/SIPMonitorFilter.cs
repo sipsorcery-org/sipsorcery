@@ -74,7 +74,6 @@ namespace SIPSorcery.SIP.App
         public const string MACHINE_BASE_TYPE = "machine";
         public const string CONTROL_BASE_TYPE = "control";
 		public const string EVENTTYPE_FULL_VALUE = "full";                  // Full SIP messages except ones to and from loopback IP's.
-        public const string EVENTTYPE_FULLINTERNAL_VALUE = "fullinternal";  // Full SIP messages including ones between any internal server agents on the loopback IP address.
 		public const string EVENTTYPE_SYSTEM_VALUE = "system";
         public const string EVENTTYPE_TROUBLE_VALUE = "trouble";
     	public const string SIPREQUEST_INVITE_VALUE = "invite";
@@ -187,10 +186,7 @@ namespace SIPSorcery.SIP.App
 			}
 			else
 			{
-                if (EventFilterDescr == EVENTTYPE_FULLINTERNAL_VALUE && (eventType == SIPMonitorEventTypesEnum.FullSIPTrace || eventType == SIPMonitorEventTypesEnum.BadSIPMessage)) {
-                    return true;
-                }
-                else if (EventFilterDescr == EVENTTYPE_FULL_VALUE && (eventType == SIPMonitorEventTypesEnum.FullSIPTrace || eventType == SIPMonitorEventTypesEnum.BadSIPMessage)) {
+                if (EventFilterDescr == EVENTTYPE_FULL_VALUE && eventType == SIPMonitorEventTypesEnum.FullSIPTrace) {
                    // if (serverEndPoint != null && serverEndPoint.SocketEndPoint.Address.ToString() == "127.0.0.1") {
                     //    return false;
                    // }
@@ -311,7 +307,8 @@ namespace SIPSorcery.SIP.App
                     return (sipMethod == SIPMethodsEnum.INVITE ||
                         sipMethod == SIPMethodsEnum.ACK ||
                         sipMethod == SIPMethodsEnum.BYE ||
-                        sipMethod == SIPMethodsEnum.CANCEL);
+                        sipMethod == SIPMethodsEnum.CANCEL ||
+                        sipMethod == SIPMethodsEnum.REFER);
 				}
                 else if (SIPRequestFilter == SIPREQUEST_REGISTER_VALUE)
 				{

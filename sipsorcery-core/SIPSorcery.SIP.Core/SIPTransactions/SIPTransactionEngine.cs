@@ -595,7 +595,6 @@ namespace SIPSorcery.SIP
                 transport.SIPResponseInTraceEvent += transport_SIPResponseInTraceEvent;
                 transport.SIPResponseOutTraceEvent += transport_SIPResponseOutTraceEvent;
                 transport.STUNRequestReceived += transport_STUNRequestReceived;
-                transport.UnrecognisedMessageReceived += transport_UnrecognisedMessageReceived;
             }
 
             void SetTransactionTraceEvents(SIPTransaction transaction)
@@ -650,14 +649,14 @@ namespace SIPSorcery.SIP
                 Console.WriteLine("Request In: " + localEndPoint + "<-" + fromEndPoint.ToString() + "\n" + sipRequest.ToString());
             }
 
-            void transport_SIPBadResponseInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, string message, SIPValidationFieldsEnum errorField)
+            void transport_SIPBadResponseInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, string message, SIPValidationFieldsEnum errorField, string rawMessage)
             {
-                Console.WriteLine("Bad Response: " + localEndPoint + "<-" + fromEndPoint.ToString() + " " + errorField + "\n" + message);
+                Console.WriteLine("Bad Response: " + localEndPoint + "<-" + fromEndPoint.ToString() + " " + errorField + ". " + message + "\n" + rawMessage);
             }
 
-            void transport_SIPBadRequestInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, string message, SIPValidationFieldsEnum errorField)
+            void transport_SIPBadRequestInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, string message, SIPValidationFieldsEnum errorField, string rawMessage)
             {
-                Console.WriteLine("Bad Request: " + localEndPoint + "<-" + fromEndPoint.ToString() + " " + errorField + "\n" + message);
+                Console.WriteLine("Bad Request: " + localEndPoint + "<-" + fromEndPoint.ToString() + " " + errorField + "." + message + "\n" + rawMessage);
             }
 
             #endregion
