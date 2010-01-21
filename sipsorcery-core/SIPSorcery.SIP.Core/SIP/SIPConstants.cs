@@ -49,7 +49,7 @@ namespace SIPSorcery.SIP
 		public const string SIP_FULLVERSION_STRING = "SIP/2.0";
 
 		public const int NONCE_TIMEOUT_MINUTES = 5;							// Length of time an issued nonce is valid for.
-		public const int SIP_MAXIMUM_LENGTH = 2048;							// Any SIP messages over this size will generate an error.
+		public const int SIP_MAXIMUM_LENGTH = 8192;							// Any SIP messages over this size will generate an error.
         public const string SIP_USERAGENT_STRING = "www.sipsorcery.com";
         public const string SIP_SERVER_STRING = "www.sipsorcery.com";
 		public const string SIP_REQUEST_REGEX = @"^\w+ .* SIP/.*";			// bnf:	Request-Line = Method SP Request-URI SP SIP-Version CRLF

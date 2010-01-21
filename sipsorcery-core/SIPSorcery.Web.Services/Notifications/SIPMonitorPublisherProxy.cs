@@ -22,9 +22,18 @@ namespace SIPSorcery.Web.Services
             : base(callbackInstance)
         { }
 
-        public string Subscribe(string customerUsername, string adminId, string address, string subject, string topic)
+        public SIPMonitorPublisherProxy(InstanceContext callbackInstance, string endPointName)
+            : base(callbackInstance, endPointName)
+        { }
+
+        public bool IsAlive()
         {
-            return base.Channel.Subscribe(customerUsername, adminId, address, subject, topic);
+            return base.Channel.IsAlive();
+        }
+
+        public string Subscribe(string customerUsername, string adminId, string address, string subject, string topic, out string subscribeError)
+        {
+            return base.Channel.Subscribe(customerUsername, adminId, address, subject, topic, out subscribeError);
         }
 
         public List<string> GetNotifications(string address, out string sessionID, out string sessionError)

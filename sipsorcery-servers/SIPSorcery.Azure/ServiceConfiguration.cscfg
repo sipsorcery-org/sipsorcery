@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<ServiceConfiguration serviceName="SIPSorcery.Azure" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceConfiguration">
+  <Role name="SIPSorcery.Azure.Service">
+    <Instances count="1" />
+    <ConfigurationSettings>
+      <!--<Setting name="DiagnosticsConnectionString" value="UseDevelopmentStorage=true" />-->
+      <Setting name="DiagnosticsConnectionString" value="DefaultEndpointsProtocol=https;AccountName=sipsorcery;AccountKey=WVmBlmznVVHGlLGKHpQpSckX90Jpn1NlQjUsZxZxjWe0dHtg05BKMylax76O1qqHYJQfwfSYH+zMFalLTEoSBg==" />
+    </ConfigurationSettings>
+    <Certificates>
+      <Certificate name="sipwizard" thumbprint="054A16ED4341578FC1CBC79BA98F80CCACF08C00" thumbprintAlgorithm="sha1" />
+    </Certificates>
+  </Role>
+</ServiceConfiguration>

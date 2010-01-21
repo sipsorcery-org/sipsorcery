@@ -144,7 +144,6 @@ namespace SIPSorcery.Servers
             SIPUserAgentConfigurationManager userAgentConfigs,
             SIPAuthenticateRequestDelegate sipRequestAuthenticator)
         {
-
             m_sipTransport = sipTransport;
             m_registrarBindingsManager = registrarBindingsManager;
             GetSIPAccount_External = getSIPAccount;
@@ -159,6 +158,8 @@ namespace SIPSorcery.Servers
             ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + "1"); });
             ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + "2"); });
             ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + "3"); });
+            ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + "4"); });
+            ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + "5"); });
         }
 
         public void AddRegisterRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest registerRequest)
@@ -298,11 +299,7 @@ namespace SIPSorcery.Servers
                 }
 
                 SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == toUser && s.SIPDomain == canonicalDomain);
-                //SIPAccount sipAccount = GetSIPAccountFromQuery_External(m_selectSIPAccountQuery, new SqlParameter("1", toUser), new SqlParameter("2", canonicalDomain));
-                //Stopwatch authTimeStopwatch = new Stopwatch();
-                //authTimeStopwatch.Start();
                 SIPRequestAuthenticationResult authenticationResult = SIPRequestAuthenticator_External(registerTransaction.LocalSIPEndPoint, registerTransaction.RemoteEndPoint, sipRequest, sipAccount, FireProxyLogEvent);
-                //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Authentication time for " + addressOfRecord.ToString() + " took " + DateTime.Now.Subtract(startAuthTime).TotalMilliseconds.ToString("0") + "ms.", null));
 
                 if (!authenticationResult.Authenticated)
                 {
@@ -379,11 +376,11 @@ namespace SIPSorcery.Servers
                             bool contactListSupported = m_userAgentConfigs.GetUserAgentContactListSupport(sipRequest.Header.UserAgent);
                             if (contactListSupported)
                             {
-                                sipRequest.Header.Contact = GetContactHeader(bindingsList); // m_registrarBindingsManager.GetContactHeader(new Guid(sipAccount.Id));
+                                sipRequest.Header.Contact = GetContactHeader(bindingsList);
                             }
                             else
                             {
-                                // Some user agents can't match the contact header is the expiry is added to it.
+                                // Some user agents can't match the contact header if the expiry is added to it.
                                 sipRequest.Header.Contact[0].Expires = bindingExpiry;
                             }
 
@@ -447,14 +444,12 @@ namespace SIPSorcery.Servers
         /// <returns></returns>
         private List<SIPContactHeader> GetContactHeader(List<SIPRegistrarBinding> bindings)
         {
-
             if (bindings != null && bindings.Count > 0)
             {
                 List<SIPContactHeader> contactHeaderList = new List<SIPContactHeader>();
 
                 foreach (SIPRegistrarBinding binding in bindings)
                 {
-                    //SIPContactHeader bindingContact = new SIPContactHeader(null, binding.MangledContactSIPURI);
                     SIPContactHeader bindingContact = new SIPContactHeader(null, binding.ContactSIPURI);
                     bindingContact.Expires = Convert.ToInt32(binding.ExpiryTime.Subtract(DateTime.UtcNow).TotalSeconds % Int32.MaxValue);
                     contactHeaderList.Add(bindingContact);

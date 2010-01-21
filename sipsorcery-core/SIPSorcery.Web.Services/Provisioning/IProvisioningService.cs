@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
+using System.ServiceModel.Web;
 using System.Text;
 using SIPSorcery.CRM;
 using SIPSorcery.SIP.App;
@@ -11,7 +12,7 @@ namespace SIPSorcery.Web.Services {
     [ServiceContract(Namespace = "http://www.sipsorcery.com/provisioning")]
     public interface IProvisioningService {
 
-        [OperationContract] bool IsAlive();
+        [OperationContract] bool IsAlive();        
         [OperationContract] void TestException();
         [OperationContract] bool AreNewAccountsEnabled();
         [OperationContract] void CreateCustomer(Customer customer);

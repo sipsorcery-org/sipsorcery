@@ -294,12 +294,24 @@ namespace SIPSorcery.Servers
                     else if (GetCanonicalDomain_External(sipRequest.URI.Host, true) != null)
                     {
                         // Call identified as incoming call for application server serviced domain.
-                        string uriUser = sipRequest.URI.User;
-                        string uriDomain = GetCanonicalDomain_External(sipRequest.URI.Host, true);
-                        UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                        SIPServerUserAgent incomingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, uriUser, uriDomain, SIPCallDirection.In, GetSIPAccount_External, null, FireProxyLogEvent, uasTransaction);
-                        uasTransaction.NewCallReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(incomingCall); };
-                        uasTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+                        if (sipRequest.URI.User.IsNullOrBlank())
+                        {
+                            // Cannot process incoming call if no user is specified.
+                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "INVITE received with an empty URI user " + sipRequest.URI.ToString() + ", returning address incomplete.", null));
+                            UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                            SIPResponse addressIncompleteResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.AddressIncomplete, "No user specified");
+                            uasTransaction.SendFinalResponse(addressIncompleteResponse);
+                        }
+                        else
+                        {
+                            // Send the incoing call to the call manager for processing.
+                            string uriUser = sipRequest.URI.User;
+                            string uriDomain = GetCanonicalDomain_External(sipRequest.URI.Host, true);
+                            UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                            SIPServerUserAgent incomingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, uriUser, uriDomain, SIPCallDirection.In, GetSIPAccount_External, null, FireProxyLogEvent, uasTransaction);
+                            uasTransaction.NewCallReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(incomingCall); };
+                            uasTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+                        }
                     }
                     else
                     {

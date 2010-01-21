@@ -233,11 +233,11 @@
   <ItemGroup>
     <Resource Include="Images\wizard-logo.png" />
     <Resource Include="Images\small_logo.png" />
-    <None Include="WCFReferences\SIPSorceryNotificationService\notifications.wsdl" />
-    <None Include="WCFReferences\SIPSorceryNotificationService\notifications.xsd" />
-    <None Include="WCFReferences\SIPSorceryNotificationService\notifications1.xsd" />
-    <None Include="WCFReferences\SIPSorceryNotificationService\notifications2.xsd" />
-    <None Include="WCFReferences\SIPSorceryNotificationService\SIPNotifierService.wsdl" />
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull1.wsdl" />
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull3.xsd" />
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull4.xsd" />
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull5.xsd" />
+    <None Include="WCFReferences\SIPSorceryNotificationService\SIPNotifierService1.wsdl" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\configuration91.svcinfo" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\configuration.svcinfo" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning1.wsdl" />
@@ -251,13 +251,13 @@
     </None>
     <None Include="WCFReferences\SIPSorceryProvisioningClient\SIPProvisioningWebService1.wsdl" />
     <Content Include="ServiceReferences.ClientConfig" />
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull1.disco" />
     <None Include="WCFReferences\SIPSorceryNotificationService\Reference.svcmap">
       <Generator>WCF Proxy Generator</Generator>
       <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
     <None Include="WCFReferences\SIPSorceryNotificationService\configuration.svcinfo" />
     <None Include="WCFReferences\SIPSorceryNotificationService\configuration91.svcinfo" />
-    <None Include="WCFReferences\SIPSorceryNotificationService\notifications.disco" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning1.disco" />
   </ItemGroup>
   <ItemGroup>

@@ -18,15 +18,10 @@
                     maxReceivedMessageSize="2147483647">
                     <security mode="None" />
                 </binding>
-                <binding name="BasicHttpBinding_INotifications" hostNameComparisonMode="StrongWildcard"
-                    maxBufferSize="2147483647" maxReceivedMessageSize="2147483647"
-                    messageEncoding="Text" textEncoding="utf-8" transferMode="Buffered">
-                    <readerQuotas maxDepth="0" maxStringContentLength="0" maxArrayLength="0"
-                        maxBytesPerRead="0" maxNameTableCharCount="0" />
+                <binding name="BasicHttpBinding_INotifications" maxBufferSize="2147483647"
+                    maxReceivedMessageSize="2147483647">
                     <security mode="None">
-                        <transport clientCredentialType="None" proxyCredentialType="None"
-                            realm="" />
-                        <message clientCredentialType="UserName" algorithmSuite="Default" />
+                        <transport realm="" />
                     </security>
                 </binding>
             </basicHttpBinding>
@@ -63,9 +58,9 @@
                 binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_IProvisioningService2"
                 contract="SIPSorceryProvisioningClient.IProvisioningService"
                 name="BasicHttpBinding_IProvisioningService2" />
-            <endpoint address="http://suzannes-pc/notifications.svc" binding="basicHttpBinding"
-                bindingConfiguration="BasicHttpBinding_INotifications" contract="SIPSorceryNotificationService.INotifications"
-                name="BasicHttpBinding_INotifications" />
+            <endpoint address="http://suzannes-pc:8080/notificationspull.svc"
+                binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_INotifications"
+                contract="SIPSorceryNotificationService.INotifications" name="BasicHttpBinding_INotifications" />
         </client>
     </system.serviceModel>
 </configuration>

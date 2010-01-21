@@ -58,13 +58,15 @@ namespace SIPSorcery.SIPRegistrationAgent
         private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
         private const string MONITOR_LOOPBACK_PORT_KEY = "MonitorLoopbackPort";
         private const string OUTBOUND_PROXY_KEY = "OutboundProxy";
+        private const string THREAD_COUNT_KEY = "ThreadCount";
 
         public static ILog logger;
 
         private static readonly XmlNode m_sipRegAgentNode;
-        public static readonly XmlNode SIPRegAgentSocketsNode;       
+        public static readonly XmlNode SIPRegAgentSocketsNode;
         public static readonly int MonitorLoopbackPort;
         public static readonly SIPEndPoint OutboundProxy;
+        public static readonly int ThreadCount = 1;
 
         static SIPRegAgentState()
         {
@@ -74,7 +76,7 @@ namespace SIPSorcery.SIPRegistrationAgent
 
                 try
                 {
-                    
+
                     log4net.Config.XmlConfigurator.Configure();
                     logger = log4net.LogManager.GetLogger(LOGGER_NAME);
                 }
@@ -85,18 +87,26 @@ namespace SIPSorcery.SIPRegistrationAgent
 
                 #endregion
 
-                if (ConfigurationManager.GetSection(SIPREGAGENT_CONFIGNODE_NAME) != null) {
+                if (ConfigurationManager.GetSection(SIPREGAGENT_CONFIGNODE_NAME) != null)
+                {
                     m_sipRegAgentNode = (XmlNode)ConfigurationManager.GetSection(SIPREGAGENT_CONFIGNODE_NAME);
                 }
 
-                if (m_sipRegAgentNode == null) {
+                if (m_sipRegAgentNode == null)
+                {
                     logger.Warn("The SIP Registration Agent " + SIPREGAGENT_CONFIGNODE_NAME + " config node was not available, the agent will not be able to start.");
                 }
-                else {
+                else
+                {
                     SIPRegAgentSocketsNode = m_sipRegAgentNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
                     Int32.TryParse(AppState.GetConfigNodeValue(m_sipRegAgentNode, MONITOR_LOOPBACK_PORT_KEY), out MonitorLoopbackPort);
-                    if (!AppState.GetConfigNodeValue(m_sipRegAgentNode, OUTBOUND_PROXY_KEY).IsNullOrBlank()) {
+                    if (!AppState.GetConfigNodeValue(m_sipRegAgentNode, OUTBOUND_PROXY_KEY).IsNullOrBlank())
+                    {
                         OutboundProxy = SIPEndPoint.ParseSIPEndPoint(AppState.GetConfigNodeValue(m_sipRegAgentNode, OUTBOUND_PROXY_KEY));
+                    }
+                    if (!AppState.GetConfigNodeValue(m_sipRegAgentNode, THREAD_COUNT_KEY).IsNullOrBlank())
+                    {
+                        Int32.TryParse(AppState.GetConfigNodeValue(m_sipRegAgentNode, THREAD_COUNT_KEY), out ThreadCount);
                     }
                 }
             }
@@ -110,7 +120,8 @@ namespace SIPSorcery.SIPRegistrationAgent
         /// <summary>
         /// Handler for processing the App.Config file and passing retrieving the proxy config node.
         /// </summary>
-        public object Create(object parent, object context, XmlNode configSection) {
+        public object Create(object parent, object context, XmlNode configSection)
+        {
             return configSection;
         }
     }

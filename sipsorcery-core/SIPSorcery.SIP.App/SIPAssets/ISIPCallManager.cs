@@ -21,12 +21,14 @@ namespace SIPSorcery.SIP.App {
 
     public class CallbackWaiter {
 
+        public string Owner;
         public CallbackWaiterEnum CallbackApplication;
         public string UniqueId;
         public Func<ISIPServerUserAgent, bool> IsMyCall;
         public DateTime Added = DateTime.Now;
 
-        public CallbackWaiter(CallbackWaiterEnum application, string uniqueId, Func<ISIPServerUserAgent, bool> isMyCall) {
+        public CallbackWaiter(string owner, CallbackWaiterEnum application, string uniqueId, Func<ISIPServerUserAgent, bool> isMyCall) {
+            Owner = owner;
             CallbackApplication = application;
             UniqueId = uniqueId;
             IsMyCall = isMyCall;

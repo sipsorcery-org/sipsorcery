@@ -169,22 +169,29 @@ namespace SIPSorcery.Servers
             }
             sipRequest.Header.Vias.PushViaHeader(via);
 
-            // Set the Contact URI on the outgoing INVITE request depending on which SIP socket the request is being sent on and whether
-            // the request is going to an external network.
-            if (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count == 1)
+            if (sipRequest.Method != SIPMethodsEnum.REGISTER)
             {
-                if (publicIPAddress != null) {
-                    sipRequest.Header.Contact[0].ContactURI = new SIPURI(sipRequest.URI.Scheme, new SIPEndPoint(localSIPEndPoint.SIPProtocol, new IPEndPoint(publicIPAddress, localSIPEndPoint.SocketEndPoint.Port)));
+                // Set the Contact URI on the outgoing requests depending on which SIP socket the request is being sent on and whether
+                // the request is going to an external network.
+                if (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count == 1)
+                {
+                    if (publicIPAddress != null)
+                    {
+                        sipRequest.Header.Contact[0].ContactURI.Host = new IPEndPoint(publicIPAddress, localSIPEndPoint.SocketEndPoint.Port).ToString();
+                        sipRequest.Header.Contact[0].ContactURI.Protocol = localSIPEndPoint.SIPProtocol;
+                    }
+                    else
+                    {
+                        sipRequest.Header.Contact[0].ContactURI.Host = localSIPEndPoint.SocketEndPoint.ToString();
+                        sipRequest.Header.Contact[0].ContactURI.Protocol = localSIPEndPoint.SIPProtocol;
+                    }
                 }
-                else {
-                    sipRequest.Header.Contact[0].ContactURI = new SIPURI(sipRequest.URI.Scheme, localSIPEndPoint);
-                }              
             }
 
             // If dispatcher is being used record the transaction so responses are sent to the correct internal socket.
-            if (m_dispatcher != null && (sipRequest.Method != SIPMethodsEnum.ACK || 
-                sipRequest.Method != SIPMethodsEnum.CANCEL || sipRequest.Method != SIPMethodsEnum.REGISTER))
+            if (m_dispatcher != null && sipRequest.Method != SIPMethodsEnum.REGISTER && sipRequest.Method != SIPMethodsEnum.ACK)
             {
+                //Log("RecordDispatch for " + sipRequest.Method + " " + sipRequest.URI.ToString() + " to " + sipRequest.RemoteSIPEndPoint.ToString() + ".");
                 m_dispatcher.RecordDispatch(sipRequest, sipRequest.RemoteSIPEndPoint);
             }
 
@@ -223,12 +230,20 @@ namespace SIPSorcery.Servers
             try {
                 sipResponse.LocalSIPEndPoint = localSIPEndPoint;
 
-                if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count == 1) {
-                   if (publicIPAddress != null) {
-                        sipResponse.Header.Contact[0].ContactURI = new SIPURI(sipResponse.Header.Contact[0].ContactURI.Scheme, new SIPEndPoint(localSIPEndPoint.SIPProtocol, new IPEndPoint(publicIPAddress, localSIPEndPoint.SocketEndPoint.Port)));
-                    }
-                    else {
-                        sipResponse.Header.Contact[0].ContactURI = new SIPURI(sipResponse.Header.Contact[0].ContactURI.Scheme, localSIPEndPoint);
+                if (sipResponse.Header.CSeqMethod != SIPMethodsEnum.REGISTER)
+                {
+                    if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count == 1)
+                    {
+                        if (publicIPAddress != null)
+                        {
+                            sipResponse.Header.Contact[0].ContactURI.Host = new IPEndPoint(publicIPAddress, localSIPEndPoint.SocketEndPoint.Port).ToString();
+                            sipResponse.Header.Contact[0].ContactURI.Protocol = localSIPEndPoint.SIPProtocol;
+                        }
+                        else
+                        {
+                            sipResponse.Header.Contact[0].ContactURI.Host = localSIPEndPoint.SocketEndPoint.ToString();
+                            sipResponse.Header.Contact[0].ContactURI.Protocol = localSIPEndPoint.SIPProtocol;
+                        }
                     }
                 }
 
@@ -282,7 +297,7 @@ namespace SIPSorcery.Servers
 
         public SIPEndPoint DispatcherLookup(string branch, SIPMethodsEnum method)
         {
-            if (m_dispatcher != null)
+            if (m_dispatcher != null && !branch.IsNullOrBlank())
             {
                 return m_dispatcher.LookupTransactionID(branch, method);
             }

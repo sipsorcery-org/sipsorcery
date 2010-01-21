@@ -178,6 +178,21 @@ namespace SIPSorcery.SIP
                     return m_defaultSIPTransport;
                 }
             }
+            set
+            {
+                if (value == SIPProtocolsEnum.udp)
+                {
+                    Scheme = SIPSchemesEnum.sip;
+                    if (Parameters != null && Parameters.Has(m_uriParamTransportKey))
+                    {
+                        Parameters.Remove(m_uriParamTransportKey);
+                    }
+                }
+                else
+                {
+                    Parameters.Set(m_uriParamTransportKey, value.ToString());
+                }
+            }
         }
 
         /// <summary>

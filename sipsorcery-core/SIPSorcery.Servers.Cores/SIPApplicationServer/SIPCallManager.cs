@@ -36,9 +36,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Net;
+using System.ServiceModel;
+using System.ServiceModel.Configuration;
 using System.Text;
 using System.Threading;
 using System.Transactions;
@@ -48,6 +52,7 @@ using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using SIPSorcery.Web.Services;
 using log4net;
 
 namespace SIPSorcery.Servers
@@ -63,6 +68,8 @@ namespace SIPSorcery.Servers
         public const string DISPATCHER_SIPACCOUNT_NAME = "dispatcher";
         private const int MAX_CALLBACK_WAIT_SECONDS = 30;
         private const int EXPIRECALL_HANGUP_FAILURE_RETRY = 60;     // When a call is hungup due to time limit being reached a new hangup time will be set in case this server agent crashes.
+        private const string DISPATCHER_CONTRACT_NAME = "SIPSorcery.Web.Services.ICallDispatcherService";
+        private const int RETRY_FAILED_PROXY = 20000;
 
         private static ILog logger = AppState.logger;
 
@@ -90,6 +97,7 @@ namespace SIPSorcery.Servers
         private AutoResetEvent m_newCallReady = new AutoResetEvent(false);
         private DialPlanEngine m_dialPlanEngine;
 
+        private Dictionary<string, CallDispatcherProxy> m_dispatcherProxy = new Dictionary<string, CallDispatcherProxy>(); // [config name, proxy].
         private Dictionary<string, CallbackWaiter> m_waitingForCallbacks = new Dictionary<string, CallbackWaiter>();
 
         public SIPCallManager(
@@ -130,6 +138,8 @@ namespace SIPSorcery.Servers
 
         public void Start()
         {
+            InitialiseDispatcherProxies();
+
             if (m_monitorCalls)
             {
                 ThreadPool.QueueUserWorkItem(delegate { MonitorCalls(); });
@@ -765,6 +775,28 @@ namespace SIPSorcery.Servers
                     m_waitingForCallbacks.Add(callbackWaiter.UniqueId, callbackWaiter);
                 }
             }
+
+            if (m_dispatcherProxy.Count > 0)
+            {
+                // Register wil the SIP proxies to get the next call for the owning user directed to this application server.
+                ThreadPool.QueueUserWorkItem(delegate
+                {
+                    try
+                    {
+                        foreach (CallDispatcherProxy proxy in m_dispatcherProxy.Values)
+                        {
+                            if (proxy.State != CommunicationState.Faulted)
+                            {
+                                proxy.SetNextCallDest(callbackWaiter.Owner, m_sipTransport.GetDefaultSIPEndPoint().ToString());
+                            }
+                        }
+                    }
+                    catch (Exception excp)
+                    {
+                        logger.Error("Exception SIPCallManager AddWaitingApplication. " + excp.Message);
+                    }
+                });
+            }
         }
 
         public void ReInvite(SIPDialogue dialogue, string replacementSDP)
@@ -775,6 +807,84 @@ namespace SIPSorcery.Servers
         public void CreateDialogueBridge(SIPDialogue clientDiaglogue, SIPDialogue forwardedDialogue, string owner)
         {
             m_sipDialogueManager.CreateDialogueBridge(clientDiaglogue, forwardedDialogue, owner);
+        }
+
+        private void InitialiseDispatcherProxies()
+        {
+            try
+            {
+                List<string> clientEndPointNames = new List<string>();
+
+                ServiceModelSectionGroup serviceModelSectionGroup = ServiceModelSectionGroup.GetSectionGroup(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None));
+                foreach (ChannelEndpointElement client in serviceModelSectionGroup.Client.Endpoints)
+                {
+                    if (client.Contract == DISPATCHER_CONTRACT_NAME)
+                    {
+                        logger.Debug("MonitorProxyManager found client endpoint for ISIPMonitorPublisher, name=" + client.Name + ".");
+                        clientEndPointNames.Add(client.Name);
+                    }
+                }
+
+                foreach (string name in clientEndPointNames)
+                {
+                    CreateProxy(name);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception InitialiseDispatcherProxy. " + excp.Message);
+            }
+        }
+
+        private void CreateProxy(string name)
+        {
+            CallDispatcherProxy dispatcherProxy = new CallDispatcherProxy(name);
+
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                string configName = name;
+
+                try
+                {
+                    dispatcherProxy.IsAlive();
+                    ((ICommunicationObject)dispatcherProxy).Faulted += ProxyChannelFaulted;
+                    logger.Debug("SIPCallManager CallDispatcherProxy successfully created for " + name + ".");
+                    m_dispatcherProxy.Add(configName, dispatcherProxy);
+                }
+                catch (Exception excp)
+                {
+                    logger.Warn("Could not connect to dispatcher proxy " + name + ". " + excp.Message);
+                    Timer retryProxy = new Timer(delegate { CreateProxy(name); }, null, RETRY_FAILED_PROXY, Timeout.Infinite);
+                }
+            });
+        }
+
+        private void ProxyChannelFaulted(object sender, EventArgs e)
+        {
+            for (int index = 0; index < m_dispatcherProxy.Count; index++)
+            {
+                KeyValuePair<string, CallDispatcherProxy> proxyEntry = m_dispatcherProxy.ElementAt(index);
+                CallDispatcherProxy proxy = proxyEntry.Value;
+
+                if (proxy.State == CommunicationState.Faulted)
+                {
+                    logger.Debug("Removing faulted dispatcher proxy for " + proxyEntry.Key + ".");
+                    m_dispatcherProxy.Remove(proxyEntry.Key);
+                    CreateProxy(proxyEntry.Key);
+                    index--;
+
+                    logger.Warn("SIPCallManager received a fault on proxy channel, comms state=" + proxy.InnerChannel.State + ".");
+
+                    try
+                    {
+                        proxy.Abort();
+                    }
+                    catch (Exception abortExcp)
+                    {
+                        logger.Error("Exception ProxyChannelFaulted Abort. " + abortExcp.Message);
+                    }
+                }
+            }
         }
     }
 }

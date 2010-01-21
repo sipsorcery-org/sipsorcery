@@ -1,16 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPProxy", "SIPSorcery.SIPProxy\SIPSorcery.SIPProxy.csproj", "{F3AC0ABC-D48F-4280-B0CF-B20CD0C5B2E1}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPMonitor", "SIPSorcery.SIPMonitor\SIPSorcery.SIPMonitor.csproj", "{1BCEA4F5-881E-45EA-AC28-B79CCF018CFD}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPAppServer", "SIPSorcery.SIPAppServer\SIPSorcery.SIPAppServer.csproj", "{0B889844-B3E3-4D37-ADF2-F94758D0E14E}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPRegistrar", "SIPSorcery.SIPRegistrar\SIPSorcery.SIPRegistrar.csproj", "{1767A1B1-03AD-4264-9611-C0C36545E7C8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPRegistrationAgent", "SIPSorcery.SIPRegistrationAgent\SIPSorcery.SIPRegistrationAgent.csproj", "{92B0EB84-6587-4D7A-803B-C9FA0230A4B3}"
-EndProject
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3A407BCE-4A7A-4DB3-A64F-5F7D7B80BE97}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SQL", "SQL", "{031FFE96-4965-4D1E-AD80-1D051CF27AF8}"
@@ -46,11 +36,25 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "images", "images", "{F3F57B
 		SIPSorcery.Web\images\banner.jpg = SIPSorcery.Web\images\banner.jpg
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPProxy", "SIPSorcery.SIPProxy\SIPSorcery.SIPProxy.csproj", "{F3AC0ABC-D48F-4280-B0CF-B20CD0C5B2E1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPMonitor", "SIPSorcery.SIPMonitor\SIPSorcery.SIPMonitor.csproj", "{1BCEA4F5-881E-45EA-AC28-B79CCF018CFD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPAppServer", "SIPSorcery.SIPAppServer\SIPSorcery.SIPAppServer.csproj", "{0B889844-B3E3-4D37-ADF2-F94758D0E14E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPRegistrar", "SIPSorcery.SIPRegistrar\SIPSorcery.SIPRegistrar.csproj", "{1767A1B1-03AD-4264-9611-C0C36545E7C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPRegistrationAgent", "SIPSorcery.SIPRegistrationAgent\SIPSorcery.SIPRegistrationAgent.csproj", "{92B0EB84-6587-4D7A-803B-C9FA0230A4B3}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.CRM.Web", "SIPSorcery.CRM.Web\SIPSorcery.CRM.Web.csproj", "{4A4987CA-60B5-4423-BA7D-B22ADD6561CF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SSHServer", "SIPSorcery.SSH\SIPSorcery.SSHServer.csproj", "{CED321D0-33FB-485F-82D4-C188BE03ECE9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.WatchTower", "SIPSorcery.WatchTower\SIPSorcery.WatchTower.csproj", "{9D85DDE9-7F22-428F-BC5D-73CBB4540746}"
+EndProject
+Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "SIPSorcery.Azure", "SIPSorcery.Azure\SIPSorcery.Azure.ccproj", "{12C8E667-DE4D-4DB0-8704-056C1C1BCAEA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Azure.Service", "SIPSorcery.Azure.Service\SIPSorcery.Azure.Service.csproj", "{F04928AB-583E-4D2A-BD7A-C90326119988}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -90,6 +94,14 @@ Global
 		{9D85DDE9-7F22-428F-BC5D-73CBB4540746}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9D85DDE9-7F22-428F-BC5D-73CBB4540746}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9D85DDE9-7F22-428F-BC5D-73CBB4540746}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12C8E667-DE4D-4DB0-8704-056C1C1BCAEA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12C8E667-DE4D-4DB0-8704-056C1C1BCAEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12C8E667-DE4D-4DB0-8704-056C1C1BCAEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12C8E667-DE4D-4DB0-8704-056C1C1BCAEA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F04928AB-583E-4D2A-BD7A-C90326119988}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F04928AB-583E-4D2A-BD7A-C90326119988}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F04928AB-583E-4D2A-BD7A-C90326119988}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F04928AB-583E-4D2A-BD7A-C90326119988}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

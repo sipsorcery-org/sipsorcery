@@ -1,0 +1,1 @@
+﻿<%@ ServiceHost Language="C#" Debug="true" Service="SIPSorcery.Azure.Service.IsAliveService" CodeBehind="isalive.svc.cs" %>

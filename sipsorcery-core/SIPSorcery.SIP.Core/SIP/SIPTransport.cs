@@ -124,8 +124,7 @@ namespace SIPSorcery.SIP
         private bool m_closed = false;
 
         private Dictionary<string, SIPChannel> m_sipChannels = new Dictionary<string, SIPChannel>();    // List of the physical channels that have been opened and are under management by this instance.
-        //private List<SIPEndPoint> m_sipLocalEndPoints = new List<SIPEndPoint>();
-
+        
         private SIPTransactionEngine m_transactionEngine;
 
         public event SIPTransportRequestDelegate SIPTransportRequestReceived;
@@ -239,7 +238,6 @@ namespace SIPSorcery.SIP
                 m_transportThreadStarted = true;
 
                 Thread inMessageThread = new Thread(new ThreadStart(ProcessInMessage));
-                //inMessageThread.Priority = ThreadPriority.AboveNormal;
                 inMessageThread.Name = RECEIVE_THREAD_NAME;
                 inMessageThread.Start();
             }
@@ -270,12 +268,6 @@ namespace SIPSorcery.SIP
                     if (m_inMessageQueue.Count >= MAX_INMESSAGE_QUEUECOUNT)
                     {
                         logger.Warn("SIPTransport queue full new message from " + remoteEndPoint + " being discarded.");
-
-
-                        //while (m_inMessageQueue.Count >= MAX_INMESSAGE_QUEUECOUNT)
-                        //{
-                        //    m_inMessageQueue.Dequeue();
-                        //}
                     }
                     else
                     {
@@ -1144,7 +1136,7 @@ namespace SIPSorcery.SIP
 
         private void SIPMessageReceived(SIPChannel sipChannel, SIPEndPoint remoteEndPoint, byte[] buffer)
         {
-            string erroneousSIPMessage = null;
+            string rawSIPMessage = null;
 
             try
             {
@@ -1164,26 +1156,26 @@ namespace SIPSorcery.SIP
                         if (buffer.Length > SIPConstants.SIP_MAXIMUM_LENGTH)
                         {
                             string rawErrorMessage = Encoding.UTF8.GetString(buffer, 0, SIPConstants.SIP_MAXIMUM_LENGTH) + "\r\n..truncated";
-                            FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "SIP message too large.", SIPValidationFieldsEnum.Request, rawErrorMessage);
+                            FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "SIP message too large, " + buffer.Length + " bytes, maximum allowed is " + SIPConstants.SIP_MAXIMUM_LENGTH + " bytes.", SIPValidationFieldsEnum.Request, rawErrorMessage);
                             SIPResponse tooLargeResponse = GetResponse(sipChannel.SIPChannelEndPoint, remoteEndPoint, SIPResponseStatusCodesEnum.MessageTooLarge, null);
                             SendResponse(tooLargeResponse);
                         }
                         else
                         {
-                            erroneousSIPMessage = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
-                            if (erroneousSIPMessage.IsNullOrBlank())
+                            rawSIPMessage = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
+                            if (rawSIPMessage.IsNullOrBlank())
                             {
                                 // An emptry transmission has been received. More than likely this is a NAT keep alive and can be disregarded.
                                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "No printable characters, length " + buffer.Length + " bytes.", SIPValidationFieldsEnum.Unknown, null);
                                 return;
                             }
-                            else if (!erroneousSIPMessage.Contains("SIP"))
+                            else if (!rawSIPMessage.Contains("SIP"))
                             {
-                                FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Missing SIP string.", SIPValidationFieldsEnum.NoSIPString, erroneousSIPMessage);
+                                FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Missing SIP string.", SIPValidationFieldsEnum.NoSIPString, rawSIPMessage);
                                 return;
                             }
 
-                            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(buffer, sipChannel.SIPChannelEndPoint, remoteEndPoint);
+                            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(rawSIPMessage, sipChannel.SIPChannelEndPoint, remoteEndPoint);
 
                             if (sipMessage != null)
                             {
@@ -1231,7 +1223,6 @@ namespace SIPSorcery.SIP
                                     }
 
                                     #endregion
-
                                 }
                                 else
                                 {
@@ -1338,7 +1329,7 @@ namespace SIPSorcery.SIP
                             }
                             else
                             {
-                                FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Not parseable as SIP message.", SIPValidationFieldsEnum.Unknown, erroneousSIPMessage);
+                                FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Not parseable as SIP message.", SIPValidationFieldsEnum.Unknown, rawSIPMessage);
                             }
                         }
                     }
@@ -1346,7 +1337,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Exception SIPTransport. " + excp.Message, SIPValidationFieldsEnum.Unknown, erroneousSIPMessage);
+                FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Exception SIPTransport. " + excp.Message, SIPValidationFieldsEnum.Unknown, rawSIPMessage);
             }
         }
 
@@ -1493,30 +1484,6 @@ namespace SIPSorcery.SIP
                 }
             }
         }
-
-        /// <summary>
-        /// Attempts to find the SIPChannel that matches the provided name.
-        /// </summary>
-        /// <param name="name">The name of the SIPChannel to find.</param>
-        /// <returns>A matching SIPChannel if found otherwise null.</returns>
-        /*public SIPChannel FindSIPChannel(string name) {
-            if (name.IsNullOrBlank()) {
-                return null;
-            }
-            else {
-                var sipChannel = from channel in m_sipChannels.Values
-                                 where channel.Name == name
-                                 select channel;
-
-                if (sipChannel.Count() > 0) {
-                    return sipChannel.First();
-                }
-                else {
-                    logger.Warn("No SIP channel could be found for channel name " + name + ".");
-                    return null;
-                }
-            }
-        }*/
 
         /// <summary>
         /// Returns the first SIPChannel found for the requested protocol.

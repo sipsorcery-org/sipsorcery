@@ -314,7 +314,8 @@ namespace SIPSorcery.SIP.App
                     SIPRequest cancelRequest = GetCancelRequest(m_serverTransaction.TransactionRequest);
                     m_cancelTransaction = m_sipTransport.CreateNonInviteTransaction(cancelRequest, m_serverEndPoint, m_serverTransaction.LocalSIPEndPoint, m_outboundProxy);
                     m_cancelTransaction.TransactionTraceMessage += TransactionTraceMessage;
-                    m_cancelTransaction.SendRequest(m_serverEndPoint, cancelRequest);
+                    //m_cancelTransaction.SendRequest(m_serverEndPoint, cancelRequest);
+                    m_cancelTransaction.SendReliableRequest();
                 }
                 //else
                 //{

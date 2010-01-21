@@ -422,7 +422,12 @@ namespace SIPSorcery.Persistence
             else if (storageType == StorageTypes.MySQL) {
                 return new MySqlConnection(dbConnStr);
             }
-            else {
+            else if (storageType == StorageTypes.MSSQL)
+            {
+                return new SqlConnection(dbConnStr);
+            }
+            else
+            {
                 throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbConnection.");
             }
         }
@@ -434,7 +439,12 @@ namespace SIPSorcery.Persistence
             else if (storageType == StorageTypes.MySQL) {
                 return new MySqlCommand(cmdText, (MySqlConnection)dbConn);
             }
-            else {
+            else if (storageType == StorageTypes.MSSQL)
+            {
+                return new SqlCommand(cmdText, (SqlConnection)dbConn);
+            }
+            else
+            {
                 throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbConnection.");
             }
         }
@@ -446,7 +456,12 @@ namespace SIPSorcery.Persistence
             else if (storageType == StorageTypes.MySQL) {
                 return new MySqlDataAdapter(cmdText, (MySqlConnection)dbConn);
             }
-            else {
+            else if (storageType == StorageTypes.MSSQL)
+            {
+                return new SqlDataAdapter(cmdText, (SqlConnection)dbConn);
+            }
+            else
+            {
                 throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbConnection.");
             }
         }
@@ -458,7 +473,12 @@ namespace SIPSorcery.Persistence
             else if (storageType == StorageTypes.MySQL) {
                 return new MySqlParameter(name, value);
             }
-            else {
+            else if (storageType == StorageTypes.MSSQL)
+            {
+                return new SqlParameter(name, value);
+            }
+            else
+            {
                 throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbParameter.");
             }
         }

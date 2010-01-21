@@ -12,8 +12,22 @@ namespace SIPSorcery.SIP.App {
     [ServiceContract(CallbackContract = typeof(ISIPMonitorNotificationReady), Namespace = "http://www.sipsorcery.com/notifications", ConfigurationName = "SIPSorcery.SIP.App.ISIPMonitorPublisher")]
     public interface ISIPMonitorPublisher 
     {
+        [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/IsAlive", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/IsAliveResponse")]
+        bool IsAlive();
+
+        /// <summary>
+        /// This method subscribes a client to the monitor event publisher so that server monitor events can be provided to the client.
+        /// </summary>
+        /// <param name="customerUsername">The username of the customer subscribing for monitor events.</param>
+        /// <param name="adminId">The admin ID of the customer subscribing for monitor events.</param>
+        /// <param name="address">The address identifier of the connection that events are being subscribed for over. A single 
+        /// address can have multiple sessions and it maps 1-to-1 with the physical connection.</param>
+        /// <param name="subject">The type of filter being set. Can be one of ControlClient or Machine.</param>
+        /// <param name="filter">The user provided filter for the monitor events. The filter tells the monitor event publisher what events
+        /// this session is interested in.</param>
+        /// <returns>The session ID for the subscription request. Each matching monitor event will have a session ID set.</returns>
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/Subscribe", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/SubscribeResponse")]
-        string Subscribe(string customerUsername, string adminId, string address, string subject, string filter);
+        string Subscribe(string customerUsername, string adminId, string address, string subject, string filter, out string subscribeError);
 
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/GetNotifications", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/GetNotificationsResponse")]
         List<string> GetNotifications(string address, out string sessionID, out string sessionError);

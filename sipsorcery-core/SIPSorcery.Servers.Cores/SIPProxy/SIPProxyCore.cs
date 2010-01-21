@@ -143,10 +143,6 @@ namespace SIPSorcery.Servers
         {
             try
             {
-                Stopwatch requestStopwatch = new Stopwatch();
-                Stopwatch scriptStopwatch = new Stopwatch();
-                requestStopwatch.Start();
-
                 // Calculate the proxy branch parameter for this request. The branch parameter has to be calculated so that INVITE's and CANCEL's generate the same branchid.
                 //string toTag = (sipRequest.Header.To != null) ? sipRequest.Header.To.ToTag : null;
                 //string fromTag = (sipRequest.Header.From != null) ? sipRequest.Header.From.FromTag : null;
@@ -170,8 +166,6 @@ namespace SIPSorcery.Servers
                 string summaryStr = "req " + sipRequest.Method + " from=" + fromUser + ", to=" + toUser + ", " + remoteEndPoint.ToString();
 
                 bool isFromAppServer = (m_sipCallDispatcherFile != null) ? m_sipCallDispatcherFile.IsAppServerEndPoint(remoteEndPoint) : false;
-
-                scriptStopwatch.Start();
 
                 lock (this)
                 {
@@ -200,13 +194,11 @@ namespace SIPSorcery.Servers
                     m_compiledScript.Execute();
                 }
 
-                scriptStopwatch.Stop();
-                requestStopwatch.Stop();
 
-                if (requestStopwatch.ElapsedMilliseconds > 20)
-                {
-                    logger.Debug("GotRequest processing time=" + requestStopwatch.ElapsedMilliseconds + "ms, script time=" + scriptStopwatch.ElapsedMilliseconds + "ms.");
-                }
+                //if (requestStopwatch.ElapsedMilliseconds > 20)
+                //{
+                //    logger.Debug("GotRequest processing time=" + requestStopwatch.ElapsedMilliseconds + "ms, script time=" + scriptStopwatch.ElapsedMilliseconds + "ms.");
+                //}
             }
             catch (SIPValidationException)
             {
@@ -237,10 +229,6 @@ namespace SIPSorcery.Servers
         {
             try
             {
-                Stopwatch responseStopwatch = new Stopwatch();
-                Stopwatch scriptStopwatch = new Stopwatch();
-                responseStopwatch.Start();
-
                 // Used in the proxy monitor messages only, plays no part in response processing.
                 string fromUser = (sipResponse.Header.From != null) ? sipResponse.Header.From.FromURI.User : null;
                 string toUser = (sipResponse.Header.To != null) ? sipResponse.Header.To.ToURI.User : null;
@@ -267,8 +255,6 @@ namespace SIPSorcery.Servers
 
                 lock (this)
                 {
-                    scriptStopwatch.Start();
-
                     m_compiledScript.DefaultScope.RemoveVariable("sys");
                     m_compiledScript.DefaultScope.RemoveVariable("isreq");
                     m_compiledScript.DefaultScope.RemoveVariable("localEndPoint");
@@ -294,13 +280,10 @@ namespace SIPSorcery.Servers
                     m_compiledScript.Execute();
                 }
 
-                scriptStopwatch.Stop();
-                responseStopwatch.Stop();
-
-                if (responseStopwatch.ElapsedMilliseconds > 20)
-                {
-                    logger.Debug("GotResponse processing time=" + responseStopwatch.ElapsedMilliseconds + "ms, script time=" + scriptStopwatch.ElapsedMilliseconds + "ms.");
-                }
+                //if (responseStopwatch.ElapsedMilliseconds > 20)
+                //{
+                //    logger.Debug("GotResponse processing time=" + responseStopwatch.ElapsedMilliseconds + "ms, script time=" + scriptStopwatch.ElapsedMilliseconds + "ms.");
+                //}
             }
             catch (Exception excp)
             {

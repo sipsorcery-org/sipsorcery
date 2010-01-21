@@ -41,8 +41,15 @@ namespace SIPSorcery.Servers
             ThreadPool.QueueUserWorkItem(delegate { RemoveExpiredSessions(); });
         }
 
-        public string Subscribe(string customerUsername, string adminId, string address, string subject, string filter)
+        public bool IsAlive()
         {
+            return true;
+        }
+
+        public string Subscribe(string customerUsername, string adminId, string address, string subject, string filter, out string subscribeError)
+        {
+            subscribeError = null;
+
             try
             {
                 string sessionID = null;
@@ -83,11 +90,11 @@ namespace SIPSorcery.Servers
                     }
                 }
 
-                if (notificationReady != null)
-                {
-                    logger.Debug("Subscribe Firing notification available callback for address " + address + ".");
-                    notificationReady(address);
-                }
+                //if (notificationReady != null)
+                //{
+                //    logger.Debug("Subscribe Firing notification available callback for address " + address + ".");
+                //    notificationReady(address);
+               // }
 
                 //logger.Debug("SIPMonitorClientManager subscribed " + session.Address + " " + session.CustomerUsername + ".");
 
@@ -95,8 +102,8 @@ namespace SIPSorcery.Servers
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPMonitorClientManager Subscribe. " + excp.Message);
-                //throw;
+                logger.Error("Exception SIPMonitorClientManager Subscribe (" + excp.GetType() + "). " + excp.Message);
+                subscribeError = excp.Message;
                 return null;
             }
         }

@@ -111,7 +111,8 @@ namespace SIPSorcery.AppServer.DialPlan {
                 m_fromURIUserRegexMatch = fromUserRegexMatch;
 
                 if (CallProgress != null) {
-                    CallProgress(SIPResponseStatusCodesEnum.Ringing, "Initiating Google Voice call", null, null, null);
+                    //CallProgress(SIPResponseStatusCodesEnum.Ringing, "Initiating Google Voice call", null, null, null);
+                    CallProgress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
                 }
 
                 CookieContainer cookies = new CookieContainer();
@@ -221,12 +222,12 @@ namespace SIPSorcery.AppServer.DialPlan {
             try {
                 int callbackTimeout = (waitForCallbackTimeout < MIN_CALLBACK_TIMEOUT || waitForCallbackTimeout > MAX_CALLBACK_TIMEOUT) ? WAIT_FOR_CALLBACK_TIMEOUT : waitForCallbackTimeout;
 
-                CallbackWaiter callbackWaiter = new CallbackWaiter(CallbackWaiterEnum.GoogleVoice, forwardingNumber, MatchIncomingCall);
+                CallbackWaiter callbackWaiter = new CallbackWaiter(m_username, CallbackWaiterEnum.GoogleVoice, forwardingNumber, MatchIncomingCall);
                 m_callManager.AddWaitingApplication(callbackWaiter);
                 
                 string callData = "outgoingNumber=" + Uri.EscapeDataString(destinationNumber) + "&forwardingNumber=" + Uri.EscapeDataString(forwardingNumber) + 
                     "&subscriberNumber=undefined&remember=0&_rnr_se=" + Uri.EscapeDataString(rnr) + "&phoneType=" + phoneType;
-                logger.Debug("call data=" + callData + ".");
+                //logger.Debug("call data=" + callData + ".");
 
                 // Build the call request.
                 HttpWebRequest callRequest = (HttpWebRequest)WebRequest.Create(VOICE_CALL_URL);
@@ -265,7 +266,7 @@ namespace SIPSorcery.AppServer.DialPlan {
         }
 
         private bool MatchIncomingCall(ISIPServerUserAgent incomingCall) {
-            try {
+            try { 
                 if (incomingCall.SIPAccount.Owner != m_username) {
                     return false;
                 }

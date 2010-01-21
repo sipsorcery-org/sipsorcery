@@ -19,11 +19,11 @@ namespace SIPSorcery.SSHServer
     {
         private const int MAX_COMMAND_LENGTH = 2000;
         private const string FILTER_COMMAND_PROMPT = "filter=>";
+        private const string DEFAULT_FILTER = "event *";
         private const string CRLF = "\r\n";
 
         private static ILog logger = AppState.logger;
 
-        private SIPMonitorPublisherProxy m_publisherWCFProxy;
         private ISIPMonitorPublisher m_publisher;
         private string m_notificationsAddress;
         private string m_notificationsSessionID;
@@ -55,11 +55,6 @@ namespace SIPSorcery.SSHServer
                 logger.Debug("Unable to resolve ISIPMonitorPublisher. " + appExcp.Message);
             }
 
-            if (m_publisher == null)
-            {
-                InitialiseProxy();
-            }
-
             WriteWelcomeMessage(customer);
             OutStream.Write(Encoding.ASCII.GetBytes(FILTER_COMMAND_PROMPT));
             ThreadPool.QueueUserWorkItem(delegate { Listen(); });
@@ -69,9 +64,9 @@ namespace SIPSorcery.SSHServer
         {
             try
             {
-                if (m_notificationsAddress != null && m_publisherWCFProxy != null)
+                if (m_notificationsAddress != null)
                 {
-                    m_publisherWCFProxy.CloseConnection(m_notificationsAddress);
+                    m_publisher.CloseConnection(m_notificationsAddress);
                 }
             }
             catch (Exception excp)
@@ -87,63 +82,6 @@ namespace SIPSorcery.SSHServer
             if (Closed != null)
             {
                 Closed(this, new EventArgs());
-            }
-        }
-
-        private void InitialiseProxy()
-        {
-            InstanceContext callbackContext = new InstanceContext(this);
-            m_publisherWCFProxy = new SIPMonitorPublisherProxy(callbackContext);
-            ((ICommunicationObject)m_publisherWCFProxy).Faulted += PublisherWCFProxyChannelFaulted;
-            m_publisher = m_publisherWCFProxy;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <remarks>This occurs when the channel to the SIP monitoring server that is publishing the events
-        /// is faulted. This can occur if the SIP monitoring server is shutdown which will close the socket.</remarks>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void PublisherWCFProxyChannelFaulted(object sender, EventArgs e)
-        {
-            try
-            {
-                logger.Warn("SIPSorceryVT100Server received a fault on Publisher WCF proxy channel, comms state=" + m_publisherWCFProxy.State + ", " + m_publisherWCFProxy.InnerChannel.State + ".");
-
-                try
-                {
-                    if (m_publisherWCFProxy.State != CommunicationState.Faulted)
-                    {
-                        try
-                        {
-                            m_publisherWCFProxy.Close();
-                        }
-                        catch (Exception closeExcp)
-                        {
-                            logger.Warn("Exception PublisherWCFProxyChannelFaulted Close. " + closeExcp.Message);
-                            m_publisherWCFProxy.Abort();
-                        }
-                    }
-                    else
-                    {
-                        m_publisherWCFProxy.Abort();
-                    }
-                }
-                catch (Exception abortExcp)
-                {
-                    logger.Error("Exception PublisherWCFProxyChannelFaulted Abort. " + abortExcp.Message);
-                }
-
-                InstanceContext callbackContext = new InstanceContext(this);
-                m_publisherWCFProxy = new SIPMonitorPublisherProxy(callbackContext);
-                ((ICommunicationObject)m_publisherWCFProxy).Faulted += PublisherWCFProxyChannelFaulted;
-                m_publisher = m_publisherWCFProxy;
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception PublisherWCFProxyChannelFaulted. " + excp.Message);
-                throw;
             }
         }
 
@@ -191,15 +129,7 @@ namespace SIPSorcery.SSHServer
                 }
                 else 
                 {
-                    //logger.Debug("Registering listener for address " + m_notificationsAddress + ".");
-                    if (m_publisherWCFProxy != null)
-                    {
-                        m_publisher.RegisterListener(m_notificationsAddress);
-                    }
-                    else
-                    {
-                        m_publisher.RegisterListener(m_notificationsAddress, NotificationReady);
-                    }
+                    m_publisher.RegisterListener(m_notificationsAddress, NotificationReady);
                 }
             }
             catch (Exception excp)
@@ -370,8 +300,22 @@ namespace SIPSorcery.SSHServer
         {
             try
             {
-                m_notificationsSessionID = m_publisher.Subscribe(Username, AdminId, m_notificationsAddress, SIPMonitorClientTypesEnum.ControlClient.ToString(), command);
-                GetNotifications();
+                if (command.IsNullOrBlank())
+                {
+                    command = DEFAULT_FILTER;
+                }
+
+                string subscribeError = null;
+                m_notificationsSessionID = m_publisher.Subscribe(Username, AdminId, m_notificationsAddress, SIPMonitorClientTypesEnum.ControlClient.ToString(), command, out subscribeError);
+
+                if (subscribeError != null)
+                {
+                    throw new ApplicationException(subscribeError);
+                }
+                else
+                {
+                    GetNotifications();
+                }
             }
             catch (ApplicationException appExcp)
             {
@@ -386,23 +330,25 @@ namespace SIPSorcery.SSHServer
         private void WriteWelcomeMessage(Customer customer)
         {
             OutStream.Write(new byte[] { 0x1B, 0x5B, 0x34, 0x37, 0x3b, 0x33, 0x34, 0x6d });
-            OutStream.Write(Encoding.ASCII.GetBytes("Welcome " + customer.FirstName + CRLF));
+            OutStream.Write(Encoding.ASCII.GetBytes("Welcome " + customer.FirstName));
             OutStream.Write(new byte[] { 0x1B, 0x5B, 0x30, 0x6d });
             OutStream.Flush();
+            OutStream.Write(Encoding.ASCII.GetBytes(CRLF));
         }
 
         private void WriteFilterDescription(string filterDescription)
         {
             OutStream.Write(new byte[] { 0x1B, 0x5B, 0x34, 0x37, 0x3b, 0x33, 0x34, 0x6d });
-            OutStream.Write(Encoding.ASCII.GetBytes(CRLF + filterDescription));
+            OutStream.Write(Encoding.ASCII.GetBytes(CRLF + filterDescription.TrimEnd()));
             OutStream.Write(new byte[] { 0x1B, 0x5B, 0x30, 0x6d });
             OutStream.Flush();
+            OutStream.Write(Encoding.ASCII.GetBytes(CRLF));
         }
 
         private void WriteError(string errorMessage)
         {
             OutStream.Write(new byte[] { 0x1B, 0x5B, 0x33, 0x31, 0x3b, 0x34, 0x37, 0x6d });
-            OutStream.Write(Encoding.ASCII.GetBytes(CRLF + errorMessage));
+            OutStream.Write(Encoding.ASCII.GetBytes(CRLF + errorMessage.TrimEnd()));
             OutStream.Write(new byte[] { 0x1B, 0x5B, 0x30, 0x6d });
             OutStream.Flush();
             OutStream.Write(Encoding.ASCII.GetBytes(CRLF + FILTER_COMMAND_PROMPT));

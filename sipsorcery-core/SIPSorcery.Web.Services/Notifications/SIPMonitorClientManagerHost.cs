@@ -19,9 +19,14 @@ namespace SIPSorcery.Web.Services
             m_publisher = publisher;
         }
 
-        public string Subscribe(string customerUsername, string adminId, string address, string subject, string filter)
+        public bool IsAlive()
         {
-            return m_publisher.Subscribe(customerUsername, adminId, address, subject, filter);
+            return m_publisher.IsAlive();
+        }
+
+        public string Subscribe(string customerUsername, string adminId, string address, string subject, string filter, out string subscribeError)
+        {
+            return m_publisher.Subscribe(customerUsername, adminId, address, subject, filter, out subscribeError);
         }
 
         public List<string> GetNotifications(string address, out string sessionID, out string sessionError)

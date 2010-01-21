@@ -188,7 +188,8 @@ namespace SIPSorcery.SIPAppServer {
 
                 if (m_sshServerEnabled)
                 {
-                    SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, m_sipMonitorPublisher);
+                    //SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, m_sipMonitorPublisher); // Uses memory to transfer events. 
+                    SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager);                          // Uses WCF netTCP channel to transfer events.
                     daemon.Start();
                 }
 

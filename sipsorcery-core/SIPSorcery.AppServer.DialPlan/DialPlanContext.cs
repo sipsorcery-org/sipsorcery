@@ -71,7 +71,7 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             get { return m_dialPlan; }
         }
-        public bool SendTrace;                      // True means the trace should be sent, false it shouldn't.
+        public bool SendTrace = true;                      // True means the trace should be sent, false it shouldn't.
         public DialPlanContextsEnum ContextType;
         public string Owner {
             get { return m_dialPlan.Owner; }
@@ -222,13 +222,9 @@ namespace SIPSorcery.AppServer.DialPlan
 
         private void ClientTransactionRemoved(ISIPServerUserAgent uas) {
             try {
-                if (!m_traceDirectory.IsNullOrBlank() && !TraceEmailAddress.IsNullOrBlank() && TraceLog != null && TraceLog.Length > 0) {
-                    if (!Directory.Exists(m_traceDirectory)) {
-                        logger.Warn("Dial Plan trace could not be saved as trace directory " + m_traceDirectory + " does not exist.");
-                    }
-                    else if(SendTrace){
-                        ThreadPool.QueueUserWorkItem(delegate { CompleteTrace(); });
-                    }
+                if (!TraceEmailAddress.IsNullOrBlank() && TraceLog != null && TraceLog.Length > 0 && SendTrace)
+                {
+                    ThreadPool.QueueUserWorkItem(delegate { CompleteTrace(); });
                 }
             }
             catch (Exception excp) {
@@ -241,10 +237,13 @@ namespace SIPSorcery.AppServer.DialPlan
                 SIPMonitorEvent traceCompleteEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dialplan trace completed at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff") + ".", Owner);
                 TraceLog.AppendLine(traceCompleteEvent.EventType + "=> " + traceCompleteEvent.Message);
 
-                string traceFilename = m_traceDirectory + Owner + "-" + DateTime.Now.ToString("ddMMMyyyyHHmmss") + ".txt";
-                StreamWriter traceSW = new StreamWriter(traceFilename);
-                traceSW.Write(TraceLog.ToString());
-                traceSW.Close();
+                if (!m_traceDirectory.IsNullOrBlank() && Directory.Exists(m_traceDirectory))
+                {
+                    string traceFilename = m_traceDirectory + Owner + "-" + DateTime.Now.ToString("ddMMMyyyyHHmmss") + ".txt";
+                    StreamWriter traceSW = new StreamWriter(traceFilename);
+                    traceSW.Write(TraceLog.ToString());
+                    traceSW.Close();
+                }
 
                 if (TraceEmailAddress != null) {
                     logger.Debug("Emailing trace to " + TraceEmailAddress + ".");

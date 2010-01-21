@@ -122,9 +122,9 @@ create table sipproviders
  registerexpiry int,
  registerserver varchar(256),
  registerrealm varchar(256),
- registerenabled bool not null default false,
- registeradminenabled bool not null default true,		-- This allows an admin to disable the registration and override the user.
- registerdisabledreason varchar(256),					-- If a registration has been disabled by the RegistrationAgent the reason will be specified here. Examples are 403 Forbidden responses.
+ registerenabled bit not null default 0,
+ registeradminenabled bit not null default 1,		-- This allows an admin to disable the registration and override the user.
+ registerdisabledreason varchar(256),				-- If a registration has been disabled by the RegistrationAgent the reason will be specified here. Examples are 403 Forbidden responses.
  inserted datetimeoffset not null,
  lastupdate datetimeoffset not null,
  Primary Key(id),
@@ -162,7 +162,7 @@ create table sipdialplans
  adminmemberid varchar(32),
  dialplanname varchar(64) not null default 'default',			-- Name the owner has assigned to the dialplan to allow them to choose between their different ones.
  traceemailaddress varchar(256),
- dialplanscript varchar(8000),
+ dialplanscript varchar(max),
  scripttypedescription varchar(12) not null default 'Ruby',		-- The type of script the dialplan has, supported values are: Asterisk, Ruby, Python and JScript.
  inserted datetimeoffset not null,
  lastupdate datetimeoffset not null,
@@ -247,7 +247,7 @@ create index regbindings_contact_index on sipregistrarbindings(contacturi);
 create table dialplandata 
 (
   dataowner varchar(32)not null,
-  datakey varchar(64) not null,
+  datakey varchar(64) not null, 
   datavalue varchar(1024) not null
   Primary Key(dataowner, datakey)
 );

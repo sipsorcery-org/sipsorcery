@@ -157,7 +157,7 @@ namespace SIPSorcery.SIP.App
                                 }
                             }
                             else {
-                                throw new ApplicationException("Filter " + filterName + " not recgonised.");
+                                throw new ApplicationException("Filter " + filterName + " was not recognised.");
                             }
                         }
                         else {
