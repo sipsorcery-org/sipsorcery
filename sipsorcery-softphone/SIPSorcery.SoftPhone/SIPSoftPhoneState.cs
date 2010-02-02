@@ -12,11 +12,13 @@ namespace SIPSorcery.SoftPhone {
 
         private const string SIPSOFTPHONE_CONFIGNODE_NAME = "sipsoftphone";
         private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
+        private const string STUN_SERVER_KEY = "STUNServerHostname";
 
         public static ILog logger;
 
         private static readonly XmlNode m_sipSoftPhoneConfigNode;
-        public static readonly XmlNode SIPSocketsNode;       
+        public static readonly XmlNode SIPSocketsNode;
+        public static readonly string STUNServerHostname;
 
         static SIPSoftPhoneState()
         {
@@ -43,6 +45,8 @@ namespace SIPSorcery.SoftPhone {
                 if (m_sipSoftPhoneConfigNode != null) {
                     SIPSocketsNode = m_sipSoftPhoneConfigNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
                 }
+
+                STUNServerHostname = ConfigurationManager.AppSettings[STUN_SERVER_KEY];
             }
             catch (Exception excp)
             {

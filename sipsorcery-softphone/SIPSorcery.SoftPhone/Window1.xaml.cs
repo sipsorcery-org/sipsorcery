@@ -28,6 +28,7 @@ namespace SIPSorcery.SoftPhone
     public partial class Window1 : Window
     {
         private const int DNS_LOOKUP_TIMEOUT = 10000;
+        private const string STUN_CLIENT_THREAD_NAME = "sipproxy-stunclient";
 
         private delegate void SetVisibilityDelegate(UIElement element, Visibility visibility);
         private delegate void AppendTraceMessageDelegate(string message);
@@ -36,6 +37,7 @@ namespace SIPSorcery.SoftPhone
         private ILog logger = SIPSoftPhoneState.logger;
 
         private XmlNode m_sipSocketsNode = SIPSoftPhoneState.SIPSocketsNode;
+        private string m_stunServerHostname = SIPSoftPhoneState.STUNServerHostname;
 
         private FlowDocument m_traceDocument = new FlowDocument();
         private Paragraph m_traceParagraph = new Paragraph();
@@ -51,6 +53,11 @@ namespace SIPSorcery.SoftPhone
         private SIPServerUserAgent m_uas;
         private STUNClient m_stunClient;
         private ManualResetEvent m_dnsLookupComplete = new ManualResetEvent(false);
+        private STUNServer m_stunServer;
+        private bool m_stop;
+        private ManualResetEvent m_stunClientMRE = new ManualResetEvent(false);     // Used to set the interval on the STUN lookups and also allow the thread to be stopped.
+
+        public IPAddress PublicIPAddress;
 
         public Window1()
         {
@@ -70,15 +77,20 @@ namespace SIPSorcery.SoftPhone
             m_cancelButton.Visibility = Visibility.Collapsed;
             m_byeButton.Visibility = Visibility.Collapsed;
 
-            m_stunClient = new STUNClient(IPAddress.Parse("10.0.0.100"), new IPEndPoint(IPAddress.Parse("75.101.138.128"), 3478));
+            if (!m_stunServerHostname.IsNullOrBlank())
+            {
+                // If a STUN server hostname has been specified start the STUN client thread.
+                ThreadPool.QueueUserWorkItem(delegate { StartSTUNClient(); });
+            }
 
             ThreadPool.QueueUserWorkItem(InitialiseSIP);
-            ThreadPool.QueueUserWorkItem(m_stunClient.GetPublicIPAddress);
             SIPDNSManager.SIPMonitorLogEvent += (e) => { AppendTraceMessage(e.Message + "\n"); };
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            m_stop = true;
+
             if (m_sipTransport != null)
             {
                 m_sipTransport.Shutdown();
@@ -87,10 +99,51 @@ namespace SIPSorcery.SoftPhone
             DNSManager.Stop();
         }
 
+        private void StartSTUNClient()
+        {
+            try
+            {
+                Thread.CurrentThread.Name = STUN_CLIENT_THREAD_NAME;
+
+                logger.Debug("STUN client started.");
+
+                while (!m_stop)
+                {
+                    try
+                    {
+                        IPAddress publicIP = STUNClient.GetPublicIPAddress(m_stunServerHostname);
+                        if (publicIP != null)
+                        {
+                            //logger.Debug("The STUN client was able to determine the public IP address as " + publicIP.ToString() + ".");
+                            PublicIPAddress = publicIP;
+                        }
+                        else
+                        {
+                            // logger.Debug("The STUN client could not determine the public IP address.");
+                            PublicIPAddress = null;
+                        }
+                    }
+                    catch (Exception getAddrExcp)
+                    {
+                        logger.Error("Exception StartSTUNClient GetPublicIPAddress. " + getAddrExcp.Message);
+                    }
+
+                    m_stunClientMRE.Reset();
+                    m_stunClientMRE.WaitOne(60000);
+                }
+
+                logger.Warn("STUN client thread stopped.");
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception StartSTUNClient. " + excp.Message);
+            }
+        }
+
         private void InitialiseSIP(object state)
         {
             // Configure the SIP transport layer.
-            m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), false, false);
+            m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine());
             List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipSocketsNode);
             m_sipTransport.AddSIPChannel(sipChannels);
 
@@ -106,22 +159,20 @@ namespace SIPSorcery.SoftPhone
         {
             if (sipRequest.Method == SIPMethodsEnum.BYE)
             {
-                string dialogueId = SIPDialogue.GetDialogueId(sipRequest.Header);
-
-                if (m_uac != null && m_uac.SIPDialogue != null && dialogueId == m_uac.SIPDialogue.DialogueId)
+                if (m_uac != null && m_uac.SIPDialogue != null && sipRequest.Header.CallId == m_uac.SIPDialogue.CallId)
                 {
                     // Call has been hungup by remote end.
                     AppendTraceMessage("Call hungup by server: " + localSIPEndPoint + "<-" + remoteEndPoint + " " + sipRequest.URI.ToString() + ".\n");
                     AppendSIPTraceMessage("Request Received " + localSIPEndPoint + "<-" + remoteEndPoint + "\n" + sipRequest.ToString());
-                    m_uac.Hungup(localSIPEndPoint, remoteEndPoint, sipRequest);
+                    m_uac.SIPDialogue.Hangup(m_sipTransport, null);
                     ResetToCallStartState();
                 }
-                else if (m_uas != null && m_uas.SIPDialogue != null && dialogueId == m_uas.SIPDialogue.DialogueId)
+                else if (m_uas != null && m_uas.SIPDialogue != null && sipRequest.Header.CallId == m_uas.SIPDialogue.CallId)
                 {
                     // Call has been hungup by remote end.
                     AppendTraceMessage("Call hungup by client: " + localSIPEndPoint + "<-" + remoteEndPoint + " " + sipRequest.URI.ToString() + ".\n");
                     AppendSIPTraceMessage("Request Received " + localSIPEndPoint + "<-" + remoteEndPoint + "\n" + sipRequest.ToString());
-                    m_uas.Hungup(localSIPEndPoint, remoteEndPoint, sipRequest);
+                    m_uas.SIPDialogue.Hangup(m_sipTransport, null);
                     ResetToCallStartState();
                 }
                 else
@@ -140,10 +191,9 @@ namespace SIPSorcery.SoftPhone
                 SetVisibility(m_uacGrid, Visibility.Collapsed);
                 SetVisibility(m_uasGrid, Visibility.Visible);
 
-                m_uas = new SIPServerUserAgent(m_sipTransport, null, null, LogTraceMessage);
-                m_uas.NewCall += UASNewCall;
-                m_uas.CallCancelled += new SIPIncomingCallCancelledDelegate(UASCallCancelled);
-                m_uas.InviteRequestReceived(sipRequest, localSIPEndPoint, remoteEndPoint);
+                UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+                m_uas = new SIPServerUserAgent(m_sipTransport, null, null, null, SIPCallDirection.In, null, null, LogTraceMessage, uasTransaction);
+                m_uas.CallCancelled += UASCallCancelled;
             }
             else if (sipRequest.Method == SIPMethodsEnum.CANCEL)
             {
@@ -170,17 +220,10 @@ namespace SIPSorcery.SoftPhone
             }
         }
 
-        private void UASCallCancelled(SIPServerUserAgent uas)
+        private void UASCallCancelled(ISIPServerUserAgent uas)
         {
-            AppendTraceMessage("Incoming call cancelled for: " + uas.SIPTransaction.TransactionRequest.URI.ToString() + "\n");
+            AppendTraceMessage("Incoming call cancelled for: " + uas.CallDestination + "\n");
             ResetToCallStartState();
-        }
-
-        private void UASNewCall(SIPServerUserAgent uas)
-        {
-            AppendTraceMessage("Incoming call accepted for: " + uas.SIPTransaction.TransactionRequest.URI.ToString() + "\n");
-
-            m_uas.SetRinging();
         }
 
         private void ResetToCallStartState()
@@ -239,20 +282,20 @@ namespace SIPSorcery.SoftPhone
 
         private void ByeButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            m_uac.Hangup();
+            m_uac.SIPDialogue.Hangup(m_sipTransport, null);
             ResetToCallStartState();
         }
 
         private void AnswerButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            m_uas.Answer(null, null, null, null);
+            m_uas.Answer(null, null, null, SIPDialogueTransferModesEnum.Allowed);
             SetVisibility(m_answerButton, Visibility.Collapsed);
             SetVisibility(m_rejectButton, Visibility.Collapsed);
         }
 
         private void RejectButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            m_uas.Reject(SIPResponseStatusCodesEnum.BusyHere, null);
+            m_uas.Reject(SIPResponseStatusCodesEnum.BusyHere, null, null);
             ResetToCallStartState();
         }
 
@@ -363,18 +406,18 @@ namespace SIPSorcery.SoftPhone
                 m_uac.CallRinging += CallRinging;
                 m_uac.CallAnswered += CallAnswered;
                 m_uac.CallFailed += CallFailed;
-                SIPCallDescriptor callDescriptor = new SIPCallDescriptor("anonymous", null, callURI, null, null, null, null, null, SIPCallDirection.Out, null, null);
+                SIPCallDescriptor callDescriptor = new SIPCallDescriptor("anonymous", null, callURI, null, null, null, null, null, SIPCallDirection.Out, null, null, null);
                 m_uac.Call(callDescriptor);
             //}
         }
 
-        private void CallFailed(SIPClientUserAgent uac, string errorMessage)
+        private void CallFailed(ISIPClientUserAgent uac, string errorMessage)
         {
             AppendTraceMessage("Call failed: " + errorMessage + "\n");
             ResetToCallStartState();
         }
 
-        private void CallAnswered(SIPClientUserAgent uac, SIPResponse sipResponse)
+        private void CallAnswered(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
             AppendTraceMessage("Call answered: " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".\n");
 
@@ -390,12 +433,12 @@ namespace SIPSorcery.SoftPhone
             }
         }
 
-        private void CallRinging(SIPClientUserAgent uac, SIPResponse sipResponse)
+        private void CallRinging(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
             AppendTraceMessage("Call ringing: " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".\n");
         }
 
-        private void CallTrying(SIPClientUserAgent uac, SIPResponse sipResponse)
+        private void CallTrying(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
             AppendTraceMessage("Call trying: " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".\n");
         }
