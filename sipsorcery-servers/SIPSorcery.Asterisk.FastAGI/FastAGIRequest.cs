@@ -42,6 +42,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Web;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -49,14 +50,17 @@ namespace SIPSorcery.Asterisk.FastAGI
 {
 	public class FastAGIRequest
 	{
+        public const string COMMENT_PREFIX = ";";
+
         private ILog logger = LogManager.GetLogger("fastagi");
 	
 		public string Request;
 		public string Channel;
 		public string Language;
 		public string Type;
-		public string UniqueId;
-		public string CallerId;
+		public string UniqueID;
+		public string CallerID;
+        public string CallerIDName;
 		public string Dnid;
 		public string Rdnis;
 		public string Context;
@@ -82,18 +86,41 @@ namespace SIPSorcery.Asterisk.FastAGI
 
                 byte[] buffer = new byte[1024];
 
-                agiSocket.Send(Encoding.ASCII.GetBytes("EXEC PLAYBACK tt-monkeys\n"));
-                int bytesRead = agiSocket.Receive(buffer);
-                logger.Debug(ASCIIEncoding.ASCII.GetString(buffer, 0, bytesRead));
+                using (StreamReader sr = new StreamReader("fastagi-dialplan.txt"))
+                {
+                    while (!sr.EndOfStream)
+                    {
+                        string dialPlanLine = sr.ReadLine();
 
-                agiSocket.Send(Encoding.ASCII.GetBytes("EXEC PLAYBACK tt-weasels\n"));
-                bytesRead = agiSocket.Receive(buffer);
-                logger.Debug(ASCIIEncoding.ASCII.GetString(buffer, 0, bytesRead));
+                        if (!dialPlanLine.IsNullOrBlank())
+                        {
+                            logger.Debug("Dialplan line: " + dialPlanLine);
+                            if (!dialPlanLine.Trim().StartsWith(COMMENT_PREFIX))
+                            {
+                                agiSocket.Send(Encoding.ASCII.GetBytes(dialPlanLine + "\n"));
+                                int bytesRead = agiSocket.Receive(buffer);
+                                logger.Debug(ASCIIEncoding.ASCII.GetString(buffer, 0, bytesRead));
+                            }
+                        }
+                    }
+                }
 
-                agiSocket.Send(Encoding.ASCII.GetBytes("TRANSFER SIP/aaron@sipsorcery.com\n"));
-                bytesRead = agiSocket.Receive(buffer);
-                logger.Debug(ASCIIEncoding.ASCII.GetString(buffer, 0, bytesRead));
+                // Dialplan finished. Now transfer the call back to sipsorcery.
+                string blindTransferURI = "http://sipsorcery.com/callmanager.svc/blindtransfer?user=username&callid=" + this.CallerIDName + "&destination=1234";
+                logger.Debug("Initiaiting blind transfer: " + blindTransferURI);
+                HttpWebRequest blindTransferRequest = (HttpWebRequest)WebRequest.Create(blindTransferURI);
+                StreamReader responseReader = new StreamReader(blindTransferRequest.GetResponse().GetResponseStream());
+                logger.Debug("Blind transfer result=" + responseReader.ReadToEnd() + ".");
 
+                // Play something while the transfer is attempted.
+                for (int index = 0; index < 3; index++)
+                {
+                    agiSocket.Send(Encoding.ASCII.GetBytes("EXEC PLAYBACK transfer\n"));
+                }
+
+                // If the Fast AGI connection is still up at this point the transfer failed.
+                agiSocket.Send(Encoding.ASCII.GetBytes("EXEC PLAYBACK sorry\n"));
+                                
                 return new AppTimeMetric();
             }
             catch (Exception excp)
@@ -121,8 +148,9 @@ namespace SIPSorcery.Asterisk.FastAGI
 				case "agi_channel": this.Channel = value; break;
 				case "agi_language": this.Language = value; break;
 				case "agi_type": this.Type = value; break;
-				case "agi_uniqueid": this.UniqueId = value; break;
-				case "agi_callerid": this.CallerId = value; break;
+				case "agi_uniqueid": this.UniqueID = value; break;
+				case "agi_callerid": this.CallerID = value; break;
+                case "agi_calleridname": this.CallerIDName = value; break;
 				case "agi_dnid": this.Dnid = value; break;
 				case "agi_rdnis": this.Rdnis = value; break;
 				case "agi_context": this.Context = value; break;
