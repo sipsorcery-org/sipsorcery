@@ -71,7 +71,9 @@
   <ItemGroup>
     <Content Include="Notifications\SIPNotifierService.svc" />
     <Content Include="Provisioning\SIPProvisioningWebService.svc" />
-    <Content Include="Web.config" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CallDispatcher\ICallDispatcherService.cs" />
@@ -79,7 +81,7 @@
     <Compile Include="CallManager\CallManagerPassThruService.cs" />
     <Compile Include="CallManager\CallManagerPassThruServiceInstanceProvider.cs" />
     <Compile Include="CallManager\CallManagerServiceInstanceProvider.cs" />
-    <Compile Include="CallManager\CallManagerServiceProxy.cs" />
+    <Compile Include="CallManager\CallManagerProxy.cs" />
     <Compile Include="CallManager\CallManagerServices.cs" />
     <Compile Include="CallManager\ICallManagerServices.cs" />
     <Compile Include="CallManager\ISIPCallDispatcher.cs" />

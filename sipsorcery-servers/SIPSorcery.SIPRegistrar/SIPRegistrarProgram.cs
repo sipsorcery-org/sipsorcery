@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -27,8 +26,8 @@ namespace SIPSorcery.SIPRegistrar {
 
         static void Main(string[] args) {
             try {
-                m_sipRegistrarStorageType = (ConfigurationManager.AppSettings[m_storageTypeKey] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[m_storageTypeKey]) : StorageTypes.Unknown;
-                m_sipRegistrarStorageConnStr = ConfigurationManager.AppSettings[m_connStrKey];
+                m_sipRegistrarStorageType = (AppState.GetConfigSetting(m_storageTypeKey) != null) ? StorageTypesConverter.GetStorageType(AppState.GetConfigSetting(m_storageTypeKey)) : StorageTypes.Unknown; ;
+                m_sipRegistrarStorageConnStr = AppState.GetConfigSetting(m_connStrKey);
 
                 if (m_sipRegistrarStorageType == StorageTypes.Unknown || m_sipRegistrarStorageConnStr.IsNullOrBlank()) {
                     throw new ApplicationException("The SIP Registrar cannot start with no persistence settings.");

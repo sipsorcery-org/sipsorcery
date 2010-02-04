@@ -213,6 +213,7 @@ namespace SIPSorcery.SIP.App
 		public SIPEndPoint DestinationEndPoint;
 		public DateTime Created;
         public string Username;
+        public string MonitorServerID;              // The ID of the monitoring server that received this event. Useful when there are multiple monitoring servers.
 
         public int GeographicId;
         public string GeographicDescription;

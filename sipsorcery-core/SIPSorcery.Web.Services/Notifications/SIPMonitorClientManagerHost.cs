@@ -8,11 +8,13 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Web.Services
 {
-    [CallbackBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, UseSynchronizationContext = false)]
+    //[CallbackBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, UseSynchronizationContext = false)]
     [ServiceBehavior(InstanceContextMode=InstanceContextMode.Single, ConcurrencyMode=ConcurrencyMode.Multiple)]
     public class SIPMonitorClientManagerHost : ISIPMonitorPublisher
     {
         private ISIPMonitorPublisher m_publisher;
+
+        public event Action<string> NotificationReady;          // Not used across WCF channels, for in memory only.
 
         public SIPMonitorClientManagerHost(ISIPMonitorPublisher publisher)
         {
@@ -49,10 +51,10 @@ namespace SIPSorcery.Web.Services
             m_publisher.CloseConnection(address);
         }
 
-        public void RegisterListener(string address)
-        {
-            m_publisher.RegisterListener(address);
-        }
+        //public void RegisterListener(string address)
+        //{
+        //    m_publisher.RegisterListener(address);
+        //}
 
         public void MonitorEventReceived(SIPMonitorEvent monitorEvent)
         {

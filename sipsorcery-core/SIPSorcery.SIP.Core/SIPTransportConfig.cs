@@ -142,20 +142,8 @@ namespace SIPSorcery.SIP
                     return serverCertificate;
                 }
                 else {
-                    X509Store store = (certificateType == "machinestore") ? new X509Store(StoreLocation.LocalMachine) : new X509Store(StoreLocation.CurrentUser);
-                    logger.Debug("Certificate store " + store.Location + " opened");
-                    store.Open(OpenFlags.OpenExistingOnly);
-                    X509Certificate2Collection collection = store.Certificates.Find(X509FindType.FindBySubjectName, certifcateLocation, true);
-                    if (collection != null && collection.Count > 0) {
-                        X509Certificate2 serverCertificate = collection[0];
-                        bool verifyCert = serverCertificate.Verify();
-                        logger.Debug("Server Certificate loaded from current user store, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
-                        return serverCertificate;
-                    }
-                    else {
-                        logger.Warn("Certificate with subject name=" + certifcateLocation + ", not found in " + store.Location + " store.");
-                        return null;
-                    }
+                    StoreLocation store = (certificateType == "machinestore") ? StoreLocation.LocalMachine : StoreLocation.CurrentUser;
+                    return AppState.LoadCertificate(store, certifcateLocation);
                 }
             }
             catch (Exception excp) {

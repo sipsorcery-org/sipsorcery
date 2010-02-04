@@ -29,21 +29,21 @@ namespace SIPSorcery.Web.Services
         public string SessionError { get; private set; }
 
         private GetNotificationsDelegate GetNotifications_External;
-        private Action<string> RegisterListenerForWCF_External;
-        private Action<string, Action<string>> RegisterListenerInProcess_External;
+        //private Action<string> RegisterListenerForWCF_External;
+        //private Action<string, Action<string>> RegisterListenerInProcess_External;
         private AsyncCallback m_callback;
 
         public NotificationAsyncResult(
             GetNotificationsDelegate getNotifications,
-            Action<string> registerListenerWCF,
-            Action<string, Action<string>> registerListenerInProcess,
+           // Action<string> registerListenerWCF,
+           // Action<string, Action<string>> registerListenerInProcess,
             MakeConnection poll,
             AsyncCallback callback,
             object state)
         {
             GetNotifications_External = getNotifications;
-            RegisterListenerForWCF_External = registerListenerWCF;
-            RegisterListenerInProcess_External = registerListenerInProcess;
+           // RegisterListenerForWCF_External = registerListenerWCF;
+           // RegisterListenerInProcess_External = registerListenerInProcess;
             this.Poll = poll;
             m_callback = callback;
             this.AsyncState = state;
@@ -54,21 +54,21 @@ namespace SIPSorcery.Web.Services
         /// <summary>
         ///  Used for callbacks initiated by across a WCF channel.
         /// </summary>
-        public void NotificationsReady()
-        {
+        //public void NotificationsReady()
+        //{
             //logger.Debug("NotificationsReady fired for " + Poll.Address + ".");
-            GetNotifications();
-        }
+        //    GetNotifications();
+        //}
 
         /// <summary>
         /// Used for callbacks from an in process object.
         /// </summary>
         /// <param name="address"></param>
-        public void NotificationsReady(string address)
-        {
+        //public void NotificationsReady(string address)
+       // {
             //logger.Debug("NotificationsReady fired for " + Poll.Address + ".");
-            GetNotifications();
-        }
+          //  GetNotifications();
+       // }
 
         public void GetNotifications()
         {
@@ -110,21 +110,21 @@ namespace SIPSorcery.Web.Services
                         m_callback(this);
                     }
                 }
-                else
-                {
+                //else
+               // {
                     //logger.Debug("NotificationAsyncResult no notifications available.");
                     // There are no pending events, let the publisher know there's an outstanding request and then wait for the callback.
                     //logger.Debug("Notification listener set for " + Poll.Address + ".");
-                    if (RegisterListenerForWCF_External != null)
-                    {
+                    //if (RegisterListenerForWCF_External != null)
+                   // {
                         //logger.Debug("Monitor event publisher was a SIPMonitorPublisherProxy.");
-                        RegisterListenerForWCF_External(Poll.Address);
-                    }
-                    else
-                    {
-                        RegisterListenerInProcess_External(Poll.Address, NotificationsReady);
-                    }
-                }
+                    //    RegisterListenerForWCF_External(Poll.Address);
+                    //}
+                    //else
+                    //{
+                    //    RegisterListenerInProcess_External(Poll.Address, NotificationsReady);
+                    //}
+                //}
             }
             catch (Exception excp)
             {

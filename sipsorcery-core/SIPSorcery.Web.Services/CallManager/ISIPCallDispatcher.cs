@@ -6,6 +6,6 @@ using System.Text;
 namespace SIPSorcery.Web.Services {
    
     public interface ISIPCallDispatcher {
-        CallManagerServiceClient GetCallManagerClient();
+        CallManagerProxy GetCallManagerClient();
     }
 }

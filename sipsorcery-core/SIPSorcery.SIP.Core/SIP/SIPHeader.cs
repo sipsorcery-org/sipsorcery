@@ -699,6 +699,10 @@ namespace SIPSorcery.SIP
 
                 return fromHeader;
             }
+            catch (ArgumentException argExcp)
+            {
+                throw new SIPValidationException(SIPValidationFieldsEnum.FromHeader, argExcp.Message);
+            }
             catch
             {
                 throw new SIPValidationException(SIPValidationFieldsEnum.FromHeader, "The SIP From header was invalid.");
@@ -925,6 +929,10 @@ namespace SIPSorcery.SIP
                 toHeader.m_userField = SIPUserField.ParseSIPUserField(toHeaderStr);
 
                 return toHeader;
+            }
+            catch (ArgumentException argExcp)
+            {
+                throw new SIPValidationException(SIPValidationFieldsEnum.ToHeader, argExcp.Message);
             }
             catch
             {
@@ -2871,6 +2879,10 @@ namespace SIPSorcery.SIP
                         }
 
                         lastHeader = headerName;
+                    }
+                    catch (SIPValidationException)
+                    {
+                        throw;
                     }
                     catch (Exception parseExcp)
                     {

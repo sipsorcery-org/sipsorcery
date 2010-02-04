@@ -1231,6 +1231,13 @@ namespace SIPSorcery.SIP
                                     try
                                     {
                                         SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessage);
+                                        
+                                        SIPValidationFieldsEnum sipRequestErrorField = SIPValidationFieldsEnum.Unknown;
+                                        string sipRequestValidationError = null;
+                                        if(!sipRequest.IsValid(out sipRequestErrorField, out sipRequestValidationError) )
+                                        {
+                                            throw new SIPValidationException(sipRequestErrorField, sipRequestValidationError);
+                                        }
 
                                         if (SIPRequestInTraceEvent != null)
                                         {

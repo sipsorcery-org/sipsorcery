@@ -44,6 +44,7 @@ using System.ServiceModel.Channels;
 using System.Text;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Timers;
 using System.Threading;
@@ -68,8 +69,8 @@ namespace SIPSorcery.Web.Services
             "Hi {0},\r\n\r\n" +
             "This is your automated SIPSorcery new account confirmation email.\r\n\r\n" +
             "To confirm your account please visit the link below. If you did not request this email please ignore it.\r\n\r\n" +
-            "http://www.sipsorcery.com/customerconfirm.aspx?id={1}\r\n\r\n" +
-            //"http://www.sipwizard.net/customerconfirm.aspx?id={1}\r\n\r\n" +
+            //"http://www.sipsorcery.com/customer/confirm/{1}\r\n\r\n" +
+            "http://www.sipsorcery.com/customerconfirm.aspx?ID={1}\r\n\r\n" +
             "Regards,\r\n\r\n" +
             "SIPSorcery";
 
@@ -127,6 +128,7 @@ namespace SIPSorcery.Web.Services
                 authId = securityheader.AuthID;
             }
             
+            // HTTP Context is available for ?? binding.
             if (authId.IsNullOrBlank() && HttpContext.Current != null) {
                 // If running in IIS check for a cookie.
                 HttpCookie authIdCookie = HttpContext.Current.Request.Cookies[AUTH_TOKEN_KEY];
@@ -135,6 +137,20 @@ namespace SIPSorcery.Web.Services
                     authId = authIdCookie.Value;
                 }
             }
+
+            // No HTTP context available so try and get a cookie value from the operation context.
+            if (authId.IsNullOrBlank() && OperationContext.Current != null && OperationContext.Current.IncomingMessageProperties[HttpRequestMessageProperty.Name] != null)
+            {
+                HttpRequestMessageProperty httpRequest = (HttpRequestMessageProperty)OperationContext.Current.IncomingMessageProperties[HttpRequestMessageProperty.Name];
+                // Check for the header in a case insensitive way. Allows matches on authid, Authid etc.
+                if (httpRequest.Headers.AllKeys.Contains(AUTH_TOKEN_KEY, StringComparer.InvariantCultureIgnoreCase))
+                {
+                    string authIDHeader = httpRequest.Headers.AllKeys.First(h => { return String.Equals(h, AUTH_TOKEN_KEY, StringComparison.InvariantCultureIgnoreCase); });
+                    authId = httpRequest.Headers[authIDHeader];
+                    logger.Debug("authid HTTP header found: " + authId + ".");
+                }
+            }
+
             return authId;
         }
 
@@ -275,7 +291,7 @@ namespace SIPSorcery.Web.Services
                     }
 
                     logger.Debug("Sending new account confirmation email to " + customer.EmailAddress + ".");
-                    Email.SendEmail(customer.EmailAddress, NEW_ACCOUNT_EMAIL_FROM_ADDRESS, NEW_ACCOUNT_EMAIL_SUBJECT, String.Format(NEW_ACCOUNT_EMAIL_BODY, customer.FirstName, customer.Id));
+                    SIPSorcerySMTP.SendEmail(customer.EmailAddress, NEW_ACCOUNT_EMAIL_FROM_ADDRESS, NEW_ACCOUNT_EMAIL_SUBJECT, String.Format(NEW_ACCOUNT_EMAIL_BODY, customer.FirstName, customer.Id));
                 }
             }
             catch (Exception excp) {

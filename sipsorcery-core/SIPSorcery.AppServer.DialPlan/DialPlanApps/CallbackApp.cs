@@ -62,6 +62,8 @@ namespace SIPSorcery.AppServer.DialPlan
         private string m_username;
         private string m_adminMemberId;
         private SIPEndPoint m_outboundProxy;
+        private SIPDialogue m_firstLegDialogue;
+        private bool m_firstLegEarlyMediaSet;
 
         public CallbackApp(
             SIPTransport sipTransport, 
@@ -104,27 +106,27 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPEndPoint defaultUDPEP = m_sipTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp);
 
-                SIPRequest firstLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.SocketEndPoint);
-                SIPDialogue firstLegDialogue = Dial(dest1, MAXCALLBACK_RINGTIME_SECONDS, 0, firstLegDummyInviteRequest);
-                if (firstLegDialogue == null)
+                SIPRequest firstLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.SocketEndPoint, null);
+                m_firstLegDialogue = Dial(dest1, MAXCALLBACK_RINGTIME_SECONDS, 0, firstLegDummyInviteRequest);
+                if (m_firstLegDialogue == null)
                 {
                     Log("The first call leg to " + dest1 + " was unsuccessful.");
                     return;
                 }
 
-                SDP firstLegSDP = SDP.ParseSDPDescription(firstLegDialogue.RemoteSDP);
+                SDP firstLegSDP = SDP.ParseSDPDescription(m_firstLegDialogue.RemoteSDP);
                 string call1SDPIPAddress = firstLegSDP.Media[0].ConnectionAddress;
                 int call1SDPPort = firstLegSDP.Media[0].Port;
                 Log("The first call leg to " + dest1 + " was successful, audio socket=" + call1SDPIPAddress + ":" + call1SDPPort + ".");
 
                 Log("Callback app commencing second leg to " + dest2 + ".");
 
-                SIPRequest secondLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.SocketEndPoint);
+                SIPRequest secondLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.SocketEndPoint, m_firstLegDialogue.RemoteSDP);
                 SIPDialogue secondLegDialogue = Dial(dest2, MAXCALLBACK_RINGTIME_SECONDS, 0, secondLegDummyInviteRequest);
                 if (secondLegDialogue == null)
                 {
                     Log("The second call leg to " + dest2 + " was unsuccessful.");
-                    firstLegDialogue.Hangup(m_sipTransport, m_outboundProxy);
+                    m_firstLegDialogue.Hangup(m_sipTransport, m_outboundProxy);
                     return;
                 }
 
@@ -133,12 +135,12 @@ namespace SIPSorcery.AppServer.DialPlan
                 int call2SDPPort = secondLegSDP.Media[0].Port;
                 Log("The second call leg to " + dest2 + " was successful, audio socket=" + call2SDPIPAddress + ":" + call2SDPPort + ".");
 
-                m_callManager.CreateDialogueBridge(firstLegDialogue, secondLegDialogue, m_username);
+                m_callManager.CreateDialogueBridge(m_firstLegDialogue, secondLegDialogue, m_username);
 
                 Log("Re-inviting Callback dialogues to each other.");
 
-                m_callManager.ReInvite(firstLegDialogue, secondLegDialogue.RemoteSDP);
-                m_callManager.ReInvite(secondLegDialogue, firstLegDialogue.RemoteSDP);
+                m_callManager.ReInvite(m_firstLegDialogue, secondLegDialogue.RemoteSDP);
+                //m_callManager.ReInvite(secondLegDialogue, m_firstLegDialogue.RemoteSDP);
 
                 SendRTPPacket(call2SDPIPAddress + ":" + call2SDPPort, call1SDPIPAddress + ":" + call1SDPPort);
                 SendRTPPacket(call1SDPIPAddress + ":" + call1SDPPort, call2SDPIPAddress + ":" + call2SDPPort);
@@ -160,7 +162,8 @@ namespace SIPSorcery.AppServer.DialPlan
             ManualResetEvent waitForCallCompleted = new ManualResetEvent(false);
 
             ForkCall call = new ForkCall(m_sipTransport, Log_External, m_callManager.QueueNewCall, m_username, m_adminMemberId, null, m_outboundProxy);
-            call.CallProgress += (s, r, h, t, b) => { Log("Progress response of " + s + " received on CallBack Dial" + "."); };
+            //call.CallProgress += (s, r, h, t, b) => { Log("Progress response of " + s + " received on CallBack Dial" + "."); };
+            call.CallProgress += CallProgress;
             call.CallFailed += (s, r, h) => { waitForCallCompleted.Set(); };
             call.CallAnswered += (s, r, toTag, h, t, b, d, transferMode) => { answeredDialogue = d; waitForCallCompleted.Set(); };
 
@@ -183,7 +186,26 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        private SIPRequest GetCallbackInviteRequest(IPEndPoint localSIPEndPoint)
+        private void CallProgress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody)
+        {
+            try
+            {
+                Log("Progress response of " + progressStatus + " received on CallBack Dial" + ".");
+
+                if (m_firstLegDialogue != null && !progressBody.IsNullOrBlank() && !m_firstLegEarlyMediaSet)
+                {
+                    m_firstLegEarlyMediaSet = true;
+                    // The first leg is up and a call on the second leg has some early media that can be passed on.
+                    m_callManager.ReInvite(m_firstLegDialogue, progressBody);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception CallbackApp. " + excp.Message);
+            }
+        }
+
+        private SIPRequest GetCallbackInviteRequest(IPEndPoint localSIPEndPoint, string sdp)
         {
             string callBackURI = "sip:callback@sipsorcery.com";
             string callBackUserField = "<" + callBackURI + ">";
@@ -195,20 +217,23 @@ namespace SIPSorcery.AppServer.DialPlan
             inviteHeader.Vias.PushViaHeader(viaHeader);
             inviteRequest.Header = inviteHeader;
 
-            string body =
-               "v=0" + CRLF +
-                "o=- " + Crypto.GetRandomInt(1000, 5000).ToString() + " 2 IN IP4 " + localSIPEndPoint.Address.ToString() + CRLF +
-                "s=session" + CRLF +
-                "c=IN IP4 " + localSIPEndPoint.Address.ToString() + CRLF +
-                "t=0 0" + CRLF +
-                "m=audio " + Crypto.GetRandomInt(10000, 20000).ToString() + " RTP/AVP 0 18 101" + CRLF +
-                "a=rtpmap:0 PCMU/8000" + CRLF +
-                "a=rtpmap:18 G729/8000" + CRLF +
-                "a=rtpmap:101 telephone-event/8000" + CRLF +
-                "a=fmtp:101 0-16" + CRLF +
-                "a=recvonly";
-            inviteHeader.ContentLength = body.Length;
-            inviteRequest.Body = body;
+            if (sdp == null)
+            {
+                sdp =
+                   "v=0" + CRLF +
+                    "o=- " + Crypto.GetRandomInt(1000, 5000).ToString() + " 2 IN IP4 " + localSIPEndPoint.Address.ToString() + CRLF +
+                    "s=session" + CRLF +
+                    "c=IN IP4 " + localSIPEndPoint.Address.ToString() + CRLF +
+                    "t=0 0" + CRLF +
+                    "m=audio " + Crypto.GetRandomInt(10000, 20000).ToString() + " RTP/AVP 0 18 101" + CRLF +
+                    "a=rtpmap:0 PCMU/8000" + CRLF +
+                    "a=rtpmap:18 G729/8000" + CRLF +
+                    "a=rtpmap:101 telephone-event/8000" + CRLF +
+                    "a=fmtp:101 0-16" + CRLF +
+                    "a=recvonly";
+            }
+            inviteHeader.ContentLength = sdp.Length;
+            inviteRequest.Body = sdp;
 
             return inviteRequest;
         }

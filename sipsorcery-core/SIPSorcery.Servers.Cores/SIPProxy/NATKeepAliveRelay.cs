@@ -203,8 +203,25 @@ namespace SIPSorcery.Servers
 
                 if (keepAliveMessage != null)
                 {
-                    FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.NATKeepAlive, SIPMonitorEventTypesEnum.NATKeepAliveRelay, "Relaying NAT keep-alive from proxy socket " + keepAliveMessage.LocalSIPEndPoint + " to " + keepAliveMessage.RemoteEndPoint + ".", null));
-                    m_sipTransport.SendRaw(keepAliveMessage.LocalSIPEndPoint, new SIPEndPoint(keepAliveMessage.RemoteEndPoint), m_sendBuffer);
+                    if (keepAliveMessage.LocalSIPEndPoint.SIPProtocol == SIPProtocolsEnum.udp)
+                    {
+                        FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.NATKeepAlive, SIPMonitorEventTypesEnum.NATKeepAliveRelay, "Relaying NAT keep-alive from proxy socket " + keepAliveMessage.LocalSIPEndPoint + " to " + keepAliveMessage.RemoteEndPoint + ".", null));
+                        m_sipTransport.SendRaw(keepAliveMessage.LocalSIPEndPoint, new SIPEndPoint(keepAliveMessage.RemoteEndPoint), m_sendBuffer);
+                    }
+                    else
+                    {
+                        // For connection oriented protocols check whether a connection exists. NAT keep alives shouldn't cause a connection to be initiated.
+                        SIPChannel sendFromChannel = m_sipTransport.FindSIPChannel(keepAliveMessage.LocalSIPEndPoint);
+                        if (sendFromChannel != null && sendFromChannel.IsConnectionEstablished(keepAliveMessage.RemoteEndPoint))
+                        {
+                            FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.NATKeepAlive, SIPMonitorEventTypesEnum.NATKeepAliveRelay, "Relaying NAT keep-alive from proxy socket " + keepAliveMessage.LocalSIPEndPoint + " to " + keepAliveMessage.RemoteEndPoint + ".", null));
+                            m_sipTransport.SendRaw(keepAliveMessage.LocalSIPEndPoint, new SIPEndPoint(keepAliveMessage.RemoteEndPoint), m_sendBuffer);
+                        }
+                        else
+                        {
+                            FireSIPMonitorLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.NATKeepAlive, SIPMonitorEventTypesEnum.NATKeepAliveRelay, "No established connection was found to relay NAT keep-alive from proxy socket " + keepAliveMessage.LocalSIPEndPoint + " to " + keepAliveMessage.RemoteEndPoint + ".", null));
+                        }
+                    }
                 }
             }
             catch (Exception excp)

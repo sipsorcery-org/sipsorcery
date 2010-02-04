@@ -62,7 +62,7 @@ namespace SIPSorcery.SIP
         private static char[] m_headerFieldRemoveChars = new char[] { ' ', '"', '\'' };
 
         public SIPAuthorisationHeadersEnum AuthorisationType { get; private set; }              // This is the type of authorisation request received.
-        public SIPAuthorisationHeadersEnum AuthorisationResponseType { get; private set; }    // If this is set it's the type of authorisation response to use otherwise use the same as the request (God knows why you need a different response header?!?)
+        public SIPAuthorisationHeadersEnum AuthorisationResponseType { get; private set; }      // If this is set it's the type of authorisation response to use otherwise use the same as the request (God knows why you need a different response header?!?)
 
 		public string Realm;
 		public string Username;
@@ -441,6 +441,24 @@ namespace SIPSorcery.SIP
                 Console.WriteLine(authRequest.ToString());
 
                 Assert.IsTrue(authRequest.Response == "7709215c1d58c1912dc59d1e8b5b6248", "The authentication response digest was not generated properly.");
+
+                Console.WriteLine("-----------------------------------------");
+            }
+
+            [Test]
+            public void KnownOpaqueTest()
+            {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate, @"digest realm=""Syndeo Corporation"", nonce=""1265068315059e3bbf3052cf13ea5ca22fb71669a7"", opaque=""09c0f23f71f89ce53baab5664c09cbfa"", algorithm=MD5");
+                authRequest.SetCredentials("user", "pass", "sip:sip.ribbit.com", "REGISTER");
+
+                string digest = authRequest.Digest;
+
+                Console.WriteLine("Digest = " + digest + ".");
+                Console.WriteLine(authRequest.ToString());
+
+                Assert.IsTrue(true, "True was false.");
 
                 Console.WriteLine("-----------------------------------------");
             }

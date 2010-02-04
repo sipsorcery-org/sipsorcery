@@ -5,15 +5,15 @@
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	mc:Ignorable="d"
 	x:Class="SIPSorcery.MonitoringConsole"
-	d:DesignWidth="640" Width="1024" Height="650" MinHeight="600">
+	d:DesignWidth="640" Width="1024" Height="600" MinHeight="600">
 
-	<Grid x:Name="LayoutRoot" Background="#FF000000" Width="1024" Margin="0,0,0,8" d:IsLocked="True" >
-		<Border Margin="8,50,16,92" BorderThickness="1,1,1,1" BorderBrush="#FFA1FA28" Height="500" Width="1000" d:IsLocked="True">
-			<TextBox Text="" TextWrapping="Wrap" AcceptsReturn="True" TabNavigation="Local" Background="{x:Null}" x:Name="m_monitoringEventsTextBox" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" BorderThickness="0,0,0,0" FontFamily="Courier New" Foreground="#FFA1FA28" IsReadOnly="True" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" SelectionBackground="Black" BorderBrush="#FFA1FA28" CaretBrush="#FFA1FA28" d:IsLocked="True"/>
+	<Grid x:Name="LayoutRoot" Background="#FF000000" Width="1024" Margin="0" Height="600" >
+		<Border Margin="8,42,16,8" BorderThickness="1,1,1,1" BorderBrush="#FFA1FA28" Width="1000">
+			<TextBox Text="" TextWrapping="Wrap" AcceptsReturn="True" TabNavigation="Local" Background="{x:Null}" x:Name="m_monitoringEventsTextBox" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" BorderThickness="0,0,0,0" FontFamily="Courier New" Foreground="#FFA1FA28" IsReadOnly="True" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" SelectionBackground="Black" BorderBrush="#FFA1FA28" CaretBrush="#FFA1FA28"/>
 		</Border>
-		<TextBox Background="White" AcceptsReturn="True" BorderThickness="2,2,2,2" FontFamily="Courier New" FontWeight="Bold" Foreground="#FF000000" Height="30" x:Name="m_commandEntryTextBox" Text="event *" TextWrapping="NoWrap" FontSize="14" KeyUp="CommandEntry_KeyUp" d:LayoutOverrides="Height" VerticalAlignment="Top" Margin="8,8,216,0" HorizontalAlignment="Stretch" BorderBrush="#FFA1FA28" LostFocus="CommandEntryTextBox_LostFocus" GotFocus="CommandEntryTextBox_GotFocus" MaxLength="256" SelectionBackground="#FFA1FA28" SelectionForeground="#FFFFFFFF" TabIndex="10" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled" CaretBrush="Black" d:IsLocked="True"/>
-		<Button Height="30" HorizontalAlignment="Right" Margin="0,8,115,0" VerticalAlignment="Top" Width="82.979" Content="Close" Click="CloseButton_Click" x:Name="m_closeSocketButton" TabIndex="12" IsTabStop="False" d:IsLocked="True"/>
-		<Button Height="30" HorizontalAlignment="Right" Margin="0,8,18,0" VerticalAlignment="Top" Width="82.979" Content="Clear" Click="ClearButton_Click" x:Name="m_clearButton" TabIndex="11" d:IsLocked="True"/>
-		<Button Height="30" HorizontalAlignment="Right" Margin="0,8,115,0" VerticalAlignment="Top" Width="82.979" Content="Connect" Click="ConnectButton_Click" x:Name="m_connectSocketButton" TabIndex="12" IsTabStop="False" d:IsLocked="True"/>
+		<TextBox Background="White" AcceptsReturn="True" BorderThickness="2,2,2,2" FontFamily="Courier New" FontWeight="Bold" Foreground="#FF000000" Height="30" x:Name="m_commandEntryTextBox" Text="event *" TextWrapping="NoWrap" FontSize="14" KeyUp="CommandEntry_KeyUp" d:LayoutOverrides="Height" VerticalAlignment="Top" Margin="8,8,216,0" HorizontalAlignment="Stretch" BorderBrush="#FFA1FA28" LostFocus="CommandEntryTextBox_LostFocus" GotFocus="CommandEntryTextBox_GotFocus" MaxLength="256" SelectionBackground="#FFA1FA28" SelectionForeground="#FFFFFFFF" TabIndex="10" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled" CaretBrush="Black"/>
+		<Button Height="30" HorizontalAlignment="Right" Margin="0,8,115,0" VerticalAlignment="Top" Width="82.979" Content="Close" Click="CloseButton_Click" x:Name="m_closeSocketButton" TabIndex="12" IsTabStop="False"/>
+		<Button Height="30" HorizontalAlignment="Right" Margin="0,8,18,0" VerticalAlignment="Top" Width="82.979" Content="Clear" Click="ClearButton_Click" x:Name="m_clearButton" TabIndex="11"/>
+		<Button Height="30" HorizontalAlignment="Right" Margin="0,8,115,0" VerticalAlignment="Top" Width="82.979" Content="Connect" Click="ConnectButton_Click" x:Name="m_connectSocketButton" TabIndex="12" IsTabStop="False"/>
 	</Grid>
 </UserControl>

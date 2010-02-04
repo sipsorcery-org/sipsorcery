@@ -17,23 +17,23 @@ namespace SIPSorcery.Web.Services {
         bool IsAlive();
 
         [OperationContract]
-        [WebGet(UriTemplate = "login?username={username}&password={password}")]
+        [WebGet(UriTemplate = "customer/login?username={username}&password={password}")]
         string Login(string username, string password);
 
         [OperationContract]
-        [WebGet(UriTemplate = "logout")]
+        [WebGet(UriTemplate = "customer/logout")]
         void Logout();
 
         [OperationContract]
-        [WebGet(UriTemplate = "sipdomains/{whereExpression}/{offset}/ {count}")]
+        [WebGet(UriTemplate = "sipdomains?where={whereExpression}&offset={offset}&count={count}")]
         List<SIPDomain> GetSIPDomains(string whereExpression, int offset, int count);
 
         [OperationContract]
-        [WebGet(UriTemplate = "getsipaccountscount?whereexpression={whereexpression}")]
+        [WebGet(UriTemplate = "sipaccounts/count?where={whereexpression}")]
         int GetSIPAccountsCount(string whereExpression);
 
         [OperationContract]
-        [WebGet(UriTemplate = "getsipaccounts?whereexpression={whereexpression}&offset={offset}&count={count}")]
+        [WebGet(UriTemplate = "sipaccounts?where={whereexpression}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
         List<SIPAccount> GetSIPAccounts(string whereExpression, int offset, int count);
 
         [OperationContract]

@@ -52,7 +52,6 @@ namespace SIPSorcery.AppServer.DialPlan
         private const string TRACE_SUBJECT = "SIP Sorcery Trace";
         
         protected static ILog logger = AppState.GetLogger("dialplan");
-        private string CRLF = SIPConstants.CRLF;
 
         private SIPMonitorLogDelegate Log_External;
         public DialogueBridgeCreatedDelegate CreateBridge_External;
@@ -247,7 +246,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 if (TraceEmailAddress != null) {
                     logger.Debug("Emailing trace to " + TraceEmailAddress + ".");
-                    Email.SendEmail(TraceEmailAddress, TRACE_FROM_ADDRESS, TRACE_SUBJECT, TraceLog.ToString());
+                    SIPSorcerySMTP.SendEmail(TraceEmailAddress, TRACE_FROM_ADDRESS, TRACE_SUBJECT, TraceLog.ToString());
                 }
             }
             catch (Exception traceExcp) {

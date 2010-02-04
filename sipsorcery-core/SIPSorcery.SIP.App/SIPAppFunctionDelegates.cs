@@ -48,6 +48,7 @@ namespace SIPSorcery.SIP.App
     public delegate void IPAddressChangedDelegate(IPAddress newIPAddress);
     public delegate void QueueNewCallDelegate(ISIPServerUserAgent uas);
     public delegate void DecrementDialPlanExecutionCountDelegate(SIPDialPlan dialPlan, Guid customerId);
+    public delegate void BlindTransferDelegate(SIPDialogue deadDialogue, SIPDialogue orphanedDialogue, SIPDialogue answeredDialogue);
 
     // SIP User Agent Delegates.
     public delegate void SIPCallResponseDelegate(ISIPClientUserAgent uac, SIPResponse sipResponse);

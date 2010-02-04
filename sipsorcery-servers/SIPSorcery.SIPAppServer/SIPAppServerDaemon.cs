@@ -67,9 +67,10 @@ using SIPSorcery.Sys;
 using SIPSorcery.Web.Services;
 using log4net;
 
-namespace SIPSorcery.SIPAppServer {
-    public class SIPAppServerDaemon {
-
+namespace SIPSorcery.SIPAppServer
+{
+    public class SIPAppServerDaemon
+    {
         private static ILog logger = SIPAppServerState.logger;
         private static ILog dialPlanLogger = AppState.GetLogger("dialplan");
 
@@ -80,7 +81,7 @@ namespace SIPSorcery.SIPAppServer {
         private static bool m_sipRegistrarEnabled = (ConfigurationManager.GetSection(SIPRegistrarState.SIPREGISTRAR_CONFIGNODE_NAME) != null);
         private static bool m_sipRegAgentEnabled = (ConfigurationManager.GetSection(SIPRegAgentState.SIPREGAGENT_CONFIGNODE_NAME) != null);
         private static bool m_sshServerEnabled = (ConfigurationManager.GetSection(SSHServerState.SSHSERVER_CONFIGNODE_NAME) != null);
-        
+
         private static int m_monitorEventLoopbackPort = SIPAppServerState.MonitorLoopbackPort;
         private string m_traceDirectory = SIPAppServerState.TraceDirectory;
         private string m_currentDirectory = SIPAppServerState.CurrentDirectory;
@@ -114,18 +115,20 @@ namespace SIPSorcery.SIPAppServer {
         private string m_callManagerServiceAddress;
         private bool m_monitorCalls;                // If true this app server instance will monitor the sip dialogues table for expired calls to hangup.
 
-        public SIPAppServerDaemon(StorageTypes storageType, string connectionString) {
+        public SIPAppServerDaemon(StorageTypes storageType, string connectionString)
+        {
             m_storageType = storageType;
             m_connectionString = connectionString;
             m_monitorCalls = true;
         }
 
         public SIPAppServerDaemon(
-            StorageTypes storageType, 
+            StorageTypes storageType,
             string connectionString,
             SIPEndPoint appServerEndPoint,
             string callManagerServiceAddress,
-            bool monitorCalls) {
+            bool monitorCalls)
+        {
 
             m_storageType = storageType;
             m_connectionString = connectionString;
@@ -134,8 +137,10 @@ namespace SIPSorcery.SIPAppServer {
             m_monitorCalls = monitorCalls;
         }
 
-        public void Start() {
-            try {
+        public void Start()
+        {
+            try
+            {
                 logger.Debug("pid=" + Process.GetCurrentProcess().Id + ".");
                 logger.Debug("os=" + System.Environment.OSVersion + ".");
                 logger.Debug("current directory=" + m_currentDirectory + ".");
@@ -143,18 +148,23 @@ namespace SIPSorcery.SIPAppServer {
                 m_sipSorceryPersistor = new SIPSorceryPersistor(m_storageType, m_connectionString);
                 m_customerSessionManager = new CustomerSessionManager(m_storageType, m_connectionString);
 
-                if (m_sipProxyEnabled) {
+                if (m_sipProxyEnabled)
+                {
                     m_sipProxyDaemon = new SIPProxyDaemon();
                     m_sipProxyDaemon.Start();
 
-                    if (m_sipProxyDaemon.PublicIPAddress != null) {
+                    if (m_sipProxyDaemon.PublicIPAddress != null)
+                    {
                         m_publicIPAddress = m_sipProxyDaemon.PublicIPAddress;
                         DialStringParser.PublicIPAddress = m_sipProxyDaemon.PublicIPAddress;
                         DialPlanScriptHelper.PublicIPAddress = m_sipProxyDaemon.PublicIPAddress;
                     }
-                    else {
-                        m_sipProxyDaemon.PublicIPAddressUpdated += (ipAddress) => {
-                            if (ipAddress != null && (m_publicIPAddress == null || ipAddress.ToString() != m_publicIPAddress.ToString())) {
+                    else
+                    {
+                        m_sipProxyDaemon.PublicIPAddressUpdated += (ipAddress) =>
+                        {
+                            if (ipAddress != null && (m_publicIPAddress == null || ipAddress.ToString() != m_publicIPAddress.ToString()))
+                            {
                                 m_publicIPAddress = ipAddress;
                                 DialStringParser.PublicIPAddress = ipAddress;
                                 DialPlanScriptHelper.PublicIPAddress = ipAddress;
@@ -163,13 +173,15 @@ namespace SIPSorcery.SIPAppServer {
                     }
                 }
 
-                if (m_sipMonitorEnabled) {
-                    m_sipMonitorPublisher = new SIPMonitorClientManager();
+                if (m_sipMonitorEnabled)
+                {
+                    m_sipMonitorPublisher = new SIPMonitorClientManager(null);
                     m_sipMonitorDaemon = new SIPMonitorDaemon(m_sipMonitorPublisher);
                     m_sipMonitorDaemon.Start();
                 }
 
-                if (m_sipRegistrarEnabled) {
+                if (m_sipRegistrarEnabled)
+                {
                     m_sipRegistrarDaemon = new SIPRegistrarDaemon(
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                         m_sipSorceryPersistor.SIPAccountsPersistor.Get,
@@ -178,7 +190,8 @@ namespace SIPSorcery.SIPAppServer {
                     m_sipRegistrarDaemon.Start();
                 }
 
-                if (m_sipRegAgentEnabled) {
+                if (m_sipRegAgentEnabled)
+                {
                     m_sipRegAgentDaemon = new SIPRegAgentDaemon(
                         m_sipSorceryPersistor.SIPProvidersPersistor,
                         m_sipSorceryPersistor.SIPProviderBindingsPersistor);
@@ -188,8 +201,7 @@ namespace SIPSorcery.SIPAppServer {
 
                 if (m_sshServerEnabled)
                 {
-                    //SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, m_sipMonitorPublisher); // Uses memory to transfer events. 
-                    SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager);                          // Uses WCF netTCP channel to transfer events.
+                    SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, m_sipMonitorPublisher); // Uses memory to transfer events. 
                     daemon.Start();
                 }
 
@@ -198,11 +210,13 @@ namespace SIPSorcery.SIPAppServer {
                 logger.Debug("Initiating SIP Application Server Agent.");
 
                 // Send events from this process to the monitoring socket.
-                if (m_monitorEventLoopbackPort != 0) {
+                if (m_monitorEventLoopbackPort != 0)
+                {
                     m_monitorEventWriter = new SIPMonitorEventWriter(m_monitorEventLoopbackPort);
                 }
 
-                if (m_sipSorceryPersistor != null && m_sipSorceryPersistor.SIPCDRPersistor != null) {
+                if (m_sipSorceryPersistor != null && m_sipSorceryPersistor.SIPCDRPersistor != null)
+                {
                     SIPCDR.CDRCreated += m_sipSorceryPersistor.QueueCDR;
                     SIPCDR.CDRAnswered += m_sipSorceryPersistor.QueueCDR;
                     SIPCDR.CDRHungup += m_sipSorceryPersistor.QueueCDR;
@@ -211,23 +225,29 @@ namespace SIPSorcery.SIPAppServer {
                 #region Initialise the SIPTransport layers.
 
                 m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), true);
-                if (m_appServerEndPoint != null) {
-                    if (m_appServerEndPoint.SIPProtocol == SIPProtocolsEnum.udp) {
+                if (m_appServerEndPoint != null)
+                {
+                    if (m_appServerEndPoint.SIPProtocol == SIPProtocolsEnum.udp)
+                    {
                         logger.Debug("Using single SIP transport socket for App Server " + m_appServerEndPoint.ToString() + ".");
                         m_sipTransport.AddSIPChannel(new SIPUDPChannel(m_appServerEndPoint.SocketEndPoint));
                     }
-                    else if (m_appServerEndPoint.SIPProtocol == SIPProtocolsEnum.tcp) {
+                    else if (m_appServerEndPoint.SIPProtocol == SIPProtocolsEnum.tcp)
+                    {
                         logger.Debug("Using single SIP transport socket for App Server " + m_appServerEndPoint.ToString() + ".");
                         m_sipTransport.AddSIPChannel(new SIPTCPChannel(m_appServerEndPoint.SocketEndPoint));
                     }
-                    else {
+                    else
+                    {
                         throw new ApplicationException("The SIP End Point of " + m_appServerEndPoint + " cannot be used with the App Server transport layer.");
                     }
                 }
-                else if (m_sipAppServerSocketsNode != null) {
+                else if (m_sipAppServerSocketsNode != null)
+                {
                     m_sipTransport.AddSIPChannel(SIPTransportConfig.ParseSIPChannelsNode(m_sipAppServerSocketsNode));
                 }
-                else {
+                else
+                {
                     throw new ApplicationException("The SIP App Server could not be started, no SIP sockets have been configured.");
                 }
 
@@ -298,11 +318,14 @@ namespace SIPSorcery.SIPAppServer {
 
                 #endregion
 
-                try {
-                    if (m_sipSorceryPersistor == null) {
+                try
+                {
+                    if (m_sipSorceryPersistor == null)
+                    {
                         logger.Warn("Provisioning hosted service could not be started as Persistor object was null.");
                     }
-                    else {
+                    else
+                    {
                         ProvisioningServiceInstanceProvider instanceProvider = new ProvisioningServiceInstanceProvider(
                             m_sipSorceryPersistor.SIPAccountsPersistor,
                             m_sipSorceryPersistor.SIPDialPlanPersistor,
@@ -320,7 +343,8 @@ namespace SIPSorcery.SIPAppServer {
                         m_sipProvisioningHost.Description.Behaviors.Add(instanceProvider);
                         m_sipProvisioningHost.Open();
 
-                        if (m_sipRegAgentDaemon == null) {
+                        if (m_sipRegAgentDaemon == null)
+                        {
                             m_sipRegAgentDaemon = new SIPRegAgentDaemon(
                                 m_sipSorceryPersistor.SIPProvidersPersistor,
                                 m_sipSorceryPersistor.SIPProviderBindingsPersistor);
@@ -332,33 +356,40 @@ namespace SIPSorcery.SIPAppServer {
                         logger.Debug("Provisioning hosted service successfully started on " + m_sipProvisioningHost.BaseAddresses[0].AbsoluteUri + ".");
                     }
                 }
-                catch (Exception excp) {
+                catch (Exception excp)
+                {
                     logger.Warn("Exception starting Provisioning hosted service. " + excp.Message);
                 }
 
-                try {
+                try
+                {
                     m_accessPolicyHost = new ServiceHost(typeof(CrossDomainService));
                     m_accessPolicyHost.Open();
 
                     logger.Debug("CrossDomain hosted service successfully started on " + m_accessPolicyHost.BaseAddresses[0].AbsoluteUri + ".");
                 }
-                catch (Exception excp) {
+                catch (Exception excp)
+                {
                     logger.Warn("Exception starting CrossDomain hosted service. " + excp.Message);
                 }
 
-                try {
+                try
+                {
                     CallManagerServiceInstanceProvider callManagerSvcInstanceProvider = new CallManagerServiceInstanceProvider(m_callManager);
 
                     Uri callManagerBaseAddress = null;
-                    if (m_callManagerServiceAddress != null) {
+                    if (m_callManagerServiceAddress != null)
+                    {
                         logger.Debug("Adding service address to Call Manager Service " + m_callManagerServiceAddress + ".");
                         callManagerBaseAddress = new Uri(m_callManagerServiceAddress);
                     }
 
-                    if (callManagerBaseAddress != null) {
+                    if (callManagerBaseAddress != null)
+                    {
                         m_callManagerSvcHost = new ServiceHost(typeof(CallManagerServices), callManagerBaseAddress);
                     }
-                    else {
+                    else
+                    {
                         m_callManagerSvcHost = new ServiceHost(typeof(CallManagerServices));
                     }
 
@@ -368,7 +399,8 @@ namespace SIPSorcery.SIPAppServer {
 
                     logger.Debug("CallManager hosted service successfully started on " + m_callManagerSvcHost.BaseAddresses[0].AbsoluteUri + ".");
                 }
-                catch (Exception excp) {
+                catch (Exception excp)
+                {
                     logger.Warn("Exception starting CallManager hosted service. " + excp.Message);
                 }
 
@@ -389,28 +421,34 @@ namespace SIPSorcery.SIPAppServer {
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPAppServerDaemon Start. " + excp.Message);
                 throw excp;
             }
         }
 
-        public void Stop() {
-            try {
+        public void Stop()
+        {
+            try
+            {
                 logger.Debug("SIP Application Server stopping...");
 
                 DNSManager.Stop();
                 m_dialPlanEngine.StopScriptMonitoring = true;
 
-                if (m_accessPolicyHost != null) {
+                if (m_accessPolicyHost != null)
+                {
                     m_accessPolicyHost.Close();
                 }
 
-                if (m_sipProvisioningHost != null) {
+                if (m_sipProvisioningHost != null)
+                {
                     m_sipProvisioningHost.Close();
                 }
 
-                if (m_callManagerSvcHost != null) {
+                if (m_callManagerSvcHost != null)
+                {
                     m_callManagerSvcHost.Close();
                 }
 
@@ -419,31 +457,38 @@ namespace SIPSorcery.SIPAppServer {
                     m_sipNotificationsHost.Close();
                 }
 
-                if (m_callManager != null) {
+                if (m_callManager != null)
+                {
                     m_callManager.Stop();
                 }
 
-                if (m_notifyManager != null) {
+                if (m_notifyManager != null)
+                {
                     m_notifyManager.Stop();
                 }
 
-                if (m_monitorEventWriter != null) {
+                if (m_monitorEventWriter != null)
+                {
                     m_monitorEventWriter.Close();
                 }
 
-                if (m_sipProxyDaemon != null) {
+                if (m_sipProxyDaemon != null)
+                {
                     m_sipProxyDaemon.Stop();
                 }
 
-                if (m_sipMonitorDaemon != null) {
+                if (m_sipMonitorDaemon != null)
+                {
                     m_sipMonitorDaemon.Stop();
                 }
 
-                if (m_sipRegistrarDaemon != null) {
+                if (m_sipRegistrarDaemon != null)
+                {
                     m_sipRegistrarDaemon.Stop();
                 }
 
-                if (m_sipRegAgentDaemon != null) {
+                if (m_sipRegAgentDaemon != null)
+                {
                     m_sipRegAgentDaemon.Stop();
                 }
 
@@ -454,17 +499,22 @@ namespace SIPSorcery.SIPAppServer {
 
                 logger.Debug("SIP Application Server stopped.");
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPAppServerDaemon Stop." + excp.Message);
             }
         }
 
         #region Logging functions.
 
-        private void FireSIPMonitorEvent(SIPMonitorEvent sipMonitorEvent) {
-            try {
-                if (sipMonitorEvent != null) {
-                    if (m_monitorEventWriter != null && sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.SIPTransaction) {
+        private void FireSIPMonitorEvent(SIPMonitorEvent sipMonitorEvent)
+        {
+            try
+            {
+                if (sipMonitorEvent != null)
+                {
+                    if (m_monitorEventWriter != null && sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.SIPTransaction)
+                    {
                         m_monitorEventWriter.Send(sipMonitorEvent);
                     }
 
@@ -475,47 +525,54 @@ namespace SIPSorcery.SIPAppServer {
                         sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.Timing &&
                         sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.ContactRegisterInProgress &&
                         sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.Monitor &&
-                        sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.UnrecognisedMessage)) {
+                        sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.UnrecognisedMessage))
+                    {
                         //logger.Debug("as (" + DateTime.Now.ToString("mm:ss:fff") + " " + sipMonitorEvent.Username + ") " + sipMonitorEvent.Message);
                         string eventUsername = (sipMonitorEvent.Username.IsNullOrBlank()) ? null : " " + sipMonitorEvent.Username;
                         dialPlanLogger.Debug("as (" + DateTime.Now.ToString("mm:ss:fff") + eventUsername + "): " + sipMonitorEvent.Message);
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception FireSIPMonitorEvent. " + excp.Message);
             }
         }
 
-        private void LogSIPRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest) {
+        private void LogSIPRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest)
+        {
             string message = "App Svr Received: " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
             //logger.Debug("as: request in " + sipRequest.Method + " " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + ", callid=" + sipRequest.Header.CallId + ".");
             string fromUser = (sipRequest.Header.From != null && sipRequest.Header.From.FromURI != null) ? sipRequest.Header.From.FromURI.User : "Error on From header";
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
-        private void LogSIPRequestOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest) {
+        private void LogSIPRequestOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest)
+        {
             string message = "App Svr Sent: " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
             //logger.Debug("as: request out " + sipRequest.Method + " " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + ", callid=" + sipRequest.Header.CallId + ".");
             string fromUser = (sipRequest.Header.From != null && sipRequest.Header.From.FromURI != null) ? sipRequest.Header.From.FromURI.User : "Error on From header";
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
-        private void LogSIPResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse) {
+        private void LogSIPResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse)
+        {
             string message = "App Svr Received: " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
             //logger.Debug("as: response in " + sipResponse.Header.CSeqMethod + " " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + ", callid=" + sipResponse.Header.CallId + ".");
             string fromUser = (sipResponse.Header.From != null && sipResponse.Header.From.FromURI != null) ? sipResponse.Header.From.FromURI.User : "Error on From header";
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
-        private void LogSIPResponseOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse) {
+        private void LogSIPResponseOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse)
+        {
             string message = "App Svr Sent: " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
             //logger.Debug("as: response out " + sipResponse.Header.CSeqMethod + " " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + ", callid=" + sipResponse.Header.CallId + ".");
             string fromUser = (sipResponse.Header.From != null && sipResponse.Header.From.FromURI != null) ? sipResponse.Header.From.FromURI.User : "Error on From header";
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
-        private void LogSIPBadRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, string sipMessage, SIPValidationFieldsEnum errorField, string rawMessage) {
+        private void LogSIPBadRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, string sipMessage, SIPValidationFieldsEnum errorField, string rawMessage)
+        {
             string errorMessage = "App Svr Bad Request Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + ", " + errorField + ". " + sipMessage;
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.BadSIPMessage, errorMessage, null));
             if (rawMessage != null)
@@ -524,7 +581,8 @@ namespace SIPSorcery.SIPAppServer {
             }
         }
 
-        private void LogSIPBadResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, string sipMessage, SIPValidationFieldsEnum errorField, string rawMessage) {
+        private void LogSIPBadResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, string sipMessage, SIPValidationFieldsEnum errorField, string rawMessage)
+        {
             string errorMessage = "App Svr Bad Response Received: " + localSIPEndPoint + "<-" + endPoint.ToString() + ", " + errorField + ". " + sipMessage;
             FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.BadSIPMessage, errorMessage, null));
             if (rawMessage != null)

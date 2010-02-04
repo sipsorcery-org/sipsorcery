@@ -89,6 +89,11 @@ namespace SIPSorcery.SIP.App {
             get { return m_uasTransaction.TransactionRequest; }
         }
 
+        public string CallDestination
+        {
+            get { return m_uasTransaction.TransactionRequest.URI.User; }
+        }
+
         public bool IsUASAnswered {
             get { return m_uasTransaction != null && m_uacTransaction.TransactionFinalResponse != null; }
         }
@@ -304,24 +309,6 @@ namespace SIPSorcery.SIP.App {
 
 
         #endregion
-
-        public void Hangup() {
-            try {
-                
-            }
-            catch (Exception excp) {
-                logger.Error("Exception SIPB2BUserAgent Hangup. " + excp.Message);
-            }
-        }
-
-        public void Hungup(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) {
-            try {
-
-            }
-            catch (Exception excp) {
-                logger.Error("Exception SIPB2BUserAgent Hangup. " + excp.Message);
-            }
-        }
 
         private SIPRequest GetInviteRequest(string callURI, SIPFromHeader fromHeader) {
             

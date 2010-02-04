@@ -71,6 +71,7 @@ namespace SIPSorcery.AppServer.DialPlan {
         private string m_fromURIUserRegexMatch;
         private ManualResetEvent m_waitForCallback = new ManualResetEvent(false);
         private ISIPServerUserAgent m_callbackCall;
+        private bool m_clientCallCancelled;
 
         internal event CallProgressDelegate CallProgress;
 
@@ -270,6 +271,11 @@ namespace SIPSorcery.AppServer.DialPlan {
                 if (incomingCall.SIPAccount.Owner != m_username) {
                     return false;
                 }
+                else if (m_clientCallCancelled)
+                {
+                    // If the call has been cancelled then don't match to avoid chance of a new incoming call matching a dead Google Voice call.
+                    return false;
+                }
 
                 SIPHeader callHeader = incomingCall.CallRequest.Header;
                 bool matchedCall = false;
@@ -297,6 +303,12 @@ namespace SIPSorcery.AppServer.DialPlan {
                 logger.Error("Exception GoogleVoiceCall MatchIncomingCall. " + excp.Message);
                 return false;
             }
+        }
+
+        public void ClientCallTerminated(CallCancelCause cancelCause)
+        {
+            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "GoogleVoiceCall client call cancelled, " + cancelCause + ".", m_username));
+            m_clientCallCancelled = true;
         }
     }
 }

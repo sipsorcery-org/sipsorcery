@@ -13,7 +13,7 @@ namespace SIPSorcery.Web.Services {
         [OperationContract]
         bool IsAlive();
 
-        [OperationContract]
+        [OperationContract(IsOneWay=true)]
         void SetNextCallDest(string username, string appServerEndPoint);
     }
 }

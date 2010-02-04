@@ -32,12 +32,16 @@ namespace SIPSorcery.Servers
         private static ILog logger = AppState.logger;
 
         private Dictionary<string, SIPMonitorClientSession> m_clientSessions = new Dictionary<string, SIPMonitorClientSession>();   // <Address, sessions>.
-        private Dictionary<string, Action<string>> m_clientsWaiting = new Dictionary<string, Action<string>>();                     // <Address> List of address endpoints that are waiting for a notification.
+        //private Dictionary<string, Action<string>> m_clientsWaiting = new Dictionary<string, Action<string>>();                     // <Address> List of address endpoints that are waiting for a notification.
         private List<string> m_failedSubscriptions = new List<string>();
         private bool m_exit;
+        private string m_monitorServerID;
 
-        public SIPMonitorClientManager()
+        public event Action<string> NotificationReady;       
+
+        public SIPMonitorClientManager(string monitorServerID)
         {
+            m_monitorServerID = monitorServerID;
             ThreadPool.QueueUserWorkItem(delegate { RemoveExpiredSessions(); });
         }
 
@@ -79,7 +83,7 @@ namespace SIPSorcery.Servers
 
                 // A suscription can belong to a second session on the same address in which case there could already
                 // be a pending notificatins request waiting.
-                Action<string> notificationReady = null;
+                /*Action<string> notificationReady = null;
 
                 lock (m_clientsWaiting)
                 {
@@ -88,7 +92,7 @@ namespace SIPSorcery.Servers
                         notificationReady = m_clientsWaiting[address];
                         m_clientsWaiting.Remove(address);
                     }
-                }
+                }*/
 
                 //if (notificationReady != null)
                 //{
@@ -112,8 +116,9 @@ namespace SIPSorcery.Servers
         {
             try
             {
-                Action<string> notificationReady = null;
-                string notificationAddress = null;
+                monitorEvent.MonitorServerID = m_monitorServerID;
+                //Action<string> notificationReady = null;
+                //string notificationAddress = null;
 
                 lock (m_clientSessions)
                 {
@@ -151,15 +156,21 @@ namespace SIPSorcery.Servers
                             eventAdded = true;
                         }
 
-                        if (eventAdded && m_clientsWaiting.ContainsKey(session.Address))
+                        //if (eventAdded && m_clientsWaiting.ContainsKey(session.Address))
+                        if (eventAdded)
                         {
-                            notificationAddress = session.Address;
-                            notificationReady = m_clientsWaiting[session.Address];
+                            //notificationAddress = session.Address;
+                            //notificationReady = m_clientsWaiting[session.Address];
+
+                            if (NotificationReady != null)
+                            {
+                                NotificationReady(session.Address);
+                            }
                         }
                     }
                 }
 
-                if (notificationReady != null)
+                /*if (notificationReady != null)
                 {
                     //logger.Debug("SIPMonitorClientManager Firing notification available callback for address " + notificationAddress + ".");
 
@@ -175,7 +186,7 @@ namespace SIPSorcery.Servers
                             m_clientsWaiting.Remove(notificationAddress);
                         }
                     }
-                }
+                }*/
             }
             catch (Exception excp)
             {
@@ -192,14 +203,14 @@ namespace SIPSorcery.Servers
             {
                 //logger.Debug("SIPMonitorClientManager GetNotifications for address " + address + ".");
 
-                lock (m_clientsWaiting)
+                /*lock (m_clientsWaiting)
                 {
                     // If there is a callback set for this address the consumer has now received it and it can be removed.
                     if (m_clientsWaiting.ContainsKey(address))
                     {
                         m_clientsWaiting.Remove(address);
                     }
-                }
+                }*/
 
                 SIPMonitorClientSession session = (m_clientSessions.ContainsKey(address)) ? m_clientSessions[address] : null;
                 if (session != null)
@@ -305,7 +316,7 @@ namespace SIPSorcery.Servers
             }
         }
 
-        public void RegisterListener(string address)
+        /*public void RegisterListener(string address)
         {
             if (OperationContext.Current != null)
             {
@@ -317,9 +328,9 @@ namespace SIPSorcery.Servers
             {
                 throw new ApplicationException("SIPMonitorClientManager.RegisterListener was called without a callback function and with no available Operation Context.");
             }
-        }
+        }*/
 
-        public void RegisterListener(string address, Action<string> notificationsReady)
+        /*public void RegisterListener(string address, Action<string> notificationsReady)
         {
             try
             {
@@ -351,7 +362,7 @@ namespace SIPSorcery.Servers
                 logger.Error("Exception RegisterListener. " + excp.Message);
                 //throw;
             }
-        }
+        }*/
 
         public void Stop()
         {
@@ -399,7 +410,7 @@ namespace SIPSorcery.Servers
                              {
                                  logger.Debug("SIPMonitorClientManager Removing inactive session connection to " + session.CustomerUsername + ".");
                                  m_clientSessions.Remove(session.Address);
-                                 m_clientsWaiting.Remove(session.Address);
+                                 //m_clientsWaiting.Remove(session.Address);
                              });
                         }
                     }

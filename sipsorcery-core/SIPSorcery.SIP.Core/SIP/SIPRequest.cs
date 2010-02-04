@@ -257,6 +257,21 @@ namespace SIPSorcery.SIP
 				
 			return false;
 		}
+
+        public bool IsValid(out SIPValidationFieldsEnum errorField, out string errorMessage)
+        {
+            errorField = SIPValidationFieldsEnum.Unknown;
+            errorMessage = null;
+
+            if (Header.Vias.Length == 0)
+            {
+                errorField = SIPValidationFieldsEnum.ViaHeader;
+                errorMessage = "No Via headers";
+                return false;
+            }
+
+            return true;
+        }
 	
         //~SIPRequest()
         //{

@@ -53,7 +53,7 @@ namespace SIPSorcery.Persistence
        		
 		private ILog logger = AppState.logger;
 	
-	    private static string m_errorNotificationAddress = AppState.ErrorNotificationEmail;
+	    //private static string m_errorNotificationAddress = AppState.ErrorNotificationEmail;
 
 		private StorageTypes m_storageType;
 		private string m_dbConnStr = null;
@@ -76,7 +76,7 @@ namespace SIPSorcery.Persistence
             // Run a security check on query for SQL injection attacks.
             if (query != null && Regex.Match(query, @"'\S;").Success)
             {
-                Email.SendEmail(m_errorNotificationAddress, m_errorNotificationAddress, "Illegal SQL Detected", query);
+                //SIPSorcerySMTP.SendEmail(m_errorNotificationAddress, m_errorNotificationAddress, "Illegal SQL Detected", query);
                 throw new ApplicationException("SQL not permitted: " + query);
             }
         }

@@ -133,7 +133,7 @@ namespace SIPSorcery.AppServer.DialPlan
          /// </summary>
          /// <param name="sipRequest">The received call request.</param>
          /// <returns>A struct indicating where and how the call should be forwarded on.</returns>
-         public DialPlanCommand GetDialPlanMatch(SIPRequest sipRequest)
+         public DialPlanCommand GetDialPlanMatch(string callDestination)
          {
              try
              {
@@ -158,7 +158,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                      // Z = [1-9]
                                      // N = [2-9]
                                      string astPattern = dialPlanCommand.Destination.Substring(1);
-                                     string dst = sipRequest.URI.User;
+                                     string dst = callDestination;
                                      int dstCharIndex = 0;
                                      int astCharIndex = 0;
 
@@ -224,11 +224,11 @@ namespace SIPSorcery.AppServer.DialPlan
                                  }
                                  else
                                  {
-                                     match = (dialPlanCommand.Destination == sipRequest.URI.User);
+                                     match = (dialPlanCommand.Destination == callDestination);
                                  }
                                  break;
                              case DialPlanOpsEnum.Regex:
-                                 match = Regex.Match(sipRequest.URI.User, dialPlanCommand.Destination).Success;
+                                 match = Regex.Match(callDestination, dialPlanCommand.Destination).Success;
                                  break;
                              default:
                                  // No match.
@@ -237,7 +237,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                          if (match)
                          {
-                             logger.Debug("Dial Plan Match for " + sipRequest.URI.User + " and " + dialPlanCommand.ToString());
+                             logger.Debug("Dial Plan Match for " + callDestination + " and " + dialPlanCommand.ToString());
                              return dialPlanCommand;
                          }
                      }

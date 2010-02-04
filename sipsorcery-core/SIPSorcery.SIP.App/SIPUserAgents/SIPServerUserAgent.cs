@@ -52,7 +52,6 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPServerUserAgent : ISIPServerUserAgent
     {
-
         private static ILog logger = AssemblyState.logger;
 
         private SIPMonitorLogDelegate Log_External = SIPMonitorEvent.DefaultSIPMonitorLogger;
@@ -98,6 +97,11 @@ namespace SIPSorcery.SIP.App
         public SIPRequest CallRequest
         {
             get { return m_uasTransaction.TransactionRequest; }
+        }
+
+        public string CallDestination
+        {
+            get { return m_uasTransaction.TransactionRequest.URI.User; }
         }
 
         public bool IsUASAnswered
@@ -359,8 +363,6 @@ namespace SIPSorcery.SIP.App
 
                     m_uasTransaction.SendFinalResponse(okResponse);
 
-                    // NOTE the Record-Route header does not get reversed for this Route set!! Since the Route set is being used from the server end NOT
-                    // the client end a reversal will generate a Route set in the wrong order.
                     m_sipDialogue = new SIPDialogue(m_uasTransaction, m_owner, m_adminMemberId);
                     m_sipDialogue.TransferMode = transferMode;
 
@@ -463,20 +465,6 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public void Hangup()
-        {
-            m_sipDialogue.Hangup(m_sipTransport, m_outboundProxy);
-        }
-
-        public void Hungup(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
-        {
-            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Call hangup request from server at " + remoteEndPoint + ".", null));
-            SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-            byeTransaction.TransactionTraceMessage += TransactionTraceMessage;
-            SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-            byeTransaction.SendFinalResponse(byeResponse);
-        }
-
         public void SetOwner(string owner, string adminMemberId)
         {
             m_owner = owner;
@@ -487,11 +475,6 @@ namespace SIPSorcery.SIP.App
                 m_uasTransaction.CDR.Owner = owner;
                 m_uasTransaction.CDR.AdminMemberId = adminMemberId;
             }
-        }
-
-        private void ByeFinalResponseReceived(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
-        {
-            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "BYE response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".", null));
         }
 
         private void TransactionTraceMessage(SIPTransaction sipTransaction, string message)

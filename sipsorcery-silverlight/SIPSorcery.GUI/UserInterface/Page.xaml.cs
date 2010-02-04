@@ -40,8 +40,8 @@ namespace SIPSorcery
 
         private string m_dummyOwner = SIPSorceryGUITestPersistor.DUMMY_OWNER;
 
-        private string m_provisioningServiceURL;
-        private string m_notificationsServiceURL;
+        private string m_provisioningServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;
+        private string m_notificationsServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_NOTIFICATIONS_FILE;
         private string m_sipMonitorHost = DEFAULT_MONITOR_HOST;
         private int m_sipControlMonitorPort = 4502;
         private int m_sipMachineMonitorPort = 4503;

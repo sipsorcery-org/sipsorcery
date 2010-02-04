@@ -16,17 +16,20 @@ namespace SIPSorcery.Web.Services
     /// Manages one or more WCF client connections to SIP monitor event publisher servers.
     /// </summary>
     [CallbackBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, UseSynchronizationContext = false)]
-    public class MonitorProxyManager : ISIPMonitorPublisher, ISIPMonitorNotificationReady
+    //public class MonitorProxyManager : ISIPMonitorPublisher, ISIPMonitorNotificationReady
+    public class MonitorProxyManager : ISIPMonitorPublisher
     {
         public const string CLIENT_ENDPOINT_NAME1 = "SIP1";
         public const string CLIENT_ENDPOINT_NAME2 = "SIP2";
-        private const int RETRY_FAILED_PROXY = 20000;
+        private const int RETRY_FAILED_PROXY = 5000;
 
         private ILog logger = AppState.logger;
 
         private Dictionary<string, SIPMonitorPublisherProxy> m_proxies = new Dictionary<string, SIPMonitorPublisherProxy>();
         private Dictionary<string, string> m_sessionIDMap = new Dictionary<string, string>();                                   // Maps a single session ID to the multiple session IDs for each proxy.
         private Dictionary<string, Action<string>> m_clientsWaiting = new Dictionary<string, Action<string>>();                 // <Address> List of address endpoints that are waiting for a notification.
+
+        public event Action<string> NotificationReady;          // Not used across WCF channels, for in memory only.
 
         public MonitorProxyManager()
         {
@@ -63,7 +66,17 @@ namespace SIPSorcery.Web.Services
 
             foreach (string proxyName in proxyNames)
             {
-                CreateProxy(proxyName);
+                try
+                {
+                    SIPMonitorPublisherProxy proxy = new SIPMonitorPublisherProxy(proxyName);
+                    m_proxies.Add(proxyName, proxy);
+                    logger.Debug("Proxy added for " + proxyName + " on " + proxy.Endpoint.Address.ToString() + ".");
+                    //CreateProxy(proxyName);
+                }
+                catch (Exception excp)
+                {
+                    logger.Error("Exception InitialiseProxies. " + excp.Message);
+                }
             }
         }
 
@@ -73,17 +86,20 @@ namespace SIPSorcery.Web.Services
             {
                 logger.Debug("Attempting to create new proxy created for " + proxyName + ".");
 
-                InstanceContext callbackContext = new InstanceContext(this);
-                SIPMonitorPublisherProxy proxy = new SIPMonitorPublisherProxy(callbackContext, proxyName);
+                //InstanceContext callbackContext = new InstanceContext(this);
+                SIPMonitorPublisherProxy proxy = new SIPMonitorPublisherProxy(proxyName);
+                m_proxies.Add(proxyName, proxy);
+                proxy.IsAlive();
+                logger.Debug("Successfully connected to proxy " + proxyName + ".");
 
-                ThreadPool.QueueUserWorkItem(delegate
+                /*ThreadPool.QueueUserWorkItem(delegate
                 {
                     string name = proxyName;
 
                     try
                     {
                         proxy.IsAlive();
-                        ((ICommunicationObject)proxy).Faulted += ProxyChannelFaulted;
+                       // ((ICommunicationObject)proxy).Faulted += ProxyChannelFaulted;
                         m_proxies.Add(name, proxy);
                         logger.Debug("Successfully connected to proxy " + name + ".");
                     }
@@ -92,7 +108,7 @@ namespace SIPSorcery.Web.Services
                         logger.Warn("Could not connect to proxy " + name + ". " + excp.Message);
                         Timer retryProxy = new Timer(delegate { CreateProxy(name); }, null, RETRY_FAILED_PROXY, Timeout.Infinite);
                     }
-                });
+                });*/
             }
             catch (Exception excp)
             {
@@ -157,8 +173,8 @@ namespace SIPSorcery.Web.Services
                 {
                     KeyValuePair<string, SIPMonitorPublisherProxy> proxyEntry = m_proxies.ElementAt(index);
 
-                    if (proxyEntry.Value.State != CommunicationState.Faulted)
-                    {
+                    //if (proxyEntry.Value.State != CommunicationState.Faulted)
+                    //{
                         try
                         {
                             logger.Debug("Attempting to subscribe to proxy " + proxyEntry.Key + ".");
@@ -187,7 +203,7 @@ namespace SIPSorcery.Web.Services
                         {
                             logger.Error("Exception MonitorProxyManager Proxy Subscribe for " + proxyEntry.Key + ". " + excp.Message);
                         }
-                    }
+                    //}
                 }
 
                 if (subscribeSuccess)
@@ -203,34 +219,40 @@ namespace SIPSorcery.Web.Services
 
         public List<string> GetNotifications(string address, out string sessionID, out string sessionError)
         {
-            if (m_proxies.Count == 0)
-            {
-                logger.Debug("GetNotifications had no available proxies.");
-                sessionID = null;
-                sessionError = null;
-                return null;
-            }
-            else
-            {
-                for (int index = 0; index < m_proxies.Count; index++)
-                {
-                    KeyValuePair<string, SIPMonitorPublisherProxy> proxyEntry = m_proxies.ElementAt(index);
+            sessionID = null;
+            sessionError = null;
 
-                    if (proxyEntry.Value.State != CommunicationState.Faulted)
+            try
+            {
+                if (m_proxies.Count == 0)
+                {
+                    //logger.Debug("GetNotifications had no available proxies.");
+                    return null;
+                }
+                else
+                {
+                    List<string> collatedNotifications = new List<string>();
+
+                    for (int index = 0; index < m_proxies.Count; index++)
                     {
+                        KeyValuePair<string, SIPMonitorPublisherProxy> proxyEntry = m_proxies.ElementAt(index);
+
+                        //if (proxyEntry.Value.State != CommunicationState.Faulted)
+                        //{
                         try
                         {
                             //logger.Debug("Retrieving notifications for proxy " + proxyEntry.Key + ".");
 
-                            List<string> notifications = proxyEntry.Value.GetNotifications(address, out sessionID, out sessionError);
-                            if (notifications != null && notifications.Count > 0)
+                            string proxySessionID = null;
+                            List<string> notifications = proxyEntry.Value.GetNotifications(address, out proxySessionID, out sessionError);
+                            if (notifications != null && notifications.Count > 0 && proxySessionID != null)
                             {
                                 //logger.Debug("Proxy " + proxyEntry.Key + " returned " + notifications.Count + ".");
-                                if (m_sessionIDMap.ContainsKey(sessionID))
+                                if (m_sessionIDMap.ContainsKey(proxySessionID))
                                 {
-                                    sessionID = m_sessionIDMap[sessionID];
+                                    sessionID = m_sessionIDMap[proxySessionID];
                                     sessionError = null;
-                                    return notifications;
+                                    collatedNotifications.AddRange(notifications);
                                 }
                                 else
                                 {
@@ -244,20 +266,26 @@ namespace SIPSorcery.Web.Services
                         catch (System.ServiceModel.CommunicationException commExcp)
                         {
                             logger.Warn("CommunicationException MonitorProxyManager GetNotifications. " + commExcp.Message);
-                            sessionID = null;
-                            sessionError = "Communications error";
-                            return null;
+                            //sessionID = null;
+                            //sessionError = "Communications error";
+                            //return null;
                         }
                         catch (Exception excp)
                         {
                             logger.Error("Exception MonitorProxyManager GetNotifications (" + excp.GetType() + "). " + excp.Message);
                         }
+                        //}
                     }
-                }
 
-                sessionError = null;
-                sessionID = null;
-                return null;
+                    //sessionError = null;
+                    //sessionID = null;
+                    return collatedNotifications;
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception MonitorProxyManager.GetNotifications. " + excp.Message);
+                throw;
             }
         }
 
@@ -359,12 +387,12 @@ namespace SIPSorcery.Web.Services
             throw new NotImplementedException();
         }
 
-        public void RegisterListener(string address)
-        {
-            throw new NotImplementedException();
-        }
+       // public void RegisterListener(string address)
+        //{
+        //    throw new NotImplementedException();
+       // }
 
-        public void RegisterListener(string address, Action<string> notificationsReady)
+        /*public void RegisterListener(string address, Action<string> notificationsReady)
         {
              if (m_proxies.Count == 0)
             {
@@ -402,7 +430,7 @@ namespace SIPSorcery.Web.Services
                     }
                 }
             }
-        }
+        }*/
 
         public void MonitorEventReceived(SIPMonitorEvent monitorEvent)
         {
@@ -414,7 +442,7 @@ namespace SIPSorcery.Web.Services
         /// is ready for a particular client connection.
         /// </summary>
         /// <param name="address">The address of the client whose notification is ready.</param>
-        public void NotificationReady(string address)
+        /*public void NotificationReady(string address)
         {
             try
             {
@@ -429,6 +457,6 @@ namespace SIPSorcery.Web.Services
             {
                 logger.Error("Exception NotificationReady. " + excp.Message);
             }
-        }
+        }*/
     }
 }

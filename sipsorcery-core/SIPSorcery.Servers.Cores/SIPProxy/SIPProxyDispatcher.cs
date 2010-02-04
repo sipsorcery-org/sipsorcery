@@ -18,9 +18,9 @@ namespace SIPSorcery.Servers
         private struct UserCallbackRecord
         {
             public DateTime ExpiresAt;
-            public SIPEndPoint DesintationEndPoint;
+            public string DesintationEndPoint;
 
-            public UserCallbackRecord(DateTime expiresAt, SIPEndPoint destinationEndPoint)
+            public UserCallbackRecord(DateTime expiresAt, string destinationEndPoint)
             {
                 ExpiresAt = expiresAt;
                 DesintationEndPoint = destinationEndPoint;
@@ -28,7 +28,7 @@ namespace SIPSorcery.Servers
         }
 
         private const int MAX_LIFETIME_SECONDS = 180;
-        private const int REMOVE_EXPIREDS_EVERY_DISPATCH = 10000;
+        private const int REMOVE_EXPIREDS_SECONDS = 60;
         private const int CALLBACK_LIFETIME_SECONDS = 60;
 
         private static ILog logger = log4net.LogManager.GetLogger("sipproxy");
@@ -38,7 +38,7 @@ namespace SIPSorcery.Servers
         private Dictionary<string, string> m_transactionEndPoints = new Dictionary<string, string>();       // [transactionId, dispatched endpoint].
         private Dictionary<string, DateTime> m_transactionIDAddedAt = new Dictionary<string, DateTime>();   // [transactionId, time added].
         private Dictionary<string, UserCallbackRecord> m_userCallbacks = new Dictionary<string, UserCallbackRecord>();    // [owner username, callback record], dictates the next call for the user should be directed to a specific app server.
-        private int m_dispatchCount = 0;
+        private DateTime m_lastRemove = DateTime.Now;
 
         public SIPProxyDispatcher(SIPMonitorLogDelegate proxyLogger)
         {
@@ -73,11 +73,10 @@ namespace SIPSorcery.Servers
 
                 m_transactionEndPoints.Add(transactionID, internalEndPoint.ToString());
                 m_transactionIDAddedAt.Add(transactionID, DateTime.Now);
-                ProxyLogger_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.CallDispatcher, "Record dispatch for " + sipRequest.Method + " " + sipRequest.URI.ToString() + " to " + internalEndPoint.ToString() + " (id=" + transactionID + ").", null));
+                //ProxyLogger_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.CallDispatcher, "Record dispatch for " + sipRequest.Method + " " + sipRequest.URI.ToString() + " to " + internalEndPoint.ToString() + " (id=" + transactionID + ").", null));
             }
 
-            m_dispatchCount++;
-            if(m_dispatchCount % REMOVE_EXPIREDS_EVERY_DISPATCH == 0)
+            if (m_lastRemove < DateTime.Now.AddSeconds(REMOVE_EXPIREDS_SECONDS * -1))
             {
                 RemoveExpiredDispatchRecords();
             }
@@ -104,35 +103,38 @@ namespace SIPSorcery.Servers
                     m_userCallbacks.Remove(username);
                 }
 
-                m_userCallbacks.Add(username, new UserCallbackRecord(DateTime.Now.AddSeconds(CALLBACK_LIFETIME_SECONDS), SIPEndPoint.ParseSIPEndPoint(appServerEndPoint)));
+                m_userCallbacks.Add(username, new UserCallbackRecord(DateTime.Now.AddSeconds(CALLBACK_LIFETIME_SECONDS), appServerEndPoint));
             }
         }
 
         public SIPEndPoint LookupTransactionID(SIPRequest sipRequest)
         {
-            SIPEndPoint transactionEndPoint = LookupTransactionID(sipRequest.Method, sipRequest.Header);
-            if (transactionEndPoint != null)
+            try
             {
-                return transactionEndPoint;
-            }
-            else if(sipRequest.Method == SIPMethodsEnum.INVITE && !sipRequest.URI.User.IsNullOrBlank())
-            {
-                if (m_userCallbacks.ContainsKey(sipRequest.URI.User))
+                SIPEndPoint transactionEndPoint = LookupTransactionID(sipRequest.Method, sipRequest.Header);
+                if (transactionEndPoint != null)
                 {
-                    SIPEndPoint callbackEndPoint = null;
-
-                    lock (m_userCallbacks)
-                    {
-                        callbackEndPoint = m_userCallbacks[sipRequest.URI.User].DesintationEndPoint;
-                        //m_userCallbacks.Remove(sipRequest.URI.User);
-                    }
-
-                    RecordDispatch(sipRequest, callbackEndPoint);
-                    return callbackEndPoint;
+                    return transactionEndPoint;
                 }
-            }
+                else if (sipRequest.Method == SIPMethodsEnum.INVITE && !sipRequest.URI.User.IsNullOrBlank())
+                {
+                    string toUser = (sipRequest.URI.User.IndexOf('.') != -1) ? sipRequest.URI.User.Substring(sipRequest.URI.User.LastIndexOf('.') + 1) : sipRequest.URI.User;
+                    if (m_userCallbacks.ContainsKey(toUser))
+                    {
+                        SIPEndPoint callbackEndPoint = null;
+                        callbackEndPoint = SIPEndPoint.ParseSIPEndPoint(m_userCallbacks[toUser].DesintationEndPoint);
+                        RecordDispatch(sipRequest, callbackEndPoint);
+                        return callbackEndPoint;
+                    }
+                }
 
-            return null;
+                return null;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception LookupTransactionID. " + excp.Message);
+                return null;
+            }
         }
 
         public SIPEndPoint LookupTransactionID(SIPResponse sipResponse)
@@ -163,7 +165,7 @@ namespace SIPSorcery.Servers
                 if (m_transactionEndPoints.ContainsKey(transactionID))
                 {
                     SIPEndPoint dispacthEndPoint = SIPEndPoint.ParseSIPEndPoint(m_transactionEndPoints[transactionID]);
-                    ProxyLogger_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.CallDispatcher, "Dispatcher lookup for " + method + " returned " + dispacthEndPoint.ToString() + " (id=" + transactionID + ").", null));
+                    //ProxyLogger_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.CallDispatcher, "Dispatcher lookup for " + method + " returned " + dispacthEndPoint.ToString() + " (id=" + transactionID + ").", null));
                     return dispacthEndPoint;
                 }
             }
@@ -213,7 +215,7 @@ namespace SIPSorcery.Servers
                      where userRecord.Value.ExpiresAt < DateTime.Now
                      select userRecord).ToList().ForEach((entry) =>
                      {
-                         //logger.Debug("SIPProxyDispatcher removing expired transactionid=" + entry.Key + ".");
+                         logger.Debug("SIPProxyDispatcher removing expired callback record for=" + entry.Key + ".");
                          m_userCallbacks.Remove(entry.Key);
                      });
                 }

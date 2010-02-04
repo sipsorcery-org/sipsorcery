@@ -227,17 +227,20 @@ namespace SIPSorcery.AppServer.DialPlan
                     getSIPAccount = m_sipAccountPersistor.Get;
                 }
                 m_dialStringParser = new DialStringParser(m_sipTransport, m_dialPlanContext.Owner, m_dialPlanContext.SIPAccount, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate);
-                foreach (string unknownHeader in m_sipRequest.Header.UnknownHeaders)
+                if (m_sipRequest != null)
                 {
-                    if (!unknownHeader.IsNullOrBlank() && unknownHeader.StartsWith(SwitchboardApp.SWITCHBOARD_REMOTE_HEADER))
+                    foreach (string unknownHeader in m_sipRequest.Header.UnknownHeaders)
                     {
-                        m_dialPlanContext.CreateBridge_External = (uasDialogue, uacDialogue, owner) =>
+                        if (!unknownHeader.IsNullOrBlank() && unknownHeader.StartsWith(SwitchboardApp.SWITCHBOARD_REMOTE_HEADER))
                         {
-                            logger.Debug("Calling switchboardapp create bridge delegate.");
-                            uasDialogue.RemoteTarget = new SIPURI(uasDialogue.RemoteTarget.Scheme, SIPEndPoint.ParseSIPEndPoint(unknownHeader.Substring(unknownHeader.IndexOf(":") + 1).Trim()));
-                            CreateBridge_External(uasDialogue, uacDialogue, owner);
-                        };
-                        break;
+                            m_dialPlanContext.CreateBridge_External = (uasDialogue, uacDialogue, owner) =>
+                            {
+                                logger.Debug("Calling switchboardapp create bridge delegate.");
+                                uasDialogue.RemoteTarget = new SIPURI(uasDialogue.RemoteTarget.Scheme, SIPEndPoint.ParseSIPEndPoint(unknownHeader.Substring(unknownHeader.IndexOf(":") + 1).Trim()));
+                                CreateBridge_External(uasDialogue, uacDialogue, owner);
+                            };
+                            break;
+                        }
                     }
                 }
             }
@@ -393,9 +396,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_customFromName,
                         m_customFromUser,
                         m_customFromHost);
-                    //if (m_customFromName != null || m_customFromUser != null || m_customFromHost != null) {
-                    //    UpdateCallQueueFromHeaders(callsQueue, m_customFromName, m_customFromUser, m_customFromHost);
-                    //}
+
                     List<SIPCallDescriptor>[] callListArray = callsQueue.ToArray();
                     callsQueue.ToList().ForEach((list) => numberLegs += list.Count);
 
@@ -939,6 +940,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 ExtendScriptTimeout(DEFAULT_CREATECALL_RINGTIME);
                 GoogleVoiceCall googleCall = new GoogleVoiceCall(m_sipTransport, m_callManager, m_dialPlanLogDelegate, m_username, m_adminMemberId, m_outboundProxySocket);
+                m_dialPlanContext.CallCancelledByClient += googleCall.ClientCallTerminated;
                 googleCall.CallProgress += m_dialPlanContext.CallProgress;
 
                 string content = m_sipRequest.Body;
@@ -1106,7 +1108,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_emailCount++;
                         subject = (subject.Length > MAX_EMAIL_SUBJECT_LENGTH) ? subject.Substring(0, MAX_EMAIL_SUBJECT_LENGTH) : subject;
                         body = (body.Length > MAX_EMAIL_BODY_LENGTH) ? body.Substring(0, MAX_EMAIL_BODY_LENGTH) : body;
-                        SIPSorcery.Sys.Email.SendEmail(to, EMAIL_FROM_ADDRESS, subject, body);
+                        SIPSorcerySMTP.SendEmail(to, EMAIL_FROM_ADDRESS, subject, body);
                         Log("Email sent to " + to + " with subject of \"" + subject + "\".");
                     }
                 }

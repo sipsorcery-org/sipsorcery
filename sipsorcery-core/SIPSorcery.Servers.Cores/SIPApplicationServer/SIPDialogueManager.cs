@@ -291,6 +291,63 @@ namespace SIPSorcery.Servers
         }
 
         /// <summary>
+        /// This method applies very liberal rules to find a matching dialogue:
+        /// 1. Treat the call identifier as a Call-ID,
+        /// 2. If no dialogue matches for that try with the call identifier as the from username on the local user field,
+        /// </summary>
+        /// <param name="owner">The dialogue owner to use when attempting to find a match.</param>
+        /// <param name="callIdentifier">A call identifier field to try and match a dialogue against.</param>
+        /// <returns>A dialogue if a match is found or null otherwise.</returns>
+        public SIPDialogue GetDialogueRelaxed(string owner, string callIdentifier)
+        {
+            if (owner.IsNullOrBlank() || callIdentifier.IsNullOrBlank())
+            {
+                return null;
+            }
+            else
+            {
+                owner = owner.ToLower();
+
+                SIPDialogue callIDDialogue = GetDialogue(callIdentifier, null, null);
+                if (callIDDialogue != null && callIDDialogue.Owner == owner)
+                {
+                    return callIDDialogue;
+                }
+                else
+                {
+                    List<SIPDialogueAsset> dialogueAssets = m_sipDialoguePersistor.Get(d => d.Owner == owner, null, 0, Int32.MaxValue);
+                    if (dialogueAssets != null && dialogueAssets.Count > 0)
+                    {
+                        SIPDialogueAsset matchingDialogue = null;
+
+                        foreach (SIPDialogueAsset dialogueAsset in dialogueAssets)
+                        {
+                            if (dialogueAsset.LocalUserField.Contains(callIdentifier))
+                            {
+                                if (matchingDialogue == null)
+                                {
+                                    matchingDialogue = dialogueAsset;
+                                }
+                                else
+                                {
+                                    // Ambiguous match, two or more dialogues match when matching on the call identifier string.
+                                    return null;
+                                }
+                            }
+                        }
+
+                        if (matchingDialogue != null)
+                        {
+                            return matchingDialogue.SIPDialogue;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Retrieves the other end of a call given the dialogue from one end.
         /// </summary>
         /// <param name="dialogue"></param>
@@ -301,19 +358,6 @@ namespace SIPSorcery.Servers
             {
                 string bridgeIdString = dialogue.BridgeId.ToString();
                 SIPDialogueAsset dialogueAsset = m_sipDialoguePersistor.Get(d => d.BridgeId == bridgeIdString && d.Id != dialogue.Id);
-                return (dialogueAsset != null) ? dialogueAsset.SIPDialogue : null;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        public SIPDialogue GetDialogueWithSameCallId(SIPDialogue dialogue)
-        {
-            if (!dialogue.CallId.IsNullOrBlank())
-            {
-                SIPDialogueAsset dialogueAsset = m_sipDialoguePersistor.Get(d => d.CallId == dialogue.CallId && d.Id != dialogue.Id);
                 return (dialogueAsset != null) ? dialogueAsset.SIPDialogue : null;
             }
             else
@@ -562,6 +606,45 @@ namespace SIPSorcery.Servers
                 {
                     logger.Error("Exception ProcessRefer sending failed response. " + respExcp.Message);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Performs a blind transfer between 3 established dialogues (answered calls). The dead dialogue is being replaced by 
+        /// the answered dialogue such that a bridged call between the dead and orphaned dialogues now becomes one between the
+        /// orphaned and answered dialgoues.
+        /// </summary>
+        /// <param name="deadDialogue"></param>
+        /// <param name="orphanedDialogue"></param>
+        /// <param name="answeredDialogue"></param>
+        public void BlindTransfer(SIPDialogue deadDialogue, SIPDialogue orphanedDialogue, SIPDialogue answeredDialogue)
+        {
+            try
+            {
+                logger.Debug("SIPDialogueManager processing Blind transfer.");
+
+                // Create bridge between answered dialogue and other end of dialogue being replaced.
+                Guid newBridgeId = Guid.NewGuid();
+                orphanedDialogue.BridgeId = newBridgeId;
+                answeredDialogue.BridgeId = newBridgeId;
+                //answeredDialogue.RemoteSDP = orphanedDialogue.SDP;
+                //orphanedDialogue.RemoteSDP = answeredDialogue.SDP;
+                m_sipDialoguePersistor.Update(new SIPDialogueAsset(orphanedDialogue));
+                m_sipDialoguePersistor.Add(new SIPDialogueAsset(answeredDialogue));
+
+                logger.Debug("Hanging up dead dialogue");
+                // Hangup dialogue being replaced.
+                deadDialogue.Hangup(m_sipTransport, m_outboundProxy);
+                CallHungup(deadDialogue, "Blind transfer");
+
+                logger.Debug("Reinviting two remainging dialogues");
+                // Reinvite  other end of dialogue being replaced to answered dialogue.
+                ReInvite(orphanedDialogue, answeredDialogue.RemoteSDP);
+                //ReInvite(answeredDialogue, orphanedDialogue.SDP);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception BlindTransfer. " + excp.Message);
             }
         }
 

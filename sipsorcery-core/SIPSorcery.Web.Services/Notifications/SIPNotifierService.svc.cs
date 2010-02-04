@@ -149,7 +149,7 @@ namespace SIPSorcery.Web.Services
             }
             catch (Exception excp)
             {
-                logger.Error("Exception GetNotifications. " + excp.Message);
+                logger.Error("Exception SIPNotifierService.GetNotifications. " + excp.Message);
                 throw;
             }
         }
@@ -266,8 +266,8 @@ namespace SIPSorcery.Web.Services
             logger.Debug("BeginMakeConnect " + poll.Address + ".");
             NotificationAsyncResult notificationAR = new NotificationAsyncResult(
                 GetNotificationsFromPublisher,
-                RegisterListenerWithPublisher,
-                RegisterListenerWithPublisher,
+                //RegisterListenerWithPublisher,
+                //RegisterListenerWithPublisher,
                 poll,
                 callback,
                 state);
@@ -345,7 +345,7 @@ namespace SIPSorcery.Web.Services
         /// is ready for a particular client connection.
         /// </summary>
         /// <param name="address">The address of the client whose notification is ready.</param>
-        public void NotificationReady(string address)
+       /* public void NotificationReady(string address)
         {
             try
             {
@@ -360,9 +360,9 @@ namespace SIPSorcery.Web.Services
             {
                 logger.Error("Exception NotificationReady. " + excp.Message);
             }
-        }
+        }*/
 
-        private void FlushPendingNotifications()
+        /*private void FlushPendingNotifications()
         {
             try
             {
@@ -388,7 +388,7 @@ namespace SIPSorcery.Web.Services
             {
                 logger.Error("Exception FlushPendingNotifications. " + excp.Message);
             }
-        }
+        }*/
 
         private ISIPMonitorPublisher GetPublisher()
         {
@@ -445,7 +445,7 @@ namespace SIPSorcery.Web.Services
             }
         }
 
-        private void RegisterListenerWithPublisher(string address)
+        /*private void RegisterListenerWithPublisher(string address)
         {
             try
             {
@@ -466,7 +466,7 @@ namespace SIPSorcery.Web.Services
                 logger.Error("SIPNotifierService RegisterListener Exception. " + excp);
                 throw;
             }
-        }
+        }*/
 
         /// <summary>
         /// This method is used only when the publisher is in the same process and a function delegate
@@ -474,10 +474,10 @@ namespace SIPSorcery.Web.Services
         /// </summary>
         /// <param name="address"></param>
         /// <param name="notificationsReady"></param>
-        private void RegisterListenerWithPublisher(string address, Action<string> notificationsReady)
+        /*private void RegisterListenerWithPublisher(string address, Action<string> notificationsReady)
         {
             GetPublisher().RegisterListener(address, notificationsReady);
-        }
+        }*/
 
         private Customer AuthenticateRequest()
         {

@@ -82,7 +82,6 @@ namespace SIPSorcery.SIP
         public string RemoteTag { get; set; }
         public int CSeq { get; set; }                               // CSeq being used by the remote UA for sending requests.
         public SIPURI RemoteTarget { get; set; }                    // This will be the Contact URI in the INVITE request or in the 2xx INVITE response and is where subsequent dialogue requests should be sent.
-        //public string DialogueId { get; set; }
         public Guid CDRId { get; set; }                             // Call detail record for call the dialogue belongs to.
         public string ContentType { get; private set; }             // The content type on the request or response that created this dialogue. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
         public string SDP { get; set; }                             // The sessions description protocol payload. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
@@ -143,9 +142,7 @@ namespace SIPSorcery.SIP
             string sdp,
             string remoteSDP)
         {
-
             Id = Guid.NewGuid();
-            //DialogueId = GetDialogueId(callId, localTag, remoteTag);
 
             CallId = callId;
             RouteSet = routeSet;
@@ -235,8 +232,6 @@ namespace SIPSorcery.SIP
             SDP = uacInviteTransaction.TransactionRequest.Body;
             RemoteSDP = uacInviteTransaction.TransactionFinalResponse.Body;
             Inserted = DateTime.UtcNow;
-
-            //DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
 
             // Set the dialogue remote target and take care of mangling if an upstream proxy has indicated it's required.
             RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(uacInviteTransaction.RemoteEndPoint.ToString()));

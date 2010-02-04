@@ -10,20 +10,24 @@ using log4net;
 
 namespace SIPSorcery.Web.Services
 {
-    public interface ISIPMonitorPublisherChannel : ISIPMonitorPublisher, IDuplexChannel
+    //public interface ISIPMonitorPublisherChannel : ISIPMonitorPublisher, IDuplexChannel
+    public interface ISIPMonitorPublisherChannel : ISIPMonitorPublisher, IChannel
     { }
 
-    [CallbackBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, UseSynchronizationContext = false)]
-    public partial class SIPMonitorPublisherProxy : DuplexClientBase<ISIPMonitorPublisher>, ISIPMonitorPublisher
+    //[CallbackBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, UseSynchronizationContext = false)]
+    //public partial class SIPMonitorPublisherProxy : DuplexClientBase<ISIPMonitorPublisher>, ISIPMonitorPublisher
+    public partial class SIPMonitorPublisherProxy : ClientBase<ISIPMonitorPublisher>, ISIPMonitorPublisher
     {
         private static ILog logger = AppState.logger;
 
-        public SIPMonitorPublisherProxy(InstanceContext callbackInstance)
-            : base(callbackInstance)
-        { }
+        public event Action<string> NotificationReady;          // Not used across WCF channels, for in memory only.
 
-        public SIPMonitorPublisherProxy(InstanceContext callbackInstance, string endPointName)
-            : base(callbackInstance, endPointName)
+        /*public SIPMonitorPublisherProxy(InstanceContext callbackInstance)
+            : base(callbackInstance)
+        { }*/
+
+        public SIPMonitorPublisherProxy(string endPointName)
+            : base(endPointName)
         { }
 
         public bool IsAlive()
@@ -56,19 +60,19 @@ namespace SIPSorcery.Web.Services
             base.Channel.CloseConnection(address);
         }
 
-        public void RegisterListener(string address)
-        {
-            base.Channel.RegisterListener(address);
-        }
+       // public void RegisterListener(string address)
+        //{
+        //    base.Channel.RegisterListener(address);
+        //}
 
         public void MonitorEventReceived(SIPMonitorEvent monitorEvent)
         {
             throw new NotImplementedException();
         }
 
-        public void RegisterListener(string address, Action<string> notificationsReady)
-        {
-            throw new NotImplementedException();
-        }
+        //public void RegisterListener(string address, Action<string> notificationsReady)
+        //{
+       //     throw new NotImplementedException();
+       // }
     }
 }

@@ -14,20 +14,21 @@ using NSsh.Common.Utility;
 
 namespace SIPSorcery.SSHServer
 {
-    [CallbackBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, UseSynchronizationContext = false)]
-    public class SIPSorceryVT100Server : ISIPMonitorNotificationReady
+    //[CallbackBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, UseSynchronizationContext = false)]
+    //public class SIPSorceryVT100Server : ISIPMonitorNotificationReady
+    public class SIPSorceryVT100Server
     {
         private const int MAX_COMMAND_LENGTH = 2000;
         private const string FILTER_COMMAND_PROMPT = "filter=>";
         private const string DEFAULT_FILTER = "event *";
         private const string CRLF = "\r\n";
+        private const int POLL_FOR_NOTIFICATIONS_PERIOD = 1000;     // Period this SSH session will poll the monitoring service to check for new event notifications.
 
         private static ILog logger = AppState.logger;
 
         private ISIPMonitorPublisher m_publisher;
         private string m_notificationsAddress;
         private string m_notificationsSessionID;
-        private bool m_firstNotificationSent;     // The first notification always be the filter description and gets special treatment.
 
         public BlockingMemoryStream InStream = new BlockingMemoryStream();
         public BlockingMemoryStream OutStream = new BlockingMemoryStream();
@@ -36,6 +37,7 @@ namespace SIPSorcery.SSHServer
         public string AdminId;
         private Customer m_customer;
         public bool HasClosed;
+        private bool StopPolling;
 
         public event EventHandler Closed;
 
@@ -78,6 +80,7 @@ namespace SIPSorcery.SSHServer
             OutStream.Close();
             ErrorStream.Close();
             HasClosed = true;
+            StopPolling = true;
 
             if (Closed != null)
             {
@@ -85,10 +88,10 @@ namespace SIPSorcery.SSHServer
             }
         }
 
-        public void NotificationReady(string address)
-        {
-            GetNotifications();
-        }
+        //public void NotificationReady(string address)
+        //{
+        //    GetNotifications();
+        //}
 
         public void GetNotifications()
         {
@@ -108,16 +111,8 @@ namespace SIPSorcery.SSHServer
                 {
                     foreach (string notification in notifications)
                     {
-                        if (!m_firstNotificationSent)
-                        {
-                            m_firstNotificationSent = true;
-                            WriteFilterDescription(notification);
-                        }
-                        else
-                        {
-                            OutStream.Write(Encoding.ASCII.GetBytes(notification));
-                            OutStream.Flush();
-                        }
+                        OutStream.Write(Encoding.ASCII.GetBytes(notification));
+                        OutStream.Flush();
                     }
 
                     notifications = m_publisher.GetNotifications(m_notificationsAddress, out sessionID, out sessionError);
@@ -127,10 +122,10 @@ namespace SIPSorcery.SSHServer
                 {
                     throw new ApplicationException(sessionError);
                 }
-                else 
-                {
-                    m_publisher.RegisterListener(m_notificationsAddress, NotificationReady);
-                }
+                //else 
+                //{
+                //m_publisher.RegisterListener(m_notificationsAddress, NotificationReady);
+                //}
             }
             catch (Exception excp)
             {
@@ -249,9 +244,9 @@ namespace SIPSorcery.SSHServer
                         if (inBuffer[0] == 's' || inBuffer[0] == 'S')
                         {
                             // Stop events.
+                            StopPolling = true;
                             logger.Debug("Closing session " + m_notificationsSessionID + ".");
                             m_publisher.CloseSession(m_notificationsAddress, m_notificationsSessionID);
-                            m_firstNotificationSent = false;
                             m_notificationsSessionID = null;
                             OutStream.Write(Encoding.ASCII.GetBytes(CRLF + FILTER_COMMAND_PROMPT));
                         }
@@ -314,7 +309,43 @@ namespace SIPSorcery.SSHServer
                 }
                 else
                 {
-                    GetNotifications();
+                    SIPMonitorFilter filter = new SIPMonitorFilter(command);
+                    WriteFilterDescription(filter.GetFilterDescription());
+
+                    if (m_publisher is SIPSorcery.Servers.SIPMonitorClientManager)
+                    {
+                        logger.Debug("VT100Server is connected to a publisher that fires an event when a notification is ready.");
+                        // The publisher will fire an event when a new notification is ready.
+                        m_publisher.NotificationReady += (address) => { GetNotifications(); };
+                    }
+                    else
+                    {
+                        logger.Debug("VT100Server is connected to a publisher that needs to be polled for events.");
+
+                        // The publisher does not supply an event when a notification is ready and must be polled instead.
+                        StopPolling = false;
+                        ThreadPool.QueueUserWorkItem(delegate
+                        {
+                            try
+                            {
+                                while (!HasClosed && !StopPolling)
+                                {
+                                    GetNotifications();
+                                    Thread.Sleep(POLL_FOR_NOTIFICATIONS_PERIOD);
+                                }
+
+                                logger.Debug("Stopped polling for events for address " + m_notificationsAddress + ".");
+                            }
+                            catch (ApplicationException appExcp)
+                            {
+                                WriteError(appExcp.Message);
+                            }
+                            catch (Exception excp)
+                            {
+                                logger.Error("Exception SIPSorceryVT100Server ProcessCommand on GetNotifications. " + excp.Message);
+                            }
+                        });
+                    }
                 }
             }
             catch (ApplicationException appExcp)

@@ -6,9 +6,8 @@
     <dialplanname>default</dialplanname>
     <traceemailaddress></traceemailaddress>
     <dialplanscript><![CDATA[sys.Log("call to #{req.URI.ToString()} from #{req.Header.From.ToString()}")
-sys.Dial("blueface")
-#sys.Respond(404, "No thanks")
-#sys.Callback("300@blueface", "username@local")]]></dialplanscript>
+sys.Dial("300@blueface[fu=anon]")
+]]></dialplanscript>
     <scripttype>Ruby</scripttype>
     <maxexecutioncount>3</maxexecutioncount>
     <executioncount>0</executioncount>

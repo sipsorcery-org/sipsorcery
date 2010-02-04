@@ -9,9 +9,12 @@ namespace SIPSorcery.SIP.App {
 
     public delegate List<string> GetNotificationsDelegate(string address, out string sessionID, out string sessionError);
 
-    [ServiceContract(CallbackContract = typeof(ISIPMonitorNotificationReady), Namespace = "http://www.sipsorcery.com/notifications", ConfigurationName = "SIPSorcery.SIP.App.ISIPMonitorPublisher")]
+    //[ServiceContract(CallbackContract = typeof(ISIPMonitorNotificationReady), Namespace = "http://www.sipsorcery.com/notifications", ConfigurationName = "SIPSorcery.SIP.App.ISIPMonitorPublisher")]
+    [ServiceContract(Namespace = "http://www.sipsorcery.com/notifications", ConfigurationName = "SIPSorcery.SIP.App.ISIPMonitorPublisher")]
     public interface ISIPMonitorPublisher 
     {
+        event Action<string> NotificationReady;
+
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/IsAlive", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/IsAliveResponse")]
         bool IsAlive();
 
@@ -32,8 +35,8 @@ namespace SIPSorcery.SIP.App {
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/GetNotifications", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/GetNotificationsResponse")]
         List<string> GetNotifications(string address, out string sessionID, out string sessionError);
 
-        [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/RegisterListener", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/RegisterListenerResponse")]
-        void RegisterListener(string address);
+        //[OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/RegisterListener", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/RegisterListenerResponse")]
+        //void RegisterListener(string address);
 
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/IsNotificationReady", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/IsNotificationReadyResponse")]
         bool IsNotificationReady(string address);
@@ -44,7 +47,7 @@ namespace SIPSorcery.SIP.App {
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/CloseConnection", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/CloseConnectionResponse")]
         void CloseConnection(string address);
 
-        void RegisterListener(string address, Action<string> notificationsReady);
+        //void RegisterListener(string address, Action<string> notificationsReady);
 
         void MonitorEventReceived(SIPMonitorEvent monitorEvent);
     }

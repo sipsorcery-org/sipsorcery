@@ -47,6 +47,7 @@ namespace SIPSorcery.SIP.App {
         bool IsAuthenticated { get; set; }
         bool IsB2B { get; }
         SIPRequest CallRequest { get; }
+        string CallDestination { get; }
         bool IsUASAnswered { get; }
         string Owner { get; }
 
@@ -61,8 +62,6 @@ namespace SIPSorcery.SIP.App {
         SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode);
         void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders);
         void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI);
-        void Hangup();
-        void Hungup(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest);
         void NoCDR();
         void SetTraceDelegate(SIPTransactionTraceMessageDelegate traceDelegate);
         void SetOwner(string owner, string adminMemberId);

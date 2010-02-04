@@ -60,7 +60,6 @@ namespace SIPSorcery.Servers
     public class SIPCallManager : ISIPCallManager
     {
         private const int MAX_FORWARD_BINDINGS = 5;
-        private const string WEB_CALLBACK_DIALPLAN_NAME = "webcallback";
         private const string MONITOR_CALLLIMITS_THREAD_NAME = "sipcallmanager-monitorcalls";
         private const string PROCESS_CALLS_THREAD_NAME_PREFIX = "sipcallmanager-processcalls";
         private const int MAX_QUEUEWAIT_PERIOD = 4000;              // Maximum time to wait to check the new calls queue if no events are received.
@@ -355,6 +354,10 @@ namespace SIPSorcery.Servers
 
         private void ProcessNewCall(ISIPServerUserAgent uas)
         {
+            bool wasExecutionCountIncremented = false;
+            Customer customer = null;
+            SIPDialPlan dialPlan = null;
+
             try
             {
                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call Manager processing new call on thread " + Thread.CurrentThread.Name + " for " + uas.CallRequest.Method + " to " + uas.CallRequest.URI.ToString() + ".", null));
@@ -415,7 +418,7 @@ namespace SIPSorcery.Servers
                     SIPDialPlan dispatcherDialPlan = new SIPDialPlan(null, null, null, pseudoScript, SIPDialPlanScriptTypesEnum.Ruby);
                     dispatcherDialPlan.Id = Guid.Empty; // Prevents the increment and decrement on the execution counts.
                     DialPlanScriptContext scriptContext = new DialPlanScriptContext(
-                            Log_External,
+                            null,
                             m_sipTransport,
                             CreateDialogueBridge,
                             DecrementDialPlanExecutionCount,
@@ -435,11 +438,10 @@ namespace SIPSorcery.Servers
                     string dialPlanName = dialPlanName = (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.OutDialPlanName : sipAccount.InDialPlanName;
                     string owner = (uas.IsB2B) ? uas.SIPAccount.Owner : uas.Owner;
 
-                    Customer customer = null;
-                    SIPDialPlan dialPlan = null;
-
                     if (GetDialPlanAndCustomer(owner, dialPlanName, uas, out customer, out dialPlan))
                     {
+                        wasExecutionCountIncremented = true;
+
                         if (dialPlan != null)
                         {
                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Using dialplan " + dialPlanName + " for " + uas.CallDirection + " call to " + callURI.ToString() + ".", owner));
@@ -535,69 +537,107 @@ namespace SIPSorcery.Servers
             {
                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Exception SIPCallManager ProcessNewCall. " + excp.Message, null));
                 uas.Reject(SIPResponseStatusCodesEnum.InternalServerError, "Exception ProcessNewCall", null);
+
+                if (wasExecutionCountIncremented)
+                {
+                    DecrementDialPlanExecutionCount(dialPlan, customer.Id);
+                }
             }
         }
 
-        public string ProcessWebCallback(string username, string number)
+        public string ProcessWebCall(string username, string number, string dialplanName, string replacesCallID)
         {
+            bool wasExecutionCountIncremented = false;
+            Customer customer = null;
+            SIPDialPlan dialPlan = null;
+
             try
             {
-                Customer customer = m_customerPersistor.Get(c => c.CustomerUsername == username);
+                customer = m_customerPersistor.Get(c => c.CustomerUsername == username);
+                SIPDialogue replacesDialogue = (!replacesCallID.IsNullOrBlank() && customer != null) ? m_sipDialogueManager.GetDialogueRelaxed(customer.CustomerUsername, replacesCallID) : null;
+
                 if (customer == null)
                 {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web Callback rejected for " + username + " and " + number + ", as no matching customer.", null));
-                    return "Sorry no matching user was found, the callback was not initiated.";
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web " + dialplanName + " rejected for " + username + " and " + number + ", as no matching user.", null));
+                    return "Sorry no matching user was found, the " + dialplanName + " was not initiated.";
                 }
                 else if (customer.Suspended)
                 {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web Callback rejected for " + username + " and " + number + ", as no account suspended.", null));
-                    return "Sorry the webcallback user's account is suspended.";
+                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web " + dialplanName + " rejected for " + username + " and " + number + ", user account is suspended.", null));
+                    return "Sorry the user's account is suspended.";
+                }
+                else if (!replacesCallID.IsNullOrBlank() && replacesDialogue == null)
+                {
+                    return "Sorry the blind transfer could not be initiated, the Call-ID to transfer could not be found.";
                 }
                 else
                 {
-                    SIPDialPlan webCallbackDialPlan = GetDialPlan_External(d => d.Owner == username && d.DialPlanName == WEB_CALLBACK_DIALPLAN_NAME);
-                    if (webCallbackDialPlan == null)
+                    dialPlan = GetDialPlan_External(d => d.Owner == username && d.DialPlanName == dialplanName);
+                    if (dialPlan == null)
                     {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web Callback rejected as no " + WEB_CALLBACK_DIALPLAN_NAME + " dialplan exists.", username));
+                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web " + dialplanName + " rejected as no " + dialplanName + " dialplan exists.", username));
                         return "Sorry the specified user has not enabled callbacks, the callback was not initiated.";
                     }
                     else
                     {
-                        if (!IsDialPlanExecutionAllowed(webCallbackDialPlan, customer))
+                        if (!IsDialPlanExecutionAllowed(dialPlan, customer))
                         {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of web callback dial plan was not processed as maximum execution count has been reached.", username));
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of web call for dialplan " + dialplanName + " was not processed as maximum execution count has been reached.", username));
                             return "Sorry the callback was not initiated, dial plan execution exceeded maximum allowed";
                         }
                         else
                         {
-                            IncrementDialPlanExecutionCount(webCallbackDialPlan, customer);
+                            IncrementDialPlanExecutionCount(dialPlan, customer);
 
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web Callback initialising to " + number + ".", username));
+                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web call for " + dialplanName + " initialising to " + number + ".", username));
 
-                            UASInviteTransaction dummyTransaction = GetDummyWebCallbackTransaction(number);
-                            SIPServerUserAgent dummyUAS = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, username, SIPDomainManager.DEFAULT_LOCAL_DOMAIN, SIPCallDirection.Out, GetSIPAccount_External, null, Log_External, dummyTransaction);
+                            ISIPServerUserAgent uas = null;
+                            if (replacesCallID.IsNullOrBlank())
+                            {
+                                UASInviteTransaction dummyTransaction = GetDummyWebCallbackTransaction(number);
+                                uas = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, username, SIPDomainManager.DEFAULT_LOCAL_DOMAIN, SIPCallDirection.Out, GetSIPAccount_External, null, Log_External, dummyTransaction);
+                            }
+                            else
+                            {
+                                SIPDialogue oppositeDialogue = m_sipDialogueManager.GetOppositeDialogue(replacesDialogue);
+                                uas = new SIPTransferServerUserAgent(Log_External, m_sipDialogueManager.BlindTransfer, m_sipTransport, m_outboundProxy, replacesDialogue, oppositeDialogue, number, customer.CustomerUsername, customer.AdminId);
+                            }
+
                             DialPlanScriptContext scriptContext = new DialPlanScriptContext(
                                     Log_External,
                                     m_sipTransport,
                                     CreateDialogueBridge,
                                     DecrementDialPlanExecutionCount,
                                     m_outboundProxy,
-                                    dummyUAS,
-                                    webCallbackDialPlan,
+                                    uas,
+                                    dialPlan,
                                     GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
                                     m_traceDirectory,
                                     null,
                                     customer.Id);
-                            m_dialPlanEngine.Execute(scriptContext, dummyUAS, SIPCallDirection.Out, CreateDialogueBridge, this);
-                            return "Callback was successfully initiated.";
+                            m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
+
+                            if (replacesCallID.IsNullOrBlank())
+                            {
+                                return "Web call was successfully initiated.";
+                            }
+                            else
+                            {
+                                return "Blind transfer was successfully initiated.";
+                            }
                         }
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPCallManager ProcessWebCallback. " + excp.Message);
+                logger.Error("Exception SIPCallManager ProcessWebCall. " + excp.Message);
                 return "Sorry there was an unexpected error, the callback was not initiated.";
+
+                if (wasExecutionCountIncremented)
+                {
+                    DecrementDialPlanExecutionCount(dialPlan, customer.Id);
+                }
             }
         }
 
@@ -734,11 +774,10 @@ namespace SIPSorcery.Servers
             SIPRequest dummyInvite = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURIRelaxed(number + "@sipsorcery.com"));
             SIPHeader dummyHeader = new SIPHeader("<sip:anon@sipsorcery.com>", "<sip:anon@sipsorcery.com>", 1, CallProperties.CreateNewCallId());
             dummyHeader.CSeqMethod = SIPMethodsEnum.INVITE;
-            dummyHeader.Vias.PushViaHeader(new SIPViaHeader("127.0.0.1:5090", CallProperties.CreateBranchId()));
+            dummyHeader.Vias.PushViaHeader(new SIPViaHeader(SIPTransport.Blackhole, CallProperties.CreateBranchId()));
             dummyInvite.Header = dummyHeader;
-            UASInviteTransaction dummyTransaction = m_sipTransport.CreateUASTransaction(dummyInvite, SIPEndPoint.ParseSIPEndPoint("127.0.0.1"), SIPEndPoint.ParseSIPEndPoint("127.0.0.1"), null);
+            UASInviteTransaction dummyTransaction = m_sipTransport.CreateUASTransaction(dummyInvite, SIPTransport.Blackhole, SIPTransport.Blackhole, null);
             return dummyTransaction;
-
         }
 
         public void Transfer(SIPDialogue dialogue, SIPNonInviteTransaction referTransaction)
@@ -820,14 +859,10 @@ namespace SIPSorcery.Servers
                 {
                     if (client.Contract == DISPATCHER_CONTRACT_NAME)
                     {
-                        logger.Debug("MonitorProxyManager found client endpoint for ISIPMonitorPublisher, name=" + client.Name + ".");
-                        clientEndPointNames.Add(client.Name);
+                        logger.Debug("MonitorProxyManager found client endpoint for " + DISPATCHER_CONTRACT_NAME + ", name=" + client.Name + ".");
+                        CallDispatcherProxy dispatcherProxy = new CallDispatcherProxy(client.Name);
+                        m_dispatcherProxy.Add(client.Name, dispatcherProxy);
                     }
-                }
-
-                foreach (string name in clientEndPointNames)
-                {
-                    CreateProxy(name);
                 }
             }
             catch (Exception excp)
@@ -836,7 +871,7 @@ namespace SIPSorcery.Servers
             }
         }
 
-        private void CreateProxy(string name)
+        /*private void CreateProxy(string name)
         {
             CallDispatcherProxy dispatcherProxy = new CallDispatcherProxy(name);
 
@@ -857,9 +892,9 @@ namespace SIPSorcery.Servers
                     Timer retryProxy = new Timer(delegate { CreateProxy(name); }, null, RETRY_FAILED_PROXY, Timeout.Infinite);
                 }
             });
-        }
+        }*/
 
-        private void ProxyChannelFaulted(object sender, EventArgs e)
+        /*private void ProxyChannelFaulted(object sender, EventArgs e)
         {
             for (int index = 0; index < m_dispatcherProxy.Count; index++)
             {
@@ -885,6 +920,6 @@ namespace SIPSorcery.Servers
                     }
                 }
             }
-        }
+        }*/
     }
 }

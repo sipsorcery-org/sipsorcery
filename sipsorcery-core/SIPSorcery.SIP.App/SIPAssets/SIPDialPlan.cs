@@ -72,7 +72,7 @@ namespace SIPSorcery.SIP.App
         public const int DEFAULT_MAXIMUM_EXECUTION_COUNT = 3;       // The default value for the maximum allowed simultaneous executions of a dial plan.
         public const string ALL_APPS_AUTHORISED = "*";              // Used in the priviled application authorisation field when the dialplan is authorised for all applications.
         public const string PROPERTY_EXECUTIONCOUNT_NAME = "ExecutionCount";
-
+       
         private static string m_newLine = AppState.NewLine;
 
         private ILog logger = AppState.logger;

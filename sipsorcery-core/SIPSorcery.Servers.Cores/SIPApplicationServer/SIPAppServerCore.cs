@@ -101,7 +101,7 @@ namespace SIPSorcery.Servers
             }
             catch (Exception excp)
             {
-                logger.Error("Exception StatefulProxyCore (ctor). " + excp.Message);
+                logger.Error("Exception SIPAppServerCore (ctor). " + excp.Message);
                 throw excp;
             }
         }
@@ -363,10 +363,10 @@ namespace SIPSorcery.Servers
 
         #region Unit testing.
 
-#if UNITTEST
+        #if UNITTEST
 	
 		[TestFixture]
-		public class StatefulProxyCoreUnitTest
+		public class SIPAppServerCoreUnitTest
 		{           
             [TestFixtureSetUp]
 			public void Init()
@@ -614,7 +614,7 @@ namespace SIPSorcery.Servers
             }
         }
 
-#endif
+        #endif
 
         #endregion
     }

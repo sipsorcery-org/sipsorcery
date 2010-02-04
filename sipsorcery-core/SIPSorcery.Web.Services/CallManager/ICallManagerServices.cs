@@ -17,5 +17,9 @@ namespace SIPSorcery.Web.Services {
         [OperationContract]
         [WebGet(UriTemplate = "webcallback?user={username}&number={number}")]
         string WebCallback(string username, string number);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "blindtransfer?user={username}&destination={destination}&callid={replacesCallID}")]
+        string BlindTransfer(string username, string destination, string replacesCallID);
     }
 }

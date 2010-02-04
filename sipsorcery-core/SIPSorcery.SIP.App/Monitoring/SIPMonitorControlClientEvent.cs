@@ -213,6 +213,12 @@ namespace SIPSorcery.SIP.App
         public string ToConsoleString(string adminId)
         {
             string consoleString = EventType.ToString() + " " + Created.ToString("HH:mm:ss:fff");
+
+            if (!MonitorServerID.IsNullOrBlank())
+            {
+                consoleString += " " + MonitorServerID;
+            }
+
             // Special case for dialplan events and super user. Add the username of the event to the start of the monitor message.
             if (adminId == m_topLevelAdminID && Username != null)
             {

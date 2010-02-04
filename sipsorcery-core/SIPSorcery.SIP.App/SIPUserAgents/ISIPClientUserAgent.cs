@@ -53,7 +53,5 @@ namespace SIPSorcery.SIP.App {
 
         void Call(SIPCallDescriptor sipCallDescriptor);
         void Cancel();
-        void Hangup();
-        void Hungup(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest);
     }
 }

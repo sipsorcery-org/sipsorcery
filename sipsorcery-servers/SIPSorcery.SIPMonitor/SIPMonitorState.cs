@@ -54,18 +54,20 @@ namespace SIPSorcery.SIPMonitor
 
         public const string SIPMONITOR_CONFIGNODE_NAME = "sipmonitor";
 
-        private const string SIPMONITOR_CLIENT_SOCKETS_NODE_NAME = "sipmonitorclientsockets";
-        private const string SIPMONITOR_MACHINE_SOCKETS_NODE_NAME = "sipmonitormachinesockets";
+        //private const string SIPMONITOR_CLIENT_SOCKETS_NODE_NAME = "sipmonitorclientsockets";
+        //private const string SIPMONITOR_MACHINE_SOCKETS_NODE_NAME = "sipmonitormachinesockets";
         private const string SIPMONITOR_LOOPBACK_EVENTPORT_KEY = "MonitorLoopbackPort";
-        private const string SIPMONITOR_SILVELRIGHT_POLICY_FILE_PATH = "SilverlightPolicyFilePath";
+        //private const string SIPMONITOR_SILVELRIGHT_POLICY_FILE_PATH = "SilverlightPolicyFilePath";
+        private const string SIPMONITOR_SERVER_ID_KEY = "SIPMonitorServerID";
 
         public static ILog logger;
 
         private static XmlNode m_sipMonitorConfigNode;
-        public static readonly XmlNode MonitorClientSocketsNode;
-        public static readonly XmlNode MonitorMachineSocketsNode;
+       // public static readonly XmlNode MonitorClientSocketsNode;
+        //public static readonly XmlNode MonitorMachineSocketsNode;
         public static readonly int MonitorLoopbackPort;
-        public static readonly string SilverlightPolicyFilePath;
+        //public static readonly string SilverlightPolicyFilePath;
+        public static readonly string SIPMonitorServerID;
 
         static SIPMonitorState()
         {
@@ -96,6 +98,7 @@ namespace SIPSorcery.SIPMonitor
                     //MonitorMachineSocketsNode = m_sipMonitorConfigNode.SelectSingleNode(SIPMONITOR_MACHINE_SOCKETS_NODE_NAME);
                     Int32.TryParse(AppState.GetConfigNodeValue(m_sipMonitorConfigNode, SIPMONITOR_LOOPBACK_EVENTPORT_KEY), out MonitorLoopbackPort);
                     //SilverlightPolicyFilePath = AppState.GetConfigNodeValue(m_sipMonitorConfigNode, SIPMONITOR_SILVELRIGHT_POLICY_FILE_PATH);
+                    SIPMonitorServerID = AppState.GetConfigNodeValue(m_sipMonitorConfigNode, SIPMONITOR_SERVER_ID_KEY);
                 }
             }
             catch (Exception excp)

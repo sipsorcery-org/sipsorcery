@@ -352,7 +352,7 @@ namespace SIPSorcery.Servers
             m_exit = true;
         }
 
-        public CallManagerServiceClient GetCallManagerClient()
+        public CallManagerProxy GetCallManagerClient()
         {
             lock (m_appServerWorkers)
             {
@@ -360,7 +360,7 @@ namespace SIPSorcery.Servers
                 {
                     if (worker.IsHealthy())
                     {
-                        return new CallManagerServiceClient(new BasicHttpBinding(), worker.CallManagerAddress);
+                        return new CallManagerProxy(new BasicHttpBinding(), worker.CallManagerAddress);
                     }
                 }
             }

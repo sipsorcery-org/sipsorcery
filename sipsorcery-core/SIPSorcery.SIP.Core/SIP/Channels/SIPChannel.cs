@@ -32,7 +32,9 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -64,6 +66,11 @@ namespace SIPSorcery.SIP
 
     public abstract class SIPChannel
     {
+        private const int PRUNE_CONNECTIONS_INTERVAL = 5000;        // The period at which to prune the connections.
+        private const int PRUNE_NOTRANSMISSION_MINUTES = 5;         // The number of minutes after which if no transmissions are sent or received a connection will be pruned.
+
+        protected ILog logger = AssemblyState.logger;
+
         protected SIPEndPoint m_localSIPEndPoint = null;
         public SIPEndPoint SIPChannelEndPoint
         {
@@ -88,12 +95,84 @@ namespace SIPSorcery.SIP
         public bool IsTLS {
             get { return m_isTLS; }
         }
-       
+
+        protected bool Closed;
+
         public SIPMessageReceivedDelegate SIPMessageReceived;
 
         public abstract void Send(IPEndPoint destinationEndPoint, string message);
         public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer);
         public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName);
         public abstract void Close();
+        public abstract bool IsConnectionEstablished(IPEndPoint remoteEndPoint);
+        protected abstract Dictionary<string, SIPConnection> GetConnectionsList();
+
+        /// <summary>
+        /// Periodically checks the established connections and closes any that have not had a transmission for a specified 
+        /// period or where the number of connections allowed per IP address has been exceeded. Only relevant for connection
+        /// oriented channels such as TCP and TLS.
+        /// </summary>
+        protected void PruneConnections(string threadName)
+        {
+            try
+            {
+                Thread.CurrentThread.Name = threadName;
+
+                while (!Closed)
+                {
+                    bool checkComplete = false;
+
+                    while (!checkComplete)
+                    {
+                        try
+                        {
+                            SIPConnection inactiveConnection = null;
+                            Dictionary<string, SIPConnection> connections = GetConnectionsList();
+
+                            lock (connections)
+                            {
+                                var inactiveConnectionKey = (from connection in connections
+                                                             where connection.Value.LastTransmission < DateTime.Now.AddMinutes(PRUNE_NOTRANSMISSION_MINUTES * -1)
+                                                             select connection.Key).FirstOrDefault();
+
+                                if (inactiveConnectionKey != null)
+                                {
+                                    inactiveConnection = connections[inactiveConnectionKey];
+                                    connections.Remove(inactiveConnectionKey);
+                                }
+                            }
+
+                            if (inactiveConnection != null)
+                            {
+                                logger.Debug("Pruning inactive connection on " + SIPChannelContactURI + " to remote end point " + inactiveConnection.RemoteEndPoint.ToString() + ".");
+                                inactiveConnection.SIPStream.Close();
+                            }
+                            else
+                            {
+                                checkComplete = true;
+                            }
+                        }
+                        catch (SocketException)
+                        {
+                            // Will be thrown if the sosket is already closed.
+                        }
+                        catch (Exception pruneExcp)
+                        {
+                            logger.Error("Exception PruneConnections (pruning). " + pruneExcp.Message);
+                            checkComplete = true;
+                        }
+                    }
+
+                    Thread.Sleep(PRUNE_CONNECTIONS_INTERVAL);
+                    checkComplete = false;
+                }
+
+                logger.Debug("SIPChannel socket on " + m_localSIPEndPoint.ToString() + " pruning connections halted.");
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPChannel PruneConnections. " + excp.Message);
+            }
+        }
     }
 }

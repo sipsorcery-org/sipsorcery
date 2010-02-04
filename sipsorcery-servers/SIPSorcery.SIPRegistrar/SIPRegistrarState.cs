@@ -88,8 +88,8 @@ namespace SIPSorcery.SIPRegistrar
 
                 #endregion
 
-                if (ConfigurationManager.GetSection(SIPREGISTRAR_CONFIGNODE_NAME) != null) {
-                    m_sipRegistrarNode = (XmlNode)ConfigurationManager.GetSection(SIPREGISTRAR_CONFIGNODE_NAME);
+                if (AppState.GetSection(SIPREGISTRAR_CONFIGNODE_NAME) != null) {
+                    m_sipRegistrarNode = (XmlNode)AppState.GetSection(SIPREGISTRAR_CONFIGNODE_NAME);
                 }
 
                 if (m_sipRegistrarNode == null) {

@@ -147,6 +147,7 @@
     <Compile Include="SIPUserAgents\SIPServerUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPCallDescriptor.cs" />
     <Compile Include="SIPUserAgents\SIPClientUserAgent.cs" />
+    <Compile Include="SIPUserAgents\SIPTransferServerUserAgent.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery.CRM\SIPSorcery.CRM.csproj">

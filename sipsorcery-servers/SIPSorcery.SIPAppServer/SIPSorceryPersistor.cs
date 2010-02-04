@@ -50,10 +50,11 @@ using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.SIPAppServer {
+namespace SIPSorcery.SIPAppServer
+{
 
-    public class SIPSorceryPersistor {
-
+    public class SIPSorceryPersistor
+    {
         private const string WRITE_CDRS_THREAD_NAME = "sipappsvr-writecdrs";
 
         private ILog logger = AppState.logger;
@@ -93,10 +94,25 @@ namespace SIPSorcery.SIPAppServer {
         public bool StopCDRWrites;
         private Queue<SIPCDR> m_pendingCDRs = new Queue<SIPCDR>();
 
-        public SIPSorceryPersistor(StorageTypes storageType, string storageConnectionStr) {
+        public SIPSorceryPersistor(StorageTypes storageType, string storageConnectionStr)
+        {
+            if (storageType == StorageTypes.XML)
+            {
+                if (!storageConnectionStr.Contains(":"))
+                {
+                    // Relative path.
+                    storageConnectionStr = AppDomain.CurrentDomain.BaseDirectory + storageConnectionStr;
+                }
 
-            if (storageType == StorageTypes.XML && !Directory.Exists(storageConnectionStr)) {
-                throw new ApplicationException("Directory " + storageConnectionStr + " does not exist for XML persistor.");
+                if (!storageConnectionStr.EndsWith(@"\"))
+                {
+                    storageConnectionStr += @"\";
+                }
+
+                if (!Directory.Exists(storageConnectionStr))
+                {
+                    throw new ApplicationException("Directory " + storageConnectionStr + " does not exist for XML persistor.");
+                }
             }
 
             m_sipAccountsPersistor = SIPAssetPersistorFactory<SIPAccount>.CreateSIPAssetPersistor(storageType, storageConnectionStr, m_sipAccountsXMLFilename);
@@ -108,48 +124,63 @@ namespace SIPSorcery.SIPAppServer {
             m_sipDialoguePersistor = SIPAssetPersistorFactory<SIPDialogueAsset>.CreateSIPAssetPersistor(storageType, storageConnectionStr, m_sipDialoguesXMLFilename);
             m_sipCDRPersistor = SIPAssetPersistorFactory<SIPCDRAsset>.CreateSIPAssetPersistor(storageType, storageConnectionStr, m_sipCDRsXMLFilename);
 
-            if (m_sipCDRPersistor != null) {
+            if (m_sipCDRPersistor != null)
+            {
                 ThreadPool.QueueUserWorkItem(delegate { WriteCDRs(); });
             }
         }
 
-        public void QueueCDR(SIPCDR cdr) {
-            try {
-                if (m_sipCDRPersistor != null && !StopCDRWrites && !m_pendingCDRs.Contains(cdr)) {
+        public void QueueCDR(SIPCDR cdr)
+        {
+            try
+            {
+                if (m_sipCDRPersistor != null && !StopCDRWrites && !m_pendingCDRs.Contains(cdr))
+                {
                     m_pendingCDRs.Enqueue(cdr);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception QueueCDR. " + excp.Message);
             }
         }
 
-        private void WriteCDRs() {
-            try {
+        private void WriteCDRs()
+        {
+            try
+            {
                 Thread.CurrentThread.Name = WRITE_CDRS_THREAD_NAME;
 
-                while (!StopCDRWrites || m_pendingCDRs.Count > 0) {
-                    try {
-                        if (m_pendingCDRs.Count > 0) {
+                while (!StopCDRWrites || m_pendingCDRs.Count > 0)
+                {
+                    try
+                    {
+                        if (m_pendingCDRs.Count > 0)
+                        {
 
                             SIPCDRAsset cdrAsset = new SIPCDRAsset(m_pendingCDRs.Dequeue());
-                            if (m_sipCDRPersistor.Count(c => c.Id == cdrAsset.Id) == 1) {
+                            if (m_sipCDRPersistor.Count(c => c.Id == cdrAsset.Id) == 1)
+                            {
                                 m_sipCDRPersistor.Update(cdrAsset);
                             }
-                            else {
+                            else
+                            {
                                 m_sipCDRPersistor.Add(cdrAsset);
                             }
                         }
-                        else {
+                        else
+                        {
                             Thread.Sleep(1000);
                         }
                     }
-                    catch (Exception writeExcp) {
+                    catch (Exception writeExcp)
+                    {
                         logger.Error("Exception WriteCDRs writing CDR. " + writeExcp.Message);
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception WriteCDRs. " + excp.Message);
             }
         }

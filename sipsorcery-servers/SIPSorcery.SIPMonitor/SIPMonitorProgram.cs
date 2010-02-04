@@ -16,11 +16,13 @@ namespace SIPSorcery.SIPMonitor
     {
         private static ManualResetEvent m_monitorUp = new ManualResetEvent(false);
 
+        private static readonly string m_monitorServerID = SIPMonitorState.SIPMonitorServerID;
+
         static void Main(string[] args)
         {
             try
             {
-                SIPMonitorClientManager sipMonitorPublisher = new SIPMonitorClientManager();
+                SIPMonitorClientManager sipMonitorPublisher = new SIPMonitorClientManager(m_monitorServerID);
 
                 SIPMonitorDaemon daemon = new SIPMonitorDaemon(sipMonitorPublisher);
 

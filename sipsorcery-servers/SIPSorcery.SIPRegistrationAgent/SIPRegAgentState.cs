@@ -87,9 +87,9 @@ namespace SIPSorcery.SIPRegistrationAgent
 
                 #endregion
 
-                if (ConfigurationManager.GetSection(SIPREGAGENT_CONFIGNODE_NAME) != null)
+                if (AppState.GetSection(SIPREGAGENT_CONFIGNODE_NAME) != null)
                 {
-                    m_sipRegAgentNode = (XmlNode)ConfigurationManager.GetSection(SIPREGAGENT_CONFIGNODE_NAME);
+                    m_sipRegAgentNode = (XmlNode)AppState.GetSection(SIPREGAGENT_CONFIGNODE_NAME);
                 }
 
                 if (m_sipRegAgentNode == null)

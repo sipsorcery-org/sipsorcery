@@ -6,7 +6,7 @@ using System.Text;
 namespace SIPSorcery.SIP.App {
    
     public interface ISIPCallManager {
-        string ProcessWebCallback(string username, string number);
+        string ProcessWebCall(string username, string number, string dialplanName, string replacesCallID);
         void CreateDialogueBridge(SIPDialogue firstLegDialogue, SIPDialogue secondLegDialogue, string owner);
         void ReInvite(SIPDialogue firstLegDialogue, string RemoteSDP);
         int GetCurrentCallCount(string owner);

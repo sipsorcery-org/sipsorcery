@@ -32,6 +32,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -51,12 +52,12 @@ namespace SIPSorcery.SIP
 	{
         private const string THREAD_NAME = "sipchanneludp-";
 
-        private ILog logger = AssemblyState.logger;
+        //private ILog logger = AssemblyState.logger;
 
 		// Channel sockets.
         private Guid m_socketId = Guid.NewGuid();
 		private UdpClient m_sipConn = null;
-		private bool m_closed = false;
+		//private bool m_closed = false;
 
         public SIPUDPChannel(IPEndPoint endPoint) {
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, endPoint);
@@ -96,7 +97,7 @@ namespace SIPSorcery.SIP
 
                 logger.Debug("SIPUDPChannel socket on " + m_localSIPEndPoint.ToString() + " listening started.");
 
-				while(!m_closed)
+				while(!Closed)
 				{
                     SIPEndPoint inEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
 
@@ -127,7 +128,7 @@ namespace SIPSorcery.SIP
 					{
                         // No need to care about zero byte packets.
                         //string remoteEndPoint = (inEndPoint != null) ? inEndPoint.ToString() : "could not determine";
-                        logger.Error("Zero bytes received on SIPUDPChannel " + m_localSIPEndPoint.ToString() + ".");
+                        //logger.Error("Zero bytes received on SIPUDPChannel " + m_localSIPEndPoint.ToString() + ".");
 					}
 					else
 					{
@@ -177,13 +178,23 @@ namespace SIPSorcery.SIP
             throw new ApplicationException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
         }
 
+        public override bool IsConnectionEstablished(IPEndPoint remoteEndPoint)
+        {
+            throw new NotSupportedException("The SIP UDP channel does not support connections.");
+        }
+
+        protected override Dictionary<string, SIPConnection> GetConnectionsList()
+        {
+            throw new NotSupportedException("The SIP UDP channel does not support connections.");
+        }
+
 		public override void Close()
 		{
 			try
 			{
 				logger.Debug("Closing SIP UDP Channel " + SIPChannelEndPoint + ".");
 				
-				m_closed = true;
+				Closed = true;
 				m_sipConn.Close();
 			}
 			catch(Exception excp)

@@ -104,6 +104,17 @@ namespace SIPSorcery.SIPAppServer
                 }
                 SIPCallDispatcherWorkersNode = m_sipAppServerConfigNode.SelectSingleNode(SIPCALL_DISPATCHER_WORKERS_NODE_NAME);
                 SIPCallDispatcherScriptPath = AppState.GetConfigNodeValue(m_sipAppServerConfigNode, SIPCALL_DISPATCHER_SCRIPTPATH_NAME);
+
+                if (TraceDirectory != null && !TraceDirectory.Contains(":"))
+                {
+                    // Relative path.
+                    TraceDirectory = AppDomain.CurrentDomain.BaseDirectory + TraceDirectory;
+                }
+
+                if (TraceDirectory != null && !TraceDirectory.EndsWith(@"\"))
+                {
+                    TraceDirectory += @"\";
+                }
 			}
 			catch(Exception excp)
 			{
