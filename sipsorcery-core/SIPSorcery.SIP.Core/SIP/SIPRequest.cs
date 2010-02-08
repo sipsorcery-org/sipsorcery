@@ -310,6 +310,16 @@ namespace SIPSorcery.SIP
                 public override void Close()
                 { }
 
+                protected override Dictionary<string, SIPConnection> GetConnectionsList()
+                {
+                    throw new NotImplementedException();
+                }
+
+                public override bool IsConnectionEstablished(IPEndPoint remoteEndPoint)
+                {
+                    throw new NotImplementedException();
+                }
+
                 public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCN)
                 {
                     throw new ApplicationException("This Send method is not available in the MockSIPChannel, please use an alternative overload.");

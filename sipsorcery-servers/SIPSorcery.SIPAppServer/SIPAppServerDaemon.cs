@@ -37,7 +37,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
@@ -76,11 +75,11 @@ namespace SIPSorcery.SIPAppServer
 
         private XmlNode m_sipAppServerSocketsNode = SIPAppServerState.SIPAppServerSocketsNode;
 
-        private static bool m_sipProxyEnabled = (ConfigurationManager.GetSection(SIPProxyState.SIPPROXY_CONFIGNODE_NAME) != null);
-        private static bool m_sipMonitorEnabled = (ConfigurationManager.GetSection(SIPMonitorState.SIPMONITOR_CONFIGNODE_NAME) != null);
-        private static bool m_sipRegistrarEnabled = (ConfigurationManager.GetSection(SIPRegistrarState.SIPREGISTRAR_CONFIGNODE_NAME) != null);
-        private static bool m_sipRegAgentEnabled = (ConfigurationManager.GetSection(SIPRegAgentState.SIPREGAGENT_CONFIGNODE_NAME) != null);
-        private static bool m_sshServerEnabled = (ConfigurationManager.GetSection(SSHServerState.SSHSERVER_CONFIGNODE_NAME) != null);
+        private static bool m_sipProxyEnabled = (AppState.GetSection(SIPProxyState.SIPPROXY_CONFIGNODE_NAME) != null);
+        private static bool m_sipMonitorEnabled = (AppState.GetSection(SIPMonitorState.SIPMONITOR_CONFIGNODE_NAME) != null);
+        private static bool m_sipRegistrarEnabled = (AppState.GetSection(SIPRegistrarState.SIPREGISTRAR_CONFIGNODE_NAME) != null);
+        private static bool m_sipRegAgentEnabled = (AppState.GetSection(SIPRegAgentState.SIPREGAGENT_CONFIGNODE_NAME) != null);
+        private static bool m_sshServerEnabled = (AppState.GetSection(SSHServerState.SSHSERVER_CONFIGNODE_NAME) != null);
 
         private static int m_monitorEventLoopbackPort = SIPAppServerState.MonitorLoopbackPort;
         private string m_traceDirectory = SIPAppServerState.TraceDirectory;

@@ -36,7 +36,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -49,7 +48,7 @@ namespace SIPSorcery.SIPRegistrar
     /// <summary>
     /// Retrieves application conifguration settings from App.Config.
     /// </summary>
-    public class SIPRegistrarState : IConfigurationSectionHandler
+    public class SIPRegistrarState
     {
         private const string LOGGER_NAME = "siprergistrar";
 
@@ -115,13 +114,6 @@ namespace SIPSorcery.SIPRegistrar
                 logger.Error("Exception SIPRegistrarState. " + excp.Message);
                 throw;
             }
-        }
-
-        /// <summary>
-        /// Handler for processing the App.Config file and passing retrieving the proxy config node.
-        /// </summary>
-        public object Create(object parent, object context, XmlNode configSection) {
-            return configSection;
         }
     }
 }

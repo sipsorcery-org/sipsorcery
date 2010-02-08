@@ -36,7 +36,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -51,7 +50,7 @@ namespace SIPSorcery.WatchTower
     /// This class maintains static application configuration settings that can be used by all classes within
     /// the AppDomain. This class is the one stop shop for retrieving or accessing application configuration settings.
     /// </summary>
-    public class WatchTowerState : IConfigurationSectionHandler
+    public class WatchTowerState
     {
         private const string LOGGER_NAME = "sipsporcery-watchtower";
         private const string WATCHTOWER_CONFIGNODE_NAME = "watchtower";         // Config node names for each of the agents.
@@ -76,9 +75,9 @@ namespace SIPSorcery.WatchTower
                 logger = AppState.GetLogger(LOGGER_NAME);
                 CurrentDirectory = Regex.Replace(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase), @"^file:\\", ""); // There's undoubtedly a better way!
 
-                if (ConfigurationManager.GetSection(WATCHTOWER_CONFIGNODE_NAME) != null)
+                if (AppState.GetSection(WATCHTOWER_CONFIGNODE_NAME) != null)
                 {
-                    m_watchtowerConfigNode = (XmlNode)ConfigurationManager.GetSection(WATCHTOWER_CONFIGNODE_NAME);
+                    m_watchtowerConfigNode = (XmlNode)AppState.GetSection(WATCHTOWER_CONFIGNODE_NAME);
                 }
                 else
                 {
@@ -97,14 +96,6 @@ namespace SIPSorcery.WatchTower
                 Console.WriteLine("Exception WatchTowerState. " + excp.Message);	// In case the logging configuration is what caused the exception.
                 throw excp;
             }
-        }
-
-        /// <summary>
-        /// Handler for processing the App.Config file and passing retrieving the proxy config node.
-        /// </summary>
-        public object Create(object parent, object context, XmlNode configSection)
-        {
-            return configSection;
         }
     }
 }

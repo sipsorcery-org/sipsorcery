@@ -36,7 +36,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -49,7 +48,7 @@ namespace SIPSorcery.SIPProxy
     /// <summary>
     /// Retrieves application conifguration settings from App.Config.
     /// </summary>
-    public class SIPProxyState : IConfigurationSectionHandler
+    public class SIPProxyState
     {
         private const string LOGGER_NAME = "sipproxy";
 
@@ -80,8 +79,9 @@ namespace SIPSorcery.SIPProxy
             {
                 logger = AppState.GetLogger(LOGGER_NAME);
 
-                if (ConfigurationManager.GetSection(SIPPROXY_CONFIGNODE_NAME) != null) {
-                    m_sipProxyNode = (XmlNode)ConfigurationManager.GetSection(SIPPROXY_CONFIGNODE_NAME);
+                if (AppState.GetSection(SIPPROXY_CONFIGNODE_NAME) != null)
+                {
+                    m_sipProxyNode = (XmlNode)AppState.GetSection(SIPPROXY_CONFIGNODE_NAME);
                 }
                 else {
                     throw new ApplicationException("The SIP Proxy could not be started, no " + SIPPROXY_CONFIGNODE_NAME + " config node available.");
@@ -106,13 +106,6 @@ namespace SIPSorcery.SIPProxy
                 logger.Error("Exception SIPProxyState. " + excp.Message);
                 throw;
             }
-        }
-
-        /// <summary>
-        /// Handler for processing the App.Config file and passing retrieving the proxy config node.
-        /// </summary>
-        public object Create(object parent, object context, XmlNode configSection) {
-            return configSection;
         }
     }
 }

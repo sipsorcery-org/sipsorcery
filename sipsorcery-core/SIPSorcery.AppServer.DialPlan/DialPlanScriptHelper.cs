@@ -38,7 +38,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -173,8 +172,8 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                m_userDataDBType = (ConfigurationManager.AppSettings[USERDATA_DBTYPE_KEY] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[USERDATA_DBTYPE_KEY]) : StorageTypes.Unknown;
-                m_userDataDBConnStr = ConfigurationManager.AppSettings[USERDATA_DBCONNSTR_KEY];
+                m_userDataDBType = (AppState.GetConfigSetting(USERDATA_DBTYPE_KEY) != null) ? StorageTypesConverter.GetStorageType(AppState.GetConfigSetting(USERDATA_DBTYPE_KEY)) : StorageTypes.Unknown;
+                m_userDataDBConnStr = AppState.GetConfigSetting(USERDATA_DBCONNSTR_KEY);
             }
             catch (Exception excp)
             {

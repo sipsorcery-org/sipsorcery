@@ -36,7 +36,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -51,7 +50,7 @@ namespace SIPSorcery.SIPAppServer
 	/// This class maintains static application configuration settings that can be used by all classes within
 	/// the AppDomain. This class is the one stop shop for retrieving or accessing application configuration settings.
 	/// </summary>
-    public class SIPAppServerState : IConfigurationSectionHandler
+    public class SIPAppServerState
 	{
         private const string LOGGER_NAME = "sipsporcery-app";
         private const string SIPAPPSERVER_CONFIGNODE_NAME = "sipappserver";         // Config node names for each of the agents.
@@ -84,9 +83,9 @@ namespace SIPSorcery.SIPAppServer
                 logger = AppState.GetLogger(LOGGER_NAME);
                 CurrentDirectory = Regex.Replace(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase), @"^file:\\", ""); // There's undoubtedly a better way!
 
-                if (ConfigurationManager.GetSection(SIPAPPSERVER_CONFIGNODE_NAME) != null)
+                if (AppState.GetSection(SIPAPPSERVER_CONFIGNODE_NAME) != null)
                 {
-                    m_sipAppServerConfigNode = (XmlNode)ConfigurationManager.GetSection(SIPAPPSERVER_CONFIGNODE_NAME);
+                    m_sipAppServerConfigNode = (XmlNode)AppState.GetSection(SIPAPPSERVER_CONFIGNODE_NAME);
                 }
                 else
                 {
@@ -123,12 +122,5 @@ namespace SIPSorcery.SIPAppServer
 				throw excp;
 			}
 		}
-
-        /// <summary>
-        /// Handler for processing the App.Config file and passing retrieving the proxy config node.
-        /// </summary>
-        public object Create(object parent, object context, XmlNode configSection) {
-            return configSection;
-        }
 	}
 }

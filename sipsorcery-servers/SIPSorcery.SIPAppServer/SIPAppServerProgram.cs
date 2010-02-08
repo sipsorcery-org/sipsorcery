@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -40,8 +39,8 @@ namespace SIPSorcery.SIPAppServer
                 culture.DateTimeFormat.LongTimePattern = "THH:mm:ss.fffffffzzz";
                 Thread.CurrentThread.CurrentCulture = culture;
 
-                m_serverStorageType = (ConfigurationManager.AppSettings[m_storageTypeKey] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[m_storageTypeKey]) : StorageTypes.Unknown;
-                m_serverStorageConnStr = ConfigurationManager.AppSettings[m_connStrKey];
+                m_serverStorageType = (AppState.GetConfigSetting(m_storageTypeKey) != null) ? StorageTypesConverter.GetStorageType(AppState.GetConfigSetting(m_storageTypeKey)) : StorageTypes.Unknown;
+                m_serverStorageConnStr = AppState.GetConfigSetting(m_connStrKey);
                 bool monitorCalls = true;
 
                 if (m_serverStorageType == StorageTypes.Unknown || m_serverStorageConnStr.IsNullOrBlank())

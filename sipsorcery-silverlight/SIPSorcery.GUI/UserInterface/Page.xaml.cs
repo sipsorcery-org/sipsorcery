@@ -82,7 +82,7 @@ namespace SIPSorcery
             //    hostPort = DEFAULT_PROVISIONING_WEBSERVICE_PORT;
             //}
 
-            string server = Application.Current.Host.Source.DnsSafeHost;
+            /*string server = Application.Current.Host.Source.DnsSafeHost;
 
             try
             {
@@ -122,7 +122,7 @@ namespace SIPSorcery
             {
                 m_setSvcLink.Visibility = Visibility.Visible;
                 m_provisioningSvcTextBox.Text = m_provisioningServiceURL;
-            }
+            }*/
 
             // Use the Silverlight network stack so that SOAP faults can get through.
             HttpWebRequest.RegisterPrefix(m_provisioningServiceURL, WebRequestCreator.ClientHttp);

@@ -87,7 +87,6 @@
       <HintPath>..\..\sipsorcery-core\SIPSorcery.Web.Services\bin\SIPSorcery.Web.Services.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.configuration" />
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>

@@ -23,8 +23,11 @@ namespace SIPSorcery
 {
     public partial class UserPage : UserControl
     {
-        private const string DEFAULT_HELP_URL = "https://www.sipsorcery.com/help.html";
+        //private const string DEFAULT_HELP_URL = "https://www.sipsorcery.com/help.html";
+        private const string DEFAULT_HELP_URL = "http://www.sipsorcery.com/help";
         private const string DEFAULT_HELP_OPTIONS = "width=600,height=500,scrollbars=1";
+        private const int HELP_POPUP_WIDTH = 600;
+        private const int HELP_POPUP_HEIGHT = 500;
         private const int INITIAL_DISPLAY_EXTEND_SESSION = 2700000;     // Display the extend session button after 45 minutes initially.
         private const int SUBSEQUENT_DISPLAY_EXTEND_SESSION = 3600000;  // Display the extend session button after 60 minutes subsequently.
         private const int EXTEND_SESSION_INCREMENTS = 60;               // The number of minutes to extend the session by.
@@ -446,11 +449,25 @@ namespace SIPSorcery
             {
                 Uri helpURI = new Uri(DEFAULT_HELP_URL);
                 HtmlPage.Window.Navigate(new Uri(DEFAULT_HELP_URL), "SIPSorceryHelp", DEFAULT_HELP_OPTIONS);
+
+                /*HtmlPopupWindowOptions options = new HtmlPopupWindowOptions();
+                options.Width = HELP_POPUP_WIDTH;
+                options.Height = HELP_POPUP_HEIGHT;
+                options.Scrollbars = true;
+
+                if (HtmlPage.IsPopupWindowAllowed)
+                {
+                    HtmlPage.PopupWindow(new Uri(DEFAULT_HELP_URL), "SIPSorceryHelp", options);
+                }
+                else
+                {
+                    LogActivityMessage(MessageLevelsEnum.Warn, "Unable to display help, popup windows have been disabled by your browser. The help page is available at " + DEFAULT_HELP_URL + ".");
+                }*/
             }
-            catch
+            catch(Exception excp)
             {
-                //LogActivityMessage(MessageLevelsEnum.Error, "Exception displaying help. " + excp.Message);
                 LogActivityMessage(MessageLevelsEnum.Warn, "Unable to display help, you may have popup windows disabled. Alternatively navigate to " + DEFAULT_HELP_URL + ".");
+                //LogActivityMessage(MessageLevelsEnum.Error, "Exception displaying help. " + excp.Message);
             }
         }
 

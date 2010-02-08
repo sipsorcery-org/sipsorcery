@@ -29,7 +29,7 @@ using log4net;
 
 namespace SIPSorcery.Sys
 {
-    public class AppState
+    public class AppState : IConfigurationSectionHandler
     {
         public const string CRLF = "\r\n";
         public const string DEFAULT_ERRRORLOG_FILE = @"c:\temp\appstate.error.log";
@@ -255,6 +255,14 @@ namespace SIPSorcery.Sys
                 logger.Error("Exception AppState.GetEncryptedSettingsCertificate. " + excp.Message);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Handler for processing the App.Config file and retrieving a custom XML node.
+        /// </summary>
+        public object Create(object parent, object context, XmlNode configSection)
+        {
+            return configSection;
         }
     }
 }

@@ -36,7 +36,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Xml;
@@ -48,7 +47,7 @@ namespace SIPSorcery.SIPMonitor
     /// <summary>
     /// Retrieves application conifguration settings from App.Config.
     /// </summary>
-    public class SIPMonitorState : IConfigurationSectionHandler
+    public class SIPMonitorState
     {
         private const string LOGGER_NAME = "sipmonitor";
 
@@ -87,8 +86,8 @@ namespace SIPSorcery.SIPMonitor
 
                 #endregion
 
-                if (ConfigurationManager.GetSection(SIPMONITOR_CONFIGNODE_NAME) != null) {
-                    m_sipMonitorConfigNode = (XmlNode)ConfigurationManager.GetSection(SIPMONITOR_CONFIGNODE_NAME);
+                if (AppState.GetSection(SIPMONITOR_CONFIGNODE_NAME) != null) {
+                    m_sipMonitorConfigNode = (XmlNode)AppState.GetSection(SIPMONITOR_CONFIGNODE_NAME);
                 }
                 if (m_sipMonitorConfigNode == null) {
                     logger.Warn("The SIP Monitor Agent " + SIPMONITOR_CONFIGNODE_NAME + " config node was not available, the agent will not be able to start.");
@@ -106,13 +105,6 @@ namespace SIPSorcery.SIPMonitor
                 logger.Error("Exception SIPMonitorState. " + excp.Message);
                 throw;
             }
-        }
-
-        /// <summary>
-        /// Handler for processing the App.Config file and passing retrieving the proxy config node.
-        /// </summary>
-        public object Create(object parent, object context, XmlNode configSection) {
-            return configSection;
         }
     }
 }

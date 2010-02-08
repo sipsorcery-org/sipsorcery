@@ -57,7 +57,6 @@ namespace SIPSorcery.SIP
 
         public static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_LENGTH;
         private static string m_sipMessageDelimiter = SIPConstants.CRLF + SIPConstants.CRLF;
-        private static char[] delimiterChars = new char[] { ':' };
 
         //public TcpClient TCPClient;
         //public DateTime Created { get; private set; }
@@ -113,19 +112,20 @@ namespace SIPSorcery.SIP
                             }
                             else
                             {
-                                string[] headerParts = header.Trim().Split(delimiterChars, 2);
+                                string trimmedHeader = header.Trim();
+                                int colonIndex = trimmedHeader.IndexOf(':');
 
-                                if (headerParts == null || headerParts.Length < 2)
+                                if (colonIndex == -1)
                                 {
                                     // Invalid SIP header, ignoring.
                                     continue;
                                 }
 
-                                string headerName = headerParts[0].Trim().ToLower();
+                                string headerName = trimmedHeader.Substring(0, colonIndex);
                                 if (headerName == SIPHeaders.SIP_COMPACTHEADER_CONTENTLENGTH.ToLower() ||
                                     headerName == SIPHeaders.SIP_HEADER_CONTENTLENGTH.ToLower())
                                 {
-                                    string headerValue = headerParts[1].Trim();
+                                    string headerValue = trimmedHeader.Substring(colonIndex + 1);
                                     if (!Int32.TryParse(headerValue, out contentLength))
                                     {
                                         logger.Warn("The content length could not be parsed from " + headerValue + " in the SIPConnection. buffer now invalid and being purged.");

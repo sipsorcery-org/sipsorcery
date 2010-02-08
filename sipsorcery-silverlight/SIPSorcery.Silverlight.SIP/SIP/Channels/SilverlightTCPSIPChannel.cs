@@ -34,6 +34,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -139,5 +140,15 @@ namespace SIPSorcery.SIP
         public override void Close() {
             m_socket.Close();
         }
+        public override bool IsConnectionEstablished(IPEndPoint remoteEndPoint)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override Dictionary<string, SIPConnection> GetConnectionsList()
+        {
+            throw new NotImplementedException();
+        }
+
     }
 }

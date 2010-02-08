@@ -69,8 +69,8 @@ namespace SIPSorcery.Web.Services
             "Hi {0},\r\n\r\n" +
             "This is your automated SIPSorcery new account confirmation email.\r\n\r\n" +
             "To confirm your account please visit the link below. If you did not request this email please ignore it.\r\n\r\n" +
-            //"http://www.sipsorcery.com/customer/confirm/{1}\r\n\r\n" +
-            "http://www.sipsorcery.com/customerconfirm.aspx?ID={1}\r\n\r\n" +
+            "http://www.sipsorcery.com/customer/confirm/{1}\r\n\r\n" +
+            //"http://www.sipsorcery.com/customerconfirm.aspx?ID={1}\r\n\r\n" +
             "Regards,\r\n\r\n" +
             "SIPSorcery";
 
@@ -500,7 +500,7 @@ namespace SIPSorcery.Web.Services
             Customer customer = AuthoriseRequest();
 
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
-            //logger.Debug("SIPProvisioningWebService GetSIPAccountscalled for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
+            logger.Debug("SIPProvisioningWebService GetSIPAccounts called for " + customer.CustomerUsername + " and where: " + authoriseExpression + ", offset="+ offset + ", count=" + count + ".");
 
             if (authoriseExpression.IsNullOrBlank()) {
                 return SIPAccountPersistor.Get(null, "sipusername", offset, count);

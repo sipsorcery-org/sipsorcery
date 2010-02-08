@@ -1364,6 +1364,7 @@ namespace SIPSorcery.SIP
             {
                 if (host.StartsWith("127.0.0.1") ||
                     host.StartsWith("10.") ||
+                    Regex.Match(host, @"^172\.1[6-9]\.").Success ||
                     Regex.Match(host, @"^172\.2\d\.").Success ||
                     host.StartsWith("172.30.") ||
                     host.StartsWith("172.31.") ||
@@ -1779,6 +1780,29 @@ namespace SIPSorcery.SIP
 
             return requestEndPoint;
         }
+
+        #endregion
+
+        #region Unit Testing.
+
+        #if UNITTEST
+
+        [TestFixture]
+        public class SIPRequestUnitTest
+        {
+            [Test]
+            public void Test172IPRangeIsPrivate()
+            {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                Assert.IsFalse(SIPTransport.IsPrivateAddress("172.15.1.1"), "Public IP address was mistakenly identified as private.");
+                Assert.IsTrue(SIPTransport.IsPrivateAddress("172.16.1.1"), "Private IP address was not correctly identified.");
+
+                Console.WriteLine("-----------------------------------------");
+            }
+        }
+
+        #endif
 
         #endregion
     }

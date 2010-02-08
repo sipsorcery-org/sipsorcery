@@ -89,6 +89,9 @@
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\SIP\Channels\SIPChannel.cs">
       <Link>SIP\Channels\SIPChannel.cs</Link>
     </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\SIP\Channels\SIPConnection.cs">
+      <Link>SIP\Channels\SIPConnection.cs</Link>
+    </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\SIP\SIPConstants.cs">
       <Link>SIP\SIPConstants.cs</Link>
     </Compile>

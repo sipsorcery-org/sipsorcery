@@ -31,7 +31,7 @@ namespace SIPSorcery.Sys
         private static string m_smtpSendUsername = AppState.GetConfigSetting("SMTPServerUsername");
         private static string m_smtpSendPassword = AppState.GetConfigSetting("SMTPServerPassword");
 
-        static SIPSorcerySMTP()
+        /*static SIPSorcerySMTP()
         {
             logger.Debug("SIPSorcerySMTP setting ServicePointManager.ServerCertificateValidationCallback.");
 
@@ -40,7 +40,7 @@ namespace SIPSorcery.Sys
                 logger.Debug("ServerCertificateValidationCallback for " + certificate.Subject + ".");
                 return true;
             };
-        }
+        }*/
 
 		public static void SendEmail(string toAddress, string fromAddress, string subject, string messageBody)
 		{

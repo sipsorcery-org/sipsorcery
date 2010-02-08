@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.ServiceProcess;
 using System.Text;
@@ -27,8 +26,8 @@ namespace SIPSorcery.SSHServer
         {
             try
             {
-                m_storageType = (ConfigurationManager.AppSettings[m_storageTypeKey] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[m_storageTypeKey]) : StorageTypes.Unknown;
-                m_connStr = ConfigurationManager.AppSettings[m_connStrKey];
+                m_storageType = (AppState.GetConfigSetting(m_storageTypeKey) != null) ? StorageTypesConverter.GetStorageType(AppState.GetConfigSetting(m_storageTypeKey)) : StorageTypes.Unknown;
+                m_connStr = AppState.GetConfigSetting(m_connStrKey);
 
                 CustomerSessionManager customerSessionManager = new CustomerSessionManager(m_storageType, m_connStr);
                 SSHServerDaemon daemon = new SSHServerDaemon(customerSessionManager);

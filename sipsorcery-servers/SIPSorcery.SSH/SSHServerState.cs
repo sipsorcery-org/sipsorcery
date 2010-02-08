@@ -48,7 +48,7 @@ namespace SIPSorcery.SSHServer
     /// <summary>
     /// Retrieves application conifguration settings from App.Config.
     /// </summary>
-    public class SSHServerState : IConfigurationSectionHandler
+    public class SSHServerState
     {
         private const string LOGGER_NAME = "sshserver";
 
@@ -79,9 +79,9 @@ namespace SIPSorcery.SSHServer
 
                 #endregion
 
-                if (ConfigurationManager.GetSection(SSHSERVER_CONFIGNODE_NAME) != null)
+                if (AppState.GetSection(SSHSERVER_CONFIGNODE_NAME) != null)
                 {
-                    m_sshServerConfigNode = (XmlNode)ConfigurationManager.GetSection(SSHSERVER_CONFIGNODE_NAME);
+                    m_sshServerConfigNode = (XmlNode)AppState.GetSection(SSHSERVER_CONFIGNODE_NAME);
                 }
                 if (m_sshServerConfigNode == null)
                 {
@@ -96,13 +96,6 @@ namespace SIPSorcery.SSHServer
                 logger.Error("Exception SSHServerState. " + excp.Message);
                 throw;
             }
-        }
-
-        /// <summary>
-        /// Handler for processing the App.Config file and passing retrieving the proxy config node.
-        /// </summary>
-        public object Create(object parent, object context, XmlNode configSection) {
-            return configSection;
         }
     }
 }
