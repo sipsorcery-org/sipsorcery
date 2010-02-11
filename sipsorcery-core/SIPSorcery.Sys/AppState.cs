@@ -42,6 +42,7 @@ namespace SIPSorcery.Sys
         private static StringDictionary m_appConfigSettings;	// Contains application configuration key, value pairs.
         private static X509Certificate2 m_encryptedSettingsCertificate;
         public static readonly string NewLine = Environment.NewLine;
+        public static readonly string CurrentDirectory;
 
         static AppState()
         {
@@ -88,6 +89,8 @@ namespace SIPSorcery.Sys
 
                 // Initialise the string dictionary to hold the application settings.
                 m_appConfigSettings = new StringDictionary();
+
+                CurrentDirectory = Regex.Replace(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase), @"^file:\\", ""); // There's undoubtedly a better way!
             }
             catch (Exception excp)
             {
@@ -255,6 +258,55 @@ namespace SIPSorcery.Sys
                 logger.Error("Exception AppState.GetEncryptedSettingsCertificate. " + excp.Message);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Checks whether a file path represents a relative or absolute path and if it's relative converts it to
+        /// an absolute one by prefixing it with the application's base directory.
+        /// </summary>
+        /// <param name="filePath">The file path to check.</param>
+        /// <returns>An absolute file path.</returns>
+        public static string ToAbsoluteFilePath(string filePath)
+        {
+            if (filePath.IsNullOrBlank())
+            {
+                return null;
+            }
+
+            if (!filePath.Contains(":"))
+            {
+                // Relative path.
+                filePath = AppDomain.CurrentDomain.BaseDirectory + filePath;
+            }
+
+            return filePath;
+        }
+
+        /// <summary>
+        /// Checks whether a directory path represents a relative or absolute path and if it's relative converts it to
+        /// an absolute one by prefixing it with the application's base directory.
+        /// </summary>
+        /// <param name="directoryPath">The directory path to check.</param>
+        /// <returns>An absolute directory path.</returns>
+        public static string ToAbsoluteDirectoryPath(string directoryPath)
+        {
+             if (directoryPath.IsNullOrBlank())
+            {
+                return null;
+            }
+
+            if (!directoryPath.Contains(":"))
+            {
+                // Relative path.
+                directoryPath = AppDomain.CurrentDomain.BaseDirectory + directoryPath;
+            }
+
+            if (!directoryPath.EndsWith(@"\"))
+            {
+                directoryPath += @"\";
+            }
+
+            return directoryPath;
         }
 
         /// <summary>

@@ -64,7 +64,6 @@ namespace SIPSorcery.WatchTower
         private static readonly XmlNode m_watchtowerConfigNode;
         public static readonly XmlNode SIPSocketsNode;
         public static readonly int MonitorLoopbackPort;
-        public static readonly string CurrentDirectory;
         public static readonly string AppServerEndPointsPath;
         public static readonly XmlNode SIPAppServerWorkersNode;
 
@@ -73,7 +72,6 @@ namespace SIPSorcery.WatchTower
             try
             {
                 logger = AppState.GetLogger(LOGGER_NAME);
-                CurrentDirectory = Regex.Replace(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase), @"^file:\\", ""); // There's undoubtedly a better way!
 
                 if (AppState.GetSection(WATCHTOWER_CONFIGNODE_NAME) != null)
                 {
@@ -87,7 +85,7 @@ namespace SIPSorcery.WatchTower
                 SIPSocketsNode = m_watchtowerConfigNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
 
                 Int32.TryParse(AppState.GetConfigNodeValue(m_watchtowerConfigNode, MONITOR_LOOPBACK_PORT_KEY), out MonitorLoopbackPort);
-                AppServerEndPointsPath = AppState.GetConfigNodeValue(m_watchtowerConfigNode, PROXY_APPSERVER_ENDPOINTS_PATH_KEY);
+                AppServerEndPointsPath = AppState.ToAbsoluteFilePath(AppState.GetConfigNodeValue(m_watchtowerConfigNode, PROXY_APPSERVER_ENDPOINTS_PATH_KEY));
                 SIPAppServerWorkersNode = m_watchtowerConfigNode.SelectSingleNode(SIAPPSERVER_WORKERS_NODE_NAME);
             }
             catch (Exception excp)

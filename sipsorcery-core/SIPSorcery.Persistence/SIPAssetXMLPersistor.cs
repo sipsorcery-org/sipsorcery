@@ -188,7 +188,6 @@ namespace SIPSorcery.Persistence
                 {
                     if (m_sipAssets.ContainsKey(id))
                     {
-
                         lock (m_sipAssets)
                         {
                             property.SetValue(m_sipAssets[id], value, null);
@@ -200,7 +199,67 @@ namespace SIPSorcery.Persistence
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPAssetXMLPersistor Update (for " + typeof(T).Name + "). " + excp.Message);
+                logger.Error("Exception SIPAssetXMLPersistor UpdateProperty (for " + typeof(T).Name + "). " + excp.Message);
+                throw;
+            }
+        }
+
+        public override void IncrementProperty(Guid id, string propertyName)
+        {
+            try
+            {
+                // Find modified poperty.
+                PropertyInfo property = typeof(T).GetProperty(propertyName);
+                if (property == null)
+                {
+                    throw new ApplicationException("Property " + propertyName + " for " + typeof(T).Name + " could not be found, IncrementProperty failed.");
+                }
+                else
+                {
+                    if (m_sipAssets.ContainsKey(id))
+                    {
+                        lock (m_sipAssets)
+                        {
+                            property.SetValue(m_sipAssets[id], Convert.ToInt32(property.GetValue(m_sipAssets[id], null)) + 1, null);
+                        }
+
+                        WriteSIPAssetXML();
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPAssetXMLPersistor IncrementProperty (for " + typeof(T).Name + "). " + excp.Message);
+                throw;
+            }
+        }
+
+        public override void DecrementProperty(Guid id, string propertyName)
+        {
+            try
+            {
+                // Find modified poperty.
+                PropertyInfo property = typeof(T).GetProperty(propertyName);
+                if (property == null)
+                {
+                    throw new ApplicationException("Property " + propertyName + " for " + typeof(T).Name + " could not be found, DecrementProperty failed.");
+                }
+                else
+                {
+                    if (m_sipAssets.ContainsKey(id))
+                    {
+                        lock (m_sipAssets)
+                        {
+                            property.SetValue(m_sipAssets[id], Convert.ToInt32(property.GetValue(m_sipAssets[id], null)) - 1, null);
+                        }
+
+                        WriteSIPAssetXML();
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPAssetXMLPersistor DecrementProperty (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }

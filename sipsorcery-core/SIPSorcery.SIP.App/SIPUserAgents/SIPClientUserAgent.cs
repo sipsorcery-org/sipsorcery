@@ -133,8 +133,8 @@ namespace SIPSorcery.SIP.App
 
                 if (!m_callCancelled)
                 {
-
-                    if (!sipCallDescriptor.ProxySendFrom.IsNullOrBlank())
+                    // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
+                    if (!sipCallDescriptor.ProxySendFrom.IsNullOrBlank() && !IPAddress.IsLoopback(m_outboundProxy.SocketEndPoint.Address))
                     {
                         // If the call descriptor needs to use a specific outbound proxy it needs to override the default one.
                         SIPEndPoint outboundProxyEndPoint = SIPEndPoint.ParseSIPEndPoint(sipCallDescriptor.ProxySendFrom);

@@ -88,7 +88,7 @@ namespace SIPSorcery.SSHServer
                     logger.Warn("The SSH Server " + SSHSERVER_CONFIGNODE_NAME + " config node was not available, the agent will not be able to start.");
                 }
                 else {
-                    NSSHConfigurationFilePath = AppState.GetConfigNodeValue(m_sshServerConfigNode, NSSH_CONFIGURATION_FILE_PATH_KEY);
+                    NSSHConfigurationFilePath = AppState.ToAbsoluteFilePath(AppState.GetConfigNodeValue(m_sshServerConfigNode, NSSH_CONFIGURATION_FILE_PATH_KEY));
                 }
             }
             catch (Exception excp)

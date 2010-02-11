@@ -111,7 +111,7 @@ namespace SIPSorcery.Servers
 
         private static ILog logger = AppState.GetLogger("sipregistrar");
 
-        private string m_sipExpiresParameterKey = SIPContactHeader.EXPIRES_PARAMETER_KEY;
+        //private string m_sipExpiresParameterKey = SIPContactHeader.EXPIRES_PARAMETER_KEY;
         private int m_minimumBindingExpiry = SIPRegistrarBindingsManager.MINIMUM_EXPIRY_SECONDS;
         //private string m_selectSIPAccountQuery = SIPAccount.SelectQuery;
 

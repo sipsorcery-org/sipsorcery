@@ -29,7 +29,7 @@ namespace SIPSorcery.Servers
 
         private const int MAX_LIFETIME_SECONDS = 180;
         private const int REMOVE_EXPIREDS_SECONDS = 60;
-        private const int CALLBACK_LIFETIME_SECONDS = 60;
+        private const int CALLBACK_LIFETIME_SECONDS = 30;
 
         private static ILog logger = log4net.LogManager.GetLogger("sipproxy");
 
@@ -96,7 +96,7 @@ namespace SIPSorcery.Servers
 
             lock (m_userCallbacks)
             {
-                logger.Debug("SIPProxyDispatcher SetNextCallDest for user " + username + " and destination " + appServerEndPoint + ".");
+                ProxyLogger_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.DialPlan, "SIP Proxy setting application server for next call to user " + username + " as " + appServerEndPoint + ".", username));
 
                 if (m_userCallbacks.ContainsKey(username))
                 {
@@ -124,6 +124,13 @@ namespace SIPSorcery.Servers
                         SIPEndPoint callbackEndPoint = null;
                         callbackEndPoint = SIPEndPoint.ParseSIPEndPoint(m_userCallbacks[toUser].DesintationEndPoint);
                         RecordDispatch(sipRequest, callbackEndPoint);
+                        ProxyLogger_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.DialPlan, "SIP Proxy directing incoming call for user " + toUser + " to application server " + callbackEndPoint.ToString() + ".", toUser));
+
+                        lock (m_userCallbacks)
+                        {
+                            m_userCallbacks.Remove(toUser);
+                        }
+
                         return callbackEndPoint;
                     }
                 }

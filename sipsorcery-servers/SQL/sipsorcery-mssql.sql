@@ -242,12 +242,12 @@ create index regbindings_contact_index on sipregistrarbindings(contacturi);
 
 --insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;174.129.236.7;174.129.236.7:5060', null, default);
 
--- SIP Sorcery User Data DDL (Postgresql & MySQL) sipsorcery-userdata
+-- SIP Sorcery User Data DDL
 
 create table dialplandata 
 (
   dataowner varchar(32)not null,
   datakey varchar(64) not null, 
-  datavalue varchar(1024) not null
+  datavalue varchar(1024) not null,
   Primary Key(dataowner, datakey)
 );

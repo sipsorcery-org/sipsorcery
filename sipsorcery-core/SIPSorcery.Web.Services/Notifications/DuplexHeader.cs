@@ -75,7 +75,6 @@ namespace SIPSorcery.Web.Services
         {
             string str = null;
             string str2 = null;
-            bool closeHeader = false;
             if (reader.IsStartElement("Duplex", "http://schemas.microsoft.com/2008/04/netduplex"))
             {
                 reader.ReadStartElement();

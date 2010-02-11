@@ -121,7 +121,7 @@ namespace SIPSorcery.SIP
                                     continue;
                                 }
 
-                                string headerName = trimmedHeader.Substring(0, colonIndex);
+                                string headerName = trimmedHeader.Substring(0, colonIndex).ToLower();
                                 if (headerName == SIPHeaders.SIP_COMPACTHEADER_CONTENTLENGTH.ToLower() ||
                                     headerName == SIPHeaders.SIP_HEADER_CONTENTLENGTH.ToLower())
                                 {

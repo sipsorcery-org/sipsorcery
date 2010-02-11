@@ -165,6 +165,7 @@
   </ProjectExtensions>
   <PropertyGroup>
     <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\SIPSorcery.Web.Services\bin\SIPSorcery.Web.Services.dll" "c:\temp\sipsorcery\"
-copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\SIPSorcery.Web.Services\bin\SIPSorcery.Web.Services.dll" C:\inetpub\wwwroot\bin\</PostBuildEvent>
+copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\SIPSorcery.Web.Services\bin\SIPSorcery.Web.Services.dll" C:\inetpub\wwwroot\bin\
+copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\SIPSorcery.Web.Services\bin\SIPSorcery.Web.Services.dll" "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build"</PostBuildEvent>
   </PropertyGroup>
 </Project>

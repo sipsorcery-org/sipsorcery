@@ -72,7 +72,17 @@ namespace SIPSorcery.Web.Services
 
         private ILog logger = log4net.LogManager.GetLogger("websvc-crossdomain");
 
-        private static readonly string m_baseDirectory = AppState.GetConfigSetting(HTTP_SERVER_BASE_DIR_KEY);
+        private static readonly string m_baseDirectory;
+
+        static CrossDomainService()
+        {
+            m_baseDirectory = AppState.ToAbsoluteDirectoryPath(AppState.GetConfigSetting(HTTP_SERVER_BASE_DIR_KEY));
+
+            if (m_baseDirectory.IsNullOrBlank())
+            {
+                m_baseDirectory = AppState.CurrentDirectory + @"\";
+            }
+        }
 
         private Stream StringToStream(string result)
         {

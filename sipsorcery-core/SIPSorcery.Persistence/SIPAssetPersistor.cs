@@ -76,63 +76,82 @@ namespace SIPSorcery.Persistence
     public delegate T SIPAssetGetFromDirectQueryDelegate<T>(string sqlQuery, params IDbDataParameter[] sqlParameters);
 #endif
 
-    public class SIPAssetPersistor<T> {
-        private static ILog logger = AppState.logger;
+    public class SIPAssetPersistor<T>
+    {
+        protected static ILog logger = AppState.logger;
+
+#if !SILVERLIGHT
+        protected DbProviderFactory m_dbProviderFactory;
+        protected string m_dbConnectionStr;
+        protected ObjectMapper<T> m_objectMapper;
+#endif
 
         public virtual event SIPAssetDelegate<T> Added;
         public virtual event SIPAssetDelegate<T> Updated;
         public virtual event SIPAssetDelegate<T> Deleted;
         public virtual event SIPAssetsModifiedDelegate Modified;
 
-        public virtual T Add(T asset) {
+        public virtual T Add(T asset)
+        {
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         }
 
-        public virtual T Update(T asset) {
+        public virtual T Update(T asset)
+        {
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         }
 
-        public virtual void UpdateProperty(Guid id, string propertyName, object value) {
+        public virtual void UpdateProperty(Guid id, string propertyName, object value)
+        {
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         }
 
-        public virtual void Delete(T asset) {
+        public virtual void IncrementProperty(Guid id, string propertyName)
+        {
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         }
 
-        public virtual void Delete(Expression<Func<T, bool>> where) {
+        public virtual void DecrementProperty(Guid id, string propertyName)
+        {
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         }
 
-        public virtual T Get(Guid id) {
+        public virtual void Delete(T asset)
+        {
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         }
 
-        public virtual object GetProperty(Guid id, string propertyName) {
+        public virtual void Delete(Expression<Func<T, bool>> where)
+        {
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         }
 
-        public virtual int Count(Expression<Func<T, bool>> where) {
+        public virtual T Get(Guid id)
+        {
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         }
 
-        public virtual T Get(Expression<Func<T, bool>> where) {
+        public virtual object GetProperty(Guid id, string propertyName)
+        {
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         }
 
-        public virtual List<T> Get(Expression<Func<T, bool>> where,  string orderByField, int offset, int count) {
+        public virtual int Count(Expression<Func<T, bool>> where)
+        {
+            throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
+        }
+
+        public virtual T Get(Expression<Func<T, bool>> where)
+        {
+            throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
+        }
+
+        public virtual List<T> Get(Expression<Func<T, bool>> where, string orderByField, int offset, int count)
+        {
             throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
         }
 
 #if !SILVERLIGHT
-
-        //public virtual T GetFromDirectQuery(string sqlQuery, params IDbDataParameter[] sqlParameters) {
-        //    throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
-        //}
-
-        //public virtual List<T> GetListFromDirectQuery(string sqlQuery, params IDbDataParameter[] sqlParameters) {
-         //   throw new NotImplementedException("Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " in " + System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.ToString() + " not implemented.");
-        //}
 
         protected DbParameter GetParameter(DbProviderFactory dbProviderFactory, MetaDataMember member, object parameterValue, string parameterName)
         {
@@ -156,6 +175,57 @@ namespace SIPSorcery.Persistence
             return dbParameter;
         }
 
+        protected void Increment(Guid id, string propertyName)
+        {
+            try
+            {
+                MetaDataMember member = m_objectMapper.GetMember(propertyName);
+                string commandText = "update " + m_objectMapper.TableName + " set " + propertyName + " = " + propertyName + " + 1 where id = '" + id + "'";
+                ExecuteCommand(commandText);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPAssetPersistor IncrementProperty (for " + typeof(T).Name + "). " + excp.Message);
+                throw;
+            }
+        }
+
+        protected void Decrement(Guid id, string propertyName)
+        {
+            try
+            {
+                MetaDataMember member = m_objectMapper.GetMember(propertyName);
+                string commandText = "update " + m_objectMapper.TableName + " set " + propertyName + " = " + propertyName + "- 1 where id = '" + id + "'";
+                ExecuteCommand(commandText);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPAssetPersistor DecrementProperty (for " + typeof(T).Name + "). " + excp.Message);
+                throw;
+            }
+        }
+
+        private void ExecuteCommand(string commandText)
+        {
+            try
+            {
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
+                {
+                    connection.ConnectionString = m_dbConnectionStr;
+                    connection.Open();
+
+                    IDbCommand command = connection.CreateCommand();
+
+                    command.CommandText = commandText;
+                    command.ExecuteNonQuery();
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPAssetPersistor ExecuteCommand (for " + typeof(T).Name + "). " + excp.Message);
+                throw;
+            }
+        }
 #endif
     }
 }

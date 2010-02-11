@@ -411,9 +411,9 @@ namespace SIPSorcery.Servers
                     #region Create a pseudo-dialplan to process the monitoring process call.
 
                     string pseudoScript =
-                        "sys.Log(\"Dispatcher Call.\")\n" +
+                        //"sys.Log(\"Dispatcher Call.\")\n" +
                         "result = sys.DoesSIPAccountExist(\"" + DISPATCHER_SIPACCOUNT_NAME + "\")\n" + // Allows the test call to check the database connectivity.
-                        "sys.Log(\"DoesSIPAccountExist result=#{result}.\")\n" +
+                        //"sys.Log(\"DoesSIPAccountExist result=#{result}.\")\n" +
                         "sys.Respond(420, nil, \"DialPlanEngine-ExecutionCount: " + m_dialPlanEngine.ScriptCount + "\")\n";
                     SIPDialPlan dispatcherDialPlan = new SIPDialPlan(null, null, null, pseudoScript, SIPDialPlanScriptTypesEnum.Ruby);
                     dispatcherDialPlan.Id = Guid.Empty; // Prevents the increment and decrement on the execution counts.
@@ -421,7 +421,6 @@ namespace SIPSorcery.Servers
                             null,
                             m_sipTransport,
                             CreateDialogueBridge,
-                            DecrementDialPlanExecutionCount,
                             m_outboundProxy,
                             uas,
                             dispatcherDialPlan,
@@ -429,6 +428,7 @@ namespace SIPSorcery.Servers
                             m_traceDirectory,
                             null,
                             Guid.Empty);
+                    scriptContext.DialPlanComplete += () => { };
                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, null, this);
 
                     #endregion
@@ -440,6 +440,8 @@ namespace SIPSorcery.Servers
 
                     if (GetDialPlanAndCustomer(owner, dialPlanName, uas, out customer, out dialPlan))
                     {
+                        //IncrementDialPlanExecutionCount(dialPlan, customer, originalExecutionCount + 1);
+                        IncrementCustomerExecutionCount(customer);
                         wasExecutionCountIncremented = true;
 
                         if (dialPlan != null)
@@ -452,7 +454,6 @@ namespace SIPSorcery.Servers
                                     Log_External,
                                     m_sipTransport,
                                     CreateDialogueBridge,
-                                    DecrementDialPlanExecutionCount,
                                     m_outboundProxy,
                                     uas,
                                     dialPlan,
@@ -460,6 +461,7 @@ namespace SIPSorcery.Servers
                                     m_traceDirectory,
                                     (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.NetworkId : null,
                                     customer.Id);
+                                lineContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer);} ;
                                 m_dialPlanEngine.Execute(lineContext, uas, uas.CallDirection, CreateDialogueBridge, this);
                             }
                             else
@@ -469,7 +471,6 @@ namespace SIPSorcery.Servers
                                     Log_External,
                                     m_sipTransport,
                                     CreateDialogueBridge,
-                                    DecrementDialPlanExecutionCount,
                                     m_outboundProxy,
                                     uas,
                                     dialPlan,
@@ -477,6 +478,7 @@ namespace SIPSorcery.Servers
                                     m_traceDirectory,
                                     (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.NetworkId : null,
                                     customer.Id);
+                                scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer);};
                                 m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
                             }
                         }
@@ -486,7 +488,7 @@ namespace SIPSorcery.Servers
                             {
                                 Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dialplan could not be loaded for incoming B2B call to " + callURI.ToString() + ".", owner));
                                 uas.Reject(SIPResponseStatusCodesEnum.InternalServerError, "Error loading incoming dial plan for B2B call", null);
-                                DecrementDialPlanExecutionCount(null, customer.Id);
+                                DecrementCustomerExecutionCount(customer);
                             }
                             else
                             {
@@ -505,7 +507,6 @@ namespace SIPSorcery.Servers
                                             Log_External,
                                             m_sipTransport,
                                             CreateDialogueBridge,
-                                            DecrementDialPlanExecutionCount,
                                             m_outboundProxy,
                                             uas,
                                             incomingDialPlan,
@@ -513,13 +514,15 @@ namespace SIPSorcery.Servers
                                             m_traceDirectory,
                                             null,
                                             customer.Id);
+                                    scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
                                 }
                                 else
                                 {
                                     Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No bindings available for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " returning temporarily not available.", owner));
                                     uas.Reject(SIPResponseStatusCodesEnum.TemporarilyNotAvailable, null, null);
-                                    DecrementDialPlanExecutionCount(null, customer.Id);
+                                    //DecrementDialPlanExecutionCount(null, customer.Id);
+                                    DecrementCustomerExecutionCount(customer);
                                 }
                             }
                         }
@@ -528,7 +531,8 @@ namespace SIPSorcery.Servers
                             // Couldn't load a dialplan for an outgoing call.
                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dialplan could not be loaded for " + uas.CallDirection + " call to " + callURI.ToString() + ".", owner));
                             uas.Reject(SIPResponseStatusCodesEnum.InternalServerError, "Error loading dial plan", null);
-                            DecrementDialPlanExecutionCount(null, customer.Id);
+                            //DecrementDialPlanExecutionCount(null, customer.Id);
+                            DecrementCustomerExecutionCount(customer);
                         }
                     }
                 }
@@ -540,7 +544,8 @@ namespace SIPSorcery.Servers
 
                 if (wasExecutionCountIncremented)
                 {
-                    DecrementDialPlanExecutionCount(dialPlan, customer.Id);
+                    //DecrementDialPlanExecutionCount(dialPlan, customer.Id);
+                    DecrementCustomerExecutionCount(customer);
                 }
             }
         }
@@ -587,7 +592,8 @@ namespace SIPSorcery.Servers
                         }
                         else
                         {
-                            IncrementDialPlanExecutionCount(dialPlan, customer);
+                            //IncrementDialPlanExecutionCount(dialPlan, customer, originalExecutionCount + 1);
+                            IncrementCustomerExecutionCount(customer);
 
                             Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web call for " + dialplanName + " initialising to " + number + ".", username));
 
@@ -607,7 +613,6 @@ namespace SIPSorcery.Servers
                                     Log_External,
                                     m_sipTransport,
                                     CreateDialogueBridge,
-                                    DecrementDialPlanExecutionCount,
                                     m_outboundProxy,
                                     uas,
                                     dialPlan,
@@ -615,6 +620,7 @@ namespace SIPSorcery.Servers
                                     m_traceDirectory,
                                     null,
                                     customer.Id);
+                            scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                             m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
 
                             if (replacesCallID.IsNullOrBlank())
@@ -632,12 +638,14 @@ namespace SIPSorcery.Servers
             catch (Exception excp)
             {
                 logger.Error("Exception SIPCallManager ProcessWebCall. " + excp.Message);
-                return "Sorry there was an unexpected error, the callback was not initiated.";
 
                 if (wasExecutionCountIncremented)
                 {
-                    DecrementDialPlanExecutionCount(dialPlan, customer.Id);
+                    //DecrementDialPlanExecutionCount(dialPlan, customer.Id, originalExecutionCount);
+                    DecrementCustomerExecutionCount(customer);
                 }
+
+                return "Sorry there was an unexpected error, the callback was not initiated.";
             }
         }
 
@@ -673,7 +681,6 @@ namespace SIPSorcery.Servers
                     }
                     else
                     {
-                        IncrementDialPlanExecutionCount(dialPlan, customer);
                         return true;
                     }
                 }
@@ -691,7 +698,7 @@ namespace SIPSorcery.Servers
         {
             try
             {
-                int dialPlanExecutionCount = (dialPlan != null) ? dialPlan.ExecutionCount : 0;
+                /*int dialPlanExecutionCount = (dialPlan != null) ? dialPlan.ExecutionCount : 0;
                 int dialPlanMaxExecutionCount = (dialPlan != null) ? dialPlan.MaxExecutionCount : 0;
 
                 if (customer.ExecutionCount >= customer.MaxExecutionCount ||
@@ -702,7 +709,9 @@ namespace SIPSorcery.Servers
                 else
                 {
                     return true;
-                }
+                }*/
+
+                return (customer.ExecutionCount < customer.MaxExecutionCount);
             }
             catch (Exception excp)
             {
@@ -711,7 +720,7 @@ namespace SIPSorcery.Servers
             }
         }
 
-        private void IncrementDialPlanExecutionCount(SIPDialPlan dialPlan, Customer customer)
+        /*private void IncrementDialPlanExecutionCount(SIPDialPlan dialPlan, Customer customer, int customerExecutionCount)
         {
             try
             {
@@ -738,7 +747,7 @@ namespace SIPSorcery.Servers
             }
         }
 
-        private void DecrementDialPlanExecutionCount(SIPDialPlan dialPlan, Guid customerId)
+        private void DecrementDialPlanExecutionCount(SIPDialPlan dialPlan, Guid customerId, int customerExecutionCount)
         {
             try
             {
@@ -766,6 +775,30 @@ namespace SIPSorcery.Servers
             catch (Exception excp)
             {
                 logger.Error("Exception SIPCallManager DecrementDialPlanExecutionCount. " + excp.Message);
+            }
+        }*/
+
+        private void IncrementCustomerExecutionCount(Customer customer)
+        {
+            try
+            {
+                m_customerPersistor.IncrementProperty(customer.Id, m_sipDialPlanExecutionCountPropertyName);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPCallManager IncrementCustomerExecutionCount. " + excp.Message);
+            }
+        }
+
+        private void DecrementCustomerExecutionCount(Customer customer)
+        {
+            try
+            {
+                m_customerPersistor.DecrementProperty(customer.Id, m_sipDialPlanExecutionCountPropertyName);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPCallManager DecrementCustomerExecutionCount. " + excp.Message);
             }
         }
 
@@ -870,56 +903,5 @@ namespace SIPSorcery.Servers
                 logger.Error("Exception InitialiseDispatcherProxy. " + excp.Message);
             }
         }
-
-        /*private void CreateProxy(string name)
-        {
-            CallDispatcherProxy dispatcherProxy = new CallDispatcherProxy(name);
-
-            ThreadPool.QueueUserWorkItem(delegate
-            {
-                string configName = name;
-
-                try
-                {
-                    dispatcherProxy.IsAlive();
-                    ((ICommunicationObject)dispatcherProxy).Faulted += ProxyChannelFaulted;
-                    logger.Debug("SIPCallManager CallDispatcherProxy successfully created for " + name + ".");
-                    m_dispatcherProxy.Add(configName, dispatcherProxy);
-                }
-                catch (Exception excp)
-                {
-                    logger.Warn("Could not connect to dispatcher proxy " + name + ". " + excp.Message);
-                    Timer retryProxy = new Timer(delegate { CreateProxy(name); }, null, RETRY_FAILED_PROXY, Timeout.Infinite);
-                }
-            });
-        }*/
-
-        /*private void ProxyChannelFaulted(object sender, EventArgs e)
-        {
-            for (int index = 0; index < m_dispatcherProxy.Count; index++)
-            {
-                KeyValuePair<string, CallDispatcherProxy> proxyEntry = m_dispatcherProxy.ElementAt(index);
-                CallDispatcherProxy proxy = proxyEntry.Value;
-
-                if (proxy.State == CommunicationState.Faulted)
-                {
-                    logger.Debug("Removing faulted dispatcher proxy for " + proxyEntry.Key + ".");
-                    m_dispatcherProxy.Remove(proxyEntry.Key);
-                    CreateProxy(proxyEntry.Key);
-                    index--;
-
-                    logger.Warn("SIPCallManager received a fault on proxy channel, comms state=" + proxy.InnerChannel.State + ".");
-
-                    try
-                    {
-                        proxy.Abort();
-                    }
-                    catch (Exception abortExcp)
-                    {
-                        logger.Error("Exception ProxyChannelFaulted Abort. " + abortExcp.Message);
-                    }
-                }
-            }
-        }*/
     }
 }

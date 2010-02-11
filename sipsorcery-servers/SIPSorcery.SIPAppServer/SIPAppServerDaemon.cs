@@ -83,7 +83,7 @@ namespace SIPSorcery.SIPAppServer
 
         private static int m_monitorEventLoopbackPort = SIPAppServerState.MonitorLoopbackPort;
         private string m_traceDirectory = SIPAppServerState.TraceDirectory;
-        private string m_currentDirectory = SIPAppServerState.CurrentDirectory;
+        private string m_currentDirectory = AppState.CurrentDirectory;
         private string m_rubyScriptCommonPath = SIPAppServerState.RubyScriptCommonPath;
         private SIPEndPoint m_outboundProxy = SIPAppServerState.OutboundProxy;
 
@@ -143,6 +143,7 @@ namespace SIPSorcery.SIPAppServer
                 logger.Debug("pid=" + Process.GetCurrentProcess().Id + ".");
                 logger.Debug("os=" + System.Environment.OSVersion + ".");
                 logger.Debug("current directory=" + m_currentDirectory + ".");
+                logger.Debug("base directory=" + AppDomain.CurrentDomain.BaseDirectory + ".");
 
                 m_sipSorceryPersistor = new SIPSorceryPersistor(m_storageType, m_connectionString);
                 m_customerSessionManager = new CustomerSessionManager(m_storageType, m_connectionString);

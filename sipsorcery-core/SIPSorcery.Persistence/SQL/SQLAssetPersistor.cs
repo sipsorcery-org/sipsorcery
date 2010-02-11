@@ -57,40 +57,39 @@ using NUnit.Framework;
 
 namespace SIPSorcery.Persistence
 {
-    public class SQLAssetPersistor<T> : SIPAssetPersistor<T> where T : class, ISIPAsset, new() {
-
-        private static ILog logger = AppState.logger;
-
-        private DbProviderFactory m_dbProviderFactory;
-        private string m_dbConnectionStr;
-        private ObjectMapper<T> m_objectMapper;
-
+    public class SQLAssetPersistor<T> : SIPAssetPersistor<T> where T : class, ISIPAsset, new()
+    {
         public override event SIPAssetDelegate<T> Added;
         public override event SIPAssetDelegate<T> Updated;
         public override event SIPAssetDelegate<T> Deleted;
         public override event SIPAssetsModifiedDelegate Modified;
 
-        public SQLAssetPersistor(DbProviderFactory factory, string dbConnStr) {
+        public SQLAssetPersistor(DbProviderFactory factory, string dbConnStr)
+        {
             m_dbProviderFactory = factory;
             m_dbConnectionStr = dbConnStr;
             m_objectMapper = new ObjectMapper<T>();
         }
 
-        public override T Add(T asset) {
-            try {
-                using (IDbConnection connection = m_dbProviderFactory.CreateConnection()) {
+        public override T Add(T asset)
+        {
+            try
+            {
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
+                {
                     connection.ConnectionString = m_dbConnectionStr;
                     connection.Open();
 
                     IDbCommand insertCommand = connection.CreateCommand();
-                    
+
                     StringBuilder insertQuery = new StringBuilder("insert into " + m_objectMapper.TableName + " (");
                     StringBuilder parametersStr = new StringBuilder("(");
                     List<DbParameter> dbParameters = new List<DbParameter>();
 
                     int paramNumber = 1;
                     Dictionary<MetaDataMember, object> allPropertyValues = m_objectMapper.GetAllValues(asset);
-                    foreach (KeyValuePair<MetaDataMember, object> propertyValue in allPropertyValues) {
+                    foreach (KeyValuePair<MetaDataMember, object> propertyValue in allPropertyValues)
+                    {
                         DbParameter dbParameter = base.GetParameter(m_dbProviderFactory, propertyValue.Key, propertyValue.Value, paramNumber.ToString());
                         insertCommand.Parameters.Add(dbParameter);
 
@@ -106,22 +105,27 @@ namespace SIPSorcery.Persistence
                     insertCommand.CommandText = insertCommandText;
                     insertCommand.ExecuteNonQuery();
 
-                    if (Added != null) {
+                    if (Added != null)
+                    {
                         Added(asset);
                     }
 
                     return asset;
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SQLAssetPersistor Add (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override T Update(T asset) {
-            try {
-                using (IDbConnection connection = m_dbProviderFactory.CreateConnection()) {
+        public override T Update(T asset)
+        {
+            try
+            {
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
+                {
                     connection.ConnectionString = m_dbConnectionStr;
                     connection.Open();
 
@@ -132,8 +136,10 @@ namespace SIPSorcery.Persistence
 
                     int paramNumber = 1;
                     Dictionary<MetaDataMember, object> allPropertyValues = m_objectMapper.GetAllValues(asset);
-                    foreach (KeyValuePair<MetaDataMember, object> propertyValue in allPropertyValues) {
-                        if (!propertyValue.Key.IsPrimaryKey) {
+                    foreach (KeyValuePair<MetaDataMember, object> propertyValue in allPropertyValues)
+                    {
+                        if (!propertyValue.Key.IsPrimaryKey)
+                        {
                             DbParameter dbParameter = base.GetParameter(m_dbProviderFactory, propertyValue.Key, propertyValue.Value, paramNumber.ToString());
                             updateCommand.Parameters.Add(dbParameter);
 
@@ -149,22 +155,27 @@ namespace SIPSorcery.Persistence
                     updateCommand.CommandText = updateCommandText;
                     updateCommand.ExecuteNonQuery();
 
-                    if (Updated != null) {
+                    if (Updated != null)
+                    {
                         Updated(asset);
                     }
 
                     return asset;
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SQLAssetPersistor Update (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override void UpdateProperty(Guid id, string propertyName, object value) {
-            try {
-                using (IDbConnection connection = m_dbProviderFactory.CreateConnection()) {
+        public override void UpdateProperty(Guid id, string propertyName, object value)
+        {
+            try
+            {
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
+                {
                     connection.ConnectionString = m_dbConnectionStr;
                     connection.Open();
 
@@ -179,15 +190,29 @@ namespace SIPSorcery.Persistence
                     updateCommand.ExecuteNonQuery();
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SQLAssetPersistor UpdateProperty (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override void Delete(T asset) {
-            try {
-                using (IDbConnection connection = m_dbProviderFactory.CreateConnection()) {
+        public override void IncrementProperty(Guid id, string propertyName)
+        {
+            base.Increment(id, propertyName);
+        }
+
+        public override void DecrementProperty(Guid id, string propertyName)
+        {
+            base.Decrement(id, propertyName);
+        }
+
+        public override void Delete(T asset)
+        {
+            try
+            {
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
+                {
                     connection.ConnectionString = m_dbConnectionStr;
                     connection.Open();
 
@@ -195,23 +220,28 @@ namespace SIPSorcery.Persistence
                     deleteCommand.CommandText = "delete from " + m_objectMapper.TableName + " where id = '" + asset.Id + "'";
                     deleteCommand.ExecuteNonQuery();
 
-                    if (Deleted != null) {
+                    if (Deleted != null)
+                    {
                         Deleted(asset);
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SQLAssetPersistor Delete (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override void Delete(Expression<Func<T, bool>> where) {
-            try {
+        public override void Delete(Expression<Func<T, bool>> where)
+        {
+            try
+            {
                 SQLQueryProvider sqlQueryProvider = new SQLQueryProvider(m_dbProviderFactory, m_dbConnectionStr, m_objectMapper.TableName, m_objectMapper.SetValue);
                 string whereStr = sqlQueryProvider.GetQueryText(where);
 
-                using (IDbConnection connection = m_dbProviderFactory.CreateConnection()) {
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
+                {
                     connection.ConnectionString = m_dbConnectionStr;
                     connection.Open();
 
@@ -220,15 +250,19 @@ namespace SIPSorcery.Persistence
                     deleteCommand.ExecuteNonQuery();
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SQLAssetPersistor Delete (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override T Get(Guid id) {
-            try {
-                using (IDbConnection connection = m_dbProviderFactory.CreateConnection()) {
+        public override T Get(Guid id)
+        {
+            try
+            {
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
+                {
                     connection.ConnectionString = m_dbConnectionStr;
                     connection.Open();
 
@@ -239,28 +273,35 @@ namespace SIPSorcery.Persistence
                     DataSet resultSet = new DataSet();
                     adapter.Fill(resultSet);
 
-                    if (resultSet != null && resultSet.Tables[0].Rows.Count == 1) {
+                    if (resultSet != null && resultSet.Tables[0].Rows.Count == 1)
+                    {
                         T instance = new T();
                         instance.Load(resultSet.Tables[0].Rows[0]);
                         return instance;
                     }
-                    else if (resultSet != null && resultSet.Tables[0].Rows.Count > 1) {
+                    else if (resultSet != null && resultSet.Tables[0].Rows.Count > 1)
+                    {
                         throw new ApplicationException("Multiple rows were returned for Get with id=" + id + ".");
                     }
-                    else {
+                    else
+                    {
                         return null;
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SQLAssetPersistor Get (id) (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override object GetProperty(Guid id, string propertyName) {
-            try {
-                using (IDbConnection connection = m_dbProviderFactory.CreateConnection()) {
+        public override object GetProperty(Guid id, string propertyName)
+        {
+            try
+            {
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
+                {
                     connection.ConnectionString = m_dbConnectionStr;
                     connection.Open();
 
@@ -270,77 +311,96 @@ namespace SIPSorcery.Persistence
                     return command.ExecuteScalar();
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SQLAssetPersistor GetProperty (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override int Count(Expression<Func<T, bool>> whereClause) {
-            try {
+        public override int Count(Expression<Func<T, bool>> whereClause)
+        {
+            try
+            {
                 SQLQueryProvider sqlQueryProvider = new SQLQueryProvider(m_dbProviderFactory, m_dbConnectionStr, m_objectMapper.TableName, m_objectMapper.SetValue);
                 Query<T> assets = new Query<T>(sqlQueryProvider);
-                if (whereClause != null) {
+                if (whereClause != null)
+                {
                     return assets.Where(whereClause).Count();
                 }
-                else {
+                else
+                {
                     return assets.Count();
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SQLAssetPersistor Count (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override T Get(Expression<Func<T, bool>> whereClause) {
-            try {
+        public override T Get(Expression<Func<T, bool>> whereClause)
+        {
+            try
+            {
                 SQLQueryProvider sqlQueryProvider = new SQLQueryProvider(m_dbProviderFactory, m_dbConnectionStr, m_objectMapper.TableName, m_objectMapper.SetValue);
                 Query<T> assets = new Query<T>(sqlQueryProvider);
                 IQueryable<T> getList = null;
-                if (whereClause != null) {
+                if (whereClause != null)
+                {
                     getList = from asset in assets.Where(whereClause) select asset;
                 }
-                else {
+                else
+                {
                     getList = from asset in assets select asset;
                 }
                 return getList.FirstOrDefault();
             }
-            catch(Exception excp) {
+            catch (Exception excp)
+            {
                 string whereClauseStr = (whereClause != null) ? whereClause.ToString() + ". " : null;
                 logger.Error("Exception SQLAssetPersistor Get (where) (for " + typeof(T).Name + "). " + whereClauseStr + excp);
                 throw;
             }
         }
 
-        public override List<T> Get(Expression<Func<T, bool>> whereClause, string orderByField, int offset, int count) {
-            try {
+        public override List<T> Get(Expression<Func<T, bool>> whereClause, string orderByField, int offset, int count)
+        {
+            try
+            {
                 SQLQueryProvider sqlQueryProvider = new SQLQueryProvider(m_dbProviderFactory, m_dbConnectionStr, m_objectMapper.TableName, m_objectMapper.SetValue);
                 Query<T> assetList = new Query<T>(sqlQueryProvider);
                 //IQueryable<T> getList = from asset in assetList.Where(whereClause) orderby orderByField select asset;
                 IQueryable<T> getList = null;
-                if (whereClause != null) {
+                if (whereClause != null)
+                {
                     getList = from asset in assetList.Where(whereClause) select asset;
                 }
-                else {
+                else
+                {
                     getList = from asset in assetList select asset;
                 }
 
-                if (!orderByField.IsNullOrBlank()) {
+                if (!orderByField.IsNullOrBlank())
+                {
                     sqlQueryProvider.OrderBy = orderByField;
                 }
 
-                if (offset != 0) {
+                if (offset != 0)
+                {
                     sqlQueryProvider.Offset = offset;
                 }
 
-                if (count != Int32.MaxValue) {
+                if (count != Int32.MaxValue)
+                {
                     sqlQueryProvider.Count = count;
                 }
 
                 return getList.ToList() ?? new List<T>();
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 string whereClauseStr = (whereClause != null) ? whereClause.ToString() + ". " : null;
                 logger.Error("Exception SQLAssetPersistor Get (list) (for " + typeof(T).Name + "). " + whereClauseStr + excp.Message);
                 throw;
@@ -350,7 +410,7 @@ namespace SIPSorcery.Persistence
 
     #region Unit testing.
 
-    #if UNITTEST
+#if UNITTEST
 
     [TestFixture]
     public class SQLAssetPersistorUnitTest {
@@ -424,7 +484,7 @@ namespace SIPSorcery.Persistence
         }*/
     }
 
-    #endif
+#endif
 
     #endregion
 }

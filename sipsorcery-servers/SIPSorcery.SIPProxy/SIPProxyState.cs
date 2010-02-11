@@ -92,8 +92,8 @@ namespace SIPSorcery.SIPProxy
                     throw new ApplicationException("The SIP Proxy could not be started, no " + SIPSOCKETS_CONFIGNODE_NAME + " node could be found.");
                 }
 
-                ProxyScriptPath =  AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_SCRIPTPATH_KEY);
-                AppServerEndPointsPath = AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_APPSERVER_ENDPOINTS_PATH_KEY);
+                ProxyScriptPath =  AppState.ToAbsoluteFilePath(AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_SCRIPTPATH_KEY));
+                AppServerEndPointsPath = AppState.ToAbsoluteFilePath(AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_APPSERVER_ENDPOINTS_PATH_KEY));
                 if (!AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_NATKEEPALIVESOCKET_KEY).IsNullOrBlank()) {
                     NATKeepAliveSocket = IPSocket.ParseSocketString(AppState.GetConfigNodeValue(m_sipProxyNode, PROXY_NATKEEPALIVESOCKET_KEY));
                 }

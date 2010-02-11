@@ -127,12 +127,6 @@ namespace SIPSorcery.AppServer.DialPlan
             m_outboundProxySocket = outboundProxySocket;
             m_rubyScriptCommonPath = rubyScriptCommonPath;
 
-            if (!m_rubyScriptCommonPath.Contains(@":"))
-            {
-                // Relative path.
-                m_rubyScriptCommonPath = AppDomain.CurrentDomain.BaseDirectory + m_rubyScriptCommonPath;
-            }
-
             LoadRubyCommonScript();
 
             Thread monitorScriptsThread = new Thread(new ThreadStart(MonitorScripts));
@@ -156,7 +150,7 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 // This can occur if the call is cancelled by the caller between when the INVITE was received and when the dialplan execution was ready.
                 logger.Warn("Dialplan execution for " + dialPlanContext.SIPDialPlan.DialPlanName + " for " + uas.CallDirection + " call to " + uas.CallDestination + " did not proceed as call already answered.");
-                dialPlanContext.DecrementDialPlanExecutionCount();
+                dialPlanContext.DialPlanExecutionFinished();
             }
             else
             {
@@ -200,7 +194,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 if (matchedCommand == null)
                 {
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Destination " + uas.CallDestination + " not found in line dial plan " + dialPlanContext.SIPDialPlan.DialPlanName + ".", dialPlanContext.Owner));
-                    uas.Reject(SIPResponseStatusCodesEnum.NotFound, null, null);
+                    dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.NotFound, null, null);
                 }
                 else if (Regex.Match(matchedCommand.Command, "Switch|Dial", RegexOptions.IgnoreCase).Success)
                 {
@@ -241,16 +235,13 @@ namespace SIPSorcery.AppServer.DialPlan
                 else
                 {
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Command " + matchedCommand.Command + " is not a valid dial plan command.", dialPlanContext.Owner));
-                    uas.Reject(SIPResponseStatusCodesEnum.InternalServerError, "Invalid dialplan command " + matchedCommand.Command, null);
+                    dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.InternalServerError, "Invalid dialplan command " + matchedCommand.Command, null);
                 }
             }
             catch (Exception excp)
             {
                 FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Error executing line dialplan for " + uas.CallRequest.URI.ToString() + ". " + excp.Message, dialPlanContext.Owner));
-            }
-            finally
-            {
-                dialPlanContext.DecrementDialPlanExecutionCount();
+                dialPlanContext.DialPlanExecutionFinished();
             }
         }
 
@@ -343,21 +334,18 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Error processing call " + uas.CallDestination + " there were no script slots available, script could not be executed.", dialPlanContext.Owner));
                         dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.InternalServerError, "Dial plan script engine was overloaded", null);
-                        dialPlanContext.DecrementDialPlanExecutionCount();
                     }
                 }
                 else
                 {
                     FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A script dial plan was empty, execution cannot continue.", dialPlanContext.Owner));
                     dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.InternalServerError, "Dial plan script was empty", null);
-                    dialPlanContext.DecrementDialPlanExecutionCount();
                 }
             }
             catch (Exception excp)
             {
                 FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Error executing script dialplan for " + uas.CallDestination + ". " + excp.Message, dialPlanContext.Owner));
                 dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.InternalServerError, "Dial plan exception starting script", null);
-                dialPlanContext.DecrementDialPlanExecutionCount();
             }
         }
 
@@ -494,8 +482,6 @@ namespace SIPSorcery.AppServer.DialPlan
                             {
                                 try
                                 {
-                                    dialPlanContext.DecrementDialPlanExecutionCount();
-
                                     if (killScript.DialPlanScriptThread != null && killScript.DialPlanScriptThread.IsAlive)
                                     {
                                         //logger.Debug("Aborting dialplan script thread.");

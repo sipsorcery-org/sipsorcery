@@ -61,12 +61,6 @@ namespace SIPSorcery.Persistence
 {
     public class MSSQLAssetPersistor<T> : SIPAssetPersistor<T> where T : class, ISIPAsset, new()
     {
-        private static ILog logger = AppState.logger;
-
-        private DbProviderFactory m_dbProviderFactory;
-        private string m_dbConnectionStr;
-        private ObjectMapper<T> m_objectMapper;
-
         public override event SIPAssetDelegate<T> Added;
         public override event SIPAssetDelegate<T> Updated;
         public override event SIPAssetDelegate<T> Deleted;
@@ -152,6 +146,16 @@ namespace SIPSorcery.Persistence
                 logger.Error("Exception MSSQLAssetPersistor UpdateProperty (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
+        }
+
+        public override void IncrementProperty(Guid id, string propertyName)
+        {
+            base.Increment(id, propertyName);
+        }
+
+        public override void DecrementProperty(Guid id, string propertyName)
+        {
+            base.Decrement(id, propertyName);
         }
 
         public override void Delete(T asset)

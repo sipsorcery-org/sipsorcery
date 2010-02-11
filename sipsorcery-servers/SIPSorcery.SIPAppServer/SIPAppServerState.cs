@@ -59,29 +59,23 @@ namespace SIPSorcery.SIPAppServer
         private const string TRACE_DIRECTORY_KEY = "TraceDirectory";
         private const string RUBY_SCRIPT_COMMON_PATH_KEY = "RubyScriptCommonPath";
         private const string OUTBOUND_PROXY_KEY = "OutboundProxy";
-        private const string NAT_KEEPALIVE_RELAY_SOCKET_KEY = "NATKeepAliveRelaySocket";
         private const string SIPCALL_DISPATCHER_WORKERS_NODE_NAME = "sipdispatcherworkers";
-        private const string SIPCALL_DISPATCHER_SCRIPTPATH_NAME = "SIPCallDispatcherScriptPath";
 
 		public static ILog logger = null;
 
         private static readonly XmlNode m_sipAppServerConfigNode;
         public static readonly XmlNode SIPAppServerSocketsNode;
         public static readonly int MonitorLoopbackPort;
-        public static readonly string CurrentDirectory;
         public static readonly string TraceDirectory;
         public static readonly string RubyScriptCommonPath;
         public static readonly SIPEndPoint OutboundProxy;
-        public static readonly IPEndPoint NATKeepAliveRelaySocket;
         public static readonly XmlNode SIPCallDispatcherWorkersNode;
-        public static string SIPCallDispatcherScriptPath;
 
 		static SIPAppServerState()
 		{
 			try
 			{
                 logger = AppState.GetLogger(LOGGER_NAME);
-                CurrentDirectory = Regex.Replace(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase), @"^file:\\", ""); // There's undoubtedly a better way!
 
                 if (AppState.GetSection(SIPAPPSERVER_CONFIGNODE_NAME) != null)
                 {
@@ -95,25 +89,13 @@ namespace SIPSorcery.SIPAppServer
                 SIPAppServerSocketsNode = m_sipAppServerConfigNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
 
                 Int32.TryParse(AppState.GetConfigNodeValue(m_sipAppServerConfigNode, APPSERVER_LOOPBACK_PORT_KEY), out MonitorLoopbackPort);
-                TraceDirectory = AppState.GetConfigNodeValue(m_sipAppServerConfigNode, TRACE_DIRECTORY_KEY);
-                RubyScriptCommonPath = AppState.GetConfigNodeValue(m_sipAppServerConfigNode, RUBY_SCRIPT_COMMON_PATH_KEY);
+                TraceDirectory = AppState.ToAbsoluteDirectoryPath(AppState.GetConfigNodeValue(m_sipAppServerConfigNode, TRACE_DIRECTORY_KEY));
+                RubyScriptCommonPath = AppState.ToAbsoluteFilePath(AppState.GetConfigNodeValue(m_sipAppServerConfigNode, RUBY_SCRIPT_COMMON_PATH_KEY));
                 if (!AppState.GetConfigNodeValue(m_sipAppServerConfigNode, OUTBOUND_PROXY_KEY).IsNullOrBlank())
                 {
                     OutboundProxy = SIPEndPoint.ParseSIPEndPoint(AppState.GetConfigNodeValue(m_sipAppServerConfigNode, OUTBOUND_PROXY_KEY));
                 }
                 SIPCallDispatcherWorkersNode = m_sipAppServerConfigNode.SelectSingleNode(SIPCALL_DISPATCHER_WORKERS_NODE_NAME);
-                SIPCallDispatcherScriptPath = AppState.GetConfigNodeValue(m_sipAppServerConfigNode, SIPCALL_DISPATCHER_SCRIPTPATH_NAME);
-
-                if (TraceDirectory != null && !TraceDirectory.Contains(":"))
-                {
-                    // Relative path.
-                    TraceDirectory = AppDomain.CurrentDomain.BaseDirectory + TraceDirectory;
-                }
-
-                if (TraceDirectory != null && !TraceDirectory.EndsWith(@"\"))
-                {
-                    TraceDirectory += @"\";
-                }
 			}
 			catch(Exception excp)
 			{

@@ -14,7 +14,6 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPMonitorLogDelegate monitorLogDelegate,
             SIPTransport sipTransport,
             DialogueBridgeCreatedDelegate createBridge,
-            DecrementDialPlanExecutionCountDelegate decrementDialPlanCountDelegate,
             SIPEndPoint outboundProxy,
             ISIPServerUserAgent sipServerUserAgent,
             SIPDialPlan dialPlan,
@@ -22,7 +21,7 @@ namespace SIPSorcery.AppServer.DialPlan
             string traceDirectory,
             string callersNetworkId,
             Guid customerId)
-            : base(monitorLogDelegate, sipTransport, createBridge, decrementDialPlanCountDelegate, outboundProxy, sipServerUserAgent, dialPlan, sipProviders, traceDirectory, callersNetworkId, customerId)
+            : base(monitorLogDelegate, sipTransport, createBridge, outboundProxy, sipServerUserAgent, dialPlan, sipProviders, traceDirectory, callersNetworkId, customerId)
         {
             ContextType = DialPlanContextsEnum.Script;
         }

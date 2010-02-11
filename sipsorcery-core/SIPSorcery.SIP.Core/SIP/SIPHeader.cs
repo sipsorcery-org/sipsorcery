@@ -192,15 +192,6 @@ namespace SIPSorcery.SIP
         public SIPViaHeader()
         { }
 
-        public SIPViaHeader(string contactIPAddress, int contactPort, string branch)
-        {
-            Version = SIPConstants.SIP_FULLVERSION_STRING;
-            Transport = SIPProtocolsEnum.udp;
-            Host = contactIPAddress;
-            Port = contactPort;
-            Branch = branch;
-        }
-
         public SIPViaHeader(string contactIPAddress, int contactPort, string branch, SIPProtocolsEnum protocol)
         {
             Version = SIPConstants.SIP_FULLVERSION_STRING;
@@ -208,44 +199,28 @@ namespace SIPSorcery.SIP
             Host = contactIPAddress;
             Port = contactPort;
             Branch = branch;
+            ViaParameters.Set(m_rportKey, null);
         }
 
-        public SIPViaHeader(IPEndPoint contactEndPoint, string branch)
-        {
-            Version = SIPConstants.SIP_FULLVERSION_STRING;
-            Transport = SIPProtocolsEnum.udp;
-            Host = contactEndPoint.Address.ToString();
-            Port = contactEndPoint.Port;
-            Branch = branch;
-        }
+        public SIPViaHeader(string contactIPAddress, int contactPort, string branch) :
+            this(contactIPAddress, contactPort, branch, SIPProtocolsEnum.udp)
+        { }
 
-        public SIPViaHeader(SIPEndPoint localEndPoint, string branch)
-        {
-            Version = SIPConstants.SIP_FULLVERSION_STRING;
-            Transport = localEndPoint.SIPProtocol;
-            Host = localEndPoint.SocketEndPoint.Address.ToString();
-            Port = localEndPoint.SocketEndPoint.Port;
-            Branch = branch;
-        }
+        public SIPViaHeader(IPEndPoint contactEndPoint, string branch) :
+            this(contactEndPoint.Address.ToString(), contactEndPoint.Port, branch, SIPProtocolsEnum.udp)
+        { }
 
-        public SIPViaHeader(string contactEndPoint, string branch)
-        {
-            Version = SIPConstants.SIP_FULLVERSION_STRING;
-            Transport = SIPProtocolsEnum.udp;
-            IPEndPoint contactSocket = IPSocket.GetIPEndPoint(contactEndPoint);
-            Host = contactSocket.Address.ToString();
-            Port = contactSocket.Port;
-            Branch = branch;
-        }
+        public SIPViaHeader(SIPEndPoint localEndPoint, string branch) :
+            this(localEndPoint.SocketEndPoint.Address.ToString(), localEndPoint.SocketEndPoint.Port, branch, localEndPoint.SIPProtocol)
+        { }
 
-        public SIPViaHeader(IPEndPoint contactEndPoint, string branch, SIPProtocolsEnum protocol)
-        {
-            Version = SIPConstants.SIP_FULLVERSION_STRING;
-            Transport = protocol;
-            Host = contactEndPoint.Address.ToString();
-            Port = contactEndPoint.Port;
-            Branch = branch;
-        }
+        public SIPViaHeader(string contactEndPoint, string branch) :
+            this (IPSocket.GetIPEndPoint(contactEndPoint).Address.ToString(), IPSocket.GetIPEndPoint(contactEndPoint).Port, branch, SIPProtocolsEnum.udp)
+        { }
+
+        public SIPViaHeader(IPEndPoint contactEndPoint, string branch, SIPProtocolsEnum protocol) :
+            this(contactEndPoint.Address.ToString(), contactEndPoint.Port, branch, protocol)
+        { }
 
         public static SIPViaHeader[] ParseSIPViaHeader(string viaHeaderStr)
         {
@@ -352,13 +327,6 @@ namespace SIPSorcery.SIP
 
         public new string ToString()
         {
-            // Removing the rport parameter if it is empty. This should not be necessary but a version of the Sipura firmware was rejecting 
-            // INVITE requests with an empty rport parameter. Hopefully no UA's break because it's not there.
-            if (ViaParameters.Has(m_rportKey) && (ViaParameters.Get(m_rportKey) == null || ViaParameters.Get(m_rportKey).Trim().Length == 0))
-            {
-                ViaParameters.Remove(m_rportKey);
-            }
-
             string sipViaHeader = SIPHeaders.SIP_HEADER_VIA + ": " + this.Version + "/" + this.Transport.ToString().ToUpper() + " " + ContactAddress;
             sipViaHeader += (ViaParameters != null && ViaParameters.Count > 0) ? ViaParameters.ToString() : null;
 
@@ -2106,6 +2074,7 @@ namespace SIPSorcery.SIP
     {
         private int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static string m_CRLF = SIPConstants.CRLF;
+        private static string m_rportKey = SIPHeaderAncillary.SIP_HEADERANC_RPORT;
 
         private List<SIPViaHeader> m_viaHeaders = new List<SIPViaHeader>();
 
@@ -2172,21 +2141,29 @@ namespace SIPSorcery.SIP
             m_viaHeaders.Add(viaHeader);
         }
 
+        /// <summary>
+        /// Updates the topmost Via header by setting the received and rport parameters to the IP address and port
+        /// the request came from.
+        /// </summary>
+        /// <remarks>The setting of the received parameter is documented in RFC3261 section 18.2.1 and in RFC3581
+        /// section 4. RFC3581 states that the received parameter value must be set even if it's the same as the 
+        /// address in the sent from field. The setting of the rport parameter is documented in RFC3581 section 4.
+        /// An attempt was made to comply with the RFC3581 standard and only set the rport parameter if it was included
+        /// by the client user agent however in the wild there are too many user agents that are behind symmetric NATs 
+        /// not setting an empty rport and if it's not added then they will not be able to communicate.
+        /// </remarks>
+        /// <param name="msgRcvdEndPoint">The remote endpoint the request was received from.</param>
         public void UpateTopViaHeader(IPEndPoint msgRcvdEndPoint)
         {
             // Update the IP Address and port that this request was received on.
             SIPViaHeader topViaHeader = this.TopViaHeader;
 
-            if (msgRcvdEndPoint.Address.ToString() != topViaHeader.Host)
-            {
-                topViaHeader.ReceivedFromIPAddress = msgRcvdEndPoint.Address.ToString();
-            }
+            topViaHeader.ReceivedFromIPAddress = msgRcvdEndPoint.Address.ToString();
 
-            if ((topViaHeader.Port == 0 && msgRcvdEndPoint.Port != m_defaultSIPPort) ||
-                (topViaHeader.Port != 0 && topViaHeader.Port != msgRcvdEndPoint.Port))
-            {
+            //if (topViaHeader.ViaParameters.Has(m_rportKey))
+            //{
                 topViaHeader.ReceivedFromPort = msgRcvdEndPoint.Port;
-            }
+            //}
         }
 
         /// <summary>
@@ -2217,20 +2194,8 @@ namespace SIPSorcery.SIP
 #if UNITTEST
 	
 		[TestFixture]
-		public class SIPViaHeaderUnitTest
+		public class SIPViaSetUnitTest
 		{
-			[TestFixtureSetUp]
-			public void Init()
-			{
-				
-			}
-
-			[TestFixtureTearDown]
-			public void Dispose()
-			{			
-				
-			}
-
 			[Test]
 			public void AdjustReceivedViaHeaderTest()
 			{
@@ -2255,6 +2220,10 @@ namespace SIPSorcery.SIP
 				Console.WriteLine("---------------------------------------------------");
 			}
 
+            /// <summary>
+            /// Tests that when the sent from socket is the same as the socket received from that the received and rport
+            /// parameters are still updated.
+            /// </summary>
             [Test]
             public void AdjustReceivedCorrectAlreadyViaHeaderTest()
             {
@@ -2273,8 +2242,8 @@ namespace SIPSorcery.SIP
                 Assert.IsTrue(viaSet.TopViaHeader.Host == "192.168.1.2", "Top Via Host was incorrect.");
                 Assert.IsTrue(viaSet.TopViaHeader.Port == 5065, "Top Via Port was incorrect.");
                 Assert.IsTrue(viaSet.TopViaHeader.ContactAddress == "192.168.1.2:5065", "Top Via ContactAddress was incorrect.");
-                Assert.IsTrue(viaSet.TopViaHeader.ReceivedFromIPAddress == null, "Top Via received was incorrect.");
-                Assert.IsTrue(viaSet.TopViaHeader.ReceivedFromPort == 0, "Top Via rport was incorrect.");
+                Assert.IsTrue(viaSet.TopViaHeader.ReceivedFromIPAddress == "192.168.1.2", "Top Via received was incorrect.");
+                Assert.IsTrue(viaSet.TopViaHeader.ReceivedFromPort == 5065, "Top Via rport was incorrect.");
 
                 Console.WriteLine("---------------------------------------------------");
             }
@@ -3085,7 +3054,7 @@ namespace SIPSorcery.SIP
 
 				Console.WriteLine("Parsed SIP Headers:\n" + sipHeader.ToString());
 
-                Assert.IsTrue("Via: SIP/2.0/UDP 192.168.1.2:5065;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" == sipHeader.Vias.TopViaHeader.ToString(), "The Via header was not parsed correctly," + sipHeader.Vias.TopViaHeader.ToString() + ".");
+                Assert.IsTrue("Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" == sipHeader.Vias.TopViaHeader.ToString(), "The Via header was not parsed correctly," + sipHeader.Vias.TopViaHeader.ToString() + ".");
 				Assert.IsTrue("SER Test X" == sipHeader.From.FromName, "The From Name value was not parsed correctly, " + sipHeader.From.FromName + ".");
 				Assert.IsTrue("sip:aaronxten@sip.blueface.ie:5065" == sipHeader.From.FromURI.ToString(), "The From URI value was not parsed correctly, " + sipHeader.From.FromURI + ".");
 				Assert.IsTrue("196468136" == sipHeader.From.FromTag, "The From tag value was not parsed correctly, " + sipHeader.From.FromTag + ".");
