@@ -106,8 +106,6 @@ namespace SIPSorcery.AppServer.DialPlan
         private string m_rubyScriptCommonPath;
         private string m_rubyScriptCommon;
 
-        /// <param name="coreLogDelegate">A function delegate that passes log/diagnostics events back to the SIP Proxy Core.</param>
-        /// <param name="createBridgeDelegate">A function delegate that is called in the event that the dial plan command results in a call being answered and a bridge needing to be created.</param>
         public DialPlanEngine(
             SIPTransport sipTransport,
             GetCanonicalDomainDelegate getCanonicalDomain,
@@ -280,7 +278,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     if (ScriptCount < MAX_ALLOWED_SCRIPTSCOPES)
                     {
                         m_dialPlanScriptContextsCreated++;
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Creating DialPlanExecutingScript number " + m_dialPlanScriptContextsCreated + " for dialplan execution for script owned by " + dialPlanContext.Owner + ".", null));
+                        //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Creating DialPlanExecutingScript number " + m_dialPlanScriptContextsCreated + " for dialplan execution for script owned by " + dialPlanContext.Owner + ".", null));
                         dialPlanExecutionScript = new DialPlanExecutingScript(FireProxyLogEvent);
                     }
                     else
@@ -361,15 +359,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 Thread.CurrentThread.Name = "dialplanscript-" + executingScript.ScriptNumber;
                 FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution starting on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
                 executingScript.DialPlanScriptEngine.Execute(script, executingScript.DialPlanScriptScope);
-
-                //string[] scriptLines = Regex.Split(script, @"(\r\n|\r|\n)");
-                //foreach (string scriptLine in scriptLines) {
-                //    if (scriptLine != null && scriptLine.Trim().Length > 0) {
-                //        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Executing script: " + scriptLine.Trim(), executingScript.Owner));
-                //        m_scriptEngine.Execute(scriptLine + "\n", executingScript.DialPlanScriptScope);
-                //    }
-                // }
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution finished after full script run on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
+                //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution finished after full script run on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
             }
             catch (ApplicationException appExcp)
             {

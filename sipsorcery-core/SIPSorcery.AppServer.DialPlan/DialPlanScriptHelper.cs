@@ -745,6 +745,24 @@ namespace SIPSorcery.AppServer.DialPlan
         }
 
         /// <summary>
+        /// Allows a hostname to be tested to determine if it is a sipsorcery serviced domain and if it is the canonical domain
+        /// will be returned.
+        /// </summary>
+        /// <param name="host">The hostname to attempt to retrieve the canonical domain for.</param>
+        /// <returns>If the host is a sipsorcery serviced domain the canonical domain for the host will be returned, otherwise null.</returns>
+        public string GetCanonicalDomain(string host)
+        {
+            if (host.IsNullOrBlank())
+            {
+                return null;
+            }
+            else
+            {
+                return m_getCanonicalDomainDelegate(host, false);
+            }
+        }
+
+        /// <summary>
         /// Adds a name value pair to the custom SIP headers list. The custom headers will be added to any forwarded call requests.
         /// </summary>
         /// <param name="headerName">The name of the SIP header to add.</param>

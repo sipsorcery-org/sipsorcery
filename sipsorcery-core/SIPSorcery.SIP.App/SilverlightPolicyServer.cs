@@ -36,27 +36,55 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
+using System.Threading;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.Web.Services
+namespace SIPSorcery.SIP.App
 {
     public class SilverlightPolicyServer
     {
         private ILog logger = AppState.logger;
 
         private Socket m_listener;
-        private byte[] m_policy;
+        private string m_policy =
+            @"<?xml version='1.0' encoding ='utf-8'?>
+                <access-policy>
+                  <cross-domain-access>
+                    <policy>
+                      <allow-from>
+                        <domain uri='*' />
+                      </allow-from>
+                      <grant-to>
+                        <socket-resource port='4502-4534' protocol='tcp' />
+                      </grant-to>
+                    </policy>
+                  </cross-domain-access>
+                </access-policy>";
 
-        // pass in the path of an XML file containing the socket policy 
-        public SilverlightPolicyServer(string policyFile)
+        public bool m_exit;
+
+        public SilverlightPolicyServer()
         {
-            // Load the policy file 
-            FileStream policyStream = new FileStream(policyFile, FileMode.Open);
-            m_policy = new byte[policyStream.Length];
-            policyStream.Read(m_policy, 0, m_policy.Length);
-            policyStream.Close();
+            ThreadPool.QueueUserWorkItem(delegate { Listen(); });
+        }
 
+        public void Stop()
+        {
+            try
+            {
+                m_exit = true;
+                m_listener.Close();
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SilverlightPolicyServer. " + excp.Message);
+            }
+        }
+
+        private void Listen()
+        {
             // Create the Listening Socket 
             m_listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
@@ -69,36 +97,12 @@ namespace SIPSorcery.Web.Services
             m_listener.Bind(new IPEndPoint(IPAddress.Any, 943));
             m_listener.Listen(10);
 
-            m_listener.BeginAccept(new AsyncCallback(OnConnection), null);
-        }
-
-        // Called when we receive a connection from a client 
-        public void OnConnection(IAsyncResult res)
-        {
-            Socket client = null;
-
-            try
+            while (!m_exit)
             {
-                client = m_listener.EndAccept(res);
+                Socket clientSocket = m_listener.Accept();
+                logger.Debug("SilverlightPolicyServer connection from " + clientSocket.RemoteEndPoint + ".");
+                PolicyConnection pc = new PolicyConnection(clientSocket, Encoding.UTF8.GetBytes(m_policy));
             }
-            catch (SocketException sockExcp)
-            {
-                logger.Error("Exception SilverlightPolicyServer OnConnection. " + sockExcp + ".");
-                return;
-            }
-
-            logger.Debug("SilverlightPolicyServer connection from " + client.RemoteEndPoint + ".");
-
-            // handle this policy request with a PolicyConnection 
-            PolicyConnection pc = new PolicyConnection(client, m_policy);
-
-            // look for more connections 
-            m_listener.BeginAccept(new AsyncCallback(OnConnection), null);
-        }
-
-        public void Close()
-        {
-            m_listener.Close();
         }
     } 
 

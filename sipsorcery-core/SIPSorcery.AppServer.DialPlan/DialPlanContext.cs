@@ -113,6 +113,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
         internal event CallCancelledDelegate CallCancelledByClient;
 
+        private bool m_dialPlanComplete;
         public event Action DialPlanComplete;
 
         public DialPlanContext(
@@ -168,7 +169,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
             finally
             {
-                DialPlanComplete();
+                DialPlanExecutionFinished();
             }
         }
 
@@ -207,13 +208,21 @@ namespace SIPSorcery.AppServer.DialPlan
             }
             finally
             {
-                DialPlanComplete();
+                DialPlanExecutionFinished();
             }
         }
 
         public void DialPlanExecutionFinished()
         {
+            if (!m_dialPlanComplete)
+            {
+                m_dialPlanComplete = true;
 
+                if (DialPlanComplete != null)
+                {
+                    DialPlanComplete();
+                }
+            }
         }
 
         /// <summary>
@@ -238,7 +247,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
             finally
             {
-                DialPlanComplete();
+                DialPlanExecutionFinished();
             }
         }
 
@@ -266,7 +275,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
             finally
             {
-                DialPlanComplete();
+                DialPlanExecutionFinished();
             }
         }
 

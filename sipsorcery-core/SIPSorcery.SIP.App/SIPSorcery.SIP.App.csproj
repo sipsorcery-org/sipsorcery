@@ -117,6 +117,7 @@
     <Compile Include="Monitoring\SIPMonitorEvent.cs" />
     <Compile Include="Monitoring\SIPMonitorFilter.cs" />
     <Compile Include="Monitoring\SIPMonitorMachineEvent.cs" />
+    <Compile Include="SilverlightPolicyServer.cs" />
     <Compile Include="SIPAssets\ISIPCallManager.cs" />
     <Compile Include="SIPAssets\SIPCDRAsset.cs" />
     <Compile Include="SIPAssets\SIPDialogueAsset.cs" />

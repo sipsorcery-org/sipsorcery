@@ -105,20 +105,14 @@ namespace SIPSorcery.Servers
         private const int MAX_REGISTER_QUEUE_SIZE = 1000;
         private const int MAX_PROCESS_REGISTER_SLEEP = 10000;
         private const string REGISTRAR_THREAD_NAME_PREFIX = "sipregistrar-core";
-        //private const int CACHE_EXPIRY_TIME = 10;			        // Time in minutes a SIP account can exist in the cache and use a previous registration before a new auth will be requested, balance with agressive NAT timeouts.
-        // a random element is also used in conjunction with this to attempt to mitigate registration spikes.
-        //public const string PROXY_VIA_PARAMETER_NAME = "proxy";   // A proxy forwarding REGISTER requests will add a parameter with this name and a value of the socket it received the request on.
 
         private static ILog logger = AppState.GetLogger("sipregistrar");
 
-        //private string m_sipExpiresParameterKey = SIPContactHeader.EXPIRES_PARAMETER_KEY;
         private int m_minimumBindingExpiry = SIPRegistrarBindingsManager.MINIMUM_EXPIRY_SECONDS;
-        //private string m_selectSIPAccountQuery = SIPAccount.SelectQuery;
 
         private SIPTransport m_sipTransport;
         private SIPRegistrarBindingsManager m_registrarBindingsManager;
         private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
-        //private SIPAssetGetFromDirectQueryDelegate<SIPAccount> GetSIPAccountFromQuery_External;
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
         private SIPAuthenticateRequestDelegate SIPRequestAuthenticator_External;
 
@@ -136,7 +130,6 @@ namespace SIPSorcery.Servers
             SIPTransport sipTransport,
             SIPRegistrarBindingsManager registrarBindingsManager,
             SIPAssetGetDelegate<SIPAccount> getSIPAccount,
-            //SIPAssetGetFromDirectQueryDelegate<SIPAccount> getSIPAccountFromQuery,
             GetCanonicalDomainDelegate getCanonicalDomain,
             bool mangleUACContact,
             bool strictRealmHandling,
@@ -147,7 +140,6 @@ namespace SIPSorcery.Servers
             m_sipTransport = sipTransport;
             m_registrarBindingsManager = registrarBindingsManager;
             GetSIPAccount_External = getSIPAccount;
-            //GetSIPAccountFromQuery_External = getSIPAccountFromQuery;
             GetCanonicalDomain_External = getCanonicalDomain;
             m_mangleUACContact = mangleUACContact;
             m_strictRealmHandling = strictRealmHandling;

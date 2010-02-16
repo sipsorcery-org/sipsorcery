@@ -39,6 +39,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.ServiceModel;
@@ -71,6 +72,7 @@ namespace SIPSorcery.Servers
         private const int RETRY_FAILED_PROXY = 20000;
 
         private static ILog logger = AppState.logger;
+        private static ILog execCountlogger = AppState.GetLogger("executioncount");
 
         private static readonly string m_sipDialPlanExecutionCountPropertyName = SIPDialPlan.PROPERTY_EXECUTIONCOUNT_NAME;
 
@@ -95,6 +97,7 @@ namespace SIPSorcery.Servers
         private Queue<ISIPServerUserAgent> m_newCalls = new Queue<ISIPServerUserAgent>();
         private AutoResetEvent m_newCallReady = new AutoResetEvent(false);
         private DialPlanEngine m_dialPlanEngine;
+        private int m_pid;
 
         private Dictionary<string, CallDispatcherProxy> m_dispatcherProxy = new Dictionary<string, CallDispatcherProxy>(); // [config name, proxy].
         private Dictionary<string, CallbackWaiter> m_waitingForCallbacks = new Dictionary<string, CallbackWaiter>();
@@ -133,6 +136,7 @@ namespace SIPSorcery.Servers
             m_dialPlanPersistor = dialPlanPersistor;
             m_traceDirectory = traceDirectory;
             m_monitorCalls = monitorCalls;
+            m_pid = Process.GetCurrentProcess().Id;
         }
 
         public void Start()
@@ -428,7 +432,6 @@ namespace SIPSorcery.Servers
                             m_traceDirectory,
                             null,
                             Guid.Empty);
-                    scriptContext.DialPlanComplete += () => { };
                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, null, this);
 
                     #endregion
@@ -782,6 +785,7 @@ namespace SIPSorcery.Servers
         {
             try
             {
+                execCountlogger.Info("Increment " + customer.CustomerUsername + ", current=" + customer.ExecutionCount + " (pid " + m_pid + ").");
                 m_customerPersistor.IncrementProperty(customer.Id, m_sipDialPlanExecutionCountPropertyName);
             }
             catch (Exception excp)
@@ -794,6 +798,7 @@ namespace SIPSorcery.Servers
         {
             try
             {
+                execCountlogger.Info("Decrement " + customer.CustomerUsername + " (pid " + m_pid + ").");
                 m_customerPersistor.DecrementProperty(customer.Id, m_sipDialPlanExecutionCountPropertyName);
             }
             catch (Exception excp)
