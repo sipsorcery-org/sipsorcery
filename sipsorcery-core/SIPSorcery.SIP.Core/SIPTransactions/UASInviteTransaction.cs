@@ -46,10 +46,10 @@ using NUnit.Framework;
 
 namespace SIPSorcery.SIP
 {
-	/// <summary>
-	/// The server transaction for an INVITE request. This transaction processes incoming calls RECEIVED by the application.
-	/// </summary>
-	public class UASInviteTransaction : SIPTransaction
+    /// <summary>
+    /// The server transaction for an INVITE request. This transaction processes incoming calls RECEIVED by the application.
+    /// </summary>
+    public class UASInviteTransaction : SIPTransaction
     {
         private static string m_sipServerAgent = SIPConstants.SIP_SERVER_STRING;
 
@@ -63,15 +63,18 @@ namespace SIPSorcery.SIP
             SIPEndPoint dstEndPoint,
             SIPEndPoint localSIPEndPoint,
             SIPEndPoint outboundProxy)
-            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy) {
+            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
+        {
             TransactionType = SIPTransactionTypesEnum.Invite;
             m_remoteTag = sipRequest.Header.From.FromTag;
 
-            if (sipRequest.Header.To.ToTag == null) {
+            if (sipRequest.Header.To.ToTag == null)
+            {
                 // This UAS needs to set the To Tag.
                 m_localTag = CallProperties.CreateNewTag();
             }
-            else {
+            else
+            {
                 // This is a re-INVITE.
                 m_localTag = sipRequest.Header.To.ToTag;
             }
@@ -116,63 +119,81 @@ namespace SIPSorcery.SIP
             logger.Warn("UASInviteTransaction received unexpected response, " + sipResponse.ReasonPhrase + " from " + remoteEndPoint.ToString() + ", ignoring.");
         }
 
-        private void UASInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest) {
-            try {
-                if (TransactionState == SIPTransactionStatesEnum.Terminated) {
+        private void UASInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
+        {
+            try
+            {
+                if (TransactionState == SIPTransactionStatesEnum.Terminated)
+                {
                     logger.Debug("Request received by UASInviteTransaction for a terminated transaction, ignoring.");
                 }
-                else if (sipRequest.Method != SIPMethodsEnum.INVITE) {
+                else if (sipRequest.Method != SIPMethodsEnum.INVITE)
+                {
                     logger.Warn("Unexpected " + sipRequest.Method + " passed to UASInviteTransaction.");
                 }
-                else {
-                    if (TransactionState != SIPTransactionStatesEnum.Trying) {
+                else
+                {
+                    if (TransactionState != SIPTransactionStatesEnum.Trying)
+                    {
                         SIPResponse tryingResponse = GetInfoResponse(m_transactionRequest, SIPResponseStatusCodesEnum.Trying);
                         SendInformationalResponse(tryingResponse);
                     }
 
                     // Notify new call subscribers.
-                    if (NewCallReceived != null) {
+                    if (NewCallReceived != null)
+                    {
                         NewCallReceived(localSIPEndPoint, remoteEndPoint, this, sipRequest);
                     }
-                    else {
+                    else
+                    {
                         // Nobody wants the call so return an error response.
                         SIPResponse declinedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Nothing listening");
                         SendFinalResponse(declinedResponse);
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception UASInviteTransaction GotRequest. " + excp.Message);
             }
         }
 
-        public void SetLocalTag(string localTag) {
+        public void SetLocalTag(string localTag)
+        {
             m_localTag = localTag;
         }
 
-        public override void SendInformationalResponse(SIPResponse sipResponse) {
-            try {
+        public override void SendInformationalResponse(SIPResponse sipResponse)
+        {
+            try
+            {
                 base.SendInformationalResponse(sipResponse);
 
-                if (CDR != null) {
+                if (CDR != null)
+                {
                     CDR.Progress(sipResponse.Status, sipResponse.ReasonPhrase);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception UASInviteTransaction SendInformationalResponse. " + excp.Message);
                 throw;
             }
         }
 
-        public override void SendFinalResponse(SIPResponse sipResponse) {
-            try {
+        public override void SendFinalResponse(SIPResponse sipResponse)
+        {
+            try
+            {
                 base.SendFinalResponse(sipResponse);
 
-                if (CDR != null) {
+                if (CDR != null)
+                {
                     CDR.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception UASInviteTransaction SendFinalResponse. " + excp.Message);
                 throw;
             }
@@ -180,18 +201,22 @@ namespace SIPSorcery.SIP
 
         public void CancelCall()
         {
-            try {
-                if (TransactionState == SIPTransactionStatesEnum.Calling || TransactionState == SIPTransactionStatesEnum.Trying || TransactionState == SIPTransactionStatesEnum.Proceeding) {
+            try
+            {
+                if (TransactionState == SIPTransactionStatesEnum.Calling || TransactionState == SIPTransactionStatesEnum.Trying || TransactionState == SIPTransactionStatesEnum.Proceeding)
+                {
                     base.Cancel();
 
                     SIPResponse cancelResponse = SIPTransport.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
                     SendFinalResponse(cancelResponse);
 
-                    if (UASInviteTransactionCancelled != null) {
+                    if (UASInviteTransactionCancelled != null)
+                    {
                         UASInviteTransactionCancelled(this);
                     }
                 }
-                else {
+                else
+                {
                     logger.Warn("A request was made to cancel transaction " + TransactionId + " that was not in the calling, trying or proceeding states, state=" + TransactionState + ".");
                 }
 
@@ -199,7 +224,8 @@ namespace SIPSorcery.SIP
                 //    CDR.Cancelled();
                 //}
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception UASInviteTransaction CancelCall. " + excp.Message);
                 throw;
             }
@@ -231,5 +257,5 @@ namespace SIPSorcery.SIP
                 throw excp;
             }
         }
-	}
+    }
 }

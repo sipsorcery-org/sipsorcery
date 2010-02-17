@@ -64,6 +64,30 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
+    <Reference Include="SIPSorcery.Net, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Build\SIPSorcery.Net.dll</HintPath>
+    </Reference>
+    <Reference Include="SIPSorcery.Persistence, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Build\SIPSorcery.Persistence.dll</HintPath>
+    </Reference>
+    <Reference Include="SIPSorcery.Silverlight.CRM, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Build\SIPSorcery.Silverlight.CRM.dll</HintPath>
+    </Reference>
+    <Reference Include="SIPSorcery.Silverlight.SIP, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Build\SIPSorcery.Silverlight.SIP.dll</HintPath>
+    </Reference>
+    <Reference Include="SIPSorcery.Silverlight.SIP.App, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Build\SIPSorcery.Silverlight.SIP.App.dll</HintPath>
+    </Reference>
+    <Reference Include="SIPSorcery.Sys, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Build\SIPSorcery.Sys.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net" />
@@ -264,26 +288,6 @@
     <ProjectReference Include="..\SIPSorcery.Messaging\SIPSorcery.Silverlight.Messaging.csproj">
       <Project>{9DE0DCC6-F4A7-4BCA-BD89-96F1D0C91151}</Project>
       <Name>SIPSorcery.Silverlight.Messaging</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
-      <Project>{6ED5020C-A823-4EA6-B01C-C505CE80E970}</Project>
-      <Name>SIPSorcery.Persistence</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Silverlight.CRM\SIPSorcery.Silverlight.CRM.csproj">
-      <Project>{FDC64126-97E7-4076-910B-E842F730CF3E}</Project>
-      <Name>SIPSorcery.Silverlight.CRM</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Silverlight.SIP.App\SIPSorcery.Silverlight.SIP.App.csproj">
-      <Project>{F1D7E6F6-4887-407C-BFCC-10ED5FA2C704}</Project>
-      <Name>SIPSorcery.Silverlight.SIP.App</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Silverlight.SIP\SIPSorcery.Silverlight.SIP.csproj">
-      <Project>{F996B6D4-3731-44A5-A35A-A6CE4010BC64}</Project>
-      <Name>SIPSorcery.Silverlight.SIP</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
-      <Project>{27E8B3BB-0C0F-473E-AFED-DCE76F73A65D}</Project>
-      <Name>SIPSorcery.Sys</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

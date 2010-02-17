@@ -214,6 +214,6 @@
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
-    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build\SIPSorcery.SIP.Core.dll" "c:\temp\sipsorcery\"</PostBuildEvent>
+    <PostBuildEvent>copy "$(TargetPath)" "c:\temp\sipsorcery\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

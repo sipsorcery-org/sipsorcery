@@ -224,6 +224,6 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-servers\SIPSorcery.SIPAppServer\bin\debug\sipsorcery-appsvr.exe" "c:\temp\sipsorcery\"</PostBuildEvent>
+    <PostBuildEvent>copy "$(TargetPath)" "c:\temp\sipsorcery\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

@@ -70,6 +70,7 @@ namespace SIPSorcery.SIPProxy
         private SIPMonitorEventWriter m_monitorEventWriter;
         private NATKeepAliveRelay m_natKeepAliveRelay;
         private STUNServer m_stunServer;
+        private SilverlightPolicyServer m_silverlightPolicyServer;
         private bool m_stop;
         private ManualResetEvent m_stunClientMRE = new ManualResetEvent(false);     // Used to set the interval on the STUN lookups and also allow the thread to be stopped.
 
@@ -134,6 +135,9 @@ namespace SIPSorcery.SIPProxy
                 {
                     m_natKeepAliveRelay = new NATKeepAliveRelay(m_sipTransport, m_natKeepAliveSocket, FireSIPMonitorEvent);
                 }
+
+                // Allow silverlight clients to connect to the proxy server's SIP sockets.
+                m_silverlightPolicyServer = new SilverlightPolicyServer();
 
                 logger.Debug("SIP Proxy daemon successfully started.");
             }
@@ -239,6 +243,11 @@ namespace SIPSorcery.SIPProxy
                 {
                     logger.Debug("Stopping STUN server.");
                     m_stunServer.Stop();
+                }
+
+                if (m_silverlightPolicyServer != null)
+                {
+                    m_silverlightPolicyServer.Stop();
                 }
 
                 logger.Debug("Shutting down SIP Transport.");

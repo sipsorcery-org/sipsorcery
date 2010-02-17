@@ -42,6 +42,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="SIPSorcery.Sys, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Build\SIPSorcery.Sys.dll</HintPath>
+    </Reference>
     <Reference Include="System.Net" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
@@ -64,16 +68,6 @@
     <Compile Include="IClientCustomHeader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MessageHeaders\SIPSorceryCustomHeader.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SIPSorcery.Silverlight.SIP.App\SIPSorcery.Silverlight.SIP.App.csproj">
-      <Project>{F1D7E6F6-4887-407C-BFCC-10ED5FA2C704}</Project>
-      <Name>SIPSorcery.Silverlight.SIP.App</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
-      <Project>{27E8B3BB-0C0F-473E-AFED-DCE76F73A65D}</Project>
-      <Name>SIPSorcery.Sys</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Silverlight\v3.0\Microsoft.Silverlight.CSharp.targets" Condition="" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -206,7 +206,6 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build\SIPSorcery.SIP.App.dll" "c:\temp\sipsorcery\"
-copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build\SIPSorcery.SIP.App.dll" C:\inetpub\wwwroot\bin\</PostBuildEvent>
+    <PostBuildEvent>copy "$(TargetPath)" "c:\temp\sipsorcery\"</PostBuildEvent>
   </PropertyGroup>
 </Project>
