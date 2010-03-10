@@ -166,13 +166,13 @@ namespace SIPSorcery.SIP.App
             {
                 if (m_answered)
                 {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A blind transfer received an answer on an already answered call, hanging up dialogue.", m_owner));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A blind transfer received an answer on an already answered call, hanging up dialogue.", m_owner));
                     answeredDialogue.Hangup(m_sipTransport, m_outboundProxy);
                 }
                 else
                 {
                     m_answered = true;
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A blind transfer received an answer.", m_owner));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A blind transfer received an answer.", m_owner));
                     BlindTransfer_External(m_dialogueToReplace, m_oppositeDialogue, answeredDialogue);
                 }
 

@@ -77,7 +77,7 @@ namespace SIPSorcery.Silverlight.Services
         {
             if (m_isConnected)
             {
-                Subscribe(SIPMonitorClientTypesEnum.ControlClient.ToString(), filter);
+                Subscribe(SIPMonitorClientTypesEnum.Console.ToString(), filter);
             }
             else
             {

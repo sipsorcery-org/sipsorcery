@@ -46,7 +46,6 @@ using SIPSorcery.Sys;
 using log4net;
 using IronRuby;
 using Microsoft.Scripting.Hosting;
-using Microsoft.Scripting.Interpreter;
 
 namespace SIPSorcery.AppServer.DialPlan
 {

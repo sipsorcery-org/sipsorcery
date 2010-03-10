@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 
-namespace SIPSorcery.Persistence {
-    
-    public interface ISIPAsset {
+namespace SIPSorcery.Persistence
+{
+    public interface ISIPAsset
+    {
         Guid Id { get; set; }
 
 #if !SILVERLIGHT

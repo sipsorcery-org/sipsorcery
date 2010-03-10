@@ -186,6 +186,41 @@ namespace SIPSorcery.Sys
             }
         }
 
+        /// <summary>
+        /// Checks the Contact SIP URI host and if it is recognised as a private address it is replaced with the socket
+        /// the SIP message was received on.
+        /// 
+        /// Private address space blocks RFC 1597.
+        ///		10.0.0.0        -   10.255.255.255
+        ///		172.16.0.0      -   172.31.255.255
+        ///		192.168.0.0     -   192.168.255.255
+        ///
+        /// </summary>
+        public static bool IsPrivateAddress(string host)
+        {
+            if (host != null && host.Trim().Length > 0)
+            {
+                if (host.StartsWith("127.0.0.1") ||
+                    host.StartsWith("10.") ||
+                    Regex.Match(host, @"^172\.1[6-9]\.").Success ||
+                    Regex.Match(host, @"^172\.2\d\.").Success ||
+                    host.StartsWith("172.30.") ||
+                    host.StartsWith("172.31.") ||
+                    host.StartsWith("192.168."))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
        	#region Unit testing.
 
 		#if UNITTEST
@@ -193,18 +228,6 @@ namespace SIPSorcery.Sys
 		[TestFixture]
 		public class IPSocketUnitTest
 		{
-			[TestFixtureSetUp]
-			public void Init()
-			{
-				
-			}
-
-			[TestFixtureTearDown]
-			public void Dispose()
-			{			
-				
-			}
-
 			[Test]
 			public void SampleTest()
 			{
@@ -230,6 +253,17 @@ namespace SIPSorcery.Sys
                 string host = IPSocket.ParseHostFromSocket("localhost:5060");
                 Console.WriteLine("host=" + host);
                 Assert.IsTrue(host == "localhost", "The host was not parsed correctly.");
+            }
+
+            [Test]
+            public void Test172IPRangeIsPrivate()
+            {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                Assert.IsFalse(IPSocket.IsPrivateAddress("172.15.1.1"), "Public IP address was mistakenly identified as private.");
+                Assert.IsTrue(IPSocket.IsPrivateAddress("172.16.1.1"), "Private IP address was not correctly identified.");
+
+                Console.WriteLine("-----------------------------------------");
             }
         }
 

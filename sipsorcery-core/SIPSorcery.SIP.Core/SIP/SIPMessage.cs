@@ -89,7 +89,7 @@ namespace SIPSorcery.SIP
 					logger.Error("SIP message received that exceeded the maximum allowed message length, ignoring.");
 					return null;
 				}
-				else if(!ByteBufferInfo.HasString(buffer, SIP_MESSAGE_IDENTIFIER, m_CRLF))
+				else if(!ByteBufferInfo.HasString(buffer, 0, buffer.Length, SIP_MESSAGE_IDENTIFIER, m_CRLF))
 				{
 					// Message does not contain "SIP" anywhrere on the first line, ignore.
 					return null;

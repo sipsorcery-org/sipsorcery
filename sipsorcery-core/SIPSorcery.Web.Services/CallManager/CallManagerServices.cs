@@ -57,18 +57,24 @@ namespace SIPSorcery.Web.Services
             {
                 logger.Debug("CallManagerServices BlindTransfer, user=" + username + ", destination=" + destination + ", callID=" + replacesCallID + ".");
 
+                string transferResult = null;
+
                 if (username.IsNullOrBlank())
                 {
-                    return "A username must be specified when initiating a blind transfer, the transfer was not initiated.";
+                    transferResult = "A username must be specified when initiating a blind transfer, the transfer was not initiated.";
                 }
                 else if (replacesCallID.IsNullOrBlank())
                 {
-                    return "Blind transfer requires a Call-ID to replace, the transfer was not initiated.";
+                    transferResult = "Blind transfer requires a Call-ID to replace, the transfer was not initiated.";
                 }
                 else
                 {
-                    return m_sipCallManager.ProcessWebCall(username, destination, WEB_TRANSFER_DIALPLAN_NAME, replacesCallID);
+                    transferResult = m_sipCallManager.ProcessWebCall(username, destination, WEB_TRANSFER_DIALPLAN_NAME, replacesCallID);
                 }
+
+                logger.Debug("BlindTransfer result=" + transferResult + ".");
+
+                return transferResult;
             }
             catch (Exception excp)
             {

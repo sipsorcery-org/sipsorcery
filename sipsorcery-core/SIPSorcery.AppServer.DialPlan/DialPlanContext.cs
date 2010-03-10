@@ -160,7 +160,15 @@ namespace SIPSorcery.AppServer.DialPlan
                 if (!m_isAnswered)
                 {
                     m_isAnswered = true;
-                    m_sipServerUserAgent.Reject(failureStatus, reasonPhrase, customHeaders);
+                    if ((int)failureStatus >= 300 && (int)failureStatus <= 399)
+                    {
+                        SIPURI redirectURI = SIPURI.ParseSIPURIRelaxed(customHeaders[0]);
+                        m_sipServerUserAgent.Redirect(failureStatus, redirectURI);
+                    }
+                    else
+                    {
+                        m_sipServerUserAgent.Reject(failureStatus, reasonPhrase, customHeaders);
+                    }
                 }
             }
             catch (Exception excp)
@@ -180,7 +188,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 if (!m_isAnswered)
                 {
                     m_isAnswered = true;
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Answering client call with a response status of " + (int)answeredStatus + ".", Owner));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Answering client call with a response status of " + (int)answeredStatus + ".", Owner));
 
                     SIPDialogue uasDialogue = m_sipServerUserAgent.Answer(answeredContentType, answeredBody, toTag, answeredDialogue, uasTransferMode);
 
@@ -235,7 +243,7 @@ namespace SIPSorcery.AppServer.DialPlan
             try
             {
                 m_isAnswered = true;
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call timed out, no ringing response was receved within the allowed time.", Owner));
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call timed out, no ringing response was receved within the allowed time.", Owner));
                 if (CallCancelledByClient != null)
                 {
                     CallCancelledByClient(CallCancelCause.TimedOut);
@@ -258,7 +266,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 if (!m_isAnswered)
                 {
                     m_isAnswered = true;
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call cancelled halting dial plan.", Owner));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Client call cancelled halting dial plan.", Owner));
                     if (CallCancelledByClient != null)
                     {
                         CallCancelledByClient(CallCancelCause.ClientCancelled);
@@ -298,7 +306,7 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                SIPMonitorEvent traceCompleteEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dialplan trace completed at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff") + ".", Owner);
+                SIPMonitorConsoleEvent traceCompleteEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dialplan trace completed at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff") + ".", Owner);
                 TraceLog.AppendLine(traceCompleteEvent.EventType + "=> " + traceCompleteEvent.Message);
 
                 if (!m_traceDirectory.IsNullOrBlank() && Directory.Exists(m_traceDirectory))
@@ -323,16 +331,21 @@ namespace SIPSorcery.AppServer.DialPlan
 
         private void TransactionTraceMessage(SIPTransaction sipTransaction, string message)
         {
-            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.SIPTransaction, message, Owner));
+            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.SIPTransaction, message, Owner));
         }
 
         private void FireProxyLogEvent(SIPMonitorEvent monitorEvent)
         {
             try
             {
-                if (TraceLog != null)
+                if (monitorEvent is SIPMonitorConsoleEvent)
                 {
-                    TraceLog.AppendLine(monitorEvent.EventType + "=> " + monitorEvent.Message);
+                    SIPMonitorConsoleEvent consoleEvent = monitorEvent as SIPMonitorConsoleEvent;
+                    
+                    if (TraceLog != null)
+                    {
+                        TraceLog.AppendLine(consoleEvent.EventType + "=> " + monitorEvent.Message);
+                    }
                 }
 
                 if (Log_External != null)

@@ -192,6 +192,7 @@ create table sipdialogues
  inserted varchar(33) not null,
  hangupat varchar(33) null default null,
  transfermode varchar(16),
+ direction varchar(3) not null,					-- In or Out with respect to the proxy.
  sdp varchar(2048),
  remotesdp varchar(2048),
  Primary Key(id),

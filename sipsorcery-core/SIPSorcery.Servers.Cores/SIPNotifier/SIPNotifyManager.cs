@@ -51,14 +51,16 @@ using log4net;
 
 namespace SIPSorcery.Servers
 {
-    public class SIPNotifyManager {
-
+    public class SIPNotifyManager
+    {
         private const int MAX_FORWARD_BINDINGS = 5;
         private const string PROCESS_NOTIFICATIONS_THREAD_NAME = "sipnotifymanager-processrequests";
         private const int MAX_QUEUEWAIT_PERIOD = 4000;              // Maximum time to wait to check the new notifications queue if no events are received.
         private const int MAX_NEWCALL_QUEUE = 10;                   // Maximum number of notification requests that will be queued for processing.
 
         private static ILog logger = AppState.logger;
+
+        private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
 
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
@@ -78,8 +80,8 @@ namespace SIPSorcery.Servers
             SIPMonitorLogDelegate logDelegate,
             SIPAssetGetDelegate<SIPAccount> getSIPAccount,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPAccountBindings,
-            GetCanonicalDomainDelegate getCanonicalDomain) {
-
+            GetCanonicalDomainDelegate getCanonicalDomain)
+        {
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
             Log_External = logDelegate;
@@ -88,29 +90,37 @@ namespace SIPSorcery.Servers
             GetCanonicalDomain_External = getCanonicalDomain;
         }
 
-        public void Start() {
+        public void Start()
+        {
             ThreadPool.QueueUserWorkItem(delegate { ProcessNewNotifications(PROCESS_NOTIFICATIONS_THREAD_NAME); });
         }
 
-        public void Stop() {
+        public void Stop()
+        {
             logger.Debug("SIPNotifyManager stopping.");
             m_stop = true;
             m_newNotificationReady.Set();
         }
 
-        private void ProcessNewNotifications(string threadName) {
-            try {
+        private void ProcessNewNotifications(string threadName)
+        {
+            try
+            {
                 Thread.CurrentThread.Name = threadName;
 
-                while (!m_stop) {
-                    while (m_newNotifications.Count > 0) {
+                while (!m_stop)
+                {
+                    while (m_newNotifications.Count > 0)
+                    {
                         SIPRequest newNotification = null;
 
-                        lock (m_newNotifications) {
+                        lock (m_newNotifications)
+                        {
                             newNotification = m_newNotifications.Dequeue();
                         }
 
-                        if (newNotification != null) {
+                        if (newNotification != null)
+                        {
                             ProcessNotifyRequest(newNotification);
                         }
                     }
@@ -121,50 +131,79 @@ namespace SIPSorcery.Servers
 
                 logger.Warn("SIPNotifyManager ProcessNewNotifications thread stopping.");
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPNotifyManager ProcessNewNotifications. " + excp.Message);
             }
         }
 
-        public void QueueNotification(SIPRequest notifyRequest) {
-            try {
-                if (m_newNotifications.Count < MAX_NEWCALL_QUEUE) {
-                    lock (m_newNotifications) {
+        public void QueueNotification(SIPRequest notifyRequest)
+        {
+            try
+            {
+                if (m_newNotifications.Count < MAX_NEWCALL_QUEUE)
+                {
+                    lock (m_newNotifications)
+                    {
                         m_newNotifications.Enqueue(notifyRequest);
                         m_newNotificationReady.Set();
                     }
                 }
-                else {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Notify rejected request as queue full.", null));
-                    SIPResponse overloadedResponse = SIPTransport.GetResponse(notifyRequest, SIPResponseStatusCodesEnum.TemporarilyNotAvailable, "Notify Manager overloaded");
+                else
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Notify rejected request as queue full.", null));
+                    SIPResponse overloadedResponse = SIPTransport.GetResponse(notifyRequest, SIPResponseStatusCodesEnum.TemporarilyUnavailable, "Notify Manager overloaded");
                     m_sipTransport.SendResponse(overloadedResponse);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPNotifyManager QueueNotification. " + excp.Message);
             }
         }
 
-        public void ProcessNotifyRequest(SIPRequest sipRequest) {
-
-            try {
-
+        public void ProcessNotifyRequest(SIPRequest sipRequest)
+        {
+            try
+            {
                 string fromURI = (sipRequest.Header.From != null && sipRequest.Header.From.FromURI != null) ? sipRequest.Header.From.FromURI.ToString() : "unknown";
 
                 string domain = GetCanonicalDomain_External(sipRequest.URI.Host, true);
-                if (domain != null) {
-
+                if (domain != null)
+                {
                     SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == sipRequest.URI.User && s.SIPDomain == domain);
 
-                    if (sipAccount != null) {
+                    if (sipAccount != null)
+                    {
                         List<SIPRegistrarBinding> bindings = GetSIPAccountBindings_External(b => b.SIPAccountId == sipAccount.Id, null, 0, MAX_FORWARD_BINDINGS);
 
-                        if (bindings != null) {
-
-                            foreach (SIPRegistrarBinding binding in bindings) {
+                        if (bindings != null)
+                        {
+                            foreach (SIPRegistrarBinding binding in bindings)
+                            {
                                 SIPURI dstURI = binding.MangledContactSIPURI;
                                 SIPEndPoint localSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy.SIPProtocol) : m_sipTransport.GetDefaultSIPEndPoint(dstURI.Protocol);
-                                SIPEndPoint dstSIPEndPoint = (m_outboundProxy == null) ? m_sipTransport.GetURIEndPoint(dstURI, true) : m_outboundProxy;
+
+                                SIPEndPoint dstSIPEndPoint = null;
+
+                                // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
+                                if(m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.SocketEndPoint.Address))
+                                {
+                                    dstSIPEndPoint = m_outboundProxy;
+                                }
+                                else if (binding.ProxySIPEndPoint != null)
+                                {
+                                    // If the binding has a specific proxy end point sent then the request needs to be forwarded to the proxy's default end point for it to take care of.
+                                    dstSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(binding.ProxySIPEndPoint.SocketEndPoint.Address, m_defaultSIPPort));
+                                }
+                                else if (m_outboundProxy != null)
+                                {
+                                    dstSIPEndPoint = m_outboundProxy;
+                                }
+                                else
+                                {
+                                    dstSIPEndPoint = m_sipTransport.GetURIEndPoint(dstURI, true);
+                                }
 
                                 // Rather than create a brand new request copy the received one and modify the headers that need to be unique.
                                 SIPRequest notifyRequest = sipRequest.Copy();
@@ -176,8 +215,14 @@ namespace SIPSorcery.Servers
                                 notifyRequest.Header.Vias = new SIPViaSet();
                                 notifyRequest.Header.Vias.PushViaHeader(viaHeader);
 
-                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding NOTIFY request from " + fromURI + " to registered binding at " + dstURI.ToString() + ".", sipAccount.Owner));
-                                SIPNonInviteTransaction notifyTransaction = m_sipTransport.CreateNonInviteTransaction(notifyRequest, dstSIPEndPoint, localSIPEndPoint, m_outboundProxy);
+                                // If the binding has a proxy socket defined set the header to ask the upstream proxy to use it.
+                                if (binding.ProxySIPEndPoint != null)
+                                {
+                                    notifyRequest.Header.ProxySendFrom = binding.ProxySIPEndPoint.ToString();
+                                }
+
+                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding NOTIFY request from " + fromURI + " to registered binding at " + dstURI.ToString() + ", proxy " + dstSIPEndPoint.ToString() + ".", sipAccount.Owner));
+                                SIPNonInviteTransaction notifyTransaction = m_sipTransport.CreateNonInviteTransaction(notifyRequest, dstSIPEndPoint, localSIPEndPoint, dstSIPEndPoint);
                                 notifyTransaction.SendReliableRequest();
                             }
 
@@ -185,28 +230,32 @@ namespace SIPSorcery.Servers
                             SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                             m_sipTransport.SendResponse(okResponse);
                         }
-                        else {
+                        else
+                        {
                             // Send unavailable response to server.
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "NOTIFY request from " + fromURI + " for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " but no bindings available, responding with temporarily unavailable.", sipAccount.Owner));
-                            SIPResponse notAvailableResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.TemporarilyNotAvailable, null);
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "NOTIFY request from " + fromURI + " for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " but no bindings available, responding with temporarily unavailable.", sipAccount.Owner));
+                            SIPResponse notAvailableResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.TemporarilyUnavailable, null);
                             m_sipTransport.SendResponse(notAvailableResponse);
                         }
                     }
-                    else {
+                    else
+                    {
                         // Send Not found response to server.
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "NOTIFY request from " + fromURI + " for " + sipRequest.URI.ToString() + " but no matching SIP account, responding with not found.", null));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "NOTIFY request from " + fromURI + " for " + sipRequest.URI.ToString() + " but no matching SIP account, responding with not found.", null));
                         SIPResponse notFoundResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, null);
                         m_sipTransport.SendResponse(notFoundResponse);
                     }
                 }
-                else {
+                else
+                {
                     // Send Not Serviced response to server.
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "NOTIFY request from " + fromURI + " for a non-serviced domain responding with not found.", null));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "NOTIFY request from " + fromURI + " for a non-serviced domain responding with not found.", null));
                     SIPResponse notServicedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Domain not serviced");
                     m_sipTransport.SendResponse(notServicedResponse);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPNotifyManager ProcessNotifyRequest. " + excp.Message);
             }
         }

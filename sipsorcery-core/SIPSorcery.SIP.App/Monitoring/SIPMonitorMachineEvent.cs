@@ -46,6 +46,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
+using System.Xml.Linq;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -60,12 +61,15 @@ namespace SIPSorcery.SIP.App
     /// updating a user interface. The events will not typically contain useful information for a human
     /// viewer.
     /// </summary>
-	public class SIPMonitorMachineEvent : SIPMonitorEvent
-	{
+    public class SIPMonitorMachineEvent : SIPMonitorEvent
+    {
         public const string SERIALISATION_PREFIX = "2";             // Prefix appended to the front of a serialised event to identify the type. 
 
-		private SIPMonitorMachineEvent()
-		{
+        public SIPMonitorMachineEventTypesEnum MachineEventType;
+        public SIPDialogue Dialogue;
+
+        private SIPMonitorMachineEvent()
+        {
             m_serialisationPrefix = SERIALISATION_PREFIX;
             ClientType = SIPMonitorClientTypesEnum.Machine;
         }
@@ -73,12 +77,22 @@ namespace SIPSorcery.SIP.App
         public SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum machineEventType, string owner, SIPEndPoint remoteEndPoint, string message)
         {
             m_serialisationPrefix = SERIALISATION_PREFIX;
-            
+
             RemoteEndPoint = remoteEndPoint;
             ClientType = SIPMonitorClientTypesEnum.Machine;
             Username = owner;
             MachineEventType = machineEventType;
             Message = message;
+        }
+
+        public SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum machineEventType, string owner, SIPDialogue sipEventDialogue)
+        {
+            m_serialisationPrefix = SERIALISATION_PREFIX;
+
+            ClientType = SIPMonitorClientTypesEnum.Machine;
+            Username = owner;
+            MachineEventType = machineEventType;
+            Dialogue = sipEventDialogue;
         }
 
         public static SIPMonitorMachineEvent ParseMachineEventCSV(string eventCSV)
@@ -95,10 +109,20 @@ namespace SIPSorcery.SIP.App
                 string[] eventFields = eventCSV.Split(new char[] { '|' });
 
                 machineEvent.MachineEventType = SIPMonitorMachineEventTypes.GetMonitorMachineTypeForId(Convert.ToInt32(eventFields[1]));
-                machineEvent.Username = eventFields[2];
-                machineEvent.RemoteEndPoint = SIPEndPoint.ParseSIPEndPoint(eventFields[3]);
-                machineEvent.Message = eventFields[4].Trim('#');
-               
+                machineEvent.Created = DateTimeOffset.Parse(eventFields[2]);
+                machineEvent.Username = eventFields[3];
+                machineEvent.RemoteEndPoint = SIPEndPoint.ParseSIPEndPoint(eventFields[4]);
+                machineEvent.Message = eventFields[5];
+                string dialogueXML = eventFields[6].Trim('#');
+
+                if (!dialogueXML.IsNullOrBlank())
+                {
+                    XDocument dialogueElement = XDocument.Parse(dialogueXML);
+                    SIPDialogueAsset dialogueAsset = new SIPDialogueAsset();
+                    dialogueAsset.Load(dialogueElement.Root);
+                    machineEvent.Dialogue = dialogueAsset.SIPDialogue;
+                }
+
                 return machineEvent;
             }
             catch (Exception excp)
@@ -114,13 +138,17 @@ namespace SIPSorcery.SIP.App
             {
                 int machineEventTypeId = (int)MachineEventType;
                 string remoteSocket = (RemoteEndPoint != null) ? RemoteEndPoint.ToString() : null;
+                string dialogueXML = (Dialogue != null) ? (new SIPDialogueAsset(Dialogue)).ToXML() : null;
 
                 string csvEvent =
                     SERIALISATION_PREFIX + "|" +
                     machineEventTypeId + "|" +
+                    Created.ToString("yyyy-MM-dd HH:mm:ss.ffffff zzz") + "|" +
                     Username + "|" +
                     remoteSocket + "|" +
-                    Message + END_MESSAGE_DELIMITER;
+                    Message + "|" +
+                    dialogueXML
+                    + END_MESSAGE_DELIMITER;
 
                 return csvEvent;
             }
@@ -138,7 +166,7 @@ namespace SIPSorcery.SIP.App
                 int machineEventTypeId = (int)MachineEventType;
                 string remoteSocket = null;
 
-                if(RemoteEndPoint != null)
+                if (RemoteEndPoint != null)
                 {
                     // This is the equivalent of applying a /20 mask to the IP address to obscure the bottom 12 bits of the address.
                     byte[] addressBytes = RemoteEndPoint.SocketEndPoint.Address.GetAddressBytes();
@@ -151,8 +179,10 @@ namespace SIPSorcery.SIP.App
                 string csvEvent =
                     SERIALISATION_PREFIX + "|" +
                     machineEventTypeId + "|" +
+                     Created.ToString() + "|" +
                     "|" +
                     remoteSocket + "|" +
+                    "|" +
                     END_MESSAGE_DELIMITER;
 
                 return csvEvent;
@@ -163,10 +193,10 @@ namespace SIPSorcery.SIP.App
                 return null;
             }
         }
-               
-		#region Unit testing.
 
-		#if UNITTEST
+        #region Unit testing.
+
+#if UNITTEST
 	
 		[TestFixture]
 		public class SIPMonitorMachineEventUnitTest
@@ -185,8 +215,8 @@ namespace SIPSorcery.SIP.App
 			}
 		}
 
-		#endif
+#endif
 
-		#endregion
-	}
+        #endregion
+    }
 }

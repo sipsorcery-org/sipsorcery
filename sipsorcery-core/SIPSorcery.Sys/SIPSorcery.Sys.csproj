@@ -119,6 +119,7 @@
     <Reference Include="System.Runtime.Serialization.Formatters.Soap">
       <Private>False</Private>
     </Reference>
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Services">
       <Name>System.Web.Services</Name>
@@ -158,6 +159,7 @@
     </Compile>
     <Compile Include="StorageTypes.cs" />
     <Compile Include="TypeExtensions.cs" />
+    <Compile Include="WCFUtility.cs" />
     <Compile Include="WebServices\XMLServiceResultStruct.cs" />
   </ItemGroup>
   <ItemGroup>

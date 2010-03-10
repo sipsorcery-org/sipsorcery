@@ -77,7 +77,7 @@ namespace SIPSorcery.Net
                     logger.Error("RTSP message received that exceeded the maximum allowed message length, ignoring.");
                     return null;
                 }
-                else if (!ByteBufferInfo.HasString(buffer, RTSP_MESSAGE_IDENTIFIER, m_CRLF))
+                else if (!ByteBufferInfo.HasString(buffer, 0, buffer.Length, RTSP_MESSAGE_IDENTIFIER, m_CRLF))
                 {
                     // Message does not contain "RTSP" anywhrere on the first line, ignore.
                     return null;

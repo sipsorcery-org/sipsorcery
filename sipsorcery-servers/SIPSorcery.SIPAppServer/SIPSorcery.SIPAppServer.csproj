@@ -133,6 +133,12 @@
     <Compile Include="..\SIPSorcery.SIPMonitor\SIPMonitorState.cs">
       <Link>Daemons\SIPMonitorState.cs</Link>
     </Compile>
+    <Compile Include="..\SIPSorcery.SIPNotifier\SIPNotifierDaemon.cs">
+      <Link>Daemons\SIPNotifierDaemon.cs</Link>
+    </Compile>
+    <Compile Include="..\SIPSorcery.SIPNotifier\SIPNotifierState.cs">
+      <Link>Daemons\SIPNotifierState.cs</Link>
+    </Compile>
     <Compile Include="..\SIPSorcery.SIPProxy\SIPProxyDaemon.cs">
       <Link>Daemons\SIPProxyDaemon.cs</Link>
       <SubType>Code</SubType>
@@ -184,7 +190,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="ExampleXMLConfig\customers.xml" />

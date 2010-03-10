@@ -62,7 +62,8 @@ namespace SIPSorcery.SIPMonitor
         private ISIPMonitorPublisher m_monitorEventPublisher;
 
         private SIPMonitorMediator m_sipMonitorMediator;
-        public SIPMonitorMediator SIPMonitorMediator {
+        public SIPMonitorMediator SIPMonitorMediator
+        {
             get { return m_sipMonitorMediator; }
         }
 
@@ -73,10 +74,12 @@ namespace SIPSorcery.SIPMonitor
 
         public void Start()
         {
-            try {
+            try
+            {
                 logger.Debug("SIPMonitorDaemon starting...");
 
-                if (m_monitorLoopbackListenerPort == 0) {
+                if (m_monitorLoopbackListenerPort == 0)
+                {
                     throw new ApplicationException("Cannot start SIP Monitor with no loopback listener port specified.");
                 }
 
@@ -91,18 +94,22 @@ namespace SIPSorcery.SIPMonitor
 
                 try
                 {
-                    SIPMonitorClientManagerHost monitorClientManagerHost = new SIPMonitorClientManagerHost(m_monitorEventPublisher);
-                    ServiceHost internalNotifications = new ServiceHost(monitorClientManagerHost);
-                    internalNotifications.Open();
+                    if (WCFUtility.DoesWCFServiceExist(typeof(SIPMonitorClientManagerHost).FullName.ToString()))
+                    {
+                        SIPMonitorClientManagerHost monitorClientManagerHost = new SIPMonitorClientManagerHost(m_monitorEventPublisher);
+                        ServiceHost internalNotifications = new ServiceHost(monitorClientManagerHost);
+                        internalNotifications.Open();
 
-                    logger.Debug("Internal notifications hosted service successfully started on " + internalNotifications.BaseAddresses[0].AbsoluteUri + ".");
+                        logger.Debug("Internal notifications hosted service successfully started on " + internalNotifications.BaseAddresses[0].AbsoluteUri + ".");
+                    }
                 }
                 catch (Exception excp)
                 {
-                    logger.Warn("Exception starting internal notifications TCP hosted service. " + excp.Message);
+                    logger.Warn("Exception starting internal notifications hosted service. " + excp.Message);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPMonitorDaemon Start. " + excp.Message);
             }
         }

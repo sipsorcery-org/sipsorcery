@@ -46,9 +46,9 @@ using NUnit.Framework;
 
 namespace SIPSorcery.SIP
 {
-	/// <summary>
+    /// <summary>
     /// SIP transaction that initiates a call to a SIP User Agent Server. This transaction processes outgoing calls SENT by the application.
-	/// </summary>
+    /// </summary>
     public class UACInviteTransaction : SIPTransaction
     {
         public event SIPTransactionResponseReceivedDelegate UACInviteTransactionInformationResponseReceived;
@@ -57,7 +57,7 @@ namespace SIPSorcery.SIP
 
         internal UACInviteTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
-		{
+        {
             TransactionType = SIPTransactionTypesEnum.Invite;
             m_localTag = sipRequest.Header.From.FromTag;
             CDR = new SIPCDR(SIPCallDirection.Out, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, localSIPEndPoint, dstEndPoint);
@@ -130,19 +130,25 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private void UACInviteTransaction_TransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) {
-            try {
+        private void UACInviteTransaction_TransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        {
+            try
+            {
                 // BranchId for 2xx responses needs to be a new one, non-2xx final responses use same one as original request.
                 SIPRequest ackRequest = null;
-                if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode < 299) {
-                    if (sipResponse.Header.To != null) {
+                if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode < 299)
+                {
+                    if (sipResponse.Header.To != null)
+                    {
                         m_remoteTag = sipResponse.Header.To.ToTag;
                     }
 
                     SIPURI ackURI = m_transactionRequest.URI;
-                    if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0) {
+                    if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0)
+                    {
                         ackURI = sipResponse.Header.Contact[0].ContactURI;
-                        if (SIPTransport.IsPrivateAddress(ackURI.Host) && !sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) {
+                        if (IPSocket.IsPrivateAddress(ackURI.Host) && !sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank())
+                        {
                             // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
                             SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom);
                             ackURI.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();
@@ -153,21 +159,25 @@ namespace SIPSorcery.SIP
                     ackRequest = GetNewTransactionACKRequest(sipResponse, ackURI, LocalSIPEndPoint);
                     base.SendRequest(ackRequest);
                 }
-                else {
+                else
+                {
                     // ACK for non 2xx response is part of the INVITE transaction and gets routed to the same endpoint as the INVITE.
                     ackRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI, LocalSIPEndPoint);
                     base.SendRequest(RemoteEndPoint, ackRequest);
                 }
 
-                if (UACInviteTransactionFinalResponseReceived != null) {
+                if (UACInviteTransactionFinalResponseReceived != null)
+                {
                     UACInviteTransactionFinalResponseReceived(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
                 }
 
-                if (CDR != null) {
+                if (CDR != null)
+                {
                     CDR.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception UACInviteTransaction_TransactionFinalResponseReceived. " + excp.Message);
             }
         }
@@ -252,7 +262,7 @@ namespace SIPSorcery.SIP
             header.AuthenticationHeader = TransactionRequest.Header.AuthenticationHeader;
             header.Routes = base.TransactionRequest.Header.Routes;
             header.ProxySendFrom = base.TransactionRequest.Header.ProxySendFrom;
-          
+
             ackRequest.Header = header;
 
             SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, sipResponse.Header.Vias.TopViaHeader.Branch);
@@ -263,17 +273,20 @@ namespace SIPSorcery.SIP
 
         public void CancelCall()
         {
-            try {
+            try
+            {
                 base.Cancel();
 
-                if (CDR != null) {
+                if (CDR != null)
+                {
                     CDR.Cancelled();
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception UACInviteTransaction CancelCall. " + excp.Message);
                 throw;
             }
         }
-	}
+    }
 }

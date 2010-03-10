@@ -10,30 +10,36 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPMonitorClientSession
     {
+        private int DEFAULT_EXPIRY = 300;             // The number of seconds of no notification requests that a session will be removed.
+
         private static readonly string m_topLevelAdminId = Customer.TOPLEVEL_ADMIN_ID;
         private static readonly string m_filterWildcard = SIPMonitorFilter.WILDCARD;
 
         private static ILog logger = AppState.logger;
 
-        public Guid MonitorSessionID { get; private set; }
+        public string SessionID { get; private set; }
         public string CustomerUsername { get; private set; }
         public string AdminId { get; private set; }
         public string Address { get; private set; }
-        public string MachineEventsSessionId { get; private set; }
-        public string ControlEventsSessionId { get; private set; }
-        public bool SubscribedForMachineEvents { get; set; }
-        public SIPMonitorFilter ControlEventsFilter { get; private set; }
-        public Queue<SIPMonitorEvent> MachineEvents = new Queue<SIPMonitorEvent>();
-        public Queue<SIPMonitorEvent> ControlEvents = new Queue<SIPMonitorEvent>();
+        public SIPMonitorClientTypesEnum SessionType;
+        public SIPMonitorFilter Filter { get; private set; }
+        public Queue<SIPMonitorEvent> Events = new Queue<SIPMonitorEvent>();
         public DateTime LastGetNotificationsRequest = DateTime.Now;
         public bool FilterDescriptionNotificationSent { get; set; }
+        public int Expiry;
 
-        public SIPMonitorClientSession(string customerUsername, string adminId, string address)
+        public SIPMonitorClientSession(string customerUsername, string adminId, string address, int expiry)
         {
-            MonitorSessionID = Guid.NewGuid();
+            SessionID = Guid.NewGuid().ToString();
             CustomerUsername = customerUsername;
             AdminId = adminId;
             Address = address;
+            Expiry = expiry;
+
+            if (Expiry <= 0)
+            {
+                Expiry = DEFAULT_EXPIRY;
+            }
         }
 
         public string SetFilter(string subject, string filter)
@@ -43,90 +49,41 @@ namespace SIPSorcery.SIP.App
                 throw new ArgumentException("SetFilter must have a valid non-empty subject", "subject");
             }
 
-            SIPMonitorClientTypesEnum clientType = SIPMonitorClientTypes.GetSIPMonitorClientType(subject);
+            SessionType = SIPMonitorClientTypes.GetSIPMonitorClientType(subject);
+            Filter = new SIPMonitorFilter(filter);
 
-            if (clientType == SIPMonitorClientTypesEnum.Machine)
+            if (Filter != null)
             {
-                if (filter.IsNullOrBlank())
+                // If the filter request is for a full SIP trace the user field must not be used since it's
+                // tricky to decide which user a SIP message belongs to prior to authentication. If a full SIP
+                // trace is requested instead of a user filter a regex will be set that matches the username in
+                // the From or To header. If a full SIP trace is not specified then the user filer will be set.
+                if (AdminId != m_topLevelAdminId)
                 {
-                    MachineEventsSessionId = null;
-                    SubscribedForMachineEvents = false;
-                    MachineEvents.Clear();
-                    return null;
-                }
-                else
-                {
-                    if (MachineEventsSessionId == null)
+                    // If this user is not the top level admin there are tight restrictions on what filter can be set.
+                    if (Filter.EventFilterDescr == "full")
                     {
-                        MachineEventsSessionId = Guid.NewGuid().ToString();
-                        SubscribedForMachineEvents = true;
-                        MachineEvents.Clear();
+                        Filter.RegexFilter = ":" + CustomerUsername + "@";
+                        Filter.Username = m_filterWildcard;
                     }
-
-                    return MachineEventsSessionId;
+                    else
+                    {
+                        Filter.Username = CustomerUsername;
+                    }
                 }
+
+                return SessionID;
             }
-            else if (clientType == SIPMonitorClientTypesEnum.ControlClient)
+            else
             {
-                if (filter.IsNullOrBlank())
-                {
-                    ControlEventsSessionId = null;
-                    ControlEventsFilter = null;
-                    ControlEvents.Clear();
-                    return null;
-                }
-                else
-                {
-                    if (ControlEventsSessionId == null)
-                    {
-                        ControlEvents.Clear();  // The control filter may have changed so remove any pending events.
-                        ControlEventsSessionId = Guid.NewGuid().ToString();
-                    }
-
-                    ControlEventsFilter = new SIPMonitorFilter(filter);
-
-                    // If the filter request is for a full SIP trace the user field must not be used since it's
-                    // tricky to decide which user a SIP message belongs to prior to authentication. If a full SIP
-                    // trace is requested instead of a user filter a regex will be set that matches the username in
-                    // the From or To header. If a full SIP trace is not specified then the user filer will be set.
-                    if (AdminId != m_topLevelAdminId && ControlEventsFilter != null)
-                    {
-                        // If this user is not the top level admin there are tight restrictions on what filter can be set.
-                        if (ControlEventsFilter.EventFilterDescr == "full")
-                        {
-                            ControlEventsFilter.RegexFilter = ":" + CustomerUsername + "@";
-                            ControlEventsFilter.Username = m_filterWildcard;
-                        }
-                        else
-                        {
-                            ControlEventsFilter.Username = CustomerUsername;
-                        }
-                    }
-
-                    return ControlEventsSessionId;
-                }
+                throw new ApplicationException("SetFilter did not understand the subject type of " + subject + ".");
             }
-
-            throw new ApplicationException("SetFilter did not understand the subject type of " + subject + ".");
         }
 
-        public void Close(string sessionID)
+        public void Close()
         {
-            if (MachineEventsSessionId == sessionID)
-            {
-                logger.Debug("Closing machine events session for " + CustomerUsername + ".");
-                MachineEventsSessionId = null;
-                SubscribedForMachineEvents = false;
-                MachineEvents.Clear();
-            }
-            else if (ControlEventsSessionId == sessionID)
-            {
-                logger.Debug("Closing control events session for " + CustomerUsername + ".");
-                FilterDescriptionNotificationSent = false;
-                ControlEventsSessionId = null;
-                ControlEventsFilter = null;
-                ControlEvents.Clear();
-            }
+            logger.Debug("Closing session " + SessionID + " for " + CustomerUsername + ".");
+            Events.Clear();
         }
     }
 }

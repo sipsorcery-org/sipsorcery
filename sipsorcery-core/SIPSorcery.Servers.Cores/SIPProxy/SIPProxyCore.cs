@@ -154,7 +154,7 @@ namespace SIPSorcery.Servers
                 {
                     if (viaHeader.Branch == proxyBranch)
                     {
-                        SendMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.Warn, "Loop detected on request from " + remoteEndPoint + " to " + sipRequest.URI.ToString() + ".", null));
+                        SendMonitorEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.Warn, "Loop detected on request from " + remoteEndPoint + " to " + sipRequest.URI.ToString() + ".", null));
                         m_sipTransport.SendResponse(SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.LoopDetected, null));
                         return;
                     }
@@ -208,7 +208,7 @@ namespace SIPSorcery.Servers
             {
                 string reqExcpError = "Exception SIPProxyCore GotRequest. " + excp.Message;
                 logger.Error(reqExcpError);
-                SIPMonitorEvent reqExcpEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.Error, reqExcpError, localSIPEndPoint, remoteEndPoint, null);
+                SIPMonitorEvent reqExcpEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.Error, reqExcpError, localSIPEndPoint, remoteEndPoint, null);
                 SendMonitorEvent(reqExcpEvent);
 
                 throw excp;
@@ -289,7 +289,7 @@ namespace SIPSorcery.Servers
             {
                 string respExcpError = "Exception SIPProxyCore GotResponse. " + excp.Message;
                 logger.Error(respExcpError);
-                SIPMonitorEvent respExcpEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.Error, respExcpError, localSIPEndPoint, remoteEndPoint, null);
+                SIPMonitorEvent respExcpEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.Error, respExcpError, localSIPEndPoint, remoteEndPoint, null);
                 SendMonitorEvent(respExcpEvent);
 
                 throw excp;
@@ -298,7 +298,7 @@ namespace SIPSorcery.Servers
 
         private void SendMonitorEvent(SIPMonitorEventTypesEnum eventType, string message, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, SIPEndPoint dstEndPoint)
         {
-            SIPMonitorEvent proxyEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, eventType, message, localEndPoint, remoteEndPoint, dstEndPoint);
+            SIPMonitorEvent proxyEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, eventType, message, localEndPoint, remoteEndPoint, dstEndPoint);
             SendMonitorEvent(proxyEvent);
         }
 

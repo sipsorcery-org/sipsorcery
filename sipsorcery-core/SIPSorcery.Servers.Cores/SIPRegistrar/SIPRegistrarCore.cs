@@ -201,12 +201,12 @@ namespace SIPSorcery.Servers
                             {
                                 m_registerQueue.Enqueue(registrarTransaction);
                             }
-                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingInProgress, "Register queued for " + registerRequest.Header.To.ToURI.ToString() + ".", null));
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingInProgress, "Register queued for " + registerRequest.Header.To.ToURI.ToString() + ".", null));
                         }
                         else
                         {
                             logger.Error("Register queue exceeded max queue size " + MAX_REGISTER_QUEUE_SIZE + ", overloaded response sent.");
-                            SIPResponse overloadedResponse = SIPTransport.GetResponse(registerRequest, SIPResponseStatusCodesEnum.TemporarilyNotAvailable, "Registrar overloaded, please try again shortly");
+                            SIPResponse overloadedResponse = SIPTransport.GetResponse(registerRequest, SIPResponseStatusCodesEnum.TemporarilyUnavailable, "Registrar overloaded, please try again shortly");
                             m_sipTransport.SendResponse(overloadedResponse);
                         }
 
@@ -243,7 +243,7 @@ namespace SIPSorcery.Servers
                                 DateTime startTime = DateTime.Now;
                                 RegisterResultEnum result = Register(registrarTransaction);
                                 TimeSpan duration = DateTime.Now.Subtract(startTime);
-                                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "register result=" + result.ToString() + ", time=" + duration.TotalMilliseconds + "ms, user=" + registrarTransaction.TransactionRequest.Header.To.ToURI.User + ".", null));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "register result=" + result.ToString() + ", time=" + duration.TotalMilliseconds + "ms, user=" + registrarTransaction.TransactionRequest.Header.To.ToURI.User + ".", null));
                             }
                         }
                         catch (Exception regExcp)
@@ -284,7 +284,7 @@ namespace SIPSorcery.Servers
 
                 if (canonicalDomain == null)
                 {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Warn, "Request for " + toHeader.ToURI.Host + " rejected as no matching domain found.", null));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Warn, "Register request for " + toHeader.ToURI.Host + " rejected as no matching domain found.", null));
                     SIPResponse noDomainResponse = GetErrorResponse(sipRequest, SIPResponseStatusCodesEnum.Forbidden, "Domain not serviced");
                     registerTransaction.SendFinalResponse(noDomainResponse);
                     return RegisterResultEnum.DomainNotServiced;
@@ -302,12 +302,12 @@ namespace SIPSorcery.Servers
 
                     if (authenticationResult.ErrorResponse == SIPResponseStatusCodesEnum.Forbidden)
                     {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Warn, "Forbidden " + toUser + "@" + canonicalDomain + " does not exist, " + sipRequest.Header.Vias.BottomViaHeader.ReceivedFromAddress + ", " + sipRequest.Header.UserAgent + ".", null));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Warn, "Forbidden " + toUser + "@" + canonicalDomain + " does not exist, " + sipRequest.Header.ProxyReceivedFrom.ToString() + ", " + sipRequest.Header.UserAgent + ".", null));
                         return RegisterResultEnum.Forbidden;
                     }
                     else
                     {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Registrar, "Authentication required for " + toUser + "@" + canonicalDomain + " from " + registerTransaction.RemoteEndPoint + ".", toUser));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Registrar, "Authentication required for " + toUser + "@" + canonicalDomain + " from " + registerTransaction.RemoteEndPoint + ".", toUser));
                         return RegisterResultEnum.AuthenticationRequired;
                     }
                 }
@@ -326,7 +326,7 @@ namespace SIPSorcery.Servers
 
                         SIPResponse okResponse = GetOkResponse(sipRequest);
                         registerTransaction.SendFinalResponse(okResponse);
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Empty registration request successful for " + toUser + "@" + canonicalDomain + " from " + registerTransaction.RemoteEndPoint + ".", toUser));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Empty registration request successful for " + toUser + "@" + canonicalDomain + " from " + registerTransaction.RemoteEndPoint + ".", toUser));
                     }
                     else
                     {
@@ -355,12 +355,12 @@ namespace SIPSorcery.Servers
 
                         int bindingExpiry = GetBindingExpiry(bindingsList, sipRequest.Header.Contact[0].ContactURI.ToString());
                         TimeSpan duration = DateTime.Now.Subtract(startTime);
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding update time for " + toUser + "@" + canonicalDomain + " took " + duration.TotalMilliseconds + "ms.", null));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding update time for " + toUser + "@" + canonicalDomain + " took " + duration.TotalMilliseconds + "ms.", null));
 
                         if (updateResult == SIPResponseStatusCodesEnum.Ok)
                         {
                             string proxySocketStr = (proxySIPEndPoint != null) ? " (proxy=" + proxySIPEndPoint.ToString() + ")" : null;
-                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Registration successful for " + toUser + "@" + canonicalDomain + " from " + uacRemoteEndPoint + proxySocketStr + ", expiry " + bindingExpiry + "s.", toUser));
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Registration successful for " + toUser + "@" + canonicalDomain + " from " + uacRemoteEndPoint + proxySocketStr + ", expiry " + bindingExpiry + "s.", toUser));
                             FireProxyLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, toUser, uacRemoteEndPoint, sipAccount.Id.ToString()));
 
                             // The standard states that the Ok response should contain the list of current bindings but that breaks some UAs. As a 
@@ -384,7 +384,7 @@ namespace SIPSorcery.Servers
                             // The binding update failed even though the REGISTER request was authorised. This is probably due to a 
                             // temporary problem connecting to the bindings data store. SendOk but set the binding expiry to the minimum so
                             // that the UA will try again as soon as possible.
-                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Error, "Registration request successful but binding update failed for " + toUser + "@" + canonicalDomain + " from " + registerTransaction.RemoteEndPoint + ".", toUser));
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Error, "Registration request successful but binding update failed for " + toUser + "@" + canonicalDomain + " from " + registerTransaction.RemoteEndPoint + ".", toUser));
                             sipRequest.Header.Contact[0].Expires = m_minimumBindingExpiry;
                             SIPResponse okResponse = GetOkResponse(sipRequest);
                             registerTransaction.SendFinalResponse(okResponse);
@@ -398,7 +398,7 @@ namespace SIPSorcery.Servers
             {
                 string regErrorMessage = "Exception registrarcore registering. " + excp.Message + "\r\n" + registerTransaction.TransactionRequest.ToString();
                 logger.Error(regErrorMessage);
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Error, regErrorMessage, null));
+                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Error, regErrorMessage, null));
 
                 try
                 {

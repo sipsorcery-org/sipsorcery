@@ -45,6 +45,7 @@ using System.Threading;
 using System.Transactions;
 using SIPSorcery.AppServer.DialPlan;
 using SIPSorcery.CRM;
+using SIPSorcery.Net;
 using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -61,7 +62,7 @@ namespace SIPSorcery.Servers
         private static string m_remoteHangupCause = SIPConstants.SIP_REMOTEHANGUP_CAUSE;
         private static string m_referReplacesParameter = SIPHeaderAncillary.SIP_REFER_REPLACES;
         private static string m_referNotifyEventValue = SIPConstants.SIP_REFER_NOTIFY_EVENT;
-        private static string m_referNotifyContentType = SIPConstants.SIP_REFER_NOTIFY_CONTENTTYPE;
+        private static string m_referNotifyContentType = SIPMIMETypes.REFER_CONTENT_TYPE;
 
         private SIPMonitorLogDelegate Log_External;
         private SIPTransport m_sipTransport;
@@ -70,6 +71,8 @@ namespace SIPSorcery.Servers
         private SIPAssetPersistor<SIPCDRAsset> m_sipCDRPersistor;
 
         private Dictionary<string, string> m_inDialogueTransactions = new Dictionary<string, string>();     // <Forwarded transaction id, Origin transaction id>.
+
+        public static IPAddress PublicIPAddress;
 
         public SIPDialogueManager(
             SIPTransport sipTransport,
@@ -85,6 +88,93 @@ namespace SIPSorcery.Servers
             m_sipCDRPersistor = sipCDRPersistor;
         }
 
+        public void ProcessInDialogueRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, SIPDialogue dialogue, Func<string, string, string, string, string> webCallback)
+        {
+            try
+            {
+                if (sipRequest.Method == SIPMethodsEnum.BYE)
+                {
+                    SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                    //logger.Debug("Matching dialogue found for BYE request to " + sipRequest.URI.ToString() + ".");
+                    SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    byeTransaction.SendFinalResponse(byeResponse);
+
+                    // Let the CallManager know so the forwarded leg of the call can be hung up.
+                    CallHungup(dialogue, sipRequest.Header.Reason);
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.INVITE)
+                {
+                    UASInviteTransaction reInviteTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                    SIPResponse tryingResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
+                    reInviteTransaction.SendInformationalResponse(tryingResponse);
+                    reInviteTransaction.CDR = null;     // Don't want CDR's on re-INVITEs.
+                    ForwardInDialogueRequest(dialogue, reInviteTransaction, localSIPEndPoint, remoteEndPoint);
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.MESSAGE)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "MESSAGE for call " + sipRequest.URI.ToString() + ": " + sipRequest.Body + ".", dialogue.Owner));
+                    SIPNonInviteTransaction messageTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                    SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    messageTransaction.SendFinalResponse(okResponse);
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.REFER)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER received on dialogue " + dialogue.DialogueName + ", transfer mode is " + dialogue.TransferMode + ".", dialogue.Owner));
+
+                    if (sipRequest.Header.ReferTo.IsNullOrBlank())
+                    {
+                        // A REFER request must have a Refer-To header.
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Bad REFER request, no Refer-To header.", dialogue.Owner));
+                        SIPResponse invalidResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadRequest, "Missing mandatory Refer-To header");
+                        m_sipTransport.SendResponse(invalidResponse);
+                    }
+                    else
+                    {
+                        if (dialogue.TransferMode == SIPDialogueTransferModesEnum.NotAllowed)
+                        {
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER rejected due to dialogue permissions.", dialogue.Owner));
+                            SIPResponse declineTransferResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Transfers are disabled on dialogue");
+                            m_sipTransport.SendResponse(declineTransferResponse);
+                        }
+                        else if (Regex.Match(sipRequest.Header.ReferTo, m_referReplacesParameter).Success)
+                        {
+                            // Attended transfers are allowed unless explicitly blocked. Attended transfers are not dangerous 
+                            // as no new call is created and it's the same as a re-invite.
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER received, attended transfer, Referred-By=" + sipRequest.Header.ReferredBy + ".", dialogue.Owner));
+                            ProcessAttendedRefer(dialogue, sipRequest, localSIPEndPoint, remoteEndPoint);
+                        }
+                        else if (dialogue.TransferMode == SIPDialogueTransferModesEnum.BlindPlaceCall)
+                        {
+                            // A blind transfer that is permitted to initiate a new call.
+                            SIPNonInviteTransaction referTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                            SIPResponse acceptedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Accepted, null);
+                            referTransaction.SendFinalResponse(acceptedResponse);
+                            //SIPDialogue oppositeDialogue = GetOppositeDialogue(dialogue);
+                            SIPURI replacesURI = SIPURI.ParseSIPURI(sipRequest.Header.ReferTo);
+                            webCallback(dialogue.Owner, replacesURI.User, "transfer", dialogue.CallId);
+                        }
+                        else
+                        {
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER received, blind transfer, Refer-To=" + sipRequest.Header.ReferTo + ", Referred-By=" + sipRequest.Header.ReferredBy + ".", dialogue.Owner));
+                            SIPNonInviteTransaction passThruTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                            ForwardInDialogueRequest(dialogue, passThruTransaction, localSIPEndPoint, remoteEndPoint);
+                        }
+                    }
+                }
+                else
+                {
+                    // This is a request on an established call forward through to the opposite dialogue.
+                    SIPNonInviteTransaction passThruTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                    ForwardInDialogueRequest(dialogue, passThruTransaction, localSIPEndPoint, remoteEndPoint);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception ProcessInDialogueRequest. " + excp.Message);
+                throw;
+            }
+        }
+
         public void CreateDialogueBridge(SIPDialogue clientDiaglogue, SIPDialogue forwardedDialogue, string owner)
         {
             logger.Debug("Creating dialogue bridge between " + clientDiaglogue.DialogueName + " and " + forwardedDialogue.DialogueName + ".");
@@ -97,10 +187,10 @@ namespace SIPSorcery.Servers
             m_sipDialoguePersistor.Add(new SIPDialogueAsset(forwardedDialogue));
 
             SIPEndPoint clientDialogueRemoteEP = (IPSocket.IsIPSocket(clientDiaglogue.RemoteTarget.Host)) ? SIPEndPoint.ParseSIPEndPoint(clientDiaglogue.RemoteTarget.Host) : null;
-            Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueCreated, clientDiaglogue.Owner, clientDialogueRemoteEP, clientDiaglogue.Id.ToString()));
+            Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueCreated, clientDiaglogue.Owner, clientDiaglogue));
 
             SIPEndPoint forwardedDialogueRemoteEP = (IPSocket.IsIPSocket(forwardedDialogue.RemoteTarget.Host)) ? SIPEndPoint.ParseSIPEndPoint(forwardedDialogue.RemoteTarget.Host) : null;
-            Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueCreated, forwardedDialogue.Owner, forwardedDialogueRemoteEP, forwardedDialogue.Id.ToString()));
+            Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueCreated, forwardedDialogue.Owner, forwardedDialogue));
         }
 
         public void CallHungup(SIPDialogue sipDialogue, string hangupCause)
@@ -158,12 +248,11 @@ namespace SIPSorcery.Servers
                         m_sipDialoguePersistor.Delete(new SIPDialogueAsset(orphanedDialogue));
 
                         SIPEndPoint orphanedDialogueRemoteEP = (IPSocket.IsIPSocket(orphanedDialogue.RemoteTarget.Host)) ? SIPEndPoint.ParseSIPEndPoint(orphanedDialogue.RemoteTarget.Host) : null;
-                        Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved, orphanedDialogue.Owner, orphanedDialogueRemoteEP, orphanedDialogue.Id.ToString()));
+                        Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved, orphanedDialogue.Owner, orphanedDialogue));
                     }
 
                     m_sipDialoguePersistor.Delete(new SIPDialogueAsset(sipDialogue));
-                    SIPEndPoint hungupDialogueRemoteEP = (IPSocket.IsIPSocket(sipDialogue.RemoteTarget.Host)) ? SIPEndPoint.ParseSIPEndPoint(sipDialogue.RemoteTarget.Host) : null;
-                    Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved, sipDialogue.Owner, hungupDialogueRemoteEP, sipDialogue.Id.ToString()));
+                    Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved, sipDialogue.Owner, sipDialogue));
                 }
                 else
                 {
@@ -220,16 +309,16 @@ namespace SIPSorcery.Servers
 
                     SIPDialogue replacesDialogue = GetDialogue(callId, localTag, remoteTag);
 
-                    if(replacesDialogue == null)
+                    if (replacesDialogue == null)
                     {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A dialogue was not found for the Replaces parameter on a Refer-To header.", null));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A dialogue was not found for the Replaces parameter on a Refer-To header.", null));
                     }
 
                     return replacesDialogue;
                 }
                 else
                 {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The Replaces parameter on a Refer-To header was not in the expected fromat, " + replaces + ".", null));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The Replaces parameter on a Refer-To header was not in the expected fromat, " + replaces + ".", null));
                     return null;
                 }
             }
@@ -371,26 +460,55 @@ namespace SIPSorcery.Servers
         /// </summary>
         /// <param name="dialogue">The dialogue describing the end of the call to be re-invited.</param>
         /// <param name="newSDP">The session description for the new dialogue desired.</param>
-        public void ReInvite(SIPDialogue dialogue, string replacementSDP)
+        public void ReInvite(SIPDialogue dialogue, SIPDialogue substituteDialogue)
         {
             try
             {
-                dialogue.CSeq = dialogue.CSeq + 1;
-                m_sipDialoguePersistor.UpdateProperty(dialogue.Id, "CSeq", dialogue.CSeq);
-                SIPEndPoint localSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultTransportContact(m_outboundProxy.SIPProtocol) : m_sipTransport.GetDefaultTransportContact(SIPProtocolsEnum.udp);
-                SIPRequest reInviteReq = GetInviteRequest(dialogue, localSIPEndPoint, replacementSDP);
-                SIPEndPoint reinviteEndPoint = m_sipTransport.GetRequestEndPoint(reInviteReq, m_outboundProxy, true);
+                string replacementSDP = substituteDialogue.RemoteSDP;
+                // Determine whether the SDP needs to be mangled.
+                IPEndPoint dialogueSDPSocket = SDP.GetSDPRTPEndPoint(dialogue.RemoteSDP);
+                IPEndPoint replacementSDPSocket = SDP.GetSDPRTPEndPoint(substituteDialogue.RemoteSDP);
+                bool wasMangled = false;
 
-                if (reinviteEndPoint != null)
+                if (!IPSocket.IsPrivateAddress(dialogueSDPSocket.Address.ToString()) && IPSocket.IsPrivateAddress(replacementSDPSocket.Address.ToString()))
                 {
-                    UACInviteTransaction reInviteTransaction = m_sipTransport.CreateUACTransaction(reInviteReq, reinviteEndPoint, localSIPEndPoint, m_outboundProxy);
-                    reInviteTransaction.CDR = null; // Don't want CDRs on re-invites.
-                    reInviteTransaction.UACInviteTransactionFinalResponseReceived += ReInviteTransactionFinalResponseReceived;
-                    reInviteTransaction.SendInviteRequest(reinviteEndPoint, reInviteReq);
+                    // The SDP being used in the re-invite uses a private IP address but the SDP on the ua it's being sent to does not so mangle.
+                    string publicIPAddress = (PublicIPAddress != null) ? PublicIPAddress.ToString() : IPSocket.ParseHostFromSocket(substituteDialogue.RemoteTarget.Host);
+                    replacementSDP = SIPPacketMangler.MangleSDP(replacementSDP, publicIPAddress, out wasMangled);
+                }
+
+                if (wasMangled)
+                {
+                    logger.Debug("The SDP being used in a re-INVITE was mangled to " + SDP.GetSDPRTPEndPoint(replacementSDP) + ".");
+                }
+
+                // Check whether there is a need to send the re-invite by comparing the new SDP being sent with what has already been sent.
+                if (dialogue.SDP == replacementSDP)
+                {
+                    logger.Debug("A reinvite was not sent to " + dialogue.RemoteTarget.ToString() + " as the SDP has not changed.");
                 }
                 else
                 {
-                    throw new ApplicationException("Could not forward re-invite as request end point could not be determined.\r\n" + reInviteReq.ToString());
+                    logger.Debug("Reinvite SDP being sent to " + dialogue.RemoteTarget.ToString() + ":\r\n" + replacementSDP);
+
+                    dialogue.CSeq = dialogue.CSeq + 1;
+                    m_sipDialoguePersistor.UpdateProperty(dialogue.Id, "CSeq", dialogue.CSeq);
+                    SIPEndPoint localSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultTransportContact(m_outboundProxy.SIPProtocol) : m_sipTransport.GetDefaultTransportContact(SIPProtocolsEnum.udp);
+                    SIPRequest reInviteReq = GetInviteRequest(dialogue, localSIPEndPoint, replacementSDP);
+                    reInviteReq.Header.ProxySendFrom = dialogue.ProxySendFrom;
+                    SIPEndPoint reinviteEndPoint = m_sipTransport.GetRequestEndPoint(reInviteReq, m_outboundProxy, true);
+
+                    if (reinviteEndPoint != null)
+                    {
+                        UACInviteTransaction reInviteTransaction = m_sipTransport.CreateUACTransaction(reInviteReq, reinviteEndPoint, localSIPEndPoint, m_outboundProxy);
+                        reInviteTransaction.CDR = null; // Don't want CDRs on re-invites.
+                        reInviteTransaction.UACInviteTransactionFinalResponseReceived += ReInviteTransactionFinalResponseReceived;
+                        reInviteTransaction.SendInviteRequest(reinviteEndPoint, reInviteReq);
+                    }
+                    else
+                    {
+                        throw new ApplicationException("Could not forward re-invite as request end point could not be determined.\r\n" + reInviteReq.ToString());
+                    }
                 }
             }
             catch (Exception excp)
@@ -404,10 +522,19 @@ namespace SIPSorcery.Servers
         {
             try
             {
-                SIPRequest inviteRequest = sipTransaction.TransactionRequest;
-                SIPDialogue dialogue = GetDialogue(inviteRequest.Header.CallId, inviteRequest.Header.From.FromTag, inviteRequest.Header.To.ToTag);
+                //SIPRequest inviteRequest = sipTransaction.TransactionRequest;
+                //SIPDialogue dialogue = GetDialogue(inviteRequest.Header.CallId, inviteRequest.Header.From.FromTag, inviteRequest.Header.To.ToTag);
                 //m_dialogueBridges[dialogueId] = m_reInvitedDialogues[dialogueId];
                 //m_reInvitedDialogues.Remove(dialogueId);
+
+                if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Reinvite request " + sipTransaction.TransactionRequest.URI.ToString() + " succeeeded with " + sipResponse.Status + ".", null));
+                }
+                else
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Reinvite request " + sipTransaction.TransactionRequest.URI.ToString() + " failed with " + sipResponse.Status + " " + sipResponse.ReasonPhrase + ".", null));
+                }
             }
             catch (Exception excp)
             {
@@ -416,11 +543,11 @@ namespace SIPSorcery.Servers
             }
         }
 
-        public void ForwardInDialogueRequest(SIPDialogue dialogue, SIPTransaction inDialogueTransaction, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint)
+        private void ForwardInDialogueRequest(SIPDialogue dialogue, SIPTransaction inDialogueTransaction, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint)
         {
             try
             {
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "In dialogue request " + inDialogueTransaction.TransactionRequest.Method + " received from for uri=" + inDialogueTransaction.TransactionRequest.URI.ToString() + ".", null));
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "In dialogue request " + inDialogueTransaction.TransactionRequest.Method + " received from for uri=" + inDialogueTransaction.TransactionRequest.URI.ToString() + ".", null));
 
                 // Update the CSeq based on the latest received request.
                 dialogue.CSeq = inDialogueTransaction.TransactionRequest.Header.CSeq;
@@ -450,7 +577,7 @@ namespace SIPSorcery.Servers
                 {
                     bool wasMangled = false;
                     forwardedRequest.Body = SIPPacketMangler.MangleSDP(inDialogueTransaction.TransactionRequest.Body, remoteUAIPAddress.ToString(), out wasMangled);
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Re-INVITE wasmangled=" + wasMangled + " remote=" + remoteUAIPAddress.ToString() + ".", null));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Re-INVITE wasmangled=" + wasMangled + " remote=" + remoteUAIPAddress.ToString() + ".", null));
                     forwardedRequest.Header.ContentLength = forwardedRequest.Body.Length;
                 }
 
@@ -466,7 +593,7 @@ namespace SIPSorcery.Servers
                         forwardedTransaction.UACInviteTransactionInformationResponseReceived += InDialogueTransactionInfoResponseReceived;
                         forwardedTransaction.TransactionRemoved += InDialogueTransactionRemoved;
 
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding re-INVITE from " + remoteEndPoint + " to " + forwardedRequest.URI.ToString() + ", first hop " + forwardEndPoint + ".", dialogue.Owner));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding re-INVITE from " + remoteEndPoint + " to " + forwardedRequest.URI.ToString() + ", first hop " + forwardEndPoint + ".", dialogue.Owner));
 
                         forwardedTransaction.SendReliableRequest();
 
@@ -482,7 +609,7 @@ namespace SIPSorcery.Servers
                         forwardedTransaction.NonInviteTransactionInfoResponseReceived += InDialogueTransactionInfoResponseReceived;
                         forwardedTransaction.TransactionRemoved += InDialogueTransactionRemoved;
 
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding in dialogue " + forwardedRequest.Method + " from " + remoteEndPoint + " to " + forwardedRequest.URI.ToString() + ", first hop " + forwardEndPoint + ".", dialogue.Owner));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding in dialogue " + forwardedRequest.Method + " from " + remoteEndPoint + " to " + forwardedRequest.URI.ToString() + ", first hop " + forwardEndPoint + ".", dialogue.Owner));
 
                         forwardedTransaction.SendReliableRequest();
 
@@ -498,28 +625,34 @@ namespace SIPSorcery.Servers
                 }
                 else
                 {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Could not forward in dialogue request end point could not be determined " + forwardedRequest.URI.ToString() + ".", dialogue.Owner));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Could not forward in dialogue request end point could not be determined " + forwardedRequest.URI.ToString() + ".", dialogue.Owner));
                 }
             }
             catch (Exception excp)
             {
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Exception forwarding in dialogue request. " + excp.Message, dialogue.Owner));
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Exception forwarding in dialogue request. " + excp.Message, dialogue.Owner));
             }
         }
 
-        public void ProcessRefer(SIPDialogue dialogue, SIPTransaction referTransaction, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint)
+        /// <summary>
+        /// Performs an attended transfer based on a REFER request with a Replaces parameter on the Refer-To header.
+        /// </summary>
+        /// <param name="dialogue">The dialogue matching the the REFER request headers (Call-ID, To tag and From tag).</param>
+        /// <param name="referTransaction">The REFER request.</param>
+        /// <param name="localEndPoint">The local SIP end point the REFER request was received on.</param>
+        /// <param name="remoteEndPoint">The remote SIP end point the REFER request was received from.</param>
+        private void ProcessAttendedRefer(SIPDialogue dialogue, SIPRequest referRequest, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint)
         {
             try
             {
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Initiating transfer.", dialogue.Owner));
-                logger.Debug("REFER received in dialogue " + dialogue.DialogueName + ".");
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Initiating attended transfer .", dialogue.Owner));
 
-                SIPRequest referRequest = referTransaction.TransactionRequest;
+                SIPNonInviteTransaction referTransaction = m_sipTransport.CreateNonInviteTransaction(referRequest, remoteEndPoint, localEndPoint, m_outboundProxy);
                 SIPUserField referToField = SIPUserField.ParseSIPUserField(referRequest.Header.ReferTo);
 
                 if (referToField == null)
                 {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Error on transfer, could not parse Refer-To header: " + referRequest.Header.ReferTo + ".", dialogue.Owner));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Error on transfer, could not parse Refer-To header: " + referRequest.Header.ReferTo + ".", dialogue.Owner));
                     SIPResponse errorResponse = SIPTransport.GetResponse(referRequest, SIPResponseStatusCodesEnum.BadRequest, "Could not parse Refer-To header");
                     referTransaction.SendFinalResponse(errorResponse);
                 }
@@ -527,124 +660,109 @@ namespace SIPSorcery.Servers
                 {
                     string replaces = referToField.URI.Headers.Get(m_referReplacesParameter);
 
-                    if (replaces.IsNullOrBlank())
+                    SIPDialogue replacesDialogue = GetDialogue(replaces);
+                    if (replacesDialogue == null)
                     {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The Refer-To header did not have a Replaces parameter (blind transfer), passing through.", dialogue.Owner));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Could not locate the dialogue for the Replaces parameter, passing through", dialogue.Owner));
                         ForwardInDialogueRequest(dialogue, referTransaction, localEndPoint, remoteEndPoint);
                     }
                     else
                     {
-                        SIPDialogue replacesDialogue = GetDialogue(replaces);
-                        if (replacesDialogue == null)
-                        {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Could not locate the dialogue for the Replaces parameter, passing through", dialogue.Owner));
-                            ForwardInDialogueRequest(dialogue, referTransaction, localEndPoint, remoteEndPoint);
-                        }
-                        else
-                        {
-                            logger.Debug("REFER dialogue being replaced " + replacesDialogue.DialogueName + ".");
+                        logger.Debug("REFER dialogue being replaced " + replacesDialogue.DialogueName + ".");
 
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Replacement dialgoue found on Refer, accepting.", dialogue.Owner));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Replacement dialgoue found on Refer, accepting.", dialogue.Owner));
 
-                            SIPDialogue remainingDialogue = GetOppositeDialogue(replacesDialogue);
-                            SIPDialogue remaining2Dialogue = GetOppositeDialogue(dialogue);
+                        SIPDialogue remainingDialogue = GetOppositeDialogue(replacesDialogue);
+                        SIPDialogue remaining2Dialogue = GetOppositeDialogue(dialogue);
 
-                            logger.Debug("REFER dialogue remaining " + remainingDialogue.DialogueName + ".");
+                        logger.Debug("REFER dialogue remaining " + remainingDialogue.DialogueName + ".");
 
-                            Guid newBridgeId = Guid.NewGuid();
-                            remainingDialogue.BridgeId = newBridgeId;
-                            remainingDialogue.CSeq++;
-                            remaining2Dialogue.BridgeId = newBridgeId;
-                            remaining2Dialogue.CSeq++;
+                        Guid newBridgeId = Guid.NewGuid();
+                        remainingDialogue.BridgeId = newBridgeId;
+                        remainingDialogue.CSeq++;
+                        remaining2Dialogue.BridgeId = newBridgeId;
+                        remaining2Dialogue.CSeq++;
 
-                            m_sipDialoguePersistor.Update(new SIPDialogueAsset(remainingDialogue));
-                            m_sipDialoguePersistor.Update(new SIPDialogueAsset(remaining2Dialogue));
+                        m_sipDialoguePersistor.Update(new SIPDialogueAsset(remainingDialogue));
+                        m_sipDialoguePersistor.Update(new SIPDialogueAsset(remaining2Dialogue));
 
-                            SIPResponse acceptedResponse = SIPTransport.GetResponse(referRequest, SIPResponseStatusCodesEnum.Accepted, null);
-                            referTransaction.SendFinalResponse(acceptedResponse);
+                        Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated, remainingDialogue.Owner, remainingDialogue));
+                        Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated, remaining2Dialogue.Owner, remaining2Dialogue));
 
-                            SIPRequest notifyTryingRequest = GetNotifyRequest(dialogue, new SIPResponse(SIPResponseStatusCodesEnum.Trying, null, null), localEndPoint);
-                            SIPEndPoint forwardEndPoint = m_sipTransport.GetRequestEndPoint(notifyTryingRequest, m_outboundProxy, true);
-                            SIPNonInviteTransaction notifyTryingTransaction = m_sipTransport.CreateNonInviteTransaction(notifyTryingRequest, forwardEndPoint, localEndPoint, m_outboundProxy);
-                            notifyTryingTransaction.SendReliableRequest();
+                        SIPResponse acceptedResponse = SIPTransport.GetResponse(referRequest, SIPResponseStatusCodesEnum.Accepted, null);
+                        referTransaction.SendFinalResponse(acceptedResponse);
 
-                            logger.Debug("Reinviting " + remainingDialogue.DialogueName + " with " + remaining2Dialogue.DialogueName + ".");
-                            //logger.Debug(remaining2Dialogue.RemoteSDP);
-                            // logger.Debug(remainingDialogue.RemoteSDP);
+                        SIPRequest notifyTryingRequest = GetNotifyRequest(referRequest, dialogue, new SIPResponse(SIPResponseStatusCodesEnum.Trying, null, null), localEndPoint);
+                        SIPEndPoint forwardEndPoint = m_sipTransport.GetRequestEndPoint(notifyTryingRequest, m_outboundProxy, true);
+                        SIPNonInviteTransaction notifyTryingTransaction = m_sipTransport.CreateNonInviteTransaction(notifyTryingRequest, forwardEndPoint, localEndPoint, m_outboundProxy);
+                        notifyTryingTransaction.SendReliableRequest();
 
-                            ReInvite(remainingDialogue, remaining2Dialogue.RemoteSDP);
-                            ReInvite(remaining2Dialogue, remainingDialogue.RemoteSDP);
+                        logger.Debug("Reinviting " + remainingDialogue.DialogueName + " with " + remaining2Dialogue.DialogueName + ".");
 
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Transfer dialogue re-invites complete.", dialogue.Owner));
+                        ReInvite(remainingDialogue, remaining2Dialogue);
+                        ReInvite(remaining2Dialogue, remainingDialogue);
 
-                            SIPRequest notifyOkRequest = GetNotifyRequest(dialogue, new SIPResponse(SIPResponseStatusCodesEnum.Ok, null, null), localEndPoint);
-                            SIPNonInviteTransaction notifyOkTransaction = m_sipTransport.CreateNonInviteTransaction(notifyOkRequest, forwardEndPoint, localEndPoint, m_outboundProxy);
-                            notifyOkTransaction.SendReliableRequest();
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Transfer dialogue re-invites complete.", dialogue.Owner));
 
-                            // Hangup redundant dialogues.
-                            logger.Debug("Hanging up redundant dialogues post transfer.");
-                            logger.Debug("Hanging up " + dialogue.DialogueName + ".");
-                            dialogue.Hangup(m_sipTransport, m_outboundProxy);
-                            CallHungup(dialogue, "Attended transfer");
-                            logger.Debug("Hanging up " + replacesDialogue.DialogueName + ".");
-                            replacesDialogue.Hangup(m_sipTransport, m_outboundProxy);
-                            CallHungup(replacesDialogue, "Attended transfer");
-                        }
+                        SIPRequest notifyOkRequest = GetNotifyRequest(referRequest, dialogue, new SIPResponse(SIPResponseStatusCodesEnum.Ok, null, null), localEndPoint);
+                        SIPNonInviteTransaction notifyOkTransaction = m_sipTransport.CreateNonInviteTransaction(notifyOkRequest, forwardEndPoint, localEndPoint, m_outboundProxy);
+                        notifyOkTransaction.SendReliableRequest();
+
+                        // Hangup redundant dialogues.
+                        logger.Debug("Hanging up redundant dialogues post transfer.");
+                        logger.Debug("Hanging up " + dialogue.DialogueName + ".");
+                        dialogue.Hangup(m_sipTransport, m_outboundProxy);
+                        CallHungup(dialogue, "Attended transfer");
+                        logger.Debug("Hanging up " + replacesDialogue.DialogueName + ".");
+                        replacesDialogue.Hangup(m_sipTransport, m_outboundProxy);
+                        CallHungup(replacesDialogue, "Attended transfer");
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ProcessRefer. " + excp.Message);
-
-                try
-                {
-                    SIPResponse failedResponse = SIPTransport.GetResponse(referTransaction.TransactionRequest, SIPResponseStatusCodesEnum.InternalServerError, null);
-                    referTransaction.SendFinalResponse(failedResponse);
-                }
-                catch (Exception respExcp)
-                {
-                    logger.Error("Exception ProcessRefer sending failed response. " + respExcp.Message);
-                }
+                logger.Error("Exception ProcessAttendedRefer. " + excp.Message);
+                throw;
             }
         }
 
         /// <summary>
-        /// Performs a blind transfer between 3 established dialogues (answered calls). The dead dialogue is being replaced by 
+        /// Performs transfer between 3 established dialogues (answered calls). The dead dialogue is being replaced by 
         /// the answered dialogue such that a bridged call between the dead and orphaned dialogues now becomes one between the
-        /// orphaned and answered dialgoues.
+        /// orphaned and answered dialogues.
         /// </summary>
-        /// <param name="deadDialogue"></param>
-        /// <param name="orphanedDialogue"></param>
-        /// <param name="answeredDialogue"></param>
-        public void BlindTransfer(SIPDialogue deadDialogue, SIPDialogue orphanedDialogue, SIPDialogue answeredDialogue)
+        /// <param name="deadDialogue">The dialogue that will be terminated.</param>
+        /// <param name="orphanedDialogue">The opposite side of the dead dialogue that will be bridged with the answered dialogue.</param>
+        /// <param name="answeredDialogue">The newly answered dialogue that will be bridged with the orpahned dialogue.</param>
+        public void DialogueTransfer(SIPDialogue deadDialogue, SIPDialogue orphanedDialogue, SIPDialogue answeredDialogue)
         {
             try
             {
-                logger.Debug("SIPDialogueManager processing Blind transfer.");
+                logger.Debug("SIPDialogueManager DialogueTransfer.");
 
                 // Create bridge between answered dialogue and other end of dialogue being replaced.
                 Guid newBridgeId = Guid.NewGuid();
                 orphanedDialogue.BridgeId = newBridgeId;
                 answeredDialogue.BridgeId = newBridgeId;
-                //answeredDialogue.RemoteSDP = orphanedDialogue.SDP;
-                //orphanedDialogue.RemoteSDP = answeredDialogue.SDP;
                 m_sipDialoguePersistor.Update(new SIPDialogueAsset(orphanedDialogue));
                 m_sipDialoguePersistor.Add(new SIPDialogueAsset(answeredDialogue));
+
+                Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueCreated, answeredDialogue.Owner, answeredDialogue));
+                Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated, orphanedDialogue.Owner, orphanedDialogue));
 
                 logger.Debug("Hanging up dead dialogue");
                 // Hangup dialogue being replaced.
                 deadDialogue.Hangup(m_sipTransport, m_outboundProxy);
                 CallHungup(deadDialogue, "Blind transfer");
 
-                logger.Debug("Reinviting two remainging dialogues");
+                logger.Debug("Reinviting two remaining dialogues");
                 // Reinvite  other end of dialogue being replaced to answered dialogue.
-                ReInvite(orphanedDialogue, answeredDialogue.RemoteSDP);
+                ReInvite(orphanedDialogue, answeredDialogue);
                 //ReInvite(answeredDialogue, orphanedDialogue.SDP);
             }
             catch (Exception excp)
             {
-                logger.Error("Exception BlindTransfer. " + excp.Message);
+                logger.Error("Exception DialogueTransfer. " + excp.Message);
             }
         }
 
@@ -668,14 +786,14 @@ namespace SIPSorcery.Servers
                 response.Header.RecordRoutes = null;    // Can't change route set within a dialogue.
                 response.Header.UserAgent = m_userAgentString;
 
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding in dialogue response from " + remoteEndPoint + " " + sipResponse.Header.CSeqMethod + " " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " to " + response.Header.Vias.TopViaHeader.ReceivedFromAddress + ".", owner));
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding in dialogue response from " + remoteEndPoint + " " + sipResponse.Header.CSeqMethod + " " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " to " + response.Header.Vias.TopViaHeader.ReceivedFromAddress + ".", owner));
 
                 // Forward the response back to the requester.
                 originTransaction.SendInformationalResponse(response);
             }
             catch (Exception excp)
             {
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Exception processing in dialogue " + sipResponse.Header.CSeqMethod + " info response. " + excp.Message, owner));
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Exception processing in dialogue " + sipResponse.Header.CSeqMethod + " info response. " + excp.Message, owner));
             }
         }
 
@@ -710,14 +828,14 @@ namespace SIPSorcery.Servers
                     response.Header.ContentLength = response.Body.Length;
                 }
 
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding in dialogue response from " + remoteEndPoint + " " + sipResponse.Header.CSeqMethod + " final response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " to " + response.Header.Vias.TopViaHeader.ReceivedFromAddress + ".", owner));
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding in dialogue response from " + remoteEndPoint + " " + sipResponse.Header.CSeqMethod + " final response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " to " + response.Header.Vias.TopViaHeader.ReceivedFromAddress + ".", owner));
 
                 // Forward the response back to the requester.
                 originTransaction.SendFinalResponse(response);
             }
             catch (Exception excp)
             {
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Exception processing in dialogue " + sipResponse.Header.CSeqMethod + " final response. " + excp.Message, owner));
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Exception processing in dialogue " + sipResponse.Header.CSeqMethod + " final response. " + excp.Message, owner));
             }
         }
 
@@ -769,11 +887,11 @@ namespace SIPSorcery.Servers
         /// </remarks>
         /// <param name="referRequest"></param>
         /// <returns></returns>
-        private SIPRequest GetNotifyRequest(SIPDialogue referDialogue, SIPResponse referResponse, SIPEndPoint localEndPoint)
+        private SIPRequest GetNotifyRequest(SIPRequest referRequest, SIPDialogue referDialogue, SIPResponse referResponse, SIPEndPoint localEndPoint)
         {
             try
             {
-                SIPRequest notifyRequest = new SIPRequest(SIPMethodsEnum.NOTIFY, referDialogue.RemoteTarget);
+                SIPRequest notifyRequest = new SIPRequest(SIPMethodsEnum.NOTIFY, referRequest.Header.Contact[0].ContactURI);
                 notifyRequest.Header = new SIPHeader(SIPFromHeader.ParseFromHeader(referDialogue.LocalUserField.ToString()), SIPToHeader.ParseToHeader(referDialogue.RemoteUserField.ToString()), referDialogue.CSeq, referDialogue.CallId);
                 notifyRequest.Header.Event = m_referNotifyEventValue;
                 notifyRequest.Header.CSeqMethod = SIPMethodsEnum.NOTIFY;

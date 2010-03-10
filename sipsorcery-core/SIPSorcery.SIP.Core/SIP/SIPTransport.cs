@@ -109,7 +109,6 @@ namespace SIPSorcery.SIP
         private static readonly int m_t1 = SIPTimings.T1;
         private static readonly int m_t2 = SIPTimings.T2;
         private static readonly int m_t6 = SIPTimings.T6;
-        private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static string m_looseRouteParameter = SIPConstants.SIP_LOOSEROUTER_PARAMETER;
         public static readonly SIPEndPoint Blackhole = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 0));   // Any SIP messages with this destination will be dropped.
 
@@ -1349,124 +1348,6 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Checks the Contact SIP URI host and if it is recognised as a private address it is replaced with the socket
-        /// the SIP message was received on.
-        /// 
-        /// Private address space blocks RFC 1597.
-        ///		10.0.0.0        -   10.255.255.255
-        ///		172.16.0.0      -   172.31.255.255
-        ///		192.168.0.0     -   192.168.255.255
-        ///
-        /// </summary>
-        public static bool IsPrivateAddress(string host)
-        {
-            if (host != null && host.Trim().Length > 0)
-            {
-                if (host.StartsWith("127.0.0.1") ||
-                    host.StartsWith("10.") ||
-                    Regex.Match(host, @"^172\.1[6-9]\.").Success ||
-                    Regex.Match(host, @"^172\.2\d\.").Success ||
-                    host.StartsWith("172.30.") ||
-                    host.StartsWith("172.31.") ||
-                    host.StartsWith("192.168."))
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                logger.Error("Cannot check private address against an empty host.");
-                return false;
-            }
-        }
-
-        public static SIPResponse GetResponse(SIPRequest sipRequest, SIPResponseStatusCodesEnum responseCode, string reasonPhrase)
-        {
-            try
-            {
-                SIPResponse response = new SIPResponse(responseCode, reasonPhrase, sipRequest.LocalSIPEndPoint);
-
-                if (reasonPhrase != null)
-                {
-                    response.ReasonPhrase = reasonPhrase;
-                }
-
-                SIPHeader requestHeader = sipRequest.Header;
-                SIPFromHeader from = (requestHeader == null || requestHeader.From != null) ? requestHeader.From : new SIPFromHeader(null, new SIPURI(sipRequest.URI.Scheme, sipRequest.LocalSIPEndPoint), null);
-                SIPToHeader to = (requestHeader == null || requestHeader.To != null) ? requestHeader.To : new SIPToHeader(null, new SIPURI(sipRequest.URI.Scheme, sipRequest.LocalSIPEndPoint), null);
-                int cSeq = (requestHeader == null || requestHeader.CSeq != -1) ? requestHeader.CSeq : 1;
-                string callId = (requestHeader == null || requestHeader.CallId != null) ? requestHeader.CallId : CallProperties.CreateNewCallId();
-
-                response.Header = new SIPHeader(from, to, cSeq, callId);
-                response.Header.CSeqMethod = (requestHeader != null) ? requestHeader.CSeqMethod : SIPMethodsEnum.NONE;
-
-                if (requestHeader == null || requestHeader.Vias == null || requestHeader.Vias.Length == 0)
-                {
-                    response.Header.Vias.PushViaHeader(new SIPViaHeader(sipRequest.RemoteSIPEndPoint, CallProperties.CreateBranchId()));
-                }
-                else
-                {
-                    response.Header.Vias = requestHeader.Vias;
-                }
-
-                response.Header.MaxForwards = Int32.MinValue;
-
-                return response;
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SIPTransport GetResponse. " + excp.Message);
-                throw excp;
-            }
-        }
-
-        /// <summary>
-        /// Used to create a SIP response when it was not possible to parse the incoming SIP request.
-        /// </summary>
-        public static SIPResponse GetResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponseStatusCodesEnum responseCode, string reasonPhrase)
-        {
-            try
-            {
-                SIPResponse response = new SIPResponse(responseCode, reasonPhrase, localSIPEndPoint);
-                SIPSchemesEnum sipScheme = (localSIPEndPoint.SIPProtocol == SIPProtocolsEnum.tls) ? SIPSchemesEnum.sips : SIPSchemesEnum.sip;
-                SIPFromHeader from = new SIPFromHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
-                SIPToHeader to = new SIPToHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
-                int cSeq = 1;
-                string callId = CallProperties.CreateNewCallId();
-                response.Header = new SIPHeader(from, to, cSeq, callId);
-                response.Header.CSeqMethod = SIPMethodsEnum.NONE;
-                response.Header.Vias.PushViaHeader(new SIPViaHeader(new SIPEndPoint(localSIPEndPoint.SIPProtocol, remoteEndPoint.SocketEndPoint), CallProperties.CreateBranchId()));
-                response.Header.MaxForwards = Int32.MinValue;
-
-                return response;
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SIPTransport GetResponse. " + excp.Message);
-                throw excp;
-            }
-        }
-
-        public static SIPRequest GetRequest(SIPMethodsEnum method, SIPURI uri, SIPToHeader to, IPEndPoint localEndPoint)
-        {
-            SIPRequest request = new SIPRequest(method, uri);
-
-            SIPContactHeader contactHeader = SIPContactHeader.ParseContactHeader("sip:" + localEndPoint)[0];
-            SIPFromHeader fromHeader = new SIPFromHeader(null, contactHeader.ContactURI, CallProperties.CreateNewTag());
-            SIPHeader header = new SIPHeader(fromHeader, to, Crypto.GetRandomInt(1000, 9999), CallProperties.CreateNewCallId());
-            request.Header = header;
-            header.CSeqMethod = method;
-            SIPViaHeader viaHeader = new SIPViaHeader(localEndPoint.Address.ToString(), localEndPoint.Port, CallProperties.CreateBranchId());
-            header.Vias.PushViaHeader(viaHeader);
-
-            return request;
-        }
-
-        /// <summary>
         /// Attempts to match a SIPChannel for this process that has the specified local end point and protocol.
         /// </summary>
         /// <param name="localEndPoint">The local socket endpoint of the SIPChannel to find.</param>
@@ -1657,7 +1538,99 @@ namespace SIPSorcery.SIP
 
         #endregion
 
-        #region Transaction retrieval and creation methods.
+        #region Request, Response and Transaction retrieval and creation methods.
+
+        public static SIPResponse GetResponse(SIPRequest sipRequest, SIPResponseStatusCodesEnum responseCode, string reasonPhrase)
+        {
+            try
+            {
+                SIPResponse response = new SIPResponse(responseCode, reasonPhrase, sipRequest.LocalSIPEndPoint);
+
+                if (reasonPhrase != null)
+                {
+                    response.ReasonPhrase = reasonPhrase;
+                }
+
+                SIPHeader requestHeader = sipRequest.Header;
+                SIPFromHeader from = (requestHeader == null || requestHeader.From != null) ? requestHeader.From : new SIPFromHeader(null, new SIPURI(sipRequest.URI.Scheme, sipRequest.LocalSIPEndPoint), null);
+                SIPToHeader to = (requestHeader == null || requestHeader.To != null) ? requestHeader.To : new SIPToHeader(null, new SIPURI(sipRequest.URI.Scheme, sipRequest.LocalSIPEndPoint), null);
+                int cSeq = (requestHeader == null || requestHeader.CSeq != -1) ? requestHeader.CSeq : 1;
+                string callId = (requestHeader == null || requestHeader.CallId != null) ? requestHeader.CallId : CallProperties.CreateNewCallId();
+
+                response.Header = new SIPHeader(from, to, cSeq, callId);
+                response.Header.CSeqMethod = (requestHeader != null) ? requestHeader.CSeqMethod : SIPMethodsEnum.NONE;
+
+                if (requestHeader == null || requestHeader.Vias == null || requestHeader.Vias.Length == 0)
+                {
+                    response.Header.Vias.PushViaHeader(new SIPViaHeader(sipRequest.RemoteSIPEndPoint, CallProperties.CreateBranchId()));
+                }
+                else
+                {
+                    response.Header.Vias = requestHeader.Vias;
+                }
+
+                response.Header.MaxForwards = Int32.MinValue;
+
+                return response;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPTransport GetResponse. " + excp.Message);
+                throw excp;
+            }
+        }
+
+        /// <summary>
+        /// Used to create a SIP response when it was not possible to parse the incoming SIP request.
+        /// </summary>
+        public SIPResponse GetResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponseStatusCodesEnum responseCode, string reasonPhrase)
+        {
+            try
+            {
+                if (localSIPEndPoint == null)
+                {
+                    localSIPEndPoint = GetDefaultSIPEndPoint();
+                }
+
+                SIPResponse response = new SIPResponse(responseCode, reasonPhrase, localSIPEndPoint);
+                SIPSchemesEnum sipScheme = (localSIPEndPoint.SIPProtocol == SIPProtocolsEnum.tls) ? SIPSchemesEnum.sips : SIPSchemesEnum.sip;
+                SIPFromHeader from = new SIPFromHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
+                SIPToHeader to = new SIPToHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
+                int cSeq = 1;
+                string callId = CallProperties.CreateNewCallId();
+                response.Header = new SIPHeader(from, to, cSeq, callId);
+                response.Header.CSeqMethod = SIPMethodsEnum.NONE;
+                response.Header.Vias.PushViaHeader(new SIPViaHeader(new SIPEndPoint(localSIPEndPoint.SIPProtocol, remoteEndPoint.SocketEndPoint), CallProperties.CreateBranchId()));
+                response.Header.MaxForwards = Int32.MinValue;
+
+                return response;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPTransport GetResponse. " + excp.Message);
+                throw;
+            }
+        }
+
+        public SIPRequest GetRequest(SIPMethodsEnum method, SIPURI uri, SIPToHeader to, SIPEndPoint localSIPEndPoint)
+        {
+            if (localSIPEndPoint == null)
+            {
+                localSIPEndPoint = GetDefaultSIPEndPoint();
+            }
+
+            SIPRequest request = new SIPRequest(method, uri);
+
+            SIPContactHeader contactHeader = new SIPContactHeader(null, new SIPURI(SIPSchemesEnum.sip, localSIPEndPoint));
+            SIPFromHeader fromHeader = new SIPFromHeader(null, contactHeader.ContactURI, CallProperties.CreateNewTag());
+            SIPHeader header = new SIPHeader(contactHeader, fromHeader, to, Crypto.GetRandomInt(1000, 9999), CallProperties.CreateNewCallId());
+            request.Header = header;
+            header.CSeqMethod = method;
+            SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
+            header.Vias.PushViaHeader(viaHeader);
+
+            return request;
+        }
 
         public SIPTransaction GetTransaction(string transactionId)
         {
@@ -1675,6 +1648,11 @@ namespace SIPSorcery.SIP
         {
             try
             {
+                if (localSIPEndPoint == null)
+                {
+                    localSIPEndPoint = GetDefaultSIPEndPoint();
+                }
+
                 CheckTransactionEngineExists();
                 SIPNonInviteTransaction nonInviteTransaction = new SIPNonInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy);
                 m_transactionEngine.AddTransaction(nonInviteTransaction);
@@ -1691,6 +1669,11 @@ namespace SIPSorcery.SIP
         {
             try
             {
+                if (localSIPEndPoint == null)
+                {
+                    localSIPEndPoint = GetDefaultSIPEndPoint();
+                }
+
                 CheckTransactionEngineExists();
                 UACInviteTransaction uacInviteTransaction = new UACInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy);
                 m_transactionEngine.AddTransaction(uacInviteTransaction);
@@ -1707,6 +1690,11 @@ namespace SIPSorcery.SIP
         {
             try
             {
+                if (localSIPEndPoint == null)
+                {
+                    localSIPEndPoint = GetDefaultSIPEndPoint();
+                }
+
                 CheckTransactionEngineExists();
                 UASInviteTransaction uasInviteTransaction = new UASInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy);
                 m_transactionEngine.AddTransaction(uasInviteTransaction);
@@ -1723,6 +1711,11 @@ namespace SIPSorcery.SIP
         {
             try
             {
+                if (localSIPEndPoint == null)
+                {
+                    localSIPEndPoint = GetDefaultSIPEndPoint();
+                }
+
                 CheckTransactionEngineExists();
                 SIPCancelTransaction cancelTransaction = new SIPCancelTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, inviteTransaction);
                 m_transactionEngine.AddTransaction(cancelTransaction);
@@ -1780,29 +1773,6 @@ namespace SIPSorcery.SIP
 
             return requestEndPoint;
         }
-
-        #endregion
-
-        #region Unit Testing.
-
-        #if UNITTEST
-
-        [TestFixture]
-        public class SIPRequestUnitTest
-        {
-            [Test]
-            public void Test172IPRangeIsPrivate()
-            {
-                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                Assert.IsFalse(SIPTransport.IsPrivateAddress("172.15.1.1"), "Public IP address was mistakenly identified as private.");
-                Assert.IsTrue(SIPTransport.IsPrivateAddress("172.16.1.1"), "Private IP address was not correctly identified.");
-
-                Console.WriteLine("-----------------------------------------");
-            }
-        }
-
-        #endif
 
         #endregion
     }

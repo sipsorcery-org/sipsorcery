@@ -17,7 +17,7 @@ namespace SIPSorcery.Web.Services {
         bool IsAlive();
 
         [OperationContract]
-        [WebGet(UriTemplate = "customer/login?username={username}&password={password}")]
+        [WebGet(UriTemplate = "customer/login?username={username}&password={password}", ResponseFormat=WebMessageFormat.Json)]
         string Login(string username, string password);
 
         [OperationContract]

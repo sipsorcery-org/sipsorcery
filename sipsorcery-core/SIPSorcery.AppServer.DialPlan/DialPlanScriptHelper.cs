@@ -71,7 +71,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private const int DEFAULT_CREATECALL_RINGTIME = 60;
         private const int ENUM_LOOKUP_TIMEOUT = 5;              // Default timeout in seconds for ENUM lookups.
         private const string DEFAULT_LOCAL_DOMAIN = "local";
-        private const int MAX_BYTES_WEB_GET = 1024;             // The maximum number of bytes that will be read from the response stream in the WebGet application.
+        private const int MAX_BYTES_WEB_GET = 8192;             // The maximum number of bytes that will be read from the response stream in the WebGet application.
         private const string EMAIL_FROM_ADDRESS = "dialplan@sipsorcery.com";    // The from address that will be set for emails sent from the dialplan.
         private const int ALLOWED_ADDRESSES_PER_EMAIL = 5;     // The maximum number of addresses that can be used in an email.
         private const int ALLOWED_EMAILS_PER_EXECUTION = 3;     // The maximum number of emails that can be sent pre dialplan execution.
@@ -225,7 +225,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 {
                     getSIPAccount = m_sipAccountPersistor.Get;
                 }
-                m_dialStringParser = new DialStringParser(m_sipTransport, m_dialPlanContext.Owner, m_dialPlanContext.SIPAccount, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate);
+                m_dialStringParser = new DialStringParser(m_sipTransport, m_dialPlanContext.Owner, m_dialPlanContext.SIPAccount, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate, m_dialPlanContext.SIPDialPlan.DialPlanName);
                 if (m_sipRequest != null)
                 {
                     foreach (string unknownHeader in m_sipRequest.Header.UnknownHeaders)
@@ -328,7 +328,6 @@ namespace SIPSorcery.AppServer.DialPlan
             int answeredCallLimit,
             SIPRequest clientRequest)
         {
-
             if (m_dialPlanContext.IsAnswered)
             {
                 Log("The call has already been answered the Dial command was not processed.");
@@ -356,11 +355,10 @@ namespace SIPSorcery.AppServer.DialPlan
                 string answeredContentType = null;
                 string answeredBody = null;
                 SIPDialogue answeredDialogue = null;
-                SIPDialogueTransferModesEnum uasTransferMode = SIPDialogueTransferModesEnum.PassThru;
+                SIPDialogueTransferModesEnum uasTransferMode = SIPDialogueTransferModesEnum.BlindPassThru;
                 int numberLegs = 0;
-                LastDialled = new List<SIPTransaction>();
 
-                m_currentCall = new ForkCall(m_sipTransport, FireProxyLogEvent, m_callManager.QueueNewCall, Username, m_adminMemberId, LastDialled, m_outboundProxySocket);
+                m_currentCall = new ForkCall(m_sipTransport, FireProxyLogEvent, m_callManager.QueueNewCall, m_dialStringParser, Username, m_adminMemberId, m_outboundProxySocket, out LastDialled);
                 m_currentCall.CallProgress += m_dialPlanContext.CallProgress;
                 m_currentCall.CallFailed += (status, reason, headers) =>
                 {
@@ -391,7 +389,6 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_customContentType,
                         m_customContent,
                         m_dialPlanContext.CallersNetworkId,
-                        m_dialPlanContext.SIPDialPlan.DialPlanName,
                         m_customFromName,
                         m_customFromUser,
                         m_customFromHost);
@@ -485,7 +482,7 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="message"></param>
         public void Log(string message)
         {
-            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, message, Username));
+            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, message, Username));
         }
 
         /// <summary>
@@ -632,7 +629,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 string canonicalDomain = m_getCanonicalDomainDelegate(domain, false);
                 if (canonicalDomain.IsNullOrBlank())
                 {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The " + domain + " is not a serviced domain.", Username));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The " + domain + " is not a serviced domain.", Username));
                     return false;
                 }
                 else
@@ -640,7 +637,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     SIPAccount sipAccount = m_sipAccountPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain);
                     if (sipAccount == null)
                     {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in IsAvailable for " + username + "@" + canonicalDomain + ".", Username));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in IsAvailable for " + username + "@" + canonicalDomain + ".", Username));
                         return false;
                     }
                     else
@@ -706,7 +703,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 string canonicalDomain = m_getCanonicalDomainDelegate(domain, false);
                 if (canonicalDomain.IsNullOrBlank())
                 {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The " + domain + " is not a serviced domain.", Username));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The " + domain + " is not a serviced domain.", Username));
                     return null;
                 }
                 else
@@ -714,12 +711,12 @@ namespace SIPSorcery.AppServer.DialPlan
                     SIPAccount sipAccount = m_sipAccountPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == domain);
                     if (sipAccount == null)
                     {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in GetBindings for " + username + "@" + domain + ".", Username));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in GetBindings for " + username + "@" + domain + ".", Username));
                         return null;
                     }
                     else if (sipAccount.Owner != m_username)
                     {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "You are not authorised to call GetBindings for " + username + "@" + domain + ".", Username));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "You are not authorised to call GetBindings for " + username + "@" + domain + ".", Username));
                         return null;
                     }
                     else
@@ -966,7 +963,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 IPEndPoint sdpEndPoint = (content.IsNullOrBlank()) ? null : SDP.GetSDPRTPEndPoint(content);
                 if (sdpEndPoint != null)
                 {
-                    if (!SIPTransport.IsPrivateAddress(sdpEndPoint.Address.ToString()))
+                    if (!IPSocket.IsPrivateAddress(sdpEndPoint.Address.ToString()))
                     {
                         Log("SDP on GoogleVoiceCall call had public IP not mangled, RTP socket " + sdpEndPoint.ToString() + ".");
                     }
@@ -999,7 +996,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 SIPDialogue answeredDialogue = googleCall.InitiateCall(emailAddress, password, forwardingNumber, destinationNumber, fromURIUserToMatch, phoneType, waitForCallbackTimeout, m_sipRequest.Header.ContentType, content);
                 if (answeredDialogue != null)
                 {
-                    m_dialPlanContext.CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, null, answeredDialogue.ContentType, answeredDialogue.RemoteSDP, answeredDialogue, SIPDialogueTransferModesEnum.PassThru);
+                    m_dialPlanContext.CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, null, answeredDialogue.ContentType, answeredDialogue.RemoteSDP, answeredDialogue, SIPDialogueTransferModesEnum.BlindPassThru);
 
                     // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
                     Log("Google Voice Call was successfully answered in " + DateTime.Now.Subtract(startTime).TotalSeconds.ToString("0.00") + "s.");
@@ -1514,40 +1511,6 @@ namespace SIPSorcery.AppServer.DialPlan
             m_executingScript.EndTime = DateTime.Now.AddSeconds(seconds + DialPlanExecutingScript.MAX_SCRIPTPROCESSING_SECONDS);
         }
 
-        private void UpdateCallQueueFromHeaders(Queue<List<SIPCallDescriptor>> callsQueue, string fromName, string fromUser, string fromHost)
-        {
-            if (callsQueue != null && callsQueue.Count > 0)
-            {
-                List<SIPCallDescriptor>[] callsArray = callsQueue.ToArray();
-                Array.Reverse(callsArray);
-                for (int callsLegIndex = 0; callsLegIndex < callsArray.Length; callsLegIndex++)
-                {
-                    if (callsArray[callsLegIndex].Count > 0)
-                    {
-                        for (int callIndex = 0; callIndex < callsArray[callsLegIndex].Count; callIndex++)
-                        {
-                            SIPCallDescriptor call = callsArray[callsLegIndex][callIndex];
-                            SIPFromHeader currentFrom = SIPFromHeader.ParseFromHeader(call.From);
-                            if (fromName != null)
-                            {
-                                currentFrom.FromName = fromName;
-                            }
-                            if (fromUser != null)
-                            {
-                                currentFrom.FromURI.User = fromUser;
-                            }
-                            if (fromHost != null)
-                            {
-                                currentFrom.FromURI.Host = fromHost;
-                            }
-                            call.From = currentFrom.ToString();
-                            callsArray[callsLegIndex][callIndex] = call;
-                        }
-                    }
-                }
-            }
-        }
-
         /// <summary>
         /// Used to authorise calls to privileged dialplan applications. For example sending an email requires that the dialplan has the "email" in
         /// its list of authorised apps.
@@ -1591,9 +1554,14 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                if (m_dialPlanContext.TraceLog != null)
+                if (monitorEvent is SIPMonitorConsoleEvent)
                 {
-                    m_dialPlanContext.TraceLog.AppendLine(monitorEvent.EventType + "=> " + monitorEvent.Message);
+                    SIPMonitorConsoleEvent consoleEvent = monitorEvent as SIPMonitorConsoleEvent;
+
+                    if (m_dialPlanContext.TraceLog != null)
+                    {
+                        m_dialPlanContext.TraceLog.AppendLine(consoleEvent.EventType + "=> " + monitorEvent.Message);
+                    }
                 }
 
                 if (m_dialPlanLogDelegate != null)
@@ -1609,10 +1577,10 @@ namespace SIPSorcery.AppServer.DialPlan
 
         #region Unit testing.
 
-#if UNITTEST
+        #if UNITTEST
 
         [TestFixture]
-		public class StatefulProxyCoreUnitTest
+		public class DialPlanScriptHelperUnitTest
 		{
             [TestFixtureSetUp]
             public void Init() {
@@ -1647,7 +1615,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-#endif
+        #endif
 
         #endregion
     }

@@ -84,7 +84,7 @@ namespace SIPSorcery
 
             string server = Application.Current.Host.Source.DnsSafeHost;
 
-            try
+            /*try
             {
                 if (server == LOCALHOST_MONITOR_HOST || Application.Current.Host.Source.Scheme == "file")
                 {
@@ -116,7 +116,7 @@ namespace SIPSorcery
                 m_sipMonitorHost = DEFAULT_MONITOR_HOST;
                 m_provisioningServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;
                 m_notificationsServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_NOTIFICATIONS_FILE;
-            }
+            }*/
 
             if (server != DEFAULT_MONITOR_HOST)
             {

@@ -67,7 +67,8 @@ namespace SIPSorcery.WatchTower
 
         public void Start()
         {
-            try {
+            try
+            {
                 logger.Debug("WatchTowerDaemon starting...");
 
                 // Send events from this process to the monitoring socket.
@@ -92,7 +93,8 @@ namespace SIPSorcery.WatchTower
                 //m_sipTransport.SIPTransportRequestReceived += GotRequest;
                 //m_sipTransport.SIPTransportResponseReceived += GotResponse;
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception WatchTowerDaemon Start. " + excp.Message);
             }
         }
@@ -113,9 +115,10 @@ namespace SIPSorcery.WatchTower
         {
             try
             {
-                if (sipMonitorEvent != null)
+                if (sipMonitorEvent != null && m_monitorEventWriter != null)
                 {
-                    if (m_monitorEventWriter != null && sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.SIPTransaction)
+                    if (!(sipMonitorEvent is SIPMonitorConsoleEvent &&
+                        ((SIPMonitorConsoleEvent)sipMonitorEvent).EventType == SIPMonitorEventTypesEnum.SIPTransaction))
                     {
                         m_monitorEventWriter.Send(sipMonitorEvent);
                     }

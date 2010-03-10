@@ -22,11 +22,13 @@ namespace SIPSorcery.Sys
 		/// <summary>
 		/// Searches a buffer for a string up until a specified end string.
 		/// </summary>
-		/// <param name="buffer"></param>
-		/// <param name="find"></param>
-		/// <param name="end"></param>
+		/// <param name="buffer">The byte array to search for an instance of the specified string.</param>
+        /// <param name="startPosition">The position in the array that the search should be started from.</param>
+        /// <param name="endPosition">An index that if reached indicates the search should be halted.</param>
+		/// <param name="find">The string that is being searched for.</param>
+		/// <param name="end">If the end string is found the search is halted and a negative result returned.</param>
 		/// <returns>The start position in the buffer of the requested string or -1 if not found.</returns>
-		public static int GetStringPosition(byte[] buffer, string find, string end)
+		public static int GetStringPosition(byte[] buffer, int startPosition, int endPosition, string find, string end)
 		{
 			if(buffer == null || buffer.Length == 0 || find == null)
 			{
@@ -40,7 +42,7 @@ namespace SIPSorcery.Sys
 				int findPosn = 0;
 				int endPosn = 0;
 
-				for(int index=0; index<buffer.Length; index++)
+                for (int index = startPosition; index < endPosition; index++)
 				{
 					if(buffer[index] == findArray[findPosn])
 					{
@@ -74,9 +76,9 @@ namespace SIPSorcery.Sys
 			}
 		}
 
-        public static bool HasString(byte[] buffer, string find, string end)
+        public static bool HasString(byte[] buffer, int startPosition, int endPosition, string find, string end)
         {
-            return GetStringPosition(buffer, find, end) != -1;
+            return GetStringPosition(buffer, startPosition, endPosition, find, end) != -1;
         }
 
 		#region Unit testing.

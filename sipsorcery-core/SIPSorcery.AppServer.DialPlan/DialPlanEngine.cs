@@ -185,30 +185,30 @@ namespace SIPSorcery.AppServer.DialPlan
             try
             {
                 //SIPRequest sipRequest = uas.CallRequest;
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Executing line dial plan for call to " + uas.CallDestination + ".", dialPlanContext.Owner));
+                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Executing line dial plan for call to " + uas.CallDestination + ".", dialPlanContext.Owner));
 
                 DialPlanCommand matchedCommand = dialPlanContext.GetDialPlanMatch(uas.CallDestination);
 
                 if (matchedCommand == null)
                 {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Destination " + uas.CallDestination + " not found in line dial plan " + dialPlanContext.SIPDialPlan.DialPlanName + ".", dialPlanContext.Owner));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Destination " + uas.CallDestination + " not found in line dial plan " + dialPlanContext.SIPDialPlan.DialPlanName + ".", dialPlanContext.Owner));
                     dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.NotFound, null, null);
                 }
                 else if (Regex.Match(matchedCommand.Command, "Switch|Dial", RegexOptions.IgnoreCase).Success)
                 {
                     if (matchedCommand.Data != null && matchedCommand.Data.Trim().Length > 0)
                     {
-                        DialStringParser dialStringParser = new DialStringParser(m_sipTransport, dialPlanContext.Owner, dialPlanContext.SIPAccount, dialPlanContext.SIPProviders, m_sipAccountPersistor.Get, GetSIPAccountBindings_External, GetCanonicalDomainDelegate_External, LogDelegate_External);
-                        ForkCall ForkCall = new ForkCall(m_sipTransport, FireProxyLogEvent, callManager.QueueNewCall, dialPlanContext.Owner, dialPlanContext.AdminMemberId, null, m_outboundProxySocket);
+                        DialStringParser dialStringParser = new DialStringParser(m_sipTransport, dialPlanContext.Owner, dialPlanContext.SIPAccount, dialPlanContext.SIPProviders, m_sipAccountPersistor.Get, GetSIPAccountBindings_External, GetCanonicalDomainDelegate_External, LogDelegate_External, dialPlanContext.SIPDialPlan.DialPlanName);
+                        ForkCall ForkCall = new ForkCall(m_sipTransport, FireProxyLogEvent, callManager.QueueNewCall, dialStringParser, dialPlanContext.Owner, dialPlanContext.AdminMemberId, m_outboundProxySocket);
                         ForkCall.CallProgress += dialPlanContext.CallProgress;
                         ForkCall.CallFailed += dialPlanContext.CallFailed;
                         ForkCall.CallAnswered += dialPlanContext.CallAnswered;
-                        Queue<List<SIPCallDescriptor>> calls = dialStringParser.ParseDialString(DialPlanContextsEnum.Line, uas.CallRequest.Copy(), matchedCommand.Data, null, null, null, dialPlanContext.CallersNetworkId, dialPlanContext.SIPDialPlan.DialPlanName, null, null, null);
+                        Queue<List<SIPCallDescriptor>> calls = dialStringParser.ParseDialString(DialPlanContextsEnum.Line, uas.CallRequest.Copy(), matchedCommand.Data, null, null, null, dialPlanContext.CallersNetworkId, null, null, null);
                         ForkCall.Start(calls);
                     }
                     else
                     {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Error processing dialplan Dial command the dial string was empty.", dialPlanContext.Owner));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Error processing dialplan Dial command the dial string was empty.", dialPlanContext.Owner));
                     }
                 }
                 //else if (Regex.Match(matchedCommand.Command, "RTSP", RegexOptions.IgnoreCase).Success)
@@ -232,13 +232,13 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Command " + matchedCommand.Command + " is not a valid dial plan command.", dialPlanContext.Owner));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Command " + matchedCommand.Command + " is not a valid dial plan command.", dialPlanContext.Owner));
                     dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.InternalServerError, "Invalid dialplan command " + matchedCommand.Command, null);
                 }
             }
             catch (Exception excp)
             {
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Error executing line dialplan for " + uas.CallRequest.URI.ToString() + ". " + excp.Message, dialPlanContext.Owner));
+                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Error executing line dialplan for " + uas.CallRequest.URI.ToString() + ". " + excp.Message, dialPlanContext.Owner));
                 dialPlanContext.DialPlanExecutionFinished();
             }
         }
@@ -269,7 +269,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     throw new ArgumentNullException("The ISIPServerUserAgent parameter cannot be null when attempting to execute a dialplan script.");
                 }
 
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.NewCall, "Executing script dial plan for call to " + uas.CallDestination + ".", dialPlanContext.Owner));
+                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.NewCall, "Executing script dial plan for call to " + uas.CallDestination + ".", dialPlanContext.Owner));
 
                 if (!dialPlanContext.DialPlanScript.IsNullOrBlank())
                 {
@@ -278,17 +278,17 @@ namespace SIPSorcery.AppServer.DialPlan
                     if (ScriptCount < MAX_ALLOWED_SCRIPTSCOPES)
                     {
                         m_dialPlanScriptContextsCreated++;
-                        //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Creating DialPlanExecutingScript number " + m_dialPlanScriptContextsCreated + " for dialplan execution for script owned by " + dialPlanContext.Owner + ".", null));
+                        //FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Creating DialPlanExecutingScript number " + m_dialPlanScriptContextsCreated + " for dialplan execution for script owned by " + dialPlanContext.Owner + ".", null));
                         dialPlanExecutionScript = new DialPlanExecutingScript(FireProxyLogEvent);
                     }
                     else
                     {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Running script limit of " + MAX_ALLOWED_SCRIPTSCOPES + " reached.", null));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Running script limit of " + MAX_ALLOWED_SCRIPTSCOPES + " reached.", null));
                         lock (m_runningScripts)
                         {
                             foreach (DialPlanExecutingScript runningScript in m_runningScripts)
                             {
-                                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, " running script owner=" + runningScript.Owner + ", dialplan name=" + runningScript.ExecutingDialPlanContext.SIPDialPlan.DialPlanName + ", start time=" + runningScript.StartTime.ToString("dd MMM yyyy HH:mm:ss") + ".", null));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, " running script owner=" + runningScript.Owner + ", dialplan name=" + runningScript.ExecutingDialPlanContext.SIPDialPlan.DialPlanName + ", start time=" + runningScript.StartTime.ToString("dd MMM yyyy HH:mm:ss") + ".", null));
                             }
                         }
                     }
@@ -330,19 +330,19 @@ namespace SIPSorcery.AppServer.DialPlan
                     }
                     else
                     {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Error processing call " + uas.CallDestination + " there were no script slots available, script could not be executed.", dialPlanContext.Owner));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Error processing call " + uas.CallDestination + " there were no script slots available, script could not be executed.", dialPlanContext.Owner));
                         dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.InternalServerError, "Dial plan script engine was overloaded", null);
                     }
                 }
                 else
                 {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A script dial plan was empty, execution cannot continue.", dialPlanContext.Owner));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A script dial plan was empty, execution cannot continue.", dialPlanContext.Owner));
                     dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.InternalServerError, "Dial plan script was empty", null);
                 }
             }
             catch (Exception excp)
             {
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Error executing script dialplan for " + uas.CallDestination + ". " + excp.Message, dialPlanContext.Owner));
+                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Error executing script dialplan for " + uas.CallDestination + ". " + excp.Message, dialPlanContext.Owner));
                 dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.InternalServerError, "Dial plan exception starting script", null);
             }
         }
@@ -353,47 +353,46 @@ namespace SIPSorcery.AppServer.DialPlan
             DialPlanScriptHelper planHelper,
             string script)
         {
-
             try
             {
                 Thread.CurrentThread.Name = "dialplanscript-" + executingScript.ScriptNumber;
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution starting on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
+                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution starting on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
                 executingScript.DialPlanScriptEngine.Execute(script, executingScript.DialPlanScriptScope);
-                //FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution finished after full script run on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
+                //FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution finished after full script run on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
             }
             catch (ApplicationException appExcp)
             {
                 if (appExcp.Message != "Script was halted by external intervention.")
                 {
                     logger.Error("ApplicationException ExecuteScript. " + appExcp.Message);
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "There was an exception executing your dial plan script: " + appExcp.Message, executingScript.Owner));
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "ApplicationException on user " + executingScript.Owner + "'s dial plan script. " + appExcp.Message, null));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "There was an exception executing your dial plan script: " + appExcp.Message, executingScript.Owner));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "ApplicationException on user " + executingScript.Owner + "'s dial plan script. " + appExcp.Message, null));
                     executingScript.ExecutionError = appExcp.Message;
                 }
                 else
                 {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution finished after being halted due to execution interrupt on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution finished after being halted due to execution interrupt on thread " + Thread.CurrentThread.Name + " for " + dialPlanContext.Owner + ".", null));
                 }
             }
             //catch (System.Scripting.SyntaxErrorException)
             catch (SyntaxErrorException syntaxExcp)
             {
                 logger.Warn("SyntaxErrorException. Owner=" + dialPlanContext.Owner + ", DialPlanName=" + dialPlanContext.SIPDialPlan.DialPlanName + ", Line=" + syntaxExcp.Line + ".");
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "There was a syntax error in your dial plan on line " + syntaxExcp.Line + ", please check.", executingScript.Owner));
+                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "There was a syntax error in your dial plan on line " + syntaxExcp.Line + ", please check.", executingScript.Owner));
                 executingScript.ExecutionError = "Dial plan syntax error";
             }
             catch (MissingMethodException missingExcp)
             {
                 logger.Warn("MissingMethodException. " + missingExcp.Message);
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "There was a missing method exception in your dial plan: " + missingExcp.Message + ".", executingScript.Owner));
+                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "There was a missing method exception in your dial plan: " + missingExcp.Message + ".", executingScript.Owner));
                 executingScript.ExecutionError = "Dial plan missing method";
             }
             catch (ThreadAbortException) { }
             catch (Exception excp)
             {
                 logger.Error("Exception ExecuteScript (" + excp.GetType() + "). " + excp.Message);
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "There was an exception executing your dial plan script: " + excp.Message, executingScript.Owner));
-                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Exception on user " + executingScript.Owner + "'s dial plan script (" + excp.GetType() + "). " + excp.Message, null));
+                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "There was an exception executing your dial plan script: " + excp.Message, executingScript.Owner));
+                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Exception on user " + executingScript.Owner + "'s dial plan script (" + excp.GetType() + "). " + excp.Message, null));
                 executingScript.ExecutionError = "Dial plan exception";
             }
             finally
@@ -429,7 +428,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                             if (!killScript.Complete)
                             {
-                                killScript.LogDelegate(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Long running dialplan script was terminated.", killScript.Owner));
+                                killScript.LogDelegate(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Long running dialplan script was terminated.", killScript.Owner));
                             }
 
                             try
@@ -440,29 +439,29 @@ namespace SIPSorcery.AppServer.DialPlan
                                     // error executing the script or the dialplan could have completed without getting an answer.
                                     if (!killScript.ExecutionError.IsNullOrBlank())
                                     {
-                                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution completed without answering and had an execution error message of " + killScript.ExecutionError + ".", killScript.Owner));
+                                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution completed without answering and had an execution error message of " + killScript.ExecutionError + ".", killScript.Owner));
                                         dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.InternalServerError, killScript.ExecutionError, null);
                                     }
                                     else if (killScript.LastFailureStatus != SIPResponseStatusCodesEnum.None)
                                     {
-                                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution completed without answering and a last failure status of " + killScript.LastFailureStatus + " " + killScript.LastFailureReason + ".", killScript.Owner));
+                                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution completed without answering and a last failure status of " + killScript.LastFailureStatus + " " + killScript.LastFailureReason + ".", killScript.Owner));
                                         dialPlanContext.CallFailed(killScript.LastFailureStatus, killScript.LastFailureReason, null);
                                     }
                                     else
                                     {
-                                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution completed without answering and with no last failure status.", killScript.Owner));
-                                        dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.TemporarilyNotAvailable, null, null);
+                                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution completed without answering and with no last failure status.", killScript.Owner));
+                                        dialPlanContext.CallFailed(SIPResponseStatusCodesEnum.TemporarilyUnavailable, null, null);
                                     }
                                 }
                                 else
                                 {
-                                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution completed with normal clearing.", killScript.Owner));
+                                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan execution completed with normal clearing.", killScript.Owner));
                                 }
 
                                 long gcMemory = GC.GetTotalMemory(false);
                                 long physicalMemory = System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64;
 
-                                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan finished for " + killScript.Owner + ", gc memory=" + gcMemory + ", physical memory=" + physicalMemory + ", running script count=" + ScriptCount + ".", null));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dial plan finished for " + killScript.Owner + ", gc memory=" + gcMemory + ", physical memory=" + physicalMemory + ", running script count=" + ScriptCount + ".", null));
                             }
                             catch (Exception finallyExcp)
                             {

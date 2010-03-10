@@ -155,6 +155,11 @@ namespace SIPSorcery.SIP
             return !(endPoint1 == endPoint2);
         }
 
+        public override int GetHashCode()
+        {
+            return SIPProtocol.GetHashCode() + SocketEndPoint.GetHashCode();
+        }
+
         #region Unit testing.
 
 		#if UNITTEST

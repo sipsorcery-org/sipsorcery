@@ -172,7 +172,7 @@ namespace SIPSorcery.Servers
                         SIPDialogueAsset expiredCall = GetNextExpiredCall();
                         if (expiredCall != null)
                         {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Hanging up expired call to " + expiredCall.RemoteTarget + " after " + expiredCall.CallDurationLimit + "s.", expiredCall.Owner));
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Hanging up expired call to " + expiredCall.RemoteTarget + " after " + expiredCall.CallDurationLimit + "s.", expiredCall.Owner));
                             expiredCall.SIPDialogue.Hangup(m_sipTransport, m_outboundProxy);
                             m_sipDialogueManager.CallHungup(expiredCall.SIPDialogue, "Call duration limit reached");
                         }
@@ -229,8 +229,8 @@ namespace SIPSorcery.Servers
                 }
                 else
                 {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call Manager rejected call as new calls queue full.", null));
-                    serverUA.Reject(SIPResponseStatusCodesEnum.TemporarilyNotAvailable, "Call Manager overloaded", null);
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call Manager rejected call as new calls queue full.", null));
+                    serverUA.Reject(SIPResponseStatusCodesEnum.TemporarilyUnavailable, "Call Manager overloaded", null);
                 }
             }
             catch (Exception excp)
@@ -364,7 +364,7 @@ namespace SIPSorcery.Servers
 
             try
             {
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call Manager processing new call on thread " + Thread.CurrentThread.Name + " for " + uas.CallRequest.Method + " to " + uas.CallRequest.URI.ToString() + ".", null));
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call Manager processing new call on thread " + Thread.CurrentThread.Name + " for " + uas.CallRequest.Method + " to " + uas.CallRequest.URI.ToString() + ".", null));
 
                 #region Do some pre-flight checks on the SIP account to determine if the call should be processed.
 
@@ -376,13 +376,13 @@ namespace SIPSorcery.Servers
                     }
                     else if (uas.CallDirection == SIPCallDirection.Out)
                     {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + uas.CallRequest.Header.From.FromURI.ToParameterlessString() + " not found for outgoing call to " + uas.CallRequest.URI.ToString() + ".", null));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + uas.CallRequest.Header.From.FromURI.ToParameterlessString() + " not found for outgoing call to " + uas.CallRequest.URI.ToString() + ".", null));
                         uas.Reject(SIPResponseStatusCodesEnum.Forbidden, null, null);
                         return;
                     }
                     else if (uas.CallDirection == SIPCallDirection.In)
                     {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + uas.CallRequest.URI.ToParameterlessString() + " not found for incoming call.", null));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + uas.CallRequest.URI.ToParameterlessString() + " not found for incoming call.", null));
                         uas.Reject(SIPResponseStatusCodesEnum.NotFound, null, null);
                         return;
                     }
@@ -391,13 +391,13 @@ namespace SIPSorcery.Servers
                 {
                     if (uas.SIPAccount.IsDisabled)
                     {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + uas.SIPAccount.SIPUsername + "@" + uas.SIPAccount.SIPDomain + " is disabled for " + uas.CallDirection + " call.", uas.SIPAccount.Owner));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + uas.SIPAccount.SIPUsername + "@" + uas.SIPAccount.SIPDomain + " is disabled for " + uas.CallDirection + " call.", uas.SIPAccount.Owner));
                         uas.Reject(SIPResponseStatusCodesEnum.Forbidden, "SIP account disabled", null);
                         return;
                     }
                     else if (uas.SIPAccount.IsIncomingOnly && uas.CallDirection == SIPCallDirection.Out)
                     {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + uas.SIPAccount.SIPUsername + "@" + uas.SIPAccount.SIPDomain + " is not permitted to make outgoing calls", uas.SIPAccount.Owner));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SIP account " + uas.SIPAccount.SIPUsername + "@" + uas.SIPAccount.SIPDomain + " is not permitted to make outgoing calls", uas.SIPAccount.Owner));
                         uas.Reject(SIPResponseStatusCodesEnum.Forbidden, "SIP account not permitted to make outgoing calls", null);
                         return;
                     }
@@ -449,7 +449,7 @@ namespace SIPSorcery.Servers
 
                         if (dialPlan != null)
                         {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Using dialplan " + dialPlanName + " for " + uas.CallDirection + " call to " + callURI.ToString() + ".", owner));
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Using dialplan " + dialPlanName + " for " + uas.CallDirection + " call to " + callURI.ToString() + ".", owner));
 
                             if (dialPlan.ScriptType == SIPDialPlanScriptTypesEnum.Asterisk)
                             {
@@ -489,13 +489,13 @@ namespace SIPSorcery.Servers
                         {
                             if (uas.IsB2B)
                             {
-                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dialplan could not be loaded for incoming B2B call to " + callURI.ToString() + ".", owner));
+                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dialplan could not be loaded for incoming B2B call to " + callURI.ToString() + ".", owner));
                                 uas.Reject(SIPResponseStatusCodesEnum.InternalServerError, "Error loading incoming dial plan for B2B call", null);
                                 DecrementCustomerExecutionCount(customer);
                             }
                             else
                             {
-                                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No dialplan specified for incoming call to " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + ", registered bindings will be used.", owner));
+                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No dialplan specified for incoming call to " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + ", registered bindings will be used.", owner));
 
                                 // The SIP account has no dialplan for an incoming call therefore send to the SIP account's bindings.
                                 List<SIPRegistrarBinding> bindings = GetSIPAccountBindings_External(b => b.SIPAccountId == sipAccount.Id, null, 0, MAX_FORWARD_BINDINGS);
@@ -503,7 +503,7 @@ namespace SIPSorcery.Servers
                                 {
                                     // Create a pseudo-dialplan to process the incoming call.
                                     string pseudoScript = "sys.Dial(\"" + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + "\")\n";
-                                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding incoming call for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " to " + bindings.Count + " bindings.", owner));
+                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding incoming call for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " to " + bindings.Count + " bindings.", owner));
                                     SIPDialPlan incomingDialPlan = new SIPDialPlan(sipAccount.Owner, null, null, pseudoScript, SIPDialPlanScriptTypesEnum.Ruby);
                                     incomingDialPlan.Id = Guid.Empty; // Prevents the increment and decrement on the execution counts.
                                     DialPlanScriptContext scriptContext = new DialPlanScriptContext(
@@ -522,8 +522,8 @@ namespace SIPSorcery.Servers
                                 }
                                 else
                                 {
-                                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No bindings available for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " returning temporarily not available.", owner));
-                                    uas.Reject(SIPResponseStatusCodesEnum.TemporarilyNotAvailable, null, null);
+                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No bindings available for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " returning temporarily not available.", owner));
+                                    uas.Reject(SIPResponseStatusCodesEnum.TemporarilyUnavailable, null, null);
                                     //DecrementDialPlanExecutionCount(null, customer.Id);
                                     DecrementCustomerExecutionCount(customer);
                                 }
@@ -532,7 +532,7 @@ namespace SIPSorcery.Servers
                         else
                         {
                             // Couldn't load a dialplan for an outgoing call.
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dialplan could not be loaded for " + uas.CallDirection + " call to " + callURI.ToString() + ".", owner));
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Dialplan could not be loaded for " + uas.CallDirection + " call to " + callURI.ToString() + ".", owner));
                             uas.Reject(SIPResponseStatusCodesEnum.InternalServerError, "Error loading dial plan", null);
                             //DecrementDialPlanExecutionCount(null, customer.Id);
                             DecrementCustomerExecutionCount(customer);
@@ -542,7 +542,7 @@ namespace SIPSorcery.Servers
             }
             catch (Exception excp)
             {
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Exception SIPCallManager ProcessNewCall. " + excp.Message, null));
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "Exception SIPCallManager ProcessNewCall. " + excp.Message, null));
                 uas.Reject(SIPResponseStatusCodesEnum.InternalServerError, "Exception ProcessNewCall", null);
 
                 if (wasExecutionCountIncremented)
@@ -566,12 +566,12 @@ namespace SIPSorcery.Servers
 
                 if (customer == null)
                 {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web " + dialplanName + " rejected for " + username + " and " + number + ", as no matching user.", null));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web " + dialplanName + " rejected for " + username + " and " + number + ", as no matching user.", null));
                     return "Sorry no matching user was found, the " + dialplanName + " was not initiated.";
                 }
                 else if (customer.Suspended)
                 {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web " + dialplanName + " rejected for " + username + " and " + number + ", user account is suspended.", null));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web " + dialplanName + " rejected for " + username + " and " + number + ", user account is suspended.", null));
                     return "Sorry the user's account is suspended.";
                 }
                 else if (!replacesCallID.IsNullOrBlank() && replacesDialogue == null)
@@ -583,14 +583,14 @@ namespace SIPSorcery.Servers
                     dialPlan = GetDialPlan_External(d => d.Owner == username && d.DialPlanName == dialplanName);
                     if (dialPlan == null)
                     {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web " + dialplanName + " rejected as no " + dialplanName + " dialplan exists.", username));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web " + dialplanName + " rejected as no " + dialplanName + " dialplan exists.", username));
                         return "Sorry the specified user has not enabled callbacks, the callback was not initiated.";
                     }
                     else
                     {
                         if (!IsDialPlanExecutionAllowed(dialPlan, customer))
                         {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of web call for dialplan " + dialplanName + " was not processed as maximum execution count has been reached.", username));
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of web call for dialplan " + dialplanName + " was not processed as maximum execution count has been reached.", username));
                             return "Sorry the callback was not initiated, dial plan execution exceeded maximum allowed";
                         }
                         else
@@ -598,7 +598,7 @@ namespace SIPSorcery.Servers
                             //IncrementDialPlanExecutionCount(dialPlan, customer, originalExecutionCount + 1);
                             IncrementCustomerExecutionCount(customer);
 
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web call for " + dialplanName + " initialising to " + number + ".", username));
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web call for " + dialplanName + " initialising to " + number + ".", username));
 
                             ISIPServerUserAgent uas = null;
                             if (replacesCallID.IsNullOrBlank())
@@ -609,7 +609,7 @@ namespace SIPSorcery.Servers
                             else
                             {
                                 SIPDialogue oppositeDialogue = m_sipDialogueManager.GetOppositeDialogue(replacesDialogue);
-                                uas = new SIPTransferServerUserAgent(Log_External, m_sipDialogueManager.BlindTransfer, m_sipTransport, m_outboundProxy, replacesDialogue, oppositeDialogue, number, customer.CustomerUsername, customer.AdminId);
+                                uas = new SIPTransferServerUserAgent(Log_External, m_sipDialogueManager.DialogueTransfer, m_sipTransport, m_outboundProxy, replacesDialogue, oppositeDialogue, number, customer.CustomerUsername, customer.AdminId);
                             }
 
                             DialPlanScriptContext scriptContext = new DialPlanScriptContext(
@@ -661,26 +661,26 @@ namespace SIPSorcery.Servers
 
                 if (customer == null)
                 {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for customer " + owner + " as no matching account found.", null));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for customer " + owner + " as no matching account found.", null));
                     uas.Reject(SIPResponseStatusCodesEnum.DoesNotExistAnywhere, "No matching user was found", null);
                 }
                 else if (customer.Suspended)
                 {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for customer " + owner + " as account is suspended.", null));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for customer " + owner + " as account is suspended.", null));
                     uas.Reject(SIPResponseStatusCodesEnum.DoesNotExistAnywhere, "User account is suspended", null);
                 }
                 else if (dialPlanName.IsNullOrBlank() && uas.CallDirection == SIPCallDirection.Out)
                 {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for customer " + owner + " as no dialplan is configured for an " + uas.CallDirection + " call.", null));
-                    uas.Reject(SIPResponseStatusCodesEnum.TemporarilyNotAvailable, "SIP account missing dialplan setting", null);
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for customer " + owner + " as no dialplan is configured for an " + uas.CallDirection + " call.", null));
+                    uas.Reject(SIPResponseStatusCodesEnum.TemporarilyUnavailable, "SIP account missing dialplan setting", null);
                 }
                 else
                 {
                     dialPlan = GetDialPlan_External(d => d.Owner == owner && d.DialPlanName == dialPlanName);
                     if (!IsDialPlanExecutionAllowed(dialPlan, customer))
                     {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of dial plan " + dialPlanName + " was not processed as maximum execution count has been reached.", owner));
-                        uas.Reject(SIPResponseStatusCodesEnum.TemporarilyNotAvailable, "Dial plan execution exceeded maximum allowed", null);
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of dial plan " + dialPlanName + " was not processed as maximum execution count has been reached.", owner));
+                        uas.Reject(SIPResponseStatusCodesEnum.TemporarilyUnavailable, "Dial plan execution exceeded maximum allowed", null);
                     }
                     else
                     {
@@ -818,14 +818,6 @@ namespace SIPSorcery.Servers
             return dummyTransaction;
         }
 
-        public void Transfer(SIPDialogue dialogue, SIPNonInviteTransaction referTransaction)
-        {
-            logger.Debug("Transfer requested to " + referTransaction.TransactionRequest.Header.ReferTo + ".");
-
-            SIPResponse errorResponse = SIPTransport.GetResponse(referTransaction.TransactionRequest, SIPResponseStatusCodesEnum.NotImplemented, null);
-            m_sipTransport.SendResponse(errorResponse);
-        }
-
         public int GetCurrentCallCount(string owner)
         {
             try
@@ -876,9 +868,9 @@ namespace SIPSorcery.Servers
             }
         }
 
-        public void ReInvite(SIPDialogue dialogue, string replacementSDP)
+        public void ReInvite(SIPDialogue dialogue, SIPDialogue substituteDialogue)
         {
-            m_sipDialogueManager.ReInvite(dialogue, replacementSDP);
+            m_sipDialogueManager.ReInvite(dialogue, substituteDialogue);
         }
 
         public void CreateDialogueBridge(SIPDialogue clientDiaglogue, SIPDialogue forwardedDialogue, string owner)

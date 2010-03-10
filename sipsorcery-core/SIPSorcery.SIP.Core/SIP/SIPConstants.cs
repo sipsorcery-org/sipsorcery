@@ -66,17 +66,9 @@ namespace SIPSorcery.SIP
 		public const int DEFAULT_REGISTEREXPIRY_SECONDS = 600;
 		public const int DEFAULT_SIP_PORT = 5060;
         public const int DEFAULT_SIP_TLS_PORT = 5061;
-
-		public const int DEFAULT_STARTRTP_PORT = 10000;
-		public const int DEFAULT_ENDRTP_PORT = 20000;
-
-		public const int MAX_PORT = 65535;
-
-		public const string MWI_CONTENT_TYPE = "application/simple-message-summary";
+ 
         public const string NAT_SENDKEEPALIVES_VALUE = "y";
-
         public const string SIP_REFER_NOTIFY_EVENT = "refer";                   // The value that must be set for the Event header on a NOTIFY request when processing a REFER (RFC 3515).
-        public const string SIP_REFER_NOTIFY_CONTENTTYPE = "message/sipfrag";   // The content type that must be set for a NOTIFY request when processing a REFER (RFC 3515).
 	}
 
 	public enum SIPMessageTypesEnum
@@ -163,6 +155,7 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_ACCEPTLANGUAGE = "Accept-Language";
         public const string SIP_HEADER_ALERTINFO = "Alert-Info";
         public const string SIP_HEADER_ALLOW = "Allow";
+        public const string SIP_HEADER_ALLOW_EVENTS = "Allow-Events";               // RC3265 (SIP Events).
         public const string SIP_HEADER_AUTHENTICATIONINFO = "Authentication-Info";
         public const string SIP_HEADER_AUTHORIZATION = "Authorization";
 		public const string SIP_HEADER_CALLID = "Call-ID";
@@ -176,6 +169,7 @@ namespace SIPSorcery.SIP
 		public const string SIP_HEADER_CSEQ = "CSeq";
         public const string SIP_HEADER_DATE = "Date";
         public const string SIP_HEADER_ERROR_INFO = "Error-Info";
+        public const string SIP_HEADER_EVENT = "Event";                             // RC3265 (SIP Events).
         public const string SIP_HEADER_EXPIRES = "Expires";
 		public const string SIP_HEADER_FROM = "From";
         public const string SIP_HEADER_IN_REPLY_TO = "In-Reply-To";
@@ -195,6 +189,7 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_ROUTE = "Route";
         public const string SIP_HEADER_SERVER = "Server";
         public const string SIP_HEADER_SUBJECT = "Subject";
+        public const string SIP_HEADER_SUBSCRIPTION_STATE = "Subscription-State";       // RC3265 (SIP Events).
         public const string SIP_HEADER_SUPPORTED = "Supported";
         public const string SIP_HEADER_TIMESTAMP = "Timestamp";
 		public const string SIP_HEADER_TO = "To";
@@ -219,10 +214,6 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_REFERREDBY = "Referred-By";
         public const string SIP_HEADER_REFERTO = "Refer-To";
         public const string SIP_COMPACTHEADER_REFERTO = "r";
-
-		// SIP Header Extensions for SIP Event Package RFC 3265.
-		public const string SIP_HEADER_EVENT = "Event";
-		public const string SIP_HEADER_SUBSCRIPTIONSTATE = "Subscription-State";
 
         // Custom SIP headers to allow proxy to communicate network info to internal servers.
         public const string SIP_HEADER_PROXY_RECEIVEDON = "Proxy-ReceivedOn";
@@ -277,13 +268,15 @@ namespace SIPSorcery.SIP
 		CANCEL = 6,
 		OPTIONS = 7,
 
-		INFO = 8,
-		NOTIFY = 9,
-		SUBSCRIBE = 10,
-		PUBLISH = 11,
+		INFO = 8,           // RFC2976.
+		NOTIFY = 9,         // RFC3265.
+        SUBSCRIBE = 10,     // RFC3265.
+		PUBLISH = 11,       // RFC3903.
 		PING = 13,
-		REFER = 14,         // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
-        MESSAGE = 15,
+		REFER = 14,         // RFC3515 "The Session Initiation Protocol (SIP) Refer Method"
+        MESSAGE = 15,       // RFC3428.
+        PRACK = 16,         // RFC3262.
+        UPDATE = 17,        // RFC3311.
 	}
 
 	public class SIPMethods
@@ -315,7 +308,8 @@ namespace SIPSorcery.SIP
 		
 		// Success
 		Ok = 200,
-        Accepted = 202,     // Extensions from RFC 3515 The Session Initiation Protocol (SIP) Refer Method.
+        Accepted = 202,                         // RC3265 (SIP Events).
+        NoNotification = 204,
 
 		// Redirection
         MultipleChoices = 300,
@@ -334,15 +328,28 @@ namespace SIPSorcery.SIP
 		NotAcceptable = 406,
 		ProxyAuthenticationRequired = 407,
         RequestTimeout = 408,
-        Gone = 409,
+        Gone = 410,
+        ConditionalRequestFailed = 412,
         RequestEntityTooLarge = 413,
-        RequestURITooLarge = 414,
+        RequestURITooLong = 414,
         UnsupportedMediaType = 415,
         UnsupportedURIScheme = 416,
+        UnknownResourcePriority = 417,
         BadExtension = 420,
         ExtensionRequired = 421,
+        SessionIntervalTooSmall = 422,
         IntervalTooBrief = 423,
-		TemporarilyNotAvailable = 480,
+        UseIdentityHeader = 428,
+        ProvideReferrerIdentity = 429,
+        FlowFailed = 430,
+        AnonymityDisallowed = 433,
+        BadIdentityInfo = 436,
+        UnsupportedCertificate = 437,
+        InvalidIdentityHeader = 438,
+        FirstHopLacksOutboundSupport = 439,
+        MaxBreadthExceeded = 440,
+        ConsentNeeded = 470,
+		TemporarilyUnavailable = 480,
 		CallLegTransactionDoesNotExist = 481,
 		LoopDetected = 482,
 		TooManyHops = 483,
@@ -351,10 +358,12 @@ namespace SIPSorcery.SIP
 		BusyHere = 486,
 		RequestTerminated = 487,
         NotAcceptableHere = 488,
+        BadEvent = 489,                         // RC3265 (SIP Events).
         RequestPending = 491,
         Undecipherable = 493,
-		
-		// Server-Error
+		SecurityAgreementRequired = 580,
+        
+		// Server Failure.
 		InternalServerError = 500,
         NotImplemented = 501,
         BadGateway = 502,
@@ -362,8 +371,9 @@ namespace SIPSorcery.SIP
 		ServerTimeout = 504,
         SIPVersionNotSupported = 505,
 		MessageTooLarge = 513,
+        PreconditionFailure = 580,
 
-		// Global-Failure
+		// Global Failures.
         BusyEverywhere = 600,
         Decline = 603,
         DoesNotExistAnywhere = 604,
@@ -385,41 +395,13 @@ namespace SIPSorcery.SIP
         Server = 2,     // UAS.
     }
 
-    /*public enum SIPValidationError
+    public class SIPMIMETypes
     {
-        None = 0,
-
-        // Errors that can occur when parsing individual headers.
-        CSeqMethodMissing = 1,
-        CSeqNotValidInteger = 2,
-        CSeqEmpty = 3,
-        ExpiresNotValidInteger = 4,
-        MaxHeaderNotValidInteger = 5,
-        ContentLengthNotValidInteger = 6,
-        NoClosingRQuote = 7,
-        URIInvalid = 8,
-        ViaHeaderIllegal = 10,
-        NonNumericPortForIPAddress = 11,
-        NoContactAddressOnVia = 14,
-
-        // Errors that can occur on the SIP header.
-        CSeqMissing = 101,
-        FromHeaderMissing = 102,
-        ToHeaderMissing = 103,
-        NoViaHeadersPresent = 104,
-
-        // Errors that can occur on a SIP request.
-        RequestURIMissing = 201,
-        RequestURIInvalid = 202,
-        TooManyHops = 203,
-        Loop = 204,
-        TooLarge = 205,
-
-        // Errors that can occur when creating a SIP Transacion.
-        NoBranchOnVia = 301,             // This validation error will only apply to requests that are being used to create a new transaction (in theory it should be all requests but there are lots of cases in the wild that this would stop).
-        DuplicateTransaction = 302,
-        AckOnNonCompletedTransaction = 303,
-    }*/
+        public const string DIALOG_INFO_CONTENT_TYPE = "application/dialog-info+xml";   // RFC4235 INVITE dialog event package.
+        public const string MWI_CONTENT_TYPE = "application/simple-message-summary";    // RFC3842 MWI event package.
+        public const string REFER_CONTENT_TYPE = "message/sipfrag";                     // RFC3515 REFER event package.
+        public const string MWI_TEXT_TYPE = "text/text";
+    }
 
     public static class SIPEscape
     {

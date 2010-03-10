@@ -51,6 +51,7 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Net" />
     <Reference Include="System.Windows.Browser" />
+    <Reference Include="System.Xml.Linq, Version=2.0.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\AssemblyState.cs">
@@ -64,6 +65,21 @@
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\SIPCDR\SIPCDR.cs">
       <Link>SIPCDR\SIPCDR.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\SIPEvents\ISIPEvent.cs">
+      <Link>SIPEvents\ISIPEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\SIPEvents\SIPEventDialog.cs">
+      <Link>SIPEvents\SIPEventDialog.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\SIPEvents\SIPEventDialogInfo.cs">
+      <Link>SIPEvents\SIPEventDialogInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\SIPEvents\SIPEventDialogParticipant.cs">
+      <Link>SIPEvents\SIPEventDialogParticipant.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\SIPEvents\SIPEventPackages.cs">
+      <Link>SIPEvents\SIPEventPackages.cs</Link>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\SIPFunctionDelegates.cs">
       <Link>SIPFunctionDelegates.cs</Link>

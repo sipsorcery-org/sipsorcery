@@ -1,5 +1,5 @@
 // ============================================================================
-// FileName: SIPMonitorControlClientEvent.cs
+// FileName: SIPMonitorConsoleEvent.cs
 //
 // Description:
 // Describes the types of events that can be sent by the different SIP Servers to SIP
@@ -59,24 +59,29 @@ namespace SIPSorcery.SIP.App
     /// Describes the types of events that can be sent by the different SIP Servers to SIP
     /// Monitor clients.
     /// </summary>
-	public class SIPMonitorControlClientEvent : SIPMonitorEvent
-	{
+    public class SIPMonitorConsoleEvent : SIPMonitorEvent
+    {
         public const string SERIALISATION_PREFIX = "1";     // Prefix appended to the front of a serialised event to identify the type.
         private const string CALLDIRECTION_IN_STRING = "<-";
         private const string CALLDIRECTION_OUT_STRING = "->";
 
         private static readonly string m_topLevelAdminID = Customer.TOPLEVEL_ADMIN_ID;
-				
-        private SIPMonitorControlClientEvent()
-        { 
-            m_serialisationPrefix = SERIALISATION_PREFIX;
-            ClientType = SIPMonitorClientTypesEnum.ControlClient;
-        }
 
-        public SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, string username)
+        public SIPMonitorServerTypesEnum ServerType;
+        public SIPEndPoint DestinationEndPoint;
+        public SIPEndPoint ServerEndPoint;           // Socket the request was received on by the server.
+        public SIPMonitorEventTypesEnum EventType;
+
+        private SIPMonitorConsoleEvent()
         {
             m_serialisationPrefix = SERIALISATION_PREFIX;
-            ClientType = SIPMonitorClientTypesEnum.ControlClient;
+            ClientType = SIPMonitorClientTypesEnum.Console;
+        }
+
+        public SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, string username)
+        {
+            m_serialisationPrefix = SERIALISATION_PREFIX;
+            ClientType = SIPMonitorClientTypesEnum.Console;
 
             ServerType = serverType;
             EventType = eventType;
@@ -85,9 +90,10 @@ namespace SIPSorcery.SIP.App
             Created = DateTime.UtcNow;
         }
 
-        public SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, string username, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint) {
+        public SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, string username, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint)
+        {
             m_serialisationPrefix = SERIALISATION_PREFIX;
-            ClientType = SIPMonitorClientTypesEnum.ControlClient;
+            ClientType = SIPMonitorClientTypesEnum.Console;
 
             ServerType = serverType;
             EventType = eventType;
@@ -98,10 +104,10 @@ namespace SIPSorcery.SIP.App
             RemoteEndPoint = remoteEndPoint;
         }
 
-        public SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, SIPEndPoint serverSocket, SIPEndPoint fromSocket, SIPEndPoint toSocket)
+        public SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, SIPEndPoint serverSocket, SIPEndPoint fromSocket, SIPEndPoint toSocket)
         {
             m_serialisationPrefix = SERIALISATION_PREFIX;
-            ClientType = SIPMonitorClientTypesEnum.ControlClient;
+            ClientType = SIPMonitorClientTypesEnum.Console;
 
             ServerType = serverType;
             EventType = eventType;
@@ -112,10 +118,10 @@ namespace SIPSorcery.SIP.App
             Created = DateTime.UtcNow;
         }
 
-        public SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, SIPRequest sipRequest, SIPResponse sipResponse, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, SIPCallDirection callDirection)
+        public SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, SIPRequest sipRequest, SIPResponse sipResponse, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, SIPCallDirection callDirection)
         {
             m_serialisationPrefix = SERIALISATION_PREFIX;
-            ClientType = SIPMonitorClientTypesEnum.ControlClient;
+            ClientType = SIPMonitorClientTypesEnum.Console;
 
             ServerType = serverType;
             EventType = eventType;
@@ -135,11 +141,11 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public static SIPMonitorControlClientEvent ParseClientControlEventCSV(string eventCSV)
+        public static SIPMonitorConsoleEvent ParseClientControlEventCSV(string eventCSV)
         {
             try
             {
-                SIPMonitorControlClientEvent monitorEvent = new SIPMonitorControlClientEvent();
+                SIPMonitorConsoleEvent monitorEvent = new SIPMonitorConsoleEvent();
 
                 if (eventCSV.IndexOf(END_MESSAGE_DELIMITER) != -1)
                 {
@@ -177,7 +183,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPMonitorControlClientEvent ParseEventCSV. " + excp.Message);
+                logger.Error("Exception SIPMonitorConsoleEvent ParseEventCSV. " + excp.Message);
                 return null;
             }
         }
@@ -205,7 +211,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPMonitorControlClientEvent ToCSV. " + excp.Message);
+                logger.Error("Exception SIPMonitorConsoleEvent ToCSV. " + excp.Message);
                 return null;
             }
         }
@@ -236,13 +242,13 @@ namespace SIPSorcery.SIP.App
 
             return consoleString;
         }
-              
-		#region Unit testing.
 
-		#if UNITTEST
+        #region Unit testing.
+
+#if UNITTEST
 	
 		[TestFixture]
-		public class SIPMonitorControlClientEventUnitTest
+		public class SIPMonitorConsoleEventUnitTest
 		{
 			[TestFixtureSetUp]
 			public void Init()
@@ -258,8 +264,8 @@ namespace SIPSorcery.SIP.App
 			}
 		}
 
-		#endif
+#endif
 
-		#endregion
-	}
+        #endregion
+    }
 }

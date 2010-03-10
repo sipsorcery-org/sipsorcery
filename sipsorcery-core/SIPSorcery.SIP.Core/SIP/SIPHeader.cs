@@ -2072,9 +2072,7 @@ namespace SIPSorcery.SIP
 
     public class SIPViaSet
     {
-        private int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static string m_CRLF = SIPConstants.CRLF;
-        private static string m_rportKey = SIPHeaderAncillary.SIP_HEADERANC_RPORT;
 
         private List<SIPViaHeader> m_viaHeaders = new List<SIPViaHeader>();
 
@@ -2159,11 +2157,7 @@ namespace SIPSorcery.SIP
             SIPViaHeader topViaHeader = this.TopViaHeader;
 
             topViaHeader.ReceivedFromIPAddress = msgRcvdEndPoint.Address.ToString();
-
-            //if (topViaHeader.ViaParameters.Has(m_rportKey))
-            //{
-                topViaHeader.ReceivedFromPort = msgRcvdEndPoint.Port;
-            //}
+            topViaHeader.ReceivedFromPort = msgRcvdEndPoint.Port;
         }
 
         /// <summary>
@@ -2271,6 +2265,7 @@ namespace SIPSorcery.SIP
         public string AcceptLanguage;
         public string AlertInfo;
         public string Allow;
+        public string AllowEvents;                      // RFC3265 SIP Events.
         public string AuthenticationInfo;
         public SIPAuthenticationHeader AuthenticationHeader;
         public string CallId;
@@ -2285,6 +2280,7 @@ namespace SIPSorcery.SIP
         public SIPMethodsEnum CSeqMethod;
         public string Date;
         public string ErrorInfo;
+        public string Event;                            // RFC3265 SIP Events.
         public int Expires = -1;
         public SIPFromHeader From;
         public string InReplyTo;
@@ -2302,6 +2298,7 @@ namespace SIPSorcery.SIP
         public SIPRouteSet Routes = new SIPRouteSet();
         public string Server;
         public string Subject;
+        public string SubscriptionState;                  // RFC3265 SIP Events.
         public string Supported;
         public string Timestamp;
         public SIPToHeader To;
@@ -2313,10 +2310,6 @@ namespace SIPSorcery.SIP
         // Non-core SIP headers from RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
         public string ReferTo;
         public string ReferredBy;
-
-        // Non-core SIP headers from RFC 3265 SIP Event Package.
-        public string Event;
-        public string SubscriptionState;
 
         // Non-core custom SIP headers used to allow a SIP Proxy to communicate network info to internal server agents.
         public string ProxyReceivedOn;
@@ -2640,14 +2633,20 @@ namespace SIPSorcery.SIP
                             }
                         }
                         #endregion
-                        #region Event.
+                        #region Allow-Events
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALLOW_EVENTS)
+                        {
+                            sipHeader.AllowEvents = headerValue;
+                        }
+                        #endregion
+                        #region Event
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_EVENT.ToLower())
                         {
                             sipHeader.Event = headerValue;
                         }
                         #endregion
                         #region SubscriptionState.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SUBSCRIPTIONSTATE.ToLower())
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SUBSCRIPTION_STATE.ToLower())
                         {
                             sipHeader.SubscriptionState = headerValue;
                         }
@@ -2968,8 +2967,9 @@ namespace SIPSorcery.SIP
                 }
 
                 // Non-core SIP headers.
+                headersBuilder.Append((AllowEvents != null) ? SIPHeaders.SIP_HEADER_ALLOW_EVENTS + ": " + AllowEvents + m_CRLF : null);
                 headersBuilder.Append((Event != null) ? SIPHeaders.SIP_HEADER_EVENT + ": " + Event + m_CRLF : null);
-                headersBuilder.Append((SubscriptionState != null) ? SIPHeaders.SIP_HEADER_SUBSCRIPTIONSTATE + ": " + SubscriptionState + m_CRLF : null);
+                headersBuilder.Append((SubscriptionState != null) ? SIPHeaders.SIP_HEADER_SUBSCRIPTION_STATE + ": " + SubscriptionState + m_CRLF : null);
                 headersBuilder.Append((ReferTo != null) ? SIPHeaders.SIP_HEADER_REFERTO + ": " + ReferTo + m_CRLF : null);
                 headersBuilder.Append((ReferredBy != null) ? SIPHeaders.SIP_HEADER_REFERREDBY + ": " + ReferredBy + m_CRLF : null);
                 headersBuilder.Append((Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);

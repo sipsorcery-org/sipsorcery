@@ -50,13 +50,14 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Net" />
     <Reference Include="System.Windows.Browser" />
+    <Reference Include="System.Xml.Linq, Version=2.0.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\AssemblyState.cs">
       <Link>AssemblyState.cs</Link>
     </Compile>
-    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\Monitoring\SIPMonitorControlClientEvent.cs">
-      <Link>Monitoring\SIPMonitorControlClientEvent.cs</Link>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\Monitoring\SIPMonitorConsoleEvent.cs">
+      <Link>Monitoring\SIPMonitorConsoleEvent.cs</Link>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\Monitoring\SIPMonitorEvent.cs">
       <Link>Monitoring\SIPMonitorEvent.cs</Link>
@@ -118,11 +119,16 @@
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPUserAgents\SIPClientUserAgent.cs">
       <Link>SIPUserAgents\SIPClientUserAgent.cs</Link>
     </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPUserAgents\SIPNotifierClient.cs">
+      <Link>SIPUserAgents\SIPNotifierClient.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPUserAgents\SIPRegistrationUserAgent.cs">
+      <Link>SIPUserAgents\SIPRegistrationUserAgent.cs</Link>
+    </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPUserAgents\SIPServerUserAgent.cs">
       <Link>SIPUserAgents\SIPServerUserAgent.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SIPUserAgents\SilverlightClientUserAgent.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">

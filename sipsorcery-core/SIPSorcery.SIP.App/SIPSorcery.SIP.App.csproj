@@ -50,11 +50,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="IronPython, Version=2.6.10920.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="IronPython, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\IronPython.dll</HintPath>
     </Reference>
-    <Reference Include="IronRuby, Version=0.9.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="IronRuby, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\IronRuby.dll</HintPath>
     </Reference>
@@ -62,15 +62,15 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Dynamic, Version=0.9.6.20, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Dynamic, Version=0.9.6.20, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\Microsoft.Dynamic.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Scripting, Version=0.9.6.20, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Scripting, Version=0.9.6.20, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\Microsoft.Scripting.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Scripting.Core, Version=0.9.6.20, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Scripting.Core, Version=0.9.6.20, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\Microsoft.Scripting.Core.dll</HintPath>
     </Reference>
@@ -113,7 +113,7 @@
     <Compile Include="DLR\ScriptLoader.cs" />
     <Compile Include="Monitoring\ISIPMonitorPublisher.cs" />
     <Compile Include="Monitoring\SIPMonitorClientSession.cs" />
-    <Compile Include="Monitoring\SIPMonitorControlClientEvent.cs" />
+    <Compile Include="Monitoring\SIPMonitorConsoleEvent.cs" />
     <Compile Include="Monitoring\SIPMonitorEvent.cs" />
     <Compile Include="Monitoring\SIPMonitorFilter.cs" />
     <Compile Include="Monitoring\SIPMonitorMachineEvent.cs" />
@@ -138,6 +138,7 @@
     <Compile Include="SIPDispatcherJob\SIPDispatcherJob.cs" />
     <Compile Include="SIPDNS\SIPDNSLookupResult.cs" />
     <Compile Include="SIPDNS\SIPDNSManager.cs" />
+    <Compile Include="SIPUserAgents\SIPNotifierClient.cs" />
     <Compile Include="SIPPacketMangler.cs" />
     <Compile Include="SIPProviderTweaks\SIPProviderMagicJack.cs" />
     <Compile Include="SIPRequestAuthoriser\SIPRequestAuthenticationResult.cs" />
@@ -145,6 +146,7 @@
     <Compile Include="SIPUserAgents\ISIPServerUserAgent.cs" />
     <Compile Include="SIPUserAgents\ISIPClientUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPB2BUserAgent.cs" />
+    <Compile Include="SIPUserAgents\SIPRegistrationUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPServerUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPCallDescriptor.cs" />
     <Compile Include="SIPUserAgents\SIPClientUserAgent.cs" />

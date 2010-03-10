@@ -232,9 +232,9 @@ namespace SIPSorcery.SIP
                 {
                     throw new ArgumentNullException("A SIPRequest object must be supplied when creating a SIPTransaction.");
                 }
-                else if (dstEndPoint == null)
+                else if (dstEndPoint == null && outboundProxy == null)
                 {
-                    throw new ArgumentNullException("The remote SIP end point must be set when creating a SIPTransaction.");
+                    throw new ArgumentNullException("The remote SIP end point or outbound proxy must be set when creating a SIPTransaction.");
                 }
                 else if (localSIPEndPoint == null) {
                     throw new ArgumentNullException("The local SIP end point must be set when creating a SIPTransaction.");

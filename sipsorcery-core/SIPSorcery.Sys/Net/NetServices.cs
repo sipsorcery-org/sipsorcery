@@ -116,7 +116,7 @@ namespace SIPSorcery.Sys
 
                 return null;
             }
-            catch (Exception excp)
+            catch
             {
                 //logger.Error("Exception GetDefaultGateway. " + excp.Message);
                 return null;
@@ -164,7 +164,7 @@ namespace SIPSorcery.Sys
 
                 return null;
             }
-            catch (Exception excp)
+            catch
             {
                 //logger.Error("Exception GetDefaultIPAddress. " + excp.Message);
                 return null;

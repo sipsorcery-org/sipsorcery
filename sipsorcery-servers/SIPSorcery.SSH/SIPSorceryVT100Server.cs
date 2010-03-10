@@ -14,8 +14,6 @@ using NSsh.Common.Utility;
 
 namespace SIPSorcery.SSHServer
 {
-    //[CallbackBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, UseSynchronizationContext = false)]
-    //public class SIPSorceryVT100Server : ISIPMonitorNotificationReady
     public class SIPSorceryVT100Server
     {
         private const int MAX_COMMAND_LENGTH = 2000;
@@ -301,7 +299,7 @@ namespace SIPSorcery.SSHServer
                 }
 
                 string subscribeError = null;
-                m_notificationsSessionID = m_publisher.Subscribe(Username, AdminId, m_notificationsAddress, SIPMonitorClientTypesEnum.ControlClient.ToString(), command, out subscribeError);
+                m_notificationsSessionID = m_publisher.Subscribe(Username, AdminId, m_notificationsAddress, SIPMonitorClientTypesEnum.Console.ToString(), command, 0, out subscribeError);
 
                 if (subscribeError != null)
                 {

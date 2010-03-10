@@ -129,82 +129,8 @@ namespace SIPSorcery.Servers
 
                 if (dialogue != null && sipRequest.Method != SIPMethodsEnum.ACK)
                 {
-                    #region Process in dialogue requests.
-
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Matching dialogue found for " + sipRequest.Method + " to " + sipRequest.URI.ToString() + " from " + remoteEndPoint + ".", dialogue.Owner));
-
-                    if (sipRequest.Method == SIPMethodsEnum.BYE)
-                    {
-                        SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                        //logger.Debug("Matching dialogue found for BYE request to " + sipRequest.URI.ToString() + ".");
-                        SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                        byeTransaction.SendFinalResponse(byeResponse);
-
-                        // Let the CallManager know so the forwarded leg of the call can be hung up.
-                        m_sipDialogueManager.CallHungup(dialogue, sipRequest.Header.Reason);
-                    }
-                    else if (sipRequest.Method == SIPMethodsEnum.INVITE)
-                    {
-                        UASInviteTransaction reInviteTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                        SIPResponse tryingResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
-                        reInviteTransaction.SendInformationalResponse(tryingResponse);
-                        reInviteTransaction.CDR = null;     // Don't want CDR's on re-INVITEs.
-                        m_sipDialogueManager.ForwardInDialogueRequest(dialogue, reInviteTransaction, localSIPEndPoint, remoteEndPoint);
-                    }
-                    else if (sipRequest.Method == SIPMethodsEnum.MESSAGE)
-                    {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "MESSAGE for call " + sipRequest.URI.ToString() + ": " + sipRequest.Body + ".", dialogue.Owner));
-                        SIPNonInviteTransaction messageTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                        SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                        messageTransaction.SendFinalResponse(okResponse);
-                    }
-                    else if (sipRequest.Method == SIPMethodsEnum.REFER)
-                    {
-                        #region Process in-dialogue REFER requests.
-
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER received on dialogue " + dialogue.DialogueName + ", transfer mode is " + dialogue.TransferMode + ".", dialogue.Owner));
-
-                        if (sipRequest.Header.ReferTo.IsNullOrBlank())
-                        {
-                            // A REFER request must have a Refer-To header.
-                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Bad REFER request, no Refer-To header.", dialogue.Owner));
-                            SIPResponse invalidResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadRequest, "Missing mandatory Refer-To header");
-                            m_sipTransport.SendResponse(invalidResponse);
-                        }
-                        else
-                        {
-                            if (dialogue.TransferMode == SIPDialogueTransferModesEnum.NotAllowed)
-                            {
-                                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER rejected due to dialogue permissions.", dialogue.Owner));
-                                SIPResponse declineTransferResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Transfers are disabled on dialogue");
-                                m_sipTransport.SendResponse(declineTransferResponse);
-                            }
-                            else if (Regex.Match(sipRequest.Header.ReferTo, m_referReplacesParameter).Success)
-                            {
-                                // Attended transfers are allowed unless explicitly blocked. Attended transfers are not dangerous 
-                                // as no new call is created and it's the same as a re-invite.
-                                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER received, attended transfer, Referred-By=" + sipRequest.Header.ReferredBy + ".", dialogue.Owner));
-                                SIPNonInviteTransaction referTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                                m_sipDialogueManager.ProcessRefer(dialogue, referTransaction, localSIPEndPoint, remoteEndPoint);
-                            }
-                            else
-                            {
-                                FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER received, blind transfer, Refer-To=" + sipRequest.Header.ReferTo + ", Referred-By=" + sipRequest.Header.ReferredBy + ".", dialogue.Owner));
-                                SIPNonInviteTransaction passThruTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                                m_sipDialogueManager.ForwardInDialogueRequest(dialogue, passThruTransaction, localSIPEndPoint, remoteEndPoint);
-                            }
-                        }
-
-                        #endregion
-                    }
-                    else
-                    {
-                        // This is a request on an established call forward through to the other end, no further action required.
-                        SIPNonInviteTransaction passThruTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                        m_sipDialogueManager.ForwardInDialogueRequest(dialogue, passThruTransaction, localSIPEndPoint, remoteEndPoint);
-                    }
-
-                    #endregion
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Matching dialogue found for " + sipRequest.Method + " to " + sipRequest.URI.ToString() + " from " + remoteEndPoint + ".", dialogue.Owner));
+                    m_sipDialogueManager.ProcessInDialogueRequest(localSIPEndPoint, remoteEndPoint, sipRequest, dialogue, m_callManager.ProcessWebCall);
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.NOTIFY)
                 {
@@ -237,13 +163,13 @@ namespace SIPSorcery.Servers
 
                     if (inviteTransaction != null)
                     {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Cancelling call for " + sipRequest.URI.ToString() + ".", fromUser));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Cancelling call for " + sipRequest.URI.ToString() + ".", fromUser));
                         SIPCancelTransaction cancelTransaction = m_sipTransport.CreateCancelTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, inviteTransaction);
                         cancelTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
                     }
                     else
                     {
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No matching transaction was found for CANCEL to " + sipRequest.URI.ToString() + ".", fromUser));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No matching transaction was found for CANCEL to " + sipRequest.URI.ToString() + ".", fromUser));
                         SIPResponse noCallLegResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
                         m_sipTransport.SendResponse(noCallLegResponse);
                     }
@@ -252,25 +178,25 @@ namespace SIPSorcery.Servers
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.BYE)
                 {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No dialogue matched for BYE to " + sipRequest.URI.ToString() + ".", fromUser));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No dialogue matched for BYE to " + sipRequest.URI.ToString() + ".", fromUser));
                     SIPResponse noCallLegResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
                     m_sipTransport.SendResponse(noCallLegResponse);
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.REFER)
                 {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No dialogue matched for REFER to " + sipRequest.URI.ToString() + ".", fromUser));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No dialogue matched for REFER to " + sipRequest.URI.ToString() + ".", fromUser));
                     SIPResponse noCallLegResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
                     m_sipTransport.SendResponse(noCallLegResponse);
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.ACK)
                 {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No transaction matched for ACK for " + sipRequest.URI.ToString() + ".", fromUser));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No transaction matched for ACK for " + sipRequest.URI.ToString() + ".", fromUser));
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
                     #region INVITE request processing.
 
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "AppServerCore INVITE received, uri=" + sipRequest.URI.ToString() + ", cseq=" + sipRequest.Header.CSeq + ".", null));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "AppServerCore INVITE received, uri=" + sipRequest.URI.ToString() + ", cseq=" + sipRequest.Header.CSeq + ".", null));
 
                     if (sipRequest.URI.User == m_dispatcherUsername)
                     {
@@ -297,7 +223,7 @@ namespace SIPSorcery.Servers
                         if (sipRequest.URI.User.IsNullOrBlank())
                         {
                             // Cannot process incoming call if no user is specified.
-                            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "INVITE received with an empty URI user " + sipRequest.URI.ToString() + ", returning address incomplete.", null));
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "INVITE received with an empty URI user " + sipRequest.URI.ToString() + ", returning address incomplete.", null));
                             UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
                             SIPResponse addressIncompleteResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.AddressIncomplete, "No user specified");
                             uasTransaction.SendFinalResponse(addressIncompleteResponse);
@@ -316,7 +242,7 @@ namespace SIPSorcery.Servers
                     else
                     {
                         // Return not found for non-serviced domain.
-                        FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Domain not serviced " + sipRequest.URI.ToString() + ", returning not found.", null));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Domain not serviced " + sipRequest.URI.ToString() + ", returning not found.", null));
                         UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
                         SIPResponse notServicedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Domain not serviced");
                         uasTransaction.SendFinalResponse(notServicedResponse);
@@ -326,7 +252,7 @@ namespace SIPSorcery.Servers
                 }
                 else
                 {
-                    FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.UnrecognisedMessage, "MethodNotAllowed response for " + sipRequest.Method + " from " + fromUser + " socket " + remoteEndPoint.ToString() + ".", null));
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.UnrecognisedMessage, "MethodNotAllowed response for " + sipRequest.Method + " from " + fromUser + " socket " + remoteEndPoint.ToString() + ".", null));
                     SIPResponse notAllowedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
                     m_sipTransport.SendResponse(notAllowedResponse);
                 }
@@ -335,7 +261,7 @@ namespace SIPSorcery.Servers
             {
                 string reqExcpError = "Exception SIPAppServerCore GotRequest (" + remoteEndPoint + "). " + excp.Message;
                 logger.Error(reqExcpError);
-                SIPMonitorEvent reqExcpEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, reqExcpError, sipRequest, null, localSIPEndPoint, remoteEndPoint, SIPCallDirection.In);
+                SIPMonitorEvent reqExcpEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, reqExcpError, sipRequest, null, localSIPEndPoint, remoteEndPoint, SIPCallDirection.In);
                 FireProxyLogEvent(reqExcpEvent);
                 throw excp;
             }
@@ -343,7 +269,7 @@ namespace SIPSorcery.Servers
 
         public void GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
         {
-            FireProxyLogEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "App Server received a SIP response from " + remoteEndPoint + " that did not match an existing transaction.\n" + sipResponse.ToString(), null));
+            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.Error, "App Server received a SIP response from " + remoteEndPoint + " that did not match an existing transaction.\n" + sipResponse.ToString(), null));
         }
 
         private void FireProxyLogEvent(SIPMonitorEvent monitorEvent)

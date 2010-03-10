@@ -51,12 +51,14 @@ namespace SIPSorcery.SIP
 {
     public class SilverlightTCPSIPChannel : SIPChannel
     {
-        private const int MAX_SOCKET_BUFFER_SIZE = 4096;        // Max amount of data that can be received from the socket on a single read.
         private const int CONNECTION_TIMEOUT = 10000;
 
+        public static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_LENGTH;
+
         private Socket m_socket;
-        private byte[] m_socketBuffer = new byte[MAX_SOCKET_BUFFER_SIZE];
+        private byte[] m_socketBuffer = new byte[2 * MaxSIPTCPMessageSize];
         private IPEndPoint m_remoteEndPoint;
+        public DateTime LastTransmission;           // Records when a SIP packet was last sent or received.
 
         private bool m_isConnected = false;
         public bool IsConnected
@@ -95,7 +97,7 @@ namespace SIPSorcery.SIP
             if (m_isConnected)
             {
                 SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
-                receiveArgs.SetBuffer(m_socketBuffer, 0, MAX_SOCKET_BUFFER_SIZE);
+                receiveArgs.SetBuffer(m_socketBuffer, 0, MaxSIPTCPMessageSize);
                 receiveArgs.Completed += SocketRead_Completed;
                 m_socket.ReceiveAsync(receiveArgs);
                 m_connectedMRE.Set();
@@ -109,18 +111,48 @@ namespace SIPSorcery.SIP
         private void SocketRead_Completed(object sender, SocketAsyncEventArgs e)
         {
             int bytesRead = e.BytesTransferred;
+
             if (bytesRead > 0)
             {
-                byte[] buffer = new byte[bytesRead];
-                Array.Copy(m_socketBuffer, buffer, bytesRead);
+                int receivePosition = 0;
+                byte[] sipMsgBuffer = SIPConnection.ProcessReceive(m_socketBuffer, 0, bytesRead);
 
-                if (SIPMessageReceived != null)
+                while (sipMsgBuffer != null)
                 {
-                    SIPMessageReceived(this, new SIPEndPoint(SIPProtocolsEnum.tcp, m_remoteEndPoint), buffer);
+                    receivePosition += sipMsgBuffer.Length;
+
+                    if (SIPMessageReceived != null)
+                    {
+                        LastTransmission = DateTime.Now;
+                        SIPMessageReceived(this, new SIPEndPoint(SIPProtocolsEnum.tcp, m_remoteEndPoint), sipMsgBuffer);
+                    }
+
+                    if (sipMsgBuffer.Length == bytesRead)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        sipMsgBuffer = SIPConnection.ProcessReceive(m_socketBuffer, receivePosition, bytesRead);
+                    }
+                }
+
+                int bytesLeftOver = 0;
+                if (receivePosition != bytesRead)
+                {
+                    bytesLeftOver = bytesRead - receivePosition;
+                }
+
+                byte[] nextReceiveBuffer = new byte[MaxSIPTCPMessageSize + bytesLeftOver];
+                if (bytesLeftOver > 0)
+                {
+                    // Copy the unprocessed portion of the current receive buffer into the start if the next receive buffer.
+                    Array.Copy(m_socketBuffer, receivePosition, nextReceiveBuffer, 0, bytesLeftOver);
+                    m_socketBuffer = nextReceiveBuffer;
                 }
 
                 SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
-                receiveArgs.SetBuffer(m_socketBuffer, 0, MAX_SOCKET_BUFFER_SIZE);
+                receiveArgs.SetBuffer(m_socketBuffer, 0, MaxSIPTCPMessageSize);
                 receiveArgs.Completed += SocketRead_Completed;
                 m_socket.ReceiveAsync(receiveArgs);
             }
@@ -165,6 +197,7 @@ namespace SIPSorcery.SIP
         {
             m_socket.Close();
         }
+
         public override bool IsConnectionEstablished(IPEndPoint remoteEndPoint)
         {
             throw new NotImplementedException();
@@ -174,6 +207,5 @@ namespace SIPSorcery.SIP
         {
             throw new NotImplementedException();
         }
-
     }
 }

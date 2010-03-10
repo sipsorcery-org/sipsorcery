@@ -11,17 +11,21 @@ using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.SIP.App {
-    
-    public class AppServerDispatcher : SIPDispatcherJob {
+namespace SIPSorcery.SIP.App
+{
 
-        public class AppServerEntry {
+    public class AppServerDispatcher : SIPDispatcherJob
+    {
+
+        public class AppServerEntry
+        {
 
             public int Priority;
             public SIPURI AppServerURI;
             public bool HasFailed;
 
-            public AppServerEntry(int priority, SIPURI appServerURI) {
+            public AppServerEntry(int priority, SIPURI appServerURI)
+            {
                 Priority = priority;
                 AppServerURI = appServerURI;
                 HasFailed = false;
@@ -35,11 +39,15 @@ namespace SIPSorcery.SIP.App {
 
         private Stopwatch m_startCheckTime = new Stopwatch();
 
-        public AppServerDispatcher(SIPTransport sipTransport, XmlNode configNode) : base(sipTransport, configNode) {
-            try {
+        public AppServerDispatcher(SIPTransport sipTransport, XmlNode configNode)
+            : base(sipTransport, configNode)
+        {
+            try
+            {
 
                 XmlNodeList appServerNodes = configNode.SelectNodes("appserver");
-                foreach (XmlNode appServerNode in appServerNodes) {
+                foreach (XmlNode appServerNode in appServerNodes)
+                {
                     int priority = Convert.ToInt32(appServerNode.Attributes.GetNamedItem("priority").Value);
                     SIPURI serverURI = SIPURI.ParseSIPURIRelaxed(appServerNode.InnerText);
                     AppServerEntry appServerEntry = new AppServerEntry(priority, serverURI);
@@ -50,26 +58,33 @@ namespace SIPSorcery.SIP.App {
                 //    m_outboundProxy = SIPEndPoint.ParseSIPEndPoint(configNode.SelectSingleNode("outboundproxy").InnerText);
                 //}
 
-                if (configNode.SelectSingleNode("interval") != null && !configNode.SelectSingleNode("interval").InnerText.IsNullOrBlank()) {
-                    if (!TimeSpan.TryParse(configNode.SelectSingleNode("interval").InnerText, out m_interval)) {
+                if (configNode.SelectSingleNode("interval") != null && !configNode.SelectSingleNode("interval").InnerText.IsNullOrBlank())
+                {
+                    if (!TimeSpan.TryParse(configNode.SelectSingleNode("interval").InnerText, out m_interval))
+                    {
                         logger.Warn("AppServerDispatcher interval could not be parsed from " + configNode.SelectSingleNode("interval").InnerText + ".");
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception AppServerDispatcher. " + excp.Message);
                 throw;
             }
         }
 
-        public override void Start() {
-            try {
+        public override void Start()
+        {
+            try
+            {
                 base.Start();
 
                 m_activeAppServerEntry = GetActiveAppServer();
 
-                if (m_activeAppServerEntry != null) {
-                    while (!m_stop) {
+                if (m_activeAppServerEntry != null)
+                {
+                    while (!m_stop)
+                    {
                         Thread.Sleep(Convert.ToInt32(m_interval.TotalMilliseconds % Int32.MaxValue));
 
                         logger.Debug("AppServerDispatcher executing.");
@@ -86,32 +101,42 @@ namespace SIPSorcery.SIP.App {
                         uac.ServerTransaction.CDR = null;
                     }
                 }
-                else {
+                else
+                {
                     logger.Warn("No active app server could be set in AppServerDispatcher.Start, job stopping.");
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception AppServerDispatcher StartJob. " + excp.Message);
             }
         }
 
-        private AppServerEntry GetActiveAppServer() {
-            try {
+        private AppServerEntry GetActiveAppServer()
+        {
+            try
+            {
                 AppServerEntry activeAppServer = null;
-                foreach (AppServerEntry appServerEntry in m_appServerEntries) {
-                    if (!appServerEntry.HasFailed) {
-                        if (activeAppServer == null) {
+                foreach (AppServerEntry appServerEntry in m_appServerEntries)
+                {
+                    if (!appServerEntry.HasFailed)
+                    {
+                        if (activeAppServer == null)
+                        {
                             activeAppServer = appServerEntry;
                         }
-                        else if (activeAppServer.Priority < appServerEntry.Priority) {
+                        else if (activeAppServer.Priority < appServerEntry.Priority)
+                        {
                             activeAppServer = appServerEntry;
                         }
                     }
                 }
 
-                if (activeAppServer == null && m_appServerEntries.Count > 0) {
+                if (activeAppServer == null && m_appServerEntries.Count > 0)
+                {
                     logger.Debug("No active app server was set, resetting failed app servers.");
-                    for (int index = 0; index < m_appServerEntries.Count; index++) {
+                    for (int index = 0; index < m_appServerEntries.Count; index++)
+                    {
                         AppServerEntry failedAppServer = m_appServerEntries[index];
                         failedAppServer.HasFailed = false;
                         m_appServerEntries[index] = failedAppServer;
@@ -122,18 +147,22 @@ namespace SIPSorcery.SIP.App {
 
                 return activeAppServer;
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SetActiveAppServer. " + excp.Message);
                 return null;
             }
         }
 
-        private void CallAnswered(ISIPClientUserAgent uac, SIPResponse sipResponse) {
+        private void CallAnswered(ISIPClientUserAgent uac, SIPResponse sipResponse)
+        {
             logger.Debug("AppServerDispatcher CallAnswered with " + (int)sipResponse.Status + " " + sipResponse.ReasonPhrase + ".");
             SIPHeader okHeader = uac.ServerTransaction.TransactionFinalResponse.Header;
             int executionCount = 0;
-            foreach (string unknownHeader in okHeader.UnknownHeaders) {
-                if (unknownHeader.StartsWith("DialPlanEngine-ExecutionCount")) {
+            foreach (string unknownHeader in okHeader.UnknownHeaders)
+            {
+                if (unknownHeader.StartsWith("DialPlanEngine-ExecutionCount"))
+                {
                     executionCount = Convert.ToInt32(Regex.Match(unknownHeader, @"\S: (?<count>\d+)").Result("${count}"));
                     break;
                 }
@@ -143,20 +172,26 @@ namespace SIPSorcery.SIP.App {
             logger.Debug("AppServerDispatcher response took " + m_startCheckTime.ElapsedMilliseconds + "ms.");
         }
 
-        private void CallFailed(ISIPClientUserAgent uac, string errorMessage) {
+        private void CallFailed(ISIPClientUserAgent uac, string errorMessage)
+        {
             logger.Debug("AppServerDispatcher CallFailed with " + errorMessage + ".");
             m_activeAppServerEntry.HasFailed = true;
             m_activeAppServerEntry = GetActiveAppServer();
         }
 
-        public override SIPEndPoint GetSIPEndPoint() {
+        public override SIPEndPoint GetSIPEndPoint()
+        {
             return new SIPEndPoint(m_activeAppServerEntry.AppServerURI);
         }
 
-        public override bool IsSIPEndPointMonitored(SIPEndPoint sipEndPoint) {
-            lock (m_activeAppServerEntry) {
-                foreach (AppServerEntry appServerEntry in m_appServerEntries) {
-                    if (new SIPEndPoint(appServerEntry.AppServerURI).ToString() == sipEndPoint.ToString()) {
+        public override bool IsSIPEndPointMonitored(SIPEndPoint sipEndPoint)
+        {
+            lock (m_activeAppServerEntry)
+            {
+                foreach (AppServerEntry appServerEntry in m_appServerEntries)
+                {
+                    if (new SIPEndPoint(appServerEntry.AppServerURI).ToString() == sipEndPoint.ToString())
+                    {
                         return true;
                     }
                 }
@@ -165,9 +200,15 @@ namespace SIPSorcery.SIP.App {
             return false;
         }
 
-        private void LogMonitorEvent(SIPMonitorEvent monitorEvent) {
-            if (monitorEvent.EventType != SIPMonitorEventTypesEnum.FullSIPTrace && monitorEvent.EventType != SIPMonitorEventTypesEnum.SIPTransaction) {
-                logger.Debug(monitorEvent.Message);
+        private void LogMonitorEvent(SIPMonitorEvent monitorEvent)
+        {
+            if (monitorEvent is SIPMonitorConsoleEvent)
+            {
+                SIPMonitorConsoleEvent consoleEvent = monitorEvent as SIPMonitorConsoleEvent;
+                if (consoleEvent.EventType != SIPMonitorEventTypesEnum.FullSIPTrace && consoleEvent.EventType != SIPMonitorEventTypesEnum.SIPTransaction)
+                {
+                    logger.Debug(monitorEvent.Message);
+                }
             }
         }
     }

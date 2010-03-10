@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+  targetNamespace="urn:ietf:params:xml:ns:dialog-info"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:tns="urn:ietf:params:xml:ns:dialog-info"
+  elementFormDefault="qualified"
+  attributeFormDefault="unqualified">
+  <!-- This import brings in the XML language attribute xml:lang-->
+  <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/03/xml.xsd"/>
+  <xs:element name="dialog-info">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="tns:dialog" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:any namespace="##other" processContents="lax" minOccurs="0"  maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="version" type="xs:nonNegativeInteger" use="required"/>
+      <xs:attribute name="state" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="full"/>
+            <xs:enumeration value="partial"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="entity" type="xs:anyURI" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="dialog">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="tns:state" minOccurs="1" maxOccurs="1"/>
+        <xs:element name="duration" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="replaces" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:attribute name="call-id" type="xs:string" use="required"/>
+            <xs:attribute name="local-tag" type="xs:string" use="required"/>
+            <xs:attribute name="remote-tag" type="xs:string" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="referred-by" type="tns:nameaddr" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="route-set" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="hop" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="local" type="tns:participant" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="remote" type="tns:participant" minOccurs="0" maxOccurs="1"/>
+        <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="id" type="xs:string" use="required"/>
+      <xs:attribute name="call-id" type="xs:string" use="optional"/>
+      <xs:attribute name="local-tag" type="xs:string" use="optional"/>
+      <xs:attribute name="remote-tag" type="xs:string" use="optional"/>
+      <xs:attribute name="direction" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="initiator"/>
+            <xs:enumeration value="recipient"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="participant">
+    <xs:sequence>
+      <xs:element name="identity" type="tns:nameaddr" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="target" minOccurs="0" maxOccurs="1">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="param" minOccurs="0" maxOccurs="unbounded">
+              <xs:complexType>
+                <xs:attribute name="pname" type="xs:string" use="required"/>
+                <xs:attribute name="pval" type="xs:string" use="required"/>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+          <xs:attribute name="uri" type="xs:string" use="required"/>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="session-description" type="tns:sessd" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="cseq" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1"/>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="nameaddr">
+    <xs:simpleContent>
+      <xs:extension base="xs:anyURI">
+        <xs:attribute name="display-name" type="xs:string" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="sessd">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="type" type="xs:string" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:element name="state">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute name="event" use="optional">
+            <xs:simpleType>
+              <xs:restriction base="xs:string">
+                <xs:enumeration value="cancelled"/>
+                <xs:enumeration value="rejected"/>
+                <xs:enumeration value="replaced"/>
+                <xs:enumeration value="local-bye"/>
+                <xs:enumeration value="remote-bye"/>
+                <xs:enumeration value="error"/>
+                <xs:enumeration value="timeout"/>
+              </xs:restriction>
+            </xs:simpleType>
+          </xs:attribute>
+          <xs:attribute name="code" use="optional">
+            <xs:simpleType>
+              <xs:restriction base="xs:positiveInteger">
+                <xs:minInclusive value="100"/>
+                <xs:maxInclusive value="699"/>
+              </xs:restriction>
+            </xs:simpleType>
+          </xs:attribute>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

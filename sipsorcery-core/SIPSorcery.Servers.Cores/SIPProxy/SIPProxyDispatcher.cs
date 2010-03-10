@@ -50,9 +50,12 @@ namespace SIPSorcery.Servers
         {
             try
             {
-                ServiceHost callDispatcherHost = new ServiceHost(this);
-                callDispatcherHost.Open();
-                logger.Debug("SIPProxyDispatcher call dispatcher service started.");
+                if (WCFUtility.DoesWCFServiceExist(this.GetType().FullName.ToString()))
+                {
+                    ServiceHost callDispatcherHost = new ServiceHost(this);
+                    callDispatcherHost.Open();
+                    logger.Debug("SIPProxyDispatcher call dispatcher service started.");
+                }
             }
             catch (Exception excp)
             {
@@ -73,7 +76,7 @@ namespace SIPSorcery.Servers
 
                 m_transactionEndPoints.Add(transactionID, internalEndPoint.ToString());
                 m_transactionIDAddedAt.Add(transactionID, DateTime.Now);
-                //ProxyLogger_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.CallDispatcher, "Record dispatch for " + sipRequest.Method + " " + sipRequest.URI.ToString() + " to " + internalEndPoint.ToString() + " (id=" + transactionID + ").", null));
+                //ProxyLogger_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.CallDispatcher, "Record dispatch for " + sipRequest.Method + " " + sipRequest.URI.ToString() + " to " + internalEndPoint.ToString() + " (id=" + transactionID + ").", null));
             }
 
             if (m_lastRemove < DateTime.Now.AddSeconds(REMOVE_EXPIREDS_SECONDS * -1))
@@ -96,7 +99,7 @@ namespace SIPSorcery.Servers
 
             lock (m_userCallbacks)
             {
-                ProxyLogger_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.DialPlan, "SIP Proxy setting application server for next call to user " + username + " as " + appServerEndPoint + ".", username));
+                ProxyLogger_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.DialPlan, "SIP Proxy setting application server for next call to user " + username + " as " + appServerEndPoint + ".", username));
 
                 if (m_userCallbacks.ContainsKey(username))
                 {
@@ -124,7 +127,7 @@ namespace SIPSorcery.Servers
                         SIPEndPoint callbackEndPoint = null;
                         callbackEndPoint = SIPEndPoint.ParseSIPEndPoint(m_userCallbacks[toUser].DesintationEndPoint);
                         RecordDispatch(sipRequest, callbackEndPoint);
-                        ProxyLogger_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.DialPlan, "SIP Proxy directing incoming call for user " + toUser + " to application server " + callbackEndPoint.ToString() + ".", toUser));
+                        ProxyLogger_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.DialPlan, "SIP Proxy directing incoming call for user " + toUser + " to application server " + callbackEndPoint.ToString() + ".", toUser));
 
                         lock (m_userCallbacks)
                         {
@@ -172,7 +175,7 @@ namespace SIPSorcery.Servers
                 if (m_transactionEndPoints.ContainsKey(transactionID))
                 {
                     SIPEndPoint dispacthEndPoint = SIPEndPoint.ParseSIPEndPoint(m_transactionEndPoints[transactionID]);
-                    //ProxyLogger_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.CallDispatcher, "Dispatcher lookup for " + method + " returned " + dispacthEndPoint.ToString() + " (id=" + transactionID + ").", null));
+                    //ProxyLogger_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.CallDispatcher, "Dispatcher lookup for " + method + " returned " + dispacthEndPoint.ToString() + " (id=" + transactionID + ").", null));
                     return dispacthEndPoint;
                 }
             }

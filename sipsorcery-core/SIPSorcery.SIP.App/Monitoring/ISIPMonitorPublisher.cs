@@ -30,7 +30,7 @@ namespace SIPSorcery.SIP.App {
         /// this session is interested in.</param>
         /// <returns>The session ID for the subscription request. Each matching monitor event will have a session ID set.</returns>
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/Subscribe", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/SubscribeResponse")]
-        string Subscribe(string customerUsername, string adminId, string address, string subject, string filter, out string subscribeError);
+        string Subscribe(string customerUsername, string adminId, string address, string subject, string filter, int expiry, out string subscribeError);
 
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/GetNotifications", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/GetNotificationsResponse")]
         List<string> GetNotifications(string address, out string sessionID, out string sessionError);

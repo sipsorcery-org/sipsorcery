@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 using SIPSorcery.Sys;
 using SIPSorcery.Persistence;
 
@@ -13,7 +14,8 @@ using System.Data.Linq;
 using System.Data.Linq.Mapping;
 #endif
 
-namespace SIPSorcery.SIP.App {
+namespace SIPSorcery.SIP.App
+{
 
     [Table(Name = "sipdialogues")]
     public class SIPDialogueAsset : ISIPAsset
@@ -27,95 +29,109 @@ namespace SIPSorcery.SIP.App {
         public SIPDialogue SIPDialogue;
 
         [Column(Name = "id", DbType = "varchar(36)", IsPrimaryKey = true, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
-        public Guid Id {
+        public Guid Id
+        {
             get { return SIPDialogue.Id; }
             set { SIPDialogue.Id = value; }
         }
 
         [Column(Name = "owner", DbType = "varchar(32)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
-        public string Owner {
+        public string Owner
+        {
             get { return SIPDialogue.Owner; }
             set { SIPDialogue.Owner = value; }
         }
 
         [Column(Name = "adminmemberid", DbType = "varchar(32)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
-        public string AdminMemberId {
+        public string AdminMemberId
+        {
             get { return SIPDialogue.AdminMemberId; }
             set { SIPDialogue.AdminMemberId = value; }
         }
 
         //[Column(Name = "dialogueid", DbType = "varchar(256)", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         //public string DialogueId {
-         //   get { return SIPDialogue.DialogueId; }
+        //   get { return SIPDialogue.DialogueId; }
         //    set { SIPDialogue.DialogueId = value; }
         //}
 
         [Column(Name = "localtag", DbType = "varchar(64)", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
-        public string LocalTag {
+        public string LocalTag
+        {
             get { return SIPDialogue.LocalTag; }
             set { SIPDialogue.LocalTag = value; }
         }
 
         [Column(Name = "remotetag", DbType = "varchar(64)", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
-        public string RemoteTag {
+        public string RemoteTag
+        {
             get { return SIPDialogue.RemoteTag; }
             set { SIPDialogue.RemoteTag = value; }
         }
 
         [Column(Name = "callid", DbType = "varchar(128)", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
-        public string CallId {
+        public string CallId
+        {
             get { return SIPDialogue.CallId; }
             set { SIPDialogue.CallId = value; }
         }
 
         [Column(Name = "cseq", DbType = "int", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
-        public int CSeq {
+        public int CSeq
+        {
             get { return SIPDialogue.CSeq; }
             set { SIPDialogue.CSeq = value; }
         }
 
         [Column(Name = "bridgeid", DbType = "varchar(36)", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
-        public string BridgeId {
+        public string BridgeId
+        {
             get { return SIPDialogue.BridgeId.ToString(); }
             set { SIPDialogue.BridgeId = (!value.IsNullOrBlank()) ? new Guid(value) : Guid.Empty; }
         }
 
         [Column(Name = "remotetarget", DbType = "varchar(256)", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
-        public string RemoteTarget {
+        public string RemoteTarget
+        {
             get { return SIPDialogue.RemoteTarget.ToString(); }
             set { SIPDialogue.RemoteTarget = (!value.IsNullOrBlank()) ? SIPURI.ParseSIPURI(value) : null; }
         }
 
         [IgnoreDataMember]
         [Column(Name = "localuserfield", DbType = "varchar(512)", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
-        public string LocalUserField {
+        public string LocalUserField
+        {
             get { return SIPDialogue.LocalUserField.ToString(); }
             set { SIPDialogue.LocalUserField = (!value.IsNullOrBlank()) ? SIPUserField.ParseSIPUserField(value) : null; }
         }
 
         [DataMember]
         [Column(Name = "remoteuserfield", DbType = "varchar(512)", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
-        public string RemoteUserField {
+        public string RemoteUserField
+        {
             get { return SIPDialogue.RemoteUserField.ToString(); }
             set { SIPDialogue.RemoteUserField = (!value.IsNullOrBlank()) ? SIPUserField.ParseSIPUserField(value) : null; }
         }
 
         [Column(Name = "proxysipsocket", DbType = "varchar(64)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public string ProxySIPSocket {
+        public string ProxySIPSocket
+        {
             get { return SIPDialogue.ProxySendFrom; }
-            set { SIPDialogue.ProxySendFrom = value;}
+            set { SIPDialogue.ProxySendFrom = value; }
         }
 
         [IgnoreDataMember]
         [Column(Name = "routeset", DbType = "varchar(512)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
-        public string RouteSet {
+        public string RouteSet
+        {
             get { return (SIPDialogue.RouteSet != null) ? SIPDialogue.RouteSet.ToString() : null; }
             set { SIPDialogue.RouteSet = (!value.IsNullOrBlank()) ? SIPRouteSet.ParseSIPRouteSet(value) : null; }
         }
 
         [Column(Name = "cdrid", DbType = "varchar(36)", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
-        public string CDRId {
+        public string CDRId
+        {
             get { return SIPDialogue.CDRId.ToString(); }
             set { SIPDialogue.CDRId = (!value.IsNullOrBlank()) ? new Guid(value) : Guid.Empty; }
         }
@@ -130,19 +146,24 @@ namespace SIPSorcery.SIP.App {
 
         [DataMember]
         [Column(Name = "inserted", DbType = "datetimeoffset", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
-        public DateTimeOffset Inserted {
+        public DateTimeOffset Inserted
+        {
             get { return SIPDialogue.Inserted; }
             set { SIPDialogue.Inserted = value.DateTime; }
         }
 
         [DataMember]
         [Column(Name = "hangupat", DbType = "datetimeoffset", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
-        public DateTimeOffset? HangupAt {
-            get {
-                if (CallDurationLimit != 0) {
+        public DateTimeOffset? HangupAt
+        {
+            get
+            {
+                if (CallDurationLimit != 0)
+                {
                     return Inserted.AddSeconds(CallDurationLimit);
                 }
-                else {
+                else
+                {
                     return null;
                 }
             }
@@ -162,7 +183,20 @@ namespace SIPSorcery.SIP.App {
                 }
             }
         }
- 
+
+        [Column(Name = "direction", DbType = "varchar(3)", IsPrimaryKey = false, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        public string Direction
+        {
+            get { return SIPDialogue.Direction.ToString(); }
+            set 
+            {
+                if (!value.IsNullOrBlank())
+                {
+                    SIPDialogue.Direction = (SIPCallDirection)Enum.Parse(typeof(SIPCallDirection), value, true);
+                }
+            }
+        }
+
         [Column(Name = "sdp", DbType = "varchar(2048)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         public string SDP
         {
@@ -177,26 +211,29 @@ namespace SIPSorcery.SIP.App {
             set { SIPDialogue.RemoteSDP = value; }
         }
 
-        public SIPDialogueAsset() {
+        public SIPDialogueAsset()
+        {
             SIPDialogue = new SIPDialogue();
         }
 
-        public SIPDialogueAsset(SIPDialogue sipDialogue) {
+        public SIPDialogueAsset(SIPDialogue sipDialogue)
+        {
             SIPDialogue = sipDialogue;
         }
 
 #if !SILVERLIGHT
 
-        public SIPDialogueAsset(DataRow row) {
+        public SIPDialogueAsset(DataRow row)
+        {
             Load(row);
         }
 
-        public DataTable GetTable() {
+        public DataTable GetTable()
+        {
             DataTable table = new DataTable();
             table.Columns.Add(new DataColumn("id", typeof(String)));
             table.Columns.Add(new DataColumn("owner", typeof(String)));
             table.Columns.Add(new DataColumn("adminmemberid", typeof(String)));
-            //table.Columns.Add(new DataColumn("dialogueid", typeof(String)));
             table.Columns.Add(new DataColumn("localtag", typeof(String)));
             table.Columns.Add(new DataColumn("remotetag", typeof(String)));
             table.Columns.Add(new DataColumn("localuserfield", typeof(String)));
@@ -211,15 +248,19 @@ namespace SIPSorcery.SIP.App {
             table.Columns.Add(new DataColumn("calldurationlimit", typeof(Int32)));
             table.Columns.Add(new DataColumn("hangupat", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("inserted", typeof(DateTimeOffset)));
+            table.Columns.Add(new DataColumn("direction", typeof(DateTimeOffset)));
+            table.Columns.Add(new DataColumn("sdp", typeof(String)));
+            table.Columns.Add(new DataColumn("remotesdp", typeof(String)));
+            table.Columns.Add(new DataColumn("transfermode", typeof(String)));
             return table;
         }
 
-        public void Load(DataRow row) {
+        public void Load(DataRow row)
+        {
             SIPDialogue = new SIPDialogue();
             SIPDialogue.Id = new Guid(row["id"] as string);
             SIPDialogue.Owner = row["owner"] as string;
             SIPDialogue.AdminMemberId = row["adminmemberid"] as string;
-            //SIPDialogue.DialogueId = row["dialogueid"] as string;
             SIPDialogue.LocalTag = row["localtag"] as string;
             SIPDialogue.RemoteTag = row["remotetag"] as string;
             SIPDialogue.LocalUserField = SIPUserField.ParseSIPUserField(row["localuserfield"] as string);
@@ -232,19 +273,47 @@ namespace SIPSorcery.SIP.App {
             SIPDialogue.ProxySendFrom = (row["proxysipsocket"] != null && row["proxysipsocket"] != DBNull.Value) ? row["proxysipsocket"] as string : null;
             SIPDialogue.CDRId = new Guid(row["cdrid"] as string);
             SIPDialogue.CallDurationLimit = (row["calldurationlimit"] != null && row["calldurationlimit"] != DBNull.Value) ? Convert.ToInt32(row["calldurationlimit"]) : 0;
+            SIPDialogue.Direction = (row["direction"] != null) ? (SIPCallDirection)Enum.Parse(typeof(SIPCallDirection), row["direction"] as string, true) : SIPCallDirection.None;
             Inserted = DateTimeOffset.Parse(row["inserted"] as string);
             TransferMode = row["transfermode"] as string;
             SDP = row["sdp"] as string;
             RemoteSDP = row["remotesdp"] as string;
         }
 
-        public Dictionary<Guid, object> Load(XmlDocument dom) {
+        public Dictionary<Guid, object> Load(XmlDocument dom)
+        {
             return SIPAssetXMLPersistor<SIPDialogueAsset>.LoadAssetsFromXMLRecordSet(dom);
         }
 
 #endif
 
-        public string ToXML() {
+        public void Load(XElement dialogueElement)
+        {
+            SIPDialogue = new SIPDialogue();
+            SIPDialogue.Id = new Guid(dialogueElement.Element("id").Value);
+            SIPDialogue.Owner = dialogueElement.Element("owner").Value;
+            SIPDialogue.AdminMemberId = dialogueElement.Element("adminmemberid").Value;
+            SIPDialogue.LocalTag = dialogueElement.Element("localtag").Value;
+            SIPDialogue.RemoteTag = dialogueElement.Element("remotetag").Value;
+            SIPDialogue.LocalUserField = SIPUserField.ParseSIPUserField(dialogueElement.Element("localuserfield").Value);
+            SIPDialogue.RemoteUserField = SIPUserField.ParseSIPUserField(dialogueElement.Element("remoteuserfield").Value);
+            SIPDialogue.CallId = dialogueElement.Element("callid").Value;
+            SIPDialogue.CSeq = Convert.ToInt32(dialogueElement.Element("cseq").Value);
+            SIPDialogue.BridgeId = new Guid(dialogueElement.Element("bridgeid").Value);
+            SIPDialogue.RemoteTarget = SIPURI.ParseSIPURI(dialogueElement.Element("remotetarget").Value);
+            SIPDialogue.RouteSet = (dialogueElement.Element("routeset") != null && !dialogueElement.Element("routeset").Value.IsNullOrBlank()) ? SIPRouteSet.ParseSIPRouteSet(dialogueElement.Element("routeset").Value) : null;
+            SIPDialogue.ProxySendFrom = (dialogueElement.Element("proxysipsocket") != null) ? dialogueElement.Element("proxysipsocket").Value : null;
+            SIPDialogue.CDRId = new Guid(dialogueElement.Element("cdrid").Value);
+            SIPDialogue.CallDurationLimit = (dialogueElement.Element("calldurationlimit") != null) ? Convert.ToInt32(dialogueElement.Element("calldurationlimit").Value) : 0;
+            SIPDialogue.Direction = (dialogueElement.Element("direction") != null) ? (SIPCallDirection)Enum.Parse(typeof(SIPCallDirection), dialogueElement.Element("direction").Value, true) : SIPCallDirection.None;
+            Inserted = DateTimeOffset.Parse(dialogueElement.Element("inserted").Value);
+            TransferMode = dialogueElement.Element("transfermode").Value;
+            SDP = dialogueElement.Element("sdp").Value;
+            RemoteSDP = dialogueElement.Element("remotesdp").Value;
+        }
+
+        public string ToXML()
+        {
             string dialogueXML =
                 " <" + XML_ELEMENT_NAME + ">" + m_newLine +
                 ToXMLNoParent() +
@@ -253,14 +322,14 @@ namespace SIPSorcery.SIP.App {
             return dialogueXML;
         }
 
-        public string ToXMLNoParent() {
+        public string ToXMLNoParent()
+        {
             string hanupAtStr = (HangupAt != null) ? HangupAt.Value.ToString("o") : null;
 
             string dialogueXML =
                  "  <id>" + SIPDialogue.Id + "</id>" + m_newLine +
                  "  <owner>" + SIPDialogue.Owner + "</owner>" + m_newLine +
                  "  <adminmemberid>" + SIPDialogue.AdminMemberId + "</adminmemberid>" + m_newLine +
-                 //"  <dialogueid>" + SIPDialogue.DialogueId + "</dialogueid>" + m_newLine +
                  "  <localtag>" + SIPDialogue.LocalTag + "</localtag>" + m_newLine +
                  "  <remotetag>" + SIPDialogue.RemoteTag + "</remotetag>" + m_newLine +
                  "  <callid>" + SIPDialogue.CallId + "</callid>" + m_newLine +
@@ -276,17 +345,20 @@ namespace SIPSorcery.SIP.App {
                  "  <inserted>" + Inserted.ToString() + "</inserted>" + m_newLine +
                  "  <hangupat>" + hanupAtStr + "</hangupat>" + m_newLine +
                  "  <transfermode>" + TransferMode + "</transfermode>" + m_newLine +
+                 "  <direction>" + Direction + "</direction>" + m_newLine +
                  "  <sdp>" + SafeXML.MakeSafeXML(SDP) + "</sdp>" + m_newLine +
                  "  <remotesdp>" + SafeXML.MakeSafeXML(RemoteSDP) + "</remotesdp>" + m_newLine;
 
             return dialogueXML;
         }
 
-        public string GetXMLElementName() {
+        public string GetXMLElementName()
+        {
             return XML_ELEMENT_NAME;
         }
 
-        public string GetXMLDocumentElementName() {
+        public string GetXMLDocumentElementName()
+        {
             return XML_DOCUMENT_ELEMENT_NAME;
         }
     }

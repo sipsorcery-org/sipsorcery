@@ -119,11 +119,11 @@ namespace SIPSorcery.AppServer.DialPlan {
                 CookieContainer cookies = new CookieContainer();
                 string rnr = Login(cookies, emailAddress, password);
                 if (!rnr.IsNullOrBlank()) {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call key " + rnr + " successfully retrieved for " + emailAddress + ", proceeding with callback.", m_username));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call key " + rnr + " successfully retrieved for " + emailAddress + ", proceeding with callback.", m_username));
                     return SendCallRequest(cookies, forwardingNumber, destinationNumber, rnr, phoneType, waitForCallbackTimeout, contentType, body);
                 }
                 else {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call key was not etrieved for " + emailAddress + " callback cannot proceed.", m_username));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call key was not etrieved for " + emailAddress + " callback cannot proceed.", m_username));
                     return null;
                 }
             }
@@ -135,7 +135,7 @@ namespace SIPSorcery.AppServer.DialPlan {
 
         private string Login(CookieContainer cookies, string emailAddress, string password) {
             try {
-                Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Logging into google.com for " + emailAddress + ".", m_username));
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Logging into google.com for " + emailAddress + ".", m_username));
 
                 // Fetch GALX
                 HttpWebRequest galxRequest = (HttpWebRequest)WebRequest.Create(PRE_LOGIN_URL);
@@ -148,7 +148,7 @@ namespace SIPSorcery.AppServer.DialPlan {
                     throw new ApplicationException("Load of the Google Voice pre-login page failed with response " + galxResponse.StatusCode + ".");
                 }
                 else {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice pre-login page loaded successfully.", m_username));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice pre-login page loaded successfully.", m_username));
                 }
 
                 StreamReader galxReader = new StreamReader(galxResponse.GetResponseStream());
@@ -157,7 +157,7 @@ namespace SIPSorcery.AppServer.DialPlan {
 
                 Match galxMatch = Regex.Match(galxResponseFromServer, @"name=""GALX""\s+?value=""(?<galxvalue>.*?)""");
                 if (galxMatch.Success) {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "GALX key " + galxMatch.Result("${galxvalue}") + " successfully retrieved.", m_username));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "GALX key " + galxMatch.Result("${galxvalue}") + " successfully retrieved.", m_username));
                 }
                 else {
                     throw new ApplicationException("Could not find GALX key on your Google Voice pre-login page, callback cannot proceed.");
@@ -196,7 +196,7 @@ namespace SIPSorcery.AppServer.DialPlan {
                     throw new ApplicationException("Load of the Google Voice account page failed for " + emailAddress + " with response " + response.StatusCode + ".");
                 }
                 else {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice home page loaded successfully.", m_username));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice home page loaded successfully.", m_username));
                 }
                 
                 StreamReader reader = new StreamReader(response.GetResponseStream());
@@ -247,16 +247,16 @@ namespace SIPSorcery.AppServer.DialPlan {
                     throw new ApplicationException("The call request failed with a " + responseStatus + " response.");
                 }
                 else {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call to " + destinationNumber + " forwarding to " + forwardingNumber + " successfully initiated, callback timeout=" + callbackTimeout + "s.", m_username));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call to " + destinationNumber + " forwarding to " + forwardingNumber + " successfully initiated, callback timeout=" + callbackTimeout + "s.", m_username));
                 }
 
                 if (m_waitForCallback.WaitOne(callbackTimeout * 1000))
                 {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call callback received.", m_username));
-                    return m_callbackCall.Answer(contentType, body, null, SIPDialogueTransferModesEnum.PassThru);
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call callback received.", m_username));
+                    return m_callbackCall.Answer(contentType, body, null, SIPDialogueTransferModesEnum.BlindPassThru);
                 }
                 else {
-                    Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call timed out waiting for callback.", m_username));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call timed out waiting for callback.", m_username));
                     return null;
                 }
             }
@@ -307,7 +307,7 @@ namespace SIPSorcery.AppServer.DialPlan {
 
         public void ClientCallTerminated(CallCancelCause cancelCause)
         {
-            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "GoogleVoiceCall client call cancelled, " + cancelCause + ".", m_username));
+            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "GoogleVoiceCall client call cancelled, " + cancelCause + ".", m_username));
             m_clientCallCancelled = true;
         }
     }

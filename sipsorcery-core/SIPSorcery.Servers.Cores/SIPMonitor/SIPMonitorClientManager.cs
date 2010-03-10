@@ -27,17 +27,18 @@ namespace SIPSorcery.Servers
         private const string REMOVESESSIONS_THREAD_NAME = "sipmonitor-expiredsession";
         private const int REMOVE_EXPIRED_SESSIONS_PERIOD = 5000;
         private const int MAX_EVENT_QUEUE_SIZE = 50;
-        private int SESSION_INACTIVITY_LIMIT = 180;             // The number of minutes of no notification requests that a session will be removed.
 
         private static ILog logger = AppState.logger;
 
-        private Dictionary<string, SIPMonitorClientSession> m_clientSessions = new Dictionary<string, SIPMonitorClientSession>();   // <Address, sessions>.
+        //private readonly string m_notificationsUsername = NotifierSubscriptionsManager.SUBSCRIPTIONS_MANAGER_USERNAME;
+
+        private Dictionary<string, List<SIPMonitorClientSession>> m_clientSessions = new Dictionary<string, List<SIPMonitorClientSession>>();   // <Address, sessions>.
         //private Dictionary<string, Action<string>> m_clientsWaiting = new Dictionary<string, Action<string>>();                     // <Address> List of address endpoints that are waiting for a notification.
         private List<string> m_failedSubscriptions = new List<string>();
         private bool m_exit;
         private string m_monitorServerID;
 
-        public event Action<string> NotificationReady;       
+        public event Action<string> NotificationReady;
 
         public SIPMonitorClientManager(string monitorServerID)
         {
@@ -50,7 +51,7 @@ namespace SIPSorcery.Servers
             return true;
         }
 
-        public string Subscribe(string customerUsername, string adminId, string address, string subject, string filter, out string subscribeError)
+        public string Subscribe(string customerUsername, string adminId, string address, string subject, string filter, int expiry, out string subscribeError)
         {
             subscribeError = null;
 
@@ -65,19 +66,20 @@ namespace SIPSorcery.Servers
                     throw new ArgumentException("Subscribe was passed a required parameter that was empty.");
                 }
 
-                SIPMonitorClientSession session = GetSession(customerUsername, address) ?? new SIPMonitorClientSession(customerUsername, adminId, address);
+                SIPMonitorClientSession session = new SIPMonitorClientSession(customerUsername, adminId, address, expiry);
                 sessionID = session.SetFilter(subject, filter);
 
-                if (session.ControlEventsFilter != null)
-                {
-                    logger.Debug("Filter set for customer=" + customerUsername + ", adminID=" + adminId + ", sessionID=" + sessionID + " as " + session.ControlEventsFilter.GetFilterDescription() + ".");
-                }
+                logger.Debug("Filter set for customer=" + customerUsername + ", adminID=" + adminId + ", sessionID=" + sessionID + " as " + session.Filter.GetFilterDescription() + ".");
 
                 lock (m_clientSessions)
                 {
                     if (!m_clientSessions.ContainsKey(session.Address))
                     {
-                        m_clientSessions.Add(session.Address, session);
+                        m_clientSessions.Add(session.Address, new List<SIPMonitorClientSession>() { session });
+                    }
+                    else
+                    {
+                        m_clientSessions[session.Address].Add(session);
                     }
                 }
 
@@ -98,7 +100,7 @@ namespace SIPSorcery.Servers
                 //{
                 //    logger.Debug("Subscribe Firing notification available callback for address " + address + ".");
                 //    notificationReady(address);
-               // }
+                // }
 
                 //logger.Debug("SIPMonitorClientManager subscribed " + session.Address + " " + session.CustomerUsername + ".");
 
@@ -122,38 +124,30 @@ namespace SIPSorcery.Servers
 
                 lock (m_clientSessions)
                 {
-                    foreach (SIPMonitorClientSession session in m_clientSessions.Values)
+                    foreach (KeyValuePair<string, List<SIPMonitorClientSession>> sessionEntry in m_clientSessions)
                     {
+                        string address = sessionEntry.Key;
+                        List<SIPMonitorClientSession> sessions = sessionEntry.Value;
+
                         bool eventAdded = false;
-                        if (monitorEvent.GetType() == typeof(SIPMonitorMachineEvent))
+
+                        foreach (SIPMonitorClientSession session in sessions)
                         {
-                            if (session.SubscribedForMachineEvents && monitorEvent.Username == session.CustomerUsername)
+                            if (((monitorEvent is SIPMonitorConsoleEvent && session.SessionType == SIPMonitorClientTypesEnum.Console) ||
+                                (monitorEvent is SIPMonitorMachineEvent && session.SessionType == SIPMonitorClientTypesEnum.Machine))
+                                && session.Filter.ShowSIPMonitorEvent(monitorEvent))
                             {
-                                //logger.Debug("SIPMonitorClientManager Enqueueing machine event for " + session.Address + ".");
-                                lock (session.MachineEvents)
+                                lock (session.Events)
                                 {
-                                    if (session.MachineEvents.Count > MAX_EVENT_QUEUE_SIZE)
+                                    if (session.Events.Count > MAX_EVENT_QUEUE_SIZE)
                                     {
                                         // Queue has exceeded max allowed size, pop off the oldest event.
-                                        session.MachineEvents.Enqueue(monitorEvent);
+                                        session.Events.Dequeue();
                                     }
-                                    session.MachineEvents.Enqueue(monitorEvent);
+                                    session.Events.Enqueue(monitorEvent);
                                 }
                                 eventAdded = true;
                             }
-                        }
-                        else if (session.ControlEventsFilter != null && session.ControlEventsFilter.ShowSIPMonitorEvent(monitorEvent))
-                        {
-                            lock (session.ControlEvents)
-                            {
-                                if (session.ControlEvents.Count > MAX_EVENT_QUEUE_SIZE)
-                                {
-                                    // Queue has exceeded max allowed size, pop off the oldest event.
-                                    session.ControlEvents.Dequeue();
-                                }
-                                session.ControlEvents.Enqueue(monitorEvent);
-                            }
-                            eventAdded = true;
                         }
 
                         //if (eventAdded && m_clientsWaiting.ContainsKey(session.Address))
@@ -164,7 +158,7 @@ namespace SIPSorcery.Servers
 
                             if (NotificationReady != null)
                             {
-                                NotificationReady(session.Address);
+                                NotificationReady(address);
                             }
                         }
                     }
@@ -212,44 +206,46 @@ namespace SIPSorcery.Servers
                     }
                 }*/
 
-                SIPMonitorClientSession session = (m_clientSessions.ContainsKey(address)) ? m_clientSessions[address] : null;
-                if (session != null)
+                List<SIPMonitorClientSession> sessions = (m_clientSessions.ContainsKey(address)) ? m_clientSessions[address] : null;
+                if (sessions != null)
                 {
-                    session.LastGetNotificationsRequest = DateTime.Now;
+                    sessions = sessions.OrderBy(s => s.LastGetNotificationsRequest).ToList();
 
-                    if (!session.FilterDescriptionNotificationSent && session.ControlEventsFilter != null)
+                    for (int index = 0; index < sessions.Count; index++)
                     {
-                        //logger.Debug("First notifications request after new console client filter set.");
-                        session.FilterDescriptionNotificationSent = true;
-                        sessionId = session.ControlEventsSessionId;
-                        SIPMonitorControlClientEvent filterDescriptionEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.Monitor, SIPMonitorEventTypesEnum.Monitor, session.ControlEventsFilter.GetFilterDescription(), session.CustomerUsername);
-                        return new List<string>() { filterDescriptionEvent.ToConsoleString(session.AdminId) };
-                    }
-                    else if (session.MachineEvents.Count > 0)
-                    {
-                        sessionId = session.MachineEventsSessionId;
-                        List<string> eventList = new List<string>();
-                        lock (session.MachineEvents)
+                        SIPMonitorClientSession session = sessions[index];
+                        session.LastGetNotificationsRequest = DateTime.Now;
+
+                        if (!session.FilterDescriptionNotificationSent && session.SessionType == SIPMonitorClientTypesEnum.Console)
                         {
-                            while (session.MachineEvents.Count > 0)
-                            {
-                                eventList.Add(((SIPMonitorMachineEvent)session.MachineEvents.Dequeue()).ToCSV());
-                            }
+                            //logger.Debug("First notifications request after new console client filter set.");
+                            session.FilterDescriptionNotificationSent = true;
+                            sessionId = session.SessionID;
+                            SIPMonitorConsoleEvent filterDescriptionEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Monitor, SIPMonitorEventTypesEnum.Monitor, session.Filter.GetFilterDescription(), session.CustomerUsername);
+                            return new List<string>() { filterDescriptionEvent.ToConsoleString(session.AdminId) };
                         }
-                        return eventList;
-                    }
-                    else if (session.ControlEvents.Count > 0)
-                    {
-                        sessionId = session.ControlEventsSessionId;
-                        List<string> eventList = new List<string>();
-                        lock (session.ControlEvents)
+                        else if (session.Events.Count > 0)
                         {
-                            while (session.ControlEvents.Count > 0)
+                            List<string> eventList = new List<string>();
+                            sessionId = session.SessionID;
+                            lock (session.Events)
                             {
-                                eventList.Add(((SIPMonitorControlClientEvent)session.ControlEvents.Dequeue()).ToConsoleString(session.AdminId));
+                                while (session.Events.Count > 0)
+                                {
+                                    SIPMonitorEvent monitorEvent = session.Events.Dequeue();
+                                    if (monitorEvent is SIPMonitorConsoleEvent)
+                                    {
+                                        eventList.Add(((SIPMonitorConsoleEvent)monitorEvent).ToConsoleString(session.AdminId));
+                                    }
+                                    else
+                                    {
+                                        eventList.Add(monitorEvent.ToCSV());
+                                    }
+                                }
                             }
+
+                            return eventList;
                         }
-                        return eventList;
                     }
                 }
 
@@ -268,17 +264,16 @@ namespace SIPSorcery.Servers
         {
             try
             {
-                SIPMonitorClientSession session = (m_clientSessions.ContainsKey(address)) ? m_clientSessions[address] : null;
-                if (session != null)
+                List<SIPMonitorClientSession> sessions = (m_clientSessions.ContainsKey(address)) ? m_clientSessions[address] : null;
+                if (sessions != null)
                 {
-                    if ((!session.FilterDescriptionNotificationSent && session.ControlEventsFilter != null) ||
-                        session.MachineEvents.Count > 0 || session.ControlEvents.Count > 0)
+                    foreach (SIPMonitorClientSession session in sessions)
                     {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
+                        if ((!session.FilterDescriptionNotificationSent && session.SessionType == SIPMonitorClientTypesEnum.Console) ||
+                            session.Events.Count > 0)
+                        {
+                            return true;
+                        }
                     }
                 }
 
@@ -293,26 +288,49 @@ namespace SIPSorcery.Servers
 
         public void CloseSession(string address, string sessionID)
         {
-            SIPMonitorClientSession connection = (m_clientSessions.ContainsKey(address)) ? m_clientSessions[address] : null;
-            if (connection != null)
+            lock (m_clientSessions)
             {
-                logger.Debug("Closing session for customer=" + connection.CustomerUsername + ", sessionID=" + sessionID + ".");
+                List<SIPMonitorClientSession> sessions = (m_clientSessions.ContainsKey(address)) ? m_clientSessions[address] : null;
+                if (sessions != null)
+                {
+                    for (int index = 0; index < sessions.Count; index++)
+                    {
+                        SIPMonitorClientSession session = sessions[index];
 
-                connection.Close(sessionID);
+                        if (session.SessionID == sessionID)
+                        {
+                            logger.Debug("Closing session for customer=" + session.CustomerUsername + ", sessionID=" + sessionID + ".");
+
+                            session.Close();
+
+                            m_clientSessions[address].Remove(session);
+
+                            if (m_clientSessions[address].Count == 0)
+                            {
+                                m_clientSessions.Remove(address);
+                            }
+                        }
+                    }
+                }
             }
         }
 
         public void CloseConnection(string address)
         {
-            SIPMonitorClientSession connection = (m_clientSessions.ContainsKey(address)) ? m_clientSessions[address] : null;
-            if (connection != null)
+            List<SIPMonitorClientSession> sessions = (m_clientSessions.ContainsKey(address)) ? m_clientSessions[address] : null;
+            if (sessions != null && sessions.Count > 0)
             {
-                logger.Debug("Closing connection for customer=" + connection.CustomerUsername + ", address=" + address + ".");
+                logger.Debug("Closing all sessions for address=" + address + ".");
 
-                lock (m_clientSessions)
+                for (int index = 0; index < sessions.Count; index++)
                 {
-                    m_clientSessions.Remove(address);
+                    CloseSession(address, sessions[index].SessionID);
                 }
+            }
+
+            if (m_clientSessions.ContainsKey(address))
+            {
+                m_clientSessions.Remove(address);
             }
         }
 
@@ -369,7 +387,7 @@ namespace SIPSorcery.Servers
             m_exit = true;
         }
 
-        private SIPMonitorClientSession GetSession(string customerUsername, string address)
+        /*private SIPMonitorClientSession GetSession(string customerUsername, string address)
         {
             lock (m_clientSessions)
             {
@@ -388,7 +406,7 @@ namespace SIPSorcery.Servers
 
                 return null;
             }
-        }
+        }*/
 
         private void RemoveExpiredSessions()
         {
@@ -402,13 +420,14 @@ namespace SIPSorcery.Servers
                     {
                         lock (m_clientSessions)
                         {
-                            var expiredSessions = from session in m_clientSessions.Values
-                                                  where session.LastGetNotificationsRequest < DateTime.Now.AddMinutes(-1 * SESSION_INACTIVITY_LIMIT)
-                                                  select session;
+                            var expiredSessions = from sessions in m_clientSessions.Values
+                                                    from session in sessions
+                                                    where session.LastGetNotificationsRequest < DateTime.Now.AddSeconds(-1 * session.Expiry)
+                                                    select session;
 
                             expiredSessions.ToList().ForEach((session) =>
                              {
-                                 logger.Debug("SIPMonitorClientManager Removing inactive session connection to " + session.CustomerUsername + ".");
+                                 logger.Debug("SIPMonitorClientManager removing inactive session connection to " + session.CustomerUsername + ".");
                                  m_clientSessions.Remove(session.Address);
                                  //m_clientsWaiting.Remove(session.Address);
                              });

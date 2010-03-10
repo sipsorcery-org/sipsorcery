@@ -76,7 +76,7 @@ namespace SIPSorcery.Servers
 
         public void Log(string message)
         {
-            m_proxyLogger(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.DialPlan, message, null));
+            m_proxyLogger(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.DialPlan, message, null));
         }
 
         public void Send(string dstSocket, SIPRequest sipRequest, string proxyBranch)

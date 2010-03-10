@@ -186,8 +186,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="SIPApplicationServer\SIPDialogueManager.cs" />
+    <Compile Include="SIPNotifier\NotifierSubscriptionsManager.cs" />
+    <Compile Include="SIPNotifier\SIPNotifierCore.cs" />
     <Compile Include="SIPWatchTower\SIPAppServerManager.cs" />
-    <Compile Include="SIPApplicationServer\SIPNotifyManager.cs" />
+    <Compile Include="SIPNotifier\SIPNotifyManager.cs" />
     <Compile Include="SIPMonitor\SIPMonitorClientManager.cs" />
     <Compile Include="SIPMonitor\SIPMonitorMediator.cs" />
     <Compile Include="SIPMonitor\SIPMonitorEventWriter.cs">
@@ -230,6 +232,7 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>

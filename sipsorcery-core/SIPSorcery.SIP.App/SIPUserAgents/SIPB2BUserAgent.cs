@@ -40,7 +40,7 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.SIP.App {
 
     /// <summary>
-    /// This class represents a back-to-back (B2B) user agent (UA) that is used to place attach an outgoing
+    /// This class represents a back-to-back (B2B) user agent (UA) that is used to attach an outgoing
     /// call (UAC) to an incoming (UAS) call. Normally the UAC call would be the client side of a call that
     /// is placed to an external UAS in this case it's the client side of a call to a UAS in the same process.
     /// The use for this class is to allow an outgoing call from a SIP Account to another SIP Account's incoming
@@ -206,14 +206,14 @@ namespace SIPSorcery.SIP.App {
             try {
                 if (!IsUASAnswered) {
                     if ((int)progressStatus >= 200) {
-                        Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "B2BUA call was passed an invalid response status of " + (int)progressStatus + ", ignoring.", m_uacOwner));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "B2BUA call was passed an invalid response status of " + (int)progressStatus + ", ignoring.", m_uacOwner));
                     }
                     else {
                         if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding) {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "B2BUA call ignoring progress response with status of " + (int)progressStatus + " as already in " + m_uasTransaction.TransactionState + ".", m_uacOwner));
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "B2BUA call ignoring progress response with status of " + (int)progressStatus + " as already in " + m_uasTransaction.TransactionState + ".", m_uacOwner));
                         }
                         else {
-                            Log_External(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "B2BUA call progressing with " + progressStatus + ".", m_uacOwner));
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "B2BUA call progressing with " + progressStatus + ".", m_uacOwner));
                             SIPResponse uasProgressResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, progressStatus, reasonPhrase);
                             m_uasTransaction.SendInformationalResponse(uasProgressResponse);
 

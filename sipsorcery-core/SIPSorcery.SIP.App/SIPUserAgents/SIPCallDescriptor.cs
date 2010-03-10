@@ -57,11 +57,13 @@ namespace SIPSorcery.SIP.App
 
     public enum SIPCallTransferModesEnum
     {
-        NotAllowed = 0, // (option=n) REFER requests will be blocked.
-        PassThru = 1,   // (option=p) Default. REFER requests will be treated as an in-dialogue request and passed through to user agents.
-        Caller = 2,     // (option=o) Only the caller can initiate transfers.
-        Callee = 3,     // (option=d) Only the callee can initiate transfers.
-        Both = 4,       // (option=b) Either end of the call can initiate a transfer.
+        NotAllowed = 0,     // (option=n) REFER requests for attended and blind transfers will be blocked.
+        BlindPassThru = 1,  // (option=p) Default. Attended processed by server, blind will be treated as an in-dialogue requests and passed through to user agents.
+        BlindPlaceCall = 2, // (option=c) Attended processed by server, blind will intiate a new call on server and then do an attended transfer.
+        //Caller = 2,     // (option=o) Only the caller can initiate transfers.
+        //Callee = 3,     // (option=d) Only the callee can initiate transfers.
+        //Both = 4,       // (option=b) Either end of the call can initiate a transfer.
+
     }
 
     public class SIPCallDescriptor
@@ -80,8 +82,6 @@ namespace SIPSorcery.SIP.App
 
         private static ILog logger = AppState.logger;
         
-        //public static SIPCallDescriptor Empty = new SIPCallDescriptor(null, null, null, null, null, null, null, null, SIPCallDirection.None, null, null);
-
         public string Username;                 // The username that will be used in the From header and to authenticate the call unless overridden by AuthUsername.
         public string AuthUsername;             // The username that will be used from authentication. Optional setting only needed if the From header user needs to be different from the digest username.
         public string Password;                 // The password that will be used to authenticate the call if required.
@@ -102,7 +102,7 @@ namespace SIPSorcery.SIP.App
         public string FromDisplayName;
         public string FromURIUsername;
         public string FromURIHost;
-        public SIPCallTransferModesEnum TransferMode = SIPCallTransferModesEnum.PassThru;   // Determines how the call (dialogues) created by this descriptor will handle transfers (REFER requests).
+        public SIPCallTransferModesEnum TransferMode = SIPCallTransferModesEnum.BlindPassThru;   // Determines how the call (dialogues) created by this descriptor will handle transfers (REFER requests).
 
         public SIPAccount ToSIPAccount;                 // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
 
@@ -260,9 +260,13 @@ namespace SIPSorcery.SIP.App
                     }
                     else if (transferMode == "p" || transferMode == "P")
                     {
-                        TransferMode = SIPCallTransferModesEnum.PassThru;
+                        TransferMode = SIPCallTransferModesEnum.BlindPassThru;
                     }
-                    else if (transferMode == "o" || transferMode == "O")
+                    else if (transferMode == "c" || transferMode == "C")
+                    {
+                        TransferMode = SIPCallTransferModesEnum.BlindPlaceCall;
+                    }
+                    /*else if (transferMode == "o" || transferMode == "O")
                     {
                         TransferMode = SIPCallTransferModesEnum.Caller;
                     }
@@ -273,7 +277,7 @@ namespace SIPSorcery.SIP.App
                     else if (transferMode == "b" || transferMode == "B")
                     {
                         TransferMode = SIPCallTransferModesEnum.Both;
-                    }
+                    }*/
                 }
             }
         }
@@ -317,6 +321,44 @@ namespace SIPSorcery.SIP.App
             }
 
             return customHeaderList;
+        }
+
+        public SIPCallDescriptor CopyOf()
+        {
+            List<string> copiedCustomHeaders = null;
+            if (CustomHeaders != null)
+            {
+                copiedCustomHeaders = new List<string>();
+                copiedCustomHeaders.InsertRange(0, CustomHeaders);
+            }
+
+            SIPCallDescriptor copy = new SIPCallDescriptor(
+                Username,
+                Password,
+                Uri,
+                From,
+                To,
+                RouteSet,
+                copiedCustomHeaders,
+                AuthUsername,
+                CallDirection,
+                ContentType,
+                Content,
+                (MangleIPAddress != null) ? new IPAddress(MangleIPAddress.GetAddressBytes()) : null);
+
+            // Options.
+            copy.DelaySeconds = DelaySeconds;
+            copy.RedirectMode = RedirectMode;
+            copy.CallDurationLimit = CallDurationLimit;
+            copy.MangleResponseSDP = MangleResponseSDP;
+            copy.FromDisplayName = FromDisplayName;
+            copy.FromURIUsername = FromURIUsername;
+            copy.FromURIHost = FromURIHost;
+            copy.TransferMode = TransferMode;
+
+            copy.ToSIPAccount = ToSIPAccount;
+
+            return copy;
         }
     }
 }

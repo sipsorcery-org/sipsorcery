@@ -110,6 +110,7 @@
       <DependentUpon>SIPProvisioningWebService.svc</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SIPSorceryAuthenticatedService.cs" />
     <Compile Include="SIPSorcerySecurityHeader.cs" />
   </ItemGroup>
   <ItemGroup>

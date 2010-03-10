@@ -14,7 +14,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006-2008 Aaron Clauson (aaronc@blueface.ie), Blue Face Ltd, Dublin, Ireland (www.blueface.ie)
+// Copyright (c) 2010 Aaron Clauson (aaron@sipsorcery.com), SIPSorcery Ltd, London, UK (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -53,198 +53,237 @@ using NUnit.Framework;
 #endif
 
 namespace SIPSorcery.SIP.App
-{	
-	public class SIPMonitorFilter
-	{
-		public const string WILDCARD = "*";
+{
+    public class SIPMonitorFilter
+    {
+        public const string WILDCARD = "*";
         public const string DEFAULT_REGEX = ".*";
         public const int DEFAULT_FILEDURATION_MINUTES = 1440;   // 1 Day.
         public const int MAX_FILEDURATION_MINUTES = 4320;       // 3 Days.
 
         public const string BASETYPE_FILTER_KEY = "basetype";   // can be machine or control.
-		public const string EVENTTYPE_FILTER_KEY = "event";
-		public const string IPADDRESS_FILTER_KEY = "ipaddr";
+        public const string EVENTTYPE_FILTER_KEY = "event";
+        public const string IPADDRESS_FILTER_KEY = "ipaddr";
         public const string IPADDRESSLONG_FILTER_KEY = "ipaddress";
-		public const string USERNAME_FILTER_KEY = "user";
-		public const string SIPREQUEST_FILTER_KEY = "request";
-		public const string SERVERADDRESS_FILTER_KEY = "ipserver";
-		public const string SERVERTYPE_FILTER_KEY = "server";
+        public const string USERNAME_FILTER_KEY = "user";
+        public const string SIPREQUEST_FILTER_KEY = "request";
+        public const string SERVERADDRESS_FILTER_KEY = "ipserver";
+        public const string SERVERTYPE_FILTER_KEY = "server";
         public const string REGEX_FILTER_KEY = "regex";
+        public const string SIPEVENT_DIALOG_KEY = "dialog";                // To subscribe for machine events related to dialogs.
 
         public const string MACHINE_BASE_TYPE = "machine";
-        public const string CONTROL_BASE_TYPE = "control";
-		public const string EVENTTYPE_FULL_VALUE = "full";                  // Full SIP messages except ones to and from loopback IP's.
-		public const string EVENTTYPE_SYSTEM_VALUE = "system";
+        public const string CONSOLE_BASE_TYPE = "console";
+        public const string EVENTTYPE_FULL_VALUE = "full";                  // Full SIP messages except ones to and from loopback IP's.
+        public const string EVENTTYPE_SYSTEM_VALUE = "system";
         public const string EVENTTYPE_TROUBLE_VALUE = "trouble";
-    	public const string SIPREQUEST_INVITE_VALUE = "invite";
-		public const string SIPREQUEST_REGISTER_VALUE = "register";
+        public const string SIPREQUEST_INVITE_VALUE = "invite";
+        public const string SIPREQUEST_REGISTER_VALUE = "register";
 
         public const string FILELOG_REQUEST_KEY = "file";
         public const string FILELOG_MINUTESDURATION_KEY = "duration";
 
-        public string BaseType = CONTROL_BASE_TYPE;
-		public string IPAddress = WILDCARD;
+        public string BaseType = CONSOLE_BASE_TYPE;
+        public string IPAddress = WILDCARD;
         public string ServerIPAddress = WILDCARD;
         public string Username = WILDCARD;
         public string SIPRequestFilter = WILDCARD;
         public string EventFilterDescr = WILDCARD;
-		public int EventTypeId = 0;
-		public int ServerTypeId = 0;
+        public int EventTypeId = 0;
+        public int ServerTypeId = 0;
         public string RegexFilter = DEFAULT_REGEX;
         public string FileLogname = null;
         public int FileLogDuration = DEFAULT_FILEDURATION_MINUTES;
+        public SIPURI EventDialogURI;
 
         public SIPMonitorFilter(string filter)
-		{
-			if(!filter.IsNullOrBlank())
-			{
-				string[] filterItems = Regex.Split(filter, @"\s+and\s+");
+        {
+            if (!filter.IsNullOrBlank())
+            {
+                string[] filterItems = Regex.Split(filter, @"\s+and\s+");
 
-                if (filterItems != null && filterItems.Length > 0) {
-                    foreach (string filterItem in filterItems) {
-
+                if (filterItems != null && filterItems.Length > 0)
+                {
+                    foreach (string filterItem in filterItems)
+                    {
                         string[] filterPair = filterItem.Trim().Split(' ');
 
-                        if (filterPair != null && filterPair.Length == 2) {
+                        if (filterPair != null && filterPair.Length == 2)
+                        {
                             string filterName = filterPair[0];
                             string filterValue = filterPair[1];
 
-                            if (filterName == BASETYPE_FILTER_KEY) {
+                            if (filterName == BASETYPE_FILTER_KEY)
+                            {
                                 BaseType = filterValue;
                             }
-                            else if (filterName == EVENTTYPE_FILTER_KEY) {
-                                if (filterValue != null && Regex.Match(filterValue, @"\d{1,2}").Success) {
+                            else if (filterName == EVENTTYPE_FILTER_KEY)
+                            {
+                                if (filterValue != null && Regex.Match(filterValue, @"\d{1,2}").Success)
+                                {
                                     EventTypeId = Convert.ToInt32(filterValue);
                                 }
-                                else {
+                                else
+                                {
                                     EventFilterDescr = filterValue;
                                 }
                             }
-                            else if (filterName == SERVERADDRESS_FILTER_KEY) {
+                            else if (filterName == SERVERADDRESS_FILTER_KEY)
+                            {
                                 ServerIPAddress = filterValue;
                             }
-                            else if (filterName == IPADDRESS_FILTER_KEY || filterName == IPADDRESSLONG_FILTER_KEY) {
+                            else if (filterName == IPADDRESS_FILTER_KEY || filterName == IPADDRESSLONG_FILTER_KEY)
+                            {
                                 IPAddress = filterValue;
                             }
-                            else if (filterName == USERNAME_FILTER_KEY) {
+                            else if (filterName == USERNAME_FILTER_KEY)
+                            {
                                 Username = filterValue;
                             }
-                            else if (filterName == SIPREQUEST_FILTER_KEY) {
+                            else if (filterName == SIPREQUEST_FILTER_KEY)
+                            {
                                 SIPRequestFilter = filterValue;
                             }
-                            else if (filterName == SERVERTYPE_FILTER_KEY) {
-                                if (filterValue != null && Regex.Match(filterValue, @"\d{1,2}").Success) {
+                            else if (filterName == SERVERTYPE_FILTER_KEY)
+                            {
+                                if (filterValue != null && Regex.Match(filterValue, @"\d{1,2}").Success)
+                                {
                                     ServerTypeId = Convert.ToInt32(filterValue);
                                 }
                             }
-                            else if (filterName == FILELOG_REQUEST_KEY) {
-                                if (filterValue != null) {
+                            else if (filterName == FILELOG_REQUEST_KEY)
+                            {
+                                if (filterValue != null)
+                                {
                                     FileLogname = filterValue;
                                 }
                             }
-                            else if (filterName == FILELOG_MINUTESDURATION_KEY) {
-                                if (filterValue != null && Regex.Match(filterValue, @"\d").Success) {
+                            else if (filterName == FILELOG_MINUTESDURATION_KEY)
+                            {
+                                if (filterValue != null && Regex.Match(filterValue, @"\d").Success)
+                                {
                                     FileLogDuration = Convert.ToInt32(filterValue);
 
-                                    if (FileLogDuration > MAX_FILEDURATION_MINUTES) {
+                                    if (FileLogDuration > MAX_FILEDURATION_MINUTES)
+                                    {
                                         FileLogDuration = MAX_FILEDURATION_MINUTES;
                                     }
                                 }
                             }
-                            else if (filterName == REGEX_FILTER_KEY) {
-                                if (filterValue != null) {
+                            else if (filterName == REGEX_FILTER_KEY)
+                            {
+                                if (filterValue != null)
+                                {
                                     RegexFilter = filterValue;
                                 }
                             }
-                            else {
+                            else if (filterName == SIPEVENT_DIALOG_KEY)
+                            {
+                                BaseType = MACHINE_BASE_TYPE;
+                                EventDialogURI = SIPURI.ParseSIPURI(filterValue);
+                            }
+                            else
+                            {
                                 throw new ApplicationException("Filter " + filterName + " was not recognised.");
                             }
                         }
-                        else {
+                        else
+                        {
                             throw new ApplicationException("Invalid item in filter: " + filterItem.Trim() + ".");
                         }
                     }
                 }
-                else {
+                else
+                {
                     throw new ApplicationException("Invalid filter format: " + filter + ".");
                 }
-			}
-		}
+            }
+        }
 
         public bool ShowEvent(SIPMonitorEventTypesEnum eventType, SIPEndPoint serverEndPoint)
-		{
-			if(EventTypeId != 0)
-			{
-				if((int)eventType == EventTypeId)
-				{
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-			else
-			{
-                if (EventFilterDescr == EVENTTYPE_FULL_VALUE && eventType == SIPMonitorEventTypesEnum.FullSIPTrace) {
-                   // if (serverEndPoint != null && serverEndPoint.SocketEndPoint.Address.ToString() == "127.0.0.1") {
-                    //    return false;
-                   // }
-                    //else {
-                        return true;
-                   // }
+        {
+            if (EventTypeId != 0)
+            {
+                if ((int)eventType == EventTypeId)
+                {
+                    return true;
                 }
-                else if (EventFilterDescr == EVENTTYPE_SYSTEM_VALUE) {
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (EventFilterDescr == EVENTTYPE_FULL_VALUE && eventType == SIPMonitorEventTypesEnum.FullSIPTrace)
+                {
+                    // if (serverEndPoint != null && serverEndPoint.SocketEndPoint.Address.ToString() == "127.0.0.1") {
+                    //    return false;
+                    // }
+                    //else {
+                    return true;
+                    // }
+                }
+                else if (EventFilterDescr == EVENTTYPE_SYSTEM_VALUE)
+                {
                     // Assume EVENTTYPE_ALL_VALUE.
                     if (eventType == SIPMonitorEventTypesEnum.Monitor ||
                         eventType == SIPMonitorEventTypesEnum.HealthCheck ||
                         eventType == SIPMonitorEventTypesEnum.ParseSIPMessage ||
-                        eventType == SIPMonitorEventTypesEnum.SIPMessageArrivalStats) {
+                        eventType == SIPMonitorEventTypesEnum.SIPMessageArrivalStats)
+                    {
                         return true;
                     }
-                    else {
+                    else
+                    {
                         return false;
                     }
                 }
-                else if (EventFilterDescr == EVENTTYPE_TROUBLE_VALUE) {
+                else if (EventFilterDescr == EVENTTYPE_TROUBLE_VALUE)
+                {
                     // Assume EVENTTYPE_ALL_VALUE.
                     if (eventType == SIPMonitorEventTypesEnum.Error ||
                         eventType == SIPMonitorEventTypesEnum.Warn ||
-                        eventType == SIPMonitorEventTypesEnum.BadSIPMessage) {
+                        eventType == SIPMonitorEventTypesEnum.BadSIPMessage)
+                    {
                         return true;
                     }
-                    else {
+                    else
+                    {
                         return false;
                     }
                 }
-                else {
+                else
+                {
                     // Assume EVENTTYPE_ALL_VALUE if nothing has been specified by the user, however do not display the full SIP trace messages.
-                    if (EventFilterDescr == WILDCARD && eventType != SIPMonitorEventTypesEnum.FullSIPTrace && eventType != SIPMonitorEventTypesEnum.UserSpecificSIPTrace) {
+                    if (EventFilterDescr == WILDCARD && eventType != SIPMonitorEventTypesEnum.FullSIPTrace && eventType != SIPMonitorEventTypesEnum.UserSpecificSIPTrace)
+                    {
                         return true;
                     }
-                    else {
+                    else
+                    {
                         return false;
                     }
                 }
-			}
-		}
+            }
+        }
 
-		public bool ShowServer(SIPMonitorServerTypesEnum eventServer)
-		{
-			if(ServerTypeId != 0)
-			{
-				if((int)eventServer == ServerTypeId)
-				{
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
+        public bool ShowServer(SIPMonitorServerTypesEnum eventServer)
+        {
+            if (ServerTypeId != 0)
+            {
+                if ((int)eventServer == ServerTypeId)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
 
-			return true;
-		}
+            return true;
+        }
 
         public bool ShowServerIPAddress(string serverIPAddress)
         {
@@ -258,12 +297,12 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-		public bool ShowIPAddress(string ipAddress)
-		{
+        public bool ShowIPAddress(string ipAddress)
+        {
             if (IPAddress == WILDCARD)
-			{
-				return true;
-			}
+            {
+                return true;
+            }
             else if (ipAddress == null || ipAddress.Trim().Length == 0)
             {
                 return false;
@@ -272,14 +311,14 @@ namespace SIPSorcery.SIP.App
             {
                 return ipAddress.Contains(IPAddress);
             }
-		}
+        }
 
-		public bool ShowUsername(string username)
-		{
+        public bool ShowUsername(string username)
+        {
             if (Username == WILDCARD)
-			{
-				return true;
-			}
+            {
+                return true;
+            }
             else if (username == null)
             {
                 return false;
@@ -292,31 +331,31 @@ namespace SIPSorcery.SIP.App
             {
                 return false;
             }
-		}
+        }
 
         public bool ShowRequest(SIPMethodsEnum sipMethod)
-		{
+        {
             if (SIPRequestFilter == WILDCARD)
-			{
-				return true;
-			}
-			else
-			{
+            {
+                return true;
+            }
+            else
+            {
                 if (SIPRequestFilter == SIPREQUEST_INVITE_VALUE)
-				{
+                {
                     return (sipMethod == SIPMethodsEnum.INVITE ||
                         sipMethod == SIPMethodsEnum.ACK ||
                         sipMethod == SIPMethodsEnum.BYE ||
                         sipMethod == SIPMethodsEnum.CANCEL ||
                         sipMethod == SIPMethodsEnum.REFER);
-				}
+                }
                 else if (SIPRequestFilter == SIPREQUEST_REGISTER_VALUE)
-				{
+                {
                     return (sipMethod == SIPMethodsEnum.REGISTER);
-				}
+                }
 
-				return false;
-			}
+                return false;
+            }
         }
 
         public bool ShowRegex(string message)
@@ -336,7 +375,7 @@ namespace SIPSorcery.SIP.App
             string eventStr = (EventTypeId == 0) ? EventFilterDescr : SIPMonitorEventTypes.GetProxyEventTypeForId(EventTypeId).ToString();
             string serverStr = (ServerTypeId == 0) ? WILDCARD : SIPMonitorServerTypes.GetProxyServerTypeForId(ServerTypeId).ToString();
 
-            string filerDescription = 
+            string filerDescription =
                 "ipaddress=" + IPAddress + ", user=" + Username + ", event=" + eventStr + ", request=" + SIPRequestFilter + ", serveripaddress=" + ServerIPAddress + ", server=" + serverStr + ", regex=" + RegexFilter + ".";
 
             return filerDescription;
@@ -357,87 +396,126 @@ namespace SIPSorcery.SIP.App
         /// <returns></returns>
         public bool ShowSIPMonitorEvent(SIPMonitorEvent proxyEvent)
         {
-            if (proxyEvent.GetType() == typeof(SIPMonitorMachineEvent)) {
-                if (BaseType == MACHINE_BASE_TYPE) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-            else if(BaseType == MACHINE_BASE_TYPE && proxyEvent.GetType() != typeof(SIPMonitorMachineEvent)) {
-                return false;
-            }
-
-            string serverAddress = (proxyEvent.ServerEndPoint != null) ? proxyEvent.ServerEndPoint.SocketEndPoint.Address.ToString() : null;
-            string remoteIPAddress = (proxyEvent.RemoteEndPoint != null) ? proxyEvent.RemoteEndPoint.SocketEndPoint.Address.ToString() : null;
-            string dstIPAddress = (proxyEvent.DestinationEndPoint != null) ? proxyEvent.DestinationEndPoint.SocketEndPoint.Address.ToString() : null;
-            SIPMethodsEnum sipMethod = SIPMethodsEnum.NONE;
-
-            if (SIPRequestFilter != WILDCARD && proxyEvent.Message != null && proxyEvent.EventType == SIPMonitorEventTypesEnum.FullSIPTrace)
+            if (proxyEvent is SIPMonitorMachineEvent)
             {
-                if(ShowEvent(proxyEvent.EventType, proxyEvent.ServerEndPoint))
+                if (BaseType == MACHINE_BASE_TYPE)
                 {
-                    if (SIPRequestFilter == SIPREQUEST_INVITE_VALUE)
-                    {
-                        // Do a regex to pick out ACK's, BYE's , CANCEL's and INVITES.
-                        if (Regex.Match(proxyEvent.Message, "(ACK|BYE|CANCEL|INVITE) +?sips?:", RegexOptions.IgnoreCase).Success ||
-                            Regex.Match(proxyEvent.Message, @"CSeq: \d+ (ACK|BYE|CANCEL|INVITE)(\r|\n)", RegexOptions.IgnoreCase).Success)
-                        {
-                            return ShowRegex(proxyEvent.Message);
-                        }
-                        else
-                        {
-                            string reqPattern = SIPRequestFilter + " +?sips?:";
-                            string respPattern = @"CSeq: \d+ " + SIPRequestFilter;
-
-                            if (Regex.Match(proxyEvent.Message, reqPattern, RegexOptions.IgnoreCase).Success ||
-                                Regex.Match(proxyEvent.Message, respPattern, RegexOptions.IgnoreCase).Success)
-                            {
-                                return ShowRegex(proxyEvent.Message);
-                            }
-                        }
-                    }
-
-                    return false;
-                }
-            }
-
-            if (ShowEvent(proxyEvent.EventType, proxyEvent.ServerEndPoint) && ShowServer(proxyEvent.ServerType))
-            {
-                if (IPAddress != WILDCARD)
-                {
-                    if (ShowIPAddress(remoteIPAddress))
+                    if(EventFilterDescr == null)
                     {
                         return true;
                     }
-                    else if (ShowIPAddress(dstIPAddress))
+                    else if (EventDialogURI != null)
                     {
-                         return true;
+                        SIPMonitorMachineEvent machineEvent = proxyEvent as SIPMonitorMachineEvent;
+                        if (machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueCreated ||
+                            machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved ||
+                            machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated)
+                        {
+                            if (machineEvent.Dialogue.Owner == EventDialogURI.User ||
+                                (machineEvent.Dialogue.LocalUserField.URI.ToParameterlessString() == EventDialogURI.ToString() ||
+                                machineEvent.Dialogue.RemoteUserField.URI.ToParameterlessString() == EventDialogURI.ToString()))
+                            {
+                                return true;
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            return false;
+                        }
                     }
                     else
                     {
                         return false;
                     }
                 }
-
-                bool showUsername = ShowUsername(proxyEvent.Username);
-                bool showServerIP = ShowServerIPAddress(serverAddress);
-                bool showRequest = ShowRequest(sipMethod);
-                bool showRegex = ShowRegex(proxyEvent.Message);
-
-                if (showUsername && showServerIP && showRequest && showRegex)
+                else
                 {
-                    return true;
+                    return false;
                 }
             }
+            else if (BaseType == MACHINE_BASE_TYPE && !(proxyEvent is SIPMonitorMachineEvent))
+            {
+                return false;
+            }
+            else 
+            {
+                SIPMonitorConsoleEvent consoleEvent = proxyEvent as SIPMonitorConsoleEvent;
 
-            return false;
+                string serverAddress = (consoleEvent.ServerEndPoint != null) ? consoleEvent.ServerEndPoint.SocketEndPoint.Address.ToString() : null;
+                string remoteIPAddress = (consoleEvent.RemoteEndPoint != null) ? consoleEvent.RemoteEndPoint.SocketEndPoint.Address.ToString() : null;
+                string dstIPAddress = (consoleEvent.DestinationEndPoint != null) ? consoleEvent.DestinationEndPoint.SocketEndPoint.Address.ToString() : null;
+                SIPMethodsEnum sipMethod = SIPMethodsEnum.NONE;
+
+                if (SIPRequestFilter != WILDCARD && consoleEvent.Message != null && consoleEvent.EventType == SIPMonitorEventTypesEnum.FullSIPTrace)
+                {
+                    if (ShowEvent(consoleEvent.EventType, consoleEvent.ServerEndPoint))
+                    {
+                        if (SIPRequestFilter == SIPREQUEST_INVITE_VALUE)
+                        {
+                            // Do a regex to pick out ACK's, BYE's , CANCEL's and INVITES.
+                            if (Regex.Match(consoleEvent.Message, "(ACK|BYE|CANCEL|INVITE) +?sips?:", RegexOptions.IgnoreCase).Success ||
+                                Regex.Match(consoleEvent.Message, @"CSeq: \d+ (ACK|BYE|CANCEL|INVITE)(\r|\n)", RegexOptions.IgnoreCase).Success)
+                            {
+                                return ShowRegex(consoleEvent.Message);
+                            }
+                            else
+                            {
+                                string reqPattern = SIPRequestFilter + " +?sips?:";
+                                string respPattern = @"CSeq: \d+ " + SIPRequestFilter;
+
+                                if (Regex.Match(consoleEvent.Message, reqPattern, RegexOptions.IgnoreCase).Success ||
+                                    Regex.Match(consoleEvent.Message, respPattern, RegexOptions.IgnoreCase).Success)
+                                {
+                                    return ShowRegex(consoleEvent.Message);
+                                }
+                            }
+                        }
+
+                        return false;
+                    }
+                }
+
+                if (ShowEvent(consoleEvent.EventType, consoleEvent.ServerEndPoint) && 
+                    (consoleEvent is SIPMonitorConsoleEvent && ShowServer(((SIPMonitorConsoleEvent)consoleEvent).ServerType)))
+                {
+                    if (IPAddress != WILDCARD)
+                    {
+                        if (ShowIPAddress(remoteIPAddress))
+                        {
+                            return true;
+                        }
+                        else if (ShowIPAddress(dstIPAddress))
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+
+                    bool showUsername = ShowUsername(proxyEvent.Username);
+                    bool showServerIP = ShowServerIPAddress(serverAddress);
+                    bool showRequest = ShowRequest(sipMethod);
+                    bool showRegex = ShowRegex(consoleEvent.Message);
+
+                    if (showUsername && showServerIP && showRequest && showRegex)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
 
         #region Unit testing.
 
-        #if UNITTEST
+#if UNITTEST
 
         [TestFixture]
 		public class ProxyMonitorFilterUnitTest
@@ -490,7 +568,7 @@ namespace SIPSorcery.SIP.App
                     "User-Agent: X-Lite release 1006e stamp 34025" + m_CRLF +
                     "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY, MESSAGE, SUBSCRIBE, INFO" + m_CRLF + m_CRLF;
 
-                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, registerRequest, "test");
+                SIPMonitorEvent monitorEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, registerRequest, "test");
                 bool showEventResult = filter.ShowSIPMonitorEvent(monitorEvent);
 
                 Assert.IsFalse(showEventResult, "The filter should not have shown this event.");
@@ -521,7 +599,7 @@ namespace SIPSorcery.SIP.App
                     "User-Agent: X-Lite release 1006e stamp 34025" + m_CRLF +
                     "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY, MESSAGE, SUBSCRIBE, INFO" + m_CRLF + m_CRLF;
 
-                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, registerRequest, "test");
+                SIPMonitorEvent monitorEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, registerRequest, "test");
                 bool showEventResult = filter.ShowSIPMonitorEvent(monitorEvent);
 
                 Assert.IsTrue(showEventResult, "The filter should have shown this event.");
@@ -538,7 +616,7 @@ namespace SIPSorcery.SIP.App
                 Assert.IsTrue(filter != null, "The filter was not correctly instantiated.");
                 Assert.AreEqual(filter.IPAddress, "10.0.0.1", "The filter ip address was not correctly set.");
 
-                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, "blah blah", String.Empty, null, SIPEndPoint.ParseSIPEndPoint("10.0.0.1"));
+                SIPMonitorEvent monitorEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, "blah blah", String.Empty, null, SIPEndPoint.ParseSIPEndPoint("10.0.0.1"));
                 bool showEventResult = filter.ShowSIPMonitorEvent(monitorEvent);
 
                 Assert.IsTrue(showEventResult, "The filter should have shown this event.");
@@ -555,7 +633,7 @@ namespace SIPSorcery.SIP.App
                 Assert.IsTrue(filter != null, "The filter was not correctly instantiated.");
                 Assert.AreEqual(filter.IPAddress, "127.0.0.1", "The filter ip address was not correctly set.");
 
-                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, "blah blah", String.Empty, null, SIPEndPoint.ParseSIPEndPoint("127.0.0.1"));
+                SIPMonitorEvent monitorEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, "blah blah", String.Empty, null, SIPEndPoint.ParseSIPEndPoint("127.0.0.1"));
                 bool showEventResult = filter.ShowSIPMonitorEvent(monitorEvent);
 
                 Assert.IsTrue(showEventResult, "The filter should have shown this event.");
@@ -572,7 +650,7 @@ namespace SIPSorcery.SIP.App
                 Assert.IsTrue(filter != null, "The filter was not correctly instantiated.");
                 Assert.AreEqual(filter.IPAddress, "127.0.0.1", "The filter ip address was not correctly set.");
 
-                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, "blah blah", String.Empty, SIPEndPoint.ParseSIPEndPoint("127.0.0.2"), null);
+                SIPMonitorEvent monitorEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, "blah blah", String.Empty, SIPEndPoint.ParseSIPEndPoint("127.0.0.2"), null);
                 bool showEventResult = filter.ShowSIPMonitorEvent(monitorEvent);
 
                 Assert.IsFalse(showEventResult, "The filter should not have shown this event.");
@@ -603,7 +681,7 @@ namespace SIPSorcery.SIP.App
                     "User-Agent: X-Lite release 1006e stamp 34025" + m_CRLF +
                     "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY, MESSAGE, SUBSCRIBE, INFO" + m_CRLF + m_CRLF;
 
-                SIPMonitorEvent monitorEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, inviteRequest, null);
+                SIPMonitorEvent monitorEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, inviteRequest, null);
                 bool showEventResult = filter.ShowSIPMonitorEvent(monitorEvent);
 
                 Assert.IsTrue(showEventResult, "The filter should have shown this event.");
@@ -623,8 +701,8 @@ namespace SIPSorcery.SIP.App
             }
 		}
 
-		#endif
+#endif
 
-		#endregion
-	}
+        #endregion
+    }
 }

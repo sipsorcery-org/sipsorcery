@@ -56,13 +56,16 @@ namespace SIPSorcery.SIP
 
         private const int MAX_TCP_CONNECTIONS = 1000;               // Maximum number of connections for the TCP listener.
         //private const int MAX_TCP_CONNECTIONS_PER_IPADDRESS = 10;   // Maximum number of connections allowed for a single remote IP address.
-
-        //private ILog logger = AssemblyState.logger;
-
+        private const int CONNECTION_ATTEMPTS_ALLOWED = 3;          // The number of failed connection attempts permitted before classifying a remote socket as failed.
+        private const int FAILED_CONNECTION_DONTUSE_INTERVAL = 300; // If a socket cannot be connected to don't try and reconnect to it for this interval.
+        
+        private static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_LENGTH;
+        
         private TcpListener m_tcpServerListener;
-        //private bool m_closed = false;
         private Dictionary<string, SIPConnection> m_connectedSockets = new Dictionary<string, SIPConnection>();
-        private List<string> m_connectingSockets = new List<string>();  // List of sockets that are in the process of being connected to. Need to avoid SIP re-transmits initiating multiple connect attempts.
+        private List<string> m_connectingSockets = new List<string>();                                  // List of sockets that are in the process of being connected to. Need to avoid SIP re-transmits initiating multiple connect attempts.
+        private Dictionary<string, int> m_connectionFailureStrikes = new Dictionary<string, int>();     // Tracks the number of connection attempts made to a remote socket, three strikes and it's out.
+        private Dictionary<string, DateTime> m_connectionFailures = new Dictionary<string, DateTime>(); // Tracks sockets that have had a connection failure on them to avoid endless re-connect attmepts.
 
         public SIPTCPChannel(IPEndPoint endPoint)
         {
@@ -78,8 +81,8 @@ namespace SIPSorcery.SIP
                 m_tcpServerListener = new TcpListener(m_localSIPEndPoint.SocketEndPoint);
                 m_tcpServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
-                ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + Crypto.GetRandomString(4)); });
-                ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + Crypto.GetRandomString(4)); });
+                ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + m_localSIPEndPoint.SocketEndPoint.Port); });
+                ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + m_localSIPEndPoint.SocketEndPoint.Port); });
 
                 logger.Debug("SIP TCP Channel listener created " + m_localSIPEndPoint.SocketEndPoint + ".");
             }
@@ -123,7 +126,8 @@ namespace SIPSorcery.SIP
                     sipTCPClient.SIPSocketDisconnected += SIPTCPSocketDisconnected;
                     sipTCPClient.SIPMessageReceived += SIPTCPMessageReceived;
                     // clientSocket.BeginReceive(sipTCPClient.SocketBuffer, 0, SIPTCPConnection.MaxSIPTCPMessageSize, SocketFlags.None, new AsyncCallback(sipTCPClient.ReceiveCallback), null);
-                    tcpClient.GetStream().BeginRead(sipTCPClient.SocketBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(sipTCPClient.ReceiveCallback), null);
+                    byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
+                    tcpClient.GetStream().BeginRead(receiveBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(sipTCPClient.ReceiveCallback), receiveBuffer);
                 }
 
                 logger.Debug("SIPTCPChannel socket on " + m_localSIPEndPoint + " listening halted.");
@@ -170,6 +174,16 @@ namespace SIPSorcery.SIP
 
         private void SIPTCPMessageReceived(SIPChannel channel, SIPEndPoint remoteEndPoint, byte[] buffer)
         {
+            if(m_connectionFailures.ContainsKey(remoteEndPoint.SocketEndPoint.ToString()) )
+            {
+                m_connectionFailures.Remove(remoteEndPoint.SocketEndPoint.ToString());
+            }
+
+            if(m_connectionFailureStrikes.ContainsKey(remoteEndPoint.SocketEndPoint.ToString()))
+            {
+                m_connectionFailureStrikes.Remove(remoteEndPoint.SocketEndPoint.ToString());
+            }
+
             if (SIPMessageReceived != null)
             {
                 SIPMessageReceived(channel, remoteEndPoint, buffer);
@@ -202,7 +216,10 @@ namespace SIPSorcery.SIP
 
                         try
                         {
+                            //logger.Warn("TCP channel BeginWrite from " + SIPChannelEndPoint.ToString() + " to " + sipTCPClient.RemoteEndPoint + ": " + Encoding.ASCII.GetString(buffer, 0, 32) + ".");
                             sipTCPClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTCPClient);
+                            //logger.Warn("TCP channel BeginWrite complete from " + SIPChannelEndPoint.ToString() + " to " + sipTCPClient.RemoteEndPoint + ".");
+                            sipTCPClient.SIPStream.Flush();
                             sent = true;
                             sipTCPClient.LastTransmission = DateTime.Now;
                         }
@@ -216,7 +233,16 @@ namespace SIPSorcery.SIP
 
                     if (!sent)
                     {
-                        if (!m_connectingSockets.Contains(dstEndPoint.ToString()))
+                        if (m_connectionFailures.ContainsKey(dstEndPoint.ToString()) && m_connectionFailures[dstEndPoint.ToString()] < DateTime.Now.AddSeconds(FAILED_CONNECTION_DONTUSE_INTERVAL * -1))
+                        {
+                            m_connectionFailures.Remove(dstEndPoint.ToString());
+                        }
+
+                        if (m_connectionFailures.ContainsKey(dstEndPoint.ToString()))
+                        {
+                            logger.Warn("TCP connection attempt to " + dstEndPoint.ToString() + " was not attempted, too many failures.");
+                        }
+                        else if (!m_connectingSockets.Contains(dstEndPoint.ToString()))
                         {
                             logger.Debug("Attempting to establish TCP connection to " + dstEndPoint + ".");
 
@@ -248,7 +274,7 @@ namespace SIPSorcery.SIP
                 SIPConnection sipTCPConnection = (SIPConnection)ar.AsyncState;
                 sipTCPConnection.SIPStream.EndWrite(ar);
 
-                //logger.Debug(bytesSent + " successfully sent to TCP " + sipTCPConnection.TCPSocket.RemoteEndPoint + ".");
+                //logger.Debug("EndSend on TCP " + SIPChannelEndPoint.ToString() + ".");
             }
             catch (Exception excp)
             {
@@ -256,18 +282,21 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCN)
+        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
         {
             throw new ApplicationException("This Send method is not available in the SIP TCP channel, please use an alternative overload.");
         }
 
         private void EndConnect(IAsyncResult ar)
         {
+            bool connected = false;
+            IPEndPoint dstEndPoint = null;
+
             try
             {
                 object[] stateObj = (object[])ar.AsyncState;
                 TcpClient tcpClient = (TcpClient)stateObj[0];
-                IPEndPoint dstEndPoint = (IPEndPoint)stateObj[1];
+                dstEndPoint = (IPEndPoint)stateObj[1];
                 byte[] buffer = (byte[])stateObj[2];
 
                 m_connectingSockets.Remove(dstEndPoint.ToString());
@@ -277,13 +306,18 @@ namespace SIPSorcery.SIP
                 if (tcpClient != null && tcpClient.Connected)
                 {
                     logger.Debug("Established TCP connection to " + dstEndPoint + ".");
+                    connected = true;
+
+                    m_connectionFailureStrikes.Remove(dstEndPoint.ToString());
+                    m_connectionFailures.Remove(dstEndPoint.ToString());
 
                     SIPConnection callerConnection = new SIPConnection(this, tcpClient.GetStream(), dstEndPoint, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
                     m_connectedSockets.Add(dstEndPoint.ToString(), callerConnection);
 
                     callerConnection.SIPSocketDisconnected += SIPTCPSocketDisconnected;
                     callerConnection.SIPMessageReceived += SIPTCPMessageReceived;
-                    callerConnection.SIPStream.BeginRead(callerConnection.SocketBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(callerConnection.ReceiveCallback), null);
+                    byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
+                    callerConnection.SIPStream.BeginRead(receiveBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(callerConnection.ReceiveCallback), receiveBuffer);
                     callerConnection.SIPStream.BeginWrite(buffer, 0, buffer.Length, EndSend, callerConnection);
                 }
                 else
@@ -294,7 +328,30 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.Error("Exception SIPTCPChannel EndConnect. " + excp.Message);
-                //throw;
+            }
+            finally
+            {
+                if (!connected && dstEndPoint != null)
+                {
+                    if (m_connectionFailureStrikes.ContainsKey(dstEndPoint.ToString()))
+                    {
+                        m_connectionFailureStrikes[dstEndPoint.ToString()] = m_connectionFailureStrikes[dstEndPoint.ToString()] + 1;
+                    }
+                    else
+                    {
+                        m_connectionFailureStrikes.Add(dstEndPoint.ToString(), 1);
+                    }
+
+                    if (m_connectionFailureStrikes[dstEndPoint.ToString()] >= CONNECTION_ATTEMPTS_ALLOWED)
+                    {
+                        if (!m_connectionFailures.ContainsKey(dstEndPoint.ToString()))
+                        {
+                            m_connectionFailures.Add(dstEndPoint.ToString(), DateTime.Now);
+                        }
+
+                        m_connectionFailureStrikes.Remove(dstEndPoint.ToString());
+                    }
+                }
             }
         }
 
@@ -340,33 +397,20 @@ namespace SIPSorcery.SIP
 
         #region Unit testing.
 
-#if UNITTEST
+        #if UNITTEST
 	
 		[TestFixture]
-		public class SIPRequestUnitTest
+		public class SIPTCPChannelUnitTest
 		{
-			[TestFixtureSetUp]
-			public void Init()
-			{
-				
-			}
-
-			[TestFixtureTearDown]
-			public void Dispose()
-			{			
-				
-			}
-
 			[Test]
 			public void SampleTest()
 			{
 				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-				
 				Assert.IsTrue(true, "True was false.");
 			}
 		}
 
-#endif
+        #endif
 
         #endregion
     }

@@ -21,7 +21,7 @@ namespace SIPSorcery.Web.Services
 {
     [ServiceBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, InstanceContextMode = InstanceContextMode.Single)]
     [AspNetCompatibilityRequirements(RequirementsMode = AspNetCompatibilityRequirementsMode.Allowed)]
-    public class SIPNotifierService : IPubSub, INotifications
+    public class SIPNotifierService : SIPSorceryAuthenticatedService, IPubSub, INotifications
     {
         private static string PULL_NOTIFICATION_POLL_PERIOD_APPSETTING_KEY = "PullNotificaitonPollPeriod";
         private static int MINIMUM_PULL_NOTIFICATION_POLL_PERIOD = 1000;
@@ -29,7 +29,6 @@ namespace SIPSorcery.Web.Services
         private ILog logger = AppState.logger;
 
         private ISIPMonitorPublisher m_sipMonitorEventPublisher;
-        private CustomerSessionManager m_customerSessionManager;
         private MonitorProxyManager m_monitorProxyManager;
 
         private int m_pullNotificationPollPeriod = MINIMUM_PULL_NOTIFICATION_POLL_PERIOD;
@@ -37,16 +36,14 @@ namespace SIPSorcery.Web.Services
 
         public SIPNotifierService()
         {
-            SIPSorceryConfiguration sipSorceryConfig = new SIPSorceryConfiguration();
-            m_customerSessionManager = new CustomerSessionManager(sipSorceryConfig);
             m_monitorProxyManager = new MonitorProxyManager();
         }
 
-        public SIPNotifierService(ISIPMonitorPublisher sipMonitorPublisher, CustomerSessionManager customerSessionManager)
+        public SIPNotifierService(ISIPMonitorPublisher sipMonitorPublisher, CustomerSessionManager customerSessionManager) :
+            base(customerSessionManager)
         {
             SIPSorceryConfiguration sipSorceryConfig = new SIPSorceryConfiguration();
             m_sipMonitorEventPublisher = sipMonitorPublisher;
-            m_customerSessionManager = customerSessionManager;
         }
 
         private void Initialise(SIPSorceryConfiguration sipSorceryConfig)
@@ -64,7 +61,17 @@ namespace SIPSorcery.Web.Services
 
         public bool IsAlive()
         {
-            return true;
+            return base.IsServiceAlive();
+        }
+
+        public string Login(string username, string password)
+        {
+            return base.Authenticate(username, password);
+        }
+
+        public void Logout()
+        {
+            base.ExpireSession();
         }
 
         public int GetPollPeriod()
@@ -79,35 +86,40 @@ namespace SIPSorcery.Web.Services
         /// <returns>If the set filter is successful a session ID otherwise null.</returns>
         public string Subscribe(string subject, string filter)
         {
-            Customer customer = AuthenticateRequest();
+            PullNotificationHeader notificationHeader = PullNotificationHeader.ParseHeader(OperationContext.Current);
+
+            if (notificationHeader != null)
+            {
+                return SubscribeForAddress(subject, filter, notificationHeader.Address);
+            }
+            else
+            {
+                throw new ApplicationException("The notification header was missing from the SetFilter request.");
+            }
+        }
+
+        public string SubscribeForAddress(string subject, string filter, string addressID)
+        {
+            Customer customer = AuthoriseRequest();
             if (customer != null)
             {
-                PullNotificationHeader notificationHeader = PullNotificationHeader.ParseHeader(OperationContext.Current);
+                string customerUsername = customer.CustomerUsername;
+                string adminId = customer.AdminId;
 
-                if (notificationHeader != null)
+                logger.Debug("SIPNotifierService received SetFilter request for customer=" + customerUsername +
+                    ", adminid=" + adminId + ", subject=" + subject + ", filter=" + filter + ".");
+
+                string subscribeError = null;
+
+                string sessionID = GetPublisher().Subscribe(customerUsername, adminId, addressID, subject, filter, 0, out subscribeError);
+
+                if (subscribeError != null)
                 {
-                    string customerUsername = customer.CustomerUsername;
-                    string adminId = customer.AdminId;
-
-                    logger.Debug("SIPNotifierService received SetFilter request for customer=" + customerUsername +
-                        ", adminid=" + adminId + ", subject=" + subject + ", filter=" + filter + ".");
-
-                    string subscribeError = null;
-
-                    string sessionID = GetPublisher().Subscribe(customerUsername, adminId, notificationHeader.Address, subject, filter, out subscribeError);
-
-                    if (subscribeError != null)
-                    {
-                        throw new ApplicationException(subscribeError);
-                    }
-                    else
-                    {
-                        return sessionID;
-                    }
+                    throw new ApplicationException(subscribeError);
                 }
                 else
                 {
-                    throw new ApplicationException("The notification header was missing from the SetFilter request.");
+                    return sessionID;
                 }
             }
             else
@@ -118,33 +130,38 @@ namespace SIPSorcery.Web.Services
 
         public Dictionary<string, List<string>> GetNotifications()
         {
+            PullNotificationHeader notificationHeader = PullNotificationHeader.ParseHeader(OperationContext.Current);
+
+            if (notificationHeader != null)
+            {
+                return GetNotificationsForAddress(notificationHeader.Address);
+            }
+            else
+            {
+                throw new ApplicationException("The GetNotifications request was missing a required " + PullNotificationHeader.NOTIFICATION_HEADER_NAME + " header.");
+            }
+        }
+
+        public Dictionary<string, List<string>> GetNotificationsForAddress(string addressID)
+        {
             try
             {
-                PullNotificationHeader notificationHeader = PullNotificationHeader.ParseHeader(OperationContext.Current);
+                string sessionID;
+                string sessionError;
 
-                if (notificationHeader != null)
+                List<string> notifications = GetPublisher().GetNotifications(addressID, out sessionID, out sessionError);
+
+                if (sessionError != null)
                 {
-                    string sessionID;
-                    string sessionError;
-
-                    List<string> notifications = GetPublisher().GetNotifications(notificationHeader.Address, out sessionID, out sessionError);
-
-                    if (sessionError != null)
-                    {
-                        throw new ApplicationException(sessionError);
-                    }
-                    else if (notifications == null || notifications.Count == 0)
-                    {
-                        return null;
-                    }
-                    else
-                    {
-                        return new Dictionary<string, List<string>>() { { sessionID, notifications } };
-                    }
+                    throw new ApplicationException(sessionError);
+                }
+                else if (notifications == null || notifications.Count == 0)
+                {
+                    return null;
                 }
                 else
                 {
-                    throw new ApplicationException("The GetNotifications request was missing a required " + PullNotificationHeader.NOTIFICATION_HEADER_NAME + " header.");
+                    return new Dictionary<string, List<string>>() { { sessionID, notifications } };
                 }
             }
             catch (Exception excp)
@@ -182,6 +199,11 @@ namespace SIPSorcery.Web.Services
             }
         }
 
+        public void CloseConnectionForAddress(string addressID)
+        {
+            GetPublisher().CloseConnection(addressID);
+        }
+
         public void Subscribe(string topic)
         {
             //SIPNotifierClientSession notifierSession = null;
@@ -215,7 +237,7 @@ namespace SIPSorcery.Web.Services
                     }
                 }*/
 
-                Customer customer = AuthenticateRequest();
+                Customer customer = AuthoriseRequest();
                 if (customer != null)
                 {
                     string customerUsername = customer.CustomerUsername;
@@ -225,7 +247,7 @@ namespace SIPSorcery.Web.Services
 
                     string subscribeError = null;
 
-                    GetPublisher().Subscribe(customerUsername, adminId, session.Address, session.SessionId, topic, out subscribeError);
+                    GetPublisher().Subscribe(customerUsername, adminId, session.Address, session.SessionId, topic, 0, out subscribeError);
 
                     if (subscribeError != null)
                     {
@@ -345,22 +367,22 @@ namespace SIPSorcery.Web.Services
         /// is ready for a particular client connection.
         /// </summary>
         /// <param name="address">The address of the client whose notification is ready.</param>
-       /* public void NotificationReady(string address)
-        {
-            try
-            {
-                logger.Debug("SIPNotifierService NotificationReady for " + address + ".");
+        /* public void NotificationReady(string address)
+         {
+             try
+             {
+                 logger.Debug("SIPNotifierService NotificationReady for " + address + ".");
 
-                if (m_pendingNotifications.ContainsKey(address))
-                {
-                    m_pendingNotifications[address].NotificationsReady();
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception NotificationReady. " + excp.Message);
-            }
-        }*/
+                 if (m_pendingNotifications.ContainsKey(address))
+                 {
+                     m_pendingNotifications[address].NotificationsReady();
+                 }
+             }
+             catch (Exception excp)
+             {
+                 logger.Error("Exception NotificationReady. " + excp.Message);
+             }
+         }*/
 
         /*private void FlushPendingNotifications()
         {
@@ -478,28 +500,5 @@ namespace SIPSorcery.Web.Services
         {
             GetPublisher().RegisterListener(address, notificationsReady);
         }*/
-
-        private Customer AuthenticateRequest()
-        {
-            Customer customer = null;
-
-            SIPSorcerySecurityHeader securityheader = SIPSorcerySecurityHeader.ParseHeader(OperationContext.Current);
-            if (securityheader == null)
-            {
-                throw new UnauthorizedAccessException("The security header was missing from the request.");
-            }
-            else
-            {
-                CustomerSession customerSession = m_customerSessionManager.Authenticate(securityheader.AuthID);
-
-                if (customerSession != null && !customerSession.Expired)
-                {
-                    string sessionUsername = customerSession.CustomerUsername;
-                    customer = m_customerSessionManager.CustomerPersistor.Get(c => c.CustomerUsername == sessionUsername);
-                }
-            }
-
-            return customer;
-        }
     }
 }

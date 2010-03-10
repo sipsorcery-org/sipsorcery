@@ -50,9 +50,9 @@ namespace SIPSorcery.SIP
 
     public enum SIPDialogueTransferModesEnum
     {
-        PassThru = 0,   // REFER requests will be treated as an in-dialogue request and passed through to user agents.
-        NotAllowed = 1, // REFER requests will be blocked.
-        Allowed = 2,    // REFER requests will be processed by the server receiving the request.
+        BlindPassThru = 0,      // REFER requests will be treated as an in-dialogue request and passed through to user agents.
+        NotAllowed = 1,         // REFER requests will be blocked.
+        BlindPlaceCall = 2,     // REFER requests without a replaces parameter will initiate a new call.
     }
 
     /// <summary>
@@ -90,6 +90,7 @@ namespace SIPSorcery.SIP
         public int CallDurationLimit { get; set; }                  // If non-zero indicates the dialogue established should only be permitted to stay up for this many seconds.
         public string ProxySendFrom { get; set; }                   // If set this is the socket the upstream proxy received the call on.
         public SIPDialogueTransferModesEnum TransferMode { get; set; }  // Specifies how the dialogue will handle REFER requests (transfers).
+        public SIPCallDirection Direction { get; set; }              // Indicates whether the dialogue was created by a ingress or egress call.
 
         public string DialogueName
         {
@@ -116,8 +117,8 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private DateTime m_inserted;
-        public DateTime Inserted
+        private DateTimeOffset m_inserted;
+        public DateTimeOffset Inserted
         {
             get { return m_inserted; }
             set { m_inserted = value.ToUniversalTime(); }
@@ -157,7 +158,8 @@ namespace SIPSorcery.SIP
             AdminMemberId = adminMemberId;
             SDP = sdp;
             RemoteSDP = remoteSDP;
-            Inserted = DateTime.UtcNow;
+            Inserted = DateTimeOffset.UtcNow;
+            Direction = SIPCallDirection.None;
         }
 
         /// <summary>
@@ -185,7 +187,8 @@ namespace SIPSorcery.SIP
             ContentType = uasInviteTransaction.TransactionFinalResponse.Header.ContentType;
             SDP = uasInviteTransaction.TransactionFinalResponse.Body;
             RemoteSDP = uasInviteTransaction.TransactionRequest.Body;
-            Inserted = DateTime.UtcNow;
+            Inserted = DateTimeOffset.UtcNow;
+            Direction = SIPCallDirection.In;
 
             //DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
 
@@ -197,7 +200,7 @@ namespace SIPSorcery.SIP
                 if (!uasInviteTransaction.TransactionRequest.Header.ProxyReceivedFrom.IsNullOrBlank())
                 {
                     // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
-                    if (SIPTransport.IsPrivateAddress(RemoteTarget.Host))
+                    if (IPSocket.IsPrivateAddress(RemoteTarget.Host))
                     {
                         SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(uasInviteTransaction.TransactionRequest.Header.ProxyReceivedFrom);
                         RemoteTarget.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();
@@ -231,7 +234,8 @@ namespace SIPSorcery.SIP
             ContentType = uacInviteTransaction.TransactionRequest.Header.ContentType;
             SDP = uacInviteTransaction.TransactionRequest.Body;
             RemoteSDP = uacInviteTransaction.TransactionFinalResponse.Body;
-            Inserted = DateTime.UtcNow;
+            Inserted = DateTimeOffset.UtcNow;
+            Direction = SIPCallDirection.Out;
 
             // Set the dialogue remote target and take care of mangling if an upstream proxy has indicated it's required.
             RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(uacInviteTransaction.RemoteEndPoint.ToString()));
@@ -242,7 +246,7 @@ namespace SIPSorcery.SIP
                 if (!uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedFrom.IsNullOrBlank())
                 {
                     // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
-                    if (SIPTransport.IsPrivateAddress(RemoteTarget.Host))
+                    if (IPSocket.IsPrivateAddress(RemoteTarget.Host))
                     {
                         SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedFrom);
                         RemoteTarget.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();

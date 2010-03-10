@@ -115,6 +115,7 @@
     <Reference Include="System.Xml">
       <Name>System.XML</Name>
     </Reference>
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyState.cs">
@@ -123,10 +124,20 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="SIPAuthorisation\SIPAuthorisationDigest.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="SIPCDR\SIPCDR.cs" />
+    <Compile Include="SIPEvents\ISIPEvent.cs" />
+    <Compile Include="SIPEvents\SIPEventDialog.cs" />
+    <Compile Include="SIPEvents\SIPEventDialogInfo.cs" />
+    <Compile Include="SIPEvents\SIPEventDialogParticipant.cs" />
+    <Compile Include="SIPEvents\SIPEventPackages.cs" />
     <Compile Include="SIPFunctionDelegates.cs" />
     <Compile Include="SIPTransactions\SIPNonInviteTransaction.cs" />
     <Compile Include="SIPTransactions\SIPCancelTransaction.cs" />
@@ -209,6 +220,15 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <None Include="SIPEvents\EventDialogSchema.xsd">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

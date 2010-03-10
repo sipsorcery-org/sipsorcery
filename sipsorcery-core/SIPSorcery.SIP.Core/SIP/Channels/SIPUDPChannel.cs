@@ -174,7 +174,8 @@ namespace SIPSorcery.SIP
             }
 		}
 
-        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCN) {
+        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
+        {
             throw new ApplicationException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
         }
 

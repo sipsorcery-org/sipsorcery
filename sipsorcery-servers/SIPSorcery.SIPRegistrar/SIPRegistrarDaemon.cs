@@ -163,15 +163,20 @@ namespace SIPSorcery.SIPRegistrar {
 
         private void FireSIPMonitorEvent(SIPMonitorEvent sipMonitorEvent) {
             try {
-                if (sipMonitorEvent != null)
+                if (sipMonitorEvent != null && m_monitorEventWriter != null)
                 {
-                    if (sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.NATKeepAlive &&
-                        sipMonitorEvent.GetType() != typeof(SIPMonitorMachineEvent))
+                    if (sipMonitorEvent is SIPMonitorConsoleEvent)
                     {
-                        logger.Debug("re: " + sipMonitorEvent.Message);
-                    }
+                        SIPMonitorConsoleEvent consoleEvent = sipMonitorEvent as SIPMonitorConsoleEvent;
 
-                    if (m_monitorEventWriter != null)
+                        if (consoleEvent.EventType != SIPMonitorEventTypesEnum.NATKeepAlive)
+                        {
+                            logger.Debug("re: " + sipMonitorEvent.Message);
+                        }
+
+                        m_monitorEventWriter.Send(sipMonitorEvent);
+                    }
+                    else
                     {
                         m_monitorEventWriter.Send(sipMonitorEvent);
                     }

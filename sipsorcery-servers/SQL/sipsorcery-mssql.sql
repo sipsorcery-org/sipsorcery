@@ -2,7 +2,7 @@
 -- datetimeoffset needs to be replaced with varchar(33) for non-MSSQL databases.
 
 -- Maps to class SIPSorcery.CRM.Customer.
-create table customers
+create table customers 
 (
  id varchar(36) not null,
  customerusername varchar(32) not null,
@@ -195,6 +195,7 @@ create table sipdialogues
  inserted datetimeoffset not null,
  hangupat datetimeoffset null default null,
  transfermode varchar(16),
+ direction varchar(3) not null,					-- In or Out with respect to the proxy.
  sdp varchar(2048),
  remotesdp varchar(2048),
  Primary Key(id),

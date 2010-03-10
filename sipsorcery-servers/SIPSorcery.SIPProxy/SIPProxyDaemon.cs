@@ -267,22 +267,30 @@ namespace SIPSorcery.SIPProxy
         {
             try
             {
-                if (sipMonitorEvent != null)
+                if (sipMonitorEvent != null && m_monitorEventWriter != null)
                 {
-                    if (m_monitorEventWriter != null && sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.SIPTransaction)
+                    if (sipMonitorEvent is SIPMonitorConsoleEvent)
+                    {
+                        SIPMonitorConsoleEvent consoleEvent = sipMonitorEvent as SIPMonitorConsoleEvent;
+
+                        if (consoleEvent.EventType != SIPMonitorEventTypesEnum.FullSIPTrace &&
+                            consoleEvent.EventType != SIPMonitorEventTypesEnum.SIPTransaction &&
+                            consoleEvent.EventType != SIPMonitorEventTypesEnum.Timing &&
+                            consoleEvent.EventType != SIPMonitorEventTypesEnum.UnrecognisedMessage &&
+                            consoleEvent.EventType != SIPMonitorEventTypesEnum.NATKeepAliveRelay &&
+                           consoleEvent.EventType != SIPMonitorEventTypesEnum.BadSIPMessage)
+                        {
+                            logger.Debug("pr: " + sipMonitorEvent.Message);
+                        }
+
+                        if (consoleEvent.EventType != SIPMonitorEventTypesEnum.SIPTransaction)
+                        {
+                            m_monitorEventWriter.Send(sipMonitorEvent);
+                        }
+                    }
+                    else
                     {
                         m_monitorEventWriter.Send(sipMonitorEvent);
-                    }
-
-                    if (sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.FullSIPTrace &&
-                        sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.SIPTransaction &&
-                        sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.Timing &&
-                        sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.UnrecognisedMessage &&
-                        sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.NATKeepAliveRelay &&
-                        sipMonitorEvent.EventType != SIPMonitorEventTypesEnum.BadSIPMessage &&
-                        sipMonitorEvent.GetType() != typeof(SIPMonitorMachineEvent))
-                    {
-                        logger.Debug("pr: " + sipMonitorEvent.Message);
                     }
                 }
             }
@@ -297,7 +305,7 @@ namespace SIPSorcery.SIPProxy
             string message = "Proxy Request Received: " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
             //logger.Debug("pr: request in " + sipRequest.Method + " " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + ", callid=" + sipRequest.Header.CallId + ".");
             string fromUser = (sipRequest.Header.From != null && sipRequest.Header.From.FromURI != null) ? sipRequest.Header.From.FromURI.User : "Error on From header";
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
+            FireSIPMonitorEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
         private void LogSIPRequestOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPRequest sipRequest)
@@ -305,7 +313,7 @@ namespace SIPSorcery.SIPProxy
             string message = "Proxy Request Sent: " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + "\r\n" + sipRequest.ToString();
             //logger.Debug("pr: request out " + sipRequest.Method + " " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + ", callid=" + sipRequest.Header.CallId + ".");
             string fromUser = (sipRequest.Header.From != null && sipRequest.Header.From.FromURI != null) ? sipRequest.Header.From.FromURI.User : "Error on From header";
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
+            FireSIPMonitorEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
         private void LogSIPResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse)
@@ -313,7 +321,7 @@ namespace SIPSorcery.SIPProxy
             string message = "Proxy Response Received: " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
             //logger.Debug("pr: response in " + sipResponse.Header.CSeqMethod + " " + localSIPEndPoint.ToString() + "<-" + endPoint.ToString() + ", callid=" + sipResponse.Header.CallId + ".");
             string fromUser = (sipResponse.Header.From != null && sipResponse.Header.From.FromURI != null) ? sipResponse.Header.From.FromURI.User : "Error on From header";
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
+            FireSIPMonitorEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
         private void LogSIPResponseOut(SIPEndPoint localSIPEndPoint, SIPEndPoint endPoint, SIPResponse sipResponse)
@@ -321,38 +329,38 @@ namespace SIPSorcery.SIPProxy
             string message = "Proxy Response Sent: " + localSIPEndPoint.ToString() + "->" + endPoint.ToString() + "\r\n" + sipResponse.ToString();
             //logger.Debug("pr: response out " + sipResponse.Header.CSeqMethod + " " + localSIPEndPoint.ToString() + "->" + endPoint.ToString()+ ", callid=" + sipResponse.Header.CallId + ".");
             string fromUser = (sipResponse.Header.From != null && sipResponse.Header.From.FromURI != null) ? sipResponse.Header.From.FromURI.User : "Error on From header";
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
+            FireSIPMonitorEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, message, fromUser, localSIPEndPoint, endPoint));
         }
 
         private void LogPrimarySTUNRequestReceived(IPEndPoint localSIPEndPoint, IPEndPoint remoteEndPoint, byte[] buffer, int bufferLength)
         {
-            SIPMonitorEvent stunEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.STUNPrimary, "Primary STUN request received from " + remoteEndPoint + ".", null);
+            SIPMonitorEvent stunEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.STUNPrimary, "Primary STUN request received from " + remoteEndPoint + ".", null);
             FireSIPMonitorEvent(stunEvent);
         }
 
         private void LogSecondarySTUNRequestReceived(IPEndPoint localSIPEndPoint, IPEndPoint remoteEndPoint, byte[] buffer, int bufferLength)
         {
-            SIPMonitorEvent stunEvent = new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.STUNSecondary, "Secondary STUN request recevied from " + remoteEndPoint + ".", null);
+            SIPMonitorEvent stunEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.STUNSecondary, "Secondary STUN request recevied from " + remoteEndPoint + ".", null);
             FireSIPMonitorEvent(stunEvent);
         }
 
         private void LogSIPBadResponseIn(SIPEndPoint localSIPEndPoint, SIPEndPoint remotePoint, string message, SIPValidationFieldsEnum errorField, string rawMessage)
         {
             string errorMessage = "Proxy Bad Response In: " + localSIPEndPoint.ToString() + "<-" + remotePoint.ToString() + ". " + errorField + ". " + message;
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.BadSIPMessage, errorMessage, null));
+            FireSIPMonitorEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.BadSIPMessage, errorMessage, null));
             if (rawMessage != null)
             {
-                FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, errorMessage + "\r\n" + rawMessage, null));
+                FireSIPMonitorEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, errorMessage + "\r\n" + rawMessage, null));
             }
         }
 
         private void LogSIPBadRequestIn(SIPEndPoint localSIPEndPoint, SIPEndPoint remotePoint, string message, SIPValidationFieldsEnum errorField, string rawMessage)
         {
             string errorMessage = "Proxy Bad Request In: " + localSIPEndPoint.ToString() + "<-" + remotePoint.ToString() + ". " + errorField + ". " + message;
-            FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.BadSIPMessage, errorMessage, null));
+            FireSIPMonitorEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.BadSIPMessage, errorMessage, null));
             if (rawMessage != null)
             {
-                FireSIPMonitorEvent(new SIPMonitorControlClientEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, errorMessage + "\r\n" + rawMessage, null));
+                FireSIPMonitorEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.FullSIPTrace, errorMessage + "\r\n" + rawMessage, null));
             }
         }
 

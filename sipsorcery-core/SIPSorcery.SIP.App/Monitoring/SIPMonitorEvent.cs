@@ -54,8 +54,8 @@ namespace SIPSorcery.SIP.App
 {
     public enum SIPMonitorClientTypesEnum
     {
-        ControlClient = 1,  // Connection from a human user.
-        Machine = 2,        // Connection from an application that will be sent events./
+        Console = 1,    // Connection from a human user.
+        Machine = 2,    // Connection from an application that will be sent events.
     }
 
     public class SIPMonitorClientTypes
@@ -79,13 +79,14 @@ namespace SIPSorcery.SIP.App
 		NATKeepAlive = 3,
 		NotifierAgent = 4,
 		Monitor = 5,
-		//StatefulProxy = 7,
         RegisterAgent = 8,
         SIPTransactionLayer = 9,
         UserAgentClient = 10,
         UserAgentServer = 10,
         AppServer = 11,
         Authoriser = 12,
+        Notifier = 13,
+        NotifierClient = 14,
 	}
 	
 	public enum SIPMonitorEventTypesEnum
@@ -136,6 +137,10 @@ namespace SIPSorcery.SIP.App
         ContactRefresh = 62,
         NATKeepAliveRelay = 63,
         CallDispatcher = 64,
+        SubscribeQueued = 65,
+        SubscribeAuth = 66,
+        SubscribeAccept = 67,
+        SubscribeFailed = 68,
 	}
 
 	public class SIPMonitorEventTypes
@@ -174,7 +179,8 @@ namespace SIPSorcery.SIP.App
         SIPRegistrationAgentBindingRemoval = 6,
         SIPDialogueCreated = 7,
         SIPDialogueRemoved = 8,
-        Logout = 9,
+        SIPDialogueUpdated = 9,
+        Logout = 10,
     }
 
     public class SIPMonitorMachineEventTypes
@@ -201,27 +207,24 @@ namespace SIPSorcery.SIP.App
 
         protected static ILog logger = AppState.logger;
 
-        protected string m_serialisationPrefix = SIPMonitorControlClientEvent.SERIALISATION_PREFIX;    // Default to a control client event.
+        protected string m_serialisationPrefix = SIPMonitorConsoleEvent.SERIALISATION_PREFIX;    // Default to a control client event.
 
         public SIPMonitorClientTypesEnum ClientType;
-        public SIPMonitorServerTypesEnum ServerType;
-        public SIPMonitorEventTypesEnum EventType;
-        public SIPMonitorMachineEventTypesEnum MachineEventType;
 		public string Message;
-        public SIPEndPoint ServerEndPoint;           // Socket the request was received on by the server.
 		public SIPEndPoint RemoteEndPoint;
-		public SIPEndPoint DestinationEndPoint;
-		public DateTime Created;
+		public DateTimeOffset Created;
         public string Username;
         public string MonitorServerID;              // The ID of the monitoring server that received this event. Useful when there are multiple monitoring servers.
 
-        public int GeographicId;
-        public string GeographicDescription;
-        public double Latitude;
-        public double Longitude;
+        //public int GeographicId;
+        //public string GeographicDescription;
+        //public double Latitude;
+        //public double Longitude;
 
 		protected SIPMonitorEvent()
-		{}
+		{
+            Created = DateTimeOffset.UtcNow;
+        }
 
 		public static SIPMonitorEvent ParseEventCSV(string eventCSV)
 		{
@@ -229,9 +232,9 @@ namespace SIPSorcery.SIP.App
             {
                 return null;
             }
-            else if (eventCSV.Trim().StartsWith(SIPMonitorControlClientEvent.SERIALISATION_PREFIX))
+            else if (eventCSV.Trim().StartsWith(SIPMonitorConsoleEvent.SERIALISATION_PREFIX))
             {
-                return SIPMonitorControlClientEvent.ParseClientControlEventCSV(eventCSV);
+                return SIPMonitorConsoleEvent.ParseClientControlEventCSV(eventCSV);
             }
             else if (eventCSV.Trim().StartsWith(SIPMonitorMachineEvent.SERIALISATION_PREFIX))
             {
@@ -251,7 +254,7 @@ namespace SIPSorcery.SIP.App
         
 		public virtual string ToCSV()
 		{
-            throw new NotImplementedException("SIPMonitorEvent ToCSV (this is a virtual method only, you should be using a super-class).");
+            throw new NotImplementedException("SIPMonitorEvent ToCSV (this is a virtual method only, you should be using a sub-class).");
 		}
 
 		#region Unit testing.

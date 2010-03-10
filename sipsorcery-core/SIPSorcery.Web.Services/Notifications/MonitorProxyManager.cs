@@ -155,7 +155,7 @@ namespace SIPSorcery.Web.Services
             return true;
         }
 
-        public string Subscribe(string customerUsername, string adminId, string address, string subject, string filter, out string subscribeError)
+        public string Subscribe(string customerUsername, string adminId, string address, string subject, string filter, int expiry, out string subscribeError)
         {
             subscribeError = null;
 
@@ -179,7 +179,7 @@ namespace SIPSorcery.Web.Services
                         {
                             logger.Debug("Attempting to subscribe to proxy " + proxyEntry.Key + ".");
                             string proxySubscribeError = null;
-                            string proxySessionID = proxyEntry.Value.Subscribe(customerUsername, adminId, address, subject, filter, out proxySubscribeError);
+                            string proxySessionID = proxyEntry.Value.Subscribe(customerUsername, adminId, address, subject, filter, expiry, out proxySubscribeError);
 
                             if (proxySubscribeError != null)
                             {

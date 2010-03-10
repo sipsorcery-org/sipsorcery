@@ -35,9 +35,9 @@ namespace SIPSorcery.Web.Services
             return base.Channel.IsAlive();
         }
 
-        public string Subscribe(string customerUsername, string adminId, string address, string subject, string topic, out string subscribeError)
+        public string Subscribe(string customerUsername, string adminId, string address, string subject, string topic, int expiry, out string subscribeError)
         {
-            return base.Channel.Subscribe(customerUsername, adminId, address, subject, topic, out subscribeError);
+            return base.Channel.Subscribe(customerUsername, adminId, address, subject, topic, expiry, out subscribeError);
         }
 
         public List<string> GetNotifications(string address, out string sessionID, out string sessionError)

@@ -66,6 +66,7 @@ namespace SIPSorcery.SIP
 
     public abstract class SIPChannel
     {
+        private const int INITIALPRUNE_CONNECTIONS_DELAY = 60000;   // Wait this long before starting the prune checks, there will be no connections to prune initially and the CPU is needed elsewhere.
         private const int PRUNE_CONNECTIONS_INTERVAL = 5000;        // The period at which to prune the connections.
         private const int PRUNE_NOTRANSMISSION_MINUTES = 5;         // The number of minutes after which if no transmissions are sent or received a connection will be pruned.
 
@@ -118,6 +119,8 @@ namespace SIPSorcery.SIP
             {
                 Thread.CurrentThread.Name = threadName;
 
+                Thread.Sleep(INITIALPRUNE_CONNECTIONS_DELAY);
+
                 while (!Closed)
                 {
                     bool checkComplete = false;
@@ -154,7 +157,7 @@ namespace SIPSorcery.SIP
                         }
                         catch (SocketException)
                         {
-                            // Will be thrown if the sosket is already closed.
+                            // Will be thrown if the socket is already closed.
                         }
                         catch (Exception pruneExcp)
                         {

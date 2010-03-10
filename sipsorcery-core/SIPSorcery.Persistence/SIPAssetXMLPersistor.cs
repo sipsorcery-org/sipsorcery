@@ -57,7 +57,6 @@ namespace SIPSorcery.Persistence
         private const int RELOAD_SPACING_SECONDS = 3;                           // Minimum interval the XML file change events will be allowed.
         private const int MINIMUM_FILE_UDPATE_INTERVAL = 2;
 
-        private static ILog logger = AppState.logger;
         private static string m_newLine = AppState.NewLine;
 
         private Dictionary<Guid, T> m_sipAssets = new Dictionary<Guid, T>();
@@ -568,15 +567,22 @@ namespace SIPSorcery.Persistence
             }
             catch (Exception excp)
             {
-                logger.Error("Exception WriteSIPAssetXML. " + excp.Message);
+                logger.Error("Exception WriteSIPAssetXMLAsync. " + excp.Message);
             }
             finally
             {
                 m_savePending = false;
 
-                if (m_xmlFileWatcher != null)
+                try
                 {
-                    m_xmlFileWatcher.EnableRaisingEvents = true;
+                    if (m_xmlFileWatcher != null)
+                    {
+                        m_xmlFileWatcher.EnableRaisingEvents = true;
+                    }
+                }
+                catch (Exception excp)
+                {
+                    logger.Error("Exception WriteSIPAssetXMLAsync finally. " + excp.Message);
                 }
             }
         }

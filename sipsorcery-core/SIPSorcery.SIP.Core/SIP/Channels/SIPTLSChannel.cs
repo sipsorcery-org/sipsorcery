@@ -58,6 +58,7 @@ namespace SIPSorcery.SIP
 
         private const int MAX_TLS_CONNECTIONS = 1000;               // Maximum number of connections for the TLS listener.
         //private const int MAX_TLS_CONNECTIONS_PER_IPADDRESS = 10;   // Maximum number of connections allowed for a single remote IP address.
+        private static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_LENGTH;
 
         private TcpListener m_tlsServerListener;
         //private bool m_closed = false;
@@ -95,8 +96,8 @@ namespace SIPSorcery.SIP
                 m_tlsServerListener = new TcpListener(m_localSIPEndPoint.SocketEndPoint);
                 m_tlsServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
-                ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + Crypto.GetRandomString(4)); });
-                ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + Crypto.GetRandomString(4)); });
+                ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + m_localSIPEndPoint.SocketEndPoint.Port); });
+                ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + m_localSIPEndPoint.SocketEndPoint.Port); });
 
                 logger.Debug("SIP TLS Channel listener created " + m_localSIPEndPoint.SocketEndPoint + ".");
             }
@@ -146,7 +147,8 @@ namespace SIPSorcery.SIP
 
                         sipTLSClient.SIPSocketDisconnected += SIPTLSSocketDisconnected;
                         sipTLSClient.SIPMessageReceived += SIPTLSMessageReceived;
-                        sslStream.BeginRead(sipTLSClient.SocketBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(sipTLSClient.ReceiveCallback), null);
+                        byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
+                        sslStream.BeginRead(receiveBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(sipTLSClient.ReceiveCallback), receiveBuffer);
                     }
                     catch (Exception e)
                     {
@@ -176,7 +178,7 @@ namespace SIPSorcery.SIP
             Send(dstEndPoint, buffer, null);
         }
 
-        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCN)
+        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
         {
             try
             {
@@ -210,7 +212,7 @@ namespace SIPSorcery.SIP
 
                     if (!sent)
                     {
-                        if (serverCN.IsNullOrBlank())
+                        if (serverCertificateName.IsNullOrBlank())
                         {
                             throw new ApplicationException("The SIP TLS Channel must be provided with the name of the expected server certificate, please use alternative method.");
                         }
@@ -224,7 +226,7 @@ namespace SIPSorcery.SIP
                             tcpClient.Client.Bind(m_localSIPEndPoint.SocketEndPoint);
 
                             m_connectingSockets.Add(dstEndPoint);
-                            tcpClient.BeginConnect(dstEndPoint.Address, dstEndPoint.Port, EndConnect, new object[] { tcpClient, dstEndPoint, buffer, serverCN });
+                            tcpClient.BeginConnect(dstEndPoint.Address, dstEndPoint.Port, EndConnect, new object[] { tcpClient, dstEndPoint, buffer, serverCertificateName });
                         }
                         else
                         {
@@ -279,7 +281,8 @@ namespace SIPSorcery.SIP
 
                     callerConnection.SIPSocketDisconnected += SIPTLSSocketDisconnected;
                     callerConnection.SIPMessageReceived += SIPTLSMessageReceived;
-                    callerConnection.SIPStream.BeginRead(callerConnection.SocketBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(callerConnection.ReceiveCallback), null);
+                    byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
+                    callerConnection.SIPStream.BeginRead(receiveBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(callerConnection.ReceiveCallback), receiveBuffer);
 
                     logger.Debug("Established TLS connection to " + dstEndPoint + ".");
 

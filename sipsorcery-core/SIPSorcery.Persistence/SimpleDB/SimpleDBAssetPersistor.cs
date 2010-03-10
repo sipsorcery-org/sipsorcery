@@ -58,40 +58,43 @@ using NUnit.Framework;
 
 namespace SIPSorcery.Persistence
 {
-    public class SimpleDBAssetPersistor<T> : SIPAssetPersistor<T> where T : class, ISIPAsset, new() {
-
-        private static ILog logger = AppState.logger;
-
+    public class SimpleDBAssetPersistor<T> : SIPAssetPersistor<T> where T : class, ISIPAsset, new()
+    {
         private AmazonSimpleDBClient m_simpleDBClient;
-        private ObjectMapper<T> m_objectMapper;
 
         public override event SIPAssetDelegate<T> Added;
         public override event SIPAssetDelegate<T> Updated;
         public override event SIPAssetDelegate<T> Deleted;
         public override event SIPAssetsModifiedDelegate Modified;
 
-        public SimpleDBAssetPersistor(string dbConnStr) {
+        public SimpleDBAssetPersistor(string dbConnStr)
+        {
             string awsKeyID = Regex.Match(dbConnStr, "AWSKeyID=(?<keyid>.+?)(;|$)").Result("${keyid}");
             string awsSecretKey = Regex.Match(dbConnStr, "AWSSecretKey=(?<secretkey>.+?)(;|$)").Result("${secretkey}");
             m_simpleDBClient = new AmazonSimpleDBClient(awsKeyID, awsSecretKey);
             m_objectMapper = new ObjectMapper<T>();
         }
 
-        public SimpleDBAssetPersistor(string awsAccessKeyId, string awsSecretAccessKey) {
+        public SimpleDBAssetPersistor(string awsAccessKeyId, string awsSecretAccessKey)
+        {
             m_simpleDBClient = new AmazonSimpleDBClient(awsAccessKeyId, awsSecretAccessKey);
             m_objectMapper = new ObjectMapper<T>();
         }
 
-        private T Upsert(T asset) {
+        private T Upsert(T asset)
+        {
             PutAttributesRequest request = new PutAttributesRequest();
             request.DomainName = m_objectMapper.TableName;
             request.ItemName = asset.Id.ToString();
             request.Attribute = new List<ReplaceableAttribute>();
             Dictionary<MetaDataMember, object> allPropertyValues = m_objectMapper.GetAllValues(asset);
 
-            foreach (KeyValuePair<MetaDataMember, object> propertyValue in allPropertyValues) {
-                if (!propertyValue.Key.IsPrimaryKey) {
-                    if (propertyValue.Value != null) {
+            foreach (KeyValuePair<MetaDataMember, object> propertyValue in allPropertyValues)
+            {
+                if (!propertyValue.Key.IsPrimaryKey)
+                {
+                    if (propertyValue.Value != null)
+                    {
                         request.Attribute.Add(new ReplaceableAttribute().WithReplace(true).WithName(propertyValue.Key.MappedName.ToLower()).WithValue(GetValue(propertyValue.Value)));
                         /*if (propertyValue.Key.Type == typeof(DateTime) || propertyValue.Key.Type == typeof(Nullable<DateTime>)) {
                             //logger.Debug("Upsert adding attribute name=" + propertyValue.Key.Name.ToLower() + ", value=" + ((DateTime)propertyValue.Value).ToString("o") + ".");
@@ -103,14 +106,15 @@ namespace SIPSorcery.Persistence
                         }*/
                     }
                     //else {
-                   //     request.Attribute.Add(new ReplaceableAttribute().WithReplace(true).WithName(propertyValue.Key.Name).WithValue(null));
-                   // }
+                    //     request.Attribute.Add(new ReplaceableAttribute().WithReplace(true).WithName(propertyValue.Key.Name).WithValue(null));
+                    // }
                 }
             }
 
             PutAttributesResponse response = m_simpleDBClient.PutAttributes(request);
 
-            if (response.IsSetResponseMetadata()) {
+            if (response.IsSetResponseMetadata())
+            {
                 ResponseMetadata responseMetadata = response.ResponseMetadata;
                 //logger.Debug("Upsert response for " + request.DomainName + ", id=" + request.ItemName + ", attributes=" + request.Attribute.Count + ": " + responseMetadata.RequestId);
             }
@@ -118,40 +122,50 @@ namespace SIPSorcery.Persistence
             return asset;
         }
 
-        public override T Add(T asset) {
-            try {
+        public override T Add(T asset)
+        {
+            try
+            {
                 T addedAsset = Upsert(asset);
 
-                if (Added != null) {
+                if (Added != null)
+                {
                     Added(addedAsset);
                 }
 
                 return addedAsset;
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SimpleDBAssetPersistor Add (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override T Update(T asset) {
-            try {
+        public override T Update(T asset)
+        {
+            try
+            {
                 T updatedAsset = Upsert(asset);
 
-                if (Updated != null) {
+                if (Updated != null)
+                {
                     Updated(updatedAsset);
                 }
 
                 return updatedAsset;
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SimpleDBAssetPersistor Update (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override void UpdateProperty(Guid id, string propertyName, object value) {
-            try {
+        public override void UpdateProperty(Guid id, string propertyName, object value)
+        {
+            try
+            {
                 PutAttributesRequest request = new PutAttributesRequest();
                 request.DomainName = m_objectMapper.TableName;
                 request.ItemName = id.ToString();
@@ -160,187 +174,233 @@ namespace SIPSorcery.Persistence
 
                 PutAttributesResponse response = m_simpleDBClient.PutAttributes(request);
 
-                if (response.IsSetResponseMetadata()) {
+                if (response.IsSetResponseMetadata())
+                {
                     ResponseMetadata responseMetadata = response.ResponseMetadata;
                     logger.Debug("UpdateProperty response: " + responseMetadata.RequestId);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SimpleDBAssetPersistor UpdateProperty (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override void Delete(T asset) {
-            try {
+        public override void Delete(T asset)
+        {
+            try
+            {
                 DeleteAttributesRequest deleteRequest = new DeleteAttributesRequest();
                 deleteRequest.DomainName = m_objectMapper.TableName;
                 deleteRequest.ItemName = asset.Id.ToString();
 
                 DeleteAttributesResponse response = m_simpleDBClient.DeleteAttributes(deleteRequest);
 
-                if (response.IsSetResponseMetadata()) {
+                if (response.IsSetResponseMetadata())
+                {
                     ResponseMetadata responseMetadata = response.ResponseMetadata;
                     logger.Debug("Delete response: " + responseMetadata.RequestId);
                 }
 
-                if (Deleted != null) {
+                if (Deleted != null)
+                {
                     Deleted(asset);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SimpleDBAssetPersistor Delete (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override void Delete(Expression<Func<T, bool>> where) {
-            try {
+        public override void Delete(Expression<Func<T, bool>> where)
+        {
+            try
+            {
                 List<T> items = Get(where, null, 0, Int32.MaxValue);
 
-                if (items != null && items.Count > 0) {
-                    foreach (T item in items) {
+                if (items != null && items.Count > 0)
+                {
+                    foreach (T item in items)
+                    {
                         DeleteAttributesRequest deleteRequest = new DeleteAttributesRequest();
                         deleteRequest.DomainName = m_objectMapper.TableName;
                         deleteRequest.ItemName = item.Id.ToString();
 
                         DeleteAttributesResponse response = m_simpleDBClient.DeleteAttributes(deleteRequest);
 
-                        if (response.IsSetResponseMetadata()) {
+                        if (response.IsSetResponseMetadata())
+                        {
                             ResponseMetadata responseMetadata = response.ResponseMetadata;
                             logger.Debug("Delete response: " + responseMetadata.RequestId);
                         }
 
-                        if (Deleted != null) {
+                        if (Deleted != null)
+                        {
                             Deleted(item);
                         }
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SimpleDBAssetPersistor Delete (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override T Get(Guid id) {
-            try {
+        public override T Get(Guid id)
+        {
+            try
+            {
                 SelectRequest request = new SelectRequest();
                 request.SelectExpression = "select * from " + m_objectMapper.TableName + " where itemName() = '" + id + "'";
                 SelectResponse response = m_simpleDBClient.Select(request);
-                if (response.IsSetSelectResult() && response.SelectResult.Item.Count == 1) {
+                if (response.IsSetSelectResult() && response.SelectResult.Item.Count == 1)
+                {
                     SimpleDBObjectReader<T> objectReader = new SimpleDBObjectReader<T>(response.SelectResult, m_objectMapper.SetValue);
                     return objectReader.First();
                 }
-                else if (response.IsSetSelectResult() && response.SelectResult.Item.Count == 1) {
+                else if (response.IsSetSelectResult() && response.SelectResult.Item.Count == 1)
+                {
                     throw new ApplicationException("Multiple rows were returned for Get with id=" + id + ".");
                 }
-                else {
+                else
+                {
                     return default(T);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SimpleDBAssetPersistor Get(for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override object GetProperty(Guid id, string propertyName) {
-            try {
+        public override object GetProperty(Guid id, string propertyName)
+        {
+            try
+            {
                 SelectRequest request = new SelectRequest();
                 request.SelectExpression = "select " + propertyName.ToLower() + " from " + m_objectMapper.TableName + " where itemName() = '" + id.ToString() + "'";
                 SelectResponse response = m_simpleDBClient.Select(request);
-                if (response.IsSetSelectResult()) {
+                if (response.IsSetSelectResult())
+                {
                     return response.SelectResult.Item[0].Attribute[0].Value;
                 }
                 return null;
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SimpleDBAssetPersistor GetProperty (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override int Count(Expression<Func<T, bool>> whereClause) {
-            try {
+        public override int Count(Expression<Func<T, bool>> whereClause)
+        {
+            try
+            {
                 SimpleDBQueryProvider simpleDBQueryProvider = new SimpleDBQueryProvider(m_simpleDBClient, m_objectMapper.TableName, m_objectMapper.SetValue);
                 Query<T> assets = new Query<T>(simpleDBQueryProvider);
-                if (whereClause != null) {
+                if (whereClause != null)
+                {
                     return assets.Where(whereClause).Count();
                 }
-                else {
+                else
+                {
                     return assets.Count();
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SimpleDBAssetPersistor Count (for " + typeof(T).Name + "). " + excp.Message);
                 throw;
             }
         }
 
-        public override T Get(Expression<Func<T, bool>> whereClause) {
-            try {
+        public override T Get(Expression<Func<T, bool>> whereClause)
+        {
+            try
+            {
                 SimpleDBQueryProvider simpleDBQueryProvider = new SimpleDBQueryProvider(m_simpleDBClient, m_objectMapper.TableName, m_objectMapper.SetValue);
                 Query<T> assets = new Query<T>(simpleDBQueryProvider);
                 IQueryable<T> getList = null;
-                if (whereClause != null) {
+                if (whereClause != null)
+                {
                     getList = from asset in assets.Where(whereClause) select asset;
                 }
-                else {
+                else
+                {
                     getList = from asset in assets select asset;
                 }
                 return getList.FirstOrDefault();
             }
-            catch(Exception excp) {
+            catch (Exception excp)
+            {
                 string whereClauseStr = (whereClause != null) ? whereClause.ToString() + ". " : null;
                 logger.Error("Exception SimpleDBAssetPersistor Get (where) (for " + typeof(T).Name + "). " + whereClauseStr + excp.Message);
                 throw;
             }
         }
 
-        public override List<T> Get(Expression<Func<T, bool>> whereClause, string orderByField, int offset, int count) {
-            try {
+        public override List<T> Get(Expression<Func<T, bool>> whereClause, string orderByField, int offset, int count)
+        {
+            try
+            {
                 SimpleDBQueryProvider simpleDBQueryProvider = new SimpleDBQueryProvider(m_simpleDBClient, m_objectMapper.TableName, m_objectMapper.SetValue);
                 Query<T> assetList = new Query<T>(simpleDBQueryProvider);
                 //IQueryable<T> getList = from asset in assetList.Where(whereClause) orderby orderByField select asset;
                 IQueryable<T> getList = null;
-                if (whereClause != null) {
+                if (whereClause != null)
+                {
                     getList = from asset in assetList.Where(whereClause) select asset;
                 }
-                else {
+                else
+                {
                     getList = from asset in assetList select asset;
                 }
 
-                if (!orderByField.IsNullOrBlank()) {
+                if (!orderByField.IsNullOrBlank())
+                {
                     simpleDBQueryProvider.OrderBy = orderByField;
                 }
 
                 //if (offset != 0) {
-                 //   simpleDBQueryProvider.Offset = offset;
+                //   simpleDBQueryProvider.Offset = offset;
                 //}
 
-                if (count != Int32.MaxValue) {
+                if (count != Int32.MaxValue)
+                {
                     simpleDBQueryProvider.Count = count;
                 }
 
                 return getList.ToList() ?? new List<T>();
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 string whereClauseStr = (whereClause != null) ? whereClause.ToString() + ". " : null;
                 logger.Error("Exception SimpleDBAssetPersistor Get (list) (for " + typeof(T).Name + "). " + whereClauseStr + excp.Message);
                 throw;
             }
         }
 
-        private string GetValue(object propertyValue) {
-            if (propertyValue == null) {
+        private string GetValue(object propertyValue)
+        {
+            if (propertyValue == null)
+            {
                 return null;
             }
-            else {
-                if (propertyValue.GetType() == typeof(DateTime) || propertyValue.GetType() == typeof(Nullable<DateTime>)) {
+            else
+            {
+                if (propertyValue.GetType() == typeof(DateTime) || propertyValue.GetType() == typeof(Nullable<DateTime>))
+                {
                     return ((DateTime)propertyValue).ToString("o");
                 }
-                else {
+                else
+                {
                     return propertyValue.ToString();
                 }
             }
@@ -386,7 +446,7 @@ namespace SIPSorcery.Persistence
 
     #region Unit testing.
 
-    #if UNITTEST
+#if UNITTEST
 
     [TestFixture]
     public class SimpleDBAssetPersistorUnitTest {
@@ -460,7 +520,7 @@ namespace SIPSorcery.Persistence
         }*/
     }
 
-    #endif
+#endif
 
     #endregion
 }
