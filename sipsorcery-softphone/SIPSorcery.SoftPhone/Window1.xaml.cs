@@ -288,7 +288,7 @@ namespace SIPSorcery.SoftPhone
 
         private void AnswerButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            m_uas.Answer(null, null, null, SIPDialogueTransferModesEnum.Allowed);
+            m_uas.Answer(null, null, null, SIPDialogueTransferModesEnum.NotAllowed);
             SetVisibility(m_answerButton, Visibility.Collapsed);
             SetVisibility(m_rejectButton, Visibility.Collapsed);
         }
@@ -445,14 +445,17 @@ namespace SIPSorcery.SoftPhone
 
         private void LogTraceMessage(SIPMonitorEvent monitorEvent)
         {
-            if (monitorEvent.EventType != SIPMonitorEventTypesEnum.FullSIPTrace &&
-                monitorEvent.EventType != SIPMonitorEventTypesEnum.SIPTransaction)
+            if(monitorEvent is SIPMonitorConsoleEvent)
             {
-                AppendTraceMessage(monitorEvent.Message + "\n");
-            }
-            else
-            {
-                AppendSIPTraceMessage(monitorEvent.Message);
+                if (((SIPMonitorConsoleEvent)monitorEvent).EventType != SIPMonitorEventTypesEnum.FullSIPTrace &&
+                    ((SIPMonitorConsoleEvent)monitorEvent).EventType != SIPMonitorEventTypesEnum.SIPTransaction)
+                {
+                    AppendTraceMessage(monitorEvent.Message + "\n");
+                }
+                else
+                {
+                    AppendSIPTraceMessage(monitorEvent.Message);
+                }
             }
         }
 
