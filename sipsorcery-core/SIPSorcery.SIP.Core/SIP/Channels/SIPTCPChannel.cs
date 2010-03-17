@@ -58,8 +58,8 @@ namespace SIPSorcery.SIP
         //private const int MAX_TCP_CONNECTIONS_PER_IPADDRESS = 10;   // Maximum number of connections allowed for a single remote IP address.
         private const int CONNECTION_ATTEMPTS_ALLOWED = 3;          // The number of failed connection attempts permitted before classifying a remote socket as failed.
         private const int FAILED_CONNECTION_DONTUSE_INTERVAL = 300; // If a socket cannot be connected to don't try and reconnect to it for this interval.
-        
-        private static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_LENGTH;
+
+        private static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH;
         
         private TcpListener m_tcpServerListener;
         private Dictionary<string, SIPConnection> m_connectedSockets = new Dictionary<string, SIPConnection>();
@@ -116,18 +116,19 @@ namespace SIPSorcery.SIP
                     logger.Debug("SIP TCP Channel connection accepted from " + remoteEndPoint + ".");
 
                     //SIPTCPConnection sipTCPClient = new SIPTCPConnection(this, clientSocket, remoteEndPoint, SIPTCPConnectionsEnum.Listener);
-                    SIPConnection sipTCPClient = new SIPConnection(this, tcpClient.GetStream(), remoteEndPoint, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Listener);
+                    SIPConnection sipTCPConnection = new SIPConnection(this, tcpClient.GetStream(), remoteEndPoint, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Listener);
+                    //SIPConnection sipTCPClient = new SIPConnection(this, tcpClient.Client, remoteEndPoint, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Listener);
 
                     lock (m_connectedSockets)
                     {
-                        m_connectedSockets.Add(remoteEndPoint.ToString(), sipTCPClient);
+                        m_connectedSockets.Add(remoteEndPoint.ToString(), sipTCPConnection);
                     }
 
-                    sipTCPClient.SIPSocketDisconnected += SIPTCPSocketDisconnected;
-                    sipTCPClient.SIPMessageReceived += SIPTCPMessageReceived;
+                    sipTCPConnection.SIPSocketDisconnected += SIPTCPSocketDisconnected;
+                    sipTCPConnection.SIPMessageReceived += SIPTCPMessageReceived;
                     // clientSocket.BeginReceive(sipTCPClient.SocketBuffer, 0, SIPTCPConnection.MaxSIPTCPMessageSize, SocketFlags.None, new AsyncCallback(sipTCPClient.ReceiveCallback), null);
-                    byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
-                    tcpClient.GetStream().BeginRead(receiveBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(sipTCPClient.ReceiveCallback), receiveBuffer);
+                    //byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
+                    sipTCPConnection.SIPStream.BeginRead(sipTCPConnection.SocketBuffer, 0, MaxSIPTCPMessageSize, new AsyncCallback(ReceiveCallback), sipTCPConnection);
                 }
 
                 logger.Debug("SIPTCPChannel socket on " + m_localSIPEndPoint + " listening halted.");
@@ -136,6 +137,27 @@ namespace SIPSorcery.SIP
             {
                 logger.Error("Exception SIPTCPChannel Listen. " + excp.Message);
                 //throw excp;
+            }
+        }
+
+        public void ReceiveCallback(IAsyncResult ar)
+        {
+            SIPConnection sipTCPConnection = (SIPConnection)ar.AsyncState;
+
+            try
+            {
+                int bytesRead = sipTCPConnection.SIPStream.EndRead(ar);
+                if (sipTCPConnection.SocketReadCompleted(bytesRead))
+                {
+                    sipTCPConnection.SIPStream.BeginRead(sipTCPConnection.SocketBuffer, sipTCPConnection.SocketBufferEndPosition, MaxSIPTCPMessageSize - sipTCPConnection.SocketBufferEndPosition, new AsyncCallback(ReceiveCallback), sipTCPConnection);
+                }
+            }
+            catch (SocketException)  // Occurs if the remote end gets disconnected.
+            { }
+            catch (Exception excp)
+            {
+                logger.Warn("Exception SIPTCPChannel ReceiveCallback. " + excp.Message);
+                SIPTCPSocketDisconnected(sipTCPConnection.RemoteEndPoint);
             }
         }
 
@@ -316,8 +338,8 @@ namespace SIPSorcery.SIP
 
                     callerConnection.SIPSocketDisconnected += SIPTCPSocketDisconnected;
                     callerConnection.SIPMessageReceived += SIPTCPMessageReceived;
-                    byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
-                    callerConnection.SIPStream.BeginRead(receiveBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(callerConnection.ReceiveCallback), receiveBuffer);
+                    //byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
+                    callerConnection.SIPStream.BeginRead(callerConnection.SocketBuffer, 0, MaxSIPTCPMessageSize, new AsyncCallback(ReceiveCallback), callerConnection);
                     callerConnection.SIPStream.BeginWrite(buffer, 0, buffer.Length, EndSend, callerConnection);
                 }
                 else

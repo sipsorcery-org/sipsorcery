@@ -10,36 +10,33 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPMonitorClientSession
     {
-        private int DEFAULT_EXPIRY = 300;             // The number of seconds of no notification requests that a session will be removed.
-
         private static readonly string m_topLevelAdminId = Customer.TOPLEVEL_ADMIN_ID;
         private static readonly string m_filterWildcard = SIPMonitorFilter.WILDCARD;
 
         private static ILog logger = AppState.logger;
 
+        public string Address { get; private set; }
         public string SessionID { get; private set; }
         public string CustomerUsername { get; private set; }
         public string AdminId { get; private set; }
-        public string Address { get; private set; }
         public SIPMonitorClientTypesEnum SessionType;
         public SIPMonitorFilter Filter { get; private set; }
         public Queue<SIPMonitorEvent> Events = new Queue<SIPMonitorEvent>();
         public DateTime LastGetNotificationsRequest = DateTime.Now;
         public bool FilterDescriptionNotificationSent { get; set; }
-        public int Expiry;
+        public DateTime SessionStartTime;
+        public DateTime? SessionEndTime;
+        public string UDPSocket;
 
-        public SIPMonitorClientSession(string customerUsername, string adminId, string address, int expiry)
+        public SIPMonitorClientSession(string customerUsername, string adminId, string address, string sessionID, DateTime? sessionEndTime, string udpSocket)
         {
-            SessionID = Guid.NewGuid().ToString();
             CustomerUsername = customerUsername;
             AdminId = adminId;
             Address = address;
-            Expiry = expiry;
-
-            if (Expiry <= 0)
-            {
-                Expiry = DEFAULT_EXPIRY;
-            }
+            SessionID = sessionID;
+            SessionStartTime = DateTime.Now;
+            SessionEndTime = sessionEndTime;
+            UDPSocket = udpSocket;
         }
 
         public string SetFilter(string subject, string filter)

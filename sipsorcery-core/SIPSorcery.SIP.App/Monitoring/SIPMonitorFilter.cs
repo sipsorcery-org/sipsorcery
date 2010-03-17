@@ -79,6 +79,7 @@ namespace SIPSorcery.SIP.App
         public const string EVENTTYPE_TROUBLE_VALUE = "trouble";
         public const string SIPREQUEST_INVITE_VALUE = "invite";
         public const string SIPREQUEST_REGISTER_VALUE = "register";
+        public const string SIPREQUEST_SIPEVENT_VALUE = "sipevent";
 
         public const string FILELOG_REQUEST_KEY = "file";
         public const string FILELOG_MINUTESDURATION_KEY = "duration";
@@ -333,31 +334,6 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public bool ShowRequest(SIPMethodsEnum sipMethod)
-        {
-            if (SIPRequestFilter == WILDCARD)
-            {
-                return true;
-            }
-            else
-            {
-                if (SIPRequestFilter == SIPREQUEST_INVITE_VALUE)
-                {
-                    return (sipMethod == SIPMethodsEnum.INVITE ||
-                        sipMethod == SIPMethodsEnum.ACK ||
-                        sipMethod == SIPMethodsEnum.BYE ||
-                        sipMethod == SIPMethodsEnum.CANCEL ||
-                        sipMethod == SIPMethodsEnum.REFER);
-                }
-                else if (SIPRequestFilter == SIPREQUEST_REGISTER_VALUE)
-                {
-                    return (sipMethod == SIPMethodsEnum.REGISTER);
-                }
-
-                return false;
-            }
-        }
-
         public bool ShowRegex(string message)
         {
             if (message == null || RegexFilter == DEFAULT_REGEX)
@@ -411,7 +387,7 @@ namespace SIPSorcery.SIP.App
                             machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved ||
                             machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated)
                         {
-                            if (machineEvent.Dialogue.Owner == EventDialogURI.User ||
+                            if (machineEvent.Dialogue.Owner == Username ||
                                 (machineEvent.Dialogue.LocalUserField.URI.ToParameterlessString() == EventDialogURI.ToString() ||
                                 machineEvent.Dialogue.RemoteUserField.URI.ToParameterlessString() == EventDialogURI.ToString()))
                             {
@@ -427,9 +403,9 @@ namespace SIPSorcery.SIP.App
                             return false;
                         }
                     }
-                    else
+                    else 
                     {
-                        return false;
+                        return proxyEvent.Username == Username;
                     }
                 }
                 else
@@ -448,7 +424,6 @@ namespace SIPSorcery.SIP.App
                 string serverAddress = (consoleEvent.ServerEndPoint != null) ? consoleEvent.ServerEndPoint.SocketEndPoint.Address.ToString() : null;
                 string remoteIPAddress = (consoleEvent.RemoteEndPoint != null) ? consoleEvent.RemoteEndPoint.SocketEndPoint.Address.ToString() : null;
                 string dstIPAddress = (consoleEvent.DestinationEndPoint != null) ? consoleEvent.DestinationEndPoint.SocketEndPoint.Address.ToString() : null;
-                SIPMethodsEnum sipMethod = SIPMethodsEnum.NONE;
 
                 if (SIPRequestFilter != WILDCARD && consoleEvent.Message != null && consoleEvent.EventType == SIPMonitorEventTypesEnum.FullSIPTrace)
                 {
@@ -456,22 +431,29 @@ namespace SIPSorcery.SIP.App
                     {
                         if (SIPRequestFilter == SIPREQUEST_INVITE_VALUE)
                         {
-                            // Do a regex to pick out ACK's, BYE's , CANCEL's and INVITES.
-                            if (Regex.Match(consoleEvent.Message, "(ACK|BYE|CANCEL|INVITE) +?sips?:", RegexOptions.IgnoreCase).Success ||
-                                Regex.Match(consoleEvent.Message, @"CSeq: \d+ (ACK|BYE|CANCEL|INVITE)(\r|\n)", RegexOptions.IgnoreCase).Success)
+                            // Do a regex to pick out ACKs, BYEs, CANCELs, INVITEs and REFERs.
+                            if (Regex.Match(consoleEvent.Message, "(ACK|BYE|CANCEL|INVITE|REFER) +?sips?:", RegexOptions.IgnoreCase).Success ||
+                                Regex.Match(consoleEvent.Message, @"CSeq: \d+ (ACK|BYE|CANCEL|INVITE|REFER)(\r|\n)", RegexOptions.IgnoreCase).Success)
                             {
-                                return ShowRegex(consoleEvent.Message);
+                                return ShowRegex(consoleEvent.Message) && (ShowIPAddress(remoteIPAddress) || ShowIPAddress(dstIPAddress));
                             }
-                            else
+                        }
+                        else if (SIPRequestFilter == SIPREQUEST_REGISTER_VALUE)
+                        {
+                            // Do a regex to pick out REGISTERs.
+                            if (Regex.Match(consoleEvent.Message, "REGISTER +?sips?:", RegexOptions.IgnoreCase).Success ||
+                                Regex.Match(consoleEvent.Message, @"CSeq: \d+ REGISTER(\r|\n)", RegexOptions.IgnoreCase).Success)
                             {
-                                string reqPattern = SIPRequestFilter + " +?sips?:";
-                                string respPattern = @"CSeq: \d+ " + SIPRequestFilter;
-
-                                if (Regex.Match(consoleEvent.Message, reqPattern, RegexOptions.IgnoreCase).Success ||
-                                    Regex.Match(consoleEvent.Message, respPattern, RegexOptions.IgnoreCase).Success)
-                                {
-                                    return ShowRegex(consoleEvent.Message);
-                                }
+                                return ShowRegex(consoleEvent.Message) && (ShowIPAddress(remoteIPAddress) || ShowIPAddress(dstIPAddress));
+                            }
+                        }
+                        else if (SIPRequestFilter == SIPREQUEST_SIPEVENT_VALUE)
+                        {
+                            // Do a regex to pick out NOTIFYs and SUBSCRIBEs.
+                            if (Regex.Match(consoleEvent.Message, "(NOTIFY|SUBSCRIBE) +?sips?:", RegexOptions.IgnoreCase).Success ||
+                                Regex.Match(consoleEvent.Message, @"CSeq: \d+ (NOTIFY|SUBSCRIBE)(\r|\n)", RegexOptions.IgnoreCase).Success)
+                            {
+                                return ShowRegex(consoleEvent.Message) && (ShowIPAddress(remoteIPAddress) || ShowIPAddress(dstIPAddress));
                             }
                         }
 
@@ -482,28 +464,12 @@ namespace SIPSorcery.SIP.App
                 if (ShowEvent(consoleEvent.EventType, consoleEvent.ServerEndPoint) && 
                     (consoleEvent is SIPMonitorConsoleEvent && ShowServer(((SIPMonitorConsoleEvent)consoleEvent).ServerType)))
                 {
-                    if (IPAddress != WILDCARD)
-                    {
-                        if (ShowIPAddress(remoteIPAddress))
-                        {
-                            return true;
-                        }
-                        else if (ShowIPAddress(dstIPAddress))
-                        {
-                            return true;
-                        }
-                        else
-                        {
-                            return false;
-                        }
-                    }
-
+                    bool showIPAddress = ShowIPAddress(remoteIPAddress) || ShowIPAddress(dstIPAddress);
                     bool showUsername = ShowUsername(proxyEvent.Username);
                     bool showServerIP = ShowServerIPAddress(serverAddress);
-                    bool showRequest = ShowRequest(sipMethod);
                     bool showRegex = ShowRegex(consoleEvent.Message);
 
-                    if (showUsername && showServerIP && showRequest && showRegex)
+                    if (showUsername && showServerIP && showRegex && showIPAddress)
                     {
                         return true;
                     }

@@ -1,14 +1,17 @@
 ﻿using System;
 using System.IO;
 using System.IO.IsolatedStorage;
+using System.Windows.Controls;
 
 namespace log4net
 {
     public class ILog
     {
-        private const string DEBUG_LOG_FILENAME = "sipsorcery.log";
+        public static TextBlock DebugTextBlock;
 
-        private StreamWriter m_logStreamWiter;
+        //private const string DEBUG_LOG_FILENAME = "sipsorcery.log";
+
+        /*private StreamWriter m_logStreamWiter;
 
         private void Write(string level, string message)
         {
@@ -44,42 +47,43 @@ namespace log4net
                 Console.WriteLine(excp.Message);
                 return null;
             }
+        }*/
+
+        private void Write(string level, string message)
+        {
+            if (DebugTextBlock != null)
+            {
+                string messageToWrite = DateTime.Now.ToString("HH:mm:ss:fff") + " " + level + ": " + message + "\n";
+
+                if (DebugTextBlock.Dispatcher.CheckAccess())
+                {
+                    DebugTextBlock.Inlines.Add(messageToWrite);
+                }
+                else
+                {
+                    DebugTextBlock.Dispatcher.BeginInvoke(delegate { DebugTextBlock.Inlines.Add(messageToWrite); });
+                }
+            }
         }
 
         public void Debug(string message)
         {
-            try
-            {
-                //Write("debug", message);
-            }
-            catch { }
+            Write("debug", message);
         }
 
         public void Error(string message)
         {
-            try
-            {
-                //Write("error", message);
-            }
-            catch { }
+            Write("error", message);
         }
 
         public void Info(string message)
         {
-            try
-            {
-                //Write("info", message);
-            }
-            catch { }
+            Write("info", message);
         }
 
         public void Warn(string message)
         {
-            try
-            {
-                //Write("warn", message);
-            }
-            catch { }
+            Write("warn", message);
         }
     }
 }

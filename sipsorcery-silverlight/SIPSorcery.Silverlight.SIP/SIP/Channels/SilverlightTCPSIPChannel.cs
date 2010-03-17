@@ -36,12 +36,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.Sys;
+using log4net;
 
 #if UNITTEST
 using NUnit.Framework;
@@ -53,36 +55,78 @@ namespace SIPSorcery.SIP
     {
         private const int CONNECTION_TIMEOUT = 10000;
 
-        public static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_LENGTH;
+        public static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH;
 
         private Socket m_socket;
-        private byte[] m_socketBuffer = new byte[2 * MaxSIPTCPMessageSize];
+        private SocketAsyncEventArgs m_socketConnectionArgs;
         private IPEndPoint m_remoteEndPoint;
+        private SIPConnection m_sipConnection;
         public DateTime LastTransmission;           // Records when a SIP packet was last sent or received.
 
+        private bool m_isConnecting = false;
         private bool m_isConnected = false;
         public bool IsConnected
         {
             get { return m_isConnected; }
         }
-        private ManualResetEvent m_connectedMRE = new ManualResetEvent(false);
 
-        public SilverlightTCPSIPChannel(IPEndPoint localEndPoint)
+        public event Action Connected;
+        public event Action<string> Disconnected;
+
+        public SilverlightTCPSIPChannel()
         {
-            m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tcp, localEndPoint);
+            m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Any, 0));
             m_isReliable = true;
             m_socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         }
 
         public void Connect(IPEndPoint remoteEndPoint)
         {
-            m_connectedMRE.Reset();
+            m_isConnecting = true;
             m_remoteEndPoint = remoteEndPoint;
-            SocketAsyncEventArgs socketConnectionArgs = new SocketAsyncEventArgs();
-            socketConnectionArgs.RemoteEndPoint = m_remoteEndPoint;
-            socketConnectionArgs.Completed += SocketConnect_Completed;
 
-            m_socket.ConnectAsync(socketConnectionArgs);
+            m_sipConnection = new SIPConnection(this, m_socket, m_remoteEndPoint, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+            m_sipConnection.SIPSocketDisconnected += SIPSocketDisconnected;
+            m_sipConnection.SIPMessageReceived += SIPTCPMessageReceived;
+
+            m_socketConnectionArgs = new SocketAsyncEventArgs();
+            m_socketConnectionArgs.RemoteEndPoint = m_remoteEndPoint;
+            m_socketConnectionArgs.Completed += SocketConnect_Completed;
+            m_socket.ConnectAsync(m_socketConnectionArgs);
+            //if (!m_socket.ConnectAsync(m_socketConnectionArgs))
+            //{
+            //    throw new ApplicationException("Asynchronous socket connect operation unexpectedly returned synchronously.");
+            //}
+        }
+
+        public void CancelConnect()
+        {
+            try
+            {
+                if (m_isConnecting && m_socketConnectionArgs != null)
+                {
+                    Socket.CancelConnectAsync(m_socketConnectionArgs);
+                    m_socket.Close();
+                }
+                //else
+                //{
+                //    logger.Warn("SilverlightTCPSIPChannel CancelConnect was called on a socket that's not in the connecting state.");
+                //}
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SilverlightTCPSIPChannel CancelConnect. " + excp.Message);
+            }
+        }
+
+        private void SIPSocketDisconnected(IPEndPoint remoteEndPoint)
+        {
+            if (m_isConnected && Disconnected != null)
+            {
+                Disconnected("Connection to " + m_remoteEndPoint + " was disconnected.");
+            }
+
+            m_isConnected = false;
         }
 
         public void SetLocalSIPEndPoint(SIPEndPoint localSIPEndPoint)
@@ -92,69 +136,46 @@ namespace SIPSorcery.SIP
 
         private void SocketConnect_Completed(object sender, SocketAsyncEventArgs e)
         {
+            m_isConnecting = false;
             m_isConnected = (e.SocketError == SocketError.Success);
 
             if (m_isConnected)
             {
                 SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
-                receiveArgs.SetBuffer(m_socketBuffer, 0, MaxSIPTCPMessageSize);
+                receiveArgs.SetBuffer(m_sipConnection.SocketBuffer, 0, MaxSIPTCPMessageSize);
                 receiveArgs.Completed += SocketRead_Completed;
                 m_socket.ReceiveAsync(receiveArgs);
-                m_connectedMRE.Set();
-            }
+
+                if (Connected != null)
+                {
+                    Connected();
+                }
+             }
             else
             {
-                throw new ApplicationException("Connection to " + m_remoteEndPoint + " failed.");
+                if (Disconnected != null)
+                {
+                    Disconnected("Connection to " + m_remoteEndPoint + " failed.");
+                }
             }
         }
 
         private void SocketRead_Completed(object sender, SocketAsyncEventArgs e)
         {
-            int bytesRead = e.BytesTransferred;
-
-            if (bytesRead > 0)
+            try
             {
-                int receivePosition = 0;
-                byte[] sipMsgBuffer = SIPConnection.ProcessReceive(m_socketBuffer, 0, bytesRead);
-
-                while (sipMsgBuffer != null)
+                if (m_sipConnection.SocketReadCompleted(e.BytesTransferred))
                 {
-                    receivePosition += sipMsgBuffer.Length;
-
-                    if (SIPMessageReceived != null)
-                    {
-                        LastTransmission = DateTime.Now;
-                        SIPMessageReceived(this, new SIPEndPoint(SIPProtocolsEnum.tcp, m_remoteEndPoint), sipMsgBuffer);
-                    }
-
-                    if (sipMsgBuffer.Length == bytesRead)
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        sipMsgBuffer = SIPConnection.ProcessReceive(m_socketBuffer, receivePosition, bytesRead);
-                    }
+                    SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
+                    receiveArgs.SetBuffer(m_sipConnection.SocketBuffer, m_sipConnection.SocketBufferEndPosition, MaxSIPTCPMessageSize - m_sipConnection.SocketBufferEndPosition);
+                    receiveArgs.Completed += SocketRead_Completed;
+                    m_socket.ReceiveAsync(receiveArgs);
                 }
-
-                int bytesLeftOver = 0;
-                if (receivePosition != bytesRead)
-                {
-                    bytesLeftOver = bytesRead - receivePosition;
-                }
-
-                byte[] nextReceiveBuffer = new byte[MaxSIPTCPMessageSize + bytesLeftOver];
-                if (bytesLeftOver > 0)
-                {
-                    // Copy the unprocessed portion of the current receive buffer into the start if the next receive buffer.
-                    Array.Copy(m_socketBuffer, receivePosition, nextReceiveBuffer, 0, bytesLeftOver);
-                    m_socketBuffer = nextReceiveBuffer;
-                }
-
-                SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
-                receiveArgs.SetBuffer(m_socketBuffer, 0, MaxSIPTCPMessageSize);
-                receiveArgs.Completed += SocketRead_Completed;
-                m_socket.ReceiveAsync(receiveArgs);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SilverlightTCPSIPChannel SocketRead_Completed. " + excp.Message);
+                throw;
             }
         }
 
@@ -168,24 +189,39 @@ namespace SIPSorcery.SIP
 
         public override void Send(IPEndPoint destinationEndPoint, string message)
         {
-            Send(destinationEndPoint, message);
+            Send(destinationEndPoint, Encoding.UTF8.GetBytes(message));
         }
 
         public override void Send(IPEndPoint destinationEndPoint, byte[] buffer)
         {
-            if (!m_isConnected)
+            if (destinationEndPoint.ToString() != m_remoteEndPoint.ToString())
             {
-                Connect(destinationEndPoint);
-
-                if (!m_connectedMRE.WaitOne(CONNECTION_TIMEOUT))
-                {
-                    throw new ApplicationException("Connection to " + destinationEndPoint.ToString() + " timed out.");
-                }
+                throw new ApplicationException("The SilverlightTCPSIPChannel can only send to a single server socket. The current connection is to " + m_remoteEndPoint + ", the request to send was to " + destinationEndPoint + ".");
+            }
+            else if (!m_isConnected)
+            {
+                throw new ApplicationException("The SilverlightTCPSIPChannel cannot send as it is in a disconnected state.");
             }
 
-            SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
-            sendArgs.SetBuffer(buffer, 0, buffer.Length);
-            m_socket.SendAsync(sendArgs);
+            try
+            {
+                SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
+                sendArgs.SetBuffer(buffer, 0, buffer.Length);
+                m_socket.SendAsync(sendArgs);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SilverlightTCPSIPChannel Send. " + excp.Message);
+                SIPSocketDisconnected(m_remoteEndPoint);
+            }
+        }
+
+        private void SIPTCPMessageReceived(SIPChannel channel, SIPEndPoint remoteEndPoint, byte[] buffer)
+        {
+            if (SIPMessageReceived != null)
+            {
+                SIPMessageReceived(channel, remoteEndPoint, buffer);
+            }
         }
 
         public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCN)
@@ -195,7 +231,20 @@ namespace SIPSorcery.SIP
 
         public override void Close()
         {
-            m_socket.Close();
+            try
+            {
+                if (m_isConnected && Disconnected != null)
+                {
+                    Disconnected("Connection to " + m_remoteEndPoint + " was closed by application request.");
+                }
+
+                m_isConnected = false;
+                m_socket.Close();
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SilverlightTCPSIPChannel Close. " + excp.Message);
+            }
         }
 
         public override bool IsConnectionEstablished(IPEndPoint remoteEndPoint)

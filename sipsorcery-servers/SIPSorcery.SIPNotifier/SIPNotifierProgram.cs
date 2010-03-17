@@ -45,7 +45,7 @@ namespace SIPSorcery.SIPNotifier
 
                 SIPAssetPersistor<Customer> customerPersistor = SIPAssetPersistorFactory<Customer>.CreateSIPAssetPersistor(m_sipNotifierStorageType, m_sipNotifierStorageConnStr, m_customersXMLFilename);
                 SIPAssetPersistor<SIPAccount> sipAccountsPersistor = SIPAssetPersistorFactory<SIPAccount>.CreateSIPAssetPersistor(m_sipNotifierStorageType, m_sipNotifierStorageConnStr, m_sipAccountsXMLFilename);
-                SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor = SIPAssetPersistorFactory<SIPDialogueAsset>.CreateSIPAssetPersistor(m_sipNotifierStorageType, m_sipNotifierStorageConnStr, m_sipAccountsXMLFilename);
+                SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor = SIPAssetPersistorFactory<SIPDialogueAsset>.CreateSIPAssetPersistor(m_sipNotifierStorageType, m_sipNotifierStorageConnStr, m_sipDialoguesXMLFilename);
                 SIPDomainManager sipDomainManager = new SIPDomainManager(m_sipNotifierStorageType, m_sipNotifierStorageConnStr);
 
                 SIPNotifierDaemon daemon = new SIPNotifierDaemon(customerPersistor.Get, sipDialoguePersistor.Get, sipDomainManager.GetDomain, sipAccountsPersistor.Get, SIPRequestAuthenticator.AuthenticateSIPRequest, null);

@@ -55,11 +55,13 @@ namespace SIPSorcery.SSHServer
         public const string SSHSERVER_CONFIGNODE_NAME = "sshserver";
 
         private const string NSSH_CONFIGURATION_FILE_PATH_KEY = "NSSHConfigurationFilePath";
+        private const string MONITOR_EVENT_RECEIVE_SOCKET = "MonitorEventReceiveSocket";
 
         public static ILog logger;
 
         private static XmlNode m_sshServerConfigNode;
         public static readonly string NSSHConfigurationFilePath;
+        public static readonly string MonitorEventReceiveSocket;
 
         static SSHServerState()
         {
@@ -87,9 +89,12 @@ namespace SIPSorcery.SSHServer
                 {
                     logger.Warn("The SSH Server " + SSHSERVER_CONFIGNODE_NAME + " config node was not available, the agent will not be able to start.");
                 }
-                else {
+                else
+                {
                     NSSHConfigurationFilePath = AppState.ToAbsoluteFilePath(AppState.GetConfigNodeValue(m_sshServerConfigNode, NSSH_CONFIGURATION_FILE_PATH_KEY));
                 }
+
+                MonitorEventReceiveSocket = AppState.GetConfigNodeValue(m_sshServerConfigNode, MONITOR_EVENT_RECEIVE_SOCKET);
             }
             catch (Exception excp)
             {

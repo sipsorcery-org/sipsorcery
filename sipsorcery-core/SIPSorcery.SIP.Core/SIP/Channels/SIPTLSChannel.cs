@@ -58,7 +58,7 @@ namespace SIPSorcery.SIP
 
         private const int MAX_TLS_CONNECTIONS = 1000;               // Maximum number of connections for the TLS listener.
         //private const int MAX_TLS_CONNECTIONS_PER_IPADDRESS = 10;   // Maximum number of connections allowed for a single remote IP address.
-        private static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_LENGTH;
+        private static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH;
 
         private TcpListener m_tlsServerListener;
         //private bool m_closed = false;
@@ -142,13 +142,13 @@ namespace SIPSorcery.SIP
                         sslStream.ReadTimeout = 5000;
                         sslStream.WriteTimeout = 5000;
 
-                        SIPConnection sipTLSClient = new SIPConnection(this, sslStream, remoteEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Listener);
-                        m_connectedSockets.Add(remoteEndPoint.ToString(), sipTLSClient);
+                        SIPConnection sipTLSConnection = new SIPConnection(this, sslStream, remoteEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Listener);
+                        m_connectedSockets.Add(remoteEndPoint.ToString(), sipTLSConnection);
 
-                        sipTLSClient.SIPSocketDisconnected += SIPTLSSocketDisconnected;
-                        sipTLSClient.SIPMessageReceived += SIPTLSMessageReceived;
-                        byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
-                        sslStream.BeginRead(receiveBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(sipTLSClient.ReceiveCallback), receiveBuffer);
+                        sipTLSConnection.SIPSocketDisconnected += SIPTLSSocketDisconnected;
+                        sipTLSConnection.SIPMessageReceived += SIPTLSMessageReceived;
+                        //byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
+                        sipTLSConnection.SIPStream.BeginRead(sipTLSConnection.SocketBuffer, 0, MaxSIPTCPMessageSize, new AsyncCallback(ReceiveCallback), sipTLSConnection);
                     }
                     catch (Exception e)
                     {
@@ -164,6 +164,27 @@ namespace SIPSorcery.SIP
             {
                 logger.Error("Exception SIPTLSChannel Listen. " + excp.Message);
                 //throw excp;
+            }
+        }
+
+        public void ReceiveCallback(IAsyncResult ar)
+        {
+            SIPConnection sipTLSConnection = (SIPConnection)ar.AsyncState;
+
+            try
+            {
+                int bytesRead = sipTLSConnection.SIPStream.EndRead(ar);
+                if (sipTLSConnection.SocketReadCompleted(bytesRead))
+                {
+                    sipTLSConnection.SIPStream.BeginRead(sipTLSConnection.SocketBuffer, sipTLSConnection.SocketBufferEndPosition, MaxSIPTCPMessageSize - sipTLSConnection.SocketBufferEndPosition, new AsyncCallback(ReceiveCallback), sipTLSConnection);
+                }
+            }
+            catch (SocketException)  // Occurs if the remote end gets disconnected.
+            { }
+            catch (Exception excp)
+            {
+                logger.Warn("Exception SIPTLSChannel ReceiveCallback. " + excp.Message);
+                SIPTLSSocketDisconnected(sipTLSConnection.RemoteEndPoint);
             }
         }
 
@@ -281,8 +302,8 @@ namespace SIPSorcery.SIP
 
                     callerConnection.SIPSocketDisconnected += SIPTLSSocketDisconnected;
                     callerConnection.SIPMessageReceived += SIPTLSMessageReceived;
-                    byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
-                    callerConnection.SIPStream.BeginRead(receiveBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(callerConnection.ReceiveCallback), receiveBuffer);
+                    //byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
+                    callerConnection.SIPStream.BeginRead(callerConnection.SocketBuffer, 0, MaxSIPTCPMessageSize, new AsyncCallback(ReceiveCallback), callerConnection);
 
                     logger.Debug("Established TLS connection to " + dstEndPoint + ".");
 

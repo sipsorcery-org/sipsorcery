@@ -59,6 +59,9 @@
     <Content Include="ClientBin\sipsorcery.xap" />
     <Content Include="default.html" />
     <Content Include="MediatorService.asmx" />
+    <Content Include="Silverlight.js" />
+    <Content Include="SIPSorcery.ClientTestPage.aspx" />
+    <Content Include="SIPSorcery.ClientTestPage.html" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>

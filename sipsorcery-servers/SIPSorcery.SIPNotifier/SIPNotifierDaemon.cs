@@ -59,6 +59,7 @@ namespace SIPSorcery.SIPNotifier
         private XmlNode m_sipNotifierSocketsNode = SIPNotifierState.SIPNotifierSocketsNode;
         private int m_monitorLoopbackPort = SIPNotifierState.MonitorLoopbackPort;
         private SIPEndPoint m_outboundProxy = SIPNotifierState.OutboundProxy;
+        private string m_udpNotificationReceiverSocket = SIPNotifierState.MonitorEventReceiveSocket;
 
         private SIPTransport m_sipTransport;
         private SIPMonitorEventWriter m_monitorEventWriter;
@@ -84,7 +85,7 @@ namespace SIPSorcery.SIPNotifier
             GetCanonicalDomain_External = getDomain;
             GetSIPAccount_External = getSIPAccount;
             SIPAuthenticateRequest_External = sipRequestAuthenticator;
-            m_publisher = publisher;
+            m_publisher = publisher ?? new SIPMonitorUDPSink(m_udpNotificationReceiverSocket);
         }
 
         public void Start()

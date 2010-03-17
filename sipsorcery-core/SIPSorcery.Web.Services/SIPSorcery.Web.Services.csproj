@@ -91,6 +91,7 @@
     <Compile Include="Notifications\PullNotificationHeader.cs" />
     <Compile Include="Notifications\SIPMonitorClientManagerHost.cs" />
     <Compile Include="Notifications\SIPMonitorPublisherProxy.cs" />
+    <Compile Include="Notifications\SIPMonitorUDPSink.cs" />
     <Compile Include="Notifications\SIPNotifierServiceInstanceProvider.cs" />
     <Compile Include="Notifications\DuplexHeader.cs" />
     <Compile Include="Notifications\IPollingDuplex.cs" />

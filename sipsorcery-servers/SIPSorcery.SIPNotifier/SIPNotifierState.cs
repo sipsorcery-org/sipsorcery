@@ -58,13 +58,15 @@ namespace SIPSorcery.SIPNotifier
         private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
         private const string MONITOR_LOOPBACK_PORT_KEY = "MonitorLoopbackPort";
         private const string OUTBOUND_PROXY_KEY = "OutboundProxy";
+        private const string MONITOR_EVENT_RECEIVE_SOCKET = "MonitorEventReceiveSocket";
 
         public static ILog logger;
 
-        public static readonly XmlNode m_sipNotifierNode;
+        private static readonly XmlNode m_sipNotifierNode;
         public static readonly XmlNode SIPNotifierSocketsNode;
         public static readonly int MonitorLoopbackPort;
         public static readonly SIPEndPoint OutboundProxy;
+        public static readonly string MonitorEventReceiveSocket;
 
         static SIPNotifierState()
         {
@@ -106,6 +108,8 @@ namespace SIPSorcery.SIPNotifier
                     {
                         OutboundProxy = SIPEndPoint.ParseSIPEndPoint(AppState.GetConfigNodeValue(m_sipNotifierNode, OUTBOUND_PROXY_KEY));
                     }
+
+                    MonitorEventReceiveSocket = AppState.GetConfigNodeValue(m_sipNotifierNode, MONITOR_EVENT_RECEIVE_SOCKET);
                 }
             }
             catch (Exception excp)

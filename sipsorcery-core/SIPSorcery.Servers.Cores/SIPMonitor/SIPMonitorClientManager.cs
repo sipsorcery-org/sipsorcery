@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.ServiceModel;
 using System.Text;
 using System.Threading;
@@ -26,7 +28,8 @@ namespace SIPSorcery.Servers
     {
         private const string REMOVESESSIONS_THREAD_NAME = "sipmonitor-expiredsession";
         private const int REMOVE_EXPIRED_SESSIONS_PERIOD = 5000;
-        private const int MAX_EVENT_QUEUE_SIZE = 50;
+        private const int MAX_EVENT_QUEUE_SIZE = 100;
+        private const int REMOVE_EXPIRED_SESSIONS_NOREQUESTS = 30;         // A session will be closed if there are no notification requests within this period.
 
         private static ILog logger = AppState.logger;
 
@@ -37,12 +40,14 @@ namespace SIPSorcery.Servers
         private List<string> m_failedSubscriptions = new List<string>();
         private bool m_exit;
         private string m_monitorServerID;
+        private UdpClient m_udpEventSender;
 
         public event Action<string> NotificationReady;
 
         public SIPMonitorClientManager(string monitorServerID)
         {
             m_monitorServerID = monitorServerID;
+            m_udpEventSender = new UdpClient();
             ThreadPool.QueueUserWorkItem(delegate { RemoveExpiredSessions(); });
         }
 
@@ -51,14 +56,12 @@ namespace SIPSorcery.Servers
             return true;
         }
 
-        public string Subscribe(string customerUsername, string adminId, string address, string subject, string filter, int expiry, out string subscribeError)
+        public string Subscribe(string customerUsername, string adminId, string address, string sessionID, string subject, string filter, int expiry, string udpSocket, out string subscribeError)
         {
             subscribeError = null;
 
             try
             {
-                string sessionID = null;
-
                 logger.Debug("SIPMonitorClientManager subscribe for customer=" + customerUsername + ", adminID=" + adminId + ", subject=" + subject + ", filter=" + filter + ".");
 
                 if (customerUsername.IsNullOrBlank() || address.IsNullOrBlank() || subject.IsNullOrBlank())
@@ -66,10 +69,12 @@ namespace SIPSorcery.Servers
                     throw new ArgumentException("Subscribe was passed a required parameter that was empty.");
                 }
 
-                SIPMonitorClientSession session = new SIPMonitorClientSession(customerUsername, adminId, address, expiry);
-                sessionID = session.SetFilter(subject, filter);
+                DateTime? sessionEndTime = (expiry != 0) ? DateTime.Now.AddSeconds(expiry) : (DateTime?)null;
+                SIPMonitorClientSession session = new SIPMonitorClientSession(customerUsername, adminId, address, sessionID, sessionEndTime, udpSocket);
+                session.SetFilter(subject, filter);
 
-                logger.Debug("Filter set for customer=" + customerUsername + ", adminID=" + adminId + ", sessionID=" + sessionID + " as " + session.Filter.GetFilterDescription() + ".");
+                string endTime = (session.SessionEndTime != null) ? session.SessionEndTime.Value.ToString("HH:mm:ss") : "not set";
+                logger.Debug("Filter set for customer=" + customerUsername + ", adminID=" + adminId + ", sessionID=" + sessionID + " as " + session.Filter.GetFilterDescription() + ", end time=" + endTime + ".");
 
                 lock (m_clientSessions)
                 {
@@ -133,20 +138,27 @@ namespace SIPSorcery.Servers
 
                         foreach (SIPMonitorClientSession session in sessions)
                         {
-                            if (((monitorEvent is SIPMonitorConsoleEvent && session.SessionType == SIPMonitorClientTypesEnum.Console) ||
-                                (monitorEvent is SIPMonitorMachineEvent && session.SessionType == SIPMonitorClientTypesEnum.Machine))
-                                && session.Filter.ShowSIPMonitorEvent(monitorEvent))
+                            if (session.Filter.ShowSIPMonitorEvent(monitorEvent))
                             {
-                                lock (session.Events)
+                                if (session.UDPSocket != null)
                                 {
-                                    if (session.Events.Count > MAX_EVENT_QUEUE_SIZE)
-                                    {
-                                        // Queue has exceeded max allowed size, pop off the oldest event.
-                                        session.Events.Dequeue();
-                                    }
-                                    session.Events.Enqueue(monitorEvent);
+                                    monitorEvent.SessionID = session.SessionID;
+                                    SendMonitorEventViaUDP(monitorEvent, session.UDPSocket);
                                 }
-                                eventAdded = true;
+                                else
+                                {
+                                    lock (session.Events)
+                                    {
+                                        if (session.Events.Count > MAX_EVENT_QUEUE_SIZE)
+                                        {
+                                            // Queue has exceeded max allowed size, pop off the oldest event.
+                                            session.Events.Dequeue();
+                                        }
+                                        monitorEvent.SessionID = session.SessionID;
+                                        session.Events.Enqueue(monitorEvent);
+                                    }
+                                    eventAdded = true;
+                                }
                             }
                         }
 
@@ -286,6 +298,30 @@ namespace SIPSorcery.Servers
             }
         }
 
+        public void ExtendSession(string address, string sessionID, int expiry)
+        {
+            lock (m_clientSessions)
+            {
+                List<SIPMonitorClientSession> sessions = (m_clientSessions.ContainsKey(address)) ? m_clientSessions[address] : null;
+                if (sessions != null)
+                {
+                    for (int index = 0; index < sessions.Count; index++)
+                    {
+                        SIPMonitorClientSession session = sessions[index];
+
+                        if (session.SessionID == sessionID)
+                        {
+                            session.LastGetNotificationsRequest = DateTime.Now;
+                            session.SessionEndTime = (expiry != 0) ? DateTime.Now.AddSeconds(expiry) : (DateTime?)null;
+
+                            string sessionEndTime = (session.SessionEndTime != null) ? session.SessionEndTime.Value.ToString("HH:mm:ss") : session.LastGetNotificationsRequest.AddSeconds(-1 * REMOVE_EXPIRED_SESSIONS_NOREQUESTS).ToString("HH:mm:ss");
+                            logger.Debug("Extending session for customer=" + session.CustomerUsername + ", sessionID=" + sessionID + " to " + sessionEndTime + ".");
+                        }
+                    }
+                }
+            }
+        }
+
         public void CloseSession(string address, string sessionID)
         {
             lock (m_clientSessions)
@@ -422,14 +458,16 @@ namespace SIPSorcery.Servers
                         {
                             var expiredSessions = from sessions in m_clientSessions.Values
                                                     from session in sessions
-                                                    where session.LastGetNotificationsRequest < DateTime.Now.AddSeconds(-1 * session.Expiry)
+                                                    where 
+                                                    (session.SessionEndTime != null && session.SessionEndTime.Value < DateTime.Now) ||
+                                                    (session.SessionEndTime == null && session.LastGetNotificationsRequest < DateTime.Now.AddSeconds(-1 * REMOVE_EXPIRED_SESSIONS_NOREQUESTS))
                                                     select session;
 
                             expiredSessions.ToList().ForEach((session) =>
                              {
-                                 logger.Debug("SIPMonitorClientManager removing inactive session connection to " + session.CustomerUsername + ".");
+                                 string sessionEndTime = (session.SessionEndTime != null) ? session.SessionEndTime.Value.ToString("HH:mm:ss") : session.LastGetNotificationsRequest.AddSeconds(-1 * REMOVE_EXPIRED_SESSIONS_NOREQUESTS).ToString("HH:mm:ss");
+                                 logger.Debug("SIPMonitorClientManager removing inactive session connection for " + session.CustomerUsername + ", start time=" + session.SessionStartTime.ToString("HH:mm:ss") + ", end time=" + sessionEndTime + ".");
                                  m_clientSessions.Remove(session.Address);
-                                 //m_clientsWaiting.Remove(session.Address);
                              });
                         }
                     }
@@ -444,6 +482,19 @@ namespace SIPSorcery.Servers
             catch (Exception excp)
             {
                 logger.Error("Exception SIPMonitorClientManager RemoveExpiredSessions. " + excp.Message);
+            }
+        }
+
+        private void SendMonitorEventViaUDP(SIPMonitorEvent monitorEvent, string destinationSocket)
+        {
+            try
+            {
+                byte[] monitorEventBytes = Encoding.UTF8.GetBytes(monitorEvent.ToCSV());
+                m_udpEventSender.Send(monitorEventBytes, monitorEventBytes.Length, IPSocket.ParseSocketString(destinationSocket));
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SendMonitorEventViaUDP. " + excp.Message);
             }
         }
     }

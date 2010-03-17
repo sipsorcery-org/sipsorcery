@@ -20,22 +20,23 @@ namespace SIPSorcery.SSHServer
         private const string FILTER_COMMAND_PROMPT = "filter=>";
         private const string DEFAULT_FILTER = "event *";
         private const string CRLF = "\r\n";
-        private const int POLL_FOR_NOTIFICATIONS_PERIOD = 1000;     // Period this SSH session will poll the monitoring service to check for new event notifications.
+        private const int DEFAULT_SESSION_LENGTH = 600;     // Default length of session to establish with monitor server.
+        private const int RENEW_SESSION_LENGTH = 500;       // The number of seconds after which to renew the session with monitor server.
 
         private static ILog logger = AppState.logger;
 
         private ISIPMonitorPublisher m_publisher;
         private string m_notificationsAddress;
         private string m_notificationsSessionID;
+        private Customer m_customer;
+        private DateTime m_lastMonitorSessionRenewal;
 
         public BlockingMemoryStream InStream = new BlockingMemoryStream();
         public BlockingMemoryStream OutStream = new BlockingMemoryStream();
         public BlockingMemoryStream ErrorStream = new BlockingMemoryStream();
         public string Username;
         public string AdminId;
-        private Customer m_customer;
         public bool HasClosed;
-        private bool StopPolling;
 
         public event EventHandler Closed;
 
@@ -49,6 +50,7 @@ namespace SIPSorcery.SSHServer
             try
             {
                 m_publisher = Dependency.Resolve<ISIPMonitorPublisher>();
+                m_publisher.NotificationReady += NotificationReady;
             }
             catch (ApplicationException appExcp)
             {
@@ -58,6 +60,23 @@ namespace SIPSorcery.SSHServer
             WriteWelcomeMessage(customer);
             OutStream.Write(Encoding.ASCII.GetBytes(FILTER_COMMAND_PROMPT));
             ThreadPool.QueueUserWorkItem(delegate { Listen(); });
+        }
+
+        public void NotificationReady(string monitorEventStr)
+        {
+            try
+            {
+                SIPMonitorConsoleEvent consoleEvent = SIPMonitorEvent.ParseEventCSV(monitorEventStr) as SIPMonitorConsoleEvent;
+                if (consoleEvent != null && consoleEvent.SessionID == m_notificationsSessionID)
+                {
+                    OutStream.Write(Encoding.ASCII.GetBytes(consoleEvent.ToConsoleString(AdminId)));
+                    OutStream.Flush();
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPSorceryVT100Server NotificationReady. " + excp.Message);
+            }
         }
 
         public void Close()
@@ -78,11 +97,32 @@ namespace SIPSorcery.SSHServer
             OutStream.Close();
             ErrorStream.Close();
             HasClosed = true;
-            StopPolling = true;
+            //StopPolling = true;
 
             if (Closed != null)
             {
                 Closed(this, new EventArgs());
+            }
+        }
+
+        private void RenewSession()
+        {
+            try
+            {
+                string sessionID = m_notificationsSessionID;
+
+                Thread.Sleep(RENEW_SESSION_LENGTH * 1000);
+
+                while (!HasClosed && sessionID == m_notificationsSessionID)
+                {
+                    m_publisher.ExtendSession(m_notificationsAddress, m_notificationsSessionID, DEFAULT_SESSION_LENGTH);
+
+                    Thread.Sleep(RENEW_SESSION_LENGTH * 1000);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPSorceryVT100Server RenewSession. " + excp.Message);
             }
         }
 
@@ -91,7 +131,7 @@ namespace SIPSorcery.SSHServer
         //    GetNotifications();
         //}
 
-        public void GetNotifications()
+        /*public void GetNotifications()
         {
             try
             {
@@ -130,7 +170,7 @@ namespace SIPSorcery.SSHServer
                 logger.Error("Exception GetNotifications. " + excp.Message);
                 throw;
             }
-        }
+        }*/
 
         /// <summary>
         /// 
@@ -242,7 +282,7 @@ namespace SIPSorcery.SSHServer
                         if (inBuffer[0] == 's' || inBuffer[0] == 'S')
                         {
                             // Stop events.
-                            StopPolling = true;
+                            //StopPolling = true;
                             logger.Debug("Closing session " + m_notificationsSessionID + ".");
                             m_publisher.CloseSession(m_notificationsAddress, m_notificationsSessionID);
                             m_notificationsSessionID = null;
@@ -299,7 +339,8 @@ namespace SIPSorcery.SSHServer
                 }
 
                 string subscribeError = null;
-                m_notificationsSessionID = m_publisher.Subscribe(Username, AdminId, m_notificationsAddress, SIPMonitorClientTypesEnum.Console.ToString(), command, 0, out subscribeError);
+                m_notificationsSessionID = Guid.NewGuid().ToString();
+                m_publisher.Subscribe(Username, AdminId, m_notificationsAddress, m_notificationsSessionID, SIPMonitorClientTypesEnum.Console.ToString(), command, DEFAULT_SESSION_LENGTH, null, out subscribeError);
 
                 if (subscribeError != null)
                 {
@@ -307,10 +348,12 @@ namespace SIPSorcery.SSHServer
                 }
                 else
                 {
+                    m_lastMonitorSessionRenewal = DateTime.Now;
+                    ThreadPool.QueueUserWorkItem(delegate { RenewSession(); });
                     SIPMonitorFilter filter = new SIPMonitorFilter(command);
                     WriteFilterDescription(filter.GetFilterDescription());
 
-                    if (m_publisher is SIPSorcery.Servers.SIPMonitorClientManager)
+                    /*if (m_publisher is SIPSorcery.Servers.SIPMonitorClientManager)
                     {
                         logger.Debug("VT100Server is connected to a publisher that fires an event when a notification is ready.");
                         // The publisher will fire an event when a new notification is ready.
@@ -343,7 +386,7 @@ namespace SIPSorcery.SSHServer
                                 logger.Error("Exception SIPSorceryVT100Server ProcessCommand on GetNotifications. " + excp.Message);
                             }
                         });
-                    }
+                    }*/
                 }
             }
             catch (ApplicationException appExcp)

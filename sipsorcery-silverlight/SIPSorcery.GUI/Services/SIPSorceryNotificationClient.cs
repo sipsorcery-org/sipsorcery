@@ -17,8 +17,9 @@ namespace SIPSorcery.Silverlight.Services
     {
         private const int MINIMUM_POLL_PERIOD = 1000;
         private const int POST_FAILURE_POLL_PERIOD = 10000; // If the poll returns an error this is the new period until it is successfuly again.
-        public const string DEFAULT_FILTER = "event *";
+        private const string MACHINE_EVENT_FILTER = "basetype machine";
         private const int POLL_RECHECK_COUNT = 1000;
+        public const string DEFAULT_FILTER = "event *";
 
         private ActivityMessageDelegate LogActivityMessage_External;
         private NotificationsClient m_notificationClient;
@@ -133,14 +134,13 @@ namespace SIPSorcery.Silverlight.Services
         {
             if (e.Error == null)
             {
-                //LogActivityMessage_External(MessageLevelsEnum.Monitor, "Notifications service connected.");
                 if (StatusChanged != null)
                 {
                     StatusChanged(ServiceConnectionStatesEnum.Ok, null);
                 }
 
                 m_notificationClient.GetPollPeriodAsync();
-                m_notificationClient.SubscribeAsync(SIPMonitorClientTypesEnum.Machine.ToString(), DEFAULT_FILTER);
+                m_notificationClient.SubscribeAsync(SIPMonitorClientTypesEnum.Machine.ToString(), MACHINE_EVENT_FILTER);
             }
             else
             {

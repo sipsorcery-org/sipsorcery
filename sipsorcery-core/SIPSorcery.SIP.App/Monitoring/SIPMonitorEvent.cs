@@ -141,6 +141,7 @@ namespace SIPSorcery.SIP.App
         SubscribeAuth = 66,
         SubscribeAccept = 67,
         SubscribeFailed = 68,
+        SubscribeRenew = 69,
 	}
 
 	public class SIPMonitorEventTypes
@@ -200,21 +201,22 @@ namespace SIPSorcery.SIP.App
     /// Describes the types of events that can be sent by the different SIP Servers to SIP
     /// Monitor clients.
     /// </summary>
-	public class SIPMonitorEvent
+	public class SIPMonitorEvent 
 	{
-		public const string SERIALISATION_DATETIME_FORMAT = "dd MMM yyyy HH:mm:ss:fff";
+        public const string SERIALISATION_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss.ffffff zzz";
 		public const string END_MESSAGE_DELIMITER = "##";
 
         protected static ILog logger = AppState.logger;
 
         protected string m_serialisationPrefix = SIPMonitorConsoleEvent.SERIALISATION_PREFIX;    // Default to a control client event.
 
+        public string SessionID;                        // The ID of the user notification session this event corresponds to.
         public SIPMonitorClientTypesEnum ClientType;
 		public string Message;
 		public SIPEndPoint RemoteEndPoint;
 		public DateTimeOffset Created;
         public string Username;
-        public string MonitorServerID;              // The ID of the monitoring server that received this event. Useful when there are multiple monitoring servers.
+        public string MonitorServerID;                  // The ID of the monitoring server that received this event. Useful when there are multiple monitoring servers.
 
         //public int GeographicId;
         //public string GeographicDescription;
@@ -242,7 +244,7 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                logger.Warn("The monitor event prefix of " + eventCSV.Trim().Substring(0, 1) + " was no recognised.");
+                logger.Warn("The monitor event prefix of " + eventCSV.Trim().Substring(0, 1) + " was not recognised. " + eventCSV);
                 return null;
             }
 		}

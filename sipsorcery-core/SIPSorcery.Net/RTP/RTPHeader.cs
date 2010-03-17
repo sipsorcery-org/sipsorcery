@@ -28,7 +28,7 @@
 //  - PCMU (G711): 000 0000 (0)
 // Sequence Number (16 bits) = Increments by one for each RTP packet sent, initial value random.
 // Timestamp (32 bits) = The sampling instant of the first bit in the RTP data packet.
-// Synchronisation Source Id (SSRC) (32 bits) = The unique synchrosnisation source for the data stream.
+// Synchronisation Source Id (SSRC) (32 bits) = The unique synchronisation source for the data stream.
 // Contributing Source Identifier Ids (0 to 15 items 32 bits each, see CC) = List of contributing sources for the payload in this field.
 //
 //

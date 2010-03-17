@@ -148,7 +148,7 @@ namespace SIPSorcery.SIP
                             if (inactiveConnection != null)
                             {
                                 logger.Debug("Pruning inactive connection on " + SIPChannelContactURI + " to remote end point " + inactiveConnection.RemoteEndPoint.ToString() + ".");
-                                inactiveConnection.SIPStream.Close();
+                                inactiveConnection.Close();
                             }
                             else
                             {

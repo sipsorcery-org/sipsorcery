@@ -26,8 +26,8 @@ namespace SIPSorcery.Web.Services
         private ILog logger = AppState.logger;
 
         private Dictionary<string, SIPMonitorPublisherProxy> m_proxies = new Dictionary<string, SIPMonitorPublisherProxy>();
-        private Dictionary<string, string> m_sessionIDMap = new Dictionary<string, string>();                                   // Maps a single session ID to the multiple session IDs for each proxy.
-        private Dictionary<string, Action<string>> m_clientsWaiting = new Dictionary<string, Action<string>>();                 // <Address> List of address endpoints that are waiting for a notification.
+        //private Dictionary<string, string> m_sessionIDMap = new Dictionary<string, string>();                                   // Maps a single session ID to the multiple session IDs for each proxy.
+        //private Dictionary<string, Action<string>> m_clientsWaiting = new Dictionary<string, Action<string>>();                 // <Address> List of address endpoints that are waiting for a notification.
 
         public event Action<string> NotificationReady;          // Not used across WCF channels, for in memory only.
 
@@ -155,7 +155,7 @@ namespace SIPSorcery.Web.Services
             return true;
         }
 
-        public string Subscribe(string customerUsername, string adminId, string address, string subject, string filter, int expiry, out string subscribeError)
+        public string Subscribe(string customerUsername, string adminId, string address, string sessionID, string subject, string filter, int expiry, string udpSocket, out string subscribeError)
         {
             subscribeError = null;
 
@@ -166,7 +166,6 @@ namespace SIPSorcery.Web.Services
             }
             else
             {
-                string clientSessionID = Guid.NewGuid().ToString();
                 bool subscribeSuccess = false;
 
                 for (int index = 0; index < m_proxies.Count; index++)
@@ -175,40 +174,40 @@ namespace SIPSorcery.Web.Services
 
                     //if (proxyEntry.Value.State != CommunicationState.Faulted)
                     //{
-                        try
-                        {
-                            logger.Debug("Attempting to subscribe to proxy " + proxyEntry.Key + ".");
-                            string proxySubscribeError = null;
-                            string proxySessionID = proxyEntry.Value.Subscribe(customerUsername, adminId, address, subject, filter, expiry, out proxySubscribeError);
+                    try
+                    {
+                        logger.Debug("Attempting to subscribe to proxy " + proxyEntry.Key + ".");
+                        string proxySubscribeError = null;
+                        string proxySessionID = proxyEntry.Value.Subscribe(customerUsername, adminId, address, sessionID, subject, filter, expiry, udpSocket, out proxySubscribeError);
 
-                            if (proxySubscribeError != null)
-                            {
-                                logger.Warn("Subscription in MonitorProxyManager failed. " + proxySubscribeError);
-                                subscribeError = proxySubscribeError;
-                                subscribeSuccess = false;
-                                break;
-                            }
-                            else
-                            {
-                                logger.Debug("Subscription created for proxy " + proxyEntry.Key + ", proxy sessionID=" + proxySessionID + ", client sessionID=" + clientSessionID + ".");
-                                m_sessionIDMap.Add(proxySessionID, clientSessionID);
-                                subscribeSuccess = true;
-                            }
-                        }
-                        catch (System.ServiceModel.CommunicationException commExcp)
+                        if (proxySubscribeError != null)
                         {
-                            logger.Warn("CommunicationException MonitorProxyManager Proxy Subscribe for " + proxyEntry.Key + ". " + commExcp.Message);
+                            logger.Warn("Subscription in MonitorProxyManager failed. " + proxySubscribeError);
+                            subscribeError = proxySubscribeError;
+                            subscribeSuccess = false;
+                            break;
                         }
-                        catch (Exception excp)
+                        else
                         {
-                            logger.Error("Exception MonitorProxyManager Proxy Subscribe for " + proxyEntry.Key + ". " + excp.Message);
+                            logger.Debug("Subscription created for proxy " + proxyEntry.Key + ", proxy sessionID=" + proxySessionID + ", client sessionID=" + sessionID + ".");
+                            //m_sessionIDMap.Add(proxySessionID, sessionID);
+                            subscribeSuccess = true;
                         }
+                    }
+                    catch (System.ServiceModel.CommunicationException commExcp)
+                    {
+                        logger.Warn("CommunicationException MonitorProxyManager Proxy Subscribe for " + proxyEntry.Key + ". " + commExcp.Message);
+                    }
+                    catch (Exception excp)
+                    {
+                        logger.Error("Exception MonitorProxyManager Proxy Subscribe for " + proxyEntry.Key + ". " + excp.Message);
+                    }
                     //}
                 }
 
                 if (subscribeSuccess)
                 {
-                    return clientSessionID;
+                    return sessionID;
                 }
                 else
                 {
@@ -243,24 +242,24 @@ namespace SIPSorcery.Web.Services
                         {
                             //logger.Debug("Retrieving notifications for proxy " + proxyEntry.Key + ".");
 
-                            string proxySessionID = null;
-                            List<string> notifications = proxyEntry.Value.GetNotifications(address, out proxySessionID, out sessionError);
-                            if (notifications != null && notifications.Count > 0 && proxySessionID != null)
+                            List<string> notifications = proxyEntry.Value.GetNotifications(address, out sessionID, out sessionError);
+                            if (notifications != null && notifications.Count > 0 && sessionError == null)
                             {
                                 //logger.Debug("Proxy " + proxyEntry.Key + " returned " + notifications.Count + ".");
-                                if (m_sessionIDMap.ContainsKey(proxySessionID))
-                                {
-                                    sessionID = m_sessionIDMap[proxySessionID];
-                                    sessionError = null;
+                               // if (m_sessionIDMap.ContainsKey(proxySessionID))
+                                //{
+                                    //sessionID = m_sessionIDMap[proxySessionID];
+                                    //sessionError = null;
                                     collatedNotifications.AddRange(notifications);
-                                }
-                                else
-                                {
-                                    logger.Warn("Notifications received for unknown sessionID, closing session on proxy.");
-                                    proxyEntry.Value.CloseSession(address, sessionID);
+                                    break;
+                                //}
+                                //else
+                                //{
+                                //    logger.Warn("Notifications received for unknown sessionID, closing session on proxy.");
+                                //    proxyEntry.Value.CloseSession(address, sessionID);
                                     // Try the same proxy again.
-                                    index--;
-                                }
+                                //    index--;
+                                //}
                             }
                         }
                         catch (System.ServiceModel.CommunicationException commExcp)
@@ -289,6 +288,46 @@ namespace SIPSorcery.Web.Services
             }
         }
 
+        public void ExtendSession(string address, string sessionID, int expiry)
+        {
+            try
+            {
+                //var proxySessions = (from session in m_sessionIDMap where session.Value == sessionID select session.Key).ToList();
+
+                //if (proxySessions != null && proxySessions.Count() > 0)
+                //{
+                for (int index = 0; index < m_proxies.Count; index++)
+                {
+                    KeyValuePair<string, SIPMonitorPublisherProxy> proxyEntry = m_proxies.ElementAt(index);
+
+                    if (proxyEntry.Value.State != CommunicationState.Faulted)
+                    {
+                        //foreach (string proxySession in proxySessions)
+                        //{
+                        try
+                        {
+                            logger.Debug("Extending session for address " + address + ", session " + sessionID + ", proxy " + proxyEntry.Key + ".");
+                            proxyEntry.Value.ExtendSession(address, sessionID, expiry);
+                        }
+                        catch (System.ServiceModel.CommunicationException commExcp)
+                        {
+                            logger.Warn("CommunicationException MonitorProxyManager ExtendSession. " + commExcp.Message);
+                        }
+                        catch (Exception excp)
+                        {
+                            logger.Error("Exception MonitorProxyManager ExtendSession (" + excp.GetType() + "). " + excp.Message);
+                        }
+                    }
+                }
+                //}
+                //}
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception ExtendSession. " + excp.Message);
+            }
+        }
+
         public void CloseSession(string address, string sessionID)
         {
             try
@@ -299,43 +338,44 @@ namespace SIPSorcery.Web.Services
                 }
                 else
                 {
-                    var proxySessions = (from session in m_sessionIDMap where session.Value == sessionID select session.Key).ToList();
+                    // var proxySessions = (from session in m_sessionIDMap where session.Value == sessionID select session.Key).ToList();
 
-                    if (proxySessions != null && proxySessions.Count() > 0)
+                    // if (proxySessions != null && proxySessions.Count() > 0)
+                    //{
+                    for (int index = 0; index < m_proxies.Count; index++)
                     {
-                        for (int index = 0; index < m_proxies.Count; index++)
-                        {
-                            KeyValuePair<string, SIPMonitorPublisherProxy> proxyEntry = m_proxies.ElementAt(index);
+                        KeyValuePair<string, SIPMonitorPublisherProxy> proxyEntry = m_proxies.ElementAt(index);
 
-                            if (proxyEntry.Value.State != CommunicationState.Faulted)
+                        if (proxyEntry.Value.State != CommunicationState.Faulted)
+                        {
+                            // foreach (string proxySession in proxySessions)
+                            //{
+                            try
                             {
-                                foreach (string proxySession in proxySessions)
-                                {
-                                    try
-                                    {
-                                        logger.Debug("Closing session for address " + address + ", session " + proxySession + ", proxy " + proxyEntry.Key + ".");
-                                        proxyEntry.Value.CloseSession(address, proxySession);
-                                    }
-                                    catch (System.ServiceModel.CommunicationException commExcp)
-                                    {
-                                        logger.Warn("CommunicationException MonitorProxyManager CloseConnection. " + commExcp.Message);
-                                    }
-                                    catch (Exception excp)
-                                    {
-                                        logger.Error("Exception MonitorProxyManager CloseConnection (" + excp.GetType() + "). " + excp.Message);
-                                    }
-                                }
+                                logger.Debug("Closing session for address " + address + ", session " + sessionID + ", proxy " + proxyEntry.Key + ".");
+                                proxyEntry.Value.CloseSession(address, sessionID);
                             }
+                            catch (System.ServiceModel.CommunicationException commExcp)
+                            {
+                                logger.Warn("CommunicationException MonitorProxyManager CloseConnection. " + commExcp.Message);
+                            }
+                            catch (Exception excp)
+                            {
+                                logger.Error("Exception MonitorProxyManager CloseConnection (" + excp.GetType() + "). " + excp.Message);
+                            }
+                            //}
                         }
+                        //}
 
-                        foreach (string proxySession in proxySessions)
-                        {
-                            m_sessionIDMap.Remove(proxySession);
-                        }
-                    }
-                    else
-                    {
-                        logger.Warn("No proxy session IDs were found in the session map for " + sessionID + ".");
+                        //foreach (string proxySession in proxySessions)
+                        //{
+                        //   m_sessionIDMap.Remove(proxySession);
+                        //}
+                        // }
+                        //else
+                        //{
+                        //    logger.Warn("No proxy session IDs were found in the session map for " + sessionID + ".");
+                        //}
                     }
                 }
             }
@@ -347,10 +387,10 @@ namespace SIPSorcery.Web.Services
 
         public void CloseConnection(string address)
         {
-            if (m_clientsWaiting.ContainsKey(address))
-            {
-                m_clientsWaiting.Remove(address);
-            }
+            //if (m_clientsWaiting.ContainsKey(address))
+            //{
+            //    m_clientsWaiting.Remove(address);
+            //}
 
             if (m_proxies.Count == 0)
             {
@@ -387,10 +427,10 @@ namespace SIPSorcery.Web.Services
             throw new NotImplementedException();
         }
 
-       // public void RegisterListener(string address)
+        // public void RegisterListener(string address)
         //{
         //    throw new NotImplementedException();
-       // }
+        // }
 
         /*public void RegisterListener(string address, Action<string> notificationsReady)
         {

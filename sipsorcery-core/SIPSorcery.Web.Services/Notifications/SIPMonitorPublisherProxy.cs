@@ -35,9 +35,9 @@ namespace SIPSorcery.Web.Services
             return base.Channel.IsAlive();
         }
 
-        public string Subscribe(string customerUsername, string adminId, string address, string subject, string topic, int expiry, out string subscribeError)
+        public string Subscribe(string customerUsername, string adminId, string address, string sessionID, string subject, string topic, int expiry, string udpSocket, out string subscribeError)
         {
-            return base.Channel.Subscribe(customerUsername, adminId, address, subject, topic, expiry, out subscribeError);
+            return base.Channel.Subscribe(customerUsername, adminId, address, sessionID, subject, topic, expiry, udpSocket, out subscribeError);
         }
 
         public List<string> GetNotifications(string address, out string sessionID, out string sessionError)
@@ -48,6 +48,11 @@ namespace SIPSorcery.Web.Services
         public bool IsNotificationReady(string address)
         {
             return base.Channel.IsNotificationReady(address);
+        }
+
+        public void ExtendSession(string address, string sessionID, int expiry)
+        {
+            base.Channel.ExtendSession(address, sessionID, expiry);
         }
 
         public void CloseSession(string address, string sessionID)

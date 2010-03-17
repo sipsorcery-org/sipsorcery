@@ -1152,10 +1152,10 @@ namespace SIPSorcery.SIP
                     else
                     {
                         // Treat all messages that don't match STUN requests as SIP.
-                        if (buffer.Length > SIPConstants.SIP_MAXIMUM_LENGTH)
+                        if (buffer.Length > SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH)
                         {
-                            string rawErrorMessage = Encoding.UTF8.GetString(buffer, 0, SIPConstants.SIP_MAXIMUM_LENGTH) + "\r\n..truncated";
-                            FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "SIP message too large, " + buffer.Length + " bytes, maximum allowed is " + SIPConstants.SIP_MAXIMUM_LENGTH + " bytes.", SIPValidationFieldsEnum.Request, rawErrorMessage);
+                            string rawErrorMessage = Encoding.UTF8.GetString(buffer, 0, 1024) + "\r\n..truncated";
+                            FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "SIP message too large, " + buffer.Length + " bytes, maximum allowed is " + SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH + " bytes.", SIPValidationFieldsEnum.Request, rawErrorMessage);
                             SIPResponse tooLargeResponse = GetResponse(sipChannel.SIPChannelEndPoint, remoteEndPoint, SIPResponseStatusCodesEnum.MessageTooLarge, null);
                             SendResponse(tooLargeResponse);
                         }

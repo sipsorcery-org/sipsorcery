@@ -211,13 +211,15 @@ namespace SIPSorcery.SIPAppServer
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                         m_sipSorceryPersistor.SIPAccountsPersistor.Get,
                         SIPRequestAuthenticator.AuthenticateSIPRequest,
-                        m_sipMonitorPublisher);
+                        //m_sipMonitorPublisher);
+                        new SIPMonitorUDPSink("127.0.0.1:10003"));
                     m_sipNotifierDaemon.Start();
                 }
 
                 if (m_sshServerEnabled)
                 {
-                    SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, m_sipMonitorPublisher); // Uses memory to transfer events. 
+                    //SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, m_sipMonitorPublisher); // Uses memory to transfer events. 
+                    SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, new SIPMonitorUDPSink("127.0.0.1:10002"));
                     daemon.Start();
                 }
 

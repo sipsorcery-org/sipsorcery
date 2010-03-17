@@ -111,7 +111,8 @@ namespace SIPSorcery.Web.Services
 
                 string subscribeError = null;
 
-                string sessionID = GetPublisher().Subscribe(customerUsername, adminId, addressID, subject, filter, 0, out subscribeError);
+                string sessionID = Guid.NewGuid().ToString();
+                GetPublisher().Subscribe(customerUsername, adminId, addressID, sessionID, subject, filter, 0, null, out subscribeError);
 
                 if (subscribeError != null)
                 {
@@ -247,7 +248,7 @@ namespace SIPSorcery.Web.Services
 
                     string subscribeError = null;
 
-                    GetPublisher().Subscribe(customerUsername, adminId, session.Address, session.SessionId, topic, 0, out subscribeError);
+                    GetPublisher().Subscribe(customerUsername, adminId, session.Address, session.SessionId, null, topic, 0, null, out subscribeError);
 
                     if (subscribeError != null)
                     {

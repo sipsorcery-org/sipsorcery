@@ -170,16 +170,19 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                logger.Debug("Stopping SIP registration user agent for " + m_sipAccountAOR.ToString() + ".");
-
-                m_exit = true;
-                m_waitForRegistrationMRE.Set();
-
-                if (m_isRegistered)
+                if (!m_exit)
                 {
-                    m_attempts = 0;
-                    m_expiry = 0;
-                    ThreadPool.QueueUserWorkItem(delegate { SendInitialRegister(); });
+                    logger.Debug("Stopping SIP registration user agent for " + m_sipAccountAOR.ToString() + ".");
+
+                    m_exit = true;
+                    m_waitForRegistrationMRE.Set();
+
+                    if (m_isRegistered)
+                    {
+                        m_attempts = 0;
+                        m_expiry = 0;
+                        ThreadPool.QueueUserWorkItem(delegate { SendInitialRegister(); });
+                    }
                 }
             }
             catch (Exception excp)

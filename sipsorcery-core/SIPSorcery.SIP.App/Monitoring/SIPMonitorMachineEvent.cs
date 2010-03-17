@@ -108,12 +108,14 @@ namespace SIPSorcery.SIP.App
 
                 string[] eventFields = eventCSV.Split(new char[] { '|' });
 
-                machineEvent.MachineEventType = SIPMonitorMachineEventTypes.GetMonitorMachineTypeForId(Convert.ToInt32(eventFields[1]));
-                machineEvent.Created = DateTimeOffset.Parse(eventFields[2]);
-                machineEvent.Username = eventFields[3];
-                machineEvent.RemoteEndPoint = SIPEndPoint.ParseSIPEndPoint(eventFields[4]);
-                machineEvent.Message = eventFields[5];
-                string dialogueXML = eventFields[6].Trim('#');
+                machineEvent.SessionID = eventFields[1];
+                machineEvent.MonitorServerID = eventFields[2];
+                machineEvent.MachineEventType = SIPMonitorMachineEventTypes.GetMonitorMachineTypeForId(Convert.ToInt32(eventFields[3]));
+                machineEvent.Created = DateTimeOffset.ParseExact(eventFields[4], SERIALISATION_DATETIME_FORMAT, CultureInfo.InvariantCulture);
+                machineEvent.Username = eventFields[5];
+                machineEvent.RemoteEndPoint = SIPEndPoint.ParseSIPEndPoint(eventFields[6]);
+                machineEvent.Message = eventFields[7];
+                string dialogueXML = eventFields[8].Trim('#');
 
                 if (!dialogueXML.IsNullOrBlank())
                 {
@@ -142,8 +144,10 @@ namespace SIPSorcery.SIP.App
 
                 string csvEvent =
                     SERIALISATION_PREFIX + "|" +
+                    SessionID + "|" +
+                    MonitorServerID + "|" +
                     machineEventTypeId + "|" +
-                    Created.ToString("yyyy-MM-dd HH:mm:ss.ffffff zzz") + "|" +
+                    Created.ToString(SERIALISATION_DATETIME_FORMAT) + "|" +
                     Username + "|" +
                     remoteSocket + "|" +
                     Message + "|" +
@@ -178,8 +182,10 @@ namespace SIPSorcery.SIP.App
 
                 string csvEvent =
                     SERIALISATION_PREFIX + "|" +
+                    SessionID + "|" +
+                    MonitorServerID + "|" +
                     machineEventTypeId + "|" +
-                     Created.ToString() + "|" +
+                    Created.ToString(SERIALISATION_DATETIME_FORMAT) + "|" +
                     "|" +
                     remoteSocket + "|" +
                     "|" +

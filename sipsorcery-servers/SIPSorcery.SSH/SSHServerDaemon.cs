@@ -67,6 +67,7 @@ namespace SIPSorcery.SSHServer
         private ILog logger = AppState.logger;
 
         private string m_nsshConfigurationFilePath = SSHServerState.NSSHConfigurationFilePath;
+        private string m_udpNotificationReceiverSocket = SSHServerState.MonitorEventReceiveSocket;
 
         private ISshService m_sshService;
         private CustomerSessionManager m_customerSessionManager;
@@ -75,7 +76,14 @@ namespace SIPSorcery.SSHServer
         public SSHServerDaemon(CustomerSessionManager customerSessionManager)
         {
             m_customerSessionManager = customerSessionManager;
-            m_monitorPublisher = new MonitorProxyManager();
+            if (m_udpNotificationReceiverSocket.IsNullOrBlank())
+            {
+                m_monitorPublisher = new MonitorProxyManager();
+            }
+            else
+            {
+                m_monitorPublisher = new SIPMonitorUDPSink(m_udpNotificationReceiverSocket);
+            }
         }
 
         public SSHServerDaemon(CustomerSessionManager customerSessionManager, ISIPMonitorPublisher monitorPublisher)
@@ -86,7 +94,8 @@ namespace SIPSorcery.SSHServer
 
         public void Start()
         {
-            try {
+            try
+            {
                 logger.Debug("SSHServerDaemon starting...");
 
                 NSshServiceConfiguration configuration = NSshServiceConfiguration.LoadFromFile(m_nsshConfigurationFilePath);
@@ -95,7 +104,8 @@ namespace SIPSorcery.SSHServer
                 m_sshService = Dependency.Resolve<ISshService>();
                 ((NSshService)m_sshService).Start();
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SSHServerDaemon Start. " + excp.Message);
             }
         }
@@ -117,7 +127,8 @@ namespace SIPSorcery.SSHServer
             }
         }
 
-        private void SetupDependencies(NSshServiceConfiguration configuration) {
+        private void SetupDependencies(NSshServiceConfiguration configuration)
+        {
             Dependency.RegisterInstance<NSshServiceConfiguration>("NSshServiceConfiguration", configuration);
             Dependency.RegisterSingleton<ISshService, NSshService>("NSshService");
             Dependency.RegisterTransient<ISshSession, SshSession>("SshSession");

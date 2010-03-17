@@ -64,7 +64,7 @@ namespace SIPSorcery.Servers
         private const int MAX_NOTIFIER_QUEUE_SIZE = 1000;
         private const int MAX_NOTIFIER_SLEEP_TIME = 10000;
         private const string NOTIFIER_THREAD_NAME_PREFIX = "sipnotifier-core";
-        private const int MIN_SUBSCRIPTION_EXPIRY = 600;
+        private const int MIN_SUBSCRIPTION_EXPIRY = 60;
         private const int MAX_SUBSCRIPTION_EXPIRY = 3600;
 
         private static ILog logger = AppState.GetLogger("sipnotifier");
@@ -313,14 +313,39 @@ namespace SIPSorcery.Servers
 
                             if (authorised)
                             {
-                                string sessionID = m_subscriptionsManager.SubscribeClient(sipAccount.Owner, adminID, sipRequest.URI, SIPEventPackage.Parse(sipRequest.Header.Event), sipRequest.Header.Contact[0].ContactURI, sipRequest.Header.Expires, sipRequest.Header.CallId, sipRequest.Header.CSeq, sipRequest.Body);
-                                SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                                subscribeTransaction.SendFinalResponse(okResponse);
-                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "Subscription accepted for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + " and expiry " + sipRequest.Header.Expires + ".", sipAccount.Owner));
-
-                                if (sessionID != null)
+                                if (sipRequest.Header.To.ToTag != null)
                                 {
-                                    m_subscriptionsManager.SendFullStateNotify(sessionID);
+                                    // Request is to renew an existing subscription.
+                                    if (m_subscriptionsManager.RenewSubscription(sipRequest.Header.Expires, sipRequest.Header.To.ToTag, sipRequest.Header.From.FromTag, sipRequest.Header.CallId, sipRequest.Header.CSeq))
+                                    {
+                                        // Existing subscription was found.
+                                        SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                                        subscribeTransaction.SendFinalResponse(okResponse);
+                                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeRenew, "Subscription renewal for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + " and expiry " + sipRequest.Header.Expires + ".", sipAccount.Owner));
+                                    }
+                                    else
+                                    {
+                                        // An existing subscription was not found.
+                                        SIPResponse noSubscriptionResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
+                                        subscribeTransaction.SendFinalResponse(noSubscriptionResponse);
+                                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription renewal failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", no existing subscription was found for subscribe dialogue.", sipAccount.Owner));
+                                    }
+                                }
+                                else
+                                {
+                                    // Request is to create a new subscription.
+                                    string toTag = CallProperties.CreateNewTag();
+                                    string sessionID = m_subscriptionsManager.SubscribeClient(sipAccount.Owner, adminID, sipRequest);
+                                    SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                                    okResponse.Header.To.ToTag = toTag;
+                                    okResponse.Header.Expires = sipRequest.Header.Expires;
+                                    subscribeTransaction.SendFinalResponse(okResponse);
+                                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "Subscription accepted for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + " and expiry " + sipRequest.Header.Expires + ".", sipAccount.Owner));
+
+                                    if (sessionID != null)
+                                    {
+                                        m_subscriptionsManager.SendFullStateNotify(sessionID);
+                                    }
                                 }
                             }
                             else

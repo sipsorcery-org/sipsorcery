@@ -87,7 +87,7 @@ namespace SIPSorcery.SIP.App
             EventType = eventType;
             Message = message;
             Username = username;
-            Created = DateTime.UtcNow;
+            Created = DateTimeOffset.UtcNow;
         }
 
         public SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, string username, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint)
@@ -99,7 +99,7 @@ namespace SIPSorcery.SIP.App
             EventType = eventType;
             Message = message;
             Username = username;
-            Created = DateTime.UtcNow;
+            Created = DateTimeOffset.UtcNow;
             ServerEndPoint = localEndPoint;
             RemoteEndPoint = remoteEndPoint;
         }
@@ -115,7 +115,7 @@ namespace SIPSorcery.SIP.App
             ServerEndPoint = serverSocket;
             RemoteEndPoint = fromSocket;
             DestinationEndPoint = toSocket;
-            Created = DateTime.UtcNow;
+            Created = DateTimeOffset.UtcNow;
         }
 
         public SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, SIPRequest sipRequest, SIPResponse sipResponse, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, SIPCallDirection callDirection)
@@ -128,7 +128,7 @@ namespace SIPSorcery.SIP.App
             Message = message;
             RemoteEndPoint = remoteEndPoint;
             ServerEndPoint = localEndPoint;
-            Created = DateTime.UtcNow;
+            Created = DateTimeOffset.UtcNow;
 
             string dirn = (callDirection == SIPCallDirection.In) ? CALLDIRECTION_IN_STRING : CALLDIRECTION_OUT_STRING;
             if (sipRequest != null)
@@ -154,30 +154,32 @@ namespace SIPSorcery.SIP.App
 
                 string[] eventFields = eventCSV.Split(new char[] { '|' });
 
-                monitorEvent.ServerType = SIPMonitorServerTypes.GetProxyServerType(eventFields[1]);
-                monitorEvent.EventType = SIPMonitorEventTypes.GetProxyEventType(eventFields[2]);
-                monitorEvent.Created = DateTime.ParseExact(eventFields[3], SERIALISATION_DATETIME_FORMAT, CultureInfo.InvariantCulture);
+                monitorEvent.SessionID = eventFields[1];
+                monitorEvent.MonitorServerID = eventFields[2];
+                monitorEvent.ServerType = SIPMonitorServerTypes.GetProxyServerType(eventFields[3]);
+                monitorEvent.EventType = SIPMonitorEventTypes.GetProxyEventType(eventFields[4]);
+                monitorEvent.Created = DateTimeOffset.ParseExact(eventFields[5], SERIALISATION_DATETIME_FORMAT, CultureInfo.InvariantCulture);
 
-                string serverEndPointStr = eventFields[4];
+                string serverEndPointStr = eventFields[6];
                 if (serverEndPointStr != null && serverEndPointStr.Trim().Length > 0)
                 {
                     monitorEvent.ServerEndPoint = SIPEndPoint.ParseSIPEndPoint(serverEndPointStr);
                 }
 
-                string remoteEndPointStr = eventFields[5];
+                string remoteEndPointStr = eventFields[7];
                 if (remoteEndPointStr != null && remoteEndPointStr.Trim().Length > 0)
                 {
                     monitorEvent.RemoteEndPoint = SIPEndPoint.ParseSIPEndPoint(remoteEndPointStr);
                 }
 
-                string dstEndPointStr = eventFields[6];
+                string dstEndPointStr = eventFields[8];
                 if (dstEndPointStr != null && dstEndPointStr.Trim().Length > 0)
                 {
                     monitorEvent.DestinationEndPoint = SIPEndPoint.ParseSIPEndPoint(dstEndPointStr);
                 }
 
-                monitorEvent.Username = eventFields[7];
-                monitorEvent.Message = eventFields[8].Trim('#');
+                monitorEvent.Username = eventFields[9];
+                monitorEvent.Message = eventFields[10].Trim('#');
 
                 return monitorEvent;
             }
@@ -198,6 +200,8 @@ namespace SIPSorcery.SIP.App
 
                 string csvEvent =
                     SERIALISATION_PREFIX + "|" +
+                    SessionID + "|" +
+                    MonitorServerID + "|" + 
                     ServerType + "|" +
                     EventType + "|" +
                     Created.ToString(SERIALISATION_DATETIME_FORMAT) + "|" +

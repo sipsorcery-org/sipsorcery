@@ -342,7 +342,7 @@ namespace SIPSorcery.SIP.App
                  "  <proxysipsocket>" + SafeXML.MakeSafeXML(ProxySIPSocket) + "</proxysipsocket>" + m_newLine +
                  "  <cdrid>" + SIPDialogue.CDRId + "</cdrid>" + m_newLine +
                  "  <calldurationlimit>" + SIPDialogue.CallDurationLimit + "</calldurationlimit>" + m_newLine +
-                 "  <inserted>" + Inserted.ToString() + "</inserted>" + m_newLine +
+                 "  <inserted>" + Inserted.ToString("dd MMM yyyy HH:mm:ss zz") + "</inserted>" + m_newLine +
                  "  <hangupat>" + hanupAtStr + "</hangupat>" + m_newLine +
                  "  <transfermode>" + TransferMode + "</transfermode>" + m_newLine +
                  "  <direction>" + Direction + "</direction>" + m_newLine +

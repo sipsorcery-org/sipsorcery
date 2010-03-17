@@ -5,13 +5,13 @@ using System.Linq;
 using System.ServiceModel;
 using System.Text;
 
-namespace SIPSorcery.SIP.App {
-
+namespace SIPSorcery.SIP.App
+{
     public delegate List<string> GetNotificationsDelegate(string address, out string sessionID, out string sessionError);
 
     //[ServiceContract(CallbackContract = typeof(ISIPMonitorNotificationReady), Namespace = "http://www.sipsorcery.com/notifications", ConfigurationName = "SIPSorcery.SIP.App.ISIPMonitorPublisher")]
     [ServiceContract(Namespace = "http://www.sipsorcery.com/notifications", ConfigurationName = "SIPSorcery.SIP.App.ISIPMonitorPublisher")]
-    public interface ISIPMonitorPublisher 
+    public interface ISIPMonitorPublisher
     {
         event Action<string> NotificationReady;
 
@@ -25,12 +25,18 @@ namespace SIPSorcery.SIP.App {
         /// <param name="adminId">The admin ID of the customer subscribing for monitor events.</param>
         /// <param name="address">The address identifier of the connection that events are being subscribed for over. A single 
         /// address can have multiple sessions and it maps 1-to-1 with the physical connection.</param>
+        /// <param name="sessionID">The session ID for this subscription.</param>
         /// <param name="subject">The type of filter being set. Can be one of ControlClient or Machine.</param>
         /// <param name="filter">The user provided filter for the monitor events. The filter tells the monitor event publisher what events
         /// this session is interested in.</param>
-        /// <returns>The session ID for the subscription request. Each matching monitor event will have a session ID set.</returns>
+        /// <param name="expiry">The duration in seconds that the subscription is being requested for.</param>
+        /// <param name="udpSocket">If set indicates a UDP socket that event notifications should be pushed to. If null the events will
+        /// be queued awating a pull request.</param>
+        /// <param name="subscribeError">If the subscribe attempt fails this parameter will hold an error message.</param>
+        /// <returns>If the subscription request is successful reflects the session ID for the subscription request, each matching monitor 
+        /// event will have a session ID set. If the subscription request fails null is returned.</returns>
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/Subscribe", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/SubscribeResponse")]
-        string Subscribe(string customerUsername, string adminId, string address, string subject, string filter, int expiry, out string subscribeError);
+        string Subscribe(string customerUsername, string adminId, string address, string sessionID, string subject, string filter, int expiry, string udpSocket, out string subscribeError);
 
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/GetNotifications", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/GetNotificationsResponse")]
         List<string> GetNotifications(string address, out string sessionID, out string sessionError);
@@ -40,6 +46,9 @@ namespace SIPSorcery.SIP.App {
 
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/IsNotificationReady", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/IsNotificationReadyResponse")]
         bool IsNotificationReady(string address);
+
+        [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/ExtendSession", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/ExtendSessionResponse")]
+        void ExtendSession(string address, string sessionID, int expiry);
 
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/CloseSession", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/CloseSessionResponse")]
         void CloseSession(string address, string sessionID);

@@ -55,7 +55,7 @@ namespace SIPSorcery.Servers
 {
     public class SIPRegistrarBindingsManager
     {
-        private struct NATKeepAliveJob
+        private class NATKeepAliveJob
         {
             public SIPEndPoint ProxyEndPoint;   // The proxy socket the NAT keep-alive packet should be sent from;
             public SIPEndPoint RemoteEndPoint;  // Where the NAT keep-alive packet should be sent by the proxy.
@@ -90,7 +90,7 @@ namespace SIPSorcery.Servers
         private const string EXPIRE_BINDINGS_THREAD_NAME = "sipregistrar-expirebindings";
         private const string SEND_KEEPALIVES_THREAD_NAME = "sipregistrar-natkeepalives";
         private const int CHECK_REGEXPIRY_DURATION = 1000;            // Period at which to check for expired bindings.
-        public const int NATKEEPALIVE_DEFAULTSEND_INTERVAL = 15;
+        public const int NATKEEPALIVE_DEFAULTSEND_INTERVAL = 10;
         private const int MAX_USERAGENT_LENGTH = 128;
         public const int MINIMUM_EXPIRY_SECONDS = 60;
         private const int DEFAULT_BINDINGS_PER_USER = 1;              // The default maixmim number of bindings that will be allowed for each unique SIP account.
@@ -392,10 +392,12 @@ namespace SIPSorcery.Servers
                 {
                     if (m_natKeepAliveJobs.ContainsKey(binding.RemoteSIPSocket))
                     {
+                        logger.Debug("Updating NAT keep-alive job for binding socket " + binding.RemoteSIPSocket + ".");
                         m_natKeepAliveJobs[binding.RemoteSIPSocket].Update(proxySIPEndPoint, DateTime.Now.AddSeconds(bindingExpiry));
                     }
                     else
                     {
+                        logger.Debug("Adding NAT keep-alive job for binding socket " + binding.RemoteSIPSocket + ".");
                         m_natKeepAliveJobs.Add(binding.RemoteSIPSocket, new NATKeepAliveJob(proxySIPEndPoint, remoteSIPEndPoint, DateTime.Now.AddSeconds(bindingExpiry), sipAccount.Owner));
                     }
                 }
@@ -459,6 +461,7 @@ namespace SIPSorcery.Servers
                                 {
                                     if (!jobsToRemove.Contains(job.RemoteEndPoint.ToString()))
                                     {
+                                        logger.Debug("Removing NAT keep-alive job for binding socket " + job.RemoteEndPoint.ToString() + ".");
                                         jobsToRemove.Add(job.RemoteEndPoint.ToString());
                                     }
                                 }

@@ -57,22 +57,35 @@ namespace SIPSorcery.SIP
 
     public class SIPConnection
     {
-        private ILog logger = AssemblyState.logger;
+        private static ILog logger = AssemblyState.logger;
 
-        public static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_LENGTH;
+        public static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH;
         private static string m_sipEOL = SIPConstants.CRLF;
         private static string m_sipMessageDelimiter = SIPConstants.CRLF + SIPConstants.CRLF;
 
         public Stream SIPStream;
+        public Socket SIPSocket;
         public IPEndPoint RemoteEndPoint;
         public SIPProtocolsEnum ConnectionProtocol;
         public SIPConnectionsEnum ConnectionType;
         public DateTime LastTransmission;           // Records when a SIP packet was last sent or received.
+        public byte[] SocketBuffer = new byte[2 * MaxSIPTCPMessageSize];
+        public int SocketBufferEndPosition = 0;
 
         private SIPChannel m_owningChannel;
 
         public event SIPMessageReceivedDelegate SIPMessageReceived;
         public event SIPConnectionDisconnectedDelegate SIPSocketDisconnected = (ep) => { };
+
+        public SIPConnection(SIPChannel channel, Socket sipSocket, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
+        {
+            LastTransmission = DateTime.Now;
+            m_owningChannel = channel;
+            SIPSocket = sipSocket;
+            RemoteEndPoint = remoteEndPoint;
+            ConnectionProtocol = connectionProtocol;
+            ConnectionType = connectionType;
+        }
 
         public SIPConnection(SIPChannel channel, Stream sipStream, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
         {
@@ -82,77 +95,80 @@ namespace SIPSorcery.SIP
             RemoteEndPoint = remoteEndPoint;
             ConnectionProtocol = connectionProtocol;
             ConnectionType = connectionType;
-            //SocketBuffer = new byte[MaxSIPTCPMessageSize];
         }
 
-        public void ReceiveCallback(IAsyncResult ar)
+        /// <summary>
+        /// Processes the receive buffer after a read from the connected socket.
+        /// </summary>
+        /// <param name="bytesRead">The number of bytes that were read into the receive buffer.</param>
+        /// <returns>True if the receive was processed correctly, false if the socket returned 0 bytes or was disconnected.</returns>
+        public bool SocketReadCompleted(int bytesRead)
         {
             try
             {
-                int bytesRead = SIPStream.EndRead(ar);
-                byte[] receiveBuffer = (byte[])ar.AsyncState;
-
                 if (bytesRead > 0)
                 {
-                    int receivePosition = 0;
-                    byte[] sipMsgBuffer = ProcessReceive(receiveBuffer, 0, bytesRead);
+                    SocketBufferEndPosition += bytesRead;
+                    int bytesSkipped = 0;
+
+                    // Attempt to extract a SIP message from the receive buffer.
+                    byte[] sipMsgBuffer = SIPConnection.ProcessReceive(SocketBuffer, 0, SocketBufferEndPosition, out bytesSkipped);
 
                     while (sipMsgBuffer != null)
                     {
-                        receivePosition += sipMsgBuffer.Length;
-
+                        // A SIP message is available.
                         if (SIPMessageReceived != null)
                         {
                             LastTransmission = DateTime.Now;
                             SIPMessageReceived(m_owningChannel, new SIPEndPoint(SIPProtocolsEnum.tcp, RemoteEndPoint), sipMsgBuffer);
                         }
 
-                        if (sipMsgBuffer.Length == bytesRead)
+                        SocketBufferEndPosition -= (sipMsgBuffer.Length + bytesSkipped);
+
+                        if (SocketBufferEndPosition == 0)
                         {
+                            //Array.Clear(SocketBuffer, 0, SocketBuffer.Length);
                             break;
                         }
                         else
                         {
-                            sipMsgBuffer = ProcessReceive(receiveBuffer, receivePosition, bytesRead);
+                            // Do a left shift on the receive array.
+                            Array.Copy(SocketBuffer, sipMsgBuffer.Length + bytesSkipped, SocketBuffer, 0, SocketBufferEndPosition);
+                            //Array.Clear(SocketBuffer, SocketBufferEndPosition, SocketBuffer.Length - SocketBufferEndPosition);
+
+                            // Try and extract another SIP message from the receive buffer.
+                            sipMsgBuffer = SIPConnection.ProcessReceive(SocketBuffer, 0, SocketBufferEndPosition, out bytesSkipped);
                         }
                     }
 
-                    int bytesLeftOver = 0;
-                    if (receivePosition != bytesRead)
-                    {
-                        bytesLeftOver = bytesRead - receivePosition;
-                    }
-
-                    byte[] nextReceiveBuffer = new byte[MaxSIPTCPMessageSize + bytesLeftOver];
-                    if (bytesLeftOver > 0)
-                    {
-                        // Copy the unprocessed portion of the current receive buffer into the start if the next receive buffer.
-                        Array.Copy(receiveBuffer, receivePosition, nextReceiveBuffer, 0, bytesLeftOver);
-                    }
-
-                    SIPStream.BeginRead(nextReceiveBuffer, bytesLeftOver, MaxSIPTCPMessageSize + bytesLeftOver, new AsyncCallback(ReceiveCallback), nextReceiveBuffer);
+                    return true;
                 }
                 else
                 {
                     //logger.Debug("SIP " + ConnectionProtocol + " socket to " + RemoteEndPoint + " was disconnected, closing.");
-                    SIPStream.Close();
+                    //SIPStream.Close();
+                    Close();
                     SIPSocketDisconnected(RemoteEndPoint);
+
+                    return false;
                 }
             }
             catch (ObjectDisposedException)
             {
                 // Will occur if the owning channel closed the connection.
                 SIPSocketDisconnected(RemoteEndPoint);
+                return false;
             }
             catch (SocketException)
             {
                 // Will occur if the owning channel closed the connection.
                 SIPSocketDisconnected(RemoteEndPoint);
+                return false;
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ReceiveCallback. " + excp.Message);
-                SIPSocketDisconnected(RemoteEndPoint);
+                logger.Error("Exception SIPConnection SocketReadCompleted. " + excp.Message);
+                throw;
             }
         }
 
@@ -165,19 +181,39 @@ namespace SIPSorcery.SIP
         /// <param name="start">The position in the buffer to start parsing for a SIP message.</param>
         /// <param name="length">The position in the buffer that indicates the end of the received bytes.</param>
         /// <returns>A byte array holding a full SIP message or if no full SIP messages are avialble null.</returns>
-        public static byte[] ProcessReceive(byte[] receiveBuffer, int start, int length)
+        private static byte[] ProcessReceive(byte[] receiveBuffer, int start, int length, out int bytesSkipped)
         {
-            int endMessageIndex = ByteBufferInfo.GetStringPosition(receiveBuffer, start, length, m_sipMessageDelimiter, null);
-            if (endMessageIndex != -1)
+            // NAT keep-alives can be interspersed between SIP messages. Treat any non-letter character
+            // at the start of a receive as a non SIP transmission and skip over it.
+            bytesSkipped = 0;
+            bool letterCharFound = false;
+            while (!letterCharFound && start < length)
             {
-                int contentLength = GetContentLength(receiveBuffer, start, endMessageIndex);
-                int messageLength = endMessageIndex - start + m_sipMessageDelimiter.Length + contentLength;
-
-                if (receiveBuffer.Length >= messageLength)
+                if ((int)receiveBuffer[start] >= 65)
                 {
-                    byte[] sipMsgBuffer = new byte[messageLength];
-                    Buffer.BlockCopy(receiveBuffer, start, sipMsgBuffer, 0, messageLength);
-                    return sipMsgBuffer;
+                    break;
+                }
+                else
+                {
+                    start++;
+                    bytesSkipped++;
+                }
+            }
+
+            if (start < length)
+            {
+                int endMessageIndex = ByteBufferInfo.GetStringPosition(receiveBuffer, start, length, m_sipMessageDelimiter, null);
+                if (endMessageIndex != -1)
+                {
+                    int contentLength = GetContentLength(receiveBuffer, start, endMessageIndex);
+                    int messageLength = endMessageIndex - start + m_sipMessageDelimiter.Length + contentLength;
+
+                    if (length - start >= messageLength)
+                    {
+                        byte[] sipMsgBuffer = new byte[messageLength];
+                        Buffer.BlockCopy(receiveBuffer, start, sipMsgBuffer, 0, messageLength);
+                        return sipMsgBuffer;
+                    }
                 }
             }
 
@@ -295,9 +331,28 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public void Close()
+        {
+            try
+            {
+                if (SIPSocket != null)
+                {
+                    SIPSocket.Close();
+                }
+                else
+                {
+                    SIPStream.Close();
+                }
+            }
+            catch (Exception closeExcp)
+            {
+                logger.Warn("Exception closing socket in SIPConnection Close. " + closeExcp.Message);
+            }
+        }
+
         #region Unit testing.
 
-#if UNITTEST
+        #if UNITTEST
 
         [TestFixture]
         public class SIPConnectionUnitTest
@@ -464,7 +519,8 @@ Event: dialog
 ";
                 byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
-                byte[] parsedNotifyBytes = ProcessReceive(notifyRequestBytes, 0, notifyRequestBytes.Length);
+                int skippedBytes = 0;
+                byte[] parsedNotifyBytes = ProcessReceive(notifyRequestBytes, 0, notifyRequestBytes.Length, out skippedBytes);
 
                 Assert.IsTrue(notifyRequestBytes.Length == parsedNotifyBytes.Length, "The length of the parsed byte array was incorrect.");
             }
@@ -571,7 +627,8 @@ a=rtpmap:101 telephone-event/8000
 
                 byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
-                byte[] parsedNotifyBytes = ProcessReceive(notifyRequestBytes, 0, notifyRequestBytes.Length);
+                int skippedBytes = 0;
+                byte[] parsedNotifyBytes = ProcessReceive(notifyRequestBytes, 0, notifyRequestBytes.Length, out skippedBytes);
 
                 Assert.IsTrue(notifyRequestBytes.Length == parsedNotifyBytes.Length, "The length of the parsed byte array was incorrect.");
             }
@@ -631,13 +688,14 @@ Server: www.sipsorcery.com
 ";
                 byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-                byte[] request1Bytes = ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length);
+                int skippedBytes = 0;
+                byte[] request1Bytes = ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length, out skippedBytes);
                 Console.WriteLine("Request1=" + UTF8Encoding.UTF8.GetString(request1Bytes));
 
-                byte[] request2Bytes = ProcessReceive(testReceiveBytes, request1Bytes.Length, testReceiveBytes.Length);
+                byte[] request2Bytes = ProcessReceive(testReceiveBytes, request1Bytes.Length, testReceiveBytes.Length, out skippedBytes);
                 Console.WriteLine("Request2=" + UTF8Encoding.UTF8.GetString(request2Bytes));
 
-                byte[] response1Bytes = ProcessReceive(testReceiveBytes, request1Bytes.Length + request2Bytes.Length, testReceiveBytes.Length);
+                byte[] response1Bytes = ProcessReceive(testReceiveBytes, request1Bytes.Length + request2Bytes.Length, testReceiveBytes.Length, out skippedBytes);
                 Console.WriteLine("Response1=" + UTF8Encoding.UTF8.GetString(response1Bytes));
 
                 Assert.IsTrue(request1Bytes.Length + request2Bytes.Length + response1Bytes.Length == testReceiveBytes.Length, "The length of the parsed requests and responses was incorrect.");
@@ -669,7 +727,8 @@ includesdp=tru";
                 
                 byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-                byte[] request1Bytes = ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length);
+                int skippedBytes = 0;
+                byte[] request1Bytes = ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length, out skippedBytes);
 
                 Assert.IsNull(request1Bytes, "The parsed bytes should have been empty.");
             }
@@ -700,9 +759,240 @@ includesdp=true!";
 
                 byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-                byte[] request1Bytes = ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length);
+                int skippedBytes = 0;
+                byte[] request1Bytes = ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length, out skippedBytes);
 
                 Assert.IsTrue(request1Bytes.Length == testReceiveBytes.Length - 1, "The parsed bytes was an incorrect length.");
+            }
+
+            /// <summary>
+            /// Test parsing a request where the array contains enough data but the end position of the valid data in the array is short.
+            /// This will occur when using a fixed length buffer to receive data and the position of the received data is less than the length
+            /// of the receive array.
+            /// </summary>
+            [Test]
+            public void ParseRequestBytesReadShortTest()
+            {
+                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                string testReceive =
+                @"SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0
+Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport
+To: <sip:aaron@10.1.1.5>
+From: <sip:switchboard@10.1.1.5>;tag=1902440575
+Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a
+CSeq: 3 SUBSCRIBE
+Contact: <sip:10.1.1.5:62647;transport=tcp>
+Max-Forwards: 70
+Expires: 600
+Content-Length: 15
+Content-Type: text/text
+Event: dialog
+
+include                                               ";
+
+                byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
+
+                int skippedBytes = 0;
+                byte[] request1Bytes = ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length - 100, out skippedBytes);
+
+                Assert.IsNull(request1Bytes, "A request array should not have been returned.");
+            }
+
+            /// <summary>
+            /// Test that parsing a request works when there are some leading bytes related to a NAT keep alive transmission.
+            /// </summary>
+            [Test]
+            public void ParseRequestWithLeadingNATKeepAliveBytesTest()
+            {
+                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                string testReceive =
+                @"    SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0
+Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport
+To: <sip:aaron@10.1.1.5>
+From: <sip:switchboard@10.1.1.5>;tag=1902440575
+Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a
+CSeq: 3 SUBSCRIBE
+Contact: <sip:10.1.1.5:62647;transport=tcp>
+Max-Forwards: 70
+Expires: 600
+Content-Length: 15
+Content-Type: text/text
+Event: dialog
+
+includesdp=true";
+
+                byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
+
+                int skippedBytes = 0;
+                byte[] request1Bytes = ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length, out skippedBytes);
+
+                Console.WriteLine(Encoding.UTF8.GetString(request1Bytes));
+
+                Assert.IsNotNull(request1Bytes, "The parsed bytes should have been populated.");
+                Assert.IsTrue(skippedBytes == 4, "The number of skipped bytes was incorrect.");
+            }
+
+            /// <summary>
+            /// Tests that a socket read leaves the buffers and positions in the correct state.
+            /// </summary>
+            [Test]
+            public void TestSocketReadSingleMessageTest()
+            {
+                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                string testReceive =
+@"SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0
+Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport
+To: <sip:aaron@10.1.1.5>
+From: <sip:switchboard@10.1.1.5>;tag=1902440575
+Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a
+CSeq: 3 SUBSCRIBE
+Contact: <sip:10.1.1.5:62647;transport=tcp>
+Max-Forwards: 70
+Expires: 600
+Content-Length: 15
+Content-Type: text/text
+Event: dialog
+
+includesdp=true";
+
+                byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
+
+                SIPConnection testConnection = new SIPConnection(null, (Stream)null, null, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+                Array.Copy(testReceiveBytes, testConnection.SocketBuffer, testReceiveBytes.Length);
+
+                bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length);
+
+                Assert.IsTrue(result, "The result of processing the receive should have been true.");
+                Assert.IsTrue(testConnection.SocketBufferEndPosition == 0, "The receive buffer end position should have been 0.");
+            }
+
+            /// <summary>
+            /// Tests that processing a buffer with a SIP message and some preceeding spurious characters skips the correct number of bytes.
+            /// </summary>
+            [Test]
+            public void TestProcessRecevieWithBytesToSkipTest()
+            {
+                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                string testReceive =
+@"            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0
+Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport
+To: <sip:aaron@10.1.1.5>
+From: <sip:switchboard@10.1.1.5>;tag=1902440575
+Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a
+CSeq: 3 SUBSCRIBE
+Contact: <sip:10.1.1.5:62647;transport=tcp>
+Max-Forwards: 70
+Expires: 600
+Content-Length: 15
+Content-Type: text/text
+Event: dialog
+
+includesdp=true";
+
+                byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
+
+                int bytesSkipped = 0;
+                byte[] result = SIPConnection.ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length, out bytesSkipped);
+
+                Assert.IsNotNull(result, "The resultant array should not have been null.");
+                Assert.IsTrue(bytesSkipped == 12, "The bytes skipped was incorrect.");
+            }
+
+            /// <summary>
+            /// Tests that a socket read leaves the buffers and positions in the correct state when the SIP message has spurious characters
+            /// preceeding the transmission.
+            /// </summary>
+            [Test]
+            public void TestSocketReadWithBytesToSkipTest()
+            {
+                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                string testReceive =
+@"            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0
+Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport
+To: <sip:aaron@10.1.1.5>
+From: <sip:switchboard@10.1.1.5>;tag=1902440575
+Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a
+CSeq: 3 SUBSCRIBE
+Contact: <sip:10.1.1.5:62647;transport=tcp>
+Max-Forwards: 70
+Expires: 600
+Content-Length: 15
+Content-Type: text/text
+Event: dialog
+
+includesdp=true";
+
+                byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
+
+                SIPConnection testConnection = new SIPConnection(null, (Stream)null, null, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+                int sipMessages = 0;
+                testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
+                Array.Copy(testReceiveBytes, testConnection.SocketBuffer, testReceiveBytes.Length);
+
+                bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length);
+
+                Assert.IsTrue(result, "The result from processing the socket read should have been true.");
+                Assert.IsTrue(sipMessages == 1, "The number of SIP messages parsed was incorrect.");
+                Assert.IsTrue(testConnection.SocketBufferEndPosition == 0, "The receive buffer end position was incorrect.");
+            }
+
+            /// <summary>
+            /// Tests that a socket read leaves the buffers and positions in the correct state when the receive contains multiple 
+            /// SIP message has spurious characters preceeding the transmission.
+            /// </summary>
+            [Test]
+            public void TestSocketReadWithTwoMessagesAndBytesToSkipTest()
+            {
+                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                string testReceive =
+@"            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0
+Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport
+To: <sip:aaron@10.1.1.5>
+From: <sip:switchboard@10.1.1.5>;tag=1902440575
+Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a
+CSeq: 3 SUBSCRIBE
+Contact: <sip:10.1.1.5:62647;transport=tcp>
+Max-Forwards: 70
+Expires: 600
+Content-Length: 15
+Content-Type: text/text
+Event: dialog
+
+includesdp=true       
+
+ 
+ SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0
+Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport
+To: <sip:aaron@10.1.1.5>
+From: <sip:switchboard@10.1.1.5>;tag=1902440575
+Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a
+CSeq: 3 SUBSCRIBE
+
+SUBSCRIBE sip:aaron@10.1.1";
+
+                byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
+
+                SIPConnection testConnection = new SIPConnection(null, (Stream)null, null, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+                int sipMessages = 0;
+                testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
+                Array.Copy(testReceiveBytes, testConnection.SocketBuffer, testReceiveBytes.Length);
+
+                bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length);
+                string remainingBytes =  Encoding.UTF8.GetString(testConnection.SocketBuffer, 0, testConnection.SocketBufferEndPosition);
+
+                Console.WriteLine("SocketBufferEndPosition=" + testConnection.SocketBufferEndPosition + ".");
+                Console.WriteLine("SocketBuffer=" + remainingBytes + ".");
+
+                Assert.IsTrue(result, "The result from processing the socket read should have been true.");
+                Assert.IsTrue(sipMessages == 2, "The number of SIP messages parsed was incorrect.");
+                Assert.IsTrue(testConnection.SocketBufferEndPosition == 26, "The receive buffer end position was incorrect.");
+                Assert.IsTrue(remainingBytes == "SUBSCRIBE sip:aaron@10.1.1", "The leftover bytes in the socket buffer were incorrect.");
             }
         }
 
