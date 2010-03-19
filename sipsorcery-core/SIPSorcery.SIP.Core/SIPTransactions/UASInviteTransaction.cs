@@ -53,6 +53,11 @@ namespace SIPSorcery.SIP
     {
         private static string m_sipServerAgent = SIPConstants.SIP_SERVER_STRING;
 
+        public string LocalTag
+        {
+            get { return m_localTag; }
+        }
+
         public event SIPTransactionCancelledDelegate UASInviteTransactionCancelled;
         public event SIPTransactionRequestReceivedDelegate NewCallReceived;
         public event SIPTransactionTimedOutDelegate UASInviteTransactionTimedOut;

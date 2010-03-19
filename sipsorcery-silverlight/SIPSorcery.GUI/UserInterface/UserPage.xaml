@@ -25,7 +25,6 @@
 				</ToolTipService.ToolTip>
 			</Ellipse>
 			<TextBlock Cursor="Hand" x:Name="m_callsLink" Width="29" Foreground="{StaticResource NormalTextBrush}" Text="Calls" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="CallsLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="224.079,0,0,0"/>
-			<TextBlock Cursor="Hand" x:Name="m_switchboardLink" Width="70" Foreground="{StaticResource NormalTextBrush}" Text="Switchboard" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="SwitchboardLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="305,0,0,0" Visibility="Collapsed"/>
 			<Image Margin="0,0,0,-181" Source="../Images/small_logo.png" Stretch="None" VerticalAlignment="Top" HorizontalAlignment="Center"/>
 			<TextBlock Cursor="Hand" x:Name="m_helpLink" Width="29" Foreground="{StaticResource NormalTextBrush}" Text="Help" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="HelpLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,202,0"/>
 			<TextBlock Cursor="Hand" x:Name="m_settingsLink" Width="95" Foreground="{StaticResource NormalTextBrush}" Text="Account Settings" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="SettingsLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,76,0"/>

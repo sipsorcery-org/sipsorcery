@@ -613,13 +613,18 @@ namespace SIPSorcery.AppServer.DialPlan
                                     providerURI.ToString(),
                                     fromHeader.ToString(),
                                     providerURI.ToString(),
-                                    (provider.ProviderOutboundProxy != null && provider.ProviderOutboundProxy.Trim().Length > 0) ? provider.ProviderOutboundProxy.Trim() : null,
+                                    null,
                                     SIPCallDescriptor.ParseCustomHeaders(SubstituteRequestVars(sipRequest, provider.CustomHeaders)),
                                     provider.ProviderAuthUsername,
                                     SIPCallDirection.Out,
                                     contentType,
                                     content,
                                     publicSDPAddress);
+
+                                if (!provider.ProviderOutboundProxy.IsNullOrBlank())
+                                {
+                                    sipCallDescriptor.ProxySendFrom = provider.ProviderOutboundProxy.Trim();
+                                }
 
                                 providerFound = true;
 

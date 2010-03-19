@@ -7,6 +7,7 @@ using System.Threading;
 using SIPSorcery.Persistence;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using log4net;
 
 namespace SIPSorcery.SIPRegistrationAgent
 {
@@ -16,6 +17,8 @@ namespace SIPSorcery.SIPRegistrationAgent
         private static readonly string m_connStrKey = SIPSorceryConfiguration.PERSISTENCE_STORAGECONNSTR_KEY;
         private static readonly string m_sipProvidersXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_SIPPROVIDERS_FILENAME;
         private static readonly string m_sipProviderBindingsXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_PROVIDER_BINDINGS_FILENAME;
+
+        private static ILog logger = AppState.logger;
 
         private static ManualResetEvent m_regAgentUp = new ManualResetEvent(false);
 
@@ -65,8 +68,7 @@ namespace SIPSorcery.SIPRegistrationAgent
             catch (Exception excp)
             {
                 Console.WriteLine("Exception Main. " + excp.Message);
-                Console.WriteLine("press any key to exit...");
-                Console.ReadLine();
+                logger.Error("Exception Main. " + excp.Message);
             }
         }
 
@@ -76,7 +78,6 @@ namespace SIPSorcery.SIPRegistrationAgent
         /// </summary>
         private static void SynchroniseBindings(SIPAssetPersistor<SIPProvider> sipProvidersPersistor, SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor)
         {
-
             Console.WriteLine("Synchronising SIP Provider bindings.");
 
             List<SIPProvider> sipProviders = sipProvidersPersistor.Get(null, null, 0, Int32.MaxValue);

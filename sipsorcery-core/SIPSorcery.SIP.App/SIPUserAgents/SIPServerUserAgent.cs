@@ -1,3 +1,4 @@
+
 //-----------------------------------------------------------------------------
 // Filename: SIPServerUserAgent.cs
 //
@@ -50,6 +51,9 @@ using NUnit.Framework;
 
 namespace SIPSorcery.SIP.App
 {
+    /// <remarks>
+    /// A To tag MUST be set on all non 100 Trying responses, see RFC 3261 "8.2.6.2 Headers and Tags".
+    /// </remarks>
     public class SIPServerUserAgent : ISIPServerUserAgent
     {
         private static ILog logger = AssemblyState.logger;
@@ -300,6 +304,11 @@ namespace SIPSorcery.SIP.App
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "UAS call progressing with " + progressStatus + ".", m_owner));
                             SIPResponse progressResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, progressStatus, reasonPhrase);
+
+                            if (progressResponse.Status != SIPResponseStatusCodesEnum.Trying)
+                            {
+                                progressResponse.Header.To.ToTag = m_uasTransaction.LocalTag;
+                            }
 
                             if (!progressBody.IsNullOrBlank())
                             {

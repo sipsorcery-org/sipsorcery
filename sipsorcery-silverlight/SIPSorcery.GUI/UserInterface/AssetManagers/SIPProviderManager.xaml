@@ -56,6 +56,12 @@
 		                    Binding="{Binding ProviderServer}" 
 							IsReadOnly="True"
 							MinWidth="120"/>
+						<data:DataGridTextColumn 
+		                    Header="Proxy" 
+		                    Width="SizeToCells"
+		                    Binding="{Binding ProviderOutboundProxy}" 
+							IsReadOnly="True"
+							MinWidth="120"/>
 						<data:DataGridCheckBoxColumn 
 		                    Header="Register" 
 		                    Width="SizeToCells"

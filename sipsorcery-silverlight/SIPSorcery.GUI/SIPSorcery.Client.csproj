@@ -128,12 +128,8 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\CallManager\SIPCallManager.xaml">
-      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
-    </Page>
-    <Page Include="UserInterface\CallManager\SIPSwitchboard.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
-      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\CreateAccountControl.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -181,8 +177,9 @@
     <Compile Include="UserInterface\About.xaml.cs">
       <DependentUpon>About.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UserInterface\CallManager\SIPSwitchboard.xaml.cs">
-      <DependentUpon>SIPSwitchboard.xaml</DependentUpon>
+    <Compile Include="UserInterface\CallManager\SIPCallManager.xaml.cs">
+      <DependentUpon>SIPCallManager.xaml</DependentUpon>
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="UserInterface\CustomerSettingsControl.xaml.cs">
       <DependentUpon>CustomerSettingsControl.xaml</DependentUpon>
@@ -218,9 +215,6 @@
     </Compile>
     <Compile Include="UserInterface\AssetManagers\SIPProviderManager.xaml.cs">
       <DependentUpon>SIPProviderManager.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserInterface\CallManager\SIPCallManager.xaml.cs">
-      <DependentUpon>SIPCallManager.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\CreateAccountControl.xaml.cs">
       <DependentUpon>CreateAccountControl.xaml</DependentUpon>

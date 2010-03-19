@@ -69,6 +69,7 @@ namespace SIPSorcery.SIPNotifier
             catch (Exception excp)
             {
                 Console.WriteLine("Exception Main. " + excp.Message);
+                logger.Error("Exception Main. " + excp.Message);
             }
         }
     }

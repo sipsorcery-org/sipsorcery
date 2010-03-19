@@ -87,10 +87,6 @@ namespace SIPSorcery.Servers
         private static readonly string m_userAgentString = SIPConstants.SIP_USERAGENT_STRING;
         private static readonly string m_regAgentContactId = SIPProviderBinding.REGAGENT_CONTACT_ID_KEY;
 
-        //private static string m_selectBinding = SIPProviderBinding.SelectBinding;
-        //private static string m_selectNextScheduledBinding = SIPProviderBinding.SelectNextScheduledBinding;
-        //private static string m_selectSIPProvider = SIPProvider.SelectProvider;
-
         private bool m_sendRegisters = true;    // While true the register agent thread will send out register requests to maintain it's registrations.
         private int m_bindingsProcessedCount = 0;
 
@@ -101,7 +97,6 @@ namespace SIPSorcery.Servers
 
         private SIPMonitorLogDelegate StatefulProxyLogEvent_External;
         private SIPAssetGetByIdDelegate<SIPProvider> GetSIPProviderById_External;
-        //private SIPAssetGetFromDirectQueryDelegate<SIPProvider> GetSIPProviderByDirectQuery_External;
         private SIPAssetUpdateDelegate<SIPProvider> UpdateSIPProvider_External;
         private SIPAssetPersistor<SIPProviderBinding> m_bindingPersistor;
 
@@ -598,6 +593,11 @@ namespace SIPSorcery.Servers
                     m_bindingPersistor.Update(binding);
                     FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegistered, "Contact successfully registered for " + binding.Owner + " on " + binding.RegistrarServer.ToString() + ", expiry " + binding.BindingExpiry + "s.", binding.Owner));
                     RemoveCachedBinding(binding.Id);
+
+                    if (sipResponse.Header.ProxyReceivedOn != null)
+                    {
+                        UpdateSIPProviderOutboundProxy(binding.ProviderId, sipResponse.Header.ProxyReceivedOn);
+                    }
                 }
             }
             catch (Exception excp)
@@ -759,7 +759,6 @@ namespace SIPSorcery.Servers
             try
             {
                 SIPProvider sipProvider = GetSIPProviderById_External(providerId);
-                //SIPProvider sipProvider = GetSIPProviderByDirectQuery_External(m_selectSIPProvider, new SqlParameter("1", providerId.ToString()));
                 sipProvider.RegisterEnabled = false;
                 sipProvider.RegisterDisabledReason = disabledReason;
                 UpdateSIPProvider_External(sipProvider);
@@ -767,6 +766,23 @@ namespace SIPSorcery.Servers
             catch (Exception excp)
             {
                 logger.Error("Exception DisableSIPProviderRegistration. " + excp.Message);
+            }
+        }
+
+        private void UpdateSIPProviderOutboundProxy(Guid providerId, string outboundProxy)
+        {
+            try
+            {
+                SIPProvider sipProvider = GetSIPProviderById_External(providerId);
+                if (sipProvider.ProviderOutboundProxy != outboundProxy)
+                {
+                    sipProvider.ProviderOutboundProxy = outboundProxy;
+                    UpdateSIPProvider_External(sipProvider);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception UpdateSIPProviderOutboundProxy. " + excp.Message);
             }
         }
 

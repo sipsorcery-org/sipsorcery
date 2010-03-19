@@ -47,9 +47,9 @@
 					<TextBlock Height="16" Width="142.295" Text="show advanced settings" TextWrapping="Wrap" Foreground="Purple" TextDecorations="Underline" Cursor="Hand" d:LayoutOverrides="Height" MouseLeftButtonUp="AdvancedSettings_MouseLeftButtonUp" Margin="8,5,0,0" HorizontalAlignment="Left" x:Name="m_advancedSettingsMenu"/>
 				</StackPanel>
 				<StackPanel Height="Auto" x:Name="m_advancedProviderSettings" Width="473">
-					<Canvas Height="20" x:Name="m_providerOutboundProxyCanvas" Width="457" Margin="0,2,0,2">
-						<TextBlock TextWrapping="Wrap" Text="Outbound Proxy" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerOutboundProxyHeading" Canvas.Left="8" Canvas.Top="0" />
-						<TextBox Text="" FontSize="12" x:Name="m_providerOutboundProxy" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="250" Canvas.Left="120"/>
+					<Canvas Height="20" x:Name="m_providerRegisterRealmCanvas" Width="457" Margin="8,2">
+						<TextBlock TextWrapping="Wrap" Text="Realm" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerRegisterRealmHeading" Canvas.Left="8" Canvas.Top="0" />
+						<TextBox Text="" FontSize="12" x:Name="m_providerRegisterRealm" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="200" Canvas.Left="120"/>
 					</Canvas>
 					<Canvas Height="20" x:Name="m_providerAuthUsernameCanvas" Width="457" Margin="0,2,0,2">
 						<TextBlock TextWrapping="Wrap" Text="Auth Username" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerAuthUsernameHeading" Canvas.Left="8" Canvas.Top="0" />
@@ -62,10 +62,6 @@
 					<Canvas Height="20" x:Name="m_providerRegisterExpiryCanvas" Width="457" Margin="0,2,0,2">
 						<TextBlock TextWrapping="Wrap" Text="Register Expiry" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerRegisterExpiryHeading" Canvas.Left="8" Canvas.Top="0" />
 						<TextBox Text="" FontSize="12" x:Name="m_providerRegisterExpiry" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="60" Canvas.Left="120" MaxLength="4" IsEnabled="False"/>
-					</Canvas>
-					<Canvas Height="20" x:Name="m_providerRegisterRealmCanvas" Width="457" Margin="0,2,0,2">
-						<TextBlock TextWrapping="Wrap" Text="Register Realm" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerRegisterRealmHeading" Canvas.Left="8" Canvas.Top="0" />
-						<TextBox Text="" FontSize="12" x:Name="m_providerRegisterRealm" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="250" Canvas.Left="120" IsEnabled="False"/>
 					</Canvas>
 					<Canvas Height="20" x:Name="m_providerRegisterServerCanvas" Width="457" Margin="0,2,0,2">
 						<TextBlock TextWrapping="Wrap" Text="Register Server" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerRegisterServerHeading" Canvas.Left="8" Canvas.Top="0" />

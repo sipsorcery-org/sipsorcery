@@ -62,7 +62,7 @@ namespace SIPSorcery
             m_sipTransport = new SIPTransport(ResolveSIPEndPoint, new SIPTransactionEngine());
             m_sipTransport.SIPTransportRequestReceived += SIPTransportRequestReceived;
             m_sipTransport.SIPTransportResponseReceived += SIPTransportResponseReceived;
-            m_sipChannel = new SilverlightTCPSIPChannel(new IPEndPoint(IPAddress.Any, 0));
+            m_sipChannel = new SilverlightTCPSIPChannel();
             m_sipTransport.AddSIPChannel(m_sipChannel);
             //m_dstEndPoint = new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Parse("10.1.1.5"), 4504));
             m_localEndPoint = new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Parse("0.0.0.0"), 0));

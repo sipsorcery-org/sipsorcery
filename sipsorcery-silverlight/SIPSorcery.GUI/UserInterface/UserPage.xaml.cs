@@ -46,7 +46,6 @@ namespace SIPSorcery
         private SIPProviderManager m_sipProviderManager;
         private SIPCallManager m_sipCallsManager;
         private MonitoringConsole m_monitorConsole;
-        private SIPSwitchboard m_switchboard;
         private CustomerSettingsControl m_customerSettings;
         private Timer m_sessionTimer;
         private Timer m_expiredTimer;
@@ -123,10 +122,6 @@ namespace SIPSorcery
             m_monitorConsole = new MonitoringConsole(LogActivityMessage, m_sipNotifierClient);
             m_monitorConsole.Visibility = Visibility.Collapsed;
             m_mainCanvas.Children.Add(m_monitorConsole);
-
-            m_switchboard = new SIPSwitchboard(LogActivityMessage, m_owner);
-            m_switchboard.Visibility = Visibility.Collapsed;
-            m_mainCanvas.Children.Add(m_switchboard);
 
             m_customerSettings = new CustomerSettingsControl(LogActivityMessage, Logout_External, m_persistor, m_owner);
             m_customerSettings.Visibility = Visibility.Collapsed;
@@ -362,7 +357,6 @@ namespace SIPSorcery
             m_sipProviderManager.Visibility = (m_sipProviderManager == control) ? Visibility.Visible : Visibility.Collapsed;
             m_sipCallsManager.Visibility = (m_sipCallsManager == control) ? Visibility.Visible : Visibility.Collapsed;
             m_monitorConsole.Visibility = (m_monitorConsole == control) ? Visibility.Visible : Visibility.Collapsed;
-            m_switchboard.Visibility = (m_switchboard == control) ? Visibility.Visible : Visibility.Collapsed;
             m_customerSettings.Visibility = (m_customerSettings == control) ? Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -514,13 +508,6 @@ namespace SIPSorcery
             {
                 LogActivityMessage(MessageLevelsEnum.Error, "Exception ShowActivityProgress. " + excp.Message);
             }
-        }
-
-        private void SwitchboardLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            SetActive(m_switchboard);
-            SetSelectedTextBlock(m_switchboardLink);
-            m_switchboard.Start();
         }
 
         private void SettingsLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)

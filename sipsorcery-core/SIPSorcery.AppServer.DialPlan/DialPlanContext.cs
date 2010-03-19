@@ -48,8 +48,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
     public class DialPlanContext
     {
-
-        private const string TRACE_FROM_ADDRESS = "siptrace@sipsorcery.com";
+        private const string TRACE_FROM_ADDRESS = "admin@sipsorcery.com";
         private const string TRACE_SUBJECT = "SIP Sorcery Trace";
 
         protected static ILog logger = AppState.GetLogger("dialplan");
