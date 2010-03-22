@@ -79,7 +79,7 @@ namespace SIPSorcery.SIP.App
         public const string EVENTTYPE_TROUBLE_VALUE = "trouble";
         public const string SIPREQUEST_INVITE_VALUE = "invite";
         public const string SIPREQUEST_REGISTER_VALUE = "register";
-        public const string SIPREQUEST_SIPEVENT_VALUE = "sipevent";
+        public const string SIPREQUEST_SUBSCRIBE_VALUE = "subscribe";
 
         public const string FILELOG_REQUEST_KEY = "file";
         public const string FILELOG_MINUTESDURATION_KEY = "duration";
@@ -447,7 +447,7 @@ namespace SIPSorcery.SIP.App
                                 return ShowRegex(consoleEvent.Message) && (ShowIPAddress(remoteIPAddress) || ShowIPAddress(dstIPAddress));
                             }
                         }
-                        else if (SIPRequestFilter == SIPREQUEST_SIPEVENT_VALUE)
+                        else if (SIPRequestFilter == SIPREQUEST_SUBSCRIBE_VALUE)
                         {
                             // Do a regex to pick out NOTIFYs and SUBSCRIBEs.
                             if (Regex.Match(consoleEvent.Message, "(NOTIFY|SUBSCRIBE) +?sips?:", RegexOptions.IgnoreCase).Success ||

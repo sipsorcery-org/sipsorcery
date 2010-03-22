@@ -18,6 +18,7 @@ namespace SIPSorcery.SIPNotifier
         private static readonly string m_connStrKey = SIPSorceryConfiguration.PERSISTENCE_STORAGECONNSTR_KEY;
         private static readonly string m_customersXMLFilename = SIPSorcery.CRM.CustomerSessionManager.CUSTOMERS_XML_FILENAME;
         private static readonly string m_sipAccountsXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_SIPACCOUNTS_FILENAME;
+        private static readonly string m_registrarBindingsXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_REGISTRAR_BINDINGS_FILENAME;
         private static readonly string m_sipDialoguesXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_SIPDIALOGUES_FILENAME;
 
         private static ILog logger = AppState.logger;
@@ -30,6 +31,8 @@ namespace SIPSorcery.SIPNotifier
         {
             try
             {
+                logger.Debug("SIP Notifier starting");
+
                 m_sipNotifierStorageType = (AppState.GetConfigSetting(m_storageTypeKey) != null) ? StorageTypesConverter.GetStorageType(AppState.GetConfigSetting(m_storageTypeKey)) : StorageTypes.Unknown; ;
                 m_sipNotifierStorageConnStr = AppState.GetConfigSetting(m_connStrKey);
 
@@ -45,18 +48,16 @@ namespace SIPSorcery.SIPNotifier
 
                 SIPAssetPersistor<Customer> customerPersistor = SIPAssetPersistorFactory<Customer>.CreateSIPAssetPersistor(m_sipNotifierStorageType, m_sipNotifierStorageConnStr, m_customersXMLFilename);
                 SIPAssetPersistor<SIPAccount> sipAccountsPersistor = SIPAssetPersistorFactory<SIPAccount>.CreateSIPAssetPersistor(m_sipNotifierStorageType, m_sipNotifierStorageConnStr, m_sipAccountsXMLFilename);
+                SIPAssetPersistor<SIPRegistrarBinding> sipRegistrarBindingsPersistor = SIPAssetPersistorFactory<SIPRegistrarBinding>.CreateSIPAssetPersistor(m_sipNotifierStorageType, m_sipNotifierStorageConnStr, m_registrarBindingsXMLFilename);
                 SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor = SIPAssetPersistorFactory<SIPDialogueAsset>.CreateSIPAssetPersistor(m_sipNotifierStorageType, m_sipNotifierStorageConnStr, m_sipDialoguesXMLFilename);
                 SIPDomainManager sipDomainManager = new SIPDomainManager(m_sipNotifierStorageType, m_sipNotifierStorageConnStr);
 
-                SIPNotifierDaemon daemon = new SIPNotifierDaemon(customerPersistor.Get, sipDialoguePersistor.Get, sipDomainManager.GetDomain, sipAccountsPersistor.Get, SIPRequestAuthenticator.AuthenticateSIPRequest, null);
+                SIPNotifierDaemon daemon = new SIPNotifierDaemon(customerPersistor.Get, sipDialoguePersistor.Get, sipDomainManager.GetDomain, sipAccountsPersistor.Get, sipRegistrarBindingsPersistor.Get, SIPRequestAuthenticator.AuthenticateSIPRequest, null);
 
                 if (args != null && args.Length == 1 && args[0].StartsWith("-c"))
                 {
-                    Console.WriteLine("SIP Notifier starting");
-
                     Thread daemonThread = new Thread(daemon.Start);
                     daemonThread.Start();
-
                     m_notifierUp.WaitOne();
                 }
                 else

@@ -47,8 +47,15 @@ namespace SIPSorcery.SIP.App
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/IsNotificationReady", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/IsNotificationReadyResponse")]
         bool IsNotificationReady(string address);
 
+        /// <summary>
+        /// Attempts to extend an existing notifications session.
+        /// </summary>
+        /// <param name="address">The address ID of the session.</param>
+        /// <param name="sessionID">The session ID of the session.</param>
+        /// <param name="expiry">The time in seconds to request the session be extended by.</param>
+        /// <returns>If the session extension is successful null is returned, if it fails an error message is returned.</returns>
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/ExtendSession", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/ExtendSessionResponse")]
-        void ExtendSession(string address, string sessionID, int expiry);
+        string ExtendSession(string address, string sessionID, int expiry);
 
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/CloseSession", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/CloseSessionResponse")]
         void CloseSession(string address, string sessionID);

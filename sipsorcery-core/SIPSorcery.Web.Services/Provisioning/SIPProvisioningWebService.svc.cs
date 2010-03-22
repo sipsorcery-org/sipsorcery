@@ -181,7 +181,7 @@ namespace SIPSorcery.Web.Services
         public bool AreNewAccountsEnabled()
         {
             logger.Debug("AreNewAccountsEnabled called from " + OperationContext.Current.Channel.RemoteAddress + ".");
-            return m_newCustomersAllowedLimit == 0 || CRMCustomerPersistor.Count(null) < m_newCustomersAllowedLimit;
+            return m_newCustomersAllowedLimit == 0 || CRMCustomerPersistor.Count(c => !c.Suspended) < m_newCustomersAllowedLimit;
         }
 
         public void CreateCustomer(Customer customer)

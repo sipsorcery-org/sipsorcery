@@ -260,6 +260,7 @@ namespace SIPSorcery.SIP.App
         public string ProviderAuthUsername;
         public string ProviderPassword;
         public string RegistrarRealm;
+        public string ProviderOutboundProxy;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -367,6 +368,7 @@ namespace SIPSorcery.SIP.App
             ProviderPassword = sipProvider.ProviderPassword;
             RegistrarServer = sipProvider.Registrar.CopyOf();
             RegistrarRealm = (!sipProvider.RegisterRealm.IsNullOrBlank()) ? sipProvider.RegisterRealm : RegistrarServer.Host;
+            ProviderOutboundProxy = sipProvider.ProviderOutboundProxy;
 
             if (sipProvider.RegisterEnabled) {
                 BindingExpiry = sipProvider.RegisterExpiry;
@@ -388,7 +390,7 @@ namespace SIPSorcery.SIP.App
             }
             else {
                 // The register contact field on the SIP Provider is empty. 
-                // This condition needs to be trearted as the binding being disbaled and it needs to be removed.
+                // This condition needs to be trearted as the binding being disabled and it needs to be removed.
                 BindingExpiry = 0;
             }
         }

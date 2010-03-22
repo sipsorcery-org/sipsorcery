@@ -81,7 +81,7 @@ namespace SIPSorcery.Servers
         private const int MAX_DNS_FAILURE_ATTEMPTS = 6;
         private const string DNS_FAILURE_MESSAGE_FORMAT = "DNS resolution failed, attempts";
         private const string THREAD_NAME_PREFIX = "regagent-";
-        private const int NUMBER_BINDINGS_PER_DB_ROUNDTRIP = 10;
+        private const int NUMBER_BINDINGS_PER_DB_ROUNDTRIP = 20;
 
         private static ILog logger = AppState.GetLogger("sipregagent");
         private static readonly string m_userAgentString = SIPConstants.SIP_USERAGENT_STRING;
@@ -98,6 +98,7 @@ namespace SIPSorcery.Servers
         private SIPMonitorLogDelegate StatefulProxyLogEvent_External;
         private SIPAssetGetByIdDelegate<SIPProvider> GetSIPProviderById_External;
         private SIPAssetUpdateDelegate<SIPProvider> UpdateSIPProvider_External;
+        private SIPAssetUpdatePropertyDelegate<SIPProvider> UpdateSIPProviderProperty_External;
         private SIPAssetPersistor<SIPProviderBinding> m_bindingPersistor;
 
         public SIPRegistrationAgentCore(
@@ -106,11 +107,13 @@ namespace SIPSorcery.Servers
             SIPEndPoint outboundProxy,
             SIPAssetGetByIdDelegate<SIPProvider> getSIPProviderById,
             SIPAssetUpdateDelegate<SIPProvider> updateSIPProvider,
+            SIPAssetUpdatePropertyDelegate<SIPProvider> updateSIPProviderProperty,
             SIPAssetPersistor<SIPProviderBinding> bindingPersistor)
         {
             StatefulProxyLogEvent_External = logDelegate;
             GetSIPProviderById_External = getSIPProviderById;
             UpdateSIPProvider_External = updateSIPProvider;
+            UpdateSIPProviderProperty_External = updateSIPProviderProperty;
             m_bindingPersistor = bindingPersistor;
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
@@ -118,24 +121,12 @@ namespace SIPSorcery.Servers
 
         public void Start(int threadCount)
         {
-            logger.Debug("SIPRegistrationAgent thread started.");
-            /*ThreadPool.QueueUserWorkItem(delegate
-            {
-                while (m_sendRegisters)
-                {
-                    logger.Warn("PROCESSED COUNT=" + m_bindingsProcessedCount + ".");
-                    m_bindingsProcessedCount = 0;
-
-                    Thread.Sleep(15000);
-                }
-            }
-           );*/
-
-            logger.Debug("Starting " + threadCount + " monitor registration threads.");
+            logger.Debug("SIPRegistrationAgent thread started with " + threadCount + " threads.");
 
             for (int index = 1; index <= threadCount; index++)
             {
-                ThreadPool.QueueUserWorkItem(delegate { MonitorRegistrations(THREAD_NAME_PREFIX + threadCount); });
+                string threadSuffix = index.ToString();
+                ThreadPool.QueueUserWorkItem(delegate { MonitorRegistrations(THREAD_NAME_PREFIX + threadSuffix); });
             }
         }
 
@@ -299,7 +290,7 @@ namespace SIPSorcery.Servers
                                     }
                                 }
 
-                                logger.Debug("Binding entry processing took " + DateTime.Now.Subtract(startTime).TotalMilliseconds.ToString("0") + ".");
+                                logger.Debug("Binding entry processing took " + DateTime.Now.Subtract(startTime).TotalMilliseconds.ToString("0") + "ms.");
 
                                 m_bindingsProcessedCount++;
                             }
@@ -346,7 +337,7 @@ namespace SIPSorcery.Servers
                         trans.Complete();
                     }
 
-                    //logger.Debug("GetNextBindings took " + DateTime.Now.Subtract(startTime).TotalMilliseconds.ToString("0") + ".");
+                    logger.Debug("GetNextBindings took " + DateTime.Now.Subtract(startTime).TotalMilliseconds.ToString("0") + ".");
 
                     return bindings;
                 }
@@ -591,13 +582,9 @@ namespace SIPSorcery.Servers
                     binding.LastRegisterTime = DateTimeOffset.UtcNow;
                     binding.RegistrationFailureMessage = null;
                     m_bindingPersistor.Update(binding);
+                    UpdateSIPProviderOutboundProxy(binding, sipResponse.Header.ProxyReceivedOn);
                     FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegistered, "Contact successfully registered for " + binding.Owner + " on " + binding.RegistrarServer.ToString() + ", expiry " + binding.BindingExpiry + "s.", binding.Owner));
                     RemoveCachedBinding(binding.Id);
-
-                    if (sipResponse.Header.ProxyReceivedOn != null)
-                    {
-                        UpdateSIPProviderOutboundProxy(binding.ProviderId, sipResponse.Header.ProxyReceivedOn);
-                    }
                 }
             }
             catch (Exception excp)
@@ -769,15 +756,13 @@ namespace SIPSorcery.Servers
             }
         }
 
-        private void UpdateSIPProviderOutboundProxy(Guid providerId, string outboundProxy)
+        private void UpdateSIPProviderOutboundProxy(SIPProviderBinding binding, string outboundProxy)
         {
             try
             {
-                SIPProvider sipProvider = GetSIPProviderById_External(providerId);
-                if (sipProvider.ProviderOutboundProxy != outboundProxy)
+                if (binding.ProviderOutboundProxy != outboundProxy)
                 {
-                    sipProvider.ProviderOutboundProxy = outboundProxy;
-                    UpdateSIPProvider_External(sipProvider);
+                    UpdateSIPProviderProperty_External(binding.ProviderId, "ProviderOutboundProxy", outboundProxy);
                 }
             }
             catch (Exception excp)

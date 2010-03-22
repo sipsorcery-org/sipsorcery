@@ -64,11 +64,13 @@ namespace SIPSorcery.SIPNotifier
         private SIPTransport m_sipTransport;
         private SIPMonitorEventWriter m_monitorEventWriter;
         private NotifierCore m_notifierCore;
+        private SIPNotifyManager m_notifyManager;
 
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
         private SIPAssetGetDelegate<Customer> GetCustomer_External;
         private SIPAssetGetListDelegate<SIPDialogueAsset> GetDialogues_External;
         private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
+        private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPRegistrarBindings_External;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;
         private ISIPMonitorPublisher m_publisher;
 
@@ -77,6 +79,7 @@ namespace SIPSorcery.SIPNotifier
             SIPAssetGetListDelegate<SIPDialogueAsset> getDialogues,
             GetCanonicalDomainDelegate getDomain,
             SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPRegistrarBindings,
             SIPAuthenticateRequestDelegate sipRequestAuthenticator,
             ISIPMonitorPublisher publisher)
         {
@@ -84,6 +87,7 @@ namespace SIPSorcery.SIPNotifier
             GetDialogues_External = getDialogues;
             GetCanonicalDomain_External = getDomain;
             GetSIPAccount_External = getSIPAccount;
+            GetSIPRegistrarBindings_External = getSIPRegistrarBindings;
             SIPAuthenticateRequest_External = sipRequestAuthenticator;
             m_publisher = publisher ?? new SIPMonitorUDPSink(m_udpNotificationReceiverSocket);
         }
@@ -92,7 +96,7 @@ namespace SIPSorcery.SIPNotifier
         {
             try
             {
-                logger.Debug("SIP Notifier daemon starting...");
+                logger.Debug("SIP Notifier Daemon starting...");
 
                 // Pre-flight checks.
                 if (m_sipNotifierSocketsNode == null || m_sipNotifierSocketsNode.ChildNodes.Count == 0)
@@ -113,10 +117,28 @@ namespace SIPSorcery.SIPNotifier
                 List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipNotifierSocketsNode);
                 m_sipTransport.AddSIPChannel(sipChannels);
 
-                m_notifierCore = new NotifierCore(FireSIPMonitorEvent, m_sipTransport, GetCustomer_External, GetDialogues_External, GetSIPAccount_External, GetCanonicalDomain_External, SIPAuthenticateRequest_External, m_outboundProxy, m_publisher);
-                m_sipTransport.SIPTransportRequestReceived += m_notifierCore.AddSubscribeRequest;
+                m_notifierCore = new NotifierCore(
+                    FireSIPMonitorEvent, 
+                    m_sipTransport, 
+                    GetCustomer_External, 
+                    GetDialogues_External, 
+                    GetSIPAccount_External, 
+                    GetCanonicalDomain_External, 
+                    SIPAuthenticateRequest_External, 
+                    m_outboundProxy, 
+                    m_publisher);
 
-                logger.Debug("SIP Notifier successfully started.");
+                m_notifyManager = new SIPNotifyManager(
+                    m_sipTransport,
+                    m_outboundProxy,
+                    FireSIPMonitorEvent,
+                    GetSIPAccount_External,
+                    GetSIPRegistrarBindings_External,
+                    GetCanonicalDomain_External);
+
+                m_sipTransport.SIPTransportRequestReceived += GotRequest;
+
+                logger.Debug("SIP Notifier Daemon successfully started.");
             }
             catch (Exception excp)
             {
@@ -129,9 +151,15 @@ namespace SIPSorcery.SIPNotifier
             try
             {
                 logger.Debug("SIP Notifier daemon stopping...");
+
                 if (m_notifierCore != null)
                 {
                     m_notifierCore.Stop();
+                }
+
+                if (m_notifyManager != null)
+                {
+                    m_notifyManager.Stop();
                 }
 
                 logger.Debug("Shutting down SIP Transport.");
@@ -142,6 +170,45 @@ namespace SIPSorcery.SIPNotifier
             catch (Exception excp)
             {
                 logger.Error("Exception SIPNotifierDaemon Stop. " + excp.Message);
+            }
+        }
+
+        public void GotRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        {
+            try
+            {
+                if (sipRequest.Method == SIPMethodsEnum.NOTIFY)
+                {
+                    if (sipRequest.Header.UnknownHeaders.Exists(s => s.Contains("Event: keep-alive")))
+                    {
+                        // If this is a NOTIFY request that's being sent for NAT keep-alive purposes repond with Ok.
+                        SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        m_sipTransport.SendResponse(okResponse);
+                    }
+                    if (GetCanonicalDomain_External(sipRequest.URI.Host, true) != null && !sipRequest.URI.User.IsNullOrBlank())
+                    {
+                        m_notifyManager.QueueNotification(sipRequest);
+                    }
+                    else
+                    {
+                        // Send Not Serviced response to server.
+                        SIPResponse notServicedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Domain not serviced");
+                        m_sipTransport.SendResponse(notServicedResponse);
+                    }
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
+                {
+                    m_notifierCore.AddSubscribeRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+                }
+                else
+                {
+                    SIPResponse methodNotSupportedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                    m_sipTransport.SendResponse(methodNotSupportedResponse);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPNotifierDaemon GotRequest. " + excp.Message);
             }
         }
 

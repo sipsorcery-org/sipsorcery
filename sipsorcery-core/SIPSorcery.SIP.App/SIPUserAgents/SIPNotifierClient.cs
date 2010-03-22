@@ -56,7 +56,7 @@ namespace SIPSorcery.SIP.App
         private const int DEFAULT_SUBSCRIBE_EXPIRY = 300;       // The default value to request on subscription requests.
         private const int RETRY_POST_FAILURE_INTERVAL = 300;    // The interval to retry the subscription after a failure response or timeout.
         private const int RESCHEDULE_SUBSCRIBE_MARGIN = 10;     // Reschedule subsequent subscriptions with a small amrgin to try and ensure there is no gap.
-        private const int MAX_SUBSCRIBE_ATTEMPTS = 3;           // The maximum number of subscribe attempts that will be made without a failure condition before incurring a temporary failure.
+        private const int MAX_SUBSCRIBE_ATTEMPTS = 4;           // The maximum number of subscribe attempts that will be made without a failure condition before incurring a temporary failure.
 
         private static readonly string m_filterTextType = SIPMIMETypes.MWI_TEXT_TYPE;
 
@@ -91,14 +91,15 @@ namespace SIPSorcery.SIP.App
         public event Action<T> NotificationReceived;
         public event Action<SIPURI, string> SubscriptionFailed;
         public event Action<SIPURI> SubscriptionSuccessful;
+        public event Action<SIPURI> SubscriptionReset;          // If an error occurs on a subcirption refresh an attempt will be made to re-establish it.
 
         public SIPNotifierClient(
             SIPMonitorLogDelegate logDelegate,
             SIPTransport sipTransport,
             SIPEndPoint outboundProxy,
             SIPEventPackage sipEventPackage,
-            SIPURI resourceURI, 
-            string authUsername, 
+            SIPURI resourceURI,
+            string authUsername,
             string authDomain,
             string authPassword,
             int expiry,
@@ -154,10 +155,10 @@ namespace SIPSorcery.SIP.App
 
                 //logger.Debug(sipRequest.ToString());
 
-               if (sipRequest.Method == SIPMethodsEnum.NOTIFY && sipRequest.Header.CallId == m_subscribeCallID && 
-                    sipRequest.Header.Event == SIPEventPackage.Dialog.ToString() && sipRequest.Body != null)
+                if (sipRequest.Method == SIPMethodsEnum.NOTIFY && sipRequest.Header.CallId == m_subscribeCallID &&
+                     sipRequest.Header.Event == SIPEventPackage.Dialog.ToString() && sipRequest.Body != null)
                 {
-                    if(sipRequest.Header.CSeq <= m_subscribeCSeq)
+                    if (sipRequest.Header.CSeq <= m_subscribeCSeq)
                     {
                         logger.Warn("A duplicate NOTIFY request received by SIPNotifierClient for subscription Call-ID " + m_subscribeCallID + ".");
                     }
@@ -174,7 +175,7 @@ namespace SIPSorcery.SIP.App
                 {
                     logger.Warn("A request received by SIPNotifierClient did not match the subscription details, request Call-ID=" + sipRequest.Header.CallId + ", subscribed Call-ID=" + m_subscribeCallID + ".");
                     logger.Debug(sipRequest.ToString());
-                } 
+                }
             }
             catch (Exception excp)
             {
@@ -330,7 +331,7 @@ namespace SIPSorcery.SIP.App
                     {
                         if (m_attempts >= MAX_SUBSCRIBE_ATTEMPTS)
                         {
-                           m_subscribed = false;
+                            m_subscribed = false;
                             SubscriptionFailed(m_resourceURI, "Subscription reached the maximum number of allowed attempts.");
                             m_waitForSubscribeResponse.Set();
                         }
@@ -382,6 +383,14 @@ namespace SIPSorcery.SIP.App
                     SubscriptionSuccessful(m_resourceURI);
                     m_waitForSubscribeResponse.Set();
                 }
+                else if (sipResponse.Status == SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist)
+                {
+                    // The notifier server does not have a record for the resubscription, create a new one.
+                    SubscriptionFailed(m_resourceURI, "Subscribe failed with response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
+                    ResetSubscriptionState();
+                    SubscriptionReset(m_resourceURI);
+                    Subscribe(m_resourceURI, m_expiry, m_sipEventPackage, m_subscribeCSeq, m_subscribeCallID);
+                }
                 else
                 {
                     SubscriptionFailed(m_resourceURI, "Subscribe failed with response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
@@ -393,6 +402,21 @@ namespace SIPSorcery.SIP.App
                 logger.Error("Exception SubscribeTransactionFinalResponseReceived. " + excp.Message);
                 SubscriptionFailed(m_resourceURI, "Exception processing subscribe response. " + excp.Message);
                 m_waitForSubscribeResponse.Set();
+            }
+        }
+
+        private void ResetSubscriptionState()
+        {
+            try
+            {
+                m_subscribeCSeq = 1;
+                m_subscribeCallID = CallProperties.CreateNewCallId();
+                m_subscriptionFromTag = CallProperties.CreateNewTag();
+                m_subscriptionToTag = null;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception ResetSubscription. " + excp.Message);
             }
         }
     }

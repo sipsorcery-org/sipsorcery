@@ -58,7 +58,7 @@ namespace SIPSorcery.SIPRegistrationAgent
         private int m_monitorLoopbackPort = SIPRegAgentState.MonitorLoopbackPort;
         private SIPEndPoint m_outboundProxy = SIPRegAgentState.OutboundProxy;
         private int m_threadCount = SIPRegAgentState.ThreadCount;
- 
+
         private SIPTransport m_sipTransport;
         private SIPMonitorEventWriter m_monitorEventWriter;
         private SIPRegistrationAgentCore m_sipRegAgentCore;
@@ -67,8 +67,8 @@ namespace SIPSorcery.SIPRegistrationAgent
 
         public SIPRegAgentDaemon(
             SIPAssetPersistor<SIPProvider> providerPersistor,
-            SIPAssetPersistor<SIPProviderBinding> bindingPersistor) {
-
+            SIPAssetPersistor<SIPProviderBinding> bindingPersistor)
+        {
             m_providerPersistor = providerPersistor;
             m_bindingPersistor = bindingPersistor;
 
@@ -86,7 +86,8 @@ namespace SIPSorcery.SIPRegistrationAgent
             {
                 logger.Debug("SIP Registration Agent daemon starting...");
 
-                if (m_sipRegAgentSocketsNode == null) {
+                if (m_sipRegAgentSocketsNode == null)
+                {
                     throw new ApplicationException("The SIP Registration Agent could not be started, no SIP transport sockets node could be found.");
                 }
 
@@ -115,6 +116,7 @@ namespace SIPSorcery.SIPRegistrationAgent
                     m_outboundProxy,
                     m_providerPersistor.Get,
                     m_providerPersistor.Update,
+                    m_providerPersistor.UpdateProperty,
                     m_bindingPersistor);
                 m_sipRegAgentCore.Start(m_threadCount);
 
@@ -145,22 +147,27 @@ namespace SIPSorcery.SIPRegistrationAgent
             }
         }
 
-        private void FireSIPMonitorEvent(SIPMonitorEvent sipMonitorEvent) {
-            try {
-                if (sipMonitorEvent != null) {
+        private void FireSIPMonitorEvent(SIPMonitorEvent sipMonitorEvent)
+        {
+            try
+            {
+                if (sipMonitorEvent != null)
+                {
                     if (sipMonitorEvent.GetType() != typeof(SIPMonitorMachineEvent))
                     {
                         logger.Debug("ra: " + sipMonitorEvent.Message);
                     }
-                    
-                    if (m_monitorEventWriter != null) {
+
+                    if (m_monitorEventWriter != null)
+                    {
                         m_monitorEventWriter.Send(sipMonitorEvent);
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception FireSIPMonitorEvent. " + excp.Message);
             }
-        }  
+        }
     }
 }

@@ -13,6 +13,9 @@ namespace SIPSorcery.SIPRegistrationAgent
 {
     public class SIPRegAgentProgram
     {
+        private const int MIN_THREADPOOL_WORKERS = 50;  // The reg agent uses the threadpool to perform database operations and it needs a larger than
+                                                        // normal number of idle threads on standby.
+
         private static readonly string m_storageTypeKey = SIPSorceryConfiguration.PERSISTENCE_STORAGETYPE_KEY;
         private static readonly string m_connStrKey = SIPSorceryConfiguration.PERSISTENCE_STORAGECONNSTR_KEY;
         private static readonly string m_sipProvidersXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_SIPPROVIDERS_FILENAME;
@@ -29,6 +32,8 @@ namespace SIPSorcery.SIPRegistrationAgent
         {
             try
             {
+                logger.Debug("SIP Registration Agent starting");
+
                 m_sipRegAgentStorageType = (AppState.GetConfigSetting(m_storageTypeKey) != null) ? StorageTypesConverter.GetStorageType(AppState.GetConfigSetting(m_storageTypeKey)) : StorageTypes.Unknown;
                 m_sipRegAgentStorageConnStr = AppState.GetConfigSetting(m_connStrKey);
 
@@ -42,6 +47,11 @@ namespace SIPSorcery.SIPRegistrationAgent
                     throw new ApplicationException("Directory " + m_sipRegAgentStorageConnStr + " does not exist for XML persistor.");
                 }
 
+                int minWorker, minIOC;
+                ThreadPool.GetMinThreads(out minWorker, out minIOC);
+                ThreadPool.SetMinThreads(MIN_THREADPOOL_WORKERS, minIOC);
+                logger.Debug("ThreadPool minimum idle thread adusted from " + minWorker + " to " + MIN_THREADPOOL_WORKERS + ".");
+
                 SIPAssetPersistor<SIPProvider> sipProvidersPersistor = SIPAssetPersistorFactory<SIPProvider>.CreateSIPAssetPersistor(m_sipRegAgentStorageType, m_sipRegAgentStorageConnStr, m_sipProvidersXMLFilename);
                 SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor = SIPAssetPersistorFactory<SIPProviderBinding>.CreateSIPAssetPersistor(m_sipRegAgentStorageType, m_sipRegAgentStorageConnStr, m_sipProviderBindingsXMLFilename);
 
@@ -49,17 +59,12 @@ namespace SIPSorcery.SIPRegistrationAgent
 
                 if (args != null && args.Length == 1 && args[0].StartsWith("-c"))
                 {
-                    Console.WriteLine("SIP Registration Agent starting");
-
                     Thread daemonThread = new Thread(daemon.Start);
                     daemonThread.Start();
-
                     m_regAgentUp.WaitOne();
                 }
                 else
                 {
-                    Console.WriteLine("SIP Registration Agent Service starting");
-
                     System.ServiceProcess.ServiceBase[] ServicesToRun;
                     ServicesToRun = new System.ServiceProcess.ServiceBase[] { new Service(daemon) };
                     System.ServiceProcess.ServiceBase.Run(ServicesToRun);
@@ -69,39 +74,6 @@ namespace SIPSorcery.SIPRegistrationAgent
             {
                 Console.WriteLine("Exception Main. " + excp.Message);
                 logger.Error("Exception Main. " + excp.Message);
-            }
-        }
-
-        /// <summary>
-        /// Synchronises the SIP Provider entries with the SIP Provider Binding entries. If a SIP Provider is set to register and does
-        /// not have a binding one needs to be added and vice versa.
-        /// </summary>
-        private static void SynchroniseBindings(SIPAssetPersistor<SIPProvider> sipProvidersPersistor, SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor)
-        {
-            Console.WriteLine("Synchronising SIP Provider bindings.");
-
-            List<SIPProvider> sipProviders = sipProvidersPersistor.Get(null, null, 0, Int32.MaxValue);
-            foreach (SIPProvider sipProvider in sipProviders)
-            {
-                if (sipProvider.RegisterEnabled && sipProvider.RegisterAdminEnabled)
-                {
-                    SIPProviderBinding binding = sipProviderBindingsPersistor.Get(b => b.ProviderId == sipProvider.Id);
-                    if (binding == null)
-                    {
-                        // Add a missing binding.
-                        SIPProviderBinding missingBinding = new SIPProviderBinding(sipProvider);
-                        sipProviderBindingsPersistor.Add(missingBinding);
-                    }
-                }
-                else
-                {
-                    SIPProviderBinding binding = sipProviderBindingsPersistor.Get(b => b.ProviderId == sipProvider.Id);
-                    if (binding != null)
-                    {
-                        // Remove binding for a SIP Provider that does not have registrations enabled.
-                        sipProviderBindingsPersistor.Delete(binding);
-                    }
-                }
             }
         }
     }

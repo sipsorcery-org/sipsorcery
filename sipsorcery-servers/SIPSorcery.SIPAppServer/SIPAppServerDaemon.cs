@@ -210,6 +210,7 @@ namespace SIPSorcery.SIPAppServer
                         m_sipSorceryPersistor.SIPDialoguePersistor.Get,
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                         m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                        m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
                         SIPRequestAuthenticator.AuthenticateSIPRequest,
                         //m_sipMonitorPublisher);
                         new SIPMonitorUDPSink("127.0.0.1:10003"));
@@ -314,15 +315,6 @@ namespace SIPSorcery.SIPAppServer
                      m_monitorCalls);
                 m_callManager.Start();
 
-                m_notifyManager = new SIPNotifyManager(
-                    m_sipTransport,
-                    m_outboundProxy,
-                    FireSIPMonitorEvent,
-                    m_sipSorceryPersistor.SIPAccountsPersistor.Get,
-                    m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
-                    m_sipSorceryPersistor.SIPDomainManager.GetDomain);
-                m_notifyManager.Start();
-
                 m_appServerCore = new SIPAppServerCore(
                     m_sipTransport,
                     m_sipSorceryPersistor.SIPDomainManager.GetDomain,
@@ -330,7 +322,7 @@ namespace SIPSorcery.SIPAppServer
                     FireSIPMonitorEvent,
                     m_callManager,
                     m_sipDialogueManager,
-                    m_notifyManager,
+                    //m_notifyManager,
                     SIPRequestAuthenticator.AuthenticateSIPRequest,
                     m_outboundProxy);
 

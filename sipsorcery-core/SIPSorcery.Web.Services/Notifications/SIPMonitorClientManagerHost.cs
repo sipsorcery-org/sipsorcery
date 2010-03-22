@@ -41,9 +41,9 @@ namespace SIPSorcery.Web.Services
             return m_publisher.IsNotificationReady(address);
         }
 
-        public void ExtendSession(string address, string sessionID, int expiry)
+        public string ExtendSession(string address, string sessionID, int expiry)
         {
-            m_publisher.ExtendSession(address, sessionID, expiry);
+            return m_publisher.ExtendSession(address, sessionID, expiry);
         }
 
         public void CloseSession(string address, string sessionID)

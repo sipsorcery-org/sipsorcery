@@ -40,6 +40,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Linq;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -58,7 +59,7 @@ namespace SIPSorcery.Servers
         public string SessionID { get; private set; }
         public string CustomerUsername { get; private set; }
         public string AdminID { get; private set; }
-        public SIPEndPoint ProxySendFrom { get; private set; }
+        public SIPEndPoint ProxySendFrom;
         public SIPURI ContactURI { get; private set; }
         public SIPEventDialogInfo DialogInfo;
         public string ToTag;
@@ -100,6 +101,8 @@ namespace SIPSorcery.Servers
         private const int MAX_DIALOGUES_FOR_NOTIFY = 25;
 
         private static ILog logger = AppState.GetLogger("sipsubmngr");
+
+        private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
 
         private event SIPMonitorLogDelegate MonitorLogEvent_External;
         private SIPAssetGetListDelegate<SIPDialogueAsset> GetDialogues_External;
@@ -155,7 +158,7 @@ namespace SIPSorcery.Servers
                 {
                     // If the Contact URI is private and the request was received on a public IP mangle it so NOTIFY requests can get through.
                     SIPEndPoint receivedFrom = (!subscribeRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(subscribeRequest.Header.ProxyReceivedFrom) : null;
-                    if( receivedFrom != null && !IPSocket.IsPrivateAddress(receivedFrom.SocketEndPoint.Address.ToString()))
+                    if (receivedFrom != null && !IPSocket.IsPrivateAddress(receivedFrom.SocketEndPoint.Address.ToString()))
                     {
                         contactURI.Host = receivedFrom.SocketEndPoint.ToString();
                     }
@@ -202,10 +205,16 @@ namespace SIPSorcery.Servers
         /// Attempts to renew an existing subscription.
         /// </summary>
         /// <returns>True if the subscription was found, false if it wasn't.</returns>
-        public bool RenewSubscription(int expiry, string toTag, string fromTag, string callID, int cseq)
+        public bool RenewSubscription(SIPRequest subscribeRequest)
         {
             try
             {
+                int expiry = subscribeRequest.Header.Expires;
+                string toTag = subscribeRequest.Header.To.ToTag;
+                string fromTag = subscribeRequest.Header.From.FromTag;
+                string callID = subscribeRequest.Header.CallId;
+                int cseq = subscribeRequest.Header.CSeq;
+
                 // Check for an existing subscription.
                 DialogSubscription existingSubscription = (from sub in m_dialogSubscriptions.Values where sub.CallID == callID select sub).FirstOrDefault();
 
@@ -216,14 +225,35 @@ namespace SIPSorcery.Servers
                         // Subsciption is being cancelled.
                         logger.Debug("Stopping subscription for " + existingSubscription.SessionID + " and " + existingSubscription.CustomerUsername + ".");
                         m_publisher.CloseSession(m_notificationsAddress, existingSubscription.SessionID);
-                        m_dialogSubscriptions.Remove(existingSubscription.SessionID);
+                        lock(m_dialogSubscriptions)
+                        {
+                            m_dialogSubscriptions.Remove(existingSubscription.SessionID);
+                        }
                     }
                     else if (cseq > existingSubscription.CSeq)
                     {
                         logger.Debug("Renewing subscription for " + existingSubscription.SessionID + " and " + existingSubscription.CustomerUsername + ".");
-                        m_publisher.ExtendSession(m_notificationsAddress, existingSubscription.SessionID, expiry);
                         existingSubscription.CSeq = cseq;
-                        SendFullStateNotify(existingSubscription.SessionID);
+                        existingSubscription.ProxySendFrom = (!subscribeRequest.Header.ProxyReceivedOn.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(subscribeRequest.Header.ProxyReceivedOn) : null;
+                        
+                        string extensionResult = m_publisher.ExtendSession(m_notificationsAddress, existingSubscription.SessionID, expiry);
+                        if (extensionResult != null)
+                        {
+                            // One or more of the monitor servers could not extend the session. Close all the existing sessions and re-create.
+                            MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Monitor session extension failed. " + extensionResult, existingSubscription.CustomerUsername));
+                            m_publisher.CloseSession(m_notificationsAddress, existingSubscription.SessionID);
+                            lock(m_dialogSubscriptions)
+                            {
+                                m_dialogSubscriptions.Remove(existingSubscription.SessionID);
+                            }
+
+                            // Re-subscribe to create a brand new session.
+                            SubscribeClient(existingSubscription.CustomerUsername, existingSubscription.AdminID, subscribeRequest);
+                        }
+                        else
+                        {
+                            SendFullStateNotify(existingSubscription.SessionID);
+                        }
                     }
 
                     return true;
@@ -276,7 +306,7 @@ namespace SIPSorcery.Servers
             try
             {
                 logger.Debug(DateTime.Now.ToString("HH:mm:ss:fff") + " Sending NOTIFY request for " + dialogSubscription.CustomerUsername + " and " + dialogSubscription.DialogInfo.Entity.ToString() + " to " +
-                    dialogSubscription.ContactURI.ToString() + ", version=" + dialogSubscription.DialogInfo.Version + ", cseq=" + (dialogSubscription.CSeq + 1)+ ".");
+                    dialogSubscription.ContactURI.ToString() + ", version=" + dialogSubscription.DialogInfo.Version + ", cseq=" + (dialogSubscription.CSeq + 1) + ".");
                 dialogSubscription.CSeq++;
 
                 SIPRequest notifyRequest = m_sipTransport.GetRequest(SIPMethodsEnum.NOTIFY, dialogSubscription.ContactURI, new SIPToHeader(null, dialogSubscription.ContactURI, dialogSubscription.ToTag), null);
@@ -286,9 +316,21 @@ namespace SIPSorcery.Servers
                 notifyRequest.Header.CallId = dialogSubscription.CallID;
                 notifyRequest.Body = dialogSubscription.DialogInfo.ToXMLText(dialogSubscription.Filter);
                 notifyRequest.Header.ContentLength = notifyRequest.Body.Length;
-                notifyRequest.Header.ProxySendFrom = (dialogSubscription.ProxySendFrom != null) ? dialogSubscription.ProxySendFrom.ToString() : null;
 
-                if (m_outboundProxy != null)
+                // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
+                if (m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.SocketEndPoint.Address))
+                {
+                    notifyRequest.Header.ProxySendFrom = dialogSubscription.ProxySendFrom.ToString();
+                    m_sipTransport.SendRequest(m_outboundProxy, notifyRequest);
+                }
+                else if (dialogSubscription.ProxySendFrom != null)
+                {
+                    notifyRequest.Header.ProxySendFrom = dialogSubscription.ProxySendFrom.ToString();
+                    // The proxy will always be listening on UDP port 5060 for requests from internal servers.
+                    SIPEndPoint internalProxyEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(dialogSubscription.ProxySendFrom.SocketEndPoint.Address, m_defaultSIPPort));
+                    m_sipTransport.SendRequest(internalProxyEndPoint, notifyRequest);
+                }
+                else if (m_outboundProxy != null)
                 {
                     m_sipTransport.SendRequest(m_outboundProxy, notifyRequest);
                 }
@@ -307,93 +349,6 @@ namespace SIPSorcery.Servers
                 logger.Error("Exception SendNotifyRequestForSubscription. " + excp.Message);
             }
         }
-
-        //private void GetNotifications()
-        /*private void MonitorEventAvailable(string monitorEventStr)
-        {
-            try
-            {
-                //Thread.CurrentThread.Name = GET_NOTIFICATIONS_THREAD_NAME;
-
-                //while (!m_exit)
-                //{
-                    //if (m_dialogSubscriptions.Count > 0)
-                   // {
-                       // while (m_publisher.IsNotificationReady(m_notificationsAddress))
-                       // {
-                            //logger.Debug("NotifierSubscriptionsManager getting notifications for " + m_notificationsAddress + ".");
-
-                            //string sessionID = null;
-                            //string sessionError = null;
-                            //List<string> notifications = m_publisher.GetNotifications(m_notificationsAddress, out sessionID, out sessionError);
-
-                            //if (sessionError != null)
-                            //{
-                            //    logger.Warn("NotifierSubscriptionsManager GetNotifications returned a session error. " + sessionError);
-                            //}
-                            //else if (notifications != null && notifications.Count() > 0)
-                            //{
-                                SIPMonitorEvent monitorEvent = SIPMonitorEvent.ParseEventCSV(monitorEventStr);
-
-                                if(monitorEvent != null && monitorEvent.SessionID.IsNullOrBlank() && m_dialogSubscriptions.ContainsKey(monitorEvent.SessionID))
-                                {
-                                    DialogSubscription dialogSubscription = m_dialogSubscriptions[sessionID];
-
-                                //var machineEvents = (from notification in notifications select SIPMonitorMachineEvent.ParseMachineEventCSV(notification)).OrderByDescending(e => e.Created);
-                                //int dialogItemsAdded = 0;
-
-                                //foreach (SIPMonitorMachineEvent machineEvent in machineEvents)
-                                //{
-                                    // The machine events are sorted in order of the most recent first, if a duplicate dialog ID occurs it can be ignored
-                                    // since the most recent notification for that dialog must have already been included.
-                                    //if ((from dialog in dialogSubscription.DialogInfo.DialogItems where dialog.ID == machineEvent.Dialogue.Id.ToString() select dialog).Count() > 0)
-                                    //{
-                                    //    logger.Debug(" notifier skipping notification for " + machineEvent.Dialogue.Id + " and " + GetStateForEventType(machineEvent.MachineEventType) + ".");
-                                    //    continue;
-                                    //}
-
-                                    //logger.Debug("NotifierSubscriptionsManager received new " + machineEvent.MachineEventType + ", message=" + machineEvent.Message + ".");
-
-                                    if (dialogSubscription != null)
-                                    {
-                                        string state = GetStateForEventType(machineEvent.MachineEventType);
-                                        SIPDialogue sipDialogue = machineEvent.Dialogue;
-                                        SIPDialogue sipDialogue = null;
-                                        if (state != "terminated")
-                                        {
-                                            SIPDialogueAsset sipDialogueAsset = GetDialogue_External(new Guid(machineEvent.Message));
-                                            sipDialogue = (sipDialogueAsset != null) ? sipDialogueAsset.SIPDialogue : null;
-                                        }
-                                        dialogSubscription.DialogInfo.DialogItems.Add(new SIPEventDialog(sipDialogue.Id.ToString(), state, sipDialogue));
-                                        dialogItemsAdded++;
-                                    }
-
-                                    // if (dialogItemsAdded >= 3)
-                                    //{
-                                    //    SendNotifyRequestForSubscription(dialogSubscription);
-                                    //     dialogItemsAdded = 0;
-                                    // }
-                                }
-
-                                if (dialogItemsAdded > 0)
-                                {
-                                    SendNotifyRequestForSubscription(dialogSubscription);
-                                }
-                                }
-                            }
-                        //}
-                    //}
-
-                    //Thread.Sleep(1000);
-                //}
-
-                //logger.Debug("NotifierSubscriptionsManager GetNotifications halted.");
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception NotifierSubscriptionsManager GetNotifications. " + excp.Message);
-            }
-        }*/
 
         private void MonitorEventAvailable(string monitorEventStr)
         {

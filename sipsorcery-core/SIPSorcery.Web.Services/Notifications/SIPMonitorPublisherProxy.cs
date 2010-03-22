@@ -50,9 +50,9 @@ namespace SIPSorcery.Web.Services
             return base.Channel.IsNotificationReady(address);
         }
 
-        public void ExtendSession(string address, string sessionID, int expiry)
+        public string ExtendSession(string address, string sessionID, int expiry)
         {
-            base.Channel.ExtendSession(address, sessionID, expiry);
+            return base.Channel.ExtendSession(address, sessionID, expiry);
         }
 
         public void CloseSession(string address, string sessionID)

@@ -58,7 +58,7 @@ namespace SIPSorcery.Servers
         private static ILog logger = AppState.GetLogger("appsvr");
 
         private string m_dispatcherUsername = SIPCallManager.DISPATCHER_SIPACCOUNT_NAME;
-        private static string m_referReplacesParameter = SIPHeaderAncillary.SIP_REFER_REPLACES;
+        //private static string m_referReplacesParameter = SIPHeaderAncillary.SIP_REFER_REPLACES;
 
         private SIPMonitorLogDelegate SIPMonitorLogEvent_External;              // Function to log messages from this core.
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
@@ -69,7 +69,7 @@ namespace SIPSorcery.Servers
         private SIPEndPoint m_outboundProxy;
         private SIPCallManager m_callManager;
         private SIPDialogueManager m_sipDialogueManager;
-        private SIPNotifyManager m_notifyManager;
+        //private SIPNotifyManager m_notifyManager;
 
         public SIPAppServerCore(
             SIPTransport sipTransport,
@@ -78,7 +78,7 @@ namespace SIPSorcery.Servers
             SIPMonitorLogDelegate proxyLog,
             SIPCallManager callManager,
             SIPDialogueManager sipDialogueManager,
-            SIPNotifyManager notifyManager,
+            //SIPNotifyManager notifyManager,
             SIPAuthenticateRequestDelegate sipAuthenticateRequest,
             SIPEndPoint outboundProxy)
         {
@@ -87,7 +87,7 @@ namespace SIPSorcery.Servers
                 m_sipTransport = sipTransport;
                 m_callManager = callManager;
                 m_sipDialogueManager = sipDialogueManager;
-                m_notifyManager = notifyManager;
+                //m_notifyManager = notifyManager;
 
                 m_sipTransport.SIPTransportRequestReceived += GotRequest;
                 m_sipTransport.SIPTransportResponseReceived += GotResponse;
@@ -131,29 +131,6 @@ namespace SIPSorcery.Servers
                 {
                     FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Matching dialogue found for " + sipRequest.Method + " to " + sipRequest.URI.ToString() + " from " + remoteEndPoint + ".", dialogue.Owner));
                     m_sipDialogueManager.ProcessInDialogueRequest(localSIPEndPoint, remoteEndPoint, sipRequest, dialogue, m_callManager.ProcessWebCall);
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.NOTIFY)
-                {
-                    #region Process NOTIFY requests.
-
-                    if (sipRequest.Header.UnknownHeaders.Exists(s => s.Contains("Event: keep-alive")))
-                    {
-                        // If this is a NOTIFY request that's being sent for NAT keep-alive purposes repond with Ok.
-                        SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                        m_sipTransport.SendResponse(okResponse);
-                    }
-                    if (GetCanonicalDomain_External(sipRequest.URI.Host, true) != null && !sipRequest.URI.User.IsNullOrBlank())
-                    {
-                        m_notifyManager.QueueNotification(sipRequest);
-                    }
-                    else
-                    {
-                        // Send Not Serviced response to server.
-                        SIPResponse notServicedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Domain not serviced");
-                        m_sipTransport.SendResponse(notServicedResponse);
-                    }
-
-                    #endregion
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.CANCEL)
                 {

@@ -316,7 +316,7 @@ namespace SIPSorcery.Servers
                                 if (sipRequest.Header.To.ToTag != null)
                                 {
                                     // Request is to renew an existing subscription.
-                                    if (m_subscriptionsManager.RenewSubscription(sipRequest.Header.Expires, sipRequest.Header.To.ToTag, sipRequest.Header.From.FromTag, sipRequest.Header.CallId, sipRequest.Header.CSeq))
+                                    if (m_subscriptionsManager.RenewSubscription(sipRequest))
                                     {
                                         // Existing subscription was found.
                                         SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);

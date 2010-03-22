@@ -298,7 +298,7 @@ namespace SIPSorcery.Servers
             }
         }
 
-        public void ExtendSession(string address, string sessionID, int expiry)
+        public string ExtendSession(string address, string sessionID, int expiry)
         {
             lock (m_clientSessions)
             {
@@ -319,7 +319,13 @@ namespace SIPSorcery.Servers
                         }
                     }
                 }
+                else
+                {
+                    return "Session was not found.";
+                }
             }
+
+            return null;
         }
 
         public void CloseSession(string address, string sessionID)

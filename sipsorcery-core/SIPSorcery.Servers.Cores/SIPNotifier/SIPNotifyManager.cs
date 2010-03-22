@@ -88,10 +88,7 @@ namespace SIPSorcery.Servers
             GetSIPAccount_External = getSIPAccount;
             GetSIPAccountBindings_External = getSIPAccountBindings;
             GetCanonicalDomain_External = getCanonicalDomain;
-        }
 
-        public void Start()
-        {
             ThreadPool.QueueUserWorkItem(delegate { ProcessNewNotifications(PROCESS_NOTIFICATIONS_THREAD_NAME); });
         }
 
@@ -151,7 +148,7 @@ namespace SIPSorcery.Servers
                 }
                 else
                 {
-                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Notify rejected request as queue full.", null));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.Warn, "Notify rejected request as queue full.", null));
                     SIPResponse overloadedResponse = SIPTransport.GetResponse(notifyRequest, SIPResponseStatusCodesEnum.TemporarilyUnavailable, "Notify Manager overloaded");
                     m_sipTransport.SendResponse(overloadedResponse);
                 }
@@ -221,7 +218,7 @@ namespace SIPSorcery.Servers
                                     notifyRequest.Header.ProxySendFrom = binding.ProxySIPEndPoint.ToString();
                                 }
 
-                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Forwarding NOTIFY request from " + fromURI + " to registered binding at " + dstURI.ToString() + ", proxy " + dstSIPEndPoint.ToString() + ".", sipAccount.Owner));
+                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.MWI, "Forwarding NOTIFY request from " + fromURI + " to registered binding at " + dstURI.ToString() + ", proxy " + dstSIPEndPoint.ToString() + ".", sipAccount.Owner));
                                 SIPNonInviteTransaction notifyTransaction = m_sipTransport.CreateNonInviteTransaction(notifyRequest, dstSIPEndPoint, localSIPEndPoint, dstSIPEndPoint);
                                 notifyTransaction.SendReliableRequest();
                             }
@@ -233,7 +230,7 @@ namespace SIPSorcery.Servers
                         else
                         {
                             // Send unavailable response to server.
-                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "NOTIFY request from " + fromURI + " for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " but no bindings available, responding with temporarily unavailable.", sipAccount.Owner));
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.MWI, "NOTIFY request from " + fromURI + " for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " but no bindings available, responding with temporarily unavailable.", sipAccount.Owner));
                             SIPResponse notAvailableResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.TemporarilyUnavailable, null);
                             m_sipTransport.SendResponse(notAvailableResponse);
                         }
@@ -241,7 +238,7 @@ namespace SIPSorcery.Servers
                     else
                     {
                         // Send Not found response to server.
-                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "NOTIFY request from " + fromURI + " for " + sipRequest.URI.ToString() + " but no matching SIP account, responding with not found.", null));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.MWI, "NOTIFY request from " + fromURI + " for " + sipRequest.URI.ToString() + " but no matching SIP account, responding with not found.", null));
                         SIPResponse notFoundResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, null);
                         m_sipTransport.SendResponse(notFoundResponse);
                     }
@@ -249,7 +246,7 @@ namespace SIPSorcery.Servers
                 else
                 {
                     // Send Not Serviced response to server.
-                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "NOTIFY request from " + fromURI + " for a non-serviced domain responding with not found.", null));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.MWI, "NOTIFY request from " + fromURI + " for a non-serviced domain responding with not found.", null));
                     SIPResponse notServicedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Domain not serviced");
                     m_sipTransport.SendResponse(notServicedResponse);
                 }

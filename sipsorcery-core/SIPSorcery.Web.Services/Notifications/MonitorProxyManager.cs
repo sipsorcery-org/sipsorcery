@@ -288,7 +288,7 @@ namespace SIPSorcery.Web.Services
             }
         }
 
-        public void ExtendSession(string address, string sessionID, int expiry)
+        public string ExtendSession(string address, string sessionID, int expiry)
         {
             try
             {
@@ -307,7 +307,12 @@ namespace SIPSorcery.Web.Services
                         try
                         {
                             logger.Debug("Extending session for address " + address + ", session " + sessionID + ", proxy " + proxyEntry.Key + ".");
-                            proxyEntry.Value.ExtendSession(address, sessionID, expiry);
+                            string proxyExtensionResult = proxyEntry.Value.ExtendSession(address, sessionID, expiry);
+
+                            if (proxyExtensionResult != null)
+                            {
+                                return proxyExtensionResult;
+                            }
                         }
                         catch (System.ServiceModel.CommunicationException commExcp)
                         {
@@ -319,12 +324,15 @@ namespace SIPSorcery.Web.Services
                         }
                     }
                 }
+
+                return null;
                 //}
                 //}
             }
             catch (Exception excp)
             {
                 logger.Error("Exception ExtendSession. " + excp.Message);
+                return excp.Message;
             }
         }
 
