@@ -1,31 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/SIPSorcery.CRM" xmlns:ser="http://schemas.microsoft.com/2003/10/Serialization/" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/SIPSorcery.CRM" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/System" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/System" xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:import schemaLocation="http://suzannes-pc:8080/provisioning.svc?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
-  <xs:complexType name="Customer">
+  <xs:complexType name="DateTimeOffset">
+    <xs:annotation>
+      <xs:appinfo>
+        <IsValueType xmlns="http://schemas.microsoft.com/2003/10/Serialization/">true</IsValueType>
+      </xs:appinfo>
+    </xs:annotation>
     <xs:sequence>
-      <xs:element minOccurs="0" name="Active" type="xs:boolean" />
-      <xs:element minOccurs="0" name="AdminId" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="AdminMemberId" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="AuthorisedApps" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="City" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="Country" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="CreatedFromIPAddress" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="CustomerPassword" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="CustomerUsername" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="EmailAddress" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="EmailAddressConfirmed" type="xs:boolean" />
-      <xs:element minOccurs="0" name="ExecutionCount" type="xs:int" />
-      <xs:element minOccurs="0" name="FirstName" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="Id" type="ser:guid" />
-      <xs:element minOccurs="0" name="Inserted" type="xs:dateTime" />
-      <xs:element minOccurs="0" name="LastName" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="MaxExecutionCount" type="xs:int" />
-      <xs:element minOccurs="0" name="SecurityAnswer" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="SecurityQuestion" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="Suspended" type="xs:boolean" />
-      <xs:element minOccurs="0" name="TimeZone" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="WebSite" nillable="true" type="xs:string" />
+      <xs:element name="DateTime" type="xs:dateTime" />
+      <xs:element name="OffsetMinutes" type="xs:short" />
     </xs:sequence>
   </xs:complexType>
-  <xs:element name="Customer" nillable="true" type="tns:Customer" />
+  <xs:element name="DateTimeOffset" nillable="true" type="tns:DateTimeOffset" />
 </xs:schema>

@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Net", "SIPSorcery.Net\SIPSorcery.Net.csproj", "{B9A3E915-302F-4433-8696-85368A5496B4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Persistence", "SIPSorcery.Persistence\SIPSorcery.Persistence.csproj", "{6ED5020C-A823-4EA6-B01C-C505CE80E970}"

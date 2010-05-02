@@ -1,4 +1,8 @@
-﻿<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(MSBuildToolsVersion)' == '3.5'">
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+  </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -10,7 +14,7 @@
     <ProjectGuid>{0E3DF5C2-6EF0-47D9-8004-BD073B12A9D2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <NoStdLib>true</NoStdLib>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.0</TargetFrameworkVersion>
     <ProjectTypeGuids>{A1591282-1198-4647-A2B1-27E5FF5F6F3B};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <StartPageUrl>Default.html</StartPageUrl>
     <XapOutputs>true</XapOutputs>
@@ -29,6 +33,9 @@
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkIdentifier>Silverlight</TargetFrameworkIdentifier>
+    <SilverlightVersion>$(TargetFrameworkVersion)</SilverlightVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -41,7 +48,6 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -53,6 +59,7 @@
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -61,6 +68,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -102,68 +110,102 @@
     <ApplicationDefinition Include="App.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Page Include="UserInterface\About.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\DialPlanDetailsControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\SIPProviderDetailsControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\DialPlanManager.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UIControls\AssetListMenuBar.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\SIPProviderManager.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\CallManager\SIPCallManager.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\CreateAccountControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\CustomerSettingsControl.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\LoginControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\MonitoringConsole.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\Page.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\SIPAccountDetailsControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\SIPAccountManager.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\CityLightsDisplay.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\UserPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -248,13 +290,34 @@
     <WCFMetadata Include="WCFReferences\" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="SIPSorcery.CRM.Customer.datasource" />
+    <None Include="SIPSorcery.SIP.App.SIPAccount.datasource" />
+    <None Include="SIPSorcery.SIP.App.SIPCDRAsset.datasource" />
+    <None Include="SIPSorcery.SIP.App.SIPDialogueAsset.datasource" />
+    <None Include="SIPSorcery.SIP.App.SIPDialPlan.datasource" />
+    <None Include="SIPSorcery.SIP.App.SIPDomain.datasource" />
+    <None Include="SIPSorcery.SIP.App.SIPProvider.datasource" />
+    <None Include="SIPSorcery.SIP.App.SIPProviderBinding.datasource" />
+    <None Include="SIPSorcery.SIP.App.SIPRegistrarBinding.datasource" />
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull.disco" />
     <Resource Include="Images\wizard-logo.png" />
     <Resource Include="Images\small_logo.png" />
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull.wsdl" />
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull1.wsdl" />
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull2.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull3.xsd" />
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull4.xsd" />
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull5.xsd" />
     <None Include="WCFReferences\SIPSorceryNotificationService\SIPNotifierService1.wsdl" />
+    <None Include="WCFReferences\SIPSorceryNotificationService\SIPNotifierService11.wsdl" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\configuration91.svcinfo" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\configuration.svcinfo" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning1.wsdl" />
@@ -262,6 +325,9 @@
     <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning41.xsd" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning42.xsd" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning43.xsd" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning7.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="WCFReferences\SIPSorceryProvisioningClient\Reference.svcmap">
       <Generator>WCF Proxy Generator</Generator>
       <LastGenOutput>Reference.cs</LastGenOutput>
@@ -286,7 +352,7 @@
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
       <Visible>False</Visible>
-      <ProductName>.NET Framework Client Profile</ProductName>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
@@ -319,7 +385,7 @@
     <WCFMetadataStorage Include="WCFReferences\SIPSorceryNotificationService\" />
     <WCFMetadataStorage Include="WCFReferences\SIPSorceryProvisioningClient\" />
   </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Silverlight\v3.0\Microsoft.Silverlight.CSharp.targets" Condition="" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Silverlight\$(SilverlightVersion)\Microsoft.Silverlight.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>
       <FlavorProperties GUID="{A1591282-1198-4647-A2B1-27E5FF5F6F3B}">
