@@ -52,7 +52,17 @@ namespace SIPSorcery.SIPNotifier
                 SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor = SIPAssetPersistorFactory<SIPDialogueAsset>.CreateSIPAssetPersistor(m_sipNotifierStorageType, m_sipNotifierStorageConnStr, m_sipDialoguesXMLFilename);
                 SIPDomainManager sipDomainManager = new SIPDomainManager(m_sipNotifierStorageType, m_sipNotifierStorageConnStr);
 
-                SIPNotifierDaemon daemon = new SIPNotifierDaemon(customerPersistor.Get, sipDialoguePersistor.Get, sipDomainManager.GetDomain, sipAccountsPersistor.Get, sipRegistrarBindingsPersistor.Get, SIPRequestAuthenticator.AuthenticateSIPRequest, null);
+                SIPNotifierDaemon daemon = new SIPNotifierDaemon(
+                    customerPersistor.Get, 
+                    sipDialoguePersistor.Get, 
+                    sipDialoguePersistor.Get, 
+                    sipDomainManager.GetDomain, 
+                    sipAccountsPersistor.Get, 
+                    sipRegistrarBindingsPersistor.Get,
+                    sipAccountsPersistor.Get,
+                    sipRegistrarBindingsPersistor.Count,
+                    SIPRequestAuthenticator.AuthenticateSIPRequest, 
+                    null);
 
                 if (args != null && args.Length == 1 && args[0].StartsWith("-c"))
                 {

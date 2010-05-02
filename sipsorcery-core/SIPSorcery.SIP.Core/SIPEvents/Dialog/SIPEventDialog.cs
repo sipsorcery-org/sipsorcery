@@ -78,8 +78,10 @@ namespace SIPSorcery.SIP
                 RemoteTag = sipDialogue.RemoteTag;
                 Direction = (sipDialogue.Direction == SIPCallDirection.In) ? SIPEventDialogDirectionEnum.recipient : SIPEventDialogDirectionEnum.initiator;
                 Duration = Convert.ToInt32((DateTimeOffset.UtcNow - sipDialogue.Inserted).TotalSeconds % Int32.MaxValue);
-                LocalParticipant = new SIPEventDialogParticipant(sipDialogue.LocalUserField.Name, sipDialogue.LocalUserField.URI, null, sipDialogue.CSeq, sipDialogue.SDP);
-                RemoteParticipant = new SIPEventDialogParticipant(sipDialogue.RemoteUserField.Name, sipDialogue.RemoteUserField.URI, sipDialogue.RemoteTarget, sipDialogue.CSeq, sipDialogue.RemoteSDP);
+                //LocalParticipant = new SIPEventDialogParticipant(sipDialogue.LocalUserField.Name, sipDialogue.LocalUserField.URI, null, sipDialogue.CSeq, sipDialogue.SDP);
+                LocalParticipant = new SIPEventDialogParticipant(sipDialogue.LocalUserField.Name, sipDialogue.LocalUserField.URI, null, sipDialogue.CSeq);
+                //RemoteParticipant = new SIPEventDialogParticipant(sipDialogue.RemoteUserField.Name, sipDialogue.RemoteUserField.URI, sipDialogue.RemoteTarget, sipDialogue.CSeq, sipDialogue.RemoteSDP);
+                RemoteParticipant = new SIPEventDialogParticipant(sipDialogue.RemoteUserField.Name, sipDialogue.RemoteUserField.URI, sipDialogue.RemoteTarget, sipDialogue.CSeq);
                 BridgeID = (sipDialogue.BridgeId != Guid.Empty) ? sipDialogue.BridgeId.ToString() : null;
             }
         }
@@ -127,11 +129,6 @@ namespace SIPSorcery.SIP
 
         public XElement ToXML()
         {
-            return ToXML(null);
-        }
-
-        public XElement ToXML(string filter)
-        {
             XNamespace ns = m_dialogXMLNS;
             XNamespace ss = m_sipsorceryXMLNS;
 
@@ -149,8 +146,10 @@ namespace SIPSorcery.SIP
             if (StateEvent != SIPEventDialogStateEvent.None) { eventDialogElement.Element(ns + "state").Add(new XAttribute("event", StateEvent.ToString())); }
             if (Duration != 0) { eventDialogElement.Add(new XElement(ns + "duration", Duration)); }
             if (BridgeID != null) { eventDialogElement.Add(new XElement(ss + "bridgeid", BridgeID)); }
-            if (LocalParticipant != null) { eventDialogElement.Add(LocalParticipant.ToXML("local", filter)); }
-            if (RemoteParticipant != null) { eventDialogElement.Add(RemoteParticipant.ToXML("remote", filter)); }
+            //if (LocalParticipant != null) { eventDialogElement.Add(LocalParticipant.ToXML("local", filter)); }
+            if (LocalParticipant != null) { eventDialogElement.Add(LocalParticipant.ToXML("local")); }
+            //if (RemoteParticipant != null) { eventDialogElement.Add(RemoteParticipant.ToXML("remote", filter)); }
+            if (RemoteParticipant != null) { eventDialogElement.Add(RemoteParticipant.ToXML("remote")); }
 
             return eventDialogElement;
         }

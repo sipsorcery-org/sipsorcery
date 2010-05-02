@@ -208,19 +208,22 @@ namespace SIPSorcery.SIPAppServer
                     m_sipNotifierDaemon = new SIPNotifierDaemon(
                         m_customerSessionManager.CustomerPersistor.Get,
                         m_sipSorceryPersistor.SIPDialoguePersistor.Get,
+                        m_sipSorceryPersistor.SIPDialoguePersistor.Get,
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                         m_sipSorceryPersistor.SIPAccountsPersistor.Get,
                         m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
+                        m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                        m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Count,
                         SIPRequestAuthenticator.AuthenticateSIPRequest,
-                        //m_sipMonitorPublisher);
-                        new SIPMonitorUDPSink("127.0.0.1:10003"));
+                        m_sipMonitorPublisher);
+                        //new SIPMonitorUDPSink("127.0.0.1:10003"));
                     m_sipNotifierDaemon.Start();
                 }
 
                 if (m_sshServerEnabled)
                 {
-                    //SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, m_sipMonitorPublisher); // Uses memory to transfer events. 
-                    SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, new SIPMonitorUDPSink("127.0.0.1:10002"));
+                    SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, m_sipMonitorPublisher); // Uses memory to transfer events. 
+                    //SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, new SIPMonitorUDPSink("127.0.0.1:10002"));
                     daemon.Start();
                 }
 
@@ -322,7 +325,6 @@ namespace SIPSorcery.SIPAppServer
                     FireSIPMonitorEvent,
                     m_callManager,
                     m_sipDialogueManager,
-                    //m_notifyManager,
                     SIPRequestAuthenticator.AuthenticateSIPRequest,
                     m_outboundProxy);
 
@@ -362,9 +364,6 @@ namespace SIPSorcery.SIPAppServer
                                 m_sipRegAgentDaemon = new SIPRegAgentDaemon(
                                     m_sipSorceryPersistor.SIPProvidersPersistor,
                                     m_sipSorceryPersistor.SIPProviderBindingsPersistor);
-
-                                // DON'T START THE DAEMON. IN THIS CASE ONLY THE LINK BETWEEN THE PROVIDER AND BINDINGS PERSISTORS IS NEEDED.
-                                //m_sipRegAgentDaemon.Start();
                             }
 
                             logger.Debug("Provisioning hosted service successfully started on " + m_sipProvisioningHost.BaseAddresses[0].AbsoluteUri + ".");

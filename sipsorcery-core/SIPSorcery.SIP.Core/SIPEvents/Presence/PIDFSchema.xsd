@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema targetNamespace="urn:ietf:params:xml:ns:pidf"
+     xmlns:tns="urn:ietf:params:xml:ns:pidf"
+     xmlns:xs="http://www.w3.org/2001/XMLSchema"
+     elementFormDefault="qualified"
+     attributeFormDefault="unqualified">
+
+  <!-- This import brings in the XML language attribute xml:lang-->
+  <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+
+  <xs:element name="presence">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="tuple" type="tns:tuple" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="note" type="tns:note" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="entity" type="xs:anyURI" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:complexType name="tuple">
+    <xs:sequence>
+      <xs:element name="status" type="tns:status"/>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="contact" type="tns:contact" minOccurs="0"/>
+      <xs:element name="note" type="tns:note" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="timestamp" type="xs:dateTime" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="status">
+    <xs:sequence>
+      <xs:element name="basic" type="tns:basic" minOccurs="0"/>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:simpleType name="basic">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="open"/>
+      <xs:enumeration value="closed"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="contact">
+    <xs:simpleContent>
+      <xs:extension base="xs:anyURI">
+        <xs:attribute name="priority" type="tns:qvalue"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="note">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute ref="xml:lang"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:simpleType name="qvalue">
+    <xs:restriction base="xs:decimal">
+      <xs:pattern value="0(.[0-9]{0,3})?"/>
+      <xs:pattern value="1(.0{0,3})?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Global Attributes -->
+  <xs:attribute name="mustUnderstand" type="xs:boolean" default="0">
+    <xs:annotation>
+      <xs:documentation>
+        This attribute may be used on any element within an optional
+        PIDF extension to indicate that the corresponding element must
+        be understood by the PIDF processor if the enclosing optional
+        element is to be handled.
+      </xs:documentation>
+    </xs:annotation>
+  </xs:attribute>
+</xs:schema>

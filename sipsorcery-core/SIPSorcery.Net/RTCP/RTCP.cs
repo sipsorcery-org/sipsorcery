@@ -686,16 +686,17 @@ namespace SIPSorcery.Net
 		{	
 			[TestFixtureSetUp]
 			public void Init()
-			{
-				
-			}
-
+			{ }
 			
 			[TestFixtureTearDown]
 			public void Dispose()
-			{			
-				
-			}
+			{ }
+
+            [Test]
+            public void SampleTest()
+            {
+                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            }
 
 			/*			
 			[Test]

@@ -64,6 +64,7 @@ namespace SIPSorcery.Servers
         private static string m_referNotifyEventValue = SIPConstants.SIP_REFER_NOTIFY_EVENT;
         private static string m_referNotifyContentType = SIPMIMETypes.REFER_CONTENT_TYPE;
         private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
+        private static readonly string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
 
         private SIPMonitorLogDelegate Log_External;
         private SIPTransport m_sipTransport;
@@ -110,6 +111,17 @@ namespace SIPSorcery.Servers
                     reInviteTransaction.SendInformationalResponse(tryingResponse);
                     reInviteTransaction.CDR = null;     // Don't want CDR's on re-INVITEs.
                     ForwardInDialogueRequest(dialogue, reInviteTransaction, localSIPEndPoint, remoteEndPoint);
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
+                {
+                    // Send back the remote SDP.
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "OPTIONS request for established dialogue " + dialogue.DialogueName + ".", dialogue.Owner));
+                    SIPNonInviteTransaction optionsTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                    SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    okResponse.Body = dialogue.RemoteSDP;
+                    okResponse.Header.ContentLength = okResponse.Body.Length;
+                    okResponse.Header.ContentType = m_sdpContentType;
+                    optionsTransaction.SendFinalResponse(okResponse);
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.MESSAGE)
                 {
@@ -188,10 +200,10 @@ namespace SIPSorcery.Servers
             m_sipDialoguePersistor.Add(new SIPDialogueAsset(forwardedDialogue));
 
             SIPEndPoint clientDialogueRemoteEP = (IPSocket.IsIPSocket(clientDiaglogue.RemoteTarget.Host)) ? SIPEndPoint.ParseSIPEndPoint(clientDiaglogue.RemoteTarget.Host) : null;
-            Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueCreated, clientDiaglogue.Owner, clientDiaglogue));
+            Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueCreated, clientDiaglogue.Owner, clientDiaglogue.Id.ToString(), clientDiaglogue.LocalUserField.URI));
 
             SIPEndPoint forwardedDialogueRemoteEP = (IPSocket.IsIPSocket(forwardedDialogue.RemoteTarget.Host)) ? SIPEndPoint.ParseSIPEndPoint(forwardedDialogue.RemoteTarget.Host) : null;
-            Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueCreated, forwardedDialogue.Owner, forwardedDialogue));
+            Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueCreated, forwardedDialogue.Owner, forwardedDialogue.Id.ToString(), forwardedDialogue.LocalUserField.URI));
         }
 
         public void CallHungup(SIPDialogue sipDialogue, string hangupCause)
@@ -249,11 +261,11 @@ namespace SIPSorcery.Servers
                         m_sipDialoguePersistor.Delete(new SIPDialogueAsset(orphanedDialogue));
 
                         SIPEndPoint orphanedDialogueRemoteEP = (IPSocket.IsIPSocket(orphanedDialogue.RemoteTarget.Host)) ? SIPEndPoint.ParseSIPEndPoint(orphanedDialogue.RemoteTarget.Host) : null;
-                        Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved, orphanedDialogue.Owner, orphanedDialogue));
+                        Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved, orphanedDialogue.Owner, orphanedDialogue.Id.ToString(), orphanedDialogue.LocalUserField.URI));
                     }
 
                     m_sipDialoguePersistor.Delete(new SIPDialogueAsset(sipDialogue));
-                    Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved, sipDialogue.Owner, sipDialogue));
+                    Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved, sipDialogue.Owner, sipDialogue.Id.ToString(), sipDialogue.LocalUserField.URI));
                 }
                 else
                 {
@@ -713,8 +725,8 @@ namespace SIPSorcery.Servers
                         m_sipDialoguePersistor.Update(new SIPDialogueAsset(remainingDialogue));
                         m_sipDialoguePersistor.Update(new SIPDialogueAsset(remaining2Dialogue));
 
-                        Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated, remainingDialogue.Owner, remainingDialogue));
-                        Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated, remaining2Dialogue.Owner, remaining2Dialogue));
+                        Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated, remainingDialogue.Owner, remainingDialogue.Id.ToString(), remainingDialogue.LocalUserField.URI));
+                        Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated, remaining2Dialogue.Owner, remaining2Dialogue.Id.ToString(), remaining2Dialogue.LocalUserField.URI));
 
                         SIPResponse acceptedResponse = SIPTransport.GetResponse(referRequest, SIPResponseStatusCodesEnum.Accepted, null);
                         referTransaction.SendFinalResponse(acceptedResponse);
@@ -774,8 +786,8 @@ namespace SIPSorcery.Servers
                 m_sipDialoguePersistor.Update(new SIPDialogueAsset(orphanedDialogue));
                 m_sipDialoguePersistor.Add(new SIPDialogueAsset(answeredDialogue));
 
-                Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueCreated, answeredDialogue.Owner, answeredDialogue));
-                Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated, orphanedDialogue.Owner, orphanedDialogue));
+                Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueCreated, answeredDialogue.Owner, answeredDialogue.Id.ToString(), answeredDialogue.LocalUserField.URI));
+                Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated, orphanedDialogue.Owner, orphanedDialogue.Id.ToString(), orphanedDialogue.LocalUserField.URI));
 
                 logger.Debug("Hanging up dead dialogue");
                 // Hangup dialogue being replaced.

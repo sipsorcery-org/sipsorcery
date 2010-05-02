@@ -70,6 +70,8 @@ namespace SIPSorcery.SIP
  
         public const string NAT_SENDKEEPALIVES_VALUE = "y";
         public const string SIP_REFER_NOTIFY_EVENT = "refer";                   // The value that must be set for the Event header on a NOTIFY request when processing a REFER (RFC 3515).
+
+        public const string SWITCHBOARD_USER_AGENT_PREFIX = "sipsorcery-switchboard";
 	}
 
 	public enum SIPMessageTypesEnum
@@ -184,6 +186,8 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_PROXY_REQUIRE = "Proxy-Require";
         public const string SIP_HEADER_REASON = "Reason";
         public const string SIP_HEADER_RECORDROUTE = "Record-Route";
+        public const string SIP_HEADER_REFERREDBY = "Referred-By";                  // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method".
+        public const string SIP_HEADER_REFERTO = "Refer-To";                        // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method".
         public const string SIP_HEADER_REPLY_TO = "Reply-To";
         public const string SIP_HEADER_REQUIRE = "Require";
         public const string SIP_HEADER_RETRY_AFTER = "Retry-After";
@@ -201,25 +205,30 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_WWWAUTHENTICATE = "WWW-Authenticate";
 
 		// SIP Compact Header Keys.
+        public const string SIP_COMPACTHEADER_ALLOWEVENTS = "u";        // RC3265 (SIP Events).
 		public const string SIP_COMPACTHEADER_CALLID = "i";
 		public const string SIP_COMPACTHEADER_CONTACT = "m";
+        public const string SIP_COMPACTHEADER_CONTENTLENGTH = "l";
+        public const string SIP_COMPACTHEADER_CONTENTTYPE = "c";
+        public const string SIP_COMPACTHEADER_EVENT = "o";              // RC3265 (SIP Events).
 		public const string SIP_COMPACTHEADER_FROM = "f";
-		public const string SIP_COMPACTHEADER_TO = "t";
-		public const string SIP_COMPACTHEADER_CONTENTLENGTH = "l";
-		public const string SIP_COMPACTHEADER_CONTENTTYPE = "c";
-		public const string SIP_COMPACTHEADER_VIA = "v";
-        public const string SIP_COMPACTHEADER_SUPPORTED = "k";
+        public const string SIP_COMPACTHEADER_REFERTO = "r";            // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method".
         public const string SIP_COMPACTHEADER_SUBJECT = "s";
-
-        // SIP Header extensions from RFC 3515 "The Session Initiation Protocol (SIP) Refer Method".
-        public const string SIP_HEADER_REFERREDBY = "Referred-By";
-        public const string SIP_HEADER_REFERTO = "Refer-To";
-        public const string SIP_COMPACTHEADER_REFERTO = "r";
+        public const string SIP_COMPACTHEADER_SUPPORTED = "k";
+        public const string SIP_COMPACTHEADER_TO = "t";
+        public const string SIP_COMPACTHEADER_VIA = "v";
 
         // Custom SIP headers to allow proxy to communicate network info to internal servers.
         public const string SIP_HEADER_PROXY_RECEIVEDON = "Proxy-ReceivedOn";
         public const string SIP_HEADER_PROXY_RECEIVEDFROM = "Proxy-ReceivedFrom";
         public const string SIP_HEADER_PROXY_SENDFROM = "Proxy-SendFrom";
+
+        // Custom SIP headers to interact with the SIP Sorcery switchboard.
+        public const string SIP_HEADER_SWITCHBOARD_CALLID = "Switchboard-CallID";
+        public const string SIP_HEADER_SWITCHBOARD_TO = "Switchboard-To";
+        public const string SIP_HEADER_SWITCHBOARD_TO_DESCRIPTION = "Switchboard-ToDescription";
+        public const string SIP_HEADER_SWITCHBOARD_FROM = "Switchboard-From";
+        public const string SIP_HEADER_SWITCHBOARD_FROM_CONTACT_URL = "Switchboard-FromContactURL";
 	}
 
 	public class SIPHeaderAncillary
@@ -402,6 +411,7 @@ namespace SIPSorcery.SIP
         public const string MWI_CONTENT_TYPE = "application/simple-message-summary";    // RFC3842 MWI event package.
         public const string REFER_CONTENT_TYPE = "message/sipfrag";                     // RFC3515 REFER event package.
         public const string MWI_TEXT_TYPE = "text/text";
+        public const string PRESENCE_NOTIFY_CONTENT_TYPE = "application/pidf+xml";      // RFC3856 presence event package.
     }
 
     public static class SIPEscape

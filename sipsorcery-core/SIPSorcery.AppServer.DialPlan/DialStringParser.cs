@@ -82,6 +82,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
         private static string m_anonymousUsername = SIPConstants.SIP_DEFAULT_USERNAME;
         private static string m_anonymousFromURI = SIPConstants.SIP_DEFAULT_FROMURI;
+        private static readonly string m_switchboardUserAgentPrefix = SIPConstants.SWITCHBOARD_USER_AGENT_PREFIX;
 
         private string m_username;
         private SIPAccount m_sipAccount;
@@ -162,7 +163,8 @@ namespace SIPSorcery.AppServer.DialPlan
             string callersNetworkId,
             string fromDisplayName,
             string fromUsername,
-            string fromHost)
+            string fromHost,
+            List<string> switchboardHeaders)
         {
             try
             {
@@ -186,7 +188,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         // Multi legged call (Script sys.Dial format).
                         //string providersString = (command.IndexOf(',') == -1) ? command : command.Substring(0, command.IndexOf(','));
-                        prioritisedCallList = ParseScriptDialString(sipRequest, command, customHeaders, customContentType, customContent, callersNetworkId, fromDisplayName, fromUsername, fromHost);
+                        prioritisedCallList = ParseScriptDialString(sipRequest, command, customHeaders, customContentType, customContent, callersNetworkId, fromDisplayName, fromUsername, fromHost, switchboardHeaders);
                     }
 
                     return prioritisedCallList;
@@ -286,7 +288,8 @@ namespace SIPSorcery.AppServer.DialPlan
             string callersNetworkId,
             string fromDisplayName,
             string fromUsername,
-            string fromHost)
+            string fromHost,
+            List<string> switchboardHeaders)
         {
             try
             {
@@ -339,7 +342,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                         if (calledSIPAccount.InDialPlanName.IsNullOrBlank() || (m_username == calledSIPAccount.Owner && m_dialPlanName == calledSIPAccount.InDialPlanName))
                                         {
                                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg is for local domain looking up bindings for " + callLegSIPURI.User + "@" + localDomain + " for call leg " + callLegDestination + ".", m_username));
-                                            switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, calledSIPAccount, customHeaders, customContentType, customContent, options, callersNetworkId, fromDisplayName, fromUsername, fromHost));
+                                            switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, calledSIPAccount, customHeaders, customContentType, customContent, options, callersNetworkId, fromDisplayName, fromUsername, fromHost, switchboardHeaders));
                                         }
                                         else
                                         {
@@ -445,7 +448,8 @@ namespace SIPSorcery.AppServer.DialPlan
             string callersNetworkId,
             string fromDisplayName,
             string fromUsername,
-            string fromHost)
+            string fromHost,
+            List<string> switchboardHeaders)
         {
             List<SIPCallDescriptor> localUserSwitchCalls = new List<SIPCallDescriptor>();
 
@@ -490,6 +494,30 @@ namespace SIPSorcery.AppServer.DialPlan
 
                         string fromHeader = (sipRequest != null) ? sipRequest.Header.From.ToString() : m_anonymousFromURI;
 
+                        // If the binding for the call is a switchboard add the custom switchboard headers.
+                        List<string> customSwitchboardHeaders = null;
+                        if (!binding.UserAgent.IsNullOrBlank() && binding.UserAgent.StartsWith(m_switchboardUserAgentPrefix))
+                        {
+                            customSwitchboardHeaders = new List<string>();
+
+                            if (customHeaders != null && customHeaders.Count > 0)
+                            {
+                                customSwitchboardHeaders.AddRange(customHeaders);
+                            }
+
+                            customSwitchboardHeaders.Add(SIPHeaders.SIP_HEADER_SWITCHBOARD_CALLID + ": " + sipRequest.Header.CallId);
+                            customSwitchboardHeaders.Add(SIPHeaders.SIP_HEADER_SWITCHBOARD_TO + ": " + sipRequest.Header.To.ToString());
+                            customSwitchboardHeaders.Add(SIPHeaders.SIP_HEADER_SWITCHBOARD_FROM + ": " + sipRequest.Header.From.ToString());
+
+                            if (switchboardHeaders != null && switchboardHeaders.Count > 0)
+                            {
+                                foreach (string switchboardHeader in switchboardHeaders)
+                                {
+                                    customSwitchboardHeaders.Add(switchboardHeader);
+                                }
+                            }
+                        }
+
                         SIPCallDescriptor switchCall = new SIPCallDescriptor(
                             null,
                             null,
@@ -497,7 +525,7 @@ namespace SIPSorcery.AppServer.DialPlan
                             fromHeader,
                             new SIPToHeader(null, SIPURI.ParseSIPURIRelaxed(sipAccount.SIPUsername + "@" + sipAccount.SIPDomain), null).ToString(),
                             null,
-                            customHeaders,
+                            customSwitchboardHeaders ?? customHeaders,
                             null,
                             SIPCallDirection.In,
                             contentType,

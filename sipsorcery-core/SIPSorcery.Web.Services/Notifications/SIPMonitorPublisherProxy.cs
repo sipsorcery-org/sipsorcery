@@ -21,6 +21,7 @@ namespace SIPSorcery.Web.Services
         private static ILog logger = AppState.logger;
 
         public event Action<string> NotificationReady;          // Not used across WCF channels, for in memory only.
+        public event Func<SIPMonitorEvent, bool> MonitorEventReady; // Not used.
 
         /*public SIPMonitorPublisherProxy(InstanceContext callbackInstance)
             : base(callbackInstance)

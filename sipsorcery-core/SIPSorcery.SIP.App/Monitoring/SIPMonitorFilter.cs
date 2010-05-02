@@ -71,6 +71,7 @@ namespace SIPSorcery.SIP.App
         public const string SERVERTYPE_FILTER_KEY = "server";
         public const string REGEX_FILTER_KEY = "regex";
         public const string SIPEVENT_DIALOG_KEY = "dialog";                // To subscribe for machine events related to dialogs.
+        public const string SIPEVENT_PRESENCE_KEY = "presence";            // To subscribe for machine events related to presence.
 
         public const string MACHINE_BASE_TYPE = "machine";
         public const string CONSOLE_BASE_TYPE = "console";
@@ -87,15 +88,16 @@ namespace SIPSorcery.SIP.App
         public string BaseType = CONSOLE_BASE_TYPE;
         public string IPAddress = WILDCARD;
         public string ServerIPAddress = WILDCARD;
-        public string Username = WILDCARD;
+        public string Username = null;
         public string SIPRequestFilter = WILDCARD;
-        public string EventFilterDescr = WILDCARD;
+        public string EventFilterDescr = null;
         public int EventTypeId = 0;
         public int ServerTypeId = 0;
         public string RegexFilter = DEFAULT_REGEX;
         public string FileLogname = null;
         public int FileLogDuration = DEFAULT_FILEDURATION_MINUTES;
-        public SIPURI EventDialogURI;
+        public SIPURI SIPEventDialogURI;
+        public SIPURI SIPEventPresenceURI;
 
         public SIPMonitorFilter(string filter)
         {
@@ -181,7 +183,12 @@ namespace SIPSorcery.SIP.App
                             else if (filterName == SIPEVENT_DIALOG_KEY)
                             {
                                 BaseType = MACHINE_BASE_TYPE;
-                                EventDialogURI = SIPURI.ParseSIPURI(filterValue);
+                                SIPEventDialogURI = SIPURI.ParseSIPURI(filterValue);
+                            }
+                            else if (filterName == SIPEVENT_PRESENCE_KEY)
+                            {
+                                BaseType = MACHINE_BASE_TYPE;
+                                SIPEventPresenceURI = SIPURI.ParseSIPURI(filterValue);
                             }
                             else
                             {
@@ -352,7 +359,7 @@ namespace SIPSorcery.SIP.App
             string serverStr = (ServerTypeId == 0) ? WILDCARD : SIPMonitorServerTypes.GetProxyServerTypeForId(ServerTypeId).ToString();
 
             string filerDescription =
-                "ipaddress=" + IPAddress + ", user=" + Username + ", event=" + eventStr + ", request=" + SIPRequestFilter + ", serveripaddress=" + ServerIPAddress + ", server=" + serverStr + ", regex=" + RegexFilter + ".";
+                "basetype=" + BaseType + ", ipaddress=" + IPAddress + ", user=" + Username + ", event=" + eventStr + ", request=" + SIPRequestFilter + ", serveripaddress=" + ServerIPAddress + ", server=" + serverStr + ", regex=" + RegexFilter + ".";
 
             return filerDescription;
         }
@@ -376,36 +383,49 @@ namespace SIPSorcery.SIP.App
             {
                 if (BaseType == MACHINE_BASE_TYPE)
                 {
-                    if(EventFilterDescr == null)
+                    if (EventFilterDescr == WILDCARD)
                     {
-                        return true;
+                        return ShowUsername(proxyEvent.Username);
                     }
-                    else if (EventDialogURI != null)
+                    else
                     {
                         SIPMonitorMachineEvent machineEvent = proxyEvent as SIPMonitorMachineEvent;
-                        if (machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueCreated ||
+
+                        if ((machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueCreated ||
                             machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved ||
-                            machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated)
+                            machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated) && SIPEventDialogURI != null)
                         {
-                            if (machineEvent.Dialogue.Owner == Username ||
-                                (machineEvent.Dialogue.LocalUserField.URI.ToParameterlessString() == EventDialogURI.ToString() ||
-                                machineEvent.Dialogue.RemoteUserField.URI.ToParameterlessString() == EventDialogURI.ToString()))
+                            if (SIPEventDialogURI.User == WILDCARD)
                             {
-                                return true;
+                                return ShowUsername(proxyEvent.Username);
                             }
                             else
                             {
-                                return false;
+                                return proxyEvent.Username == Username && machineEvent.ResourceURI != null &&
+                                    machineEvent.ResourceURI.User == SIPEventDialogURI.User && machineEvent.ResourceURI.Host == SIPEventDialogURI.Host;
                             }
+                        }
+                        else if ((machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingRemoval ||
+                            machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate) && SIPEventPresenceURI != null)
+                        {
+                            if (SIPEventPresenceURI.User == WILDCARD)
+                            {
+                                return ShowUsername(proxyEvent.Username);
+                            }
+                            else
+                            {
+                                return proxyEvent.Username == Username && machineEvent.ResourceURI != null &&
+                                    machineEvent.ResourceURI.User == SIPEventPresenceURI.User && machineEvent.ResourceURI.Host == SIPEventPresenceURI.Host;
+                            }
+                        }
+                        else if (SIPEventDialogURI == null && SIPEventPresenceURI == null)
+                        {
+                            return ShowUsername(proxyEvent.Username);
                         }
                         else
                         {
                             return false;
                         }
-                    }
-                    else 
-                    {
-                        return proxyEvent.Username == Username;
                     }
                 }
                 else
@@ -417,7 +437,7 @@ namespace SIPSorcery.SIP.App
             {
                 return false;
             }
-            else 
+            else
             {
                 SIPMonitorConsoleEvent consoleEvent = proxyEvent as SIPMonitorConsoleEvent;
 
@@ -461,7 +481,7 @@ namespace SIPSorcery.SIP.App
                     }
                 }
 
-                if (ShowEvent(consoleEvent.EventType, consoleEvent.ServerEndPoint) && 
+                if (ShowEvent(consoleEvent.EventType, consoleEvent.ServerEndPoint) &&
                     (consoleEvent is SIPMonitorConsoleEvent && ShowServer(((SIPMonitorConsoleEvent)consoleEvent).ServerType)))
                 {
                     bool showIPAddress = ShowIPAddress(remoteIPAddress) || ShowIPAddress(dstIPAddress);

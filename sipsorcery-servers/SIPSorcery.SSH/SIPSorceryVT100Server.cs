@@ -51,6 +51,7 @@ namespace SIPSorcery.SSHServer
             {
                 m_publisher = Dependency.Resolve<ISIPMonitorPublisher>();
                 m_publisher.NotificationReady += NotificationReady;
+                m_publisher.MonitorEventReady += MonitorEventAvailable;
             }
             catch (ApplicationException appExcp)
             {
@@ -62,20 +63,53 @@ namespace SIPSorcery.SSHServer
             ThreadPool.QueueUserWorkItem(delegate { Listen(); });
         }
 
-        public void NotificationReady(string monitorEventStr)
+        private void NotificationReady(string addressID)
         {
             try
             {
-                SIPMonitorConsoleEvent consoleEvent = SIPMonitorEvent.ParseEventCSV(monitorEventStr) as SIPMonitorConsoleEvent;
-                if (consoleEvent != null && consoleEvent.SessionID == m_notificationsSessionID)
+                if (addressID == m_notificationsAddress)
                 {
-                    OutStream.Write(Encoding.ASCII.GetBytes(consoleEvent.ToConsoleString(AdminId)));
-                    OutStream.Flush();
+                    string sessionID = null;
+                    string sessionError = null;
+                    List<string> notifications = m_publisher.GetNotifications(m_notificationsAddress, out sessionID, out sessionError);
+
+                    if (sessionError != null)
+                    {
+                        logger.Warn("SIPSorceryVT100Server error on get notifications. " + sessionError + ".");
+                    }
+                    else if (m_notificationsSessionID == sessionID)
+                    {
+                        foreach (string notification in notifications)
+                        {
+                            MonitorEventAvailable(SIPMonitorEvent.ParseEventCSV(notification));
+                        }
+                    }
                 }
             }
             catch (Exception excp)
             {
                 logger.Error("Exception SIPSorceryVT100Server NotificationReady. " + excp.Message);
+            }
+        }
+
+        public bool MonitorEventAvailable(SIPMonitorEvent monitorEvent)
+        {
+            try
+            {
+                SIPMonitorConsoleEvent consoleEvent = monitorEvent as SIPMonitorConsoleEvent;
+                if (consoleEvent != null && consoleEvent.SessionID == m_notificationsSessionID)
+                {
+                    OutStream.Write(Encoding.ASCII.GetBytes(consoleEvent.ToConsoleString(AdminId)));
+                    OutStream.Flush();
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPSorceryVT100Server NotificationReady. " + excp.Message);
+                return false;
             }
         }
 

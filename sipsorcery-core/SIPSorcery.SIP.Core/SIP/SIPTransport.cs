@@ -106,6 +106,8 @@ namespace SIPSorcery.SIP
         private const int MAX_INMESSAGE_QUEUECOUNT = 5000;          // The maximum number of messages that can be stored in the incoming message queue.
         private const int MAX_RELIABLETRANSMISSIONS_COUNT = 5000;   // The maximum number of messages that can be maintained for reliable transmissions.
 
+        public const string ALLOWED_SIP_METHODS = "ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, REFER, REGISTER, SUBSCRIBE";
+
         private static readonly int m_t1 = SIPTimings.T1;
         private static readonly int m_t2 = SIPTimings.T2;
         private static readonly int m_t6 = SIPTimings.T6;
@@ -532,29 +534,38 @@ namespace SIPSorcery.SIP
 
         private void SendRequest(SIPChannel sipChannel, SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
-            if (dstEndPoint != null && dstEndPoint.ToString() == Blackhole.ToString())
+            try
             {
-                // Ignore packet, it's destined for the blackhole.
-                return;
-            }
+                if (dstEndPoint != null && dstEndPoint.ToString() == Blackhole.ToString())
+                {
+                    // Ignore packet, it's destined for the blackhole.
+                    return;
+                }
 
-            if (m_sipChannels.Count == 0)
-            {
-                throw new ApplicationException("No channels are configured in the SIP transport layer. The request could not be sent.");
-            }
+                if (m_sipChannels.Count == 0)
+                {
+                    throw new ApplicationException("No channels are configured in the SIP transport layer. The request could not be sent.");
+                }
 
-            if (sipChannel.IsTLS)
-            {
-                sipChannel.Send(dstEndPoint.SocketEndPoint, Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host);
-            }
-            else
-            {
-                sipChannel.Send(dstEndPoint.SocketEndPoint, Encoding.UTF8.GetBytes(sipRequest.ToString()));
-            }
+                if (sipChannel.IsTLS)
+                {
+                    sipChannel.Send(dstEndPoint.SocketEndPoint, Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host);
+                }
+                else
+                {
+                    sipChannel.Send(dstEndPoint.SocketEndPoint, Encoding.UTF8.GetBytes(sipRequest.ToString()));
+                }
 
-            if (SIPRequestOutTraceEvent != null)
+                if (SIPRequestOutTraceEvent != null)
+                {
+                    FireSIPRequestOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipRequest);
+                }
+            }
+            catch (ApplicationException appExcp)
             {
-                FireSIPRequestOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipRequest);
+                logger.Warn("ApplicationException SIPTransport SendRequest. " + appExcp.Message);
+                SIPResponse errorResponse = GetResponse(sipRequest, SIPResponseStatusCodesEnum.InternalServerError, appExcp.Message);
+                SendResponse(errorResponse);
             }
         }
 
@@ -727,22 +738,29 @@ namespace SIPSorcery.SIP
 
         private void SendResponse(SIPChannel sipChannel, SIPEndPoint dstEndPoint, SIPResponse sipResponse)
         {
-            if (dstEndPoint != null && dstEndPoint.ToString() == Blackhole.ToString())
+            try
             {
-                // Ignore packet, it's destined for the blackhole.
-                return;
+                if (dstEndPoint != null && dstEndPoint.ToString() == Blackhole.ToString())
+                {
+                    // Ignore packet, it's destined for the blackhole.
+                    return;
+                }
+
+                if (m_sipChannels.Count == 0)
+                {
+                    throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
+                }
+
+                sipChannel.Send(dstEndPoint.SocketEndPoint, Encoding.UTF8.GetBytes(sipResponse.ToString()));
+
+                if (SIPRequestOutTraceEvent != null)
+                {
+                    FireSIPResponseOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipResponse);
+                }
             }
-
-            if (m_sipChannels.Count == 0)
+            catch (ApplicationException appExcp)
             {
-                throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
-            }
-
-            sipChannel.Send(dstEndPoint.SocketEndPoint, Encoding.UTF8.GetBytes(sipResponse.ToString()));
-
-            if (SIPRequestOutTraceEvent != null)
-            {
-                FireSIPResponseOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipResponse);
+                logger.Warn("ApplicationException SIPTransport SendResponse. " + appExcp.Message);
             }
         }
 
@@ -1570,6 +1588,7 @@ namespace SIPSorcery.SIP
                 }
 
                 response.Header.MaxForwards = Int32.MinValue;
+                response.Header.Allow = ALLOWED_SIP_METHODS;
 
                 return response;
             }
@@ -1602,6 +1621,7 @@ namespace SIPSorcery.SIP
                 response.Header.CSeqMethod = SIPMethodsEnum.NONE;
                 response.Header.Vias.PushViaHeader(new SIPViaHeader(new SIPEndPoint(localSIPEndPoint.SIPProtocol, remoteEndPoint.SocketEndPoint), CallProperties.CreateBranchId()));
                 response.Header.MaxForwards = Int32.MinValue;
+                response.Header.Allow = ALLOWED_SIP_METHODS;
 
                 return response;
             }
@@ -1612,6 +1632,11 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public SIPRequest GetRequest(SIPMethodsEnum method, SIPURI uri)
+        {
+            return GetRequest(method, uri, new SIPToHeader(null, uri, null), null);
+        }
+
         public SIPRequest GetRequest(SIPMethodsEnum method, SIPURI uri, SIPToHeader to, SIPEndPoint localSIPEndPoint)
         {
             if (localSIPEndPoint == null)
@@ -1620,12 +1645,15 @@ namespace SIPSorcery.SIP
             }
 
             SIPRequest request = new SIPRequest(method, uri);
+            request.LocalSIPEndPoint = localSIPEndPoint;
 
             SIPContactHeader contactHeader = new SIPContactHeader(null, new SIPURI(SIPSchemesEnum.sip, localSIPEndPoint));
             SIPFromHeader fromHeader = new SIPFromHeader(null, contactHeader.ContactURI, CallProperties.CreateNewTag());
-            SIPHeader header = new SIPHeader(contactHeader, fromHeader, to, Crypto.GetRandomInt(1000, 9999), CallProperties.CreateNewCallId());
+            SIPHeader header = new SIPHeader(contactHeader, fromHeader, to, 1, CallProperties.CreateNewCallId());
             request.Header = header;
             header.CSeqMethod = method;
+            header.Allow = ALLOWED_SIP_METHODS;
+            
             SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
             header.Vias.PushViaHeader(viaHeader);
 

@@ -469,7 +469,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         // If there is a dial string parser available it will be used to generate a list of call destination from the redirect URI.
                         SIPCallDescriptor redirectCallDescriptor = answeredUAC.CallDescriptor.CopyOf();
                         Queue<List<SIPCallDescriptor>> redirectQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, null, redirectURI.ToString(), redirectCallDescriptor.CustomHeaders,
-                            redirectCallDescriptor.ContentType, redirectCallDescriptor.Content, null, redirectCallDescriptor.FromDisplayName, redirectCallDescriptor.FromURIUsername, redirectCallDescriptor.FromURIHost);
+                            redirectCallDescriptor.ContentType, redirectCallDescriptor.Content, null, redirectCallDescriptor.FromDisplayName, redirectCallDescriptor.FromURIUsername, redirectCallDescriptor.FromURIHost, null);
 
                         if (redirectQueue != null && redirectQueue.Count > 0)
                         {

@@ -46,6 +46,7 @@ namespace SIPSorcery.SIP
     public class SIPEventConsts
     {
         public const string DIALOG_XML_NAMESPACE_URN = "urn:ietf:params:xml:ns:dialog-info";
+        public const string PIDF_XML_NAMESPACE_URN = "urn:ietf:params:xml:ns:pidf";             // Presence Information Data Format XML namespace.
         public const string SIPSORCERY_DIALOG_XML_NAMESPACE_PREFIX = "ss";                      // Used for custom sipsorcery elements in dialog event notification payloads.
         public const string SIPSORCERY_DIALOG_XML_NAMESPACE_URN = "sipsorcery:dialog-info";     // Used for custom sipsorcery elements in dialog event notification payloads.
     }
@@ -95,6 +96,7 @@ namespace SIPSorcery.SIP
                 {
                     case "dialog": return SIPEventPackage.Dialog;
                     case "message-summary": return SIPEventPackage.MessageSummary;
+                    case "presence": return SIPEventPackage.Presence;
                     case "refer": return SIPEventPackage.Refer;
                     default: throw new ArgumentException("The value is not valid for a SIPEventPackage.");
                 }
@@ -239,5 +241,12 @@ namespace SIPSorcery.SIP
         {
             return m_value.GetHashCode();
         }
+    }
+
+    public enum SIPEventPresenceStateEnum
+    {
+        none,
+        closed,
+        open,
     }
 }

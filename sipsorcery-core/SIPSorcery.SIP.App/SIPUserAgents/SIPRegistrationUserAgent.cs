@@ -81,6 +81,8 @@ namespace SIPSorcery.SIP.App
         private int m_attempts;
         private ManualResetEvent m_waitForRegistrationMRE = new ManualResetEvent(false);
 
+        public string UserAgent;        // If not null this value will replace the default user agent value in the REGISTER request.
+
         public event Action<SIPURI, string> RegistrationFailed;
         public event Action<SIPURI, string> RegistrationTemporaryFailure;
         public event Action<SIPURI> RegistrationSuccessful;
@@ -459,21 +461,19 @@ namespace SIPSorcery.SIP.App
                 SIPURI registerURI = m_sipAccountAOR.CopyOf();
                 registerURI.User = null;
 
-                SIPFromHeader fromHeader = new SIPFromHeader(null, m_sipAccountAOR, CallProperties.CreateNewTag());
-                SIPToHeader toHeader = new SIPToHeader(null, m_sipAccountAOR, null);
-                SIPContactHeader contactHeader = new SIPContactHeader(null, m_contactURI);
+                SIPRequest registerRequest = m_sipTransport.GetRequest(
+                    SIPMethodsEnum.REGISTER, 
+                    registerURI,
+                    new SIPToHeader(null, m_sipAccountAOR, null),
+                    localSIPEndPoint);
 
-                SIPRequest registerRequest = new SIPRequest(SIPMethodsEnum.REGISTER, registerURI);
-                registerRequest.LocalSIPEndPoint = localSIPEndPoint;
-                SIPHeader header = new SIPHeader(contactHeader, fromHeader, toHeader, ++m_cseq, m_callID);
-                header.CSeqMethod = SIPMethodsEnum.REGISTER;
-                header.UserAgent = m_userAgent;
-                header.Expires = m_expiry;
+                registerRequest.Header.From = new SIPFromHeader(null, m_sipAccountAOR, CallProperties.CreateNewTag());
+                registerRequest.Header.Contact[0] = new SIPContactHeader(null, m_contactURI);
+                registerRequest.Header.CSeq = ++m_cseq;
+                registerRequest.Header.CallId = m_callID;
+                registerRequest.Header.UserAgent = (!UserAgent.IsNullOrBlank()) ? UserAgent : m_userAgent;
+                registerRequest.Header.Expires = m_expiry;
 
-                SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
-                header.Vias.PushViaHeader(viaHeader);
-
-                registerRequest.Header = header;
                 return registerRequest;
             }
             catch (Exception excp)

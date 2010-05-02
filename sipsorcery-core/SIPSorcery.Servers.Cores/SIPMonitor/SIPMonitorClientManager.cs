@@ -43,6 +43,7 @@ namespace SIPSorcery.Servers
         private UdpClient m_udpEventSender;
 
         public event Action<string> NotificationReady;
+        public event Func<SIPMonitorEvent, bool> MonitorEventReady; 
 
         public SIPMonitorClientManager(string monitorServerID)
         {
@@ -140,24 +141,29 @@ namespace SIPSorcery.Servers
                         {
                             if (session.Filter.ShowSIPMonitorEvent(monitorEvent))
                             {
+                                //logger.Debug("Session accepted event " + monitorEvent.ClientType + " for session " + monitorEvent.SessionID + ".");
+
+                                monitorEvent.SessionID = session.SessionID;
+
                                 if (session.UDPSocket != null)
                                 {
-                                    monitorEvent.SessionID = session.SessionID;
                                     SendMonitorEventViaUDP(monitorEvent, session.UDPSocket);
                                 }
                                 else
                                 {
-                                    lock (session.Events)
+                                    if (MonitorEventReady == null || !MonitorEventReady(monitorEvent))
                                     {
-                                        if (session.Events.Count > MAX_EVENT_QUEUE_SIZE)
+                                        lock (session.Events)
                                         {
-                                            // Queue has exceeded max allowed size, pop off the oldest event.
-                                            session.Events.Dequeue();
+                                            if (session.Events.Count > MAX_EVENT_QUEUE_SIZE)
+                                            {
+                                                // Queue has exceeded max allowed size, pop off the oldest event.
+                                                session.Events.Dequeue();
+                                            }
+                                            session.Events.Enqueue(monitorEvent);
                                         }
-                                        monitorEvent.SessionID = session.SessionID;
-                                        session.Events.Enqueue(monitorEvent);
+                                        eventAdded = true;
                                     }
-                                    eventAdded = true;
                                 }
                             }
                         }

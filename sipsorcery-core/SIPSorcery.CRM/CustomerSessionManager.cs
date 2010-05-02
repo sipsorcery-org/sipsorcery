@@ -170,6 +170,37 @@ namespace SIPSorcery.CRM
             }
         }
 
+        public CustomerSession CreateSwitchboardSession(string owner)
+        {
+            Customer customer = m_customerPersistor.Get(c => c.CustomerUsername == owner);
+
+            if (customer != null)
+            {
+                if (!customer.EmailAddressConfirmed)
+                {
+                    throw new ApplicationException("Your email address has not yet been confirmed.");
+                }
+                else if (customer.Suspended)
+                {
+                    throw new ApplicationException("Your account is suspended.");
+                }
+                else
+                {
+                    logger.Debug("CreateSwitchboardSession successful for " + owner + ".");
+
+                    string sessionId = Crypto.GetRandomByteString(SESSION_ID_STRING_LENGTH / 2);
+                    CustomerSession customerSession = new CustomerSession(Guid.NewGuid(), sessionId, customer.CustomerUsername, null);
+                    m_customerSessionPersistor.Add(customerSession);
+                    return customerSession;
+                }
+            }
+            else
+            {
+                logger.Debug("CreateSwitchboardSession failed for " + owner + ".");
+                return null;
+            }
+        }
+
         public void ExpireToken(string sessionId)
         {
 

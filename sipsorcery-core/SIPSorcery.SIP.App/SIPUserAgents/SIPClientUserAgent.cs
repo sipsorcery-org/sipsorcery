@@ -536,8 +536,6 @@ namespace SIPSorcery.SIP.App
                             }
                         }
 
-                        // Set the SDP back to what the UA oiginally specified.
-                        //m_serverTransaction.TransactionRequest.Body = m_sipCallDescriptor.Content;
                         m_sipDialogue = new SIPDialogue(m_serverTransaction, Owner, AdminMemberId);
                         m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
                     }
@@ -617,9 +615,6 @@ namespace SIPSorcery.SIP.App
                 {
                     foreach (string customHeader in sipCallDescriptor.CustomHeaders)
                     {
-                        //string headerName = customHeader.Key as string;
-                        //string headerValue = customHeader.Value as string;
-
                         if (customHeader.IsNullOrBlank())
                         {
                             continue;

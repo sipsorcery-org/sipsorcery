@@ -142,6 +142,7 @@ namespace SIPSorcery.SIP.App
         SubscribeAccept = 67,
         SubscribeFailed = 68,
         SubscribeRenew = 69,
+        NotifySent = 70,
 	}
 
 	public class SIPMonitorEventTypes

@@ -290,7 +290,7 @@ namespace SIPSorcery.Servers
                                     }
                                 }
 
-                                logger.Debug("Binding entry processing took " + DateTime.Now.Subtract(startTime).TotalMilliseconds.ToString("0") + "ms.");
+                                //logger.Debug("Binding entry processing took " + DateTime.Now.Subtract(startTime).TotalMilliseconds.ToString("0") + "ms.");
 
                                 m_bindingsProcessedCount++;
                             }
@@ -337,7 +337,7 @@ namespace SIPSorcery.Servers
                         trans.Complete();
                     }
 
-                    logger.Debug("GetNextBindings took " + DateTime.Now.Subtract(startTime).TotalMilliseconds.ToString("0") + ".");
+                    //logger.Debug("GetNextBindings took " + DateTime.Now.Subtract(startTime).TotalMilliseconds.ToString("0") + ".");
 
                     return bindings;
                 }

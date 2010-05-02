@@ -66,7 +66,8 @@ namespace SIPSorcery.SIP.App
         public const string SERIALISATION_PREFIX = "2";             // Prefix appended to the front of a serialised event to identify the type. 
 
         public SIPMonitorMachineEventTypesEnum MachineEventType;
-        public SIPDialogue Dialogue;
+        public string ResourceID;                                   // For a dialog SIP Event this will be the dialogue ID, for a presence SIP event this will be the SIP Account ID.
+        public SIPURI ResourceURI;                                  // If applicable the URI of the resource that generated this event.
 
         private SIPMonitorMachineEvent()
         {
@@ -85,14 +86,15 @@ namespace SIPSorcery.SIP.App
             Message = message;
         }
 
-        public SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum machineEventType, string owner, SIPDialogue sipEventDialogue)
+        public SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum machineEventType, string owner, string resourceID, SIPURI resourceURI)
         {
             m_serialisationPrefix = SERIALISATION_PREFIX;
 
             ClientType = SIPMonitorClientTypesEnum.Machine;
             Username = owner;
             MachineEventType = machineEventType;
-            Dialogue = sipEventDialogue;
+            ResourceID = resourceID;
+            ResourceURI = resourceURI;
         }
 
         public static SIPMonitorMachineEvent ParseMachineEventCSV(string eventCSV)
@@ -115,14 +117,12 @@ namespace SIPSorcery.SIP.App
                 machineEvent.Username = eventFields[5];
                 machineEvent.RemoteEndPoint = SIPEndPoint.ParseSIPEndPoint(eventFields[6]);
                 machineEvent.Message = eventFields[7];
-                string dialogueXML = eventFields[8].Trim('#');
+                machineEvent.ResourceID = eventFields[8];
+                string resourceURI = eventFields[9].Trim('#');
 
-                if (!dialogueXML.IsNullOrBlank())
+                if (!resourceURI.IsNullOrBlank())
                 {
-                    XDocument dialogueElement = XDocument.Parse(dialogueXML);
-                    SIPDialogueAsset dialogueAsset = new SIPDialogueAsset();
-                    dialogueAsset.Load(dialogueElement.Root);
-                    machineEvent.Dialogue = dialogueAsset.SIPDialogue;
+                    machineEvent.ResourceURI = SIPURI.ParseSIPURIRelaxed(resourceURI);
                 }
 
                 return machineEvent;
@@ -140,7 +140,7 @@ namespace SIPSorcery.SIP.App
             {
                 int machineEventTypeId = (int)MachineEventType;
                 string remoteSocket = (RemoteEndPoint != null) ? RemoteEndPoint.ToString() : null;
-                string dialogueXML = (Dialogue != null) ? (new SIPDialogueAsset(Dialogue)).ToXML() : null;
+                string resourceURIStr = (ResourceURI != null) ? ResourceURI.ToString() : null;
 
                 string csvEvent =
                     SERIALISATION_PREFIX + "|" +
@@ -151,7 +151,8 @@ namespace SIPSorcery.SIP.App
                     Username + "|" +
                     remoteSocket + "|" +
                     Message + "|" +
-                    dialogueXML
+                    ResourceID + "|" +
+                    resourceURIStr
                     + END_MESSAGE_DELIMITER;
 
                 return csvEvent;
@@ -188,6 +189,7 @@ namespace SIPSorcery.SIP.App
                     Created.ToString(SERIALISATION_DATETIME_FORMAT) + "|" +
                     "|" +
                     remoteSocket + "|" +
+                    "|" +
                     "|" +
                     END_MESSAGE_DELIMITER;
 

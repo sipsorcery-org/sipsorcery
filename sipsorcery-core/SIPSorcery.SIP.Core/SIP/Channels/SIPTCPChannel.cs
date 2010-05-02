@@ -262,7 +262,7 @@ namespace SIPSorcery.SIP
 
                         if (m_connectionFailures.ContainsKey(dstEndPoint.ToString()))
                         {
-                            logger.Warn("TCP connection attempt to " + dstEndPoint.ToString() + " was not attempted, too many failures.");
+                            throw new ApplicationException("TCP connection attempt to " + dstEndPoint.ToString() + " was not attempted, too many failures.");
                         }
                         else if (!m_connectingSockets.Contains(dstEndPoint.ToString()))
                         {

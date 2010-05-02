@@ -145,7 +145,7 @@ namespace SIPSorcery.SIP.App
             From = from ?? m_defaultFromURI;
             To = to ?? uri;                        
             RouteSet = routeSet;
-            CustomHeaders = customHeaders;   
+            CustomHeaders = customHeaders ?? new List<string>();   
             AuthUsername = authUsername;
             CallDirection = callDirection;
             ContentType = contentType;
@@ -237,7 +237,7 @@ namespace SIPSorcery.SIP.App
                 }
 
                 // Parse the From header URI username option.
-                Match fromUsernameNameMatch = Regex.Match(options, FROM_USERNAME_KEY + @"=(?<username>\w+)");
+                Match fromUsernameNameMatch = Regex.Match(options, FROM_USERNAME_KEY + @"=(?<username>.+?)(,|$)");
                 if (fromUsernameNameMatch.Success) {
                     FromURIUsername = fromUsernameNameMatch.Result("${username}").Trim();
                 }

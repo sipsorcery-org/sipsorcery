@@ -121,7 +121,8 @@ namespace SIPSorcery.Servers
 
                 // Check dialogue requests for an existing dialogue.
                 if ((sipRequest.Method == SIPMethodsEnum.BYE || sipRequest.Method == SIPMethodsEnum.INFO || sipRequest.Method == SIPMethodsEnum.INVITE ||
-                    sipRequest.Method == SIPMethodsEnum.MESSAGE || sipRequest.Method == SIPMethodsEnum.NOTIFY || sipRequest.Method == SIPMethodsEnum.REFER)
+                    sipRequest.Method == SIPMethodsEnum.MESSAGE || sipRequest.Method == SIPMethodsEnum.NOTIFY || sipRequest.Method == SIPMethodsEnum.OPTIONS ||
+                        sipRequest.Method == SIPMethodsEnum.REFER)
                     && sipRequest.Header.From != null && sipRequest.Header.From.FromTag != null && sipRequest.Header.To != null && sipRequest.Header.To.ToTag != null)
                 {
                     dialogue = m_sipDialogueManager.GetDialogue(sipRequest);

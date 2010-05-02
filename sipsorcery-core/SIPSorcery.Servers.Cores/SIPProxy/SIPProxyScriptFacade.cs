@@ -107,7 +107,7 @@ namespace SIPSorcery.Servers
         /// default channel that matches the destination end point should be used.</param>
         /// <param name="setContactToLocal">If true the Contact header URI will be overwritten with the URI of the
         /// proxy socket the request is being sent from. This should only be used for INVITE requests.</param>
-        public void Send(SIPEndPoint dstSIPEndPoint, SIPRequest sipRequest, string proxyBranch, SIPEndPoint localSIPEndPoint, SIPURI contactURI)
+        public void Send(SIPEndPoint dstSIPEndPoint, SIPRequest sipRequest, string proxyBranch, SIPEndPoint localSIPEndPoint, IPAddress publicIPAddress)
         {
             if (dstSIPEndPoint == null)
             {
@@ -138,9 +138,14 @@ namespace SIPSorcery.Servers
 
             sipRequest.LocalSIPEndPoint = localSIPEndPoint;
 
-            if (contactURI != null && sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count > 0)
+            //if (contactURI != null && sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count > 0)
+            //{
+            //    sipRequest.Header.Contact[0].ContactURI = contactURI;
+            //}
+
+            if (sipRequest.Method != SIPMethodsEnum.REGISTER)
             {
-                sipRequest.Header.Contact[0].ContactURI = contactURI;
+                AdjustContactHeader(sipRequest, localSIPEndPoint, publicIPAddress);
             }
 
             m_sipTransport.SendRequest(dstSIPEndPoint, sipRequest);
@@ -186,21 +191,7 @@ namespace SIPSorcery.Servers
 
             if (sipRequest.Method != SIPMethodsEnum.REGISTER)
             {
-                // Set the Contact URI on the outgoing requests depending on which SIP socket the request is being sent on and whether
-                // the request is going to an external network.
-                if (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count == 1)
-                {
-                    if (publicIPAddress != null)
-                    {
-                        sipRequest.Header.Contact[0].ContactURI.Host = new IPEndPoint(publicIPAddress, localSIPEndPoint.SocketEndPoint.Port).ToString();
-                        sipRequest.Header.Contact[0].ContactURI.Protocol = localSIPEndPoint.SIPProtocol;
-                    }
-                    else
-                    {
-                        sipRequest.Header.Contact[0].ContactURI.Host = localSIPEndPoint.SocketEndPoint.ToString();
-                        sipRequest.Header.Contact[0].ContactURI.Protocol = localSIPEndPoint.SIPProtocol;
-                    }
-                }
+                AdjustContactHeader(sipRequest, localSIPEndPoint, publicIPAddress);
             }
 
             // If dispatcher is being used record the transaction so responses are sent to the correct internal socket.
@@ -217,6 +208,25 @@ namespace SIPSorcery.Servers
 
             sipRequest.LocalSIPEndPoint = localSIPEndPoint;
             m_sipTransport.SendRequest(dstSIPEndPoint, sipRequest);
+        }
+
+        private void AdjustContactHeader(SIPRequest sipRequest, SIPEndPoint localSIPEndPoint, IPAddress publicIPAddress)
+        {
+            // Set the Contact URI on the outgoing requests depending on which SIP socket the request is being sent on and whether
+            // the request is going to an external network.
+            if (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count == 1)
+            {
+                if (publicIPAddress != null)
+                {
+                    sipRequest.Header.Contact[0].ContactURI.Host = new IPEndPoint(publicIPAddress, localSIPEndPoint.SocketEndPoint.Port).ToString();
+                    sipRequest.Header.Contact[0].ContactURI.Protocol = localSIPEndPoint.SIPProtocol;
+                }
+                else
+                {
+                    sipRequest.Header.Contact[0].ContactURI.Host = localSIPEndPoint.SocketEndPoint.ToString();
+                    sipRequest.Header.Contact[0].ContactURI.Protocol = localSIPEndPoint.SIPProtocol;
+                }
+            }
         }
 
         public void Send(SIPResponse sipResponse)

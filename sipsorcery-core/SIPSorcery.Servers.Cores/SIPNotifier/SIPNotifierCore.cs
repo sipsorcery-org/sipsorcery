@@ -69,6 +69,7 @@ namespace SIPSorcery.Servers
 
         private static ILog logger = AppState.GetLogger("sipnotifier");
 
+        private static string m_wildcardUser = SIPMonitorFilter.WILDCARD;
         private string m_topLevelAdminID = Customer.TOPLEVEL_ADMIN_ID;
 
         private SIPMonitorLogDelegate MonitorLogEvent_External;
@@ -90,8 +91,11 @@ namespace SIPSorcery.Servers
             SIPTransport sipTransport,
             SIPAssetGetDelegate<Customer> getCustomer,
             SIPAssetGetListDelegate<SIPDialogueAsset> getDialogues,
+            SIPAssetGetByIdDelegate<SIPDialogueAsset> getDialogue,
             SIPAssetGetDelegate<SIPAccount> getSIPAccount,
             GetCanonicalDomainDelegate getCanonicalDomain,
+            SIPAssetGetListDelegate<SIPAccount> getSIPAccounts,
+            SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount,
             SIPAuthenticateRequestDelegate sipRequestAuthenticator,
             SIPEndPoint outboundProxy,
             ISIPMonitorPublisher publisher)
@@ -103,7 +107,7 @@ namespace SIPSorcery.Servers
             GetCanonicalDomain_External = getCanonicalDomain;
             SIPRequestAuthenticator_External = sipRequestAuthenticator;
             m_outboundProxy = outboundProxy;
-            m_subscriptionsManager = new NotifierSubscriptionsManager(MonitorLogEvent_External, getDialogues, m_sipTransport, m_outboundProxy, publisher);
+            m_subscriptionsManager = new NotifierSubscriptionsManager(MonitorLogEvent_External, getDialogues, getDialogue, getSIPAccounts, getBindingsCount, m_sipTransport, m_outboundProxy, publisher);
 
             ThreadPool.QueueUserWorkItem(delegate { ProcessSubscribeRequest(NOTIFIER_THREAD_NAME_PREFIX + "1"); });
         }
@@ -112,10 +116,10 @@ namespace SIPSorcery.Servers
         {
             m_exit = true;
 
-            if (m_subscriptionsManager != null)
-            {
-                m_subscriptionsManager.Stop();
-            }
+            //if (m_subscriptionsManager != null)
+            //{
+            //    m_subscriptionsManager.Stop();
+            //}
         }
 
         public void AddSubscribeRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest subscribeRequest)
@@ -131,7 +135,8 @@ namespace SIPSorcery.Servers
                 {
                     #region Do as many validation checks as possible on the request before adding it to the queue.
 
-                    if (subscribeRequest.Header.Event.IsNullOrBlank() || subscribeRequest.Header.Event.ToLower() != SIPEventPackage.Dialog.ToString())
+                    if (subscribeRequest.Header.Event.IsNullOrBlank() ||
+                        !(subscribeRequest.Header.Event.ToLower() == SIPEventPackage.Dialog.ToString() || subscribeRequest.Header.Event.ToLower() == SIPEventPackage.Presence.ToString()))
                     {
                         SIPResponse badEventResponse = SIPTransport.GetResponse(subscribeRequest, SIPResponseStatusCodesEnum.BadEvent, null);
                         m_sipTransport.SendResponse(badEventResponse);
@@ -240,6 +245,7 @@ namespace SIPSorcery.Servers
                     FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.Warn, "Subscribe request for " + fromHost + " rejected as no matching domain found.", null));
                     SIPResponse noDomainResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Forbidden, "Domain not serviced");
                     subscribeTransaction.SendFinalResponse(noDomainResponse);
+                    return;
                 }
 
                 SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == fromUser && s.SIPDomain == canonicalDomain);
@@ -260,100 +266,128 @@ namespace SIPSorcery.Servers
                     {
                         FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Authentication required for " + fromUser + "@" + canonicalDomain + " from " + subscribeTransaction.RemoteEndPoint + ".", sipAccount.Owner));
                     }
+                    return;
                 }
                 else
                 {
-                    // Authenticated but the authorisation to subscribe to the requested resource also needs to be checked.
-                    SIPURI resourceURI = sipRequest.URI;
-                    string resourceCanonicalDomain = GetCanonicalDomain_External(resourceURI.Host, true);
-
-                    if (resourceCanonicalDomain == null)
+                    if (sipRequest.Header.To.ToTag != null)
                     {
-                        SIPResponse notFoundResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Domain " + resourceURI.Host + " not serviced");
-                        subscribeTransaction.SendFinalResponse(notFoundResponse);
-                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", domain not serviced.", sipAccount.Owner));
-                    }
-                    else
-                    {
-                        SIPAccount resourceSIPAccount = GetSIPAccount_External(s => s.SIPUsername == resourceURI.User && s.SIPDomain == resourceCanonicalDomain);
+                        // Request is to renew an existing subscription.
+                        SIPResponseStatusCodesEnum errorResponse = SIPResponseStatusCodesEnum.None;
+                        string errorResponseReason = null;
 
-                        if (resourceSIPAccount == null)
+                        string sessionID = m_subscriptionsManager.RenewSubscription(sipRequest, out errorResponse, out errorResponseReason);
+                        if (errorResponse != SIPResponseStatusCodesEnum.None)
                         {
-                            SIPResponse notFoundResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Requested resource does not exist");
-                            subscribeTransaction.SendFinalResponse(notFoundResponse);
-                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", SIP account does not exist.", sipAccount.Owner));
+                            // A subscription renewal attempt failed
+                            SIPResponse renewalErrorResponse = SIPTransport.GetResponse(sipRequest, errorResponse, errorResponseReason);
+                            subscribeTransaction.SendFinalResponse(renewalErrorResponse);
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription renewal failed for event type " + sipRequest.Header.Event + " " + sipRequest.URI.ToString() + ", " + errorResponse + " " + errorResponseReason + ".", sipAccount.Owner));
+                        }
+                        else if (sipRequest.Header.Expires == 0)
+                        {
+                            // Existing subscription was closed.
+                            SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                            subscribeTransaction.SendFinalResponse(okResponse);
                         }
                         else
                         {
-                            // Check the owner permissions on the requesting and subscribed resources.
-                            bool authorised = false;
-                            string adminID = null;
+                            // Existing subscription was found.
+                            SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                            subscribeTransaction.SendFinalResponse(okResponse);
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeRenew, "Subscription renewal for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + " and expiry " + sipRequest.Header.Expires + ".", sipAccount.Owner));
+                            m_subscriptionsManager.SendFullStateNotify(sessionID);
+                        }
+                    }
+                    else
+                    {
+                        // Authenticated but the this is a new subscription request and authorisation to subscribe to the requested resource also needs to be checked.
+                        SIPURI canonicalResourceURI = sipRequest.URI.CopyOf();
+                        string resourceCanonicalDomain = GetCanonicalDomain_External(canonicalResourceURI.Host, true);
+                        canonicalResourceURI.Host = resourceCanonicalDomain;
+                        SIPAccount resourceSIPAccount = null;
 
-                            if (sipAccount.Owner == resourceSIPAccount.Owner)
+                        if (resourceCanonicalDomain == null)
+                        {
+                            SIPResponse notFoundResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Domain " + resourceCanonicalDomain + " not serviced");
+                            subscribeTransaction.SendFinalResponse(notFoundResponse);
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", domain not serviced.", sipAccount.Owner));
+                            return;
+                        }
+
+                        if (canonicalResourceURI.User != m_wildcardUser)
+                        {
+                            resourceSIPAccount = GetSIPAccount_External(s => s.SIPUsername == canonicalResourceURI.User && s.SIPDomain == canonicalResourceURI.Host);
+
+                            if (resourceSIPAccount == null)
+                            {
+                                SIPResponse notFoundResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Requested resource does not exist");
+                                subscribeTransaction.SendFinalResponse(notFoundResponse);
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", SIP account does not exist.", sipAccount.Owner));
+                                return;
+                            }
+                        }
+
+                        // Check the owner permissions on the requesting and subscribed resources.
+                        bool authorised = false;
+                        string adminID = null;
+
+                        if (canonicalResourceURI.User == m_wildcardUser || sipAccount.Owner == resourceSIPAccount.Owner)
+                        {
+                            authorised = true;
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Subscription to " + canonicalResourceURI.ToString() + " authorised due to common owner.", sipAccount.Owner));
+                        }
+                        else
+                        {
+                            // Lookup the customer record for the requestor and check the administrative level on it.
+                            Customer requestingCustomer = GetCustomer_External(c => c.CustomerUsername == sipAccount.Owner);
+                            adminID = requestingCustomer.AdminId;
+                            if (!resourceSIPAccount.AdminMemberId.IsNullOrBlank() && requestingCustomer.AdminId == resourceSIPAccount.AdminMemberId)
                             {
                                 authorised = true;
-                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Subscription to " + resourceURI.ToString() + " authorised due to common owner.", sipAccount.Owner));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Subscription to " + canonicalResourceURI.ToString() + " authorised due to requestor admin permissions for domain " + resourceSIPAccount.AdminMemberId + ".", sipAccount.Owner));
+                            }
+                            else if (requestingCustomer.AdminId == m_topLevelAdminID)
+                            {
+                                authorised = true;
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Subscription to " + canonicalResourceURI.ToString() + " authorised due to requestor having top level admin permissions.", sipAccount.Owner));
+                            }
+                        }
+
+                        if (authorised)
+                        {
+                            // Request is to create a new subscription.
+                            SIPResponseStatusCodesEnum errorResponse = SIPResponseStatusCodesEnum.None;
+                            string errorResponseReason = null;
+                            string toTag = CallProperties.CreateNewTag();
+                            string sessionID = m_subscriptionsManager.SubscribeClient(sipAccount.Owner, adminID, sipRequest, toTag, canonicalResourceURI, out errorResponse, out errorResponseReason);
+
+                            if (errorResponse != SIPResponseStatusCodesEnum.None)
+                            {
+                                SIPResponse subscribeErrorResponse = SIPTransport.GetResponse(sipRequest, errorResponse, errorResponseReason);
+                                subscribeTransaction.SendFinalResponse(subscribeErrorResponse);
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", " + errorResponse + " " + errorResponseReason + ".", sipAccount.Owner));
                             }
                             else
                             {
-                                // Lookup the customer record for the requestor and check the administrative level on it.
-                                Customer requestingCustomer = GetCustomer_External(c => c.CustomerUsername == sipAccount.Owner);
-                                adminID = requestingCustomer.AdminId;
-                                if (!resourceSIPAccount.AdminMemberId.IsNullOrBlank() && requestingCustomer.AdminId == resourceSIPAccount.AdminMemberId)
-                                {
-                                    authorised = true;
-                                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Subscription to " + resourceURI.ToString() + " authorised due to requestor admin permissions for domain " + resourceSIPAccount.AdminMemberId + ".", sipAccount.Owner));
-                                }
-                                else if (requestingCustomer.AdminId == m_topLevelAdminID)
-                                {
-                                    authorised = true;
-                                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Subscription to " + resourceURI.ToString() + " authorised due to requestor having top level admin permissions.", sipAccount.Owner));
-                                }
-                            }
+                                SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                                okResponse.Header.To.ToTag = toTag;
+                                okResponse.Header.Expires = sipRequest.Header.Expires;
+                                okResponse.Header.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, new SIPURI(SIPSchemesEnum.sip, subscribeTransaction.LocalSIPEndPoint)) };
+                                subscribeTransaction.SendFinalResponse(okResponse);
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "Subscription accepted for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + " and expiry " + sipRequest.Header.Expires + ".", sipAccount.Owner));
 
-                            if (authorised)
-                            {
-                                if (sipRequest.Header.To.ToTag != null)
+                                if (sessionID != null)
                                 {
-                                    // Request is to renew an existing subscription.
-                                    if (m_subscriptionsManager.RenewSubscription(sipRequest))
-                                    {
-                                        // Existing subscription was found.
-                                        SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                                        subscribeTransaction.SendFinalResponse(okResponse);
-                                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeRenew, "Subscription renewal for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + " and expiry " + sipRequest.Header.Expires + ".", sipAccount.Owner));
-                                    }
-                                    else
-                                    {
-                                        // An existing subscription was not found.
-                                        SIPResponse noSubscriptionResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
-                                        subscribeTransaction.SendFinalResponse(noSubscriptionResponse);
-                                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription renewal failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", no existing subscription was found for subscribe dialogue.", sipAccount.Owner));
-                                    }
-                                }
-                                else
-                                {
-                                    // Request is to create a new subscription.
-                                    string toTag = CallProperties.CreateNewTag();
-                                    string sessionID = m_subscriptionsManager.SubscribeClient(sipAccount.Owner, adminID, sipRequest);
-                                    SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                                    okResponse.Header.To.ToTag = toTag;
-                                    okResponse.Header.Expires = sipRequest.Header.Expires;
-                                    subscribeTransaction.SendFinalResponse(okResponse);
-                                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "Subscription accepted for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + " and expiry " + sipRequest.Header.Expires + ".", sipAccount.Owner));
-
-                                    if (sessionID != null)
-                                    {
-                                        m_subscriptionsManager.SendFullStateNotify(sessionID);
-                                    }
+                                    m_subscriptionsManager.SendFullStateNotify(sessionID);
                                 }
                             }
-                            else
-                            {
-                                SIPResponse forbiddenResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Forbidden, "Requested resource not authorised");
-                                subscribeTransaction.SendFinalResponse(forbiddenResponse);
-                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", requesting account " + sipAccount.Owner + " was not authorised.", sipAccount.Owner));
-                            }
+                        }
+                        else
+                        {
+                            SIPResponse forbiddenResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Forbidden, "Requested resource not authorised");
+                            subscribeTransaction.SendFinalResponse(forbiddenResponse);
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", requesting account " + sipAccount.Owner + " was not authorised.", sipAccount.Owner));
                         }
                     }
                 }

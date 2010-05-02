@@ -81,6 +81,7 @@ namespace SIPSorcery.SIP
         public SIPUserField RemoteUserField { get; set; }           // To header for a UAC, From header for a UAS.    
         public string RemoteTag { get; set; }
         public int CSeq { get; set; }                               // CSeq being used by the remote UA for sending requests.
+        public int RemoteCSeq { get; set; }                         // Latest CSeq received from the remote UA.
         public SIPURI RemoteTarget { get; set; }                    // This will be the Contact URI in the INVITE request or in the 2xx INVITE response and is where subsequent dialogue requests should be sent.
         public Guid CDRId { get; set; }                             // Call detail record for call the dialogue belongs to.
         public string ContentType { get; private set; }             // The content type on the request or response that created this dialogue. This is not part of or required for the dialogue and is kept for info and consumer app. purposes only.
@@ -251,6 +252,46 @@ namespace SIPSorcery.SIP
                         SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedFrom);
                         RemoteTarget.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// This constructor is used to create non-INVITE dialogues for example the dialogues used in SIP event interactions
+        /// where the dialogue is created based on a SUBSCRIBE request.
+        /// </summary>
+        public SIPDialogue(
+          SIPRequest nonInviteRequest,
+          string owner,
+          string adminMemberId,
+          string toTag)
+        {
+            Id = Guid.NewGuid();
+
+            CallId = nonInviteRequest.Header.CallId;
+            RouteSet = (nonInviteRequest.Header.RecordRoutes != null) ? nonInviteRequest.Header.RecordRoutes.Reversed() : null;
+            RemoteUserField = nonInviteRequest.Header.From.FromUserField;
+            RemoteTag = nonInviteRequest.Header.From.FromTag;
+            LocalUserField = nonInviteRequest.Header.To.ToUserField;
+            LocalUserField.Parameters.Set("tag", toTag);
+            LocalTag = toTag;
+            CSeq = nonInviteRequest.Header.CSeq;
+            Owner = owner;
+            AdminMemberId = adminMemberId;
+            Inserted = DateTimeOffset.UtcNow;
+            Direction = SIPCallDirection.Out;
+
+            // Set the dialogue remote target and take care of mangling if an upstream proxy has indicated it's required.
+            RemoteTarget = nonInviteRequest.Header.Contact[0].ContactURI;
+            ProxySendFrom = nonInviteRequest.Header.ProxyReceivedOn;
+
+            if (!nonInviteRequest.Header.ProxyReceivedFrom.IsNullOrBlank())
+            {
+                // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
+                if (IPSocket.IsPrivateAddress(RemoteTarget.Host))
+                {
+                    SIPEndPoint remoteUASIPEndPoint = SIPEndPoint.ParseSIPEndPoint(nonInviteRequest.Header.ProxyReceivedFrom);
+                    RemoteTarget.Host = remoteUASIPEndPoint.SocketEndPoint.ToString();
                 }
             }
         }

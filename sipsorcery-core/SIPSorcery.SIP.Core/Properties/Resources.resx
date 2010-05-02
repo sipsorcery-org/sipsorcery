@@ -119,6 +119,9 @@
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="EventDialogSchema" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\SIPEvents\EventDialogSchema.xsd;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+    <value>..\sipevents\dialog\eventdialogschema.xsd;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="PIDFSchema" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\sipevents\presence\pidfschema.xsd;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
 </root>

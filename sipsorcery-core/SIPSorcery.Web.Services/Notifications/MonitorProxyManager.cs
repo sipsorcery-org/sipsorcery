@@ -30,6 +30,7 @@ namespace SIPSorcery.Web.Services
         //private Dictionary<string, Action<string>> m_clientsWaiting = new Dictionary<string, Action<string>>();                 // <Address> List of address endpoints that are waiting for a notification.
 
         public event Action<string> NotificationReady;          // Not used across WCF channels, for in memory only.
+        public event Func<SIPMonitorEvent, bool> MonitorEventReady;// Not used.
 
         public MonitorProxyManager()
         {

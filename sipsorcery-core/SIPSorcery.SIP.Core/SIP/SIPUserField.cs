@@ -172,10 +172,32 @@ namespace SIPSorcery.SIP
 			}
 			catch(Exception excp)
 			{
-				logger.Debug("Exception SIPUserField ToString. " + excp.Message);
-				return null;
+				logger.Error("Exception SIPUserField ToString. " + excp.Message);
+                throw;
 			}
 		}
+
+        public string ToParameterlessString()
+        {
+            try
+            {
+                string userFieldStr = null;
+
+                if (Name != null)
+                {
+                    userFieldStr = "\"" + Name + "\" ";
+                }
+
+                userFieldStr += "<" + URI.ToParameterlessString() + ">";
+
+                return userFieldStr;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPUserField ToParameterlessString. " + excp.Message);
+                throw;
+            }
+        }
 
         public SIPUserField CopyOf()
         {

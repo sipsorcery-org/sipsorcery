@@ -350,11 +350,24 @@ namespace SIPSorcery.Net
                         }
                         else if (sdpLine.Trim().StartsWith("m="))
                         {
-                            string[] mediaFields = sdpLine.Substring(2).Trim().Split(' ');
+                            /*string[] mediaFields = sdpLine.Substring(2).Trim().Split(new char[]{' '}, 4, StringSplitOptions.None);
                             media.Media = SDPMediaTypes.GetSDPMediaType(mediaFields[0]);
                             Int32.TryParse(mediaFields[1], out media.Port);
                             media.Transport = mediaFields[2];
-                            media.FormatList = mediaFields[3].Trim();
+                            media.FormatList = mediaFields[3].Trim();*/
+
+                            Match mediaMatch = Regex.Match(sdpLine.Substring(2).Trim(), @"(?<type>\w+)\s+(?<port>\d+)\s+(?<transport>\S+)\s+(?<formats>.*)$");
+                            if (mediaMatch.Success)
+                            {
+                                media.Media = SDPMediaTypes.GetSDPMediaType(mediaMatch.Result("${type}"));
+                                Int32.TryParse(mediaMatch.Result("${port}"), out media.Port);
+                                media.Transport = mediaMatch.Result("${transport}");
+                                media.FormatList = mediaMatch.Result("${formats}");
+                            }
+                            else
+                            {
+                                logger.Warn("A media line in SDP was invalid: " + sdpLine.Substring(2) + ".");
+                            }
                         }
                         else
                         {
@@ -531,7 +544,9 @@ namespace SIPSorcery.Net
                 Console.WriteLine(sdp.ToString());
 
                 Assert.IsTrue(sdp.Media[0].ConnectionAddress == "10.0.0.4", "The connection address was not parsed correctly.");
+                Assert.IsTrue(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
                 Assert.IsTrue(sdp.Media[0].Port == 12228, "The connection port was not parsed correctly.");
+                Assert.IsTrue(sdp.Media[0].FormatList == "0 101", "The media format list was incorrect.");
             }
 		}
 

@@ -59,7 +59,8 @@ namespace SIPSorcery.SIP.App
 
         public bool Exit = false;
 
-        public event Action<string> NotificationReady;
+        public event Action<string> NotificationReady;  // Not used.
+        public event Func<SIPMonitorEvent, bool> MonitorEventReady;
 
         public SIPMonitorUDPSink(string udpSocket)
         {
@@ -104,9 +105,10 @@ namespace SIPSorcery.SIP.App
 
                     if (buffer != null && buffer.Length > 0)
                     {
-                        if (NotificationReady != null)
+                        if (MonitorEventReady != null)
                         {
-                            NotificationReady(Encoding.UTF8.GetString(buffer));
+                            SIPMonitorEvent monitorEvent = SIPMonitorEvent.ParseEventCSV(Encoding.UTF8.GetString(buffer));
+                            MonitorEventReady(monitorEvent);
                         }
                     }
                 }

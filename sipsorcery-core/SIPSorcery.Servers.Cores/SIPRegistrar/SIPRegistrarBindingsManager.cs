@@ -155,6 +155,8 @@ namespace SIPSorcery.Servers
                             FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingExpired, "Expired binding deleted for " + expiredBinding.SIPAccountName + " and " + expiredBinding.MangledContactURI + ", last register " +
                                 expiredBinding.LastUpdate.ToString("HH:mm:ss") + ", expiry " + expiredBinding.Expiry + ", expiry time " + expiredBinding.ExpiryTime.ToString("HH:mm:ss") + ", now " + expiryTime.ToString("HH:mm:ss") + ".", expiredBinding.Owner));
 
+                            FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingRemoval, expiredBinding.Owner, expiredBinding.SIPAccountId.ToString(), SIPURI.ParseSIPURIRelaxed(expiredBinding.SIPAccountName + "@sipsorcery.com")));
+
                             lock (m_natKeepAliveJobs)
                             {
                                 if (m_natKeepAliveJobs.ContainsKey(expiredBinding.RemoteSIPSocket))
@@ -250,7 +252,6 @@ namespace SIPSorcery.Servers
 
                 if (bindingURI.Host == m_sipRegisterRemoveAll)
                 {
-
                     #region Process remove all bindings.
 
                     if (expiresHeaderValue == 0)
@@ -274,6 +275,8 @@ namespace SIPSorcery.Servers
                                 }
                             }
                         }
+
+                        FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingRemoval, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
 
                         responseStatus = SIPResponseStatusCodesEnum.Ok;
                     }
@@ -305,6 +308,8 @@ namespace SIPSorcery.Servers
                             m_bindingsPersistor.Delete(binding);
                             bindingExpiry = 0;
 
+                            FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingRemoval, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
+
                             // Remove the NAT keep-alive job if present.
                             if (m_natKeepAliveJobs.ContainsKey(binding.RemoteSIPSocket))
                             {
@@ -320,6 +325,7 @@ namespace SIPSorcery.Servers
                             m_bindingsPersistor.Update(binding);
                             TimeSpan duration = DateTime.Now.Subtract(startTime);
                             FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding database update time for " + sipAccountAOR + " took " + duration.TotalMilliseconds + "ms.", null));
+                            FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
 
                             // Add a NAT keep-alive job if required.
                             if (sipAccount.SendNATKeepAlives && proxySIPEndPoint != null)
@@ -361,7 +367,7 @@ namespace SIPSorcery.Servers
                                 AddNATKeepAliveJob(sipAccount, remoteSIPEndPoint, proxySIPEndPoint, newBinding, bindingExpiry);
                             }
 
-                            FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, sipAccount.SIPUsername, remoteSIPEndPoint, null));
+                            FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
                         }
                         else
                         {

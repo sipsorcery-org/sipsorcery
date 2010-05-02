@@ -65,6 +65,7 @@ namespace SIPSorcery.Servers
     public class SIPMonitorMediator
 	{
         private const int MAX_LOGFILE_SIZE = 1000000;   // Maximum log file size, approx. 1MB. Once that size oldest messages will be truncated.
+        private const string EVENT_PROCESSOR_THREAD_NAME = "monitor-eventlistener";
 
 		private static ILog logger = AppState.logger;
 
@@ -89,6 +90,7 @@ namespace SIPSorcery.Servers
         public void StartMonitoring()
         {
             Thread monitorThread = new Thread(new ThreadStart(StartEventProcessing));
+            monitorThread.Name = EVENT_PROCESSOR_THREAD_NAME;
             monitorThread.Start();
         }
 
@@ -107,6 +109,7 @@ namespace SIPSorcery.Servers
 
                     if (buffer != null && buffer.Length > 0)
                     {
+                        //logger.Debug("Monitor event received: " + Encoding.ASCII.GetString(buffer, 0, buffer.Length) + ".");
                         SIPMonitorEvent sipMonitorEvent = SIPMonitorEvent.ParseEventCSV(Encoding.ASCII.GetString(buffer, 0, buffer.Length));
                         
                         if (sipMonitorEvent != null)

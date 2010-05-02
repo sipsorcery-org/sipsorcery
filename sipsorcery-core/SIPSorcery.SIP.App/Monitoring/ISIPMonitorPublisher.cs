@@ -14,6 +14,7 @@ namespace SIPSorcery.SIP.App
     public interface ISIPMonitorPublisher
     {
         event Action<string> NotificationReady;
+        event Func<SIPMonitorEvent, bool> MonitorEventReady;
 
         [OperationContract(Action = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/IsAlive", ReplyAction = "http://www.sipsorcery.com/notifications/ISIPMonitorPublisher/IsAliveResponse")]
         bool IsAlive();

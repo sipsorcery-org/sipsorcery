@@ -14,7 +14,8 @@ namespace SIPSorcery.Web.Services
     {
         private ISIPMonitorPublisher m_publisher;
 
-        public event Action<string> NotificationReady;          // Not used across WCF channels, for in memory only.
+        public event Action<string> NotificationReady;              // Not used across WCF channels, for in memory only.
+        public event Func<SIPMonitorEvent, bool> MonitorEventReady; // Not used.
 
         public SIPMonitorClientManagerHost(ISIPMonitorPublisher publisher)
         {

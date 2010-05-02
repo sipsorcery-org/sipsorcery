@@ -16,7 +16,6 @@ using System.Data.Linq.Mapping;
 
 namespace SIPSorcery.SIP.App
 {
-
     [Table(Name = "sipdialogues")]
     public class SIPDialogueAsset : ISIPAsset
     {

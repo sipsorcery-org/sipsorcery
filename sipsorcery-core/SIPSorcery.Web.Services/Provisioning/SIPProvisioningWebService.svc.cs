@@ -59,7 +59,7 @@ using log4net;
 namespace SIPSorcery.Web.Services
 {
     [AspNetCompatibilityRequirements(RequirementsMode = AspNetCompatibilityRequirementsMode.Allowed)]
-    public class SIPProvisioningWebService : SIPSorceryAuthenticatedService, IProvisioningService, IProvisioningServiceREST
+    public class SIPProvisioningWebService : SIPSorceryAuthorisationService, IProvisioningService, IProvisioningServiceREST
     {
         private const string NEW_ACCOUNT_EMAIL_FROM_ADDRESS = "admin@sipsorcery.com";
         private const string NEW_ACCOUNT_EMAIL_SUBJECT = "SIPSorcery Account Confirmation";
@@ -315,7 +315,8 @@ namespace SIPSorcery.Web.Services
                     {
                         if (timezone.DisplayName == customer.TimeZone)
                         {
-                            return (int)timezone.BaseUtcOffset.TotalMinutes;
+                            //return (int)timezone.BaseUtcOffset.TotalMinutes;
+                            return (int)timezone.GetUtcOffset(DateTimeOffset.UtcNow).TotalMinutes;
                         }
                     }
                 }

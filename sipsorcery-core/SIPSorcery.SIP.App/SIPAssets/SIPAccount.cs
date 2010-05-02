@@ -389,8 +389,11 @@ namespace SIPSorcery.SIP.App
             else if (Regex.Match(sipAccount.SIPUsername, "[^" + USERNAME_ALLOWED_CHARS + "]").Success) {
                 return "The username had an invalid character, characters permitted are alpha-numeric and .-_.";
             }
-            else if (sipAccount.SIPUsername.Contains(".") && sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".") + 1).Trim() != sipAccount.Owner) {
-                return "You are not permitted to create this username. Only user " + sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".") + 1).Trim() + " can create SIP accounts ending in " + sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".")).Trim() + ".";
+            else if (sipAccount.SIPUsername.Contains(".") &&
+                (sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".") + 1).Trim().Length >= USERNAME_MIN_LENGTH && 
+                sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".") + 1).Trim() != sipAccount.Owner))
+            {
+               return "You are not permitted to create this username. Only user " + sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".") + 1).Trim() + " can create SIP accounts ending in " + sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".")).Trim() + ".";
             }
             else if (!sipAccount.IsIncomingOnly || !sipAccount.SIPPassword.IsNullOrBlank()) {
                 if (sipAccount.SIPPassword.IsNullOrBlank()) {

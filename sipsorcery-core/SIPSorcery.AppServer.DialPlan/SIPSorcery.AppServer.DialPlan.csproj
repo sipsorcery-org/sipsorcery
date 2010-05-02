@@ -99,7 +99,6 @@
     <Compile Include="DialPlanApps\GoogleVoiceCall.cs" />
     <Compile Include="DialPlanApps\RTSPApp.cs" />
     <Compile Include="DialPlanApps\ForkCall.cs" />
-    <Compile Include="DialPlanApps\SwitchboardApp.cs" />
     <Compile Include="DialPlanCommand.cs" />
     <Compile Include="DialPlanContext.cs" />
     <Compile Include="DialPlanEngine.cs" />

@@ -108,6 +108,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private string m_customFromName;
         private string m_customFromUser;
         private string m_customFromHost;
+        private List<string> m_switchboardHeaders = new List<string>();
         private SIPCallDirection m_callDirection;
         private DialStringParser m_dialStringParser;
         private bool m_clientCallCancelled;
@@ -226,22 +227,6 @@ namespace SIPSorcery.AppServer.DialPlan
                     getSIPAccount = m_sipAccountPersistor.Get;
                 }
                 m_dialStringParser = new DialStringParser(m_sipTransport, m_dialPlanContext.Owner, m_dialPlanContext.SIPAccount, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate, m_dialPlanContext.SIPDialPlan.DialPlanName);
-                if (m_sipRequest != null)
-                {
-                    foreach (string unknownHeader in m_sipRequest.Header.UnknownHeaders)
-                    {
-                        if (!unknownHeader.IsNullOrBlank() && unknownHeader.StartsWith(SwitchboardApp.SWITCHBOARD_REMOTE_HEADER))
-                        {
-                            m_dialPlanContext.CreateBridge_External = (uasDialogue, uacDialogue, owner) =>
-                            {
-                                logger.Debug("Calling switchboardapp create bridge delegate.");
-                                uasDialogue.RemoteTarget = new SIPURI(uasDialogue.RemoteTarget.Scheme, SIPEndPoint.ParseSIPEndPoint(unknownHeader.Substring(unknownHeader.IndexOf(":") + 1).Trim()));
-                                CreateBridge_External(uasDialogue, uacDialogue, owner);
-                            };
-                            break;
-                        }
-                    }
-                }
             }
         }
 
@@ -391,7 +376,8 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_dialPlanContext.CallersNetworkId,
                         m_customFromName,
                         m_customFromUser,
-                        m_customFromHost);
+                        m_customFromHost,
+                        m_switchboardHeaders);
 
                     List<SIPCallDescriptor>[] callListArray = callsQueue.ToArray();
                     callsQueue.ToList().ForEach((list) => numberLegs += list.Count);
@@ -851,6 +837,39 @@ namespace SIPSorcery.AppServer.DialPlan
             m_customFromName = null;
             m_customFromUser = null;
             m_customFromHost = null;
+        }
+
+        /// <summary>
+        /// Sets a SIP header for the switchboard client application. Unlike custom SIP headers switchboard
+        /// SIP headers are only sent on calls where the destination is identified as a switchboard application.
+        /// </summary>
+        /// <param name="switchboardHeaderName">The name of the swithboard SIP header to add.</param>
+        /// <param name="headerValue">The value of the SIP header to add.</param>
+        public void SetSwitchboardHeader(string switchboardHeaderName, string headerValue)
+        {
+            if (switchboardHeaderName.IsNullOrBlank())
+            {
+                Log("The name of the switchboard header to set was empty, the header was not added.");
+            }
+            else if (!(switchboardHeaderName.Trim().StartsWith("Switchboard") || switchboardHeaderName.Trim().StartsWith("switchboard")))
+            {
+                Log("The name of the switchboard header was not in the valid set of header names, the header was not added.");
+            }
+            else
+            {
+                string trimmedName = switchboardHeaderName.Trim();
+                string trimmedValue = (headerValue != null) ? headerValue.Trim() : String.Empty;
+                m_switchboardHeaders.Add(trimmedName + ": " + trimmedValue);
+                Log("Switchboard SIP header " + trimmedName + " successfully added to list.");
+            }
+        }
+
+        /// <summary>
+        /// Clears all the custom switchboard SIP header values from the list.
+        /// </summary>
+        public void ClearSwitchboardHeaders()
+        {
+            m_switchboardHeaders.Clear();
         }
 
         /// <summary>
@@ -1343,15 +1362,6 @@ namespace SIPSorcery.AppServer.DialPlan
                 Log("Exception DBExecuteScalar. " + excp.Message);
                 return null;
             }
-        }
-
-        public void Switchboard()
-        {
-            ExtendScriptTimeout(30);
-            SIPAccount sipAccount = m_sipAccountPersistor.Get(s => s.SIPUsername == "switchboard" && s.SIPDomain == "sipsorcery.com");
-            List<SIPRegistrarBinding> bindings = GetSIPAccountBindings_External(s => s.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
-            SwitchboardApp switchboardApp = new SwitchboardApp(m_sipTransport, FireProxyLogEvent, m_username, m_adminMemberId, m_outboundProxySocket, m_dialPlanContext);
-            switchboardApp.SendToSwitchboard(m_sipRequest, bindings[0]);
         }
 
         private StorageTypes GetStorageType(string dbType)

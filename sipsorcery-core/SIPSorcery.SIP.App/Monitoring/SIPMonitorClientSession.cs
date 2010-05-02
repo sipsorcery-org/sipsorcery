@@ -48,6 +48,7 @@ namespace SIPSorcery.SIP.App
 
             SessionType = SIPMonitorClientTypes.GetSIPMonitorClientType(subject);
             Filter = new SIPMonitorFilter(filter);
+            Filter.BaseType = SessionType.ToString().ToLower();
 
             if (Filter != null)
             {
@@ -67,6 +68,10 @@ namespace SIPSorcery.SIP.App
                     {
                         Filter.Username = CustomerUsername;
                     }
+                }
+                else
+                {
+                    Filter.Username = m_filterWildcard;
                 }
 
                 return SessionID;

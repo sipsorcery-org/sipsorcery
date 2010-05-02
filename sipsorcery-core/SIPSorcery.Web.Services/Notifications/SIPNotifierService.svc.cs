@@ -21,7 +21,7 @@ namespace SIPSorcery.Web.Services
 {
     [ServiceBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, InstanceContextMode = InstanceContextMode.Single)]
     [AspNetCompatibilityRequirements(RequirementsMode = AspNetCompatibilityRequirementsMode.Allowed)]
-    public class SIPNotifierService : SIPSorceryAuthenticatedService, IPubSub, INotifications
+    public class SIPNotifierService : SIPSorceryAuthorisationService, IPubSub, INotifications
     {
         private static string PULL_NOTIFICATION_POLL_PERIOD_APPSETTING_KEY = "PullNotificaitonPollPeriod";
         private static int MINIMUM_PULL_NOTIFICATION_POLL_PERIOD = 1000;

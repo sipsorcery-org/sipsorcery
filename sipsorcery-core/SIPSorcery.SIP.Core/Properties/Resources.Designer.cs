@@ -78,5 +78,25 @@ namespace SIPSorcery.SIP.Properties {
                 return ResourceManager.GetString("EventDialogSchema", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+        ///&lt;xs:schema targetNamespace=&quot;urn:ietf:params:xml:ns:pidf&quot;
+        ///     xmlns:tns=&quot;urn:ietf:params:xml:ns:pidf&quot;
+        ///     xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot;
+        ///     elementFormDefault=&quot;qualified&quot;
+        ///     attributeFormDefault=&quot;unqualified&quot;&gt;
+        ///
+        ///  &lt;!-- This import brings in the XML language attribute xml:lang--&gt;
+        ///  &lt;xs:import namespace=&quot;http://www.w3.org/XML/1998/namespace&quot; schemaLocation=&quot;http://www.w3.org/2001/xml.xsd&quot;/&gt;
+        ///
+        ///  &lt;xs:element name=&quot;presence&quot;&gt;
+        ///    &lt;xs:complexType&gt;        /// [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string PIDFSchema {
+            get {
+                return ResourceManager.GetString("PIDFSchema", resourceCulture);
+            }
+        }
     }
 }

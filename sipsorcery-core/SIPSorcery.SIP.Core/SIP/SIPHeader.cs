@@ -2259,13 +2259,13 @@ namespace SIPSorcery.SIP
         private static ILog logger = AssemblyState.logger;
         private static string m_CRLF = SIPConstants.CRLF;
 
-        // Core SIP headers.
+        // RFC SIP headers.
         public string Accept;
         public string AcceptEncoding;
         public string AcceptLanguage;
         public string AlertInfo;
         public string Allow;
-        public string AllowEvents;                      // RFC3265 SIP Events.
+        public string AllowEvents;                          // RFC3265 SIP Events.
         public string AuthenticationInfo;
         public SIPAuthenticationHeader AuthenticationHeader;
         public string CallId;
@@ -2280,7 +2280,7 @@ namespace SIPSorcery.SIP
         public SIPMethodsEnum CSeqMethod;
         public string Date;
         public string ErrorInfo;
-        public string Event;                            // RFC3265 SIP Events.
+        public string Event;                                // RFC3265 SIP Events.
         public int Expires = -1;
         public SIPFromHeader From;
         public string InReplyTo;
@@ -2292,13 +2292,15 @@ namespace SIPSorcery.SIP
         public string ProxyRequire;
         public string Reason;
         public SIPRouteSet RecordRoutes = new SIPRouteSet();
+        public string ReferredBy;                           // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
+        public string ReferTo;                              // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
         public string ReplyTo;
         public string Require;
         public string RetryAfter;
         public SIPRouteSet Routes = new SIPRouteSet();
         public string Server;
         public string Subject;
-        public string SubscriptionState;                  // RFC3265 SIP Events.
+        public string SubscriptionState;                    // RFC3265 SIP Events.
         public string Supported;
         public string Timestamp;
         public SIPToHeader To;
@@ -2307,14 +2309,17 @@ namespace SIPSorcery.SIP
         public SIPViaSet Vias = new SIPViaSet();
         public string Warning;
 
-        // Non-core SIP headers from RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
-        public string ReferTo;
-        public string ReferredBy;
-
         // Non-core custom SIP headers used to allow a SIP Proxy to communicate network info to internal server agents.
         public string ProxyReceivedOn;
         public string ProxyReceivedFrom;
         public string ProxySendFrom;
+
+        // Non-core custom SIP headers for use with the SIP Sorcery switchboard.
+        public string SwitchboardCallID;
+        public string SwitchboardTo;
+        public string SwitchboardToDescription;
+        public string SwitchboardFrom;
+        public string SwitchboardFromContactURL;
 
         public List<string> UnknownHeaders = new List<string>();	// Holds any unrecognised headers.
 
@@ -2634,13 +2639,13 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Allow-Events
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALLOW_EVENTS)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALLOW_EVENTS || headerNameLower == SIPHeaders.SIP_COMPACTHEADER_ALLOWEVENTS)
                         {
                             sipHeader.AllowEvents = headerValue;
                         }
                         #endregion
                         #region Event
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_EVENT.ToLower())
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_EVENT.ToLower() || headerNameLower == SIPHeaders.SIP_COMPACTHEADER_EVENT)
                         {
                             sipHeader.Event = headerValue;
                         }
@@ -2840,6 +2845,36 @@ namespace SIPSorcery.SIP
                             sipHeader.Warning = headerValue;
                         }
                         #endregion
+                        #region Switchboard-CallID.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_CALLID.ToLower())
+                        {
+                            sipHeader.SwitchboardCallID = headerValue;
+                        }
+                        #endregion
+                        #region Switchboard-To.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_TO.ToLower())
+                        {
+                            sipHeader.SwitchboardTo = headerValue;
+                        }
+                        #endregion
+                        #region Switchboard-ToDescription.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_TO_DESCRIPTION.ToLower())
+                        {
+                            sipHeader.SwitchboardToDescription = headerValue;
+                        }
+                        #endregion
+                        #region Switchboard-From.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_FROM.ToLower())
+                        {
+                            sipHeader.SwitchboardFrom = headerValue;
+                        }
+                        #endregion
+                        #region Switchboard-FromContactURL.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_FROM_CONTACT_URL.ToLower())
+                        {
+                            sipHeader.SwitchboardFromContactURL = headerValue;
+                        }
+                        #endregion
 
                         else
                         {
@@ -2973,9 +3008,16 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((ReferTo != null) ? SIPHeaders.SIP_HEADER_REFERTO + ": " + ReferTo + m_CRLF : null);
                 headersBuilder.Append((ReferredBy != null) ? SIPHeaders.SIP_HEADER_REFERREDBY + ": " + ReferredBy + m_CRLF : null);
                 headersBuilder.Append((Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);
+                
+                // Custom SIP headers.
                 headersBuilder.Append((ProxyReceivedFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM + ": " + ProxyReceivedFrom + m_CRLF : null);
                 headersBuilder.Append((ProxyReceivedOn != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON + ": " + ProxyReceivedOn + m_CRLF : null);
                 headersBuilder.Append((ProxySendFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_SENDFROM + ": " + ProxySendFrom + m_CRLF : null);
+                headersBuilder.Append((SwitchboardCallID != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_CALLID + ": " + SwitchboardCallID + m_CRLF : null);
+                headersBuilder.Append((SwitchboardTo != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_TO + ": " + SwitchboardTo + m_CRLF : null);
+                headersBuilder.Append((SwitchboardToDescription != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_TO_DESCRIPTION + ": " + SwitchboardToDescription + m_CRLF : null);
+                headersBuilder.Append((SwitchboardFrom != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_FROM + ": " + SwitchboardFrom + m_CRLF : null);
+                headersBuilder.Append((SwitchboardFromContactURL != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_FROM_CONTACT_URL + ": " + SwitchboardFromContactURL + m_CRLF : null);
 
                 // Unknown SIP headers
                 foreach (string unknownHeader in UnknownHeaders)
@@ -3010,6 +3052,41 @@ namespace SIPSorcery.SIP
             string headerString = this.ToString();
             string[] sipHeaders = SIPHeader.SplitHeaders(headerString);
             return ParseSIPHeaders(sipHeaders);
+        }
+
+        public string GetUnknownHeaderValue(string unknownHeaderName)
+        {
+            if (unknownHeaderName.IsNullOrBlank())
+            {
+                return null;
+            }
+            else if (UnknownHeaders == null || UnknownHeaders.Count == 0)
+            {
+                return null;
+            }
+            else
+            {
+                foreach (string unknonwHeader in UnknownHeaders)
+                {
+                    string trimmedHeader = unknonwHeader.Trim();
+                    int delimiterIndex = trimmedHeader.IndexOf(SIPConstants.HEADER_DELIMITER_CHAR);
+
+                    if (delimiterIndex == -1)
+                    {
+                        logger.Warn("Invalid SIP header, ignoring, " + unknonwHeader + ".");
+                        continue;
+                    }
+
+                    string headerName = trimmedHeader.Substring(0, delimiterIndex).Trim();
+
+                    if (headerName.ToLower() == unknownHeaderName.ToLower())
+                    {
+                        return trimmedHeader.Substring(delimiterIndex + 1).Trim();
+                    }
+                }
+
+                return null;
+            }
         }
 
         #region Unit testing.
