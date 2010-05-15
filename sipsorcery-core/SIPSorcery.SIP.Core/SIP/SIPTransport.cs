@@ -112,7 +112,8 @@ namespace SIPSorcery.SIP
         private static readonly int m_t2 = SIPTimings.T2;
         private static readonly int m_t6 = SIPTimings.T6;
         private static string m_looseRouteParameter = SIPConstants.SIP_LOOSEROUTER_PARAMETER;
-        public static readonly SIPEndPoint Blackhole = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 0));   // Any SIP messages with this destination will be dropped.
+        public static IPAddress BlackholeAddress = IPAddress.Any;                               // (IPAddress.Any is 0.0.0.0) Any SIP messages with this IP address will be dropped.
+        //public static readonly SIPEndPoint Blackhole = new SIPEndPoint(new IPEndPoint(BlackholeAddress, 0));   
 
         private static ILog logger = AssemblyState.logger;
 
@@ -328,7 +329,7 @@ namespace SIPSorcery.SIP
         {
             foreach (SIPChannel sipChannel in m_sipChannels.Values)
             {
-                if (sipChannel.SIPChannelEndPoint.SIPProtocol == SIPProtocolsEnum.udp)
+                if (sipChannel.SIPChannelEndPoint.Protocol == SIPProtocolsEnum.udp)
                 {
                     return sipChannel.SIPChannelEndPoint;
                 }
@@ -341,7 +342,7 @@ namespace SIPSorcery.SIP
         {
             foreach (SIPChannel sipChannel in m_sipChannels.Values)
             {
-                if (sipChannel.SIPChannelEndPoint.SIPProtocol == protocol)
+                if (sipChannel.SIPChannelEndPoint.Protocol == protocol)
                 {
                     return sipChannel.SIPChannelEndPoint;
                 }
@@ -352,15 +353,15 @@ namespace SIPSorcery.SIP
 
         public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
         {
-            bool isDestLoopback = IPAddress.IsLoopback(destinationEP.SocketEndPoint.Address);
+            bool isDestLoopback = IPAddress.IsLoopback(destinationEP.Address);
 
             foreach (SIPChannel sipChannel in m_sipChannels.Values)
             {
-                if (sipChannel.SIPChannelEndPoint.SIPProtocol == destinationEP.SIPProtocol)
+                if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol)
                 {
                     if (isDestLoopback)
                     {
-                        if (IPAddress.IsLoopback(sipChannel.SIPChannelEndPoint.SocketEndPoint.Address))
+                        if (IPAddress.IsLoopback(sipChannel.SIPChannelEndPoint.Address))
                         {
                             return sipChannel.SIPChannelEndPoint;
                         }
@@ -450,7 +451,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         public void SendRaw(SIPEndPoint localSIPEndPoint, SIPEndPoint destinationEndPoint, byte[] buffer)
         {
-            if (destinationEndPoint != null && destinationEndPoint.ToString() == Blackhole.ToString())
+            if (destinationEndPoint != null && destinationEndPoint.Address == BlackholeAddress)
             {
                 // Ignore packet, it's destined for the blackhole.
                 return;
@@ -464,11 +465,12 @@ namespace SIPSorcery.SIP
             SIPChannel sendSIPChannel = FindSIPChannel(localSIPEndPoint);
             if (sendSIPChannel != null)
             {
-                sendSIPChannel.Send(destinationEndPoint.SocketEndPoint, buffer);
+                sendSIPChannel.Send(destinationEndPoint.GetIPEndPoint(), buffer);
             }
             else
             {
-                logger.Warn("No SIPChannel could be found for " + localSIPEndPoint + " in SIPTransport.SendRaw.");
+                logger.Warn("No SIPChannel could be found for " + localSIPEndPoint + " in SIPTransport.SendRaw, sending to " + destinationEndPoint.ToString() + ".");
+                //logger.Warn(Encoding.UTF8.GetString(buffer));
             }
         }
 
@@ -481,7 +483,7 @@ namespace SIPSorcery.SIP
 
             SIPEndPoint requestEndPoint = GetRequestEndPoint(sipRequest, null, true);
 
-            if (requestEndPoint != null && requestEndPoint.ToString() == Blackhole.ToString())
+            if (requestEndPoint != null && requestEndPoint.Address == BlackholeAddress)
             {
                 // Ignore packet, it's destined for the blackhole.
                 return;
@@ -499,7 +501,7 @@ namespace SIPSorcery.SIP
 
         public void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
-            if (dstEndPoint != null && dstEndPoint.ToString() == Blackhole.ToString())
+            if (dstEndPoint != null && dstEndPoint.Address == BlackholeAddress)
             {
                 // Ignore packet, it's destined for the blackhole.
                 return;
@@ -515,11 +517,11 @@ namespace SIPSorcery.SIP
             if (sipRequest.LocalSIPEndPoint != null)
             {
                 sipChannel = FindSIPChannel(sipRequest.LocalSIPEndPoint);
-                sipChannel = sipChannel ?? GetDefaultChannel(sipRequest.LocalSIPEndPoint.SIPProtocol);
+                sipChannel = sipChannel ?? GetDefaultChannel(sipRequest.LocalSIPEndPoint.Protocol);
             }
             else
             {
-                sipChannel = GetDefaultChannel(dstEndPoint.SIPProtocol);
+                sipChannel = GetDefaultChannel(dstEndPoint.Protocol);
             }
 
             if (sipChannel != null)
@@ -528,7 +530,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                throw new ApplicationException("A default SIP channel could not be found for protocol " + sipRequest.LocalSIPEndPoint.SIPProtocol + " when sending SIP request.");
+                throw new ApplicationException("A default SIP channel could not be found for protocol " + sipRequest.LocalSIPEndPoint.Protocol + " when sending SIP request.");
             }
         }
 
@@ -536,7 +538,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (dstEndPoint != null && dstEndPoint.ToString() == Blackhole.ToString())
+                if (dstEndPoint != null && dstEndPoint.Address == BlackholeAddress)
                 {
                     // Ignore packet, it's destined for the blackhole.
                     return;
@@ -549,11 +551,11 @@ namespace SIPSorcery.SIP
 
                 if (sipChannel.IsTLS)
                 {
-                    sipChannel.Send(dstEndPoint.SocketEndPoint, Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host);
+                    sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host);
                 }
                 else
                 {
-                    sipChannel.Send(dstEndPoint.SocketEndPoint, Encoding.UTF8.GetBytes(sipRequest.ToString()));
+                    sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()));
                 }
 
                 if (SIPRequestOutTraceEvent != null)
@@ -575,7 +577,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         public void SendSIPReliable(SIPTransaction sipTransaction)
         {
-            if (sipTransaction.RemoteEndPoint != null && sipTransaction.RemoteEndPoint.ToString() == Blackhole.ToString())
+            if (sipTransaction.RemoteEndPoint != null && sipTransaction.RemoteEndPoint.Address == BlackholeAddress)
             {
                 sipTransaction.Retransmits = 1;
                 sipTransaction.InitialTransmit = DateTime.Now;
@@ -655,8 +657,7 @@ namespace SIPSorcery.SIP
 
         public void SendResponse(SIPEndPoint dstEndPoint, SIPResponse sipResponse)
         {
-
-            if (dstEndPoint != null && dstEndPoint.ToString() == Blackhole.ToString())
+            if (dstEndPoint != null && dstEndPoint.Address == BlackholeAddress)
             {
                 // Ignore packet, it's destined for the blackhole.
             }
@@ -668,7 +669,7 @@ namespace SIPSorcery.SIP
                 }
 
                 SIPChannel sipChannel = FindSIPChannel(sipResponse.LocalSIPEndPoint);
-                sipChannel = sipChannel ?? GetDefaultChannel(dstEndPoint.SIPProtocol);
+                sipChannel = sipChannel ?? GetDefaultChannel(dstEndPoint.Protocol);
 
                 if (sipChannel != null)
                 {
@@ -683,8 +684,7 @@ namespace SIPSorcery.SIP
 
         public void SendResponse(SIPResponse sipResponse)
         {
-
-            if (sipResponse.LocalSIPEndPoint != null && sipResponse.LocalSIPEndPoint.ToString() == Blackhole.ToString())
+            if (sipResponse.LocalSIPEndPoint != null && sipResponse.LocalSIPEndPoint.Address == BlackholeAddress)
             {
                 // Ignore packet, it's destined for the blackhole.
                 return;
@@ -699,19 +699,22 @@ namespace SIPSorcery.SIP
             SIPViaHeader topViaHeader = sipResponse.Header.Vias.TopViaHeader;
             if (topViaHeader == null)
             {
-                throw new ApplicationException("There was no top Via header on SIP Response when attempting to send it.\n" + sipResponse.ToString());
-            }
-
-            SIPChannel sipChannel = FindSIPChannel(sipResponse.LocalSIPEndPoint);
-            sipChannel = sipChannel ?? GetDefaultChannel(topViaHeader.Transport);
-
-            if (sipChannel != null)
-            {
-                SendResponse(sipChannel, sipResponse);
+                logger.Warn("There was no top Via header on a SIP response from " + sipResponse.RemoteSIPEndPoint + " when attempting to send it, response dropped.");
+                //logger.Warn(sipResponse.ToString());
             }
             else
             {
-                throw new ApplicationException("Could not find a SIP channel to send SIP Response to " + topViaHeader.ReceivedFromAddress + ".");
+                SIPChannel sipChannel = FindSIPChannel(sipResponse.LocalSIPEndPoint);
+                sipChannel = sipChannel ?? GetDefaultChannel(topViaHeader.Transport);
+
+                if (sipChannel != null)
+                {
+                    SendResponse(sipChannel, sipResponse);
+                }
+                else
+                {
+                    throw new ApplicationException("Could not find a SIP channel to send SIP Response to " + topViaHeader.ReceivedFromAddress + ".");
+                }
             }
         }
 
@@ -726,21 +729,20 @@ namespace SIPSorcery.SIP
             SIPViaHeader topVia = sipResponse.Header.Vias.TopViaHeader;
             SIPEndPoint dstEndPoint = GetHostEndPoint(topVia.ReceivedFromAddress, true);
 
-            if (dstEndPoint != null && dstEndPoint.ToString() == Blackhole.ToString())
+            if (dstEndPoint != null && dstEndPoint.Address == BlackholeAddress)
             {
                 // Ignore packet, it's destined for the blackhole.
                 return;
             }
 
-            dstEndPoint.SIPProtocol = topVia.Transport;
-            SendResponse(sipChannel, dstEndPoint, sipResponse);
+            SendResponse(sipChannel, new SIPEndPoint(topVia.Transport, dstEndPoint.GetIPEndPoint()), sipResponse);
         }
 
         private void SendResponse(SIPChannel sipChannel, SIPEndPoint dstEndPoint, SIPResponse sipResponse)
         {
             try
             {
-                if (dstEndPoint != null && dstEndPoint.ToString() == Blackhole.ToString())
+                if (dstEndPoint != null && dstEndPoint.Address == BlackholeAddress)
                 {
                     // Ignore packet, it's destined for the blackhole.
                     return;
@@ -751,7 +753,7 @@ namespace SIPSorcery.SIP
                     throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
                 }
 
-                sipChannel.Send(dstEndPoint.SocketEndPoint, Encoding.UTF8.GetBytes(sipResponse.ToString()));
+                sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
 
                 if (SIPRequestOutTraceEvent != null)
                 {
@@ -1164,7 +1166,7 @@ namespace SIPSorcery.SIP
                         // Treat any messages that cannot be SIP as STUN requests.
                         if (STUNRequestReceived != null)
                         {
-                            STUNRequestReceived(sipChannel.SIPChannelEndPoint.SocketEndPoint, remoteEndPoint.SocketEndPoint, buffer, buffer.Length);
+                            STUNRequestReceived(sipChannel.SIPChannelEndPoint.GetIPEndPoint(), remoteEndPoint.GetIPEndPoint(), buffer, buffer.Length);
                         }
                     }
                     else
@@ -1335,7 +1337,7 @@ namespace SIPSorcery.SIP
 
                                             // Request has passed validity checks, adjust the client Via header to reflect the socket the request was received on.
                                             //SIPViaHeader originalTopViaHeader = sipRequest.Header.Via.TopViaHeader;
-                                            sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.SocketEndPoint);
+                                            sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
 
                                             // Stateful cores should create a transaction once they receive this event, stateless cores should not.
                                             SIPTransportRequestReceived(sipChannel.SIPChannelEndPoint, remoteEndPoint, sipRequest);
@@ -1402,14 +1404,14 @@ namespace SIPSorcery.SIP
             // Channels that are not on a loopback address take priority.
             foreach (SIPChannel sipChannel in m_sipChannels.Values)
             {
-                if (sipChannel.SIPChannelEndPoint.SIPProtocol == protocol && !IPAddress.IsLoopback(sipChannel.SIPChannelEndPoint.SocketEndPoint.Address))
+                if (sipChannel.SIPChannelEndPoint.Protocol == protocol && !IPAddress.IsLoopback(sipChannel.SIPChannelEndPoint.Address))
                 {
                     return sipChannel;
                 }
             }
             foreach (SIPChannel sipChannel in m_sipChannels.Values)
             {
-                if (sipChannel.SIPChannelEndPoint.SIPProtocol == protocol)
+                if (sipChannel.SIPChannelEndPoint.Protocol == protocol)
                 {
                     return sipChannel;
                 }
@@ -1612,14 +1614,14 @@ namespace SIPSorcery.SIP
                 }
 
                 SIPResponse response = new SIPResponse(responseCode, reasonPhrase, localSIPEndPoint);
-                SIPSchemesEnum sipScheme = (localSIPEndPoint.SIPProtocol == SIPProtocolsEnum.tls) ? SIPSchemesEnum.sips : SIPSchemesEnum.sip;
+                SIPSchemesEnum sipScheme = (localSIPEndPoint.Protocol == SIPProtocolsEnum.tls) ? SIPSchemesEnum.sips : SIPSchemesEnum.sip;
                 SIPFromHeader from = new SIPFromHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
                 SIPToHeader to = new SIPToHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
                 int cSeq = 1;
                 string callId = CallProperties.CreateNewCallId();
                 response.Header = new SIPHeader(from, to, cSeq, callId);
                 response.Header.CSeqMethod = SIPMethodsEnum.NONE;
-                response.Header.Vias.PushViaHeader(new SIPViaHeader(new SIPEndPoint(localSIPEndPoint.SIPProtocol, remoteEndPoint.SocketEndPoint), CallProperties.CreateBranchId()));
+                response.Header.Vias.PushViaHeader(new SIPViaHeader(new SIPEndPoint(localSIPEndPoint.Protocol, remoteEndPoint.GetIPEndPoint()), CallProperties.CreateBranchId()));
                 response.Header.MaxForwards = Int32.MinValue;
                 response.Header.Allow = ALLOWED_SIP_METHODS;
 

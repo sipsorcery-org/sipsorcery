@@ -13,6 +13,12 @@ using NUnit.Framework;
 
 namespace SIPSorcery.SIP
 {
+    /// <summary>
+    /// This class must remain immutable otherwise the SIP stack can develop problems. SIP end points can get
+    /// passed amongst different servers for logging and forwarding SIP messages and a modification of the end point
+    /// by one server can result in a problem for a different server. Instead a new SIP end point should be created
+    /// wherever a modification is required.
+    /// </summary>
     public class SIPEndPoint
     {
         private static ILog logger = AppState.logger;
@@ -21,36 +27,52 @@ namespace SIPSorcery.SIP
         private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static int m_defaultSIPTLSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;
 
-        public SIPProtocolsEnum SIPProtocol = SIPProtocolsEnum.udp;
-        public IPEndPoint SocketEndPoint;
+        public SIPProtocolsEnum Protocol { get; private set; }
+        public IPAddress Address { get; private set; }
+        public int Port { get; private set; }
 
         private SIPEndPoint() { }
 
         public SIPEndPoint(IPEndPoint endPoint)
         {
-            SocketEndPoint = endPoint;
+            Protocol = SIPProtocolsEnum.udp;
+            Address = endPoint.Address;
+            Port = endPoint.Port;
+        }
+
+        public SIPEndPoint(SIPProtocolsEnum protocol, IPAddress address, int port)
+        {
+            Protocol = protocol;
+            Address = address;
+            Port = port;
         }
 
         public SIPEndPoint(SIPURI sipURI)
         {
-            SIPProtocol = sipURI.Protocol;
-            SocketEndPoint = IPSocket.ParseSocketString(sipURI.Host);
+            Protocol = sipURI.Protocol;
+            IPEndPoint endPoint = IPSocket.ParseSocketString(sipURI.Host);
+            Address = endPoint.Address;
+            Port = endPoint.Port;
         }
 
         public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint)
         {
-            SIPProtocol = protocol;
-            SocketEndPoint = endPoint;
+            Protocol = protocol;
+            Address = endPoint.Address;
+            Port = endPoint.Port;
         }
 
         public static SIPEndPoint ParseSIPEndPoint(string sipEndPointStr)
         {
-            try {
-                if (sipEndPointStr.IsNullOrBlank()) {
+            try
+            {
+                if (sipEndPointStr.IsNullOrBlank())
+                {
                     return null;
                 }
 
-                if(sipEndPointStr.StartsWith("udp") || sipEndPointStr.StartsWith("tcp") || sipEndPointStr.StartsWith("tls")){
+                if (sipEndPointStr.StartsWith("udp") || sipEndPointStr.StartsWith("tcp") || sipEndPointStr.StartsWith("tls"))
+                {
                     return ParseSerialisedSIPEndPoint(sipEndPointStr);
                 }
 
@@ -58,55 +80,68 @@ namespace SIPSorcery.SIP
                 int port = 0;
                 SIPProtocolsEnum protocol = SIPProtocolsEnum.udp;
 
-                if (sipEndPointStr.StartsWith("sip:")) {
+                if (sipEndPointStr.StartsWith("sip:"))
+                {
                     sipEndPointStr = sipEndPointStr.Substring(4);
                 }
-                else if (sipEndPointStr.StartsWith("sips:")) {
+                else if (sipEndPointStr.StartsWith("sips:"))
+                {
                     sipEndPointStr = sipEndPointStr.Substring(5);
                     protocol = SIPProtocolsEnum.tls;
                 }
 
                 int colonIndex = sipEndPointStr.IndexOf(':');
                 int semiColonIndex = sipEndPointStr.IndexOf(';');
-                if (colonIndex == -1 && semiColonIndex == -1) {
+                if (colonIndex == -1 && semiColonIndex == -1)
+                {
                     ipAddress = sipEndPointStr;
                 }
-                else if (colonIndex != -1 && semiColonIndex == -1) {
+                else if (colonIndex != -1 && semiColonIndex == -1)
+                {
                     ipAddress = sipEndPointStr.Substring(0, colonIndex);
                     port = Convert.ToInt32(sipEndPointStr.Substring(colonIndex + 1));
                 }
-                else {
-                    if (colonIndex != -1 && colonIndex < semiColonIndex) {
+                else
+                {
+                    if (colonIndex != -1 && colonIndex < semiColonIndex)
+                    {
                         ipAddress = sipEndPointStr.Substring(0, colonIndex);
                         port = Convert.ToInt32(sipEndPointStr.Substring(colonIndex + 1, semiColonIndex - colonIndex - 1));
                     }
-                    else {
+                    else
+                    {
                         ipAddress = sipEndPointStr.Substring(0, semiColonIndex);
                     }
 
-                    if (protocol != SIPProtocolsEnum.tls) {
+                    if (protocol != SIPProtocolsEnum.tls)
+                    {
                         sipEndPointStr = sipEndPointStr.Substring(semiColonIndex + 1);
                         int transportIndex = sipEndPointStr.ToLower().IndexOf(m_transportParameterKey + "=");
-                        if (transportIndex != -1) {
+                        if (transportIndex != -1)
+                        {
                             sipEndPointStr = sipEndPointStr.Substring(transportIndex + 10);
                             semiColonIndex = sipEndPointStr.IndexOf(';');
-                            if (semiColonIndex != -1) {
+                            if (semiColonIndex != -1)
+                            {
                                 protocol = SIPProtocolsType.GetProtocolType(sipEndPointStr.Substring(0, semiColonIndex));
                             }
-                            else {
+                            else
+                            {
                                 protocol = SIPProtocolsType.GetProtocolType(sipEndPointStr);
                             }
                         }
                     }
                 }
 
-                if(port == 0 ) {
+                if (port == 0)
+                {
                     port = (protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort;
                 }
 
-                return new SIPEndPoint(protocol, new IPEndPoint(IPAddress.Parse(ipAddress), port));
+                return new SIPEndPoint(protocol, IPAddress.Parse(ipAddress), port);
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception ParseSIPEndPoint. " + excp.Message);
                 throw;
             }
@@ -117,13 +152,14 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="serialisedSIPEndPoint">The serialised SIP end point MUST be in the form protocol:socket and protocol must
         /// be exactly 3 characters. Valid examples are udp:10.0.0.1:5060, invalid example is 10.0.0.1:5060.</param>
-        private static SIPEndPoint ParseSerialisedSIPEndPoint(string serialisedSIPEndPoint) {
+        private static SIPEndPoint ParseSerialisedSIPEndPoint(string serialisedSIPEndPoint)
+        {
             return new SIPEndPoint(SIPProtocolsType.GetProtocolType(serialisedSIPEndPoint.Substring(0, 3)), IPSocket.ParseSocketString(serialisedSIPEndPoint.Substring(4)));
         }
 
         public override string ToString()
         {
-            return SIPProtocol + ":" + SocketEndPoint;
+            return Protocol + ":" + Address + ":" + Port;
         }
 
         public static bool AreEqual(SIPEndPoint endPoint1, SIPEndPoint endPoint2)
@@ -136,14 +172,18 @@ namespace SIPSorcery.SIP
             return AreEqual(this, (SIPEndPoint)obj);
         }
 
-        public static bool operator ==(SIPEndPoint endPoint1, SIPEndPoint endPoint2) {
-            if ((object)endPoint1 == null && (object)endPoint2 == null) {
+        public static bool operator ==(SIPEndPoint endPoint1, SIPEndPoint endPoint2)
+        {
+            if ((object)endPoint1 == null && (object)endPoint2 == null)
+            {
                 return true;
             }
-            else if ((object)endPoint1 == null || (object)endPoint2 == null) {
+            else if ((object)endPoint1 == null || (object)endPoint2 == null)
+            {
                 return false;
             }
-            else if (endPoint1.ToString() != endPoint2.ToString()) {
+            else if (endPoint1.ToString() != endPoint2.ToString())
+            {
                 return false;
             }
 
@@ -157,12 +197,23 @@ namespace SIPSorcery.SIP
 
         public override int GetHashCode()
         {
-            return SIPProtocol.GetHashCode() + SocketEndPoint.GetHashCode();
+            return Protocol.GetHashCode() + Address.GetHashCode() + Port.GetHashCode();
+        }
+
+        public SIPEndPoint CopyOf()
+        {
+            SIPEndPoint copy = new SIPEndPoint(Protocol, new IPAddress(Address.GetAddressBytes()), Port);
+            return copy;
+        }
+
+        public IPEndPoint GetIPEndPoint()
+        {
+            return new IPEndPoint(Address, Port);
         }
 
         #region Unit testing.
 
-		#if UNITTEST
+        #if UNITTEST
 
         [TestFixture]
         public class SIPEndPointUnitTest {
@@ -187,9 +238,9 @@ namespace SIPSorcery.SIP
 
                 Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
 
-                Assert.IsTrue(sipEndPoint.SIPProtocol == SIPProtocolsEnum.tls, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.tls, "The SIPEndPoint protocol was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
 
                 Assert.IsTrue(true, "True was false.");
             }
@@ -203,9 +254,9 @@ namespace SIPSorcery.SIP
 
                 Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
 
-                Assert.IsTrue(sipEndPoint.SIPProtocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
 
                 Assert.IsTrue(true, "True was false.");
             }
@@ -219,9 +270,9 @@ namespace SIPSorcery.SIP
 
                 Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
 
-                Assert.IsTrue(sipEndPoint.SIPProtocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
 
                 Assert.IsTrue(true, "True was false.");
             }
@@ -235,9 +286,9 @@ namespace SIPSorcery.SIP
 
                 Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
 
-                Assert.IsTrue(sipEndPoint.SIPProtocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Port == 5065, "The SIPEndPoint port was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Port == 5065, "The SIPEndPoint port was incorrectly parsed.");
 
                 Assert.IsTrue(true, "True was false.");
             }
@@ -251,9 +302,9 @@ namespace SIPSorcery.SIP
 
                 Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
 
-                Assert.IsTrue(sipEndPoint.SIPProtocol == SIPProtocolsEnum.tcp, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.tcp, "The SIPEndPoint protocol was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
 
                 Assert.IsTrue(true, "True was false.");
             }
@@ -267,9 +318,9 @@ namespace SIPSorcery.SIP
 
                 Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
 
-                Assert.IsTrue(sipEndPoint.SIPProtocol == SIPProtocolsEnum.tls, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Port == 5063, "The SIPEndPoint port was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.tls, "The SIPEndPoint protocol was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Port == 5063, "The SIPEndPoint port was incorrectly parsed.");
 
                 Assert.IsTrue(true, "True was false.");
             }
@@ -283,9 +334,9 @@ namespace SIPSorcery.SIP
 
                 Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
 
-                Assert.IsTrue(sipEndPoint.SIPProtocol == SIPProtocolsEnum.tcp, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.SocketEndPoint.Port == 5063, "The SIPEndPoint port was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.tcp, "The SIPEndPoint protocol was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
+                Assert.IsTrue(sipEndPoint.Port == 5063, "The SIPEndPoint port was incorrectly parsed.");
 
                 Assert.IsTrue(true, "True was false.");
             }
@@ -321,7 +372,7 @@ namespace SIPSorcery.SIP
         }
 
         #endif
-        
+
         #endregion
     }
 }

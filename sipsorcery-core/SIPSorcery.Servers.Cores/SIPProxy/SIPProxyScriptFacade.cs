@@ -79,76 +79,134 @@ namespace SIPSorcery.Servers
             m_proxyLogger(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.DialPlan, message, null));
         }
 
-        public void Send(string dstSocket, SIPRequest sipRequest, string proxyBranch)
+        /// <summary>
+        /// Used to send a SIP request received from an external user agent to an internal SIP server agent.
+        /// </summary>
+        /// <param name="receivedFromEP">The SIP end point the proxy received the request from.</param>
+        /// <param name="receivedOnEP">The SIP end point the proxy received the request on.</param>
+        /// <param name="dstSocket">The internal socket to send the request to.</param>
+        /// <param name="sipRequest">The SIP request to send.</param>
+        /// <param name="proxyBranch">The branch to set on the Via header when sending the request. The branch should be calculated
+        /// by the proxy core so that looped requests can be detected.</param>
+        /// <param name="sendFromSocket">The proxy socket to send the request from.</param>
+        public void SendInternal(SIPEndPoint receivedFromEP, SIPEndPoint receivedOnEP, string dstSocket, SIPRequest sipRequest, string proxyBranch, string sendFromSocket)
         {
-            SIPEndPoint dstSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(dstSocket);
-            Send(dstSIPEndPoint, sipRequest, proxyBranch, null, null);
-        }
+            try
+            {
+                if (!IsDestinationValid(sipRequest, dstSocket))
+                {
+                    logger.Debug("SendInternal failed destination check.");
+                    return;
+                }
 
-        public void Send(string dstSocket, SIPRequest sipRequest, string proxyBranch, string localSocket)
-        {
-            SIPEndPoint dstSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(dstSocket);
-            SIPEndPoint localSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(localSocket);
-            Send(dstSIPEndPoint, sipRequest, proxyBranch, localSIPEndPoint, null);
-        }
+                sipRequest.Header.ProxyReceivedFrom = receivedFromEP.ToString();
+                sipRequest.Header.ProxyReceivedOn = receivedOnEP.ToString();
 
-        public void Send(SIPEndPoint dstSIPEndPoint, SIPRequest sipRequest, string proxyBranch, SIPEndPoint localSIPEndPoint)
-        {
-            Send(dstSIPEndPoint, sipRequest, proxyBranch, localSIPEndPoint, null);
+                SIPEndPoint dstSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(dstSocket);
+                SIPEndPoint localSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(sendFromSocket);
+
+                if (receivedOnEP != localSIPEndPoint)
+                {
+                    // The proxy is being requested to send the request on a different socket to the one it was received on.
+                    // A second Via header is added to ensure the response can navigate back the same path. The calculated branch
+                    // parameter needs to go on the top Via header so that whichever internal socket the request is being sent to can
+                    // determine re-transmits.
+                    SIPViaHeader via = new SIPViaHeader(receivedOnEP, CallProperties.CreateBranchId());
+                    sipRequest.Header.Vias.PushViaHeader(via);
+
+                    SIPViaHeader topVia = new SIPViaHeader(localSIPEndPoint, proxyBranch);
+                    sipRequest.Header.Vias.PushViaHeader(topVia);
+                }
+                else
+                {
+                    // Only a single Via header is required as any response to this request will be sent from the same socket it gets received on.
+                    SIPViaHeader via = new SIPViaHeader(localSIPEndPoint, proxyBranch);
+                    sipRequest.Header.Vias.PushViaHeader(via);
+                }
+
+                sipRequest.LocalSIPEndPoint = localSIPEndPoint;
+
+                m_sipTransport.SendRequest(dstSIPEndPoint, sipRequest);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPRequest SendInternal. " + excp.Message);
+                logger.Error(sipRequest.ToString());
+                throw;
+            }
         }
 
         /// <summary>
-        /// Forwards a SIP request through the Proxy.
+        /// Used to send a request from an internal server agent to an external SIP user agent. The difference between this method and
+        /// the SendTransparent method is that this one will set Via headers in accordance with RFC3261.
         /// </summary>
-        /// <param name="dstSIPEndPoint">The destination SIP socket to send the request to.</param>
+        /// <param name="receivedOnEP">The proxy SIP end point the request was received on.</param>
+        /// <param name="dstSocket">The SIP end point the request is being sent to.</param>
         /// <param name="sipRequest">The SIP request to send.</param>
-        /// <param name="proxyBranch">The branchid to set on the Via header to be added for this forwarding leg.</param>
-        /// <param name="localSIPEndPoint">The proxy socket that the request should be sent from. If null the 
-        /// default channel that matches the destination end point should be used.</param>
-        /// <param name="setContactToLocal">If true the Contact header URI will be overwritten with the URI of the
-        /// proxy socket the request is being sent from. This should only be used for INVITE requests.</param>
-        public void Send(SIPEndPoint dstSIPEndPoint, SIPRequest sipRequest, string proxyBranch, SIPEndPoint localSIPEndPoint, IPAddress publicIPAddress)
+        /// <param name="proxyBranch">The branch parameter for the top Via header that has been pre-calculated by the proxy core.</param>
+        /// <param name="sendFromSocket">The proxy SIP end point to send this request from. If the SIP request has its ProxySendFrom header
+        /// value set that will overrule this parameter.</param>
+        public void SendExternal(SIPEndPoint receivedOnEP, SIPEndPoint dstSIPEndPoint, SIPRequest sipRequest, string proxyBranch, IPAddress publicIPAddress)
         {
-            if (dstSIPEndPoint == null)
+            try
             {
-                Log("Send was passed an emtpy destination for " + sipRequest.URI.ToString() + ", returning unresolvable.");
-                Respond(sipRequest, SIPResponseStatusCodesEnum.NotFound, "DNS lookup unresolvable");
-                return;
-            }
+                if (!IsDestinationValid(sipRequest, dstSIPEndPoint))
+                {
+                    logger.Debug("SendExternal failed destination check.");
+                    return;
+                }
 
-            // Determine the external SIP endpoint that the proxy will use to send this request. If the ProxySendFrom header is set
-            // it overrides any specified value.
-            if (!sipRequest.Header.ProxySendFrom.IsNullOrBlank())
+                // Determine the external SIP endpoint that the proxy will use to send this request.
+                SIPEndPoint localSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint(dstSIPEndPoint);
+                if (!sipRequest.Header.ProxySendFrom.IsNullOrBlank())
+                {
+                    SIPChannel proxyChannel = m_sipTransport.FindSIPChannel(SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxySendFrom));
+                    if (proxyChannel == null)
+                    {
+                        logger.Warn("No SIP channel could be found for\n" + sipRequest.ToString());
+                    }
+                    localSIPEndPoint = (proxyChannel != null) ? proxyChannel.SIPChannelEndPoint : localSIPEndPoint;
+                }
+
+                if (receivedOnEP != localSIPEndPoint)
+                {
+                    // The proxy is being requested to send the request on a different socket to the one it was received on.
+                    // A second Via header is added to ensure the response can navigate back the same path. The calculated branch
+                    // parameter needs to go on the top Via header so that whichever internal socket the request is being sent to can
+                    // determine re-transmits.
+                    SIPViaHeader via = new SIPViaHeader(receivedOnEP, CallProperties.CreateBranchId());
+                    sipRequest.Header.Vias.PushViaHeader(via);
+
+                    SIPViaHeader externalVia = new SIPViaHeader(localSIPEndPoint, proxyBranch);
+                    sipRequest.Header.Vias.PushViaHeader(externalVia);
+                }
+                else
+                {
+                    // Only a single Via header is required as any response to this request will be sent from the same socket it gets received on.
+                    SIPViaHeader via = new SIPViaHeader(localSIPEndPoint, proxyBranch);
+                    sipRequest.Header.Vias.PushViaHeader(via);
+                }
+
+                if (sipRequest.Method != SIPMethodsEnum.REGISTER)
+                {
+                    AdjustContactHeader(sipRequest.Header, localSIPEndPoint, publicIPAddress);
+                }
+
+                sipRequest.LocalSIPEndPoint = localSIPEndPoint;
+
+                // Proxy sepecific headers that don't need to be seen by external UAs.
+                sipRequest.Header.ProxyReceivedOn = null;
+                sipRequest.Header.ProxyReceivedFrom = null;
+                sipRequest.Header.ProxySendFrom = null;
+
+                m_sipTransport.SendRequest(dstSIPEndPoint, sipRequest);
+            }
+            catch (Exception excp)
             {
-                SIPChannel proxyChannel = m_sipTransport.FindSIPChannel(SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxySendFrom));
-                localSIPEndPoint = (proxyChannel != null) ? proxyChannel.SIPChannelEndPoint : null;
+                logger.Error("Exception SIPRequest SendExternal. " + excp.Message);
+                logger.Error(sipRequest.ToString());
+                throw;
             }
-            localSIPEndPoint = localSIPEndPoint ?? m_sipTransport.GetDefaultSIPEndPoint(dstSIPEndPoint);
-
-            // If the request is being forwarded on a different proxy socket to the one it was received on then two Via headers
-            // need to be added, one for the proxy socket the request was received on and one for the socket it is being sent on.
-            if (localSIPEndPoint != sipRequest.LocalSIPEndPoint)
-            {
-                SIPViaHeader receiveSocketVia = new SIPViaHeader(sipRequest.LocalSIPEndPoint, CallProperties.CreateBranchId());
-                sipRequest.Header.Vias.PushViaHeader(receiveSocketVia);
-            }
-
-            SIPViaHeader via = new SIPViaHeader(localSIPEndPoint, proxyBranch);
-            sipRequest.Header.Vias.PushViaHeader(via);
-
-            sipRequest.LocalSIPEndPoint = localSIPEndPoint;
-
-            //if (contactURI != null && sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count > 0)
-            //{
-            //    sipRequest.Header.Contact[0].ContactURI = contactURI;
-            //}
-
-            if (sipRequest.Method != SIPMethodsEnum.REGISTER)
-            {
-                AdjustContactHeader(sipRequest, localSIPEndPoint, publicIPAddress);
-            }
-
-            m_sipTransport.SendRequest(dstSIPEndPoint, sipRequest);
         }
 
         /// <summary>
@@ -159,129 +217,199 @@ namespace SIPSorcery.Servers
         /// </summary>
         /// <param name="dstSIPEndPoint">The destination SIP socket to send the request to.</param>
         /// <param name="sipRequest">The SIP request to send.</param>
-        /// <param name="proxyBranch">The branchid to set on the Via header to be added for this forwarding leg.</param>
         /// default channel that matches the destination end point should be used.</param>
-        public void SendTransparent(SIPEndPoint dstSIPEndPoint, SIPRequest sipRequest, string proxyBranch, IPAddress publicIPAddress)
-        {
-            if (dstSIPEndPoint == null)
-            {
-                Log("Send was passed an emtpy destination for " + sipRequest.URI.ToString() + ", returning unresolvable.");
-                Respond(sipRequest, SIPResponseStatusCodesEnum.NotFound, "DNS lookup unresolvable");
-                return;
-            }
-
-            // Determine the external SIP endpoint that the proxy will use to send this request.
-            SIPEndPoint localSIPEndPoint = null;
-            if (!sipRequest.Header.ProxySendFrom.IsNullOrBlank())
-            {
-                SIPChannel proxyChannel = m_sipTransport.FindSIPChannel(SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxySendFrom));
-                localSIPEndPoint = (proxyChannel != null) ? proxyChannel.SIPChannelEndPoint : null;
-            }
-            localSIPEndPoint = localSIPEndPoint ?? m_sipTransport.GetDefaultSIPEndPoint(dstSIPEndPoint);
-
-            // Create the single Via header for the outgoing request. It uses the passed in branchid which has been taken from the
-            // request that's being forwarded. If this proxy is behind a NAT and the public IP is known that's also set on the Via.
-            sipRequest.Header.Vias = new SIPViaSet();
-            SIPViaHeader via = new SIPViaHeader(localSIPEndPoint, proxyBranch);
-            if (publicIPAddress != null)
-            {
-                via.Host = publicIPAddress.ToString();
-            }
-            sipRequest.Header.Vias.PushViaHeader(via);
-
-            if (sipRequest.Method != SIPMethodsEnum.REGISTER)
-            {
-                AdjustContactHeader(sipRequest, localSIPEndPoint, publicIPAddress);
-            }
-
-            // If dispatcher is being used record the transaction so responses are sent to the correct internal socket.
-            if (m_dispatcher != null && sipRequest.Method != SIPMethodsEnum.REGISTER && sipRequest.Method != SIPMethodsEnum.ACK)
-            {
-                //Log("RecordDispatch for " + sipRequest.Method + " " + sipRequest.URI.ToString() + " to " + sipRequest.RemoteSIPEndPoint.ToString() + ".");
-                m_dispatcher.RecordDispatch(sipRequest, sipRequest.RemoteSIPEndPoint);
-            }
-
-            // Proxy sepecific headers that don't need to be seen by external UAs.
-            sipRequest.Header.ProxyReceivedOn = null;
-            sipRequest.Header.ProxyReceivedFrom = null;
-            sipRequest.Header.ProxySendFrom = null;
-
-            sipRequest.LocalSIPEndPoint = localSIPEndPoint;
-            m_sipTransport.SendRequest(dstSIPEndPoint, sipRequest);
-        }
-
-        private void AdjustContactHeader(SIPRequest sipRequest, SIPEndPoint localSIPEndPoint, IPAddress publicIPAddress)
-        {
-            // Set the Contact URI on the outgoing requests depending on which SIP socket the request is being sent on and whether
-            // the request is going to an external network.
-            if (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count == 1)
-            {
-                if (publicIPAddress != null)
-                {
-                    sipRequest.Header.Contact[0].ContactURI.Host = new IPEndPoint(publicIPAddress, localSIPEndPoint.SocketEndPoint.Port).ToString();
-                    sipRequest.Header.Contact[0].ContactURI.Protocol = localSIPEndPoint.SIPProtocol;
-                }
-                else
-                {
-                    sipRequest.Header.Contact[0].ContactURI.Host = localSIPEndPoint.SocketEndPoint.ToString();
-                    sipRequest.Header.Contact[0].ContactURI.Protocol = localSIPEndPoint.SIPProtocol;
-                }
-            }
-        }
-
-        public void Send(SIPResponse sipResponse)
-        {
-            m_sipTransport.SendResponse(sipResponse);
-        }
-
-        public void Send(SIPResponse sipResponse, string localSIPEndPoint)
-        {
-            sipResponse.LocalSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(localSIPEndPoint);
-            m_sipTransport.SendResponse(sipResponse);
-        }
-
-        public void Send(SIPResponse sipResponse, SIPEndPoint localSIPEndPoint)
-        {
-            sipResponse.LocalSIPEndPoint = localSIPEndPoint;
-            m_sipTransport.SendResponse(sipResponse);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sipResponse"></param>
-        /// <param name="localSIPEndPoint"></param>
-        /// <param name="setContactURIToLocal">If true will set the Contact URI to the URI of the proxy socket the response
-        /// is being sent from. This should only be used for INVITE responses where the contact header needs to be updated
-        /// to make sure the correct proxy socket is used for in-dialogue requests.</param>
-        public void Send(SIPResponse sipResponse, SIPEndPoint localSIPEndPoint, IPAddress publicIPAddress)
+        public void SendTransparent(SIPEndPoint dstSIPEndPoint, SIPRequest sipRequest, IPAddress publicIPAddress)
         {
             try
             {
-                sipResponse.LocalSIPEndPoint = localSIPEndPoint;
-
-                if (sipResponse.Header.CSeqMethod != SIPMethodsEnum.REGISTER)
+                if (!IsDestinationValid(sipRequest, dstSIPEndPoint))
                 {
-                    if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count == 1)
-                    {
-                        if (publicIPAddress != null)
-                        {
-                            sipResponse.Header.Contact[0].ContactURI.Host = new IPEndPoint(publicIPAddress, localSIPEndPoint.SocketEndPoint.Port).ToString();
-                            sipResponse.Header.Contact[0].ContactURI.Protocol = localSIPEndPoint.SIPProtocol;
-                        }
-                        else
-                        {
-                            sipResponse.Header.Contact[0].ContactURI.Host = localSIPEndPoint.SocketEndPoint.ToString();
-                            sipResponse.Header.Contact[0].ContactURI.Protocol = localSIPEndPoint.SIPProtocol;
-                        }
-                    }
+                    logger.Debug("SendTransparent failed destination check.");
+                    return;
                 }
+
+                // Determine the external SIP endpoint that the proxy will use to send this request.
+                SIPEndPoint localSIPEndPoint = null;
+                if (!sipRequest.Header.ProxySendFrom.IsNullOrBlank())
+                {
+                    SIPChannel proxyChannel = m_sipTransport.FindSIPChannel(SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxySendFrom));
+                    localSIPEndPoint = (proxyChannel != null) ? proxyChannel.SIPChannelEndPoint : null;
+                }
+                localSIPEndPoint = localSIPEndPoint ?? m_sipTransport.GetDefaultSIPEndPoint(dstSIPEndPoint);
+
+                // Create the single Via header for the outgoing request. It uses the passed in branchid which has been taken from the
+                // request that's being forwarded. If this proxy is behind a NAT and the public IP is known that's also set on the Via.
+                string proxyBranch = sipRequest.Header.Vias.PopTopViaHeader().Branch;
+                sipRequest.Header.Vias = new SIPViaSet();
+                SIPViaHeader via = new SIPViaHeader(localSIPEndPoint, proxyBranch);
+                if (publicIPAddress != null)
+                {
+                    via.Host = publicIPAddress.ToString();
+                }
+                sipRequest.Header.Vias.PushViaHeader(via);
+
+                if (sipRequest.Method != SIPMethodsEnum.REGISTER)
+                {
+                    AdjustContactHeader(sipRequest.Header, localSIPEndPoint, publicIPAddress);
+                }
+
+                // If dispatcher is being used record the transaction so responses are sent to the correct internal socket.
+                if (m_dispatcher != null && sipRequest.Method != SIPMethodsEnum.REGISTER && sipRequest.Method != SIPMethodsEnum.ACK && sipRequest.Method != SIPMethodsEnum.NOTIFY)
+                {
+                    //Log("RecordDispatch for " + sipRequest.Method + " " + sipRequest.URI.ToString() + " to " + sipRequest.RemoteSIPEndPoint.ToString() + ".");
+                    m_dispatcher.RecordDispatch(sipRequest, sipRequest.RemoteSIPEndPoint);
+                }
+
+                // Proxy sepecific headers that don't need to be seen by external UAs.
+                sipRequest.Header.ProxyReceivedOn = null;
+                sipRequest.Header.ProxyReceivedFrom = null;
+                sipRequest.Header.ProxySendFrom = null;
+
+                sipRequest.LocalSIPEndPoint = localSIPEndPoint;
+                m_sipTransport.SendRequest(dstSIPEndPoint, sipRequest);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SendTransparent. " + excp.Message);
+                logger.Error(sipRequest.ToString());
+                throw;
+            }
+        }
+
+        public void SendInternal(SIPEndPoint receivedFromEP, SIPEndPoint receivedOnEP, SIPResponse sipResponse, SIPEndPoint localSIPEndPoint)
+        {
+            try
+            {
+                sipResponse.Header.ProxyReceivedFrom = receivedFromEP.ToString();
+                sipResponse.Header.ProxyReceivedOn = receivedOnEP.ToString();
+
+                sipResponse.LocalSIPEndPoint = localSIPEndPoint;
+                m_sipTransport.SendResponse(sipResponse);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPResponse SendInternal. " + excp.Message);
+                logger.Error(sipResponse.ToString());
+                throw;
+            }
+        }
+
+        public void SendTransparent(SIPEndPoint receivedFromEP, SIPEndPoint receivedOnEP, SIPResponse sipResponse, SIPEndPoint localSIPEndPoint, string dstSIPEndPoint, string proxyBranch)
+        {
+            SendTransparent(receivedFromEP, receivedOnEP, sipResponse, localSIPEndPoint, SIPEndPoint.ParseSIPEndPoint(dstSIPEndPoint), proxyBranch);
+        }
+
+        /// <summary>
+        /// This method is the equivalent to the same named method for sending SIP requests. The two methods are used to allow the Proxy to
+        /// deliver requests to external SIP agents with only a SINGLE Via header due to a small number of providers rejecting requests with
+        /// more than one Via header.
+        /// </summary>
+        /// <param name="receivedFromEP">The socket the response was received from.</param>
+        /// <param name="receivedOnEP">The proxy socket the response was received on.</param>
+        /// <param name="sipResponse">The response being forwarded.</param>
+        /// <param name="localSIPEndPoint">The proxy socket to forward the request from.</param>
+        /// <param name="dstSIPEndPoint">The internal destination socket to forward the response to.</param>
+        /// <param name="proxyBranch">The branch parameter from the top Via header that needs to be reused when forwarding the response.</param>
+        public void SendTransparent(SIPEndPoint receivedFromEP, SIPEndPoint receivedOnEP, SIPResponse sipResponse, SIPEndPoint localSIPEndPoint, SIPEndPoint dstSIPEndPoint, string proxyBranch)
+        {
+            try
+            {
+                sipResponse.Header.ProxyReceivedFrom = receivedFromEP.ToString();
+                sipResponse.Header.ProxyReceivedOn = receivedOnEP.ToString();
+
+                sipResponse.Header.Vias.PushViaHeader(new SIPViaHeader(dstSIPEndPoint, proxyBranch));
+
+                sipResponse.LocalSIPEndPoint = localSIPEndPoint;
+                m_sipTransport.SendResponse(sipResponse);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPResponse SendInternal. " + excp.Message);
+                logger.Error(sipResponse.ToString());
+                throw;
+            }
+        }
+
+        public void SendExternal(SIPResponse sipResponse, SIPEndPoint localSIPEndPoint)
+        {
+            try
+            {
+                sipResponse.Header.ProxyReceivedOn = null;
+                sipResponse.Header.ProxyReceivedFrom = null;
+                sipResponse.Header.ProxySendFrom = null;
+
+                sipResponse.LocalSIPEndPoint = localSIPEndPoint;
 
                 m_sipTransport.SendResponse(sipResponse);
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPProxyScriptHelper Send SIPResponse. " + excp);
+                logger.Error("Exception SIPResponse SendExternal. " + excp.Message);
+                logger.Error(sipResponse.ToString());
+                throw;
+            }
+        }
+
+        public void SendExternal(SIPResponse sipResponse, SIPEndPoint localSIPEndPoint, IPAddress publicIPAddress)
+        {
+            AdjustContactHeader(sipResponse.Header, localSIPEndPoint, publicIPAddress);
+            SendExternal(sipResponse, localSIPEndPoint);
+        }
+
+        private bool IsDestinationValid(SIPRequest sipRequest, string dstSIPEndPoint)
+        {
+            if (dstSIPEndPoint.IsNullOrBlank())
+            {
+                Log("Request with URI " + sipRequest.URI.ToString() + " from " + sipRequest.RemoteSIPEndPoint + " was unresolvable.");
+                Respond(sipRequest, SIPResponseStatusCodesEnum.DoesNotExistAnywhere, "Destination unresolvable");
+                return false;
+            }
+            else
+            {
+                return IsDestinationValid(sipRequest, SIPEndPoint.ParseSIPEndPoint(dstSIPEndPoint));
+            }
+        }
+
+        private bool IsDestinationValid(SIPRequest sipRequest, SIPEndPoint dstSIPEndPoint)
+        {
+            if (dstSIPEndPoint == null)
+            {
+                Log("Request with URI " + sipRequest.URI.ToString() + " from " + sipRequest.RemoteSIPEndPoint + " was unresolvable.");
+                Respond(sipRequest, SIPResponseStatusCodesEnum.DoesNotExistAnywhere, "Destination unresolvable");
+                return false;
+            }
+            else if (SIPTransport.BlackholeAddress.Equals(dstSIPEndPoint.Address))
+            {
+                Log("Request with URI " + sipRequest.URI.ToString() + " from " + sipRequest.RemoteSIPEndPoint + " resolved to a blackhole IP address.");
+                Respond(sipRequest, SIPResponseStatusCodesEnum.BadRequest, "Resolved to blackhole");
+                return false;
+            }
+
+            return true;
+        }
+
+        private void AdjustContactHeader(SIPHeader sipHeader, SIPEndPoint localSIPEndPoint, IPAddress publicIPAddress)
+        {
+            try
+            {
+                // Set the Contact URI on the outgoing requests depending on which SIP socket the request is being sent on and whether
+                // the request is going to an external network.
+                if (sipHeader.Contact != null && sipHeader.Contact.Count == 1)
+                {
+                    SIPEndPoint proxyContact = localSIPEndPoint.CopyOf();
+                    if (publicIPAddress != null)
+                    {
+                        proxyContact = new SIPEndPoint(proxyContact.Protocol, publicIPAddress, proxyContact.Port);
+                    }
+
+                    sipHeader.Contact[0].ContactURI.Host = proxyContact.GetIPEndPoint().ToString();
+                    sipHeader.Contact[0].ContactURI.Protocol = proxyContact.Protocol;
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception AdjustContactHeader. " + excp.Message);
+                throw;
             }
         }
 
@@ -311,8 +439,7 @@ namespace SIPSorcery.Servers
         public SIPEndPoint Resolve(SIPResponse sipResponse)
         {
             SIPViaHeader topVia = sipResponse.Header.Vias.TopViaHeader;
-            SIPEndPoint dstEndPoint = m_sipTransport.GetHostEndPoint(topVia.ReceivedFromAddress, true);
-            dstEndPoint.SIPProtocol = topVia.Transport;
+            SIPEndPoint dstEndPoint = new SIPEndPoint(topVia.Transport, m_sipTransport.GetHostEndPoint(topVia.ReceivedFromAddress, true).GetIPEndPoint());
             return dstEndPoint;
         }
 
@@ -323,7 +450,8 @@ namespace SIPSorcery.Servers
 
         public SIPEndPoint DispatcherLookup(SIPRequest sipRequest)
         {
-            if (m_dispatcher != null)
+            if (m_dispatcher != null &&
+                (sipRequest.Method == SIPMethodsEnum.ACK || sipRequest.Method == SIPMethodsEnum.CANCEL || sipRequest.Method == SIPMethodsEnum.INVITE))
             {
                 return m_dispatcher.LookupTransactionID(sipRequest);
             }
@@ -331,11 +459,12 @@ namespace SIPSorcery.Servers
             return null;
         }
 
-        public SIPEndPoint DispatcherLookup(string branch, SIPMethodsEnum method)
+        public SIPEndPoint DispatcherLookup(SIPResponse sipResponse)
         {
-            if (m_dispatcher != null && !branch.IsNullOrBlank())
+            if (m_dispatcher != null &&
+                (sipResponse.Header.CSeqMethod == SIPMethodsEnum.ACK || sipResponse.Header.CSeqMethod == SIPMethodsEnum.CANCEL || sipResponse.Header.CSeqMethod == SIPMethodsEnum.INVITE))
             {
-                return m_dispatcher.LookupTransactionID(branch, method);
+                return m_dispatcher.LookupTransactionID(sipResponse);
             }
 
             return null;

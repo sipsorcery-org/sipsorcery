@@ -80,15 +80,15 @@ namespace SIPSorcery.SIP
                     {
                         if (protocol == SIPProtocolsEnum.udp)
                         {
-                            logger.Debug(" attempting to create SIP UDP channel for " + sipEndPoint.SocketEndPoint + ".");
-                            SIPUDPChannel udpChannel = new SIPUDPChannel(sipEndPoint.SocketEndPoint);
+                            logger.Debug(" attempting to create SIP UDP channel for " + sipEndPoint.GetIPEndPoint() + ".");
+                            SIPUDPChannel udpChannel = new SIPUDPChannel(sipEndPoint.GetIPEndPoint());
                             sipChannels.Add(udpChannel);
                         }
                         else if (protocol == SIPProtocolsEnum.tcp)
                         {
-                            logger.Debug(" attempting to create SIP TCP channel for " + sipEndPoint.SocketEndPoint + ".");
+                            logger.Debug(" attempting to create SIP TCP channel for " + sipEndPoint.GetIPEndPoint() + ".");
 
-                            SIPTCPChannel tcpChannel = new SIPTCPChannel(sipEndPoint.SocketEndPoint);
+                            SIPTCPChannel tcpChannel = new SIPTCPChannel(sipEndPoint.GetIPEndPoint());
                             sipChannels.Add(tcpChannel);
                         }
                         else if (protocol == SIPProtocolsEnum.tls)
@@ -105,10 +105,10 @@ namespace SIPSorcery.SIP
                                 }
 
                                 string certificatePath = (sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_PATH_PARAMETER) != null) ? sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_PATH_PARAMETER).Value : null;
-                                logger.Debug(" attempting to create SIP TLS channel for " + sipEndPoint.SocketEndPoint + " and certificate type of " + certificateType + " at " + certificatePath + ".");
+                                logger.Debug(" attempting to create SIP TLS channel for " + sipEndPoint.GetIPEndPoint() + " and certificate type of " + certificateType + " at " + certificatePath + ".");
                                 X509Certificate2 certificate = LoadCertificate(certificateType, certificatePath);
                                 if(certificate != null) {
-                                    SIPTLSChannel tlsChannel = new SIPTLSChannel(certificate, sipEndPoint.SocketEndPoint);
+                                    SIPTLSChannel tlsChannel = new SIPTLSChannel(certificate, sipEndPoint.GetIPEndPoint());
                                     sipChannels.Add(tlsChannel);
                                 }
                                 else {

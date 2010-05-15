@@ -93,13 +93,13 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                m_tlsServerListener = new TcpListener(m_localSIPEndPoint.SocketEndPoint);
+                m_tlsServerListener = new TcpListener(m_localSIPEndPoint.GetIPEndPoint());
                 m_tlsServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
-                ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + m_localSIPEndPoint.SocketEndPoint.Port); });
-                ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + m_localSIPEndPoint.SocketEndPoint.Port); });
+                ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + m_localSIPEndPoint.Port); });
+                ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + m_localSIPEndPoint.Port); });
 
-                logger.Debug("SIP TLS Channel listener created " + m_localSIPEndPoint.SocketEndPoint + ".");
+                logger.Debug("SIP TLS Channel listener created " + m_localSIPEndPoint.GetIPEndPoint() + ".");
             }
             catch (Exception excp)
             {
@@ -244,7 +244,7 @@ namespace SIPSorcery.SIP
                             logger.Debug("Attempting to establish TLS connection to " + dstEndPoint + ".");
                             TcpClient tcpClient = new TcpClient();
                             tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                            tcpClient.Client.Bind(m_localSIPEndPoint.SocketEndPoint);
+                            tcpClient.Client.Bind(m_localSIPEndPoint.GetIPEndPoint());
 
                             m_connectingSockets.Add(dstEndPoint);
                             tcpClient.BeginConnect(dstEndPoint.Address, dstEndPoint.Port, EndConnect, new object[] { tcpClient, dstEndPoint, buffer, serverCertificateName });

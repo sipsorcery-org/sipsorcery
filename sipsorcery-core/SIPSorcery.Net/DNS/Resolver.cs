@@ -337,7 +337,7 @@ namespace Heijden.DNS
 			if (!m_UseCache)
 				return;
 
-			// No question, no caching
+			// No question, no cache
 			if (response.Questions.Count == 0)
 				return;
 

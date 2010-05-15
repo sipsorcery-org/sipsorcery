@@ -174,7 +174,7 @@ namespace SIPSorcery.Servers
                                         // it sent the registration with.
                                         if (binding.RegistrarSIPEndPoint != null)
                                         {
-                                            binding.LocalSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy.SIPProtocol) : m_sipTransport.GetDefaultSIPEndPoint(binding.RegistrarSIPEndPoint.SIPProtocol);
+                                            binding.LocalSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy.Protocol) : m_sipTransport.GetDefaultSIPEndPoint(binding.RegistrarSIPEndPoint.Protocol);
 
                                             // Want to remove this binding, send a register with a 0 expiry.
                                             FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "Sending zero expiry register for " + binding.Owner + " and " + binding.ProviderName + " to " + binding.RegistrarSIPEndPoint.ToString() + ".", binding.Owner));
@@ -227,9 +227,7 @@ namespace SIPSorcery.Servers
                                                     int attempts = Convert.ToInt32(Regex.Match(binding.RegistrationFailureMessage, @"(?<attempts>\d)\.$").Result("${attempts}"));
                                                     if (attempts >= MAX_DNS_FAILURE_ATTEMPTS)
                                                     {
-                                                        provider.RegisterEnabled = false;
-                                                        provider.RegisterDisabledReason = "Could not resolve registrar.";
-                                                        UpdateSIPProvider_External(provider);
+                                                        DisableSIPProviderRegistration(provider.Id, "Could not resolve registrar.");
                                                         RemoveCachedBinding(binding.Id);
                                                         m_bindingPersistor.Delete(binding);
                                                     }
@@ -251,7 +249,7 @@ namespace SIPSorcery.Servers
                                             binding.RegistrarSIPEndPoint = registrarEndPoint;
                                             binding.LastRegisterAttempt = DateTimeOffset.UtcNow;
                                             binding.NextRegistrationTime = DateTimeOffset.UtcNow.AddSeconds(REGISTER_FAILURERETRY_INTERVAL);
-                                            binding.LocalSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy.SIPProtocol) : m_sipTransport.GetDefaultSIPEndPoint(binding.RegistrarServer.Protocol);
+                                            binding.LocalSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy.Protocol) : m_sipTransport.GetDefaultSIPEndPoint(binding.RegistrarServer.Protocol);
                                             FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "Sending initial register for " + binding.Owner + " and " + binding.ProviderName + " to " + registrarEndPoint.ToString() + ".", binding.Owner));
                                             m_bindingPersistor.Update(binding);
 
@@ -275,8 +273,7 @@ namespace SIPSorcery.Servers
                                             // If a register attempt generates an exception then disable it.
                                             if (provider != null)
                                             {
-                                                provider.RegisterEnabled = false;
-                                                provider.RegisterDisabledReason = regExcp.Message;
+                                                DisableSIPProviderRegistration(provider.Id, regExcp.Message);
                                                 UpdateSIPProvider_External(provider);
                                             }
 

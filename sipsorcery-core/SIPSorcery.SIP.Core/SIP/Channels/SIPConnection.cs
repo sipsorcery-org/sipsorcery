@@ -929,7 +929,7 @@ includesdp=true";
 
                 byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-                SIPConnection testConnection = new SIPConnection(null, (Stream)null, null, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+                SIPConnection testConnection = new SIPConnection(null, (Stream)null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
                 int sipMessages = 0;
                 testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
                 Array.Copy(testReceiveBytes, testConnection.SocketBuffer, testReceiveBytes.Length);
@@ -978,7 +978,7 @@ SUBSCRIBE sip:aaron@10.1.1";
 
                 byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-                SIPConnection testConnection = new SIPConnection(null, (Stream)null, null, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+                SIPConnection testConnection = new SIPConnection(null, (Stream)null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
                 int sipMessages = 0;
                 testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
                 Array.Copy(testReceiveBytes, testConnection.SocketBuffer, testReceiveBytes.Length);

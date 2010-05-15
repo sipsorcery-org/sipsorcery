@@ -33,6 +33,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using log4net;
 using SIPSorcery.Sys;
@@ -49,7 +50,7 @@ namespace SIPSorcery.SIP.App {
     public class SIPB2BUserAgent : ISIPServerUserAgent, ISIPClientUserAgent {
 
         private static ILog logger = AssemblyState.logger;
-        private static readonly SIPEndPoint m_blackhole = SIPTransport.Blackhole;
+        private static readonly SIPEndPoint m_blackhole = new SIPEndPoint(new IPEndPoint(SIPTransport.BlackholeAddress, 0));
 
         private SIPMonitorLogDelegate Log_External;
         private QueueNewCallDelegate QueueNewCall_External;

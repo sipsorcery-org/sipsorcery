@@ -307,7 +307,7 @@ namespace SIPSorcery.Servers
                     }
                     else
                     {
-                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Registrar, "Authentication required for " + toUser + "@" + canonicalDomain + " from " + registerTransaction.RemoteEndPoint + ".", toUser));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Registrar, "Authentication required for " + toUser + "@" + canonicalDomain + " from " + sipRequest.Header.ProxyReceivedFrom.ToString() + ".", toUser));
                         return RegisterResultEnum.AuthenticationRequired;
                     }
                 }
@@ -326,7 +326,7 @@ namespace SIPSorcery.Servers
 
                         SIPResponse okResponse = GetOkResponse(sipRequest);
                         registerTransaction.SendFinalResponse(okResponse);
-                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Empty registration request successful for " + toUser + "@" + canonicalDomain + " from " + registerTransaction.RemoteEndPoint + ".", toUser));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Empty registration request successful for " + toUser + "@" + canonicalDomain + " from " + sipRequest.Header.ProxyReceivedFrom.ToString() + ".", toUser));
                     }
                     else
                     {

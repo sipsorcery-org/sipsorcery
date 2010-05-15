@@ -94,7 +94,7 @@ namespace SIPSorcery.Web.Services
                 HttpCookie authIdCookie = HttpContext.Current.Request.Cookies[AUTH_TOKEN_KEY];
                 if (authIdCookie != null)
                 {
-                    logger.Debug("authid cookie found: " + authIdCookie.Value + ".");
+                    //logger.Debug("authid cookie found: " + authIdCookie.Value + ".");
                     authId = authIdCookie.Value;
                 }
             }
@@ -108,7 +108,7 @@ namespace SIPSorcery.Web.Services
                 {
                     string authIDHeader = httpRequest.Headers.AllKeys.First(h => { return String.Equals(h, AUTH_TOKEN_KEY, StringComparison.InvariantCultureIgnoreCase); });
                     authId = httpRequest.Headers[authIDHeader];
-                    logger.Debug("authid HTTP header found: " + authId + ".");
+                    //logger.Debug("authid HTTP header found: " + authId + ".");
                 }
                 else if (httpRequest.Headers.AllKeys.Contains(COOKIES_KEY, StringComparer.InvariantCultureIgnoreCase))
                 {
@@ -116,7 +116,7 @@ namespace SIPSorcery.Web.Services
                     if (authIDMatch.Success)
                     {
                         authId = authIDMatch.Result("${authid}");
-                        logger.Debug("authid HTTP cookie found: " + authId + ".");
+                        //logger.Debug("authid HTTP cookie found: " + authId + ".");
                     }
                 }
             }

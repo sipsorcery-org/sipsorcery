@@ -33,6 +33,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using SIPSorcery.Sys;
 using log4net;
@@ -226,7 +227,7 @@ namespace SIPSorcery.SIP.App
             SIPRequest dummyInvite = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURIRelaxed(callDestination + "@sipsorcery.com"));
             SIPHeader dummyHeader = new SIPHeader("<sip:anon@sipsorcery.com>", "<sip:anon@sipsorcery.com>", 1, CallProperties.CreateNewCallId());
             dummyHeader.CSeqMethod = SIPMethodsEnum.INVITE;
-            dummyHeader.Vias.PushViaHeader(new SIPViaHeader(SIPTransport.Blackhole, CallProperties.CreateBranchId()));
+            dummyHeader.Vias.PushViaHeader(new SIPViaHeader(new IPEndPoint(SIPTransport.BlackholeAddress, 0), CallProperties.CreateBranchId()));
             dummyInvite.Header = dummyHeader;
             dummyInvite.Header.ContentType = "application/sdp";
             dummyInvite.Body = dialogueToReplace.SDP;

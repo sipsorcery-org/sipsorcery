@@ -174,11 +174,11 @@ namespace SIPSorcery.SIP.App
                 if (RemoteEndPoint != null)
                 {
                     // This is the equivalent of applying a /20 mask to the IP address to obscure the bottom 12 bits of the address.
-                    byte[] addressBytes = RemoteEndPoint.SocketEndPoint.Address.GetAddressBytes();
+                    byte[] addressBytes = RemoteEndPoint.Address.GetAddressBytes();
                     addressBytes[3] = 0;
                     addressBytes[2] = (byte)(addressBytes[2] & 0xf0);
                     IPAddress anonymisedIPAddress = new IPAddress(addressBytes);
-                    remoteSocket = (RemoteEndPoint != null) ? anonymisedIPAddress.ToString() + ":" + RemoteEndPoint.SocketEndPoint.Port : null;
+                    remoteSocket = (RemoteEndPoint != null) ? anonymisedIPAddress.ToString() + ":" + RemoteEndPoint.Port : null;
                 }
 
                 string csvEvent =

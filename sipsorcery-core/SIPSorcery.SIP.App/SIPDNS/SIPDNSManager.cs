@@ -98,6 +98,7 @@ namespace SIPSorcery.SIP.App
             SIPDNSLookupResult lookupResult = ResolveSIPService(sipURI, synchronous);
             if (lookupResult.LookupError != null)
             {
+                logger.Warn("SIPDNSManager experienced a lookup error of " + lookupResult.LookupError + " on " + sipURI.ToParameterlessString() + ", returning null.");
                 return null;
             }
             else if (lookupResult.EndPointResults != null && lookupResult.EndPointResults.Count > 0)
@@ -106,6 +107,7 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
+                logger.Warn("SIPDNSManager was empty for a lookup on " + sipURI.ToParameterlessString() + ", returning null.");
                 return null;
             }
         }

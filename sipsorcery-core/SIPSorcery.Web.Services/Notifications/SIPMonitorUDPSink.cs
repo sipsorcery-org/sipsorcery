@@ -84,11 +84,11 @@ namespace SIPSorcery.SIP.App
 
                 while (!Exit)
                 {
-                    SIPEndPoint inEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
+                    IPEndPoint inEndPoint =new IPEndPoint(IPAddress.Any, 0);
 
                     try
                     {
-                        buffer = udpClient.Receive(ref inEndPoint.SocketEndPoint);
+                        buffer = udpClient.Receive(ref inEndPoint);
                     }
                     catch (SocketException)
                     {
@@ -99,7 +99,7 @@ namespace SIPSorcery.SIP.App
                         // There is no point logging this as without processing the ICMP message it's not possible to know which socket the rejection came from.
                         logger.Error("Exception listening on SIPMonitorUDPSink. " + listenExcp.Message);
 
-                        inEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
+                        inEndPoint = new IPEndPoint(IPAddress.Any, 0);
                         continue;
                     }
 

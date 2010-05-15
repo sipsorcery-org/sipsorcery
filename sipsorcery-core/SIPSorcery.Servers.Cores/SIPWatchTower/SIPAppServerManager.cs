@@ -290,8 +290,8 @@ namespace SIPSorcery.Servers
                         SIPEndPoint activeWorkerEndPoint = GetFirstHealthyEndPoint();
                         if (activeWorkerEndPoint != null)
                         {
-                            SIPCallDescriptor callDescriptor = new SIPCallDescriptor(m_dispatcherUsername, null, "sip:" + m_dispatcherUsername + "@" + activeWorkerEndPoint.SocketEndPoint.ToString(),
-                                    "sip:" + m_dispatcherUsername + "@sipcalldispatcher", "sip:" + activeWorkerEndPoint.SocketEndPoint.ToString(), null, null, null, SIPCallDirection.Out, null, null, null);
+                            SIPCallDescriptor callDescriptor = new SIPCallDescriptor(m_dispatcherUsername, null, "sip:" + m_dispatcherUsername + "@" + activeWorkerEndPoint.GetIPEndPoint().ToString(),
+                                    "sip:" + m_dispatcherUsername + "@sipcalldispatcher", "sip:" + activeWorkerEndPoint.GetIPEndPoint().ToString(), null, null, null, SIPCallDirection.Out, null, null, null);
                             SIPClientUserAgent uac = new SIPClientUserAgent(m_sipTransport, null, null, null, null);
                             uac.CallFailed += new SIPCallFailedDelegate(AppServerCallFailed);
                             //uac.CallAnswered += (call, sipResponse) => { logger.Debug("Probe call answered with " + sipResponse.StatusCode + "."); };
@@ -327,7 +327,7 @@ namespace SIPSorcery.Servers
                 {
                     foreach (SIPAppServerWorker worker in m_appServerWorkers)
                     {
-                        if (worker.AppServerEndpoint.SocketEndPoint.ToString() == workerSocket)
+                        if (worker.AppServerEndpoint.GetIPEndPoint().ToString() == workerSocket)
                         {
                             failedWorker = worker;
                             break;

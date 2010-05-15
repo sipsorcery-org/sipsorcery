@@ -73,7 +73,8 @@ namespace SIPSorcery.SIP.App
                         // Check for IP address authentication.
                         if (!sipAccount.IPAddressACL.IsNullOrBlank()) {
                             SIPEndPoint uaEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
-                            if (Regex.Match(uaEndPoint.SocketEndPoint.ToString(), sipAccount.IPAddressACL).Success) {
+                            if (Regex.Match(uaEndPoint.GetIPEndPoint().ToString(), sipAccount.IPAddressACL).Success)
+                            {
                                 // Successfully authenticated
                                 return new SIPRequestAuthenticationResult(true, true);
                             }
@@ -86,7 +87,8 @@ namespace SIPSorcery.SIP.App
                         // Check for IP address authentication.
                         if (!sipAccount.IPAddressACL.IsNullOrBlank()) {
                             SIPEndPoint uaEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
-                            if (Regex.Match(uaEndPoint.SocketEndPoint.ToString(), sipAccount.IPAddressACL).Success) {
+                            if (Regex.Match(uaEndPoint.GetIPEndPoint().ToString(), sipAccount.IPAddressACL).Success)
+                            {
                                 // Successfully authenticated
                                 return new SIPRequestAuthenticationResult(true, true);
                             }

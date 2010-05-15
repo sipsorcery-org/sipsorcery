@@ -117,7 +117,7 @@ namespace SIPSorcery.SIP
     /// </remarks>
     [DataContract]
     public class SIPURI
-	{
+    {
         public const int DNS_RESOLUTION_TIMEOUT = 2000;    // Timeout for resolving DNS hosts in milliseconds.
 
         public const char SCHEME_ADDR_SEPARATOR = ':';
@@ -133,7 +133,7 @@ namespace SIPSorcery.SIP
 
         private static SIPProtocolsEnum m_defaultSIPTransport = SIPProtocolsEnum.udp;
         private static SIPSchemesEnum m_defaultSIPScheme = SIPSchemesEnum.sip;
-		private static string m_sipRegisterRemoveAll = SIPConstants.SIP_REGISTER_REMOVEALL;
+        private static string m_sipRegisterRemoveAll = SIPConstants.SIP_REGISTER_REMOVEALL;
         private static string m_uriParamTransportKey = SIPHeaderAncillary.SIP_HEADERANC_TRANSPORT;
 
         [DataMember]
@@ -218,15 +218,15 @@ namespace SIPSorcery.SIP
             }
         }
 
-		private SIPURI()
-		{}
+        private SIPURI()
+        { }
 
-		public SIPURI(string user, string host, string paramsAndHeaders)
-		{
-			User = user;
-			Host = host;
+        public SIPURI(string user, string host, string paramsAndHeaders)
+        {
+            User = user;
+            Host = host;
             ParseParamsAndHeaders(paramsAndHeaders);
-		}
+        }
 
         public SIPURI(string user, string host, string paramsAndHeaders, SIPSchemesEnum scheme)
         {
@@ -243,7 +243,8 @@ namespace SIPSorcery.SIP
             ParseParamsAndHeaders(paramsAndHeaders);
             Scheme = scheme;
 
-            if (protocol != SIPProtocolsEnum.udp) {
+            if (protocol != SIPProtocolsEnum.udp)
+            {
                 Parameters.Set(m_uriParamTransportKey, protocol.ToString());
             }
         }
@@ -251,15 +252,16 @@ namespace SIPSorcery.SIP
         public SIPURI(SIPSchemesEnum scheme, SIPEndPoint sipEndPoint)
         {
             Scheme = scheme;
-            Host = sipEndPoint.SocketEndPoint.ToString();
+            Host = sipEndPoint.GetIPEndPoint().ToString();
 
-            if (sipEndPoint.SIPProtocol != SIPProtocolsEnum.udp) {
-                Parameters.Set(m_uriParamTransportKey, sipEndPoint.SIPProtocol.ToString());
+            if (sipEndPoint.Protocol != SIPProtocolsEnum.udp)
+            {
+                Parameters.Set(m_uriParamTransportKey, sipEndPoint.Protocol.ToString());
             }
         }
 
-		public static SIPURI ParseSIPURI(string uri)
-		{
+        public static SIPURI ParseSIPURI(string uri)
+        {
             try
             {
                 SIPURI sipURI = new SIPURI();
@@ -349,7 +351,7 @@ namespace SIPSorcery.SIP
                 logger.Error("Exception ParseSIPURI (URI=" + uri + "). " + excp.Message);
                 throw new SIPValidationException(SIPValidationFieldsEnum.URI, "Unknown error parsing SIP URI.");
             }
-		}
+        }
 
         public static SIPURI ParseSIPURIRelaxed(string partialURI)
         {
@@ -374,29 +376,35 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public new string ToString() {
-            try {
+        public new string ToString()
+        {
+            try
+            {
                 string uriStr = Scheme.ToString() + SCHEME_ADDR_SEPARATOR;
 
                 uriStr = (User != null) ? uriStr + User + USER_HOST_SEPARATOR + Host : uriStr + Host;
 
-                if (Parameters != null && Parameters.Count > 0) {
+                if (Parameters != null && Parameters.Count > 0)
+                {
                     uriStr += Parameters.ToString();
                 }
 
                 // If the URI's protocol is not implied already set the transport parameter.
-                if (Scheme != SIPSchemesEnum.sips && Protocol != SIPProtocolsEnum.udp && !Parameters.Has(m_uriParamTransportKey)) {
+                if (Scheme != SIPSchemesEnum.sips && Protocol != SIPProtocolsEnum.udp && !Parameters.Has(m_uriParamTransportKey))
+                {
                     uriStr += PARAM_TAG_DELIMITER + m_uriParamTransportKey + TAG_NAME_VALUE_SEPERATOR + Protocol.ToString();
                 }
 
-                if (Headers != null && Headers.Count > 0) {
+                if (Headers != null && Headers.Count > 0)
+                {
                     string headerStr = Headers.ToString();
                     uriStr += HEADER_START_DELIMITER + headerStr.Substring(1);
                 }
 
                 return uriStr;
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPURI ToString. " + excp.Message);
                 throw excp;
             }
@@ -431,13 +439,14 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public SIPEndPoint ToSIPEndPoint() {
-            if (IPSocket.IsIPSocket(Host) || IPSocket.IsIPAddress(Host)) {
-                SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(Host);
-                sipEndPoint.SIPProtocol = Protocol;
-                return sipEndPoint;
+        public SIPEndPoint ToSIPEndPoint()
+        {
+            if (IPSocket.IsIPSocket(Host) || IPSocket.IsIPAddress(Host))
+            {
+                return new SIPEndPoint(Protocol, IPSocket.GetIPEndPoint(Host));
             }
-            else {
+            else
+            {
                 return null;
             }
         }
@@ -567,10 +576,10 @@ namespace SIPSorcery.SIP
 
             return copy;
         }
-				
-		#region Unit testing.
 
-		#if UNITTEST
+        #region Unit testing.
+
+#if UNITTEST
 	
 		[TestFixture]
 		public class SIPURIUnitTest
@@ -985,8 +994,8 @@ namespace SIPSorcery.SIP
             }
         }
 
-		#endif
+#endif
 
-		#endregion
-	}
+        #endregion
+    }
 }

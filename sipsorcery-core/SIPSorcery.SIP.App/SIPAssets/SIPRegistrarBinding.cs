@@ -326,7 +326,7 @@ namespace SIPSorcery.SIP.App
 
                 //logger.Debug("Mangling contact header from " + m_mangledContactURI.Host + " to " + IPSocket.GetSocketString(uacRecvdEndPoint) + ".");
 
-                m_mangledContactURI.Host = remoteSIPEndPoint.SocketEndPoint.ToString();
+                m_mangledContactURI.Host = remoteSIPEndPoint.GetIPEndPoint().ToString();
             }
 
             m_expiry = expiry;
@@ -412,7 +412,7 @@ namespace SIPSorcery.SIP.App
 
                 //logger.Debug("Mangling contact header from " + m_mangledContactURI.Host + " to " + IPSocket.GetSocketString(uacRecvdEndPoint) + ".");
 
-                m_mangledContactURI.Host = remoteSIPEndPoint.SocketEndPoint.ToString();
+                m_mangledContactURI.Host = remoteSIPEndPoint.GetIPEndPoint().ToString();
             }
         }
 

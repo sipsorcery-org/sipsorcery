@@ -326,14 +326,14 @@ namespace SIPSorcery.Servers
 
                 // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
                 SIPEndPoint dstEndPoint = m_outboundProxy;
-                if (m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.SocketEndPoint.Address))
+                if (m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.Address))
                 {
                     dstEndPoint = m_outboundProxy;
                 }
                 else if (subscription.SubscriptionDialogue.ProxySendFrom != null)
                 {
                     // The proxy will always be listening on UDP port 5060 for requests from internal servers.
-                    dstEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(SIPEndPoint.ParseSIPEndPoint(subscription.SubscriptionDialogue.ProxySendFrom).SocketEndPoint.Address, m_defaultSIPPort));
+                    dstEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(SIPEndPoint.ParseSIPEndPoint(subscription.SubscriptionDialogue.ProxySendFrom).Address, m_defaultSIPPort));
                 }
 
                 SIPNonInviteTransaction notifyTransaction = m_sipTransport.CreateNonInviteTransaction(notifyRequest, dstEndPoint, m_sipTransport.GetDefaultSIPEndPoint(dstEndPoint), m_outboundProxy);

@@ -249,15 +249,15 @@ namespace SIPSorcery.SIPAppServer
                 m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), true);
                 if (m_appServerEndPoint != null)
                 {
-                    if (m_appServerEndPoint.SIPProtocol == SIPProtocolsEnum.udp)
+                    if (m_appServerEndPoint.Protocol == SIPProtocolsEnum.udp)
                     {
                         logger.Debug("Using single SIP transport socket for App Server " + m_appServerEndPoint.ToString() + ".");
-                        m_sipTransport.AddSIPChannel(new SIPUDPChannel(m_appServerEndPoint.SocketEndPoint));
+                        m_sipTransport.AddSIPChannel(new SIPUDPChannel(m_appServerEndPoint.GetIPEndPoint()));
                     }
-                    else if (m_appServerEndPoint.SIPProtocol == SIPProtocolsEnum.tcp)
+                    else if (m_appServerEndPoint.Protocol == SIPProtocolsEnum.tcp)
                     {
                         logger.Debug("Using single SIP transport socket for App Server " + m_appServerEndPoint.ToString() + ".");
-                        m_sipTransport.AddSIPChannel(new SIPTCPChannel(m_appServerEndPoint.SocketEndPoint));
+                        m_sipTransport.AddSIPChannel(new SIPTCPChannel(m_appServerEndPoint.GetIPEndPoint()));
                     }
                     else
                     {

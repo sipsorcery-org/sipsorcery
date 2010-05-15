@@ -154,7 +154,7 @@ namespace SIPSorcery.SIP.App
 
                     // Only mangle if the host is a private IP address and there is something to change. 
                     // For example the server could be on the same private subnet in which case it can't help.
-                    if (IPSocket.IsPrivateAddress(contactHost) && contactHost != remoteEndPoint.SocketEndPoint.Address.ToString())
+                    if (IPSocket.IsPrivateAddress(contactHost) && contactHost != remoteEndPoint.Address.ToString())
                     {
                         SIPURI origContact = sipResponse.Header.Contact[0].ContactURI;
                         sipResponse.Header.Contact[0].ContactURI = new SIPURI(origContact.Scheme, remoteEndPoint);
@@ -167,7 +167,7 @@ namespace SIPSorcery.SIP.App
                 if (sipResponse.Body != null)
                 {
                     bool wasMangled = false;
-                    string mangledSDP = MangleSDP(sipResponse.Body, remoteEndPoint.SocketEndPoint.Address.ToString(), out wasMangled);
+                    string mangledSDP = MangleSDP(sipResponse.Body, remoteEndPoint.Address.ToString(), out wasMangled);
 
                     if (wasMangled)
                     {
@@ -176,7 +176,7 @@ namespace SIPSorcery.SIP.App
 
                         if (logDelegate != null)
                         {
-                            logDelegate(new SIPMonitorConsoleEvent(server, SIPMonitorEventTypesEnum.DialPlan, "SDP mangled for INVITE response from " + sipResponse.RemoteSIPEndPoint.ToString() + ", adjusted address " + remoteEndPoint.SocketEndPoint.Address.ToString() + ".", username));
+                            logDelegate(new SIPMonitorConsoleEvent(server, SIPMonitorEventTypesEnum.DialPlan, "SDP mangled for INVITE response from " + sipResponse.RemoteSIPEndPoint.ToString() + ", adjusted address " + remoteEndPoint.Address.ToString() + ".", username));
                         }
                     }
                 }
@@ -193,11 +193,11 @@ namespace SIPSorcery.SIP.App
             string remoteUAStr = sipRequest.Header.ProxyReceivedFrom;
             if (!remoteUAStr.IsNullOrBlank())
             {
-                requestIPAddress = SIPEndPoint.ParseSIPEndPoint(remoteUAStr).SocketEndPoint.Address;
+                requestIPAddress = SIPEndPoint.ParseSIPEndPoint(remoteUAStr).Address;
             }
             else if (sipRequest.RemoteSIPEndPoint != null)
             {
-                requestIPAddress = sipRequest.RemoteSIPEndPoint.SocketEndPoint.Address;
+                requestIPAddress = sipRequest.RemoteSIPEndPoint.Address;
             }
             return requestIPAddress;
         }

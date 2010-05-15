@@ -99,9 +99,9 @@ namespace SIPSorcery.Servers
 
                 Buffer.BlockCopy(RemoteEndPoint.Address.GetAddressBytes(), 0, buffer, 0, 4);
                 Buffer.BlockCopy(BitConverter.GetBytes(RemoteEndPoint.Port), 0, buffer, 4, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes((int)LocalSIPEndPoint.SIPProtocol), 0, buffer, 8, 4);
-                Buffer.BlockCopy(LocalSIPEndPoint.SocketEndPoint.Address.GetAddressBytes(), 0, buffer, 12, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(LocalSIPEndPoint.SocketEndPoint.Port), 0, buffer, 16, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes((int)LocalSIPEndPoint.Protocol), 0, buffer, 8, 4);
+                Buffer.BlockCopy(LocalSIPEndPoint.Address.GetAddressBytes(), 0, buffer, 12, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(LocalSIPEndPoint.Port), 0, buffer, 16, 4);
 
                 return buffer;
             }
@@ -203,7 +203,7 @@ namespace SIPSorcery.Servers
 
                 if (keepAliveMessage != null)
                 {
-                    if (keepAliveMessage.LocalSIPEndPoint.SIPProtocol == SIPProtocolsEnum.udp)
+                    if (keepAliveMessage.LocalSIPEndPoint.Protocol == SIPProtocolsEnum.udp)
                     {
                         FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.NATKeepAlive, SIPMonitorEventTypesEnum.NATKeepAliveRelay, "Relaying NAT keep-alive from proxy socket " + keepAliveMessage.LocalSIPEndPoint + " to " + keepAliveMessage.RemoteEndPoint + ".", null));
                         m_sipTransport.SendRaw(keepAliveMessage.LocalSIPEndPoint, new SIPEndPoint(keepAliveMessage.RemoteEndPoint), m_sendBuffer);

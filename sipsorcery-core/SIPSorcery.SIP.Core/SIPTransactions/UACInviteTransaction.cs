@@ -151,7 +151,7 @@ namespace SIPSorcery.SIP
                         {
                             // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
                             SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom);
-                            ackURI.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();
+                            ackURI.Host = remoteUASSIPEndPoint.GetIPEndPoint().ToString();
                         }
                     }
 

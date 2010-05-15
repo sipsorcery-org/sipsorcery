@@ -1,4 +1,7 @@
 ﻿using System;
+using System.IO;
+using System.Net;
+using System.Reflection;
 using System.ServiceModel;
 using System.Text;
 using System.Threading;
@@ -10,6 +13,7 @@ using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Resources;
 using System.Windows.Shapes;
 using SIPSorcery.Persistence;
 using SIPSorcery.Silverlight.Messaging;
@@ -47,6 +51,7 @@ namespace SIPSorcery
         private SIPCallManager m_sipCallsManager;
         private MonitoringConsole m_monitorConsole;
         private CustomerSettingsControl m_customerSettings;
+        private UserControl m_switchboardControl;
         private Timer m_sessionTimer;
         private Timer m_expiredTimer;
         private Timer m_notificationsTimer;
@@ -358,6 +363,11 @@ namespace SIPSorcery
             m_sipCallsManager.Visibility = (m_sipCallsManager == control) ? Visibility.Visible : Visibility.Collapsed;
             m_monitorConsole.Visibility = (m_monitorConsole == control) ? Visibility.Visible : Visibility.Collapsed;
             m_customerSettings.Visibility = (m_customerSettings == control) ? Visibility.Visible : Visibility.Collapsed;
+
+            if (m_switchboardControl != null)
+            {
+                m_switchboardControl.Visibility = (m_switchboardControl == control) ? Visibility.Visible : Visibility.Collapsed;
+            }
         }
 
         private void SIPAccountsLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -407,6 +417,21 @@ namespace SIPSorcery
             if (!m_sipCallsManager.Initialised)
             {
                 m_sipCallsManager.Initialise();
+            }
+        }
+
+        private void SwitchboardLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            SetSelectedTextBlock(m_switchboardLink);
+
+            if (m_switchboardControl == null)
+            {
+                SetActive(null);
+                DownloadSwtichboardControl();
+            }
+            else
+            {
+                SetActive(m_switchboardControl);
             }
         }
 
@@ -527,6 +552,51 @@ namespace SIPSorcery
         {
             UIHelper.SetVisibility(m_extendSessionButton, Visibility.Collapsed);
             m_persistor.ExtendSessionAsync(EXTEND_SESSION_INCREMENTS);
+        }
+
+        private void DownloadSwtichboardControl()
+        {
+            WebClient downloader = new WebClient();
+            downloader.OpenReadCompleted += new OpenReadCompletedEventHandler(downloader_OpenReadCompleted); 
+            string component = "switchboard.xap"; 
+            string absoluteUri = System.Windows.Application.Current.Host.Source.AbsoluteUri; 
+            //string path = absoluteUri.Substring(0, absoluteUri.LastIndexOf("/") + 1) + component;
+            string path = "http://localhost:8080/clientbin/switchboard.xap";
+            LogActivityMessage(MessageLevelsEnum.Info, "Downloading switchboard component from " + path + "...");
+            downloader.OpenReadAsync(new Uri(path, UriKind.Absolute));
+        }
+
+        void downloader_OpenReadCompleted(object sender, OpenReadCompletedEventArgs e) 
+        { 
+            AssemblyPart assemblyPart = new AssemblyPart();
+            Assembly windowsControlsAssembly = GetAssemblyFromPackage("System.Windows.Controls.dll", e.Result);
+            Assembly windowsToolkitAssembly = GetAssemblyFromPackage("System.Windows.Controls.Toolkit.dll", e.Result);
+            Assembly windowsDataToolkitAssembly = GetAssemblyFromPackage("System.Windows.Controls.Data.DataForm.Toolkit.dll", e.Result);
+            Assembly windowsLayoutToolkitAssembly = GetAssemblyFromPackage("System.Windows.Controls.Layout.Toolkit.dll", e.Result);
+            Assembly windowsToolkitInternalsAssembly = GetAssemblyFromPackage("System.Windows.Controls.Toolkit.Internals.dll", e.Result);
+            Assembly switchboardEntitiesAssembly = GetAssemblyFromPackage("SIPSorcery.Silverlight.SwitchboardEntities.dll", e.Result);
+            Assembly switchboardAssembly = GetAssemblyFromPackage("SIPSorcery.Silverlight.Switchboard.dll", e.Result);
+            m_switchboardControl = (UserControl)switchboardAssembly.CreateInstance("SIPSorcery.Silverlight.Switchboard.MainPage");
+            m_mainCanvas.Children.Add(m_switchboardControl);
+        }
+
+        private Assembly GetAssemblyFromPackage(string assemblyName, Stream xap)
+        {
+            // Local variables
+            Uri assemblyUri = null;
+            StreamResourceInfo resPackage = null;
+            StreamResourceInfo resAssembly = null;
+            AssemblyPart part = null;
+
+            // Initialize
+            assemblyUri = new Uri(assemblyName, UriKind.Relative);
+            resPackage = new StreamResourceInfo(xap, null);
+            resAssembly = Application.GetResourceStream(resPackage, assemblyUri);
+
+            // Extract an assembly 
+            part = new AssemblyPart();
+            Assembly a = part.Load(resAssembly.Stream);
+            return a;
         }
     }
 }

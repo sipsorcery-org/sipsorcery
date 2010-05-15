@@ -179,19 +179,19 @@ namespace SIPSorcery.Servers
                             foreach (SIPRegistrarBinding binding in bindings)
                             {
                                 SIPURI dstURI = binding.MangledContactSIPURI;
-                                SIPEndPoint localSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy.SIPProtocol) : m_sipTransport.GetDefaultSIPEndPoint(dstURI.Protocol);
+                                SIPEndPoint localSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy.Protocol) : m_sipTransport.GetDefaultSIPEndPoint(dstURI.Protocol);
 
                                 SIPEndPoint dstSIPEndPoint = null;
 
                                 // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
-                                if(m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.SocketEndPoint.Address))
+                                if(m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.Address))
                                 {
                                     dstSIPEndPoint = m_outboundProxy;
                                 }
                                 else if (binding.ProxySIPEndPoint != null)
                                 {
                                     // If the binding has a specific proxy end point sent then the request needs to be forwarded to the proxy's default end point for it to take care of.
-                                    dstSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(binding.ProxySIPEndPoint.SocketEndPoint.Address, m_defaultSIPPort));
+                                    dstSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(binding.ProxySIPEndPoint.Address, m_defaultSIPPort));
                                 }
                                 else if (m_outboundProxy != null)
                                 {
@@ -216,6 +216,9 @@ namespace SIPSorcery.Servers
                                 if (binding.ProxySIPEndPoint != null)
                                 {
                                     notifyRequest.Header.ProxySendFrom = binding.ProxySIPEndPoint.ToString();
+
+                                    // If the binding has a specific proxy end point sent then the request needs to be forwarded to the proxy's default end point for it to take care of.
+                                    dstSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(binding.ProxySIPEndPoint.Address, m_defaultSIPPort));
                                 }
 
                                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.MWI, "Forwarding NOTIFY request from " + fromURI + " to registered binding at " + dstURI.ToString() + ", proxy " + dstSIPEndPoint.ToString() + ".", sipAccount.Owner));

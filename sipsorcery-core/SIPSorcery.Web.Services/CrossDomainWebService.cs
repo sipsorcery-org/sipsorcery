@@ -64,6 +64,9 @@ namespace SIPSorcery.Web.Services
 
         [OperationContract, WebGet(UriTemplate = "/clientbin/sipsorcery.xap")]
         Stream GetSIPSorceryXAP();
+
+        [OperationContract, WebGet(UriTemplate = "/clientbin/switchboard.xap")]
+        Stream GetSwitchboardXAP();
     }
 
     public class CrossDomainService : ICrossDomain
@@ -141,16 +144,26 @@ namespace SIPSorcery.Web.Services
 
         public Stream GetSIPSorceryXAP()
         {
-            logger.Debug("Request for clientbin/sipsorcery.xap.");
+            return GetXAP("sipsorcery.xap");
+        }
 
-            if (File.Exists(m_baseDirectory + "clientbin/sipsorcery.xap"))
+        public Stream GetSwitchboardXAP()
+        {
+            return GetXAP("switchboard.xap");
+        }
+        
+        public Stream GetXAP(string xapFilename)
+        {
+            logger.Debug("Request for clientbin/" + xapFilename + ".");
+
+            if (File.Exists(m_baseDirectory + "clientbin/" + xapFilename + "."))
             {
-                StreamReader sr = new StreamReader(m_baseDirectory + "clientbin/sipsorcery.xap");
+                StreamReader sr = new StreamReader(m_baseDirectory + "clientbin/" + xapFilename + ".");
                 return sr.BaseStream;
             }
             else
             {
-                logger.Error("File clientbin/sipsorcery.xap did not exist in " + m_baseDirectory + ".");
+                logger.Error("File clientbin/" + xapFilename + " did not exist in " + m_baseDirectory + ".");
                 return null;
             }
         }

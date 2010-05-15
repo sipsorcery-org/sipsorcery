@@ -66,13 +66,13 @@ namespace SIPSorcery.SIP
 
         private void Initialise() {
             try {
-                m_sipConn = new UdpClient(m_localSIPEndPoint.SocketEndPoint);
+                m_sipConn = new UdpClient(m_localSIPEndPoint.GetIPEndPoint());
 
                 Thread listenThread = new Thread(new ThreadStart(Listen));
                 listenThread.Name = THREAD_NAME + Crypto.GetRandomString(4);
                 listenThread.Start();
 
-                logger.Debug("SIPUDPChannel listener created " + m_localSIPEndPoint.SocketEndPoint + ".");
+                logger.Debug("SIPUDPChannel listener created " + m_localSIPEndPoint.GetIPEndPoint() + ".");
             }
             catch (Exception excp) {
                 logger.Error("Exception SIPUDPChannel Initialise. " + excp.Message);
@@ -99,11 +99,11 @@ namespace SIPSorcery.SIP
 
 				while(!Closed)
 				{
-                    SIPEndPoint inEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
+                    IPEndPoint inEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
                     try
                     {
-                        buffer = m_sipConn.Receive(ref inEndPoint.SocketEndPoint);
+                        buffer = m_sipConn.Receive(ref inEndPoint);
                     }
                     catch (SocketException)
                     {
@@ -120,7 +120,7 @@ namespace SIPSorcery.SIP
                         // There is no point logging this as without processing the ICMP message it's not possible to know which socket the rejection came from.
                         logger.Error("Exception listening on SIPUDPChannel. " + listenExcp.Message);
 
-                        inEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
+                        inEndPoint = new IPEndPoint(IPAddress.Any, 0);
                         continue;
                     }
 
@@ -134,7 +134,7 @@ namespace SIPSorcery.SIP
 					{
 						if(SIPMessageReceived != null)
 						{
-                            SIPMessageReceived(this, inEndPoint, buffer);
+                            SIPMessageReceived(this, new SIPEndPoint(SIPProtocolsEnum.udp, inEndPoint), buffer);
 						}
 					}
 				}

@@ -106,7 +106,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPEndPoint defaultUDPEP = m_sipTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp);
 
-                SIPRequest firstLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.SocketEndPoint, null);
+                SIPRequest firstLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.GetIPEndPoint(), null);
                 m_firstLegDialogue = Dial(dest1, MAXCALLBACK_RINGTIME_SECONDS, 0, firstLegDummyInviteRequest);
                 if (m_firstLegDialogue == null)
                 {
@@ -121,7 +121,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 Log("Callback app commencing second leg to " + dest2 + ".");
 
-                SIPRequest secondLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.SocketEndPoint, m_firstLegDialogue.RemoteSDP);
+                SIPRequest secondLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.GetIPEndPoint(), m_firstLegDialogue.RemoteSDP);
                 SIPDialogue secondLegDialogue = Dial(dest2, MAXCALLBACK_RINGTIME_SECONDS, 0, secondLegDummyInviteRequest);
                 if (secondLegDialogue == null)
                 {

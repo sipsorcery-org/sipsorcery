@@ -255,7 +255,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     string content = sipRequest.Body;
                     string remoteUAStr = sipRequest.Header.ProxyReceivedFrom;
                     SIPEndPoint remoteUAAddress = (!remoteUAStr.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(remoteUAStr) : sipRequest.RemoteSIPEndPoint;
-                    SIPCallDescriptor switchCallStruct = new SIPCallDescriptor(username, password, forwardURI.ToString(), callFromHeader.ToString(), forwardURI.ToString(), socket, null, null, SIPCallDirection.Out, sipRequest.Header.ContentType, content, remoteUAAddress.SocketEndPoint.Address);
+                    SIPCallDescriptor switchCallStruct = new SIPCallDescriptor(username, password, forwardURI.ToString(), callFromHeader.ToString(), forwardURI.ToString(), socket, null, null, SIPCallDirection.Out, sipRequest.Header.ContentType, content, remoteUAAddress.Address);
 
                     return switchCallStruct;
                 }

@@ -194,7 +194,6 @@ namespace SIPSorcery.Servers
                     m_compiledScript.Execute();
                 }
 
-
                 //if (requestStopwatch.ElapsedMilliseconds > 20)
                 //{
                 //    logger.Debug("GotRequest processing time=" + requestStopwatch.ElapsedMilliseconds + "ms, script time=" + scriptStopwatch.ElapsedMilliseconds + "ms.");
@@ -244,7 +243,9 @@ namespace SIPSorcery.Servers
                 {
                     SIPViaHeader nextTopVia = sipResponse.Header.Vias.TopViaHeader;
                     SIPEndPoint nextTopViaSIPEndPoint = new SIPEndPoint(nextTopVia.Transport, IPSocket.ParseSocketString(nextTopVia.ContactAddress));
-                    if (m_sipTransport.IsLocalSIPEndPoint(nextTopViaSIPEndPoint) || (PublicIPAddress != null && nextTopViaSIPEndPoint.SocketEndPoint.Address.ToString() == PublicIPAddress.ToString()))
+                    if (!(PublicIPAddress != null && nextTopVia.ReceivedFromIPAddress != null && nextTopVia.ReceivedFromIPAddress != PublicIPAddress.ToString())
+                        && 
+                        (m_sipTransport.IsLocalSIPEndPoint(nextTopViaSIPEndPoint) || (PublicIPAddress != null && nextTopVia.ReceivedFromIPAddress == PublicIPAddress.ToString())))
                     {
                         sipResponse.Header.Vias.PopTopViaHeader();
                         outSocket = nextTopViaSIPEndPoint;
@@ -288,7 +289,7 @@ namespace SIPSorcery.Servers
             catch (Exception excp)
             {
                 string respExcpError = "Exception SIPProxyCore GotResponse. " + excp.Message;
-                logger.Error(respExcpError);
+                logger.Error(respExcpError + "\n" + sipResponse.ToString());
                 SIPMonitorEvent respExcpEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.Error, respExcpError, localSIPEndPoint, remoteEndPoint, null);
                 SendMonitorEvent(respExcpEvent);
 

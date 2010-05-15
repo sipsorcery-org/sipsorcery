@@ -211,7 +211,7 @@ namespace SIPSorcery.SIP
         { }
 
         public SIPViaHeader(SIPEndPoint localEndPoint, string branch) :
-            this(localEndPoint.SocketEndPoint.Address.ToString(), localEndPoint.SocketEndPoint.Port, branch, localEndPoint.SIPProtocol)
+            this(localEndPoint.Address.ToString(), localEndPoint.Port, branch, localEndPoint.Protocol)
         { }
 
         public SIPViaHeader(string contactEndPoint, string branch) :

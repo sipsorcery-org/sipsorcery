@@ -441,9 +441,9 @@ namespace SIPSorcery.SIP.App
             {
                 SIPMonitorConsoleEvent consoleEvent = proxyEvent as SIPMonitorConsoleEvent;
 
-                string serverAddress = (consoleEvent.ServerEndPoint != null) ? consoleEvent.ServerEndPoint.SocketEndPoint.Address.ToString() : null;
-                string remoteIPAddress = (consoleEvent.RemoteEndPoint != null) ? consoleEvent.RemoteEndPoint.SocketEndPoint.Address.ToString() : null;
-                string dstIPAddress = (consoleEvent.DestinationEndPoint != null) ? consoleEvent.DestinationEndPoint.SocketEndPoint.Address.ToString() : null;
+                string serverAddress = (consoleEvent.ServerEndPoint != null) ? consoleEvent.ServerEndPoint.Address.ToString() : null;
+                string remoteIPAddress = (consoleEvent.RemoteEndPoint != null) ? consoleEvent.RemoteEndPoint.Address.ToString() : null;
+                string dstIPAddress = (consoleEvent.DestinationEndPoint != null) ? consoleEvent.DestinationEndPoint.Address.ToString() : null;
 
                 if (SIPRequestFilter != WILDCARD && consoleEvent.Message != null && consoleEvent.EventType == SIPMonitorEventTypesEnum.FullSIPTrace)
                 {

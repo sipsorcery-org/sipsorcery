@@ -506,13 +506,13 @@ namespace SIPSorcery.Servers
 
                     dialogue.CSeq = dialogue.CSeq + 1;
                     m_sipDialoguePersistor.UpdateProperty(dialogue.Id, "CSeq", dialogue.CSeq);
-                    SIPEndPoint localSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultTransportContact(m_outboundProxy.SIPProtocol) : m_sipTransport.GetDefaultTransportContact(SIPProtocolsEnum.udp);
+                    SIPEndPoint localSIPEndPoint = (m_outboundProxy != null) ? m_sipTransport.GetDefaultTransportContact(m_outboundProxy.Protocol) : m_sipTransport.GetDefaultTransportContact(SIPProtocolsEnum.udp);
                     SIPRequest reInviteReq = GetInviteRequest(dialogue, localSIPEndPoint, replacementSDP);
 
                     SIPEndPoint reinviteEndPoint = null;
 
                     // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
-                    if (m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.SocketEndPoint.Address))
+                    if (m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.Address))
                     {
                         reInviteReq.Header.ProxySendFrom = dialogue.ProxySendFrom;
                         reinviteEndPoint = m_outboundProxy;
@@ -521,7 +521,7 @@ namespace SIPSorcery.Servers
                     {
                         reInviteReq.Header.ProxySendFrom = dialogue.ProxySendFrom;
                         // The proxy will always be listening on UDP port 5060 for requests from internal servers.
-                        reinviteEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(SIPEndPoint.ParseSIPEndPoint(dialogue.ProxySendFrom).SocketEndPoint.Address, m_defaultSIPPort));
+                        reinviteEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(SIPEndPoint.ParseSIPEndPoint(dialogue.ProxySendFrom).Address, m_defaultSIPPort));
                     }
                     else
                     {
@@ -586,7 +586,7 @@ namespace SIPSorcery.Servers
                 SIPDialogue bridgedDialogue = GetOppositeDialogue(dialogue);
 
                 SIPEndPoint forwardSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint(new SIPEndPoint(bridgedDialogue.RemoteTarget));
-                IPAddress remoteUAIPAddress = (inDialogueTransaction.TransactionRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? remoteEndPoint.SocketEndPoint.Address : SIPEndPoint.ParseSIPEndPoint(inDialogueTransaction.TransactionRequest.Header.ProxyReceivedFrom).SocketEndPoint.Address;
+                IPAddress remoteUAIPAddress = (inDialogueTransaction.TransactionRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? remoteEndPoint.Address : SIPEndPoint.ParseSIPEndPoint(inDialogueTransaction.TransactionRequest.Header.ProxyReceivedFrom).Address;
 
                 SIPRequest forwardedRequest = inDialogueTransaction.TransactionRequest.Copy();
                 forwardedRequest.URI = bridgedDialogue.RemoteTarget;
@@ -615,7 +615,7 @@ namespace SIPSorcery.Servers
                 {
                     forwardedRequest.Header.ProxySendFrom = bridgedDialogue.ProxySendFrom;
                     // The proxy will always be listening on UDP port 5060 for requests from internal servers.
-                    forwardEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(SIPEndPoint.ParseSIPEndPoint(bridgedDialogue.ProxySendFrom).SocketEndPoint.Address, m_defaultSIPPort));
+                    forwardEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(SIPEndPoint.ParseSIPEndPoint(bridgedDialogue.ProxySendFrom).Address, m_defaultSIPPort));
                 }
                 else
                 {
@@ -847,7 +847,7 @@ namespace SIPSorcery.Servers
 
                 // Lookup the originating transaction.
                 SIPTransaction originTransaction = m_sipTransport.GetTransaction(m_inDialogueTransactions[sipTransaction.TransactionId]);
-                IPAddress remoteUAIPAddress = (sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) ? remoteEndPoint.SocketEndPoint.Address : SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom).SocketEndPoint.Address;
+                IPAddress remoteUAIPAddress = (sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) ? remoteEndPoint.Address : SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom).Address;
                 SIPEndPoint forwardSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint(sipResponse.Header.Vias.TopViaHeader.Transport);
 
                 SIPResponse response = sipResponse.Copy();

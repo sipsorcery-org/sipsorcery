@@ -133,7 +133,7 @@ namespace SIPSorcery.SIP.App
                 if (!m_callCancelled)
                 {
                     // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
-                    if(m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.SocketEndPoint.Address))
+                    if(m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.Address))
                     {
                         m_serverEndPoint = m_outboundProxy;
                     }
@@ -141,7 +141,7 @@ namespace SIPSorcery.SIP.App
                     {
                         // If the binding has a specific proxy end point sent then the request needs to be forwarded to the proxy's default end point for it to take care of.
                         SIPEndPoint outboundProxyEndPoint = SIPEndPoint.ParseSIPEndPoint(sipCallDescriptor.ProxySendFrom);
-                        m_outboundProxy = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(outboundProxyEndPoint.SocketEndPoint.Address, m_defaultSIPPort));
+                        m_outboundProxy = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(outboundProxyEndPoint.Address, m_defaultSIPPort));
                         m_serverEndPoint = m_outboundProxy;
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "SIPClientUserAgent Call using alternate outbound proxy of " + m_outboundProxy + ".", Owner));
                     }
@@ -493,7 +493,7 @@ namespace SIPSorcery.SIP.App
 
                                         if (!sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank())
                                         {
-                                            IPAddress remoteUASAddress = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom).SocketEndPoint.Address;
+                                            IPAddress remoteUASAddress = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom).Address;
                                             if (IPSocket.IsPrivateAddress(remoteUASAddress.ToString()) && m_sipCallDescriptor.MangleIPAddress != null)
                                             {
                                                 // If the response has arrived here on a private IP address then it must be
@@ -505,9 +505,9 @@ namespace SIPSorcery.SIP.App
                                                 publicIPAddress = remoteUASAddress.ToString();
                                             }
                                         }
-                                        else if (!IPSocket.IsPrivateAddress(remoteEndPoint.SocketEndPoint.Address.ToString()))
+                                        else if (!IPSocket.IsPrivateAddress(remoteEndPoint.Address.ToString()))
                                         {
-                                            publicIPAddress = remoteEndPoint.SocketEndPoint.Address.ToString();
+                                            publicIPAddress = remoteEndPoint.Address.ToString();
                                         }
                                         else if (m_sipCallDescriptor.MangleIPAddress != null)
                                         {

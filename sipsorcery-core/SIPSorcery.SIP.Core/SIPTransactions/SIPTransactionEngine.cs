@@ -470,13 +470,13 @@ namespace SIPSorcery.SIP
                 {
                     SIPTransactionEngine clientEngine = new SIPTransactionEngine();     // Client side of the INVITE.
                     SIPEndPoint clientEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 12013));
-                    clientTransport = new SIPTransport(MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(clientEndPoint.SocketEndPoint), false);
+                    clientTransport = new SIPTransport(MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(clientEndPoint.GetIPEndPoint()), false);
                     SetTransportTraceEvents(clientTransport);
 
                     SIPTransactionEngine serverEngine = new SIPTransactionEngine();     // Server side of the INVITE.
                     UASInviteTransaction serverTransaction = null;
                     SIPEndPoint serverEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 12014));
-                    serverTransport = new SIPTransport(MockSIPDNSManager.Resolve, serverEngine, new SIPUDPChannel(serverEndPoint.SocketEndPoint), false);
+                    serverTransport = new SIPTransport(MockSIPDNSManager.Resolve, serverEngine, new SIPUDPChannel(serverEndPoint.GetIPEndPoint()), false);
                     SetTransportTraceEvents(serverTransport);
                     serverTransport.SIPTransportRequestReceived += (localEndPoint, remoteEndPoint, sipRequest) =>
                     {

@@ -65,17 +65,15 @@ namespace SIPSorcery.Servers
 
         public void RecordDispatch(SIPRequest sipRequest, SIPEndPoint internalEndPoint)
         {
-            string transactionID = GetDispatcherTransactionID(sipRequest.Method, sipRequest.Header);
-
             lock(m_transactionEndPoints)
             {
-                if (m_transactionEndPoints.ContainsKey(transactionID))
+                if (m_transactionEndPoints.ContainsKey(sipRequest.Header.CallId))
                 {
                     return;
                 }
 
-                m_transactionEndPoints.Add(transactionID, internalEndPoint.ToString());
-                m_transactionIDAddedAt.Add(transactionID, DateTime.Now);
+                m_transactionEndPoints.Add(sipRequest.Header.CallId, internalEndPoint.ToString());
+                m_transactionIDAddedAt.Add(sipRequest.Header.CallId, DateTime.Now);
                 //ProxyLogger_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.CallDispatcher, "Record dispatch for " + sipRequest.Method + " " + sipRequest.URI.ToString() + " to " + internalEndPoint.ToString() + " (id=" + transactionID + ").", null));
             }
 
@@ -114,7 +112,7 @@ namespace SIPSorcery.Servers
         {
             try
             {
-                SIPEndPoint transactionEndPoint = LookupTransactionID(sipRequest.Method, sipRequest.Header);
+                SIPEndPoint transactionEndPoint = LookupTransactionID(sipRequest.Header.CallId);
                 if (transactionEndPoint != null)
                 {
                     return transactionEndPoint;
@@ -149,58 +147,27 @@ namespace SIPSorcery.Servers
 
         public SIPEndPoint LookupTransactionID(SIPResponse sipResponse)
         {
-            return LookupTransactionID(sipResponse.Header.CSeqMethod, sipResponse.Header);
+            return LookupTransactionID(sipResponse.Header.CallId);
         }
 
-        public SIPEndPoint LookupTransactionID(string branch, SIPMethodsEnum method)
+        private SIPEndPoint LookupTransactionID(string callID)
         {
-            return LookupTransactionID(method, branch);
-        }
-
-        private SIPEndPoint LookupTransactionID(SIPMethodsEnum method, SIPHeader header)
-        {
-            return LookupTransactionID(method, header.Vias.TopViaHeader.Branch);
-        }
-
-        private SIPEndPoint LookupTransactionID(SIPMethodsEnum method, string branch)
-        {
-            if (branch.IsNullOrBlank())
+            if (callID.IsNullOrBlank())
             {
                 return null;
             }
 
-            string transactionID = GetDispatcherTransactionID(branch, method);
             lock (m_transactionEndPoints)
             {
-                if (m_transactionEndPoints.ContainsKey(transactionID))
+                if (m_transactionEndPoints.ContainsKey(callID))
                 {
-                    SIPEndPoint dispacthEndPoint = SIPEndPoint.ParseSIPEndPoint(m_transactionEndPoints[transactionID]);
+                    SIPEndPoint dispacthEndPoint = SIPEndPoint.ParseSIPEndPoint(m_transactionEndPoints[callID]);
                     //ProxyLogger_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.CallDispatcher, "Dispatcher lookup for " + method + " returned " + dispacthEndPoint.ToString() + " (id=" + transactionID + ").", null));
                     return dispacthEndPoint;
                 }
             }
 
             return null;
-        }
-
-        private string GetDispatcherTransactionID(SIPMethodsEnum method, SIPHeader sipHeader)
-        {
-            if (sipHeader.Vias == null || sipHeader.Vias.Length == 0 || sipHeader.Vias.TopViaHeader.Branch.IsNullOrBlank())
-            {
-                throw new ArgumentException("GetDispatcherTransactionID was passed a SIP header with an invalid Via header.");
-            }
-
-            return GetDispatcherTransactionID(sipHeader.Vias.TopViaHeader.Branch, method);
-        }
-
-        private string GetDispatcherTransactionID(string branch, SIPMethodsEnum method)
-        {
-            if (method == SIPMethodsEnum.ACK || method == SIPMethodsEnum.CANCEL)
-            {
-                method = SIPMethodsEnum.INVITE;
-            }
-
-            return SIPTransaction.GetRequestTransactionId(branch, method); 
         }
 
         private void RemoveExpiredDispatchRecords()

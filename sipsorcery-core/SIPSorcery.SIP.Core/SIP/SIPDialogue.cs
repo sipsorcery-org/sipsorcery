@@ -204,7 +204,7 @@ namespace SIPSorcery.SIP
                     if (IPSocket.IsPrivateAddress(RemoteTarget.Host))
                     {
                         SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(uasInviteTransaction.TransactionRequest.Header.ProxyReceivedFrom);
-                        RemoteTarget.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();
+                        RemoteTarget.Host = remoteUASSIPEndPoint.GetIPEndPoint().ToString();
                     }
                 }
             }
@@ -250,7 +250,7 @@ namespace SIPSorcery.SIP
                     if (IPSocket.IsPrivateAddress(RemoteTarget.Host))
                     {
                         SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedFrom);
-                        RemoteTarget.Host = remoteUASSIPEndPoint.SocketEndPoint.ToString();
+                        RemoteTarget.Host = remoteUASSIPEndPoint.GetIPEndPoint().ToString();
                     }
                 }
             }
@@ -291,7 +291,7 @@ namespace SIPSorcery.SIP
                 if (IPSocket.IsPrivateAddress(RemoteTarget.Host))
                 {
                     SIPEndPoint remoteUASIPEndPoint = SIPEndPoint.ParseSIPEndPoint(nonInviteRequest.Header.ProxyReceivedFrom);
-                    RemoteTarget.Host = remoteUASIPEndPoint.SocketEndPoint.ToString();
+                    RemoteTarget.Host = remoteUASIPEndPoint.GetIPEndPoint().ToString();
                 }
             }
         }
@@ -311,20 +311,20 @@ namespace SIPSorcery.SIP
             try
             {
                 SIPEndPoint byeOutboundProxy = null;
-                if (outboundProxy != null && IPAddress.IsLoopback(outboundProxy.SocketEndPoint.Address))
+                if (outboundProxy != null && IPAddress.IsLoopback(outboundProxy.Address))
                 {
                     byeOutboundProxy = outboundProxy;
                 }
                 else if (!ProxySendFrom.IsNullOrBlank())
                 {
-                    byeOutboundProxy = new SIPEndPoint(new IPEndPoint(SIPEndPoint.ParseSIPEndPoint(ProxySendFrom).SocketEndPoint.Address, m_defaultSIPPort));
+                    byeOutboundProxy = new SIPEndPoint(new IPEndPoint(SIPEndPoint.ParseSIPEndPoint(ProxySendFrom).Address, m_defaultSIPPort));
                 }
                 else if (outboundProxy != null)
                 {
                     byeOutboundProxy = outboundProxy;
                 }
 
-                SIPEndPoint localEndPoint = (byeOutboundProxy != null) ? sipTransport.GetDefaultSIPEndPoint(byeOutboundProxy.SIPProtocol) : sipTransport.GetDefaultSIPEndPoint(GetRemoteTargetProtocol());
+                SIPEndPoint localEndPoint = (byeOutboundProxy != null) ? sipTransport.GetDefaultSIPEndPoint(byeOutboundProxy.Protocol) : sipTransport.GetDefaultSIPEndPoint(GetRemoteTargetProtocol());
                 SIPRequest byeRequest = GetByeRequest(localEndPoint);
                 SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(byeRequest, sipTransport.GetRequestEndPoint(byeRequest, byeOutboundProxy, true), localEndPoint, byeOutboundProxy);
                 byeTransaction.SendReliableRequest();

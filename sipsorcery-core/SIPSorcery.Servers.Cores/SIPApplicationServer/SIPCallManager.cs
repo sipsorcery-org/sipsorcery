@@ -812,9 +812,10 @@ namespace SIPSorcery.Servers
             SIPRequest dummyInvite = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURIRelaxed(number + "@sipsorcery.com"));
             SIPHeader dummyHeader = new SIPHeader("<sip:anon@sipsorcery.com>", "<sip:anon@sipsorcery.com>", 1, CallProperties.CreateNewCallId());
             dummyHeader.CSeqMethod = SIPMethodsEnum.INVITE;
-            dummyHeader.Vias.PushViaHeader(new SIPViaHeader(SIPTransport.Blackhole, CallProperties.CreateBranchId()));
+            SIPEndPoint blackholeEndPoint = new SIPEndPoint(new IPEndPoint(SIPTransport.BlackholeAddress, 0));
+            dummyHeader.Vias.PushViaHeader(new SIPViaHeader(blackholeEndPoint, CallProperties.CreateBranchId()));
             dummyInvite.Header = dummyHeader;
-            UASInviteTransaction dummyTransaction = m_sipTransport.CreateUASTransaction(dummyInvite, SIPTransport.Blackhole, SIPTransport.Blackhole, null);
+            UASInviteTransaction dummyTransaction = m_sipTransport.CreateUASTransaction(dummyInvite, blackholeEndPoint, blackholeEndPoint, null);
             return dummyTransaction;
         }
 

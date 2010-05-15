@@ -237,7 +237,7 @@ namespace SIPSorcery.Servers
             out SIPResponseStatusCodesEnum responseStatus,
             out string responseMessage)
         {
-            logger.Debug("UpdateBinding " + bindingURI.ToString() + ".");
+            //logger.Debug("UpdateBinding " + bindingURI.ToString() + ".");
 
             int bindingExpiry = 0;
             int maxAllowedExpiry = m_userAgentConfigs.GetMaxAllowedExpiry(userAgent);
@@ -324,7 +324,7 @@ namespace SIPSorcery.Servers
                             DateTime startTime = DateTime.Now;
                             m_bindingsPersistor.Update(binding);
                             TimeSpan duration = DateTime.Now.Subtract(startTime);
-                            FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding database update time for " + sipAccountAOR + " took " + duration.TotalMilliseconds + "ms.", null));
+                            //FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding database update time for " + sipAccountAOR + " took " + duration.TotalMilliseconds + "ms.", null));
                             FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
 
                             // Add a NAT keep-alive job if required.
@@ -359,7 +359,7 @@ namespace SIPSorcery.Servers
                             bindings.Add(newBinding);
                             m_bindingsPersistor.Add(newBinding);
                             TimeSpan duration = DateTime.Now.Subtract(startTime);
-                            FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding database add time for " + sipAccountAOR + " took " + duration.TotalMilliseconds + "ms.", null));
+                            //FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding database add time for " + sipAccountAOR + " took " + duration.TotalMilliseconds + "ms.", null));
 
                             // Add a NAT keep-alive job if required.
                             if (sipAccount.SendNATKeepAlives && proxySIPEndPoint != null)
@@ -398,12 +398,12 @@ namespace SIPSorcery.Servers
                 {
                     if (m_natKeepAliveJobs.ContainsKey(binding.RemoteSIPSocket))
                     {
-                        logger.Debug("Updating NAT keep-alive job for binding socket " + binding.RemoteSIPSocket + ".");
+                        //logger.Debug("Updating NAT keep-alive job for binding socket " + binding.RemoteSIPSocket + ".");
                         m_natKeepAliveJobs[binding.RemoteSIPSocket].Update(proxySIPEndPoint, DateTime.Now.AddSeconds(bindingExpiry));
                     }
                     else
                     {
-                        logger.Debug("Adding NAT keep-alive job for binding socket " + binding.RemoteSIPSocket + ".");
+                        //logger.Debug("Adding NAT keep-alive job for binding socket " + binding.RemoteSIPSocket + ".");
                         m_natKeepAliveJobs.Add(binding.RemoteSIPSocket, new NATKeepAliveJob(proxySIPEndPoint, remoteSIPEndPoint, DateTime.Now.AddSeconds(bindingExpiry), sipAccount.Owner));
                     }
                 }
@@ -431,11 +431,11 @@ namespace SIPSorcery.Servers
                 {
                     if (binding.ContactURI == bindingURI)
                     {
-                        logger.Debug(binding.ContactURI + " matched " + bindingURI + ".");
+                        //logger.Debug(binding.ContactURI + " matched " + bindingURI + ".");
                         return binding;
                     }
                 }
-                logger.Debug("No existing binding matched for " + bindingURI + ".");
+                //logger.Debug("No existing binding matched for " + bindingURI + ".");
                 return null;
             }
         }
@@ -473,7 +473,7 @@ namespace SIPSorcery.Servers
                                 }
                                 else if (job.NextSendTime == null || job.NextSendTime < DateTime.Now)
                                 {
-                                    SendNATKeepAlive_External(new NATKeepAliveMessage(job.ProxyEndPoint, job.RemoteEndPoint.SocketEndPoint));
+                                    SendNATKeepAlive_External(new NATKeepAliveMessage(job.ProxyEndPoint, job.RemoteEndPoint.GetIPEndPoint()));
                                     job.NextSendTime = DateTime.Now.AddSeconds(NATKEEPALIVE_DEFAULTSEND_INTERVAL);
                                     //logger.Debug("Requesting NAT keep-alive from proxy socket " + job.ProxyEndPoint.ToString() + " to " + job.RemoteEndPoint + ", owner=" + job.Owner + ".");
                                     FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.NATKeepAlive, SIPMonitorEventTypesEnum.NATKeepAlive, "Requesting NAT keep-alive from proxy socket " + job.ProxyEndPoint + " to " + job.RemoteEndPoint + ".", job.Owner));

@@ -78,13 +78,13 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                m_tcpServerListener = new TcpListener(m_localSIPEndPoint.SocketEndPoint);
+                m_tcpServerListener = new TcpListener(m_localSIPEndPoint.GetIPEndPoint());
                 m_tcpServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
-                ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + m_localSIPEndPoint.SocketEndPoint.Port); });
-                ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + m_localSIPEndPoint.SocketEndPoint.Port); });
+                ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + m_localSIPEndPoint.Port); });
+                ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + m_localSIPEndPoint.Port); });
 
-                logger.Debug("SIP TCP Channel listener created " + m_localSIPEndPoint.SocketEndPoint + ".");
+                logger.Debug("SIP TCP Channel listener created " + m_localSIPEndPoint.GetIPEndPoint() + ".");
             }
             catch (Exception excp)
             {
@@ -196,14 +196,14 @@ namespace SIPSorcery.SIP
 
         private void SIPTCPMessageReceived(SIPChannel channel, SIPEndPoint remoteEndPoint, byte[] buffer)
         {
-            if(m_connectionFailures.ContainsKey(remoteEndPoint.SocketEndPoint.ToString()) )
+            if (m_connectionFailures.ContainsKey(remoteEndPoint.GetIPEndPoint().ToString()))
             {
-                m_connectionFailures.Remove(remoteEndPoint.SocketEndPoint.ToString());
+                m_connectionFailures.Remove(remoteEndPoint.GetIPEndPoint().ToString());
             }
 
-            if(m_connectionFailureStrikes.ContainsKey(remoteEndPoint.SocketEndPoint.ToString()))
+            if (m_connectionFailureStrikes.ContainsKey(remoteEndPoint.GetIPEndPoint().ToString()))
             {
-                m_connectionFailureStrikes.Remove(remoteEndPoint.SocketEndPoint.ToString());
+                m_connectionFailureStrikes.Remove(remoteEndPoint.GetIPEndPoint().ToString());
             }
 
             if (SIPMessageReceived != null)
@@ -270,7 +270,7 @@ namespace SIPSorcery.SIP
 
                             TcpClient tcpClient = new TcpClient();
                             tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                            tcpClient.Client.Bind(m_localSIPEndPoint.SocketEndPoint);
+                            tcpClient.Client.Bind(m_localSIPEndPoint.GetIPEndPoint());
 
                             m_connectingSockets.Add(dstEndPoint.ToString());
                             tcpClient.BeginConnect(dstEndPoint.Address, dstEndPoint.Port, EndConnect, new object[] { tcpClient, dstEndPoint, buffer });

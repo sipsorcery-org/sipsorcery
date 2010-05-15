@@ -113,7 +113,6 @@ namespace Heijden.DNS
 			}
 		}
 
-
         public DNSResponse(IPAddress address)
         {
             Answers = new List<AnswerRR>();
