@@ -429,7 +429,7 @@ namespace SIPSorcery.Servers
                             uas,
                             dispatcherDialPlan,
                             null,
-                            m_traceDirectory,
+                            null,
                             null,
                             Guid.Empty);
                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, null, this);

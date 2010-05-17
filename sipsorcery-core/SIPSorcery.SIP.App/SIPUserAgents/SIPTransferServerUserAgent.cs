@@ -99,7 +99,7 @@ namespace SIPSorcery.SIP.App
             get { return m_owner; }
         }
 
-        private SIPMonitorLogDelegate Log_External = SIPMonitorEvent.DefaultSIPMonitorLogger;
+        private SIPMonitorLogDelegate Log_External =  (e) => { }; //SIPMonitorEvent.DefaultSIPMonitorLogger;
         private BlindTransferDelegate BlindTransfer_External;
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;                   // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.

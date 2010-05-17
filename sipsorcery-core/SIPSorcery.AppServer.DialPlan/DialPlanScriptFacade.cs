@@ -1,8 +1,8 @@
 // ============================================================================
-// FileName: DialPlanScriptHelper.cs
+// FileName: DialPlanScriptFacade.cs
 //
 // Description:
-// Dial plan script helper methods for Ruby dial plan scripts.
+// Dial plan script facade or helper methods for dial plan scripts.
 //
 // Author(s):
 // Aaron Clauson
@@ -13,7 +13,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2008 Aaron Clauson (aaronc@blueface.ie), Blue Face Ltd, Dublin, Ireland (www.blueface.ie)
+// Copyright (c) 2010 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery Pty Ltd
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -66,7 +66,7 @@ namespace SIPSorcery.AppServer.DialPlan
     /// <summary>
     /// Helper functions for use in dial plan scripts.
     /// </summary>
-    public class DialPlanScriptHelper
+    public class DialPlanScriptFacade
     {
         private const int DEFAULT_CREATECALL_RINGTIME = 60;
         private const int ENUM_LOOKUP_TIMEOUT = 5;              // Default timeout in seconds for ENUM lookups.
@@ -169,7 +169,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public static IPAddress PublicIPAddress;    // If the app server is behind a NAT then it can set this address to be used in mangled SDP.
 
-        static DialPlanScriptHelper()
+        static DialPlanScriptFacade()
         {
             try
             {
@@ -182,7 +182,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        public DialPlanScriptHelper(
+        public DialPlanScriptFacade(
             SIPTransport sipTransport,
             DialPlanExecutingScript executingScript,
             SIPMonitorLogDelegate logDelegate,

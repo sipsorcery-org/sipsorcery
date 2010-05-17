@@ -208,7 +208,8 @@ namespace SIPSorcery.Persistence
             {
                 using (DataContext dataContext = new DataContext(m_dbConnectionStr) { ObjectTrackingEnabled = false })
                 {
-                    return (from asset in dataContext.GetTable<T>() where asset.Id == id select asset).FirstOrDefault();
+                    //return (from asset in dataContext.GetTable<T>() where asset.Id == id select asset).FirstOrDefault();
+                    return (from asset in dataContext.GetTable<T>() where asset.Id.Equals(id) select asset).FirstOrDefault();
                 }
             }
             catch (Exception excp)

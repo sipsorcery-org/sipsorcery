@@ -58,7 +58,7 @@ namespace SIPSorcery.SIP.App
     {
         private static ILog logger = AssemblyState.logger;
 
-        private SIPMonitorLogDelegate Log_External = SIPMonitorEvent.DefaultSIPMonitorLogger;
+        private SIPMonitorLogDelegate Log_External = (e) => { }; //SIPMonitorEvent.DefaultSIPMonitorLogger;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;
         private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
 
@@ -128,7 +128,6 @@ namespace SIPSorcery.SIP.App
             SIPMonitorLogDelegate logDelegate,
             UASInviteTransaction uasTransaction)
         {
-
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
             m_sipUsername = sipUsername;
@@ -296,7 +295,8 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
+                        // Allow all Trying responses through as some may contain additional useful information on the call state for the caller.
+                        if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding && progressStatus != SIPResponseStatusCodesEnum.Trying)
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "UAS call ignoring progress response with status of " + (int)progressStatus + " as already in " + m_uasTransaction.TransactionState + ".", m_owner));
                         }

@@ -233,7 +233,6 @@ namespace SIPSorcery.Net
         }
     }
 	
-    [DataContract]
 	public class RTCPReportSampler
 	{
 		private const int TRANSITTIMES_QUEUE_LENGTH = 5000;

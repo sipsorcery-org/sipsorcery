@@ -7,6 +7,7 @@ using System.Threading;
 using log4net;
 using SIPSorcery.Sys;
 using Microsoft.Scripting.Hosting;
+using Microsoft.Scripting;
 
 namespace SIPSorcery.SIP.App
 {
@@ -16,7 +17,6 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public class ScriptLoader
     {
-
         private enum ScriptTypesEnum
         {
             None = 0,
@@ -88,7 +88,10 @@ namespace SIPSorcery.SIP.App
                     logger.Debug("Compiling IronPython script file from " + m_scriptPath + ".");
                     ScriptRuntime scriptRuntime = IronPython.Hosting.Python.CreateRuntime();
                     ScriptScope scriptScope = scriptRuntime.CreateScope("IronPython");
-                    return scriptScope.Engine.CreateScriptSourceFromString(m_scriptText).Compile();
+                    CompiledCode compiledCode = scriptScope.Engine.CreateScriptSourceFromFile(m_scriptPath).Compile();
+                    logger.Debug("IronPython compilation complete.");
+                    return compiledCode;
+                    //return scriptScope.Engine.CreateScriptSourceFromString(m_scriptText).Compile();
                 }
                 else if (scriptType == ScriptTypesEnum.Ruby)
                 {

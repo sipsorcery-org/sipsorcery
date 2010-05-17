@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SIPSorcery.AppServer.DialPlan</RootNamespace>
     <AssemblyName>SIPSorcery.AppServer.DialPlan</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -31,6 +31,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -105,7 +106,7 @@
     <Compile Include="DialPlanExecutingScript.cs" />
     <Compile Include="DialPlanLineContext.cs" />
     <Compile Include="DialPlanScriptContext.cs" />
-    <Compile Include="DialPlanScriptHelper.cs" />
+    <Compile Include="DialPlanScriptFacade.cs" />
     <Compile Include="DialStringParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -159,7 +159,7 @@ namespace SIPSorcery.SIPAppServer
                     {
                         m_publicIPAddress = m_sipProxyDaemon.PublicIPAddress;
                         DialStringParser.PublicIPAddress = m_sipProxyDaemon.PublicIPAddress;
-                        DialPlanScriptHelper.PublicIPAddress = m_sipProxyDaemon.PublicIPAddress;
+                        DialPlanScriptFacade.PublicIPAddress = m_sipProxyDaemon.PublicIPAddress;
                         SIPDialogueManager.PublicIPAddress = m_sipProxyDaemon.PublicIPAddress;
                     }
                     else
@@ -170,7 +170,7 @@ namespace SIPSorcery.SIPAppServer
                             {
                                 m_publicIPAddress = ipAddress;
                                 DialStringParser.PublicIPAddress = ipAddress;
-                                DialPlanScriptHelper.PublicIPAddress = ipAddress;
+                                DialPlanScriptFacade.PublicIPAddress = ipAddress;
                                 SIPDialogueManager.PublicIPAddress = ipAddress;
                             }
                         };

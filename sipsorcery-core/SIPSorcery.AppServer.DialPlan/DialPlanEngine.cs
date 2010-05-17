@@ -297,7 +297,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         dialPlanExecutionScript.Initialise(dialPlanContext);
 
-                        DialPlanScriptHelper planHelper = new DialPlanScriptHelper(
+                        DialPlanScriptFacade planFacade = new DialPlanScriptFacade(
                             m_sipTransport,
                             dialPlanExecutionScript,
                             FireProxyLogEvent,
@@ -313,13 +313,13 @@ namespace SIPSorcery.AppServer.DialPlan
                             m_outboundProxySocket);
 
                         ScriptScope rubyScope = dialPlanExecutionScript.DialPlanScriptScope;
-                        rubyScope.SetVariable(SCRIPT_HELPEROBJECT_NAME, planHelper);
+                        rubyScope.SetVariable(SCRIPT_HELPEROBJECT_NAME, planFacade);
                         if (uas.CallRequest != null)
                         {
                             rubyScope.SetVariable(SCRIPT_REQUESTOBJECT_NAME, uas.CallRequest.Copy());
                         }
 
-                        dialPlanExecutionScript.DialPlanScriptThread = new Thread(new ParameterizedThreadStart(delegate { ExecuteScript(dialPlanExecutionScript, dialPlanContext, planHelper, m_rubyScriptCommon + dialPlanContext.DialPlanScript); }));
+                        dialPlanExecutionScript.DialPlanScriptThread = new Thread(new ParameterizedThreadStart(delegate { ExecuteScript(dialPlanExecutionScript, dialPlanContext, planFacade, m_rubyScriptCommon + dialPlanContext.DialPlanScript); }));
 
                         lock (m_runningScripts)
                         {
@@ -350,7 +350,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private void ExecuteScript(
             DialPlanExecutingScript executingScript,
             DialPlanContext dialPlanContext,
-            DialPlanScriptHelper planHelper,
+            DialPlanScriptFacade planFacade,
             string script)
         {
             try

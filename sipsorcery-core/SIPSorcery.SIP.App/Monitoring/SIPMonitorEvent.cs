@@ -250,10 +250,10 @@ namespace SIPSorcery.SIP.App
             }
 		}
 
-        public static void DefaultSIPMonitorLogger(SIPMonitorEvent sipMonitorEvent)
-        {
-            logger.Debug(sipMonitorEvent.Message);
-        }
+        //public static void DefaultSIPMonitorLogger(SIPMonitorEvent sipMonitorEvent)
+        //{
+        //    logger.Debug(sipMonitorEvent.Message);
+        //}
         
 		public virtual string ToCSV()
 		{

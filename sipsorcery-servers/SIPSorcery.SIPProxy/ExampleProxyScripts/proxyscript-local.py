@@ -4,17 +4,18 @@ from SIPSorcery.SIP import *
 
 m_registrarSocket = "udp:127.0.0.1:5001"
 m_regAgentSocket = "udp:127.0.0.1:5002"
-m_notifierSocket = "udp:10.249.142.143:5003"
+m_notifierSocket = "udp:127.0.0.1:5003"
+m_appServerSocket = "udp:10.1.1.5:5065"
+m_proxySocketInternal = "udp:10.1.1.5:5060"
 m_proxySocketLoopback = "udp:127.0.0.1:5060"
-m_proxySocketInternal = "udp:10.249.142.143:5060"
 
   #===== Utility functions to customise depending on deployment, such as single or mutliple server and private or public network. =====
 
 def GetAppServer():
-  return sys.GetAppServer()
+  return m_appServerSocket
 
 def IsFromApplicationServer():
-  return IsFromAppServer
+  return remoteEndPoint.ToString() == m_appServerSocket
 
 def IsFromNotifierServer():
   return remoteEndPoint.ToString() == m_notifierSocket
@@ -23,7 +24,10 @@ def IsFromNotifierServer():
 # on an external network.
 #def IsLocalNetDestination(SIPEndPoint destinationAddress) :
 def IsLocalNetDestination(destinationEP) :
-  return False
+  if destinationEP.Address.ToString().StartsWith("10."):
+    return True
+  else:
+    return False
 
   #===== End of customisable utility functions =====
 
