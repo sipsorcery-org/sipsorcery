@@ -34,7 +34,7 @@ namespace SIPSorcery
         private const string DEFAULT_MONITOR_HOST = "www.sipsorcery.com";
         private const string ALTERNATE_MONITOR_HOST = "www.sipwizard.net";
         private const string LOCALHOST_MONITOR_HOST = "localhost";
-        private const string DEFAULT_PROVISIONING_HOST = "https://www.sipsorcery.com/";
+        private const string DEFAULT_PROVISIONING_HOST = "https://www.sipsorcery.com/"; //"http://96.31.45.21/service/"; 
         private const string ALTERNATE_PROVISIONING_HOST = "https://www.sipwizard.net/";
         private const string LOCALHOST_PROVISIONING_HOST = "http://localhost:8080/";
 

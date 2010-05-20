@@ -68,7 +68,8 @@ namespace SIPSorcery.Web.Services
             "Hi {0},\r\n\r\n" +
             "This is your automated SIPSorcery new account confirmation email.\r\n\r\n" +
             "To confirm your account please visit the link below. If you did not request this email please ignore it.\r\n\r\n" +
-            "http://www.sipsorcery.com/customer/confirm/{1}\r\n\r\n" +
+            //"http://www.sipsorcery.com/customer/confirm/{1}\r\n\r\n" +
+            "http://www.sipsorcery.com/customerconfirm.aspx?id={1}\r\n\r\n" +
             "Regards,\r\n\r\n" +
             "SIPSorcery";
 
