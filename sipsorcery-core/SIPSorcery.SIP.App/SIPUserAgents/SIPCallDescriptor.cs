@@ -102,7 +102,7 @@ namespace SIPSorcery.SIP.App
         public string FromDisplayName;
         public string FromURIUsername;
         public string FromURIHost;
-        public SIPCallTransferModesEnum TransferMode = SIPCallTransferModesEnum.BlindPassThru;   // Determines how the call (dialogues) created by this descriptor will handle transfers (REFER requests).
+        public SIPCallTransferModesEnum TransferMode = SIPCallTransferModesEnum.NotAllowed;   // Determines how the call (dialogues) created by this descriptor will handle transfers (REFER requests).
 
         public SIPAccount ToSIPAccount;                 // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
 

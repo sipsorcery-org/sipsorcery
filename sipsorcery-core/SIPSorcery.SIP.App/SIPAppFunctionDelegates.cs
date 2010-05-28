@@ -52,6 +52,7 @@ namespace SIPSorcery.SIP.App
     // SIP User Agent Delegates.
     public delegate void SIPCallResponseDelegate(ISIPClientUserAgent uac, SIPResponse sipResponse);
     public delegate void SIPCallFailedDelegate(ISIPClientUserAgent uac, string errorMessage);
+    public delegate void SIPUASStateChangedDelegate(ISIPServerUserAgent uas, SIPResponseStatusCodesEnum statusCode, string reasonPhrase);
 
     // Authorisation delegates.
     public delegate SIPRequestAuthenticationResult SIPAuthenticateRequestDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, SIPAccount sipAccount, SIPMonitorLogDelegate log);

@@ -116,6 +116,7 @@ namespace SIPSorcery.SIP.App
         public event SIPUASDelegate CallCancelled;
         public event SIPUASDelegate NoRingTimeout;
         public event SIPUASDelegate TransactionComplete;
+        public event SIPUASStateChangedDelegate UASStateChanged;
 
         public SIPServerUserAgent(
             SIPTransport sipTransport,
@@ -295,6 +296,11 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
+                        if (UASStateChanged != null)
+                        {
+                            UASStateChanged(this, progressStatus, reasonPhrase);
+                        }
+
                         // Allow all Trying responses through as some may contain additional useful information on the call state for the caller.
                         if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding && progressStatus != SIPResponseStatusCodesEnum.Trying)
                         {
@@ -356,6 +362,11 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
+                    if (UASStateChanged != null)
+                    {
+                        UASStateChanged(this, SIPResponseStatusCodesEnum.Ok, null);
+                    }
+
                     if (!toTag.IsNullOrBlank())
                     {
                         m_uasTransaction.SetLocalTag(toTag);
@@ -397,6 +408,11 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
+                        if (UASStateChanged != null)
+                        {
+                            UASStateChanged(this, failureStatus, reasonPhrase);
+                        }
+
                         string failureReason = (!reasonPhrase.IsNullOrBlank()) ? " and " + reasonPhrase : null;
 
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "UAS call failed with a response status of " + (int)failureStatus + failureReason + ".", m_owner));

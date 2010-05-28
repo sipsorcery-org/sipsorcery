@@ -32,11 +32,9 @@ namespace SIPSorcery
         private const string DEFAULT_PROVISIONING_FILE = "provisioning.svc";
         private const string DEFAULT_NOTIFICATIONS_FILE = "notificationspull.svc";
         private const string DEFAULT_MONITOR_HOST = "www.sipsorcery.com";
-        private const string ALTERNATE_MONITOR_HOST = "www.sipwizard.net";
         private const string LOCALHOST_MONITOR_HOST = "localhost";
-        private const string DEFAULT_PROVISIONING_HOST = "https://www.sipsorcery.com/"; //"http://96.31.45.21/service/"; 
-        private const string ALTERNATE_PROVISIONING_HOST = "https://www.sipwizard.net/";
-        private const string LOCALHOST_PROVISIONING_HOST = "http://localhost:8080/";
+        private const string DEFAULT_PROVISIONING_HOST = "https://www.sipsorcery.com/";
+        private const string LOCALHOST_PROVISIONING_HOST = "http://localhost/";
 
         private string m_dummyOwner = SIPSorceryGUITestPersistor.DUMMY_OWNER;
 
@@ -84,7 +82,7 @@ namespace SIPSorcery
 
             string server = Application.Current.Host.Source.DnsSafeHost;
 
-            /*try
+            try
             {
                 if (server == LOCALHOST_MONITOR_HOST || Application.Current.Host.Source.Scheme == "file")
                 {
@@ -92,13 +90,8 @@ namespace SIPSorcery
                     m_provisioningServiceURL = LOCALHOST_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;
                     m_notificationsServiceURL = LOCALHOST_PROVISIONING_HOST + DEFAULT_NOTIFICATIONS_FILE;
                 }
-                else if (server == ALTERNATE_MONITOR_HOST)
-                {
-                    m_sipMonitorHost = ALTERNATE_MONITOR_HOST;
-                    m_provisioningServiceURL = ALTERNATE_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;
-                    m_notificationsServiceURL = ALTERNATE_PROVISIONING_HOST + DEFAULT_NOTIFICATIONS_FILE;
-                }
-                else if (server != DEFAULT_MONITOR_HOST)
+                
+                /*if (server != DEFAULT_MONITOR_HOST)
                 {
                     m_sipMonitorHost = server;
                     m_provisioningServiceURL = Application.Current.Host.Source.Scheme + "://" + server + ":" + DEFAULT_PROVISIONING_WEBSERVICE_PORT + "/" + DEFAULT_PROVISIONING_FILE;
@@ -109,14 +102,14 @@ namespace SIPSorcery
                     m_sipMonitorHost = DEFAULT_MONITOR_HOST;
                     m_provisioningServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;
                     m_notificationsServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_NOTIFICATIONS_FILE;
-                }
+                }*/
             }
             catch
             {
                 m_sipMonitorHost = DEFAULT_MONITOR_HOST;
                 m_provisioningServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;
                 m_notificationsServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_NOTIFICATIONS_FILE;
-            }*/
+            }
 
             if (server != DEFAULT_MONITOR_HOST)
             {

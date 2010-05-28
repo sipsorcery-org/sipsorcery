@@ -652,6 +652,109 @@ namespace SIPSorcery.Servers
             }
         }
 
+        /// <summary>
+        /// Processes an in dialogue REFER request that specifies a new destination for an existing call leg.
+        /// </summary>
+        /// <param name="username">The username of the user the transfer is being processed for.</param>
+        /// <param name="referTo">The Refer-To header URI from the REFER request.</param>
+        /// <param name="dialplanName">The dialplan to use to process the transfer.</param>
+        /// <param name="replacesCallID">The call ID that is being replaced by the new dialogue if one is created.</param>
+        /// <returns>A SIP server user agent.</returns>
+        public ISIPServerUserAgent BlindTransfer(string username, SIPURI referTo, string dialplanName, SIPDialogue replacesDialogue)
+        {
+            if (dialplanName.IsNullOrBlank())
+            {
+                throw new ApplicationException("A dial plan name must be provided when processing a blind transfer.");
+            }
+            else if (referTo == null)
+            {
+                throw new ApplicationException("The refer to URI cannot be empty when processing a blind transfer.");
+            }
+            else if (replacesDialogue == null)
+            {
+                throw new ApplicationException("The blind transfer could not be initiated, the dialogue to transfer could not be found.");
+            }
+
+            bool wasExecutionCountIncremented = false;
+            Customer customer = null;
+            SIPDialPlan dialPlan = null;
+
+            try
+            {
+                customer = m_customerPersistor.Get(c => c.CustomerUsername == username);
+
+                if (customer == null)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Blind transfer using dialplan " + dialplanName + " rejected for " + username + " and " + referTo.ToString() + ", as no matching user.", username));
+                    throw new ApplicationException("No matching user was found, the blind transfer was not initiated.");
+                }
+                else if (customer.Suspended)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Blind transfer using dialplan " + dialplanName + " rejected for " + username + " and " + referTo.ToString() + ", user account is suspended.", username));
+                    throw new ApplicationException("The user's account is suspended, the blind transfer was not initiated.");
+                }
+                
+                else
+                {
+                    dialPlan = GetDialPlan_External(d => d.Owner == username && d.DialPlanName == dialplanName);
+                    if (dialPlan == null)
+                    {
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Blind transfer rejected as no " + dialplanName + " dialplan exists.", username));
+                        throw new ApplicationException("The blind transfer could not be initiated, no dialplan with name " + dialplanName + " could be found.");
+                    }
+                    else
+                    {
+                        if (!IsDialPlanExecutionAllowed(dialPlan, customer))
+                        {
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of blind transfer for dialplan " + dialplanName + " was not processed as maximum execution count has been reached.", username));
+                            throw new ApplicationException("The blind transfer was not initiated, dial plan execution exceeded maximum allowed");
+                        }
+                        else
+                        {
+                            IncrementCustomerExecutionCount(customer);
+
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Blind transfer for dialplan " + dialplanName + " starting for " + referTo.ToString() + ".", username));
+
+                            SIPDialogue oppositeDialogue = m_sipDialogueManager.GetOppositeDialogue(replacesDialogue);
+                            ISIPServerUserAgent uas = new SIPTransferServerUserAgent(Log_External, m_sipDialogueManager.DialogueTransfer, m_sipTransport, m_outboundProxy, replacesDialogue, oppositeDialogue, referTo.ToString(), customer.CustomerUsername, customer.AdminId);
+
+                            DialPlanScriptContext scriptContext = new DialPlanScriptContext(
+                                    Log_External,
+                                    m_sipTransport,
+                                    CreateDialogueBridge,
+                                    m_outboundProxy,
+                                    uas,
+                                    dialPlan,
+                                    GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
+                                    m_traceDirectory,
+                                    null,
+                                    customer.Id);
+                            scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
+                            m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
+
+                            return uas;
+                        }
+                    }
+                }
+            }
+            catch (ApplicationException)
+            {
+                throw;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPCallManager BlindTransfer. " + excp.Message);
+
+                if (wasExecutionCountIncremented)
+                {
+                    //DecrementDialPlanExecutionCount(dialPlan, customer.Id, originalExecutionCount);
+                    DecrementCustomerExecutionCount(customer);
+                }
+
+                throw;
+            }
+        }
+
         private bool GetDialPlanAndCustomer(string owner, string dialPlanName, ISIPServerUserAgent uas, out Customer customer, out SIPDialPlan dialPlan)
         {
             try
@@ -890,7 +993,7 @@ namespace SIPSorcery.Servers
                 {
                     if (client.Contract == DISPATCHER_CONTRACT_NAME)
                     {
-                        logger.Debug("MonitorProxyManager found client endpoint for " + DISPATCHER_CONTRACT_NAME + ", name=" + client.Name + ".");
+                        logger.Debug("InitialiseDispatcherProxy found client endpoint for " + DISPATCHER_CONTRACT_NAME + ", name=" + client.Name + ".");
                         CallDispatcherProxy dispatcherProxy = new CallDispatcherProxy(client.Name);
                         m_dispatcherProxy.Add(client.Name, dispatcherProxy);
                     }

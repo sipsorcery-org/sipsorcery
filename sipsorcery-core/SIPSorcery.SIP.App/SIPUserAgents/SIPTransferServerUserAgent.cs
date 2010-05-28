@@ -114,6 +114,7 @@ namespace SIPSorcery.SIP.App
         public event SIPUASDelegate CallCancelled;
         public event SIPUASDelegate NoRingTimeout;
         public event SIPUASDelegate TransactionComplete;
+        public event SIPUASStateChangedDelegate UASStateChanged;
 
         public SIPTransferServerUserAgent(            
             SIPMonitorLogDelegate logDelegate,
@@ -140,6 +141,11 @@ namespace SIPSorcery.SIP.App
 
         public void Progress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody)
         {
+            if (UASStateChanged != null)
+            {
+                UASStateChanged(this, progressStatus, reasonPhrase);
+            }
+
             if (progressBody != null)
             {
                 // Re-invite the remote dialogue so that they can listen to some real progress tones.
@@ -174,6 +180,12 @@ namespace SIPSorcery.SIP.App
                 {
                     m_answered = true;
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A blind transfer received an answer.", m_owner));
+
+                    if (UASStateChanged != null)
+                    {
+                        UASStateChanged(this, SIPResponseStatusCodesEnum.Ok, null);
+                    }
+
                     BlindTransfer_External(m_dialogueToReplace, m_oppositeDialogue, answeredDialogue);
                 }
 
@@ -189,6 +201,11 @@ namespace SIPSorcery.SIP.App
         public void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders)
         {
             logger.Warn("SIPTransferServerUserAgent Reject called with " + failureStatus + " " + reasonPhrase + ".");
+
+            if (UASStateChanged != null)
+            {
+                UASStateChanged(this, failureStatus, reasonPhrase);
+            }
         }
 
         public void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI)

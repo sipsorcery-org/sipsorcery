@@ -38,7 +38,8 @@ using System.Text;
 using log4net;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.SIP.App {
+namespace SIPSorcery.SIP.App
+{
 
     /// <summary>
     /// This class represents a back-to-back (B2B) user agent (UA) that is used to attach an outgoing
@@ -47,7 +48,8 @@ namespace SIPSorcery.SIP.App {
     /// The use for this class is to allow an outgoing call from a SIP Account to another SIP Account's incoming
     /// dial plan.
     /// </summary>
-    public class SIPB2BUserAgent : ISIPServerUserAgent, ISIPClientUserAgent {
+    public class SIPB2BUserAgent : ISIPServerUserAgent, ISIPClientUserAgent
+    {
 
         private static ILog logger = AssemblyState.logger;
         private static readonly SIPEndPoint m_blackhole = new SIPEndPoint(new IPEndPoint(SIPTransport.BlackholeAddress, 0));
@@ -74,19 +76,22 @@ namespace SIPSorcery.SIP.App {
         // UAS fields.
         private UASInviteTransaction m_uasTransaction;
         public bool IsB2B { get { return true; } }
-        public bool IsAuthenticated { get { return false; } set{} }
+        public bool IsAuthenticated { get { return false; } set { } }
 
         public SIPCallDirection CallDirection { get { return SIPCallDirection.In; } }
-        public UASInviteTransaction SIPTransaction {
+        public UASInviteTransaction SIPTransaction
+        {
             get { return m_uasTransaction; }
         }
-       
-        public SIPAccount SIPAccount {
+
+        public SIPAccount SIPAccount
+        {
             get { return m_uacCallDescriptor.ToSIPAccount; }
             set { }
         }
 
-        public SIPRequest CallRequest {
+        public SIPRequest CallRequest
+        {
             get { return m_uasTransaction.TransactionRequest; }
         }
 
@@ -95,30 +100,34 @@ namespace SIPSorcery.SIP.App {
             get { return m_uasTransaction.TransactionRequest.URI.User; }
         }
 
-        public bool IsUASAnswered {
+        public bool IsUASAnswered
+        {
             get { return m_uasTransaction != null && m_uacTransaction.TransactionFinalResponse != null; }
         }
 
-        public bool IsUACAnswered {
+        public bool IsUACAnswered
+        {
             get { return m_uacTransaction != null && m_uacTransaction.TransactionFinalResponse != null; }
         }
 
         public event SIPUASDelegate CallCancelled;
         public event SIPUASDelegate NoRingTimeout;
         public event SIPUASDelegate TransactionComplete;
+        public event SIPUASStateChangedDelegate UASStateChanged;
 
         // UAS and UAC field.
         private SIPDialogue m_sipDialogue;
         public SIPDialogue SIPDialogue { get { return m_sipDialogue; } }
         //private SIPAccount m_destinationSIPAccount;
-        
+
         public SIPB2BUserAgent(
             SIPMonitorLogDelegate logDelegate,
             QueueNewCallDelegate queueCall,
             SIPTransport sipTranpsort,
             string uacOwner,
             string uacAdminMemberId
-            ) {
+            )
+        {
             Log_External = logDelegate;
             QueueNewCall_External = queueCall;
             m_sipTransport = sipTranpsort;
@@ -128,11 +137,14 @@ namespace SIPSorcery.SIP.App {
 
         #region UAC methods.
 
-        public void Call(SIPCallDescriptor sipCallDescriptor) {
-            try {
+        public void Call(SIPCallDescriptor sipCallDescriptor)
+        {
+            try
+            {
                 m_uacCallDescriptor = sipCallDescriptor;
                 SIPRequest uacInviteRequest = GetInviteRequest(m_uacCallDescriptor.Uri, sipCallDescriptor.GetFromHeader());
-                if (sipCallDescriptor.MangleResponseSDP && sipCallDescriptor.MangleIPAddress != null) {
+                if (sipCallDescriptor.MangleResponseSDP && sipCallDescriptor.MangleIPAddress != null)
+                {
                     uacInviteRequest.Header.ProxyReceivedFrom = sipCallDescriptor.MangleIPAddress.ToString();
                 }
                 uacInviteRequest.Body = sipCallDescriptor.Content;
@@ -142,7 +154,8 @@ namespace SIPSorcery.SIP.App {
 
                 // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
                 m_uacTransaction = m_sipTransport.CreateUACTransaction(uacInviteRequest, m_blackhole, m_blackhole, null);
-                if (m_uacTransaction.CDR != null) {
+                if (m_uacTransaction.CDR != null)
+                {
                     m_uacTransaction.CDR.Owner = m_uacOwner;
                     m_uacTransaction.CDR.AdminMemberId = m_uacAdminMemberId;
                 }
@@ -164,25 +177,30 @@ namespace SIPSorcery.SIP.App {
                 //m_uasTransaction.TransactionTraceMessage += TransactionTraceMessage;
                 //m_uasTransaction.UASInviteTransactionTimedOut += ClientTimedOut;
                 //m_uasTransaction.UASInviteTransactionCancelled += (t) => { };
-                
+
                 QueueNewCall_External(this);
             }
-            catch (Exception excp) {
-                logger.Error("Exception SIPB2BUserAgent Call. " + excp.Message); 
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPB2BUserAgent Call. " + excp.Message);
             }
         }
 
-        public void Cancel() {
-            try {
+        public void Cancel()
+        {
+            try
+            {
                 logger.Debug("SIPB2BUserAgent Cancel.");
                 m_uasTransaction.CancelCall();
                 m_uacTransaction.CancelCall();
 
-                if (CallCancelled != null) {
+                if (CallCancelled != null)
+                {
                     CallCancelled(this);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPB2BUserAgent Cancel. " + excp.Message);
             }
         }
@@ -191,40 +209,58 @@ namespace SIPSorcery.SIP.App {
 
         #region UAS methods.
 
-        public void SetTraceDelegate(SIPTransactionTraceMessageDelegate traceDelegate) {
+        public void SetTraceDelegate(SIPTransactionTraceMessageDelegate traceDelegate)
+        {
             m_uasTransaction.TransactionTraceMessage += traceDelegate;
         }
 
-        public bool LoadSIPAccountForIncomingCall() {
+        public bool LoadSIPAccountForIncomingCall()
+        {
             return true;
         }
 
-        public bool AuthenticateCall() {
+        public bool AuthenticateCall()
+        {
             return false;
         }
 
-        public void Progress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody) {
-            try {
-                if (!IsUASAnswered) {
-                    if ((int)progressStatus >= 200) {
+        public void Progress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody)
+        {
+            try
+            {
+                if (!IsUASAnswered)
+                {
+                    if ((int)progressStatus >= 200)
+                    {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "B2BUA call was passed an invalid response status of " + (int)progressStatus + ", ignoring.", m_uacOwner));
                     }
-                    else {
-                        if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding) {
+                    else
+                    {
+                        if (UASStateChanged != null)
+                        {
+                            UASStateChanged(this, progressStatus, reasonPhrase);
+                        }
+
+                        if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
+                        {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "B2BUA call ignoring progress response with status of " + (int)progressStatus + " as already in " + m_uasTransaction.TransactionState + ".", m_uacOwner));
                         }
-                        else {
+                        else
+                        {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "B2BUA call progressing with " + progressStatus + ".", m_uacOwner));
                             SIPResponse uasProgressResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, progressStatus, reasonPhrase);
                             m_uasTransaction.SendInformationalResponse(uasProgressResponse);
 
                             SIPResponse uacProgressResponse = SIPTransport.GetResponse(m_uacTransaction.TransactionRequest, progressStatus, reasonPhrase);
-                            if (!progressBody.IsNullOrBlank()) {
+                            if (!progressBody.IsNullOrBlank())
+                            {
                                 uacProgressResponse.Body = progressBody;
                                 uacProgressResponse.Header.ContentType = progressContentType;
                             }
-                            if (customHeaders != null && customHeaders.Length > 0) {
-                                foreach (string header in customHeaders) {
+                            if (customHeaders != null && customHeaders.Length > 0)
+                            {
+                                foreach (string header in customHeaders)
+                                {
                                     uacProgressResponse.Header.UnknownHeaders.Add(header);
                                 }
                             }
@@ -233,24 +269,33 @@ namespace SIPSorcery.SIP.App {
                         }
                     }
                 }
-                else {
+                else
+                {
                     logger.Warn("B2BUserAgent Progress fired on already answered call.");
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception B2BUserAgent Progress. " + excp.Message);
             }
         }
 
-        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode) {
+        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode)
+        {
             return Answer(contentType, body, answeredDialogue, transferMode);
         }
 
         public SIPDialogue Answer(string contentType, string body, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode)
         {
-            try {
+            try
+            {
                 logger.Debug("SIPB2BUserAgent Answer.");
                 m_sipDialogue = answeredDialogue;
+
+                if (UASStateChanged != null)
+                {
+                    UASStateChanged(this, SIPResponseStatusCodesEnum.Ok, null);
+                }
 
                 SIPResponse uasOkResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, SIPResponseStatusCodesEnum.Ok, null);
                 m_uasTransaction.SendFinalResponse(uasOkResponse);
@@ -260,28 +305,38 @@ namespace SIPSorcery.SIP.App {
                 uacOkResponse.Header.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, new SIPURI(SIPSchemesEnum.sip, m_blackhole)) };
                 m_uacTransaction.GotResponse(m_blackhole, m_blackhole, uacOkResponse);
                 uacOkResponse.Header.ContentType = contentType;
-                if (!body.IsNullOrBlank()) {
+                if (!body.IsNullOrBlank())
+                {
                     uacOkResponse.Body = body;
                     uacOkResponse.Header.ContentLength = body.Length;
                 }
                 CallAnswered((ISIPClientUserAgent)this, uacOkResponse);
                 return null;
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPB2BUSerAgent Answer. " + excp.Message);
                 throw;
             }
         }
 
-        public void Reject(SIPResponseStatusCodesEnum rejectCode, string rejectReason, string[] customHeaders) {
+        public void Reject(SIPResponseStatusCodesEnum rejectCode, string rejectReason, string[] customHeaders)
+        {
             logger.Debug("SIPB2BUserAgent Reject.");
+
+            if (UASStateChanged != null)
+            {
+                UASStateChanged(this, rejectCode, rejectReason);
+            }
 
             SIPResponse uasfailureResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, rejectCode, rejectReason);
             m_uasTransaction.SendFinalResponse(uasfailureResponse);
 
             SIPResponse uacfailureResponse = SIPTransport.GetResponse(m_uacTransaction.TransactionRequest, rejectCode, rejectReason);
-            if (customHeaders != null && customHeaders.Length > 0) {
-                foreach (string header in customHeaders) {
+            if (customHeaders != null && customHeaders.Length > 0)
+            {
+                foreach (string header in customHeaders)
+                {
                     uacfailureResponse.Header.UnknownHeaders.Add(header);
                 }
             }
@@ -289,17 +344,20 @@ namespace SIPSorcery.SIP.App {
             CallAnswered((ISIPClientUserAgent)this, uacfailureResponse);
         }
 
-        public void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI) {
+        public void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI)
+        {
             logger.Debug("SIPB2BUserAgent Redirect.");
             //m_uas.Redirect(redirectCode, redirectURI);
         }
 
-        public void NoCDR() {
+        public void NoCDR()
+        {
             m_uasTransaction.CDR = null;
             m_uacTransaction.CDR = null;
         }
 
-        public void SetOwner(string owner, string adminMemberId) {
+        public void SetOwner(string owner, string adminMemberId)
+        {
 
             if (m_uasTransaction.CDR != null)
             {
@@ -311,8 +369,9 @@ namespace SIPSorcery.SIP.App {
 
         #endregion
 
-        private SIPRequest GetInviteRequest(string callURI, SIPFromHeader fromHeader) {
-            
+        private SIPRequest GetInviteRequest(string callURI, SIPFromHeader fromHeader)
+        {
+
             SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI(callURI));
             inviteRequest.LocalSIPEndPoint = m_blackhole;
 

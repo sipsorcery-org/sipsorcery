@@ -131,7 +131,14 @@ namespace SIPSorcery.Servers
                 if (dialogue != null && sipRequest.Method != SIPMethodsEnum.ACK)
                 {
                     FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Matching dialogue found for " + sipRequest.Method + " to " + sipRequest.URI.ToString() + " from " + remoteEndPoint + ".", dialogue.Owner));
-                    m_sipDialogueManager.ProcessInDialogueRequest(localSIPEndPoint, remoteEndPoint, sipRequest, dialogue, m_callManager.ProcessWebCall);
+                    if (sipRequest.Method != SIPMethodsEnum.REFER)
+                    {
+                        m_sipDialogueManager.ProcessInDialogueRequest(localSIPEndPoint, remoteEndPoint, sipRequest, dialogue);
+                    }
+                    else
+                    {
+                        m_sipDialogueManager.ProcessInDialogueReferRequest(localSIPEndPoint, remoteEndPoint, sipRequest, dialogue, m_callManager.BlindTransfer);
+                    }
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.CANCEL)
                 {

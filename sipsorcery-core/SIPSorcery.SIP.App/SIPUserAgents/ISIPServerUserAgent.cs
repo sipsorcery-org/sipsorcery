@@ -35,11 +35,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SIPSorcery.SIP.App {
-
+namespace SIPSorcery.SIP.App 
+{
     public delegate void SIPUASDelegate(ISIPServerUserAgent uas);
 
-    public interface ISIPServerUserAgent {
+    public interface ISIPServerUserAgent 
+    {
 
         SIPCallDirection CallDirection { get; }
         SIPDialogue SIPDialogue { get; }
@@ -54,6 +55,7 @@ namespace SIPSorcery.SIP.App {
         event SIPUASDelegate CallCancelled;
         event SIPUASDelegate NoRingTimeout;
         event SIPUASDelegate TransactionComplete;
+        event SIPUASStateChangedDelegate UASStateChanged;
 
         bool LoadSIPAccountForIncomingCall();
         bool AuthenticateCall();

@@ -62,7 +62,7 @@ def SendExternalResponse(resp, sendFromSIPEndPoint, publicIP):
     sys.Log("The destination could not be resolved for a SIP response.")
     sys.Log(resp.ToString())
   elif IsLocalNetDestination(dest):
-    sys.SendExternal(resp, sendFromSIPEndPoint)
+    sys.SendExternal(resp, sendFromSIPEndPoint, None)
   else:
     sys.SendExternal(resp, sendFromSIPEndPoint, publicIP)
 
@@ -75,6 +75,9 @@ if isreq:
 
   #sys.Log("req " + summary)
   req.Header.MaxForwards = req.Header.MaxForwards - 1
+
+  if req.Header.UserAgent == "Cisco-CP7965G/8.5.3" or req.Header.UserAgent == "Cisco-CP7911G/8.5.3":
+    req.Header.Vias.TopViaHeader.ViaParameters.Remove("rport")
 
   if sipMethod == "REGISTER":
     if remoteEndPoint.ToString() == m_regAgentSocket:
@@ -98,8 +101,12 @@ if isreq:
       # Request from a SIP Application or Notification server for an external user agent.
       SendExternalRequest(localEndPoint, req, proxyBranch, publicip, False)
     else:
-      # A notification from an external notification server.
-      sys.SendInternal(remoteEndPoint, localEndPoint, m_notifierSocket, req, proxyBranch, m_proxySocketLoopback)
+      if req.Header.Event != None and req.Header.Event.StartsWith("refer"):
+        # REFER notification for app server.
+        sys.SendInternal(remoteEndPoint, localEndPoint, GetAppServer().ToString(), req, proxyBranch, m_proxySocketInternal)
+      else:
+        # A notification from an external notification server.
+        sys.SendInternal(remoteEndPoint, localEndPoint, m_notifierSocket, req, proxyBranch, m_proxySocketLoopback)
   
   else:
     # All other requests are processed by the Application Server.

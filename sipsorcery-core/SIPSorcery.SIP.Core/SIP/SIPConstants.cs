@@ -69,7 +69,6 @@ namespace SIPSorcery.SIP
         public const int DEFAULT_SIP_TLS_PORT = 5061;
  
         public const string NAT_SENDKEEPALIVES_VALUE = "y";
-        public const string SIP_REFER_NOTIFY_EVENT = "refer";                   // The value that must be set for the Event header on a NOTIFY request when processing a REFER (RFC 3515).
 
         public const string SWITCHBOARD_USER_AGENT_PREFIX = "sipsorcery-switchboard";
 	}

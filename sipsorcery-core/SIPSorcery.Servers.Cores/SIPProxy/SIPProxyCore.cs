@@ -60,7 +60,9 @@ namespace SIPSorcery.Servers
     public class SIPProxyCore
     {
         private static ILog logger = log4net.LogManager.GetLogger("sipproxy");
-
+        
+        //private static string m_branchIdSuffix = Crypto.GetRandomString(6);     // A string that will be appended to Via branch ID's used by thsi proxy, used for Loop identification
+        
         private SIPMonitorLogDelegate m_proxyLogger = (e) => { };
 
         private SIPTransport m_sipTransport;
@@ -71,7 +73,7 @@ namespace SIPSorcery.Servers
         private SIPProxyDispatcher m_proxyDispatcher;
         private SIPCallDispatcherFile m_sipCallDispatcherFile;
         private DateTime m_lastScriptChange = DateTime.MinValue;
-
+        
         public IPAddress PublicIPAddress;       // Can be set if there is an object somewhere that knows the public IP. The address wil be available in the proxy runtime script.
 
         public SIPProxyCore(
@@ -152,7 +154,9 @@ namespace SIPSorcery.Servers
                 // Check whether the branch parameter already exists in the Via list.
                 foreach (SIPViaHeader viaHeader in sipRequest.Header.Vias.Via)
                 {
-                    if (viaHeader.Branch == proxyBranch)
+                    //if (viaHeader.Branch == proxyBranch)
+                    SIPEndPoint sentFromEndPoint = SIPEndPoint.ParseSIPEndPoint(viaHeader.Transport + ":" + viaHeader.ContactAddress);
+                    if(m_sipTransport.IsLocalSIPEndPoint(sentFromEndPoint))
                     {
                         SendMonitorEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.Warn, "Loop detected on request from " + remoteEndPoint + " to " + sipRequest.URI.ToString() + ".", null));
                         m_sipTransport.SendResponse(SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.LoopDetected, null));
@@ -242,10 +246,11 @@ namespace SIPSorcery.Servers
                 if (sipResponse.Header.Vias.Length > 0)
                 {
                     SIPViaHeader nextTopVia = sipResponse.Header.Vias.TopViaHeader;
-                    SIPEndPoint nextTopViaSIPEndPoint = new SIPEndPoint(nextTopVia.Transport, IPSocket.ParseSocketString(nextTopVia.ContactAddress));
-                    if (!(PublicIPAddress != null && nextTopVia.ReceivedFromIPAddress != null && nextTopVia.ReceivedFromIPAddress != PublicIPAddress.ToString())
-                        && 
-                        (m_sipTransport.IsLocalSIPEndPoint(nextTopViaSIPEndPoint) || (PublicIPAddress != null && nextTopVia.ReceivedFromIPAddress == PublicIPAddress.ToString())))
+                    SIPEndPoint nextTopViaSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(nextTopVia.Transport + ":" + nextTopVia.ContactAddress);
+                    //if (!(PublicIPAddress != null && nextTopVia.ReceivedFromIPAddress != null && nextTopVia.ReceivedFromIPAddress != PublicIPAddress.ToString())
+                    //    && 
+                    //    (m_sipTransport.IsLocalSIPEndPoint(nextTopViaSIPEndPoint) || (PublicIPAddress != null && nextTopVia.ReceivedFromIPAddress == PublicIPAddress.ToString())))
+                    if(m_sipTransport.IsLocalSIPEndPoint(nextTopViaSIPEndPoint))
                     {
                         sipResponse.Header.Vias.PopTopViaHeader();
                         outSocket = nextTopViaSIPEndPoint;

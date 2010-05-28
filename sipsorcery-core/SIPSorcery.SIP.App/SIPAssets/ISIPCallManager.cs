@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SIPSorcery.SIP.App {
-   
-    public interface ISIPCallManager {
+namespace SIPSorcery.SIP.App
+{
+    public interface ISIPCallManager
+    {
         string ProcessWebCall(string username, string number, string dialplanName, string replacesCallID);
         void CreateDialogueBridge(SIPDialogue firstLegDialogue, SIPDialogue secondLegDialogue, string owner);
         void ReInvite(SIPDialogue firstLegDialogue, SIPDialogue substituteDialogue);
@@ -14,20 +15,22 @@ namespace SIPSorcery.SIP.App {
         void AddWaitingApplication(CallbackWaiter callbackWaiter);
     }
 
-    public enum CallbackWaiterEnum {
+    public enum CallbackWaiterEnum
+    {
         None = 0,
         GoogleVoice = 1,
     }
 
-    public class CallbackWaiter {
-
+    public class CallbackWaiter
+    {
         public string Owner;
         public CallbackWaiterEnum CallbackApplication;
         public string UniqueId;
         public Func<ISIPServerUserAgent, bool> IsMyCall;
         public DateTime Added = DateTime.Now;
 
-        public CallbackWaiter(string owner, CallbackWaiterEnum application, string uniqueId, Func<ISIPServerUserAgent, bool> isMyCall) {
+        public CallbackWaiter(string owner, CallbackWaiterEnum application, string uniqueId, Func<ISIPServerUserAgent, bool> isMyCall)
+        {
             Owner = owner;
             CallbackApplication = application;
             UniqueId = uniqueId;
