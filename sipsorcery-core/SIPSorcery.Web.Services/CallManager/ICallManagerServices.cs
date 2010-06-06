@@ -21,5 +21,9 @@ namespace SIPSorcery.Web.Services {
         [OperationContract]
         [WebGet(UriTemplate = "blindtransfer?user={username}&destination={destination}&callid={replacesCallID}")]
         string BlindTransfer(string username, string destination, string replacesCallID);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "dualtransfer?user={username}&callid1={callID1}&callid2={callID2}")]
+        string DualTransfer(string username, string callID1, string callID2);
     }
 }

@@ -159,7 +159,7 @@ create table sipdialplans
  adminmemberid varchar(32),
  dialplanname varchar(64) not null default 'default',			-- Name the owner has assigned to the dialplan to allow them to choose between their different ones.
  traceemailaddress varchar(256),
- dialplanscript varchar(30000),
+ dialplanscript text,
  scripttypedescription varchar(12) not null default 'Ruby',		-- The type of script the dialplan has, supported values are: Asterisk, Ruby, Python and JScript.
  inserted varchar(33) not null,
  lastupdate varchar(33) not null,

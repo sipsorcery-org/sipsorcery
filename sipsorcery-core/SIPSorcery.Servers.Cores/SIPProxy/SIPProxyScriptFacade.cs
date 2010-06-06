@@ -426,14 +426,21 @@ namespace SIPSorcery.Servers
             m_sipTransport.SendResponse(response);
         }
 
-        public SIPEndPoint Resolve(SIPRequest sipRequest)
+        public SIPDNSLookupResult Resolve(SIPRequest sipRequest)
         {
-            return m_sipTransport.GetRequestEndPoint(sipRequest, null, true);
+            if (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0)
+            {
+                return SIPDNSManager.ResolveSIPService(sipRequest.Header.Routes.TopRoute.URI, true);
+            }
+            else
+            {
+                return SIPDNSManager.ResolveSIPService(sipRequest.URI, true);
+            }
         }
 
-        public SIPEndPoint Resolve(SIPURI sipURI)
+        public SIPDNSLookupResult Resolve(SIPURI sipURI)
         {
-            return m_sipTransport.GetURIEndPoint(sipURI, false);
+            return SIPDNSManager.ResolveSIPService(sipURI, true);
         }
 
         public SIPEndPoint Resolve(SIPResponse sipResponse)

@@ -50,9 +50,17 @@ namespace SIPSorcery.Web.Services
         {
             List<string> clientEndPointNames = new List<string>();
 
-            // This service will only ever be hosted within IIS. Local installs do not need the notifications service endpoint as they will communicate 
-            // directly with the monitor event publisher in memory.
-            ServiceModelSectionGroup serviceModelSectionGroup = ServiceModelSectionGroup.GetSectionGroup(WebConfigurationManager.OpenWebConfiguration("~"));
+            ServiceModelSectionGroup serviceModelSectionGroup = (ServiceModelSectionGroup)ConfigurationManager.GetSection("system.serviceModel");
+
+            /*try
+            {
+                serviceModelSectionGroup = ServiceModelSectionGroup.GetSectionGroup(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None));
+            }
+            catch
+            {
+                serviceModelSectionGroup = ServiceModelSectionGroup.GetSectionGroup(WebConfigurationManager.OpenWebConfiguration("~"));
+            }*/
+
             foreach (ChannelEndpointElement client in serviceModelSectionGroup.Client.Endpoints)
             {
                 if (client.Contract == CLIENT_CONTRACT && !clientEndPointNames.Contains(client.Name))

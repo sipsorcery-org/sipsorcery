@@ -2320,6 +2320,7 @@ namespace SIPSorcery.SIP
         public string SwitchboardToDescription;
         public string SwitchboardFrom;
         public string SwitchboardFromContactURL;
+        public string SwitchboardTerminate;         // CAn be set on a BYE request to indicate whether the switchboard is requesting both, current or opposite dialogues to be hungup.
 
         public List<string> UnknownHeaders = new List<string>();	// Holds any unrecognised headers.
 
@@ -2875,6 +2876,12 @@ namespace SIPSorcery.SIP
                             sipHeader.SwitchboardFromContactURL = headerValue;
                         }
                         #endregion
+                        #region Switchboard-Terminate.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_TERMINATE.ToLower())
+                        {
+                            sipHeader.SwitchboardTerminate = headerValue;
+                        }
+                        #endregion
 
                         else
                         {
@@ -3018,6 +3025,7 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((SwitchboardToDescription != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_TO_DESCRIPTION + ": " + SwitchboardToDescription + m_CRLF : null);
                 headersBuilder.Append((SwitchboardFrom != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_FROM + ": " + SwitchboardFrom + m_CRLF : null);
                 headersBuilder.Append((SwitchboardFromContactURL != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_FROM_CONTACT_URL + ": " + SwitchboardFromContactURL + m_CRLF : null);
+                headersBuilder.Append((SwitchboardTerminate != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_TERMINATE + ": " + SwitchboardTerminate + m_CRLF : null);
 
                 // Unknown SIP headers
                 foreach (string unknownHeader in UnknownHeaders)

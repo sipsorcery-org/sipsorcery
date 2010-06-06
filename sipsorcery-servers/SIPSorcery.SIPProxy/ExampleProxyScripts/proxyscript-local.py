@@ -37,22 +37,27 @@ def IsLocalNetDestination(destinationEP) :
 # request and then checking whether it is on the same subnet.
 #def SendExternalRequest(SIPEndPoint receivedOn, SIPRequest req, String proxyBranch, IPAddress publicIP, bool sendTransparently):
 def SendExternalRequest(receivedOn, req, proxyBranch, publicIP, sendTransparently):  
-  dest = sys.Resolve(req)
-  if dest == None:
-    if req.Method != "ACK":
+  lookupResult = sys.Resolve(req)
+  if lookupResult.Pending:
+    # Do nothing.
+    sys.Log("DNS lookup pending for " + req.URI.Host + ".")
+  elif lookupResult.LookupError != None or lookupResult.EndPointResults == None or lookupResult.EndPointResults.Count == 0:
+    if req.Method.ToString() != "ACK":
       sys.Respond(req, SIPResponseStatusCodesEnum.DoesNotExistAnywhere, "Host " + req.URI.Host + " unresolvable")
-  elif IsLocalNetDestination(dest):
-    #sys.Log("Request destination " + dest.ToString() + " determined as local network.")
-    if sendTransparently:
-      sys.SendTransparent(dest, req, None) 
-    else:
-      sys.SendExternal(receivedOn, dest, req, proxyBranch, None) 
   else:
-    #sys.Log("Request destination " + dest.ToString() + " determined as external network.")
-    if sendTransparently:
-      sys.SendTransparent(dest, req, publicIP) 
+    dest = lookupResult.EndPointResults[0].LookupEndPoint    
+    if IsLocalNetDestination(dest):
+      #sys.Log("Request destination " + dest.ToString() + " determined as local network.")
+      if sendTransparently:
+        sys.SendTransparent(dest, req, None) 
+      else:
+        sys.SendExternal(receivedOn, dest, req, proxyBranch, None) 
     else:
-      sys.SendExternal(receivedOn, dest, req, proxyBranch, publicIP)
+      #sys.Log("Request destination " + dest.ToString() + " determined as external network.")
+      if sendTransparently:
+        sys.SendTransparent(dest, req, publicIP) 
+      else:
+        sys.SendExternal(receivedOn, dest, req, proxyBranch, publicIP)
 
 #def SendExternalResponse(SIPResponse resp, SIPEndPoint sendFromSIPEndPoint, IPAddress publicIP):
 def SendExternalResponse(resp, sendFromSIPEndPoint, publicIP):
@@ -142,7 +147,7 @@ else:
 
   elif sipMethod == "REGISTER":
     # REGISTER response for SIP Registration Agent.
-    sys.SendTransparent(remoteEndPoint, localEndPoint, resp, SIPEndPoint.ParseSIPEndPoint(m_proxySocketInternal), m_regAgentSocket, topVia.Branch)
+    sys.SendTransparent(remoteEndPoint, localEndPoint, resp, SIPEndPoint.ParseSIPEndPoint(m_proxySocketLoopback), m_regAgentSocket, topVia.Branch)
 
   elif sipMethod == "NOTIFY" or sipMethod == "SUBSCRIBE":
     if not IsFromNotifierServer() and not IsFromApplicationServer():

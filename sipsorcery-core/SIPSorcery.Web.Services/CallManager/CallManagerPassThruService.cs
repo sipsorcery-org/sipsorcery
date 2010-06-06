@@ -14,7 +14,6 @@ namespace SIPSorcery.Web.Services
 
     public class CallManagerPassThruService : ICallManagerServices
     {
-
         private const int OPERATION_TIMEOUT = 5000;
 
         private static ILog logger = AppState.logger;
@@ -104,6 +103,31 @@ namespace SIPSorcery.Web.Services
             {
                 logger.Error("Exception CallManagerPassThruService BlindTransfer. " + excp.Message);
                 return "Sorry there was an unexpected error, the blind transfer was not initiated.";
+            }
+        }
+
+        public string DualTransfer(string username, string callID1, string callID2)
+        {
+            try
+            {
+                logger.Debug("CallManagerPassThruService DualTransfer, callID1=" + callID1 + ", callID2=" + callID2 + ".");
+
+                CallManagerProxy client = (m_sipCallDispatcher != null) ? m_sipCallDispatcher.GetCallManagerClient() : m_callManagerClient;
+
+                if (client != null)
+                {
+                    logger.Debug("Sending DualTransfer request to client endpoint at " + client.Endpoint.Address.ToString() + ".");
+                    return client.DualTransfer(username, callID1, callID2);
+                }
+                else
+                {
+                    throw new ApplicationException("Call Manager Pass Thru service could not create a client.");
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception CallManagerPassThruService DualTransfer. " + excp.Message);
+                return "Sorry there was an unexpected error, the dual transfer was not initiated.";
             }
         }
     }

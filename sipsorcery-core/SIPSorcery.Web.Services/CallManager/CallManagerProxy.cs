@@ -33,5 +33,10 @@ namespace SIPSorcery.Web.Services {
         {
             return base.Channel.BlindTransfer(username, destination, replaceCallID);
         }
+
+        public string DualTransfer(string username, string callID1, string callID2)
+        {
+            return base.Channel.DualTransfer(username, callID1, callID2);
+        }
     }
 }

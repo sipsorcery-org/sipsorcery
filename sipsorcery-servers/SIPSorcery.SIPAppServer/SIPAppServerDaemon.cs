@@ -297,7 +297,10 @@ namespace SIPSorcery.SIPAppServer
                      m_outboundProxy,
                      FireSIPMonitorEvent,
                      m_sipSorceryPersistor.SIPDialoguePersistor,
-                     m_sipSorceryPersistor.SIPCDRPersistor);
+                     m_sipSorceryPersistor.SIPCDRPersistor,
+                     SIPRequestAuthenticator.AuthenticateSIPRequest,
+                     m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                     m_sipSorceryPersistor.SIPDomainManager.GetDomain);
 
                 m_callManager = new SIPCallManager(
                      m_sipTransport,
@@ -394,7 +397,7 @@ namespace SIPSorcery.SIPAppServer
                 {
                     if (WCFUtility.DoesWCFServiceExist(typeof(CallManagerServices).FullName.ToString()))
                     {
-                        CallManagerServiceInstanceProvider callManagerSvcInstanceProvider = new CallManagerServiceInstanceProvider(m_callManager);
+                        CallManagerServiceInstanceProvider callManagerSvcInstanceProvider = new CallManagerServiceInstanceProvider(m_callManager, m_sipDialogueManager);
 
                         Uri callManagerBaseAddress = null;
                         if (m_callManagerServiceAddress != null)

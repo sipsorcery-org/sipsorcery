@@ -151,12 +151,19 @@ namespace SIPSorcery.Servers
                 string route = (sipRequest.Header.Routes != null) ? sipRequest.Header.Routes.ToString() : null;
                 //string authHeader = (sipRequest.Header.AuthenticationHeader != null) ? sipRequest.Header.AuthenticationHeader.ToString() : null;
                 string proxyBranch = CallProperties.CreateBranchId(SIPConstants.SIP_BRANCH_MAGICCOOKIE, null, null, sipRequest.Header.CallId, sipRequest.URI.ToString(), null, sipRequest.Header.CSeq, route, null, null);
-                // Check whether the branch parameter already exists in the Via list.
+                
+                // Check whether the branch parameter already exists in the Via list. One instance of an already added Via header will be allowed to support a single spiral.
+                int loopedViaCount = 0;
                 foreach (SIPViaHeader viaHeader in sipRequest.Header.Vias.Via)
                 {
                     //if (viaHeader.Branch == proxyBranch)
                     SIPEndPoint sentFromEndPoint = SIPEndPoint.ParseSIPEndPoint(viaHeader.Transport + ":" + viaHeader.ContactAddress);
                     if(m_sipTransport.IsLocalSIPEndPoint(sentFromEndPoint))
+                    {
+                        loopedViaCount++;
+                    }
+
+                    if (loopedViaCount >= 2)
                     {
                         SendMonitorEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.Warn, "Loop detected on request from " + remoteEndPoint + " to " + sipRequest.URI.ToString() + ".", null));
                         m_sipTransport.SendResponse(SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.LoopDetected, null));

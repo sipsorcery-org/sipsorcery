@@ -18,9 +18,11 @@ namespace SIPSorcery.Web.Services {
     public class CallManagerServiceInstanceProvider : IInstanceProvider, IServiceBehavior {
 
         private ISIPCallManager m_sipCallManager;
+        private ISIPDialogueManager m_sipDialogueManager;
 
-        public CallManagerServiceInstanceProvider(ISIPCallManager sipCallManager) {
+        public CallManagerServiceInstanceProvider(ISIPCallManager sipCallManager, ISIPDialogueManager sipDialogueManager) {
             m_sipCallManager = sipCallManager;
+            m_sipDialogueManager = sipDialogueManager;
         }
 
         public object GetInstance(InstanceContext instanceContext) {
@@ -28,7 +30,7 @@ namespace SIPSorcery.Web.Services {
         }
 
         public object GetInstance(InstanceContext instanceContext, Message message) {
-            return new CallManagerServices(m_sipCallManager);
+            return new CallManagerServices(m_sipCallManager, m_sipDialogueManager);
         }
 
         public void ReleaseInstance(InstanceContext instanceContext, object instance) { }

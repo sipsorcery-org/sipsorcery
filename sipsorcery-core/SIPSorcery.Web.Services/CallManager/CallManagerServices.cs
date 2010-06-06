@@ -16,12 +16,14 @@ namespace SIPSorcery.Web.Services
         private static ILog logger = AppState.logger;
 
         private ISIPCallManager m_sipCallManager;
+        private ISIPDialogueManager m_sipDialogueManager;
 
         public CallManagerServices() { }
 
-        public CallManagerServices(ISIPCallManager sipCallManager)
+        public CallManagerServices(ISIPCallManager sipCallManager, ISIPDialogueManager sipDialogueManager)
         {
             m_sipCallManager = sipCallManager;
+            m_sipDialogueManager = sipDialogueManager;
         }
 
         public bool IsAlive()
@@ -79,6 +81,36 @@ namespace SIPSorcery.Web.Services
             catch (Exception excp)
             {
                 logger.Error("Exception BlindTransfer. " + excp.Message);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// An attended transfer between two separate established calls where one leg of each call is being transferred 
+        /// to the other.
+        /// </summary>
+        /// <param name="callID1">The Call-ID of the first call leg that is no longer required and of which the opposite end will be transferred.</param>
+        /// <param name="callID2">The Call-ID of the second call leg that is no longer required and of which the opposite end will be transferred. If 
+        /// left empty then the transfer will default to using the last call that was received.</param>
+        /// <returns>If successful null otherwise a string with an error message.</returns>
+        public string DualTransfer(string username, string callID1, string callID2)
+        {
+            try
+            {
+                logger.Debug("CallManagerServices DualTransfer, Username=" + username + ", CallID1=" + callID1 + ", CallID2=" + callID2 + ".");
+
+                m_sipDialogueManager.DualTransfer(username, callID1, callID2);
+
+                return null;
+            }
+            catch (ApplicationException appExcp)
+            {
+                logger.Warn("ApplicationException DualTransfer. " + appExcp.Message);
+                return appExcp.Message;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception DualTransfer. " + excp.Message);
                 throw;
             }
         }

@@ -38,11 +38,12 @@ using System.Net.Sockets;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using SIPSorcery.Web.Services;
 using log4net;
 
-namespace SIPSorcery.SIP.App
+namespace SIPSorcery.Web.Services
 {
     /// <summary>
     /// A sink for SIP monitor events that sets up and manages event sessions using a WCF channel but 
@@ -64,6 +65,8 @@ namespace SIPSorcery.SIP.App
 
         public SIPMonitorUDPSink(string udpSocket)
         {
+            logger.Debug("Request to create SIPMonitorUDPSink on " + udpSocket + ".");
+
             m_monitorProxyManager = new MonitorProxyManager();
             m_eventReceiverEndPoint = IPSocket.ParseSocketString(udpSocket);
 
@@ -84,7 +87,7 @@ namespace SIPSorcery.SIP.App
 
                 while (!Exit)
                 {
-                    IPEndPoint inEndPoint =new IPEndPoint(IPAddress.Any, 0);
+                    IPEndPoint inEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
                     try
                     {
@@ -157,7 +160,7 @@ namespace SIPSorcery.SIP.App
 
         public void CloseConnection(string address)
         {
-            m_monitorProxyManager.CloseConnection(address);   
+            m_monitorProxyManager.CloseConnection(address);
         }
 
         public void MonitorEventReceived(SIPMonitorEvent monitorEvent)

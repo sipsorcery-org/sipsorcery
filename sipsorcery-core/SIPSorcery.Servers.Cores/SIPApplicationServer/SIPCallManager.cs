@@ -173,8 +173,8 @@ namespace SIPSorcery.Servers
                         if (expiredCall != null)
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Hanging up expired call to " + expiredCall.RemoteTarget + " after " + expiredCall.CallDurationLimit + "s.", expiredCall.Owner));
-                            expiredCall.SIPDialogue.Hangup(m_sipTransport, m_outboundProxy);
-                            m_sipDialogueManager.CallHungup(expiredCall.SIPDialogue, "Call duration limit reached");
+                            //expiredCall.SIPDialogue.Hangup(m_sipTransport, m_outboundProxy);
+                            m_sipDialogueManager.CallHungup(expiredCall.SIPDialogue, "Call duration limit reached", true);
                         }
                     }
                     catch (Exception monitorExcp)
@@ -816,6 +816,8 @@ namespace SIPSorcery.Servers
                 {
                     return true;
                 }*/
+
+                //logger.Debug("IsDialPlanExecutionAllowed for " + customer.CustomerUsername + " and " + dialPlan.DialPlanName + ", count=" + dialPlan.ExecutionCount + ", max=" + dialPlan.MaxExecutionCount + ".");
 
                 return (customer.ExecutionCount < customer.MaxExecutionCount);
             }

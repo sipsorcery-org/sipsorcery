@@ -228,6 +228,7 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_SWITCHBOARD_TO_DESCRIPTION = "Switchboard-ToDescription";
         public const string SIP_HEADER_SWITCHBOARD_FROM = "Switchboard-From";
         public const string SIP_HEADER_SWITCHBOARD_FROM_CONTACT_URL = "Switchboard-FromContactURL";
+        public const string SIP_HEADER_SWITCHBOARD_TERMINATE = "Switchboard-Terminate";
 	}
 
 	public class SIPHeaderAncillary

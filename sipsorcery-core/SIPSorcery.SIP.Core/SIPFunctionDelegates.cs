@@ -61,5 +61,4 @@ namespace SIPSorcery.SIP
     public delegate void SIPTransactionResponseRetransmitDelegate(SIPTransaction sipTransaction, SIPResponse sipResponse, int retransmitNumber);
     public delegate void SIPTransactionRemovedDelegate(SIPTransaction sipTransaction);
     public delegate void SIPTransactionTraceMessageDelegate(SIPTransaction sipTransaction, string message);
-   
 }

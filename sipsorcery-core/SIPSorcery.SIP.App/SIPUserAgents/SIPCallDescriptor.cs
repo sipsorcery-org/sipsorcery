@@ -55,7 +55,7 @@ namespace SIPSorcery.SIP.App
         Replace = 2,    // (option=r)
     }
 
-    public enum SIPCallTransferModesEnum
+    /*public enum SIPCallTransferModesEnum
     {
         NotAllowed = 0,     // (option=n) REFER requests for attended and blind transfers will be blocked.
         BlindPassThru = 1,  // (option=p) Default. Attended processed by server, blind will be treated as an in-dialogue requests and passed through to user agents.
@@ -63,8 +63,7 @@ namespace SIPSorcery.SIP.App
         //Caller = 2,     // (option=o) Only the caller can initiate transfers.
         //Callee = 3,     // (option=d) Only the callee can initiate transfers.
         //Both = 4,       // (option=b) Either end of the call can initiate a transfer.
-
-    }
+    }*/
 
     public class SIPCallDescriptor
     {
@@ -102,7 +101,7 @@ namespace SIPSorcery.SIP.App
         public string FromDisplayName;
         public string FromURIUsername;
         public string FromURIHost;
-        public SIPCallTransferModesEnum TransferMode = SIPCallTransferModesEnum.NotAllowed;   // Determines how the call (dialogues) created by this descriptor will handle transfers (REFER requests).
+        public SIPDialogueTransferModesEnum TransferMode = SIPDialogueTransferModesEnum.Default;   // Determines how the call (dialogues) created by this descriptor will handle transfers (REFER requests).
 
         public SIPAccount ToSIPAccount;                 // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
 
@@ -256,15 +255,15 @@ namespace SIPSorcery.SIP.App
                     string transferMode = transferMatch.Result("${transfermode}");
                     if (transferMode == "n" || transferMode == "N")
                     {
-                        TransferMode = SIPCallTransferModesEnum.NotAllowed;
+                        TransferMode = SIPDialogueTransferModesEnum.NotAllowed;
                     }
                     else if (transferMode == "p" || transferMode == "P")
                     {
-                        TransferMode = SIPCallTransferModesEnum.BlindPassThru;
+                        TransferMode = SIPDialogueTransferModesEnum.BlindPassThru;
                     }
                     else if (transferMode == "c" || transferMode == "C")
                     {
-                        TransferMode = SIPCallTransferModesEnum.BlindPlaceCall;
+                        TransferMode = SIPDialogueTransferModesEnum.BlindPlaceCall;
                     }
                     /*else if (transferMode == "o" || transferMode == "O")
                     {

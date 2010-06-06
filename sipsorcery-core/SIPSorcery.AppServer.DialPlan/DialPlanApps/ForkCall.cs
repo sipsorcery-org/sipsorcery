@@ -365,16 +365,21 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_callAnswered = true;
                         m_answeredUAC = answeredUAC;
 
-                        SIPDialogueTransferModesEnum uasTransferMode = SIPDialogueTransferModesEnum.BlindPassThru;
-                        if (m_answeredUAC.CallDescriptor.TransferMode == SIPCallTransferModesEnum.NotAllowed)
+                        SIPDialogueTransferModesEnum uasTransferMode = SIPDialogueTransferModesEnum.Default;
+                        if (m_answeredUAC.CallDescriptor.TransferMode == SIPDialogueTransferModesEnum.NotAllowed)
                         {
                             answeredUAC.SIPDialogue.TransferMode = SIPDialogueTransferModesEnum.NotAllowed;
                             uasTransferMode = SIPDialogueTransferModesEnum.NotAllowed;
                         }
-                        else if (m_answeredUAC.CallDescriptor.TransferMode == SIPCallTransferModesEnum.BlindPlaceCall)
+                        else if (m_answeredUAC.CallDescriptor.TransferMode == SIPDialogueTransferModesEnum.BlindPlaceCall)
                         {
                             answeredUAC.SIPDialogue.TransferMode = SIPDialogueTransferModesEnum.BlindPlaceCall;
                             uasTransferMode = SIPDialogueTransferModesEnum.BlindPlaceCall;
+                        }
+                        else if (m_answeredUAC.CallDescriptor.TransferMode == SIPDialogueTransferModesEnum.BlindPassThru)
+                        {
+                            answeredUAC.SIPDialogue.TransferMode = SIPDialogueTransferModesEnum.BlindPassThru;
+                            uasTransferMode = SIPDialogueTransferModesEnum.BlindPassThru;
                         }
                         /*else if (m_answeredUAC.CallDescriptor.TransferMode == SIPCallTransferModesEnum.Caller)
                         {
