@@ -75,9 +75,9 @@ namespace SIPSorcery.Servers
         private SIPMonitorLogDelegate MonitorLogEvent_External;
         private SIPTransport m_sipTransport;
         private SIPAssetGetDelegate<Customer> GetCustomer_External;
-        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
         private SIPAuthenticateRequestDelegate SIPRequestAuthenticator_External;
+        private SIPAssetPersistor<SIPAccount> m_sipAssetPersistor;
 
         private Queue<SIPNonInviteTransaction> m_notifierQueue = new Queue<SIPNonInviteTransaction>();
         private AutoResetEvent m_notifierARE = new AutoResetEvent(false);
@@ -92,9 +92,8 @@ namespace SIPSorcery.Servers
             SIPAssetGetDelegate<Customer> getCustomer,
             SIPAssetGetListDelegate<SIPDialogueAsset> getDialogues,
             SIPAssetGetByIdDelegate<SIPDialogueAsset> getDialogue,
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
             GetCanonicalDomainDelegate getCanonicalDomain,
-            SIPAssetGetListDelegate<SIPAccount> getSIPAccounts,
+            SIPAssetPersistor<SIPAccount> sipAssetPersistor,
             SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount,
             SIPAuthenticateRequestDelegate sipRequestAuthenticator,
             SIPEndPoint outboundProxy,
@@ -103,11 +102,11 @@ namespace SIPSorcery.Servers
             MonitorLogEvent_External = logDelegate;
             m_sipTransport = sipTransport;
             GetCustomer_External = getCustomer;
-            GetSIPAccount_External = getSIPAccount;
+            m_sipAssetPersistor = sipAssetPersistor;
             GetCanonicalDomain_External = getCanonicalDomain;
             SIPRequestAuthenticator_External = sipRequestAuthenticator;
             m_outboundProxy = outboundProxy;
-            m_subscriptionsManager = new NotifierSubscriptionsManager(MonitorLogEvent_External, getDialogues, getDialogue, getSIPAccounts, getBindingsCount, m_sipTransport, m_outboundProxy, publisher);
+            m_subscriptionsManager = new NotifierSubscriptionsManager(MonitorLogEvent_External, getDialogues, getDialogue, m_sipAssetPersistor, getBindingsCount, m_sipTransport, m_outboundProxy, publisher);
 
             ThreadPool.QueueUserWorkItem(delegate { ProcessSubscribeRequest(NOTIFIER_THREAD_NAME_PREFIX + "1"); });
         }
@@ -248,7 +247,7 @@ namespace SIPSorcery.Servers
                     return;
                 }
 
-                SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == fromUser && s.SIPDomain == canonicalDomain);
+                SIPAccount sipAccount = m_sipAssetPersistor.Get(s => s.SIPUsername == fromUser && s.SIPDomain == canonicalDomain);
                 SIPRequestAuthenticationResult authenticationResult = SIPRequestAuthenticator_External(subscribeTransaction.LocalSIPEndPoint, subscribeTransaction.RemoteEndPoint, sipRequest, sipAccount, FireProxyLogEvent);
 
                 if (!authenticationResult.Authenticated)
@@ -317,7 +316,7 @@ namespace SIPSorcery.Servers
 
                         if (canonicalResourceURI.User != m_wildcardUser)
                         {
-                            resourceSIPAccount = GetSIPAccount_External(s => s.SIPUsername == canonicalResourceURI.User && s.SIPDomain == canonicalResourceURI.Host);
+                            resourceSIPAccount = m_sipAssetPersistor.Get(s => s.SIPUsername == canonicalResourceURI.User && s.SIPDomain == canonicalResourceURI.Host);
 
                             if (resourceSIPAccount == null)
                             {

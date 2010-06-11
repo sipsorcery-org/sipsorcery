@@ -13,11 +13,12 @@
 // 08 Feb 2008  Aaron Clauson   Added SIP Providers to dial plan to facilitate multi-legged forwards in the Switch command.
 // 16 Feb 2008  Aaron Clauson   Added capability for Ruby scripted dial plans.
 // 28 Sep 2008  Aaron Clauson   Renamed from SIPDialPlan to SIPDialPlanEngine.
+// 11 Jun 2010  Aaron Clauson   Added per user execution count property.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2008 Aaron Clauson (aaronc@blueface.ie), Blue Face Ltd, Dublin, Ireland (www.blueface.ie)
+// Copyright (c) 2010 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery Ltd, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -130,6 +131,24 @@ namespace SIPSorcery.AppServer.DialPlan
             Thread monitorScriptsThread = new Thread(new ThreadStart(MonitorScripts));
             monitorScriptsThread.Name = MONITOR_THREAD_NAME;
             monitorScriptsThread.Start();
+        }
+
+        /// <summary>
+        /// Gets the number of currently executing dial plan scripts for the specified username.
+        /// </summary>
+        /// <param name="username">The username to get the exeuction count for.</param>
+        /// <returns>The number of currently executing dial plan scripts for the specified user.</returns>
+        public int GetExecutionCountForUser(string username)
+        {
+            try
+            {
+                return (from script in m_runningScripts where script.Owner == username select script).Count();
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception GetExecutionCountForUser. " + excp.Message);
+                return 0;
+            }
         }
 
         public void Execute(

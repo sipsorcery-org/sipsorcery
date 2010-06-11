@@ -108,7 +108,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private string m_customFromName;
         private string m_customFromUser;
         private string m_customFromHost;
-        private List<string> m_switchboardHeaders = new List<string>();
+        //private List<string> m_switchboardHeaders = new List<string>();
         private SIPCallDirection m_callDirection;
         private DialStringParser m_dialStringParser;
         private bool m_clientCallCancelled;
@@ -166,6 +166,11 @@ namespace SIPSorcery.AppServer.DialPlan
             get { return m_dialPlanContext.SendTrace; }
             set { m_dialPlanContext.SendTrace = value; }
         }
+
+        // Switchboard descriptive fields.
+        public string SwitchboardCallerDescription;
+        public string SwitchboardDescription;
+        public string SwitchboardOwner;
 
         public static IPAddress PublicIPAddress;    // If the app server is behind a NAT then it can set this address to be used in mangled SDP.
 
@@ -340,7 +345,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 string answeredContentType = null;
                 string answeredBody = null;
                 SIPDialogue answeredDialogue = null;
-                SIPDialogueTransferModesEnum uasTransferMode = SIPDialogueTransferModesEnum.BlindPassThru;
+                SIPDialogueTransferModesEnum uasTransferMode = SIPDialogueTransferModesEnum.Default;
                 int numberLegs = 0;
 
                 m_currentCall = new ForkCall(m_sipTransport, FireProxyLogEvent, m_callManager.QueueNewCall, m_dialStringParser, Username, m_adminMemberId, m_outboundProxySocket, out LastDialled);
@@ -366,6 +371,8 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 try
                 {
+                    SwitchboardHeaders switchboardHeaders = new SwitchboardHeaders(m_sipRequest.Header.CallId, SwitchboardCallerDescription, SwitchboardDescription, SwitchboardOwner);
+
                     Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(
                         DialPlanContextsEnum.Script,
                         clientRequest,
@@ -377,7 +384,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_customFromName,
                         m_customFromUser,
                         m_customFromHost,
-                        m_switchboardHeaders);
+                        switchboardHeaders);
 
                     List<SIPCallDescriptor>[] callListArray = callsQueue.ToArray();
                     callsQueue.ToList().ForEach((list) => numberLegs += list.Count);
@@ -423,6 +430,11 @@ namespace SIPSorcery.AppServer.DialPlan
                                     answeredDialogue.CallDurationLimit = answeredCallLimit;
                                 }
 
+                                // Set switchboard dialogue values from the answered response or from dialplan set values.
+                                answeredDialogue.SwitchboardCallerDescription = SwitchboardCallerDescription ?? m_sipRequest.Header.SwitchboardCallerDescription;
+                                answeredDialogue.SwitchboardDescription = SwitchboardDescription ?? m_sipRequest.Header.SwitchboardDescription;
+                                answeredDialogue.SwitchboardOwner = SwitchboardOwner ?? m_sipRequest.Header.SwitchboardOwner;
+                                
                                 m_dialPlanContext.CallAnswered(answeredStatus, answeredReason, null, null, answeredContentType, answeredBody, answeredDialogue, uasTransferMode);
 
                                 // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
@@ -840,39 +852,6 @@ namespace SIPSorcery.AppServer.DialPlan
         }
 
         /// <summary>
-        /// Sets a SIP header for the switchboard client application. Unlike custom SIP headers switchboard
-        /// SIP headers are only sent on calls where the destination is identified as a switchboard application.
-        /// </summary>
-        /// <param name="switchboardHeaderName">The name of the swithboard SIP header to add.</param>
-        /// <param name="headerValue">The value of the SIP header to add.</param>
-        public void SetSwitchboardHeader(string switchboardHeaderName, string headerValue)
-        {
-            if (switchboardHeaderName.IsNullOrBlank())
-            {
-                Log("The name of the switchboard header to set was empty, the header was not added.");
-            }
-            else if (!(switchboardHeaderName.Trim().StartsWith("Switchboard") || switchboardHeaderName.Trim().StartsWith("switchboard")))
-            {
-                Log("The name of the switchboard header was not in the valid set of header names, the header was not added.");
-            }
-            else
-            {
-                string trimmedName = switchboardHeaderName.Trim();
-                string trimmedValue = (headerValue != null) ? headerValue.Trim() : String.Empty;
-                m_switchboardHeaders.Add(trimmedName + ": " + trimmedValue);
-                Log("Switchboard SIP header " + trimmedName + " successfully added to list.");
-            }
-        }
-
-        /// <summary>
-        /// Clears all the custom switchboard SIP header values from the list.
-        /// </summary>
-        public void ClearSwitchboardHeaders()
-        {
-            m_switchboardHeaders.Clear();
-        }
-
-        /// <summary>
         /// Sets the custom body that will override the incoming request body for forwarded INVITE requests.
         /// </summary>
         /// <param name="body">The custom body that will be sent in forwarded INVITE requests.</param>
@@ -1015,7 +994,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 SIPDialogue answeredDialogue = googleCall.InitiateCall(emailAddress, password, forwardingNumber, destinationNumber, fromURIUserToMatch, phoneType, waitForCallbackTimeout, m_sipRequest.Header.ContentType, content);
                 if (answeredDialogue != null)
                 {
-                    m_dialPlanContext.CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, null, answeredDialogue.ContentType, answeredDialogue.RemoteSDP, answeredDialogue, SIPDialogueTransferModesEnum.BlindPassThru);
+                    m_dialPlanContext.CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, null, answeredDialogue.ContentType, answeredDialogue.RemoteSDP, answeredDialogue, SIPDialogueTransferModesEnum.Default);
 
                     // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
                     Log("Google Voice Call was successfully answered in " + DateTime.Now.Subtract(startTime).TotalSeconds.ToString("0.00") + "s.");

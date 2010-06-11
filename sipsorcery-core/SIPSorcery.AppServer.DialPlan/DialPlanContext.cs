@@ -195,6 +195,11 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         if (uasDialogue != null)
                         {
+                            // Duplicate switchboard dialogue settings.
+                            uasDialogue.SwitchboardDescription = answeredDialogue.SwitchboardDescription;
+                            uasDialogue.SwitchboardCallerDescription = answeredDialogue.SwitchboardCallerDescription;
+                            uasDialogue.SwitchboardOwner = answeredDialogue.SwitchboardOwner;
+
                             // Record the now established call with the call manager for in dialogue management and hangups.
                             CreateBridge_External(uasDialogue, answeredDialogue, m_dialPlan.Owner);
                         }

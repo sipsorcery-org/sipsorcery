@@ -37,6 +37,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -63,6 +64,7 @@ namespace SIPSorcery.SIP.App
 
         public const string BASETYPE_FILTER_KEY = "basetype";   // can be machine or control.
         public const string EVENTTYPE_FILTER_KEY = "event";
+        public const string MACHINE_EVENTTYPE_FILTER_KEY = "machineevent";
         public const string IPADDRESS_FILTER_KEY = "ipaddr";
         public const string IPADDRESSLONG_FILTER_KEY = "ipaddress";
         public const string USERNAME_FILTER_KEY = "user";
@@ -75,12 +77,12 @@ namespace SIPSorcery.SIP.App
 
         public const string MACHINE_BASE_TYPE = "machine";
         public const string CONSOLE_BASE_TYPE = "console";
-        public const string EVENTTYPE_FULL_VALUE = "full";                  // Full SIP messages except ones to and from loopback IP's.
+        public const string EVENTTYPE_FULL_VALUE = "full";                          // Full SIP messages.
         public const string EVENTTYPE_SYSTEM_VALUE = "system";
         public const string EVENTTYPE_TROUBLE_VALUE = "trouble";
         public const string SIPREQUEST_INVITE_VALUE = "invite";
         public const string SIPREQUEST_REGISTER_VALUE = "register";
-        public const string SIPREQUEST_SUBSCRIBE_VALUE = "subscribe";
+        public const string SIPREQUEST_NOTIFY_VALUE = "notify";
 
         public const string FILELOG_REQUEST_KEY = "file";
         public const string FILELOG_MINUTESDURATION_KEY = "duration";
@@ -92,6 +94,7 @@ namespace SIPSorcery.SIP.App
         public string SIPRequestFilter = WILDCARD;
         public string EventFilterDescr = null;
         public int EventTypeId = 0;
+        public List<int> MachineEventTypeIds = null;
         public int ServerTypeId = 0;
         public string RegexFilter = DEFAULT_REGEX;
         public string FileLogname = null;
@@ -129,6 +132,22 @@ namespace SIPSorcery.SIP.App
                                 else
                                 {
                                     EventFilterDescr = filterValue;
+                                }
+                            }
+                            else if (filterName == MACHINE_EVENTTYPE_FILTER_KEY)
+                            {
+                                if (!filterValue.IsNullOrBlank())
+                                {
+                                    MachineEventTypeIds = new List<int>();
+                                    string[] ids = filterValue.Split(',');
+                                    foreach (string id in ids)
+                                    {
+                                        int eventId = 0;
+                                        if (Int32.TryParse(id, out eventId))
+                                        {
+                                            MachineEventTypeIds.Add(eventId);
+                                        }
+                                    }
                                 }
                             }
                             else if (filterName == SERVERADDRESS_FILTER_KEY)
@@ -276,6 +295,32 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+        public bool ShowMachineEvent(SIPMonitorMachineEventTypesEnum eventType)
+        {
+            if (MachineEventTypeIds != null && MachineEventTypeIds.Count > 0)
+            {
+                foreach (int eventId in MachineEventTypeIds)
+                {
+                    if ((int)eventType == eventId)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            if (eventType == SIPMonitorMachineEventTypesEnum.SIPDialogueTransfer)
+            {
+                // These events are only returned if explicitly requested.
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
         public bool ShowServer(SIPMonitorServerTypesEnum eventServer)
         {
             if (ServerTypeId != 0)
@@ -393,11 +438,12 @@ namespace SIPSorcery.SIP.App
 
                         if ((machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueCreated ||
                             machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved ||
-                            machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated) && SIPEventDialogURI != null)
+                            machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated ||
+                            machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueTransfer) && SIPEventDialogURI != null)
                         {
                             if (SIPEventDialogURI.User == WILDCARD)
                             {
-                                return ShowUsername(proxyEvent.Username);
+                                return ShowUsername(proxyEvent.Username) && ShowMachineEvent(machineEvent.MachineEventType);
                             }
                             else
                             {
@@ -467,7 +513,7 @@ namespace SIPSorcery.SIP.App
                                 return ShowRegex(consoleEvent.Message) && (ShowIPAddress(remoteIPAddress) || ShowIPAddress(dstIPAddress));
                             }
                         }
-                        else if (SIPRequestFilter == SIPREQUEST_SUBSCRIBE_VALUE)
+                        else if (SIPRequestFilter == SIPREQUEST_NOTIFY_VALUE)
                         {
                             // Do a regex to pick out NOTIFYs and SUBSCRIBEs.
                             if (Regex.Match(consoleEvent.Message, "(NOTIFY|SUBSCRIBE) +?sips?:", RegexOptions.IgnoreCase).Success ||

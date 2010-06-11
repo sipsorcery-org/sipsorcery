@@ -87,6 +87,8 @@ namespace SIPSorcery.AppServer.DialPlan
         private List<SIPTransaction> m_switchCallTransactions = new List<SIPTransaction>();                 // Used to maintain a list of all the transactions used in the call. Allows response codes and such to be checked.    
         private List<SIPCallDescriptor> m_delayedCalls = new List<SIPCallDescriptor>();
 
+        public SIPResponse AnsweredSIPResponse { get; private set; }
+
         /// <remarks>
         /// The ForkCall allows a SIP call to be forked to multiple destinations. To do this it utilises multiple
         /// simultaneous SIPCallDescriptor objects and consolidates their responses to work out what should and shouldn't
@@ -364,6 +366,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         // This is the first call we've got an answer on.
                         m_callAnswered = true;
                         m_answeredUAC = answeredUAC;
+                        AnsweredSIPResponse = answeredResponse;
 
                         SIPDialogueTransferModesEnum uasTransferMode = SIPDialogueTransferModesEnum.Default;
                         if (m_answeredUAC.CallDescriptor.TransferMode == SIPDialogueTransferModesEnum.NotAllowed)
@@ -376,10 +379,10 @@ namespace SIPSorcery.AppServer.DialPlan
                             answeredUAC.SIPDialogue.TransferMode = SIPDialogueTransferModesEnum.BlindPlaceCall;
                             uasTransferMode = SIPDialogueTransferModesEnum.BlindPlaceCall;
                         }
-                        else if (m_answeredUAC.CallDescriptor.TransferMode == SIPDialogueTransferModesEnum.BlindPassThru)
+                        else if (m_answeredUAC.CallDescriptor.TransferMode == SIPDialogueTransferModesEnum.PassThru)
                         {
-                            answeredUAC.SIPDialogue.TransferMode = SIPDialogueTransferModesEnum.BlindPassThru;
-                            uasTransferMode = SIPDialogueTransferModesEnum.BlindPassThru;
+                            answeredUAC.SIPDialogue.TransferMode = SIPDialogueTransferModesEnum.PassThru;
+                            uasTransferMode = SIPDialogueTransferModesEnum.PassThru;
                         }
                         /*else if (m_answeredUAC.CallDescriptor.TransferMode == SIPCallTransferModesEnum.Caller)
                         {

@@ -712,35 +712,51 @@ namespace SIPSorcery.Web.Services
 
         public int GetCallsCount(string whereExpression)
         {
-            Customer customer = AuthoriseRequest();
-
-            string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
-            //logger.Debug("SIPProvisioningWebService GetCallsCount for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
-
-            if (authoriseExpression.IsNullOrBlank())
+            try
             {
-                return SIPDialoguePersistor.Count(null);
+                Customer customer = AuthoriseRequest();
+
+                string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
+                //logger.Debug("SIPProvisioningWebService GetCallsCount for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
+
+                if (authoriseExpression.IsNullOrBlank())
+                {
+                    return SIPDialoguePersistor.Count(null);
+                }
+                else
+                {
+                    return SIPDialoguePersistor.Count(DynamicExpression.ParseLambda<SIPDialogueAsset, bool>(authoriseExpression));
+                }
             }
-            else
+            catch (Exception excp)
             {
-                return SIPDialoguePersistor.Count(DynamicExpression.ParseLambda<SIPDialogueAsset, bool>(authoriseExpression));
+                logger.Error("Exception GetCallsCount. " + excp.Message);
+                throw;
             }
         }
 
         public List<SIPDialogueAsset> GetCalls(string whereExpression, int offset, int count)
         {
-            Customer customer = AuthoriseRequest();
-
-            string authorisedExpression = GetAuthorisedWhereExpression(customer, whereExpression);
-            //logger.Debug("SIPProvisioningWebService GetCalls for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
-
-            if (authorisedExpression.IsNullOrBlank())
+            try
             {
-                return SIPDialoguePersistor.Get(null, null, offset, count);
+                Customer customer = AuthoriseRequest();
+
+                string authorisedExpression = GetAuthorisedWhereExpression(customer, whereExpression);
+                //logger.Debug("SIPProvisioningWebService GetCalls for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
+
+                if (authorisedExpression.IsNullOrBlank())
+                {
+                    return SIPDialoguePersistor.Get(null, null, offset, count);
+                }
+                else
+                {
+                    return SIPDialoguePersistor.Get(DynamicExpression.ParseLambda<SIPDialogueAsset, bool>(authorisedExpression), null, offset, count);
+                }
             }
-            else
+            catch (Exception excp)
             {
-                return SIPDialoguePersistor.Get(DynamicExpression.ParseLambda<SIPDialogueAsset, bool>(authorisedExpression), null, offset, count);
+                logger.Error("Exception GetCalls. " + excp.Message);
+                throw;
             }
         }
 

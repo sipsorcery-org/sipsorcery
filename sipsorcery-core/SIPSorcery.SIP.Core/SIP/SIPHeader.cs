@@ -2293,6 +2293,7 @@ namespace SIPSorcery.SIP
         public string Reason;
         public SIPRouteSet RecordRoutes = new SIPRouteSet();
         public string ReferredBy;                           // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
+        public string ReferSub;                             // RFC 4488 If set to false indicates the implict REFER subscription should not be created.
         public string ReferTo;                              // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
         public string ReplyTo;
         public string Require;
@@ -2316,11 +2317,15 @@ namespace SIPSorcery.SIP
 
         // Non-core custom SIP headers for use with the SIP Sorcery switchboard.
         public string SwitchboardCallID;
-        public string SwitchboardTo;
-        public string SwitchboardToDescription;
+        public string SwitchboardCallerDescription;
+        public string SwitchboardDescription;
         public string SwitchboardFrom;
+        public string SwitchboardTo;
         public string SwitchboardFromContactURL;
-        public string SwitchboardTerminate;         // CAn be set on a BYE request to indicate whether the switchboard is requesting both, current or opposite dialogues to be hungup.
+        public string SwitchboardOwner;
+        public string SwitchboardTerminate;         // Can be set on a BYE request to indicate whether the switchboard is requesting both, current or opposite dialogues to be hungup.
+        public int SwitchboardTokenRequest;         // A user agent can request a token from a sipsorcery server and this value indicates the period the token is being requested for.
+        public string SwitchboardToken;             // If a token is issued this header will be used to hold it in the response.
 
         public List<string> UnknownHeaders = new List<string>();	// Holds any unrecognised headers.
 
@@ -2669,6 +2674,19 @@ namespace SIPSorcery.SIP
                             sipHeader.Date = headerValue;
                         }
                         #endregion
+                        #region Refer-Sub.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REFERSUB.ToLower())
+                        {
+                            if (sipHeader.ReferSub == null)
+                            {
+                                sipHeader.ReferSub = headerValue;
+                            }
+                            else
+                            {
+                                throw new SIPValidationException(SIPValidationFieldsEnum.ReferToHeader, "Only a single Refer-Sub header is permitted.");
+                            }
+                        }
+                        #endregion
                         #region Refer-To.
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_REFERTO.ToLower() ||
                             headerNameLower == SIPHeaders.SIP_COMPACTHEADER_REFERTO)
@@ -2858,10 +2876,16 @@ namespace SIPSorcery.SIP
                             sipHeader.SwitchboardTo = headerValue;
                         }
                         #endregion
-                        #region Switchboard-ToDescription.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_TO_DESCRIPTION.ToLower())
+                        #region Switchboard-CallerDescription.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_CALLER_DESCRIPTION.ToLower())
                         {
-                            sipHeader.SwitchboardToDescription = headerValue;
+                            sipHeader.SwitchboardCallerDescription = headerValue;
+                        }
+                        #endregion
+                        #region Switchboard-Description.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_DESCRIPTION.ToLower())
+                        {
+                            sipHeader.SwitchboardDescription = headerValue;
                         }
                         #endregion
                         #region Switchboard-From.
@@ -2876,10 +2900,28 @@ namespace SIPSorcery.SIP
                             sipHeader.SwitchboardFromContactURL = headerValue;
                         }
                         #endregion
+                        #region Switchboard-Owner.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_OWNER.ToLower())
+                        {
+                            sipHeader.SwitchboardOwner = headerValue;
+                        }
+                        #endregion
                         #region Switchboard-Terminate.
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_TERMINATE.ToLower())
                         {
                             sipHeader.SwitchboardTerminate = headerValue;
+                        }
+                        #endregion
+                        #region Switchboard-Token.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_TOKEN.ToLower())
+                        {
+                            sipHeader.SwitchboardToken = headerValue;
+                        }
+                        #endregion
+                        #region Switchboard-TokenRequest.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_TOKENREQUEST.ToLower())
+                        {
+                            Int32.TryParse(headerValue, out sipHeader.SwitchboardTokenRequest);
                         }
                         #endregion
 
@@ -3012,6 +3054,7 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((AllowEvents != null) ? SIPHeaders.SIP_HEADER_ALLOW_EVENTS + ": " + AllowEvents + m_CRLF : null);
                 headersBuilder.Append((Event != null) ? SIPHeaders.SIP_HEADER_EVENT + ": " + Event + m_CRLF : null);
                 headersBuilder.Append((SubscriptionState != null) ? SIPHeaders.SIP_HEADER_SUBSCRIPTION_STATE + ": " + SubscriptionState + m_CRLF : null);
+                headersBuilder.Append((ReferSub != null) ? SIPHeaders.SIP_HEADER_REFERSUB + ": " + ReferSub + m_CRLF : null);
                 headersBuilder.Append((ReferTo != null) ? SIPHeaders.SIP_HEADER_REFERTO + ": " + ReferTo + m_CRLF : null);
                 headersBuilder.Append((ReferredBy != null) ? SIPHeaders.SIP_HEADER_REFERREDBY + ": " + ReferredBy + m_CRLF : null);
                 headersBuilder.Append((Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);
@@ -3022,10 +3065,14 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((ProxySendFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_SENDFROM + ": " + ProxySendFrom + m_CRLF : null);
                 headersBuilder.Append((SwitchboardCallID != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_CALLID + ": " + SwitchboardCallID + m_CRLF : null);
                 headersBuilder.Append((SwitchboardTo != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_TO + ": " + SwitchboardTo + m_CRLF : null);
-                headersBuilder.Append((SwitchboardToDescription != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_TO_DESCRIPTION + ": " + SwitchboardToDescription + m_CRLF : null);
+                headersBuilder.Append((SwitchboardCallerDescription != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_CALLER_DESCRIPTION + ": " + SwitchboardCallerDescription + m_CRLF : null);
+                headersBuilder.Append((SwitchboardDescription != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_DESCRIPTION + ": " + SwitchboardDescription + m_CRLF : null);
                 headersBuilder.Append((SwitchboardFrom != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_FROM + ": " + SwitchboardFrom + m_CRLF : null);
                 headersBuilder.Append((SwitchboardFromContactURL != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_FROM_CONTACT_URL + ": " + SwitchboardFromContactURL + m_CRLF : null);
+                headersBuilder.Append((SwitchboardOwner != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_OWNER + ": " + SwitchboardOwner + m_CRLF : null);
                 headersBuilder.Append((SwitchboardTerminate != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_TERMINATE + ": " + SwitchboardTerminate + m_CRLF : null);
+                headersBuilder.Append((SwitchboardToken != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_TOKEN + ": " + SwitchboardToken + m_CRLF : null);
+                headersBuilder.Append((SwitchboardTokenRequest > 0) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_TOKENREQUEST + ": " + SwitchboardTokenRequest + m_CRLF : null);
 
                 // Unknown SIP headers
                 foreach (string unknownHeader in UnknownHeaders)

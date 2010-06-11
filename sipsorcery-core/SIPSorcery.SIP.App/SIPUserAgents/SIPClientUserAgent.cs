@@ -609,6 +609,15 @@ namespace SIPSorcery.SIP.App
             inviteRequest.Header.ContentLength = (inviteRequest.Body != null) ? inviteRequest.Body.Length : 0;
             inviteRequest.Header.ContentType = contentType;
 
+            // Add custom switchboard headers.
+            if (CallDescriptor.SwitchboardHeaders != null)
+            {
+                inviteHeader.SwitchboardCallID = CallDescriptor.SwitchboardHeaders.SwitchboardCallID;
+                inviteHeader.SwitchboardCallerDescription = CallDescriptor.SwitchboardHeaders.SwitchboardCallerDescription;
+                inviteHeader.SwitchboardDescription = CallDescriptor.SwitchboardHeaders.SwitchboardDescription;
+                inviteHeader.SwitchboardOwner = CallDescriptor.SwitchboardHeaders.SwitchboardOwner;
+            }
+
             try
             {
                 if (sipCallDescriptor.CustomHeaders != null && sipCallDescriptor.CustomHeaders.Count > 0)

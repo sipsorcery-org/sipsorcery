@@ -65,6 +65,22 @@ namespace SIPSorcery.SIP.App
         //Both = 4,       // (option=b) Either end of the call can initiate a transfer.
     }*/
 
+    public class SwitchboardHeaders
+    {
+        public string SwitchboardCallID;
+        public string SwitchboardCallerDescription;
+        public string SwitchboardDescription;
+        public string SwitchboardOwner;
+
+        public SwitchboardHeaders(string callID, string callerDescription, string description, string owner)
+        {
+            SwitchboardCallID = callID;
+            SwitchboardCallerDescription = callerDescription;
+            SwitchboardDescription = description;
+            SwitchboardOwner = owner;
+        }
+    }
+
     public class SIPCallDescriptor
     {
         public const string DELAY_CALL_OPTION_KEY = "dt";       // Dial string option to delay the start of a call leg.
@@ -103,7 +119,10 @@ namespace SIPSorcery.SIP.App
         public string FromURIHost;
         public SIPDialogueTransferModesEnum TransferMode = SIPDialogueTransferModesEnum.Default;   // Determines how the call (dialogues) created by this descriptor will handle transfers (REFER requests).
 
-        public SIPAccount ToSIPAccount;                 // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
+        // Custom headers for sipsorcery switchboard application.
+        public SwitchboardHeaders SwitchboardHeaders;
+
+        public SIPAccount ToSIPAccount;         // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
 
         public ManualResetEvent DelayMRE;       // If the call needs to be delayed DelaySeconds this MRE will be used.
 
@@ -259,7 +278,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else if (transferMode == "p" || transferMode == "P")
                     {
-                        TransferMode = SIPDialogueTransferModesEnum.BlindPassThru;
+                        TransferMode = SIPDialogueTransferModesEnum.PassThru;
                     }
                     else if (transferMode == "c" || transferMode == "C")
                     {

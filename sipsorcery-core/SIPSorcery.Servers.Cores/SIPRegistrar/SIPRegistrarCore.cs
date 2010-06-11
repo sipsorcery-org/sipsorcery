@@ -43,6 +43,9 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
@@ -123,6 +126,7 @@ namespace SIPSorcery.Servers
         private SIPUserAgentConfigurationManager m_userAgentConfigs;
         private Queue<SIPNonInviteTransaction> m_registerQueue = new Queue<SIPNonInviteTransaction>();
         private AutoResetEvent m_registerARE = new AutoResetEvent(false);
+        private RSACryptoServiceProvider m_switchbboardRSAProvider; // If available this certificate can be used to sign switchboard tokens.
 
         public bool Stop;
 
@@ -135,7 +139,8 @@ namespace SIPSorcery.Servers
             bool strictRealmHandling,
             SIPMonitorLogDelegate proxyLogDelegate,
             SIPUserAgentConfigurationManager userAgentConfigs,
-            SIPAuthenticateRequestDelegate sipRequestAuthenticator)
+            SIPAuthenticateRequestDelegate sipRequestAuthenticator,
+            string switchboardCertificateName)
         {
             m_sipTransport = sipTransport;
             m_registrarBindingsManager = registrarBindingsManager;
@@ -152,6 +157,20 @@ namespace SIPSorcery.Servers
             ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + "3"); });
             ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + "4"); });
             ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + "5"); });
+
+            try
+            {
+                if (!switchboardCertificateName.IsNullOrBlank())
+                {
+                    X509Certificate2 switchboardCertificate = AppState.LoadCertificate(StoreLocation.LocalMachine, switchboardCertificateName, false);
+                    m_switchbboardRSAProvider = (RSACryptoServiceProvider)switchboardCertificate.PrivateKey;
+                    logger.Debug("Switchboard RSA provider successfully loaded from " + switchboardCertificateName + " certificate.");
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception loading switchboard certificate using " + switchboardCertificateName + ". " + excp.Message);
+            }
         }
 
         public void AddRegisterRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest registerRequest)
@@ -377,6 +396,22 @@ namespace SIPSorcery.Servers
                             }
 
                             SIPResponse okResponse = GetOkResponse(sipRequest);
+
+                            // If a request was made for a switchboard token and a certificate is available to sign the tokens generate it.
+                            if (sipRequest.Header.SwitchboardTokenRequest > 0 && m_switchbboardRSAProvider != null)
+                            {
+                                SwitchboardToken token = new SwitchboardToken(sipRequest.Header.SwitchboardTokenRequest, sipAccount.Owner, uacRemoteEndPoint.Address.ToString());
+
+                                lock (m_switchbboardRSAProvider)
+                                {
+                                    token.SignedHash = Convert.ToBase64String(m_switchbboardRSAProvider.SignHash(Crypto.GetSHAHash(token.GetHashString()), null));
+                                }
+
+                                string tokenXML = token.ToXML(true);
+                                logger.Debug("Switchboard token set for " + sipAccount.Owner + " with expiry of " + token.Expiry + "s.");
+                                okResponse.Header.SwitchboardToken = Crypto.SymmetricEncrypt(sipAccount.SIPPassword, sipRequest.Header.AuthenticationHeader.SIPDigest.Nonce, tokenXML);
+                            }
+
                             registerTransaction.SendFinalResponse(okResponse);
                         }
                         else

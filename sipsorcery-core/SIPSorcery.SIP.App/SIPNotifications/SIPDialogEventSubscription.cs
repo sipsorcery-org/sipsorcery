@@ -75,7 +75,7 @@ namespace SIPSorcery.SIP.App
             return DialogInfo.ToXMLText();
         }
 
-        public override void AddMonitorEvent(SIPMonitorMachineEvent machineEvent)
+        public override bool AddMonitorEvent(SIPMonitorMachineEvent machineEvent)
         {
             try
             {
@@ -86,6 +86,7 @@ namespace SIPSorcery.SIP.App
                 if (machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved)
                 {
                     DialogInfo.DialogItems.Add(new SIPEventDialog(machineEvent.ResourceID, state, null));
+                    return true;
                 }
                 else
                 {
@@ -95,10 +96,29 @@ namespace SIPSorcery.SIP.App
                     {
                         // Couldn't find the dialogue in the database so it must be terminated.
                         DialogInfo.DialogItems.Add(new SIPEventDialog(machineEvent.ResourceID, "terminated", null));
+                        return true;
+                    }
+                    else if (machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueTransfer)
+                    {
+                        // For dialog transfer events add both dialogs involved to the notification.
+
+                        DialogInfo.DialogItems.Add(new SIPEventDialog(sipDialogue.Id.ToString(), state, sipDialogue.SIPDialogue));
+
+                        if (sipDialogue.SIPDialogue.BridgeId != Guid.Empty)
+                        {
+                            SIPDialogueAsset bridgedDialogue = GetDialogues_External(d => d.BridgeId == sipDialogue.BridgeId && d.Id != sipDialogue.Id, null, 0, 1).FirstOrDefault();
+                            if (bridgedDialogue != null)
+                            {
+                                DialogInfo.DialogItems.Add(new SIPEventDialog(bridgedDialogue.Id.ToString(), state, bridgedDialogue.SIPDialogue));
+                            }
+                        }
+
+                        return true;
                     }
                     else
                     {
                         DialogInfo.DialogItems.Add(new SIPEventDialog(sipDialogue.Id.ToString(), state, sipDialogue.SIPDialogue));
+                        return true;
                     }
                 }
             }
@@ -136,6 +156,7 @@ namespace SIPSorcery.SIP.App
                 case SIPMonitorMachineEventTypesEnum.SIPDialogueCreated: return "confirmed";
                 case SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved: return "terminated";
                 case SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated: return "updated";
+                case SIPMonitorMachineEventTypesEnum.SIPDialogueTransfer: return "updated";
                 default: throw new ApplicationException("The state for a dialog SIP event could not be determined from the monitor event type of " + machineEventType + ".");
             }
         }

@@ -76,6 +76,7 @@ create table sipaccounts
  networkid varchar(16),
  ipaddressacl varchar(256),
  inserted datetimeoffset not null,
+ isswitchboardenabled bit not null default 1,
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Foreign Key(sipdomain) references sipdomains(domain) on delete cascade on update cascade,
@@ -198,6 +199,9 @@ create table sipdialogues
  direction varchar(3) not null,					-- In or Out with respect to the proxy.
  sdp varchar(2048),
  remotesdp varchar(2048),
+ switchboarddescription varchar(1024),
+ switchboardcallerdescription varchar(1024),
+ switchboardowner varchar(32),
  Primary Key(id),
  Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade
 );
@@ -223,14 +227,14 @@ create table cdr
  bridgeid varchar(36),							-- If the call was involved in a bridge the id of it.
  inprogresstime datetimeoffset null default null,-- The time of the last info response for the call.
  inprogressstatus int,							-- The SIP response status code of the last info response for the call.
- inprogressreason varchar(64),					-- The SIP response reason phrase of the last info response for the call.
+ inprogressreason varchar(512),					-- The SIP response reason phrase of the last info response for the call.
  ringduration int,								-- Number of seconds the call was ringing for.
  answeredtime datetimeoffset null default null,	-- The time the call was answered with a final response.
  answeredstatus int,							-- The SIP response status code of the final response for the call.
- answeredreason varchar(64),					-- The SIP response reason phrase of the final response for the call.
+ answeredreason varchar(512),					-- The SIP response reason phrase of the final response for the call.
  duration int,									-- Number of seconds the call was established for.
  hunguptime datetimeoffset null default null,	-- The time the call was hungup.
- hungupreason varchar(64),						-- The SIP response Reason header on the BYE request if present.
+ hungupreason varchar(512),						-- The SIP response Reason header on the BYE request if present.
  Primary Key(id)
 );
 

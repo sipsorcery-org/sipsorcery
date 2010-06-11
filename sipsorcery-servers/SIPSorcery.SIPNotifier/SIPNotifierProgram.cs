@@ -57,7 +57,7 @@ namespace SIPSorcery.SIPNotifier
                     sipDialoguePersistor.Get, 
                     sipDialoguePersistor.Get, 
                     sipDomainManager.GetDomain, 
-                    sipAccountsPersistor.Get, 
+                    sipAccountsPersistor, 
                     sipRegistrarBindingsPersistor.Get,
                     sipAccountsPersistor.Get,
                     sipRegistrarBindingsPersistor.Count,

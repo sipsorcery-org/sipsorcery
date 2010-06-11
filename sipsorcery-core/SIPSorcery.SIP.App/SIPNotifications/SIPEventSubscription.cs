@@ -59,7 +59,7 @@ namespace SIPSorcery.SIP.App
             throw new NotImplementedException();
         }
 
-        public virtual void AddMonitorEvent(SIPMonitorMachineEvent machineEvent)
+        public virtual bool AddMonitorEvent(SIPMonitorMachineEvent machineEvent)
         {
             throw new NotImplementedException();
         }

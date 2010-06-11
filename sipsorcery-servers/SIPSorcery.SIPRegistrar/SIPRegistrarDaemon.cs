@@ -58,6 +58,7 @@ namespace SIPSorcery.SIPRegistrar {
         private int m_monitorLoopbackPort = SIPRegistrarState.MonitorLoopbackPort;
         private int m_maximumAccountBindings = SIPRegistrarState.MaximumAccountBindings;
         private IPEndPoint m_natKeepAliveRelaySocket = SIPRegistrarState.NATKeepAliveRelaySocket;
+        private string m_switchboardCertificateName = SIPRegistrarState.SwitchboardCertificateName;
 
         private SIPTransport m_sipTransport;
         private SIPMonitorEventWriter m_monitorEventWriter;
@@ -118,7 +119,7 @@ namespace SIPSorcery.SIPRegistrar {
                 m_registrarBindingsManager = new SIPRegistrarBindingsManager(FireSIPMonitorEvent, m_registrarBindingsPersistor, SendNATKeepAlive, m_maximumAccountBindings, userAgentConfigManager);
                 m_registrarBindingsManager.Start();
 
-                m_registrarCore = new RegistrarCore(m_sipTransport, m_registrarBindingsManager, GetSIPAccount_External, GetCanonicalDomain_External, true, true, FireSIPMonitorEvent, userAgentConfigManager, SIPAuthenticateRequest_External);
+                m_registrarCore = new RegistrarCore(m_sipTransport, m_registrarBindingsManager, GetSIPAccount_External, GetCanonicalDomain_External, true, true, FireSIPMonitorEvent, userAgentConfigManager, SIPAuthenticateRequest_External, m_switchboardCertificateName);
                 m_sipTransport.SIPTransportRequestReceived += m_registrarCore.AddRegisterRequest;
 
                 logger.Debug("SIP Registrar successfully started.");

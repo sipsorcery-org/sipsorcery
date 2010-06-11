@@ -63,7 +63,7 @@ namespace SIPSorcery.SIP
             foreach (XmlNode sipSocketNode in sipChannelsNode.ChildNodes)
             {
                 logger.Debug("Creating SIP Channel for " + sipSocketNode.OuterXml + ".");
-                
+
                 string localSocket = sipSocketNode.InnerText;
 
                 SIPProtocolsEnum protocol = SIPProtocolsEnum.udp;
@@ -71,7 +71,7 @@ namespace SIPSorcery.SIP
                 {
                     protocol = SIPProtocolsType.GetProtocolType(sipSocketNode.Attributes.GetNamedItem(SIP_PROTOCOL_PARAMETER).Value);
                 }
-                
+
                 List<SIPEndPoint> nodeSIPEndPoints = GetSIPEndPoints(localSocket, protocol);
 
                 foreach (SIPEndPoint sipEndPoint in nodeSIPEndPoints)
@@ -100,18 +100,21 @@ namespace SIPSorcery.SIP
                             else
                             {
                                 string certificateType = "machinestore";
-                                if (sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_TYPE_PARAMETER) != null) {
+                                if (sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_TYPE_PARAMETER) != null)
+                                {
                                     certificateType = sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_TYPE_PARAMETER).Value;
                                 }
 
                                 string certificatePath = (sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_PATH_PARAMETER) != null) ? sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_PATH_PARAMETER).Value : null;
                                 logger.Debug(" attempting to create SIP TLS channel for " + sipEndPoint.GetIPEndPoint() + " and certificate type of " + certificateType + " at " + certificatePath + ".");
                                 X509Certificate2 certificate = LoadCertificate(certificateType, certificatePath);
-                                if(certificate != null) {
+                                if (certificate != null)
+                                {
                                     SIPTLSChannel tlsChannel = new SIPTLSChannel(certificate, sipEndPoint.GetIPEndPoint());
                                     sipChannels.Add(tlsChannel);
                                 }
-                                else {
+                                else
+                                {
                                     logger.Warn("A SIP TLS channel was not created because the certificate could not be loaded.");
                                 }
                             }
@@ -131,22 +134,27 @@ namespace SIPSorcery.SIP
             return sipChannels;
         }
 
-        private static X509Certificate2 LoadCertificate(string certificateType, string certifcateLocation) {
-            try {
+        private static X509Certificate2 LoadCertificate(string certificateType, string certifcateLocation)
+        {
+            try
+            {
 
-                if (certificateType == "file") {
+                if (certificateType == "file")
+                {
                     X509Certificate2 serverCertificate = new X509Certificate2(certifcateLocation, String.Empty);
                     //DisplayCertificateChain(m_serverCertificate);
                     bool verifyCert = serverCertificate.Verify();
                     logger.Debug("Server Certificate loaded from file, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
                     return serverCertificate;
                 }
-                else {
+                else
+                {
                     StoreLocation store = (certificateType == "machinestore") ? StoreLocation.LocalMachine : StoreLocation.CurrentUser;
-                    return AppState.LoadCertificate(store, certifcateLocation);
+                    return AppState.LoadCertificate(store, certifcateLocation, true);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception LoadCertificate. " + excp.Message);
                 return null;
             }

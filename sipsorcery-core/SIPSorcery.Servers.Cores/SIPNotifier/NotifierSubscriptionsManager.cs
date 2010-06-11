@@ -65,8 +65,8 @@ namespace SIPSorcery.Servers
         private SIPMonitorLogDelegate MonitorLogEvent_External;
         private SIPAssetGetListDelegate<SIPDialogueAsset> GetDialogues_External;
         private SIPAssetGetByIdDelegate<SIPDialogueAsset> GetDialogue_External;
-        private SIPAssetGetListDelegate<SIPAccount> GetSIPAccounts_External;
         private SIPAssetCountDelegate<SIPRegistrarBinding> GetSIPRegistrarBindingsCount_External;
+        private SIPAssetPersistor<SIPAccount> m_sipAssetPersistor;
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
         private ISIPMonitorPublisher m_publisher;                           // The SIP monitor event publisher, could be a memory or WPF boundary.
@@ -78,7 +78,7 @@ namespace SIPSorcery.Servers
             SIPMonitorLogDelegate logDelegate,
             SIPAssetGetListDelegate<SIPDialogueAsset> getDialogues,
             SIPAssetGetByIdDelegate<SIPDialogueAsset> getDialogue,
-            SIPAssetGetListDelegate<SIPAccount> getSIPAccounts,
+            SIPAssetPersistor<SIPAccount> sipAssetPersistor,
             SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount,
             SIPTransport sipTransport,
             SIPEndPoint outboundProxy,
@@ -87,8 +87,8 @@ namespace SIPSorcery.Servers
             MonitorLogEvent_External = logDelegate;
             GetDialogues_External = getDialogues;
             GetDialogue_External = getDialogue;
-            GetSIPAccounts_External = getSIPAccounts;
             GetSIPRegistrarBindingsCount_External = getBindingsCount;
+            m_sipAssetPersistor = sipAssetPersistor;
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
             m_publisher = publisher;
@@ -128,6 +128,11 @@ namespace SIPSorcery.Servers
                         if (eventPackage == SIPEventPackage.Dialog)
                         {
                             string monitorFilter = "dialog " + canonicalResourceURI.ToString();
+                            if (!subscribeRequest.Body.IsNullOrBlank())
+                            {
+                                monitorFilter += " and " + subscribeRequest.Body;
+                            }
+
                             m_publisher.Subscribe(owner, adminID, m_notificationsAddress, sessionID, SIPMonitorClientTypesEnum.Machine.ToString(), monitorFilter, expiry, null, out subscribeError);
 
                             if (subscribeError != null)
@@ -152,7 +157,8 @@ namespace SIPSorcery.Servers
                             }
                             else
                             {
-                                SIPPresenceEventSubscription subscription = new SIPPresenceEventSubscription(MonitorLogEvent_External, sessionID, resourceURI, canonicalResourceURI, monitorFilter, subscribeDialogue, expiry, GetSIPAccounts_External, GetSIPRegistrarBindingsCount_External);
+                                bool switchboardAccountsOnly = subscribeRequest.Body == SIPPresenceEventSubscription.SWITCHBOARD_FILTER;
+                                SIPPresenceEventSubscription subscription = new SIPPresenceEventSubscription(MonitorLogEvent_External, sessionID, resourceURI, canonicalResourceURI, monitorFilter, subscribeDialogue, expiry, m_sipAssetPersistor, GetSIPRegistrarBindingsCount_External, switchboardAccountsOnly);
                                 m_subscriptions.Add(sessionID, subscription);
                                 MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "New presence subscription created for " + resourceURI.ToString() + ", expiry " + expiry + "s.", owner));
                             }
@@ -305,49 +311,46 @@ namespace SIPSorcery.Servers
         {
             try
             {
-                lock (subscription)
+                subscription.SubscriptionDialogue.CSeq++;
+
+                //logger.Debug(DateTime.Now.ToString("HH:mm:ss:fff") + " Sending NOTIFY request for " + subscription.SubscriptionDialogue.Owner + " event " + subscription.SubscriptionEventPackage.ToString()
+                //    + " and " + subscription.ResourceURI.ToString() + " to " + subscription.SubscriptionDialogue.RemoteTarget.ToString() + ", cseq=" + (subscription.SubscriptionDialogue.CSeq) + ".");
+
+                int secondsRemaining = Convert.ToInt32(subscription.LastSubscribe.AddSeconds(subscription.Expiry).Subtract(DateTime.Now).TotalSeconds % Int32.MaxValue);
+
+                SIPRequest notifyRequest = m_sipTransport.GetRequest(SIPMethodsEnum.NOTIFY, subscription.SubscriptionDialogue.RemoteTarget);
+                notifyRequest.Header.From = SIPFromHeader.ParseFromHeader(subscription.SubscriptionDialogue.LocalUserField.ToString());
+                notifyRequest.Header.To = SIPToHeader.ParseToHeader(subscription.SubscriptionDialogue.RemoteUserField.ToString());
+                notifyRequest.Header.Event = subscription.SubscriptionEventPackage.ToString();
+                notifyRequest.Header.CSeq = subscription.SubscriptionDialogue.CSeq;
+                notifyRequest.Header.CallId = subscription.SubscriptionDialogue.CallId;
+                notifyRequest.Body = subscription.GetNotifyBody();
+                notifyRequest.Header.ContentLength = notifyRequest.Body.Length;
+                notifyRequest.Header.SubscriptionState = "active;expires=" + secondsRemaining.ToString();
+                notifyRequest.Header.ContentType = subscription.NotifyContentType;
+                notifyRequest.Header.ProxySendFrom = subscription.SubscriptionDialogue.ProxySendFrom;
+
+                // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
+                SIPEndPoint dstEndPoint = m_outboundProxy;
+                if (m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.Address))
                 {
-                    subscription.SubscriptionDialogue.CSeq++;
-
-                    //logger.Debug(DateTime.Now.ToString("HH:mm:ss:fff") + " Sending NOTIFY request for " + subscription.SubscriptionDialogue.Owner + " event " + subscription.SubscriptionEventPackage.ToString()
-                    //    + " and " + subscription.ResourceURI.ToString() + " to " + subscription.SubscriptionDialogue.RemoteTarget.ToString() + ", cseq=" + (subscription.SubscriptionDialogue.CSeq) + ".");
-
-                    int secondsRemaining = Convert.ToInt32(subscription.LastSubscribe.AddSeconds(subscription.Expiry).Subtract(DateTime.Now).TotalSeconds % Int32.MaxValue);
-
-                    SIPRequest notifyRequest = m_sipTransport.GetRequest(SIPMethodsEnum.NOTIFY, subscription.SubscriptionDialogue.RemoteTarget);
-                    notifyRequest.Header.From = SIPFromHeader.ParseFromHeader(subscription.SubscriptionDialogue.LocalUserField.ToString());
-                    notifyRequest.Header.To = SIPToHeader.ParseToHeader(subscription.SubscriptionDialogue.RemoteUserField.ToString());
-                    notifyRequest.Header.Event = subscription.SubscriptionEventPackage.ToString();
-                    notifyRequest.Header.CSeq = subscription.SubscriptionDialogue.CSeq;
-                    notifyRequest.Header.CallId = subscription.SubscriptionDialogue.CallId;
-                    notifyRequest.Body = subscription.GetNotifyBody();
-                    notifyRequest.Header.ContentLength = notifyRequest.Body.Length;
-                    notifyRequest.Header.SubscriptionState = "active;expires=" + secondsRemaining.ToString();
-                    notifyRequest.Header.ContentType = subscription.NotifyContentType;
-                    notifyRequest.Header.ProxySendFrom = subscription.SubscriptionDialogue.ProxySendFrom;
-
-                    // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
-                    SIPEndPoint dstEndPoint = m_outboundProxy;
-                    if (m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.Address))
-                    {
-                        dstEndPoint = m_outboundProxy;
-                    }
-                    else if (subscription.SubscriptionDialogue.ProxySendFrom != null)
-                    {
-                        // The proxy will always be listening on UDP port 5060 for requests from internal servers.
-                        dstEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(SIPEndPoint.ParseSIPEndPoint(subscription.SubscriptionDialogue.ProxySendFrom).Address, m_defaultSIPPort));
-                    }
-
-                    SIPNonInviteTransaction notifyTransaction = m_sipTransport.CreateNonInviteTransaction(notifyRequest, dstEndPoint, m_sipTransport.GetDefaultSIPEndPoint(dstEndPoint), m_outboundProxy);
-                    notifyTransaction.NonInviteTransactionFinalResponseReceived += (local, remote, transaction, response) => { NotifyTransactionFinalResponseReceived(local, remote, transaction, response, subscription); };
-                    m_sipTransport.SendSIPReliable(notifyTransaction);
-
-                    //logger.Debug(notifyRequest.ToString());
-
-                    MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.NotifySent, "Notification sent for " + subscription.SubscriptionEventPackage.ToString() + " and " + subscription.ResourceURI.ToString() + " to " + subscription.SubscriptionDialogue.RemoteTarget.ToString() + ".", subscription.SubscriptionDialogue.Owner));
-
-                    subscription.NotificationSent();
+                    dstEndPoint = m_outboundProxy;
                 }
+                else if (subscription.SubscriptionDialogue.ProxySendFrom != null)
+                {
+                    // The proxy will always be listening on UDP port 5060 for requests from internal servers.
+                    dstEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(SIPEndPoint.ParseSIPEndPoint(subscription.SubscriptionDialogue.ProxySendFrom).Address, m_defaultSIPPort));
+                }
+
+                SIPNonInviteTransaction notifyTransaction = m_sipTransport.CreateNonInviteTransaction(notifyRequest, dstEndPoint, m_sipTransport.GetDefaultSIPEndPoint(dstEndPoint), m_outboundProxy);
+                notifyTransaction.NonInviteTransactionFinalResponseReceived += (local, remote, transaction, response) => { NotifyTransactionFinalResponseReceived(local, remote, transaction, response, subscription); };
+                m_sipTransport.SendSIPReliable(notifyTransaction);
+
+                //logger.Debug(notifyRequest.ToString());
+
+                MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.NotifySent, "Notification sent for " + subscription.SubscriptionEventPackage.ToString() + " and " + subscription.ResourceURI.ToString() + " to " + subscription.SubscriptionDialogue.RemoteTarget.ToString() + ".", subscription.SubscriptionDialogue.Owner));
+
+                subscription.NotificationSent();
             }
             catch (Exception excp)
             {
@@ -386,10 +389,17 @@ namespace SIPSorcery.Servers
                     lock (subscription)
                     {
                         string resourceURI = (machineEvent.ResourceURI != null) ? machineEvent.ResourceURI.ToString() : null;
+
+                        //logger.Debug("NotifierSubscriptionsManager received new " + machineEvent.MachineEventType + ", resource ID=" + machineEvent.ResourceID + ", resource URI=" + resourceURI + ".");
+
                         //MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.Monitor, "NotifierSubscriptionsManager received new " + machineEvent.MachineEventType + ", resource ID=" + machineEvent.ResourceID + ", resource URI=" + resourceURI + ".", subscription.SubscriptionDialogue.Owner));
 
-                        subscription.AddMonitorEvent(machineEvent);
-                        SendNotifyRequestForSubscription(subscription);
+                        if (subscription.AddMonitorEvent(machineEvent))
+                        {
+                            SendNotifyRequestForSubscription(subscription);
+                        }
+
+                        //logger.Debug("NotifierSubscriptionsManager completed " + machineEvent.MachineEventType + ", resource ID=" + machineEvent.ResourceID + ", resource URI=" + resourceURI + ".");
                     }
 
                     return true;

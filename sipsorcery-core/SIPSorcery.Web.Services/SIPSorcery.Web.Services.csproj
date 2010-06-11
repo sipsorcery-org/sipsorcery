@@ -114,7 +114,6 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SIPSorceryAuthorisationService.cs" />
-    <Compile Include="SIPSorcerySecurityHeader.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery.CRM\SIPSorcery.CRM.csproj">

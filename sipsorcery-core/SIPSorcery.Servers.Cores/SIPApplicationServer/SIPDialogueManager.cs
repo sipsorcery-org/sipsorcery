@@ -195,8 +195,16 @@ namespace SIPSorcery.Servers
                     {
                         // Attended transfers are allowed unless explicitly blocked. Attended transfers are not dangerous 
                         // as no new call is created and it's the same as a re-invite.
-                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER received, attended transfer, Referred-By=" + sipRequest.Header.ReferredBy + ".", dialogue.Owner));
-                        ProcessAttendedRefer(dialogue, referTransaction, sipRequest, localSIPEndPoint, remoteEndPoint);
+                        if (dialogue.TransferMode == SIPDialogueTransferModesEnum.PassThru)
+                        {
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER received, attended transfer, passing through, Referred-By=" + sipRequest.Header.ReferredBy + ".", dialogue.Owner));
+                            ForwardInDialogueRequest(dialogue, referTransaction, localSIPEndPoint, remoteEndPoint);
+                        }
+                        else
+                        {
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER received, attended transfer, processing on app server, Referred-By=" + sipRequest.Header.ReferredBy + ".", dialogue.Owner));
+                            ProcessAttendedRefer(dialogue, referTransaction, sipRequest, localSIPEndPoint, remoteEndPoint);
+                        }
                     }
                     else
                     {
@@ -882,14 +890,21 @@ namespace SIPSorcery.Servers
                     SIPDialogue replacesDialogue = GetDialogue(replaces);
                     if (replacesDialogue == null)
                     {
-                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Could not locate the dialogue for the Replaces parameter, passing through", dialogue.Owner));
-                        ForwardInDialogueRequest(dialogue, referTransaction, localEndPoint, remoteEndPoint);
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Could not locate the dialogue for the Replaces parameter on an attended transfer.", dialogue.Owner));
+                        SIPResponse errorResponse = SIPTransport.GetResponse(referRequest, SIPResponseStatusCodesEnum.BadRequest, "Could not locate replaced dialogue");
+                        referTransaction.SendFinalResponse(errorResponse);
                     }
                     else
                     {
                         logger.Debug("REFER dialogue being replaced " + replacesDialogue.DialogueName + ".");
 
-                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Replacement dialgoue found on Refer, accepting.", dialogue.Owner));
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Replacement dialogue found on Refer, accepting.", dialogue.Owner));
+
+                        bool sendNotifications = true;
+                        if(!referRequest.Header.ReferSub.IsNullOrBlank())
+                        {
+                            Boolean.TryParse(referRequest.Header.ReferSub, out sendNotifications);
+                        }
 
                         SIPDialogue remainingDialogue = GetOppositeDialogue(replacesDialogue);
                         SIPDialogue remaining2Dialogue = GetOppositeDialogue(dialogue);
@@ -907,11 +922,15 @@ namespace SIPSorcery.Servers
 
                         Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated, remainingDialogue.Owner, remainingDialogue.Id.ToString(), remainingDialogue.LocalUserField.URI));
                         Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated, remaining2Dialogue.Owner, remaining2Dialogue.Id.ToString(), remaining2Dialogue.LocalUserField.URI));
+                        Log_External(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPDialogueTransfer, remainingDialogue.Owner, remainingDialogue.Id.ToString(), remainingDialogue.LocalUserField.URI));
 
                         SIPResponse acceptedResponse = SIPTransport.GetResponse(referRequest, SIPResponseStatusCodesEnum.Accepted, null);
                         referTransaction.SendFinalResponse(acceptedResponse);
 
-                        SendNotifyRequestForRefer(referRequest, dialogue, localEndPoint, SIPResponseStatusCodesEnum.Trying, null);
+                        if (sendNotifications)
+                        {
+                            SendNotifyRequestForRefer(referRequest, dialogue, localEndPoint, SIPResponseStatusCodesEnum.Trying, null);
+                        }
 
                         logger.Debug("Reinviting " + remainingDialogue.DialogueName + " with " + remaining2Dialogue.DialogueName + ".");
 
@@ -920,7 +939,10 @@ namespace SIPSorcery.Servers
 
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Transfer dialogue re-invites complete.", dialogue.Owner));
 
-                        SendNotifyRequestForRefer(referRequest, dialogue, localEndPoint, SIPResponseStatusCodesEnum.Ok, null);
+                        if (sendNotifications)
+                        {
+                            SendNotifyRequestForRefer(referRequest, dialogue, localEndPoint, SIPResponseStatusCodesEnum.Ok, null);
+                        }
 
                         // Hangup redundant dialogues.
                         logger.Debug("Hanging up redundant dialogues post transfer.");

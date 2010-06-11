@@ -205,12 +205,20 @@ namespace SIPSorcery.Sys
             return ConfigurationManager.GetSection(sectionName);
         }
 
-        public static X509Certificate2 LoadCertificate(StoreLocation storeLocation, string certificateSubject)
+        /// <summary>
+        /// Attempts to load an X509 certificate from a Windows OS certificate store.
+        /// </summary>
+        /// <param name="storeLocation">The certificate store to load from, can be CurrentUser or LocalMachine.</param>
+        /// <param name="certificateSubject">The subject name of the certificate to attempt to load.</param>
+        /// <param name="checkValidity">Checks if the certificate is current and has a verifiable certificate issuer list. Should be
+        /// set to false for self issued certificates.</param>
+        /// <returns>A certificate object if the load is successful otherwise null.</returns>
+        public static X509Certificate2 LoadCertificate(StoreLocation storeLocation, string certificateSubject, bool checkValidity)
         {
             X509Store store = new X509Store(storeLocation);
             logger.Debug("Certificate store " + store.Location + " opened");
             store.Open(OpenFlags.OpenExistingOnly);
-            X509Certificate2Collection collection = store.Certificates.Find(X509FindType.FindBySubjectName, certificateSubject, true);
+            X509Certificate2Collection collection = store.Certificates.Find(X509FindType.FindBySubjectName, certificateSubject, checkValidity);
             if (collection != null && collection.Count > 0)
             {
                 X509Certificate2 serverCertificate = collection[0];
@@ -234,7 +242,7 @@ namespace SIPSorcery.Sys
                     string encryptedSettingsCertName = ConfigurationManager.AppSettings[ENCRYPTED_SETTINGS_CERTIFICATE_NAME];
                     if (!encryptedSettingsCertName.IsNullOrBlank())
                     {
-                        X509Certificate2 encryptedSettingsCertificate = LoadCertificate(StoreLocation.LocalMachine, encryptedSettingsCertName);
+                        X509Certificate2 encryptedSettingsCertificate = LoadCertificate(StoreLocation.LocalMachine, encryptedSettingsCertName, true);
                         if (encryptedSettingsCertificate != null)
                         {
                             logger.Debug("Encrypted settings certificate successfully loaded for " + encryptedSettingsCertName + ".");

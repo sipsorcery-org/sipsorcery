@@ -84,7 +84,7 @@ namespace SIPSorcery
 
             try
             {
-                if (server == LOCALHOST_MONITOR_HOST || Application.Current.Host.Source.Scheme == "file")
+                if (server.StartsWith(LOCALHOST_MONITOR_HOST) || Application.Current.Host.Source.Scheme == "file")
                 {
                     m_sipMonitorHost = LOCALHOST_MONITOR_HOST;
                     m_provisioningServiceURL = LOCALHOST_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;

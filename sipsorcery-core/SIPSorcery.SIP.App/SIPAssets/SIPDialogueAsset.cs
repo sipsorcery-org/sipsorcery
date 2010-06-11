@@ -210,6 +210,27 @@ namespace SIPSorcery.SIP.App
             set { SIPDialogue.RemoteSDP = value; }
         }
 
+        [Column(Name = "switchboarddescription", DbType = "varchar(1024)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        public string SwitchboardDescription
+        {
+            get { return SIPDialogue.SwitchboardDescription; }
+            set { SIPDialogue.SwitchboardDescription = value; }
+        }
+
+        [Column(Name = "switchboardcallerdescription", DbType = "varchar(1024)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        public string SwitchboardCallerDescription 
+        {
+            get { return SIPDialogue.SwitchboardCallerDescription; }
+            set { SIPDialogue.SwitchboardCallerDescription = value; } 
+        }
+
+        [Column(Name = "switchboardowner", DbType = "varchar(32)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        public string SwitchboardOwner
+        {
+            get { return SIPDialogue.SwitchboardOwner; }
+            set { SIPDialogue.SwitchboardOwner = value; }
+        }
+
         public SIPDialogueAsset()
         {
             SIPDialogue = new SIPDialogue();
@@ -251,6 +272,9 @@ namespace SIPSorcery.SIP.App
             table.Columns.Add(new DataColumn("sdp", typeof(String)));
             table.Columns.Add(new DataColumn("remotesdp", typeof(String)));
             table.Columns.Add(new DataColumn("transfermode", typeof(String)));
+            table.Columns.Add(new DataColumn("switchboarddescription", typeof(String)));
+            table.Columns.Add(new DataColumn("switchboardcallerdescription", typeof(String)));
+            table.Columns.Add(new DataColumn("switchboardowner", typeof(String)));
             return table;
         }
 
@@ -277,6 +301,9 @@ namespace SIPSorcery.SIP.App
             TransferMode = row["transfermode"] as string;
             SDP = row["sdp"] as string;
             RemoteSDP = row["remotesdp"] as string;
+            SIPDialogue.SwitchboardCallerDescription = (row["switchboardcallerdescription"] != null && row["switchboardcallerdescription"] != DBNull.Value) ? row["switchboardcallerdescription"] as string : null;
+            SIPDialogue.SwitchboardDescription = (row["switchboarddescription"] != null && row["switchboarddescription"] != DBNull.Value) ? row["switchboarddescription"] as string : null;
+            SIPDialogue.SwitchboardOwner = (row["switchboardowner"] != null && row["switchboardowner"] != DBNull.Value) ? row["switchboardowner"] as string : null;
         }
 
         public Dictionary<Guid, object> Load(XmlDocument dom)
@@ -309,6 +336,9 @@ namespace SIPSorcery.SIP.App
             TransferMode = dialogueElement.Element("transfermode").Value;
             SDP = dialogueElement.Element("sdp").Value;
             RemoteSDP = dialogueElement.Element("remotesdp").Value;
+            SIPDialogue.SwitchboardCallerDescription = (dialogueElement.Element("switchboardcallerdescription") != null) ? dialogueElement.Element("switchboardcallerdescription").Value : null;
+            SIPDialogue.SwitchboardDescription = (dialogueElement.Element("switchboarddescription") != null) ? dialogueElement.Element("switchboarddescription").Value : null;
+            SIPDialogue.SwitchboardOwner = (dialogueElement.Element("switchboardowner") != null) ? dialogueElement.Element("switchboardowner").Value : null;
         }
 
         public string ToXML()
@@ -346,7 +376,10 @@ namespace SIPSorcery.SIP.App
                  "  <transfermode>" + TransferMode + "</transfermode>" + m_newLine +
                  "  <direction>" + Direction + "</direction>" + m_newLine +
                  "  <sdp>" + SafeXML.MakeSafeXML(SDP) + "</sdp>" + m_newLine +
-                 "  <remotesdp>" + SafeXML.MakeSafeXML(RemoteSDP) + "</remotesdp>" + m_newLine;
+                 "  <remotesdp>" + SafeXML.MakeSafeXML(RemoteSDP) + "</remotesdp>" + m_newLine +
+                 "  <switchboardcallerdescription>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardCallerDescription) + "</switchboardcallerdescription>" + m_newLine +
+                 "  <switchboarddescription>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardDescription) + "</switchboarddescription>" + m_newLine +
+                 "  <switchboardowner>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardOwner) + "</switchboardowner>" + m_newLine;
 
             return dialogueXML;
         }

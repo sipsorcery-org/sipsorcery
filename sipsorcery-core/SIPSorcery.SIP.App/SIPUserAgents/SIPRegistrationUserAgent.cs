@@ -79,9 +79,12 @@ namespace SIPSorcery.SIP.App
         private string m_callID;
         private bool m_exit;
         private int m_attempts;
+        private string m_lastServerNonce;
         private ManualResetEvent m_waitForRegistrationMRE = new ManualResetEvent(false);
 
-        public string UserAgent;        // If not null this value will replace the default user agent value in the REGISTER request.
+        public string UserAgent;                // If not null this value will replace the default user agent value in the REGISTER request.
+        public bool RequestSwitchboardToken;    // If set to true a header will be set on the REGISTER request that asks the server to return a toekn that can be used by the switchboard for 3rd party authorisation.
+        public string SwitchboardToken;         // If a switchboard token is provided by the server it will be placed here.
 
         public event Action<SIPURI, string> RegistrationFailed;
         public event Action<SIPURI, string> RegistrationTemporaryFailure;
@@ -288,6 +291,10 @@ namespace SIPSorcery.SIP.App
                         {
                             m_isRegistered = true;
                             m_expiry = GetUpdatedExpiry(sipResponse);
+                            if (sipResponse.Header.SwitchboardToken != null && m_lastServerNonce != null)
+                            {
+                                SwitchboardToken = Crypto.SymmetricDecrypt(m_password, m_lastServerNonce, sipResponse.Header.SwitchboardToken);
+                            }
                             RegistrationSuccessful(m_sipAccountAOR);
                         }
                         else
@@ -302,7 +309,8 @@ namespace SIPSorcery.SIP.App
                     {
                         // SIP account does not appear to exist.
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration failed with " + sipResponse.Status + " for " + m_sipAccountAOR.ToString() + ", no further registration attempts will be made.", m_owner));
-                        RegistrationFailed(m_sipAccountAOR, "Registration failed with " + sipResponse.Status + ", no further registration attempts will be made.");
+                        string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
+                        RegistrationFailed(m_sipAccountAOR, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
                         m_exit = true;
                         m_waitForRegistrationMRE.Set();
                     }
@@ -342,6 +350,10 @@ namespace SIPSorcery.SIP.App
                     {
                         m_isRegistered = true;
                         m_expiry = GetUpdatedExpiry(sipResponse);
+                        if (sipResponse.Header.SwitchboardToken != null && m_lastServerNonce != null)
+                        {
+                            SwitchboardToken = Crypto.SymmetricDecrypt(m_password, m_lastServerNonce, sipResponse.Header.SwitchboardToken);
+                        }
                         RegistrationSuccessful(m_sipAccountAOR);
                     }
                     else
@@ -362,7 +374,17 @@ namespace SIPSorcery.SIP.App
                 {
                     // SIP account does not appear to exist.
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration failed with " + sipResponse.Status + " for " + m_sipAccountAOR.ToString() + ", no further registration attempts will be made.", m_owner));
-                    RegistrationFailed(m_sipAccountAOR, "Registration failed with " + sipResponse.Status + ", no further registration attempts will be made.");
+                    string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
+                    RegistrationFailed(m_sipAccountAOR, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
+                    m_exit = true;
+                    m_waitForRegistrationMRE.Set();
+                }
+                else if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
+                {
+                    // SIP account credentials failed.
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration failed with " + sipResponse.Status + " for " + m_sipAccountAOR.ToString() + ", no further registration attempts will be made.", m_owner));
+                    string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
+                    RegistrationFailed(m_sipAccountAOR, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
                     m_exit = true;
                     m_waitForRegistrationMRE.Set();
                 }
@@ -488,6 +510,7 @@ namespace SIPSorcery.SIP.App
             try
             {
                 SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
+                m_lastServerNonce = authRequest.Nonce;
                 string username = (m_authUsername != null) ? m_authUsername : m_sipAccountAOR.User;
                 authRequest.SetCredentials(username, m_password, registerRequest.URI.ToString(), SIPMethodsEnum.REGISTER.ToString());
 
@@ -500,6 +523,11 @@ namespace SIPSorcery.SIP.App
 
                 regRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
                 regRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
+
+                if (RequestSwitchboardToken)
+                {
+                    regRequest.Header.SwitchboardTokenRequest = m_expiry;
+                }
 
                 return regRequest;
             }

@@ -165,7 +165,7 @@ namespace SIPSorcery.Persistence {
                             break;
                         default:
                             sb.Append("'");
-                            sb.Append(c.Value);
+                            sb.Append(c.Value.ToString().Replace("'", "''"));
                             sb.Append("'");
                             break;
                     }

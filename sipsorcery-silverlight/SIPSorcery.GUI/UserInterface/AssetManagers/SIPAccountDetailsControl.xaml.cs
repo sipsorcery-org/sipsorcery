@@ -38,11 +38,11 @@ namespace SIPSorcery
 
         public SIPAccountDetailsControl(
             DetailsControlModesEnum mode,
-            SIPAccount sipAccount, 
-            string owner, 
-            SIPAccountUpdateDelegate add, 
-            SIPAccountUpdateDelegate update, 
-            ControlClosedDelegate closed, 
+            SIPAccount sipAccount,
+            string owner,
+            SIPAccountUpdateDelegate add,
+            SIPAccountUpdateDelegate update,
+            ControlClosedDelegate closed,
             GetDialPlanNamesDelegate getDialPlanNames,
             GetSIPDomainsDelegate getSIPDomains)
         {
@@ -59,7 +59,7 @@ namespace SIPSorcery
 
             if (m_detailsMode == DetailsControlModesEnum.Edit)
             {
-                   PopulateDataFields(m_sipAccount);
+                PopulateDataFields(m_sipAccount);
             }
             else
             {
@@ -114,6 +114,7 @@ namespace SIPSorcery
                 m_sipAccountInDialPlanStatus.Text = (m_sipAccount.InDialPlanName != null) ? m_sipAccount.InDialPlanName : "-";
                 m_sipAccountNetworkId.IsEnabled = false;
                 m_sipAccountIPAddressACL.IsEnabled = false;
+                m_isSwitchboardEnabledCheckBox.IsEnabled = false;
             }
             else
             {
@@ -147,6 +148,7 @@ namespace SIPSorcery
             m_keepAlivesCheckBox.IsChecked = sipAccount.SendNATKeepAlives;
             m_sipAccountNetworkId.Text = (sipAccount.NetworkId != null) ? sipAccount.NetworkId : String.Empty;
             m_sipAccountIPAddressACL.Text = (sipAccount.IPAddressACL != null) ? sipAccount.IPAddressACL : String.Empty;
+            m_isSwitchboardEnabledCheckBox.IsChecked = sipAccount.IsSwitchboardEnabled;
         }
 
         private void SetDialPlanNames(object state)
@@ -225,8 +227,10 @@ namespace SIPSorcery
             }
         }
 
-        private void Add() {
-            try {
+        private void Add()
+        {
+            try
+            {
                 string username = m_sipAccountUsername.Text.Trim();
                 string password = m_sipAccountPassword.Text.Trim();
                 string domain = m_domainNames.SelectedItem as string;
@@ -236,6 +240,7 @@ namespace SIPSorcery
                 string ipAddressACL = m_sipAccountIPAddressACL.Text.Trim();
                 bool sendKeepAlives = m_keepAlivesCheckBox.IsChecked.Value;
                 bool isIncomingOnly = m_statusIncomingOnlyRadio.IsChecked.Value;
+                bool isSwitchboardEnabled = m_isSwitchboardEnabledCheckBox.IsChecked.Value;
 
                 SIPAccount sipAccount = new SIPAccount(m_owner, domain, username, password, outDialPlan);
                 sipAccount.InDialPlanName = inDialPlan;
@@ -246,22 +251,26 @@ namespace SIPSorcery
                 sipAccount.Inserted = DateTime.UtcNow;
 
                 string validationError = SIPAccount.ValidateAndClean(sipAccount);
-                if (validationError != null) {
+                if (validationError != null)
+                {
                     WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
                 }
-                else {
+                else
+                {
                     WriteStatusMessage(MessageLevelsEnum.Info, "Adding SIP Account please wait...");
                     AddSIPAccount_External(sipAccount);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 WriteStatusMessage(MessageLevelsEnum.Error, "Add SIPAccount Exception. " + excp.Message);
             }
         }
 
         private void Update()
         {
-            try {
+            try
+            {
                 m_sipAccount.SIPPassword = m_sipAccountPassword.Text;
                 m_sipAccount.OutDialPlanName = (m_outDialPlan.SelectedIndex != -1) ? m_outDialPlan.SelectedItem as string : null;
                 m_sipAccount.InDialPlanName = (m_inDialPlan.SelectedIndex != -1) ? m_inDialPlan.SelectedItem as string : null;
@@ -270,17 +279,21 @@ namespace SIPSorcery
                 m_sipAccount.IsUserDisabled = m_statusDisabledRadio.IsChecked.Value;
                 m_sipAccount.NetworkId = m_sipAccountNetworkId.Text.Trim();
                 m_sipAccount.IPAddressACL = m_sipAccountIPAddressACL.Text.Trim();
+                m_sipAccount.IsSwitchboardEnabled = m_isSwitchboardEnabledCheckBox.IsChecked.Value;
 
                 string validationError = SIPAccount.ValidateAndClean(m_sipAccount);
-                if (validationError != null) {
+                if (validationError != null)
+                {
                     WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
                 }
-                else {
+                else
+                {
                     WriteStatusMessage(MessageLevelsEnum.Info, "Attempting to update SIP Account " + m_sipAccount.SIPUsername + "@" + m_sipAccount.SIPDomain + " please wait...");
                     UpdateSIPAccount_External(m_sipAccount);
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 WriteStatusMessage(MessageLevelsEnum.Error, "Update SIPAccount Exception. " + excp.Message);
             }
         }

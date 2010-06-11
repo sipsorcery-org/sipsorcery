@@ -71,11 +71,10 @@ namespace SIPSorcery.SIPNotifier
         private SIPAssetGetDelegate<Customer> GetCustomer_External;
         private SIPAssetGetListDelegate<SIPDialogueAsset> GetDialogues_External;
         private SIPAssetGetByIdDelegate<SIPDialogueAsset> GetDialogue_External;
-        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPRegistrarBindings_External;
-        private SIPAssetGetListDelegate<SIPAccount> GetSIPAccounts_External;
         private SIPAssetCountDelegate<SIPRegistrarBinding> GetBindingsCount_External;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;
+        private SIPAssetPersistor<SIPAccount> m_sipAssetPersistor;
         private ISIPMonitorPublisher m_publisher;
 
         public SIPNotifierDaemon(
@@ -83,7 +82,7 @@ namespace SIPSorcery.SIPNotifier
             SIPAssetGetListDelegate<SIPDialogueAsset> getDialogues,
             SIPAssetGetByIdDelegate<SIPDialogueAsset> getDialogue,
             GetCanonicalDomainDelegate getDomain,
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            SIPAssetPersistor<SIPAccount> sipAsssetPersistor,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPRegistrarBindings,
             SIPAssetGetListDelegate<SIPAccount> getSIPAccounts,
             SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount,
@@ -94,9 +93,8 @@ namespace SIPSorcery.SIPNotifier
             GetDialogues_External = getDialogues;
             GetDialogue_External = getDialogue;
             GetCanonicalDomain_External = getDomain;
-            GetSIPAccount_External = getSIPAccount;
+            m_sipAssetPersistor = sipAsssetPersistor;
             GetSIPRegistrarBindings_External = getSIPRegistrarBindings;
-            GetSIPAccounts_External = getSIPAccounts;
             GetBindingsCount_External = getBindingsCount;
             SIPAuthenticateRequest_External = sipRequestAuthenticator;
             m_publisher = publisher ?? new SIPMonitorUDPSink(m_udpNotificationReceiverSocket);
@@ -133,9 +131,8 @@ namespace SIPSorcery.SIPNotifier
                     GetCustomer_External, 
                     GetDialogues_External,
                     GetDialogue_External, 
-                    GetSIPAccount_External,
                     GetCanonicalDomain_External, 
-                    GetSIPAccounts_External,
+                    m_sipAssetPersistor,
                     GetBindingsCount_External,
                     SIPAuthenticateRequest_External, 
                     m_outboundProxy, 
@@ -145,7 +142,7 @@ namespace SIPSorcery.SIPNotifier
                     m_sipTransport,
                     m_outboundProxy,
                     FireSIPMonitorEvent,
-                    GetSIPAccount_External,
+                    m_sipAssetPersistor.Get,
                     GetSIPRegistrarBindings_External,
                     GetCanonicalDomain_External);
 

@@ -210,7 +210,7 @@ namespace SIPSorcery.SIPAppServer
                         m_sipSorceryPersistor.SIPDialoguePersistor.Get,
                         m_sipSorceryPersistor.SIPDialoguePersistor.Get,
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
-                        m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                        m_sipSorceryPersistor.SIPAccountsPersistor,
                         m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
                         m_sipSorceryPersistor.SIPAccountsPersistor.Get,
                         m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Count,

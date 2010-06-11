@@ -186,6 +186,7 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_REASON = "Reason";
         public const string SIP_HEADER_RECORDROUTE = "Record-Route";
         public const string SIP_HEADER_REFERREDBY = "Referred-By";                  // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method".
+        public const string SIP_HEADER_REFERSUB = "Refer-Sub";                      // RFC 4488 Used to stop the implicit SIP event subscription on a REFER request.
         public const string SIP_HEADER_REFERTO = "Refer-To";                        // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method".
         public const string SIP_HEADER_REPLY_TO = "Reply-To";
         public const string SIP_HEADER_REQUIRE = "Require";
@@ -224,11 +225,15 @@ namespace SIPSorcery.SIP
 
         // Custom SIP headers to interact with the SIP Sorcery switchboard.
         public const string SIP_HEADER_SWITCHBOARD_CALLID = "Switchboard-CallID";
-        public const string SIP_HEADER_SWITCHBOARD_TO = "Switchboard-To";
-        public const string SIP_HEADER_SWITCHBOARD_TO_DESCRIPTION = "Switchboard-ToDescription";
+        public const string SIP_HEADER_SWITCHBOARD_CALLER_DESCRIPTION = "Switchboard-CallerDescription";
+        public const string SIP_HEADER_SWITCHBOARD_DESCRIPTION = "Switchboard-Description";
         public const string SIP_HEADER_SWITCHBOARD_FROM = "Switchboard-From";
         public const string SIP_HEADER_SWITCHBOARD_FROM_CONTACT_URL = "Switchboard-FromContactURL";
+        public const string SIP_HEADER_SWITCHBOARD_OWNER = "Switchboard-Owner";
+        public const string SIP_HEADER_SWITCHBOARD_TO = "Switchboard-To";
         public const string SIP_HEADER_SWITCHBOARD_TERMINATE = "Switchboard-Terminate";
+        public const string SIP_HEADER_SWITCHBOARD_TOKEN = "Switchboard-Token";
+        public const string SIP_HEADER_SWITCHBOARD_TOKENREQUEST = "Switchboard-TokenRequest";
 	}
 
 	public class SIPHeaderAncillary

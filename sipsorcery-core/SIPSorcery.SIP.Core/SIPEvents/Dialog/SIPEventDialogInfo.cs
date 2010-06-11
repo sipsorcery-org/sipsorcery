@@ -87,8 +87,8 @@ namespace SIPSorcery.SIP
         private static ILog logger = AppState.logger;
 
         private static readonly string m_dialogXMLNS = SIPEventConsts.DIALOG_XML_NAMESPACE_URN;
-        private static readonly string m_sipsorceryXMLNS = SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_URN;
-        private static readonly string m_sipsorceryXMLPrefix = SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_PREFIX;
+        //private static readonly string m_sipsorceryXMLNS = SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_URN;
+        //private static readonly string m_sipsorceryXMLPrefix = SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_PREFIX;
 
         public int Version;
         public SIPEventDialogInfoStateEnum State;
@@ -139,7 +139,7 @@ namespace SIPSorcery.SIP
         public override string ToXMLText()
         {
             XNamespace ns = m_dialogXMLNS;
-            XNamespace ss = m_sipsorceryXMLNS;
+            //XNamespace ss = m_sipsorceryXMLNS;
             XDocument dialogEventDoc = new XDocument(new XElement(ns + "dialog-info",
                 //new XAttribute(XNamespace.Xmlns + m_sipsorceryXMLPrefix, m_sipsorceryXMLNS),
                 new XAttribute("version", Version),

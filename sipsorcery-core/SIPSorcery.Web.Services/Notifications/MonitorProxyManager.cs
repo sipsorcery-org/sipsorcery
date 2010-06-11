@@ -50,16 +50,17 @@ namespace SIPSorcery.Web.Services
         {
             List<string> clientEndPointNames = new List<string>();
 
-            ServiceModelSectionGroup serviceModelSectionGroup = (ServiceModelSectionGroup)ConfigurationManager.GetSection("system.serviceModel");
+            //ServiceModelSectionGroup serviceModelSectionGroup = (ServiceModelSectionGroup)ConfigurationManager.GetSection("system.serviceModel");
+            ServiceModelSectionGroup serviceModelSectionGroup = null;
 
-            /*try
+            try
             {
                 serviceModelSectionGroup = ServiceModelSectionGroup.GetSectionGroup(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None));
             }
             catch
             {
                 serviceModelSectionGroup = ServiceModelSectionGroup.GetSectionGroup(WebConfigurationManager.OpenWebConfiguration("~"));
-            }*/
+            }
 
             foreach (ChannelEndpointElement client in serviceModelSectionGroup.Client.Endpoints)
             {

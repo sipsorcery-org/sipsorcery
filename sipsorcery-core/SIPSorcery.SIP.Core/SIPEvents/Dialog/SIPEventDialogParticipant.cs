@@ -49,14 +49,14 @@ namespace SIPSorcery.SIP
     public class SIPEventDialogParticipant
     {
         private static readonly string m_dialogXMLNS = SIPEventConsts.DIALOG_XML_NAMESPACE_URN;
-        //private static readonly string m_sipsorceryXMLNS = SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_URN;
-        //private static readonly string m_includeSDPFilter = SIPEventFilters.SIP_DIALOG_INCLUDE_SDP;
+        private static readonly string m_sipsorceryXMLNS = SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_URN;
 
         public string DisplayName;
         public SIPURI URI;
         public SIPURI TargetURI;
         public int CSeq;
-        //public string SDP;              // The Session Description Payload from the dialog participant.
+        public string SwitchboardDescription;           // A user definable field that can attach a description to the SIP account the call was received on or the call destination.
+        public string SwitchboardCallerDescription;     // A user definable field that can attach a description about the caller.
 
         private SIPEventDialogParticipant()
         { }
@@ -67,7 +67,6 @@ namespace SIPSorcery.SIP
             URI = uri;
             TargetURI = targetURI;
             CSeq = cseq;
-            //SDP = sdp;
         }
 
         public static SIPEventDialogParticipant Parse(string participantXMLStr)
@@ -79,7 +78,7 @@ namespace SIPSorcery.SIP
         public static SIPEventDialogParticipant Parse(XElement participantElement)
         {
             XNamespace ns = m_dialogXMLNS;
-            //XNamespace ss = m_sipsorceryXMLNS;
+            XNamespace ss = m_sipsorceryXMLNS;
             SIPEventDialogParticipant participant = new SIPEventDialogParticipant();
 
             XElement identityElement = participantElement.Element(ns + "identity");
@@ -96,8 +95,8 @@ namespace SIPSorcery.SIP
             }
 
             participant.CSeq = (participantElement.Element(ns + "cseq") != null) ? Convert.ToInt32(participantElement.Element(ns + "cseq").Value) : 0;
-
-            //participant.SDP = (participantElement.Element(ss + "sdp") != null) ? participantElement.Element(ss + "sdp").Value.Replace("\n", "\r\n") : null;
+            participant.SwitchboardDescription = (participantElement.Element(ss + "switchboarddescription") != null) ? participantElement.Element(ss + "switchboarddescription").Value : null;
+            participant.SwitchboardCallerDescription = (participantElement.Element(ss + "switchboardcallerdescription") != null) ? participantElement.Element(ss + "switchboardcallerdescription").Value : null;
 
             return participant;
         }
@@ -109,10 +108,8 @@ namespace SIPSorcery.SIP
         /// <returns>An XML element representing the dialog participant.</returns>
         public XElement ToXML(string nodeName)
         {
-            //bool includeSDP = (!filter.IsNullOrBlank() && Regex.Match(filter, m_includeSDPFilter).Success) ? true : false;
-
             XNamespace ns = m_dialogXMLNS;
-            //XNamespace ss = m_sipsorceryXMLNS;
+            XNamespace ss = m_sipsorceryXMLNS;
             XElement participantElement = new XElement(ns + nodeName);
 
             if(URI != null)
@@ -137,11 +134,17 @@ namespace SIPSorcery.SIP
                 participantElement.Add(cseqElement);
             }
 
-            //if (includeSDP && !SDP.IsNullOrBlank())
-           // {
-            //    XElement sdpElement = new XElement(ss + "sdp", SDP);
-            //    participantElement.Add(sdpElement);
-            //}
+            if (!SwitchboardDescription.IsNullOrBlank())
+            {
+                XElement switchDescriptionElement = new XElement(ss + "switchboarddescription", SwitchboardDescription);
+                participantElement.Add(switchDescriptionElement);
+            }
+
+            if (!SwitchboardCallerDescription.IsNullOrBlank())
+            {
+                XElement switchCallerDescriptionElement = new XElement(ss + "switchboardcallerdescription", SwitchboardCallerDescription);
+                participantElement.Add(switchCallerDescriptionElement);
+            }
 
             return participantElement;
         }

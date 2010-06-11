@@ -44,16 +44,16 @@ using SIPSorcery.CRM;
 using SIPSorcery.Persistence;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using SIPSorcery.Sys.Auth;
 using log4net;
 
 namespace SIPSorcery.Web.Services
 {
     public class SIPSorceryAuthorisationService
     {
-        public const string AUTH_TOKEN_KEY = "authid";
-        public const string COOKIES_KEY = "Cookie";
-
         private ILog logger = AppState.logger;
+
+        private static readonly string m_authIDKey = ServiceAuthToken.AUTH_TOKEN_KEY;
 
         protected CustomerSessionManager CRMSessionManager;
         protected SIPAssetPersistor<Customer> CRMCustomerPersistor;
@@ -75,53 +75,6 @@ namespace SIPSorcery.Web.Services
         {
             logger.Debug("IsAlive called from " + OperationContext.Current.Channel.RemoteAddress + ".");
             return true;
-        }
-
-        private string GetAuthId()
-        {
-            string authId = null;
-
-            SIPSorcerySecurityHeader securityheader = SIPSorcerySecurityHeader.ParseHeader(OperationContext.Current);
-            if (securityheader != null)
-            {
-                authId = securityheader.AuthID;
-            }
-
-            // HTTP Context is available for ?? binding.
-            if (authId.IsNullOrBlank() && HttpContext.Current != null)
-            {
-                // If running in IIS check for a cookie.
-                HttpCookie authIdCookie = HttpContext.Current.Request.Cookies[AUTH_TOKEN_KEY];
-                if (authIdCookie != null)
-                {
-                    //logger.Debug("authid cookie found: " + authIdCookie.Value + ".");
-                    authId = authIdCookie.Value;
-                }
-            }
-
-            // No HTTP context available so try and get a cookie value from the operation context.
-            if (authId.IsNullOrBlank() && OperationContext.Current != null && OperationContext.Current.IncomingMessageProperties[HttpRequestMessageProperty.Name] != null)
-            {
-                HttpRequestMessageProperty httpRequest = (HttpRequestMessageProperty)OperationContext.Current.IncomingMessageProperties[HttpRequestMessageProperty.Name];
-                // Check for the header in a case insensitive way. Allows matches on authid, Authid etc.
-                if (httpRequest.Headers.AllKeys.Contains(AUTH_TOKEN_KEY, StringComparer.InvariantCultureIgnoreCase))
-                {
-                    string authIDHeader = httpRequest.Headers.AllKeys.First(h => { return String.Equals(h, AUTH_TOKEN_KEY, StringComparison.InvariantCultureIgnoreCase); });
-                    authId = httpRequest.Headers[authIDHeader];
-                    //logger.Debug("authid HTTP header found: " + authId + ".");
-                }
-                else if (httpRequest.Headers.AllKeys.Contains(COOKIES_KEY, StringComparer.InvariantCultureIgnoreCase))
-                {
-                    Match authIDMatch = Regex.Match(httpRequest.Headers[COOKIES_KEY], @"authid=(?<authid>\w+)");
-                    if (authIDMatch.Success)
-                    {
-                        authId = authIDMatch.Result("${authid}");
-                        //logger.Debug("authid HTTP cookie found: " + authId + ".");
-                    }
-                }
-            }
-
-            return authId;
         }
 
         public string Authenticate(string username, string password)
@@ -150,7 +103,7 @@ namespace SIPSorcery.Web.Services
                     if (HttpContext.Current != null)
                     {
                         logger.Debug("Setting authid cookie for " + customerSession.CustomerUsername + ".");
-                        HttpCookie authCookie = new HttpCookie(AUTH_TOKEN_KEY, customerSession.SessionID);
+                        HttpCookie authCookie = new HttpCookie(m_authIDKey, customerSession.SessionID);
                         authCookie.Secure = HttpContext.Current.Request.IsSecureConnection;
                         authCookie.HttpOnly = true;
                         authCookie.Expires = DateTime.Now.AddMinutes(customerSession.TimeLimitMinutes);
@@ -170,7 +123,7 @@ namespace SIPSorcery.Web.Services
         {
             try
             {
-                string authId = GetAuthId();
+                string authId = ServiceAuthToken.GetAuthId();
                 //logger.Debug("Authorising request for sessionid=" + authId + ".");
 
                 if (authId != null)
@@ -212,12 +165,12 @@ namespace SIPSorcery.Web.Services
 
                 logger.Debug("SIPSorceryAuthenticatedService ExpireSession called for " + customer.CustomerUsername + ".");
 
-                CRMSessionManager.ExpireToken(GetAuthId());
+                CRMSessionManager.ExpireToken(ServiceAuthToken.GetAuthId());
 
                 // If running in IIS remove the cookie.
                 if (HttpContext.Current != null)
                 {
-                    HttpContext.Current.Request.Cookies.Remove(AUTH_TOKEN_KEY);
+                    HttpContext.Current.Request.Cookies.Remove(m_authIDKey);
                 }
             }
             catch (UnauthorizedAccessException)
@@ -240,10 +193,10 @@ namespace SIPSorcery.Web.Services
                 logger.Debug("SIPSorceryAuthenticatedService ExtendExistingSession called for " + customer.CustomerUsername + " and " + minutes + " minutes.");
                 if (HttpContext.Current != null)
                 {
-                    HttpCookie authIdCookie = HttpContext.Current.Request.Cookies[AUTH_TOKEN_KEY];
+                    HttpCookie authIdCookie = HttpContext.Current.Request.Cookies[m_authIDKey];
                     authIdCookie.Expires = authIdCookie.Expires.AddMinutes(minutes);
                 }
-                CRMSessionManager.ExtendSession(GetAuthId(), minutes);
+                CRMSessionManager.ExtendSession(ServiceAuthToken.GetAuthId(), minutes);
             }
             catch (Exception excp)
             {

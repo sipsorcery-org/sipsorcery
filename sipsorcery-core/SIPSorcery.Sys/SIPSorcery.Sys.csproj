@@ -114,13 +114,9 @@
     <Reference Include="System.Data.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Runtime.Serialization, Version=3.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="System.Runtime.Serialization.Formatters.Soap">
-      <Private>False</Private>
-    </Reference>
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
+    <Reference Include="System.ServiceModel.Web" />
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Services">
       <Name>System.Web.Services</Name>
@@ -136,6 +132,8 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Auth\ServiceAuthToken.cs" />
+    <Compile Include="Auth\SIPSorcerySecurityHeader.cs" />
     <Compile Include="AzureTraceAppender.cs" />
     <Compile Include="SIPSorceryConfiguration.cs" />
     <Compile Include="Net\ByteBufferInfo.cs">

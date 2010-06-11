@@ -253,7 +253,7 @@ namespace SIPSorcery.AppServer.DialPlan {
                 if (m_waitForCallback.WaitOne(callbackTimeout * 1000))
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call callback received.", m_username));
-                    return m_callbackCall.Answer(contentType, body, null, SIPDialogueTransferModesEnum.BlindPassThru);
+                    return m_callbackCall.Answer(contentType, body, null, SIPDialogueTransferModesEnum.Default);
                 }
                 else {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call timed out waiting for callback.", m_username));

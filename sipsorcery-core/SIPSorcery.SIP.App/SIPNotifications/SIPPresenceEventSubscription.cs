@@ -9,14 +9,17 @@ namespace SIPSorcery.SIP.App
     public class SIPPresenceEventSubscription : SIPEventSubscription
     {
         private const int MAX_SIPACCOUNTS_TO_RETRIEVE = 25;
+        public const string SWITCHBOARD_FILTER = "switchboard";    // If a client specifies this value as a filter it's only interested in SIP accounts that are switchboard enabled.
 
         private static string m_wildcardUser = SIPMonitorFilter.WILDCARD;
         private static string m_contentType = SIPMIMETypes.PRESENCE_NOTIFY_CONTENT_TYPE;
 
         private SIPEventPresence Presence;
 
-        private SIPAssetGetListDelegate<SIPAccount> GetSIPAccounts_External;
         private SIPAssetCountDelegate<SIPRegistrarBinding> GetSIPRegistrarBindingsCount_External;
+        private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
+
+        private bool m_switchboardSIPAccountsOnly;      // If true means this subscription should only generate notifications for SIP accounts that are switchboard enabled.
 
         public override SIPEventPackage SubscriptionEventPackage
         {
@@ -41,14 +44,16 @@ namespace SIPSorcery.SIP.App
             string filter,
             SIPDialogue subscriptionDialogue,
             int expiry,
-            SIPAssetGetListDelegate<SIPAccount> getSIPAccounts,
-            SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount
+            SIPAssetPersistor<SIPAccount> sipAccountPersistor,
+            SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount,
+            bool switchboardSIPAccountsOnly
             )
             : base(log, sessionID, resourceURI, canonincalResourceURI, filter, subscriptionDialogue, expiry)
         {
-            GetSIPAccounts_External = getSIPAccounts;
+            m_sipAccountPersistor = sipAccountPersistor;
             GetSIPRegistrarBindingsCount_External = getBindingsCount;
             Presence = new SIPEventPresence(resourceURI);
+            m_switchboardSIPAccountsOnly = switchboardSIPAccountsOnly;
         }
 
         public override void GetFullState()
@@ -59,11 +64,25 @@ namespace SIPSorcery.SIP.App
 
                 if (ResourceURI.User == m_wildcardUser)
                 {
-                    sipAccounts = GetSIPAccounts_External(s => s.Owner == SubscriptionDialogue.Owner, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                    if (m_switchboardSIPAccountsOnly)
+                    {
+                        sipAccounts = m_sipAccountPersistor.Get(s => s.Owner == SubscriptionDialogue.Owner && s.IsSwitchboardEnabled, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                    }
+                    else
+                    {
+                        sipAccounts = m_sipAccountPersistor.Get(s => s.Owner == SubscriptionDialogue.Owner, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                    }
                 }
                 else
                 {
-                    sipAccounts = GetSIPAccounts_External(s => s.SIPUsername == CanonicalResourceURI.User && s.SIPDomain == CanonicalResourceURI.Host, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                    if (m_switchboardSIPAccountsOnly)
+                    {
+                        sipAccounts = m_sipAccountPersistor.Get(s => s.SIPUsername == CanonicalResourceURI.User && s.SIPDomain == CanonicalResourceURI.Host && s.IsSwitchboardEnabled, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                    }
+                    else
+                    {
+                        sipAccounts = m_sipAccountPersistor.Get(s => s.SIPUsername == CanonicalResourceURI.User && s.SIPDomain == CanonicalResourceURI.Host, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                    }
                 }
 
                 foreach (SIPAccount sipAccount in sipAccounts)
@@ -98,7 +117,12 @@ namespace SIPSorcery.SIP.App
             return Presence.ToXMLText();
         }
 
-        public override void AddMonitorEvent(SIPMonitorMachineEvent machineEvent)
+        /// <summary>
+        /// Checks and where required adds a presence related monitor event to the list of pending notifications.
+        /// </summary>
+        /// <param name="machineEvent">The monitor event that has been received.</param>
+        /// <returns>True if a notification needs to be sent as a result of this monitor event, false otherwise.</returns>
+        public override bool AddMonitorEvent(SIPMonitorMachineEvent machineEvent)
         {
             try
             {
@@ -106,26 +130,43 @@ namespace SIPSorcery.SIP.App
 
                 string safeSIPAccountID = machineEvent.ResourceID;
                 SIPURI sipAccountURI = machineEvent.ResourceURI;
+                bool sendNotificationForEvent = true;
 
-                if (machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate)
+                if (m_switchboardSIPAccountsOnly)
                 {
-                    // A binding has been updated so there is at least one device online for the SIP account.
-                    Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.open, sipAccountURI, Decimal.Zero));
-                    //logger.Debug(" single presence open.");
-                }
-                else
-                {
-                    // A binding has been removed but there could still be others.
+                    // Need to check whether the SIP account is switchboard enabled before forwarding the notification.
                     Guid sipAccountID = new Guid(machineEvent.ResourceID);
-                    int bindingsCount = GetSIPRegistrarBindingsCount_External(b => b.SIPAccountId == sipAccountID);
-                    if (bindingsCount > 0)
+                    sendNotificationForEvent = Convert.ToBoolean(m_sipAccountPersistor.GetProperty(sipAccountID, "IsSwitchboardEnabled"));
+                }
+
+                if (sendNotificationForEvent)
+                {
+                    if (machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate)
                     {
+                        // A binding has been updated so there is at least one device online for the SIP account.
                         Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.open, sipAccountURI, Decimal.Zero));
+                        //logger.Debug(" single presence open.");
                     }
                     else
                     {
-                        Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.closed, sipAccountURI, Decimal.Zero));
+                        // A binding has been removed but there could still be others.
+                        Guid sipAccountID = new Guid(machineEvent.ResourceID);
+                        int bindingsCount = GetSIPRegistrarBindingsCount_External(b => b.SIPAccountId == sipAccountID);
+                        if (bindingsCount > 0)
+                        {
+                            Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.open, sipAccountURI, Decimal.Zero));
+                        }
+                        else
+                        {
+                            Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.closed, sipAccountURI, Decimal.Zero));
+                        }
                     }
+
+                    return true;
+                }
+                else
+                {
+                    return false;
                 }
             }
             catch (Exception excp)

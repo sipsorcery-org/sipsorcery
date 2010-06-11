@@ -171,7 +171,7 @@ namespace SIPSorcery.SIP.App {
             set { m_sipCDR.ProgressStatus = value; }
         }
 
-        [Column(Name = "inprogressreason", DbType = "varchar(64)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [Column(Name = "inprogressreason", DbType = "varchar(512)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string InProgressReason {
             get { return m_sipCDR.ProgressReasonPhrase; }
@@ -224,7 +224,7 @@ namespace SIPSorcery.SIP.App {
             set { m_sipCDR.AnswerStatus = value; }
         }
 
-        [Column(Name = "answeredreason", DbType = "varchar(64)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [Column(Name = "answeredreason", DbType = "varchar(512)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string AnsweredReason {
             get { return m_sipCDR.AnswerReasonPhrase; }
@@ -270,7 +270,7 @@ namespace SIPSorcery.SIP.App {
             }
         }
 
-        [Column(Name = "hungupreason", DbType = "varchar(64)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [Column(Name = "hungupreason", DbType = "varchar(512)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
         public string HungupReason {
             get { return m_sipCDR.HangupReason; }

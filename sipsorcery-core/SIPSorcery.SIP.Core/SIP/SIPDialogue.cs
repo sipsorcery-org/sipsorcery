@@ -51,7 +51,7 @@ namespace SIPSorcery.SIP
     public enum SIPDialogueTransferModesEnum
     {
         Default = 0,
-        BlindPassThru = 1,      // REFER requests will be treated as an in-dialogue request and passed through to user agents.
+        PassThru = 1,           // REFER requests will be treated as an in-dialogue request and passed through to user agents.
         NotAllowed = 2,         // REFER requests will be blocked.
         BlindPlaceCall = 3,     // REFER requests without a replaces parameter will initiate a new call.
     }
@@ -93,6 +93,11 @@ namespace SIPSorcery.SIP
         public string ProxySendFrom { get; set; }                   // If set this is the socket the upstream proxy received the call on.
         public SIPDialogueTransferModesEnum TransferMode { get; set; }  // Specifies how the dialogue will handle REFER requests (transfers).
         public SIPCallDirection Direction { get; set; }              // Indicates whether the dialogue was created by a ingress or egress call.
+
+        // User informational fields. They don't affect the operation of the dialogue but allow the user to optionally attach descriptive fields to it.
+        public string SwitchboardCallerDescription { get; set; }
+        public string SwitchboardDescription { get; set; }
+        public string SwitchboardOwner { get; set; }
 
         public string DialogueName
         {

@@ -182,7 +182,8 @@ namespace SIPSorcery.SIP.App
         SIPDialogueCreated = 7,
         SIPDialogueRemoved = 8,
         SIPDialogueUpdated = 9,
-        Logout = 10,
+        SIPDialogueTransfer = 10,
+        Logout = 11,
     }
 
     public class SIPMonitorMachineEventTypes

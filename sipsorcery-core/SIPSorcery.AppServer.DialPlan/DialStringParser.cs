@@ -164,7 +164,7 @@ namespace SIPSorcery.AppServer.DialPlan
             string fromDisplayName,
             string fromUsername,
             string fromHost,
-            List<string> switchboardHeaders)
+            SwitchboardHeaders switchboardHeaders)
         {
             try
             {
@@ -289,7 +289,7 @@ namespace SIPSorcery.AppServer.DialPlan
             string fromDisplayName,
             string fromUsername,
             string fromHost,
-            List<string> switchboardHeaders)
+            SwitchboardHeaders switchboardHeaders)
         {
             try
             {
@@ -449,7 +449,7 @@ namespace SIPSorcery.AppServer.DialPlan
             string fromDisplayName,
             string fromUsername,
             string fromHost,
-            List<string> switchboardHeaders)
+            SwitchboardHeaders switchboardHeaders)
         {
             List<SIPCallDescriptor> localUserSwitchCalls = new List<SIPCallDescriptor>();
 
@@ -494,30 +494,6 @@ namespace SIPSorcery.AppServer.DialPlan
 
                         string fromHeader = (sipRequest != null) ? sipRequest.Header.From.ToString() : m_anonymousFromURI;
 
-                        // If the binding for the call is a switchboard add the custom switchboard headers.
-                        List<string> customSwitchboardHeaders = null;
-                        if (!binding.UserAgent.IsNullOrBlank() && binding.UserAgent.StartsWith(m_switchboardUserAgentPrefix))
-                        {
-                            customSwitchboardHeaders = new List<string>();
-
-                            if (customHeaders != null && customHeaders.Count > 0)
-                            {
-                                customSwitchboardHeaders.AddRange(customHeaders);
-                            }
-
-                            customSwitchboardHeaders.Add(SIPHeaders.SIP_HEADER_SWITCHBOARD_CALLID + ": " + sipRequest.Header.CallId);
-                            customSwitchboardHeaders.Add(SIPHeaders.SIP_HEADER_SWITCHBOARD_TO + ": " + sipRequest.Header.To.ToString());
-                            customSwitchboardHeaders.Add(SIPHeaders.SIP_HEADER_SWITCHBOARD_FROM + ": " + sipRequest.Header.From.ToString());
-
-                            if (switchboardHeaders != null && switchboardHeaders.Count > 0)
-                            {
-                                foreach (string switchboardHeader in switchboardHeaders)
-                                {
-                                    customSwitchboardHeaders.Add(switchboardHeader);
-                                }
-                            }
-                        }
-
                         SIPCallDescriptor switchCall = new SIPCallDescriptor(
                             null,
                             null,
@@ -525,12 +501,19 @@ namespace SIPSorcery.AppServer.DialPlan
                             fromHeader,
                             new SIPToHeader(null, SIPURI.ParseSIPURIRelaxed(sipAccount.SIPUsername + "@" + sipAccount.SIPDomain), null).ToString(),
                             null,
-                            customSwitchboardHeaders ?? customHeaders,
+                            customHeaders,
                             null,
                             SIPCallDirection.In,
                             contentType,
                             content,
                             publicSDPAddress);
+
+                        // If the binding for the call is a switchboard add the custom switchboard headers.
+                        if (!binding.UserAgent.IsNullOrBlank() && binding.UserAgent.StartsWith(m_switchboardUserAgentPrefix))
+                        {
+                            switchCall.SwitchboardHeaders = switchboardHeaders;
+                        }
+
                         // If the binding has a proxy socket defined set the header to ask the upstream proxy to use it.
                         if (binding.ProxySIPEndPoint != null)
                         {

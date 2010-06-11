@@ -279,6 +279,19 @@ namespace SIPSorcery.SIP.App
             set { m_inserted = value.ToUniversalTime(); }
         }
 
+        private bool m_isSwitchboardEnabled = true;
+        [Column(Name = "isswitchboardenabled", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public bool IsSwitchboardEnabled
+        {
+            get { return m_isSwitchboardEnabled; }
+            set
+            {
+                m_isSwitchboardEnabled = value;
+                NotifyPropertyChanged("IsSwitchboardEnabled");
+            }
+        }
+
         public DateTimeOffset InsertedLocal {
             get { return Inserted.AddMinutes(TimeZoneOffsetMinutes); }
         }
@@ -316,6 +329,7 @@ namespace SIPSorcery.SIP.App
             table.Columns.Add(new DataColumn("inserted", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("networkid", typeof(String)));
             table.Columns.Add(new DataColumn("ipaddressacl", typeof(String)));
+            table.Columns.Add(new DataColumn("isswitchboardenabled", typeof(Boolean)));
             return table;
         }
 
@@ -337,6 +351,7 @@ namespace SIPSorcery.SIP.App
                 m_inserted = (sipAccountRow.Table.Columns.Contains("inserted") && sipAccountRow["inserted"] != null) ? DateTimeOffset.Parse(sipAccountRow["inserted"] as string) : DateTimeOffset.UtcNow;
                 m_networkId = (sipAccountRow.Table.Columns.Contains("networkid") && sipAccountRow["networkid"] != null) ? sipAccountRow["networkid"] as string : null;
                 m_ipAddressACL = (sipAccountRow.Table.Columns.Contains("ipaddressacl") && sipAccountRow["ipaddressacl"] != null) ? sipAccountRow["ipaddressacl"] as string : null;
+                m_isSwitchboardEnabled = (sipAccountRow.Table.Columns.Contains("isswitchboardenabled") && sipAccountRow["isswitchboardenabled"] != null && sipAccountRow["isswitchboardenabled"] != DBNull.Value) ? Convert.ToBoolean(sipAccountRow["isswitchboardenabled"]) : false;
             }
             catch (Exception excp) {
                 logger.Error("Exception SIPAccount Load. " + excp);
@@ -477,7 +492,8 @@ namespace SIPSorcery.SIP.App
                 "  <disabledreason>" + m_adminDisabledReason + "</disabledreason>" + m_newLine +
                 "  <networkid>" + m_networkId + "</networkid>" + m_newLine +
                 "  <ipaddressacl>" + SafeXML.MakeSafeXML(m_ipAddressACL) + "</ipaddressacl>" + m_newLine +
-                "  <inserted>" + m_inserted.ToString("o") + "</inserted>";
+                "  <inserted>" + m_inserted.ToString("o") + "</inserted>" + m_newLine +
+                "  <isswitchboardenabled>" + m_isAdminDisabled + "</isswitchboardenabled>";
 
             return sipAccountXML;
         }
