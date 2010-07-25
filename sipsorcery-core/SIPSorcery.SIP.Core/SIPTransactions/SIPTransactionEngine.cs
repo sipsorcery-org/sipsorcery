@@ -380,10 +380,10 @@ namespace SIPSorcery.SIP
         {
             private class MockSIPDNSManager
             {
-                public static SIPEndPoint Resolve(SIPURI sipURI, bool synchronous)
+                public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool async)
                 {
                     // This assumes the input SIP URI has an IP address as the host!
-                    return new SIPEndPoint(sipURI);
+                    return new SIPDNSLookupResult(sipURI, new SIPEndPoint(IPSocket.ParseSocketString(sipURI.Host)));
                 }
             }
 

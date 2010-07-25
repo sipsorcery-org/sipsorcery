@@ -561,5 +561,16 @@ namespace SIPSorcery
             About about = new About();
             about.Show();
         }
+
+        private void UserControl_SizeChanged(object sender, System.Windows.SizeChangedEventArgs e)
+        {
+           // try
+           // {
+                //document.getElementById("silverlightControlHost").style.height="300px";
+                HtmlPage.Plugin.SetProperty("height", e.NewSize.Height);
+                //Dispatcher.BeginInvoke(() => { MessageBox.Show("Control resized"); });
+            //}
+           // catch { }
+        }
     }
 }

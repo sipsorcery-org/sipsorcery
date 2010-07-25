@@ -446,7 +446,7 @@ namespace SIPSorcery.Servers
         public SIPEndPoint Resolve(SIPResponse sipResponse)
         {
             SIPViaHeader topVia = sipResponse.Header.Vias.TopViaHeader;
-            SIPEndPoint dstEndPoint = new SIPEndPoint(topVia.Transport, m_sipTransport.GetHostEndPoint(topVia.ReceivedFromAddress, true).GetIPEndPoint());
+            SIPEndPoint dstEndPoint = new SIPEndPoint(topVia.Transport, m_sipTransport.GetHostEndPoint(topVia.ReceivedFromAddress, true).GetSIPEndPoint().GetIPEndPoint());
             return dstEndPoint;
         }
 

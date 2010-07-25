@@ -2,4 +2,11 @@
 *.suo
 _UpgradeReport_Files
 stable
+</Value></Property><Property><Name>svn:ignore</Name><Value>*.cache
+*.suo
+_UpgradeReport_Files
+stable
+Backup
+Build
+ConsoleApplication1
 </Value></Property></Properties></ItemProperties>

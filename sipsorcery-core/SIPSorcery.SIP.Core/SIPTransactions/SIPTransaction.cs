@@ -63,19 +63,19 @@ namespace SIPSorcery.SIP
         Invite = 1,
         NonInvite = 2,
     }
-    
+
     /// <note>
-	/// A response matches a client transaction under two conditions:
-	///
-	/// 1.  If the response has the same value of the branch parameter in
-	/// the top Via header field as the branch parameter in the top
-	/// Via header field of the request that created the transaction.
+    /// A response matches a client transaction under two conditions:
     ///
-	/// 2.  If the method parameter in the CSeq header field matches the
-	/// method of the request that created the transaction.  The
-	/// method is needed since a CANCEL request constitutes a
-	/// different transaction, but shares the same value of the branch
-	/// parameter.
+    /// 1.  If the response has the same value of the branch parameter in
+    /// the top Via header field as the branch parameter in the top
+    /// Via header field of the request that created the transaction.
+    ///
+    /// 2.  If the method parameter in the CSeq header field matches the
+    /// method of the request that created the transaction.  The
+    /// method is needed since a CANCEL request constitutes a
+    /// different transaction, but shares the same value of the branch
+    /// parameter.
     /// 
     /// [RFC 3261 17.2.3 page 137]
     /// A request matches a transaction:
@@ -109,15 +109,15 @@ namespace SIPSorcery.SIP
     /// - Matching a response to a transaction can rely on the branchid in the Via header.
     /// - Matching a request to a transaction can rely on the branchid EXCEPT for an
     ///   ACK for a 2xx final response which is a new transaction and has a new branch ID.
-	/// </note>
-	public class SIPTransaction
-	{
+    /// </note>
+    public class SIPTransaction
+    {
         protected static ILog logger = AssemblyState.logger;
-    
+
         protected static readonly int m_t1 = SIPTimings.T1;                     // SIP Timer T1 in milliseconds.
         protected static readonly int m_t6 = SIPTimings.T6;                     // SIP Timer T1 in milliseconds.
         protected static readonly int m_maxRingTime = SIPTimings.MAX_RING_TIME; // Max time an INVITE will be left ringing for (typically 10 mins).    
-        
+
         private static string m_crLF = SIPConstants.CRLF;
 
         public int Retransmits = 0;
@@ -141,7 +141,7 @@ namespace SIPSorcery.SIP
         public DateTime CompletedAt = DateTime.Now;     // For INVITEs thiis the time they recieved the final response and is used to calculate the time they expie as T6 after this.
         public DateTime TimedOutAt;                     // If the transaction times out this holds the value it timed out at.
 
-        protected string m_branchId;    
+        protected string m_branchId;
         public string BranchId
         {
             get { return m_branchId; }
@@ -195,7 +195,7 @@ namespace SIPSorcery.SIP
         protected event SIPTransactionResponseReceivedDelegate TransactionDuplicateResponse;
         protected event SIPTransactionRequestRetransmitDelegate TransactionRequestRetransmit;
         protected event SIPTransactionResponseRetransmitDelegate TransactionResponseRetransmit;
-        
+
         // Events that don't affect the transaction processing, i.e. used for logging/tracing.
         public event SIPTransactionStateChangeDelegate TransactionStateChanged;
         public event SIPTransactionTraceMessageDelegate TransactionTraceMessage;
@@ -206,20 +206,20 @@ namespace SIPSorcery.SIP
         public Int64 TransactionsDestroyed = 0;
 
         private SIPTransport m_sipTransport;
-        
+
         /// <summary>
         /// Creates a new SIP transaction and adds it to the list of in progress transactions.
         /// </summary>
         /// <param name="sipTransport">The SIP Transport layer that is to be used with the transaction.</param>
         /// <param name="transactionRequest">The SIP Request on which the transaction is based.</param>
-        /// <param name="dstEndPoint">he socket the at the remote end of the transaction and which transaction messages will be sent to.</param>
+        /// <param name="dstEndPoint">The socket the at the remote end of the transaction and which transaction messages will be sent to.</param>
         /// <param name="localSIPEndPoint">The socket that should be used as the send from socket for communications on this transaction. Typically this will
         /// be the socket the initial request was received on.</param>
         protected SIPTransaction(
-            SIPTransport sipTransport, 
-            SIPRequest transactionRequest, 
-            SIPEndPoint dstEndPoint, 
-            SIPEndPoint localSIPEndPoint, 
+            SIPTransport sipTransport,
+            SIPRequest transactionRequest,
+            SIPEndPoint dstEndPoint,
+            SIPEndPoint localSIPEndPoint,
             SIPEndPoint outboundProxy)
         {
             try
@@ -232,14 +232,16 @@ namespace SIPSorcery.SIP
                 {
                     throw new ArgumentNullException("A SIPRequest object must be supplied when creating a SIPTransaction.");
                 }
-                else if (dstEndPoint == null && outboundProxy == null)
+                /*else if (dstEndPoint == null && outboundProxy == null)
                 {
                     throw new ArgumentNullException("The remote SIP end point or outbound proxy must be set when creating a SIPTransaction.");
-                }
-                else if (localSIPEndPoint == null) {
+                }*/
+                else if (localSIPEndPoint == null)
+                {
                     throw new ArgumentNullException("The local SIP end point must be set when creating a SIPTransaction.");
                 }
-                else if (transactionRequest.Header.Vias.TopViaHeader == null) {
+                else if (transactionRequest.Header.Vias.TopViaHeader == null)
+                {
                     throw new ArgumentNullException("The SIP request must have a Via header when creating a SIPTransaction.");
                 }
 
@@ -263,7 +265,7 @@ namespace SIPSorcery.SIP
                 throw excp;
             }
         }
-        
+
         public static string GetRequestTransactionId(string branchId, SIPMethodsEnum method)
         {
             return Crypto.GetSHAHashAsString(branchId + method.ToString());
@@ -284,7 +286,7 @@ namespace SIPSorcery.SIP
             if (TransactionState == SIPTransactionStatesEnum.Completed || TransactionState == SIPTransactionStatesEnum.Confirmed)
             {
                 FireTransactionTraceMessage("Received Duplicate Response " + localSIPEndPoint.ToString() + "<-" + remoteEndPoint + m_crLF + sipResponse.ToString());
-                
+
                 if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.INVITE)
                 {
                     if (sipResponse.StatusCode >= 100 && sipResponse.StatusCode <= 199)
@@ -305,7 +307,7 @@ namespace SIPSorcery.SIP
             else
             {
                 FireTransactionTraceMessage("Received Response " + localSIPEndPoint.ToString() + "<-" + remoteEndPoint + m_crLF + sipResponse.ToString());
-                
+
                 if (sipResponse.StatusCode >= 100 && sipResponse.StatusCode <= 199)
                 {
                     UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
@@ -373,16 +375,20 @@ namespace SIPSorcery.SIP
             m_sipTransport.SendResponse(sipResponse);
         }
 
-        public void RetransmitFinalResponse() {
-            try {
-                if (TransactionFinalResponse != null && TransactionState != SIPTransactionStatesEnum.Confirmed) {
+        public void RetransmitFinalResponse()
+        {
+            try
+            {
+                if (TransactionFinalResponse != null && TransactionState != SIPTransactionStatesEnum.Confirmed)
+                {
                     m_sipTransport.SendResponse(TransactionFinalResponse);
                     Retransmits += 1;
                     LastTransmit = DateTime.Now;
                     ResponseRetransmit();
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception RetransmitFinalResponse. " + excp.Message);
             }
         }
@@ -402,7 +408,7 @@ namespace SIPSorcery.SIP
 
         public void SendRequest(SIPRequest sipRequest)
         {
-            SIPEndPoint dstEndPoint = m_sipTransport.GetRequestEndPoint(sipRequest, OutboundProxy, true);
+            SIPEndPoint dstEndPoint = m_sipTransport.GetRequestEndPoint(sipRequest, OutboundProxy, true).GetSIPEndPoint();
 
             if (dstEndPoint != null)
             {
@@ -412,6 +418,10 @@ namespace SIPSorcery.SIP
                 {
                     m_ackRequest = sipRequest;
                     m_ackRequestIPEndPoint = dstEndPoint;
+                }
+                else
+                {
+                    RemoteEndPoint = dstEndPoint;
                 }
 
                 m_sipTransport.SendRequest(dstEndPoint, sipRequest);
@@ -563,7 +573,7 @@ namespace SIPSorcery.SIP
         private void FireTransactionStateChangedEvent()
         {
             FireTransactionTraceMessage("Transaction state changed to " + this.TransactionState + ".");
-            
+
             if (TransactionStateChanged != null)
             {
                 try
@@ -599,17 +609,17 @@ namespace SIPSorcery.SIP
 
         #region Unit testing.
 
-		#if UNITTEST
+#if UNITTEST
 
 		[TestFixture]
 		public class SIPTransactionUnitTest
 		{
             private class MockSIPDNSManager
             {
-                public static SIPEndPoint Resolve(SIPURI sipURI, bool synchronous)
+                public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool async)
                 {
                     // This assumes the input SIP URI has an IP address as the host!
-                    return new SIPEndPoint(sipURI);
+                    return new SIPDNSLookupResult(sipURI, new SIPEndPoint(IPSocket.ParseSocketString(sipURI.Host)));
                 }
             }
 
@@ -677,7 +687,7 @@ namespace SIPSorcery.SIP
 			}
         }
 
-        #endif
+#endif
 
         #endregion
     }

@@ -48,7 +48,8 @@ namespace SIPSorcery.Net
 
         private const int NUMBER_LOOKUP_THREADS = 5;    // Number of threads that will be available to undertake DNS lookups.
         private const string LOOKUP_THREAD_NAME = "dnslookup";
-        private const int DEFAULT_DNS_TIMEOUT = 5;  // Default timeout in seconds for DNS lookups.
+        private const int DEFAULT_DNS_TIMEOUT = 5;              // Default timeout in seconds for DNS lookups.
+        private const int DEFAULT_A_RECORD_DNS_TIMEOUT = 15;    // Default timeout in seconds for A record DNS lookups.
         private const string SIP_TCP_QUERY_PREFIX = "_sip._tcp.";
         private const string SIP_UDP_QUERY_PREFIX = "_sip._udp.";
         private const string SIP_TLS_QUERY_PREFIX = "_sip._tls.";
@@ -118,12 +119,13 @@ namespace SIPSorcery.Net
         /// <returns>If null is returned it means this is the first lookup for this hostname. The caller should wait a few seconds and call the method again.</returns>
         public static DNSResponse LookupAsync(string hostname)
         {
-            return Lookup(hostname, DNSQType.A, DEFAULT_DNS_TIMEOUT, null, true, true);
+            return Lookup(hostname, DNSQType.A, DEFAULT_A_RECORD_DNS_TIMEOUT, null, true, true);
         }
 
         public static DNSResponse LookupAsync(string hostname, DNSQType queryType)
         {
-            return Lookup(hostname, queryType, DEFAULT_DNS_TIMEOUT, null, true, true);
+            int lookupTimeout = (queryType == DNSQType.A || queryType == DNSQType.AAAA) ? DEFAULT_A_RECORD_DNS_TIMEOUT : DEFAULT_DNS_TIMEOUT;
+            return Lookup(hostname, queryType, lookupTimeout, null, true, true);
         }
 
         /// <summary>
@@ -182,20 +184,21 @@ namespace SIPSorcery.Net
                     else
                     {
                         //logger.Debug("DNS lookup cache miss for " + queryType.ToString() + " " + hostname + ".");
-                        DNSResponse errorResponse = new DNSResponse();
-                        errorResponse.Error = "Cache miss";
-                        return errorResponse;
+                        // Timeout.
+                        DNSResponse timeoutResponse = new DNSResponse();
+                        timeoutResponse.Timedout = true;
+                        return timeoutResponse;
                     }
                 }
                 else
                 {
                     // If this block gets called it's because the DNS resolver class did not return within twice the timeout period it
                     // was asked to do so in. If this happens a lot further investigation into the DNS resolver class is warranted.
-                    logger.Error("The DNSManager timed out waiting for the DNS resovler to complete the lookup for " + queryType.ToString() + " " + hostname + ".");
+                    logger.Error("DNSManager timed out waiting for the DNS resovler to complete the lookup for " + queryType.ToString() + " " + hostname + ".");
 
                     // Timeout.
                     DNSResponse timeoutResponse = new DNSResponse();
-                    timeoutResponse.Error = "Error in DNS resolver";
+                    timeoutResponse.Timedout = true;
                     return timeoutResponse;
                 }
             }
@@ -227,7 +230,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception MatchIPAddress. " + excp);
+                logger.Error("Exception DNSManager MatchIPAddress. " + excp);
                 return null;
             }
         }
@@ -258,7 +261,7 @@ namespace SIPSorcery.Net
                         m_queuedLookups.Enqueue(lookupRequest);
                     }
 
-                    logger.Debug("Lookup queued for " + lookupRequest.QueryType + " " + lookupRequest.Hostname + ", queue size=" + m_queuedLookups.Count + ", in progress=" + m_queuedLookups.Count + ".");
+                    logger.Debug("DNSManager lookup queued for " + lookupRequest.QueryType + " " + lookupRequest.Hostname + ", queue size=" + m_queuedLookups.Count + ", in progress=" + m_queuedLookups.Count + ".");
                     m_lookupARE.Set();
                 }
                 else
@@ -277,7 +280,7 @@ namespace SIPSorcery.Net
                             }
                         }
 
-                        logger.Debug("Duplicate lookup added for " + lookupRequest.QueryType + " " + lookupRequest.Hostname + ", queue size=" + m_queuedLookups.Count + ", in progress=" + m_queuedLookups.Count + ".");
+                        logger.Debug("DNSManager duplicate lookup added for " + lookupRequest.QueryType + " " + lookupRequest.Hostname + ", queue size=" + m_queuedLookups.Count + ", in progress=" + m_queuedLookups.Count + ".");
                     }
                 }
             }
@@ -321,7 +324,7 @@ namespace SIPSorcery.Net
                             }
 
                             lookups++;
-                            logger.Debug("Thread " + threadName + " looking up " + queryType + " " + lookupRequest.Hostname + ".");
+                            logger.Debug("DNSManager thread " + threadName + " looking up " + queryType + " " + lookupRequest.Hostname + ".");
 
                             //dnsEntry = new DNSEntry(hostname);
                             //dnsEntry.LastLookup = DateTime.Now;
@@ -338,29 +341,29 @@ namespace SIPSorcery.Net
 
                             if (dnsResponse == null)
                             {
-                                logger.Debug("DNS resolution error for " + lookupRequest.QueryType + " " + lookupRequest.Hostname + " no response was returned. Time taken=" + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds + "ms.");
+                                logger.Warn("DNSManager resolution error for " + lookupRequest.QueryType + " " + lookupRequest.Hostname + " no response was returned. Time taken=" + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds + "ms.");
                             }
                             else if (dnsResponse.Error != null)
                             {
-                                logger.Debug("DNS resolution error for " + lookupRequest.QueryType + " " + lookupRequest.Hostname + ". " + dnsResponse.Error + ". Time taken=" + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds + "ms.");
+                                logger.Warn("DNSManager resolution error for " + lookupRequest.QueryType + " " + lookupRequest.Hostname + ". " + dnsResponse.Error + ". Time taken=" + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds + "ms.");
                             }
                             else if (lookupRequest.QueryType == DNSQType.A)
                             {
                                 if (dnsResponse.RecordsA != null && dnsResponse.RecordsA.Length > 0)
                                 {
-                                    logger.Debug("Resolved A record for " + lookupRequest.Hostname + " to " + dnsResponse.RecordsA[0].Address.ToString() + " in " + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds + "ms.");
+                                    logger.Debug("DNSManager resolved A record for " + lookupRequest.Hostname + " to " + dnsResponse.RecordsA[0].Address.ToString() + " in " + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds + "ms.");
                                 }
                                 else
                                 {
-                                    logger.Debug("Could not resolve A record for " + lookupRequest.Hostname + " in " + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds + "ms.");
+                                    logger.Warn("DNSManager could not resolve A record for " + lookupRequest.Hostname + " in " + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds + "ms.");
                                 }
                             }
                             else if (lookupRequest.QueryType == DNSQType.SRV)
                             {
-                                logger.Debug("Resolve time for " + lookupRequest.Hostname + " " + lookupRequest.QueryType + " " + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds + "ms.");
+                                logger.Debug("DNSManager resolve time for " + lookupRequest.Hostname + " " + lookupRequest.QueryType + " " + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds + "ms.");
                                 if (dnsResponse.RecordsRR == null || dnsResponse.RecordsRR.Length == 0)
                                 {
-                                    logger.Debug(" no resource records found for " + lookupRequest.Hostname + ".");
+                                    logger.Debug(" no SRV resource records found for " + lookupRequest.Hostname + ".");
                                 }
                                 else
                                 {
@@ -372,14 +375,14 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                logger.Debug("Resolve time for " + lookupRequest.Hostname + " " + lookupRequest.QueryType + " " + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds + "ms.");
+                                logger.Debug("DNSManager resolve time for " + lookupRequest.Hostname + " " + lookupRequest.QueryType + " " + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds + "ms.");
                             }
                         }
                         catch (Exception lookupExcp)
                         {
                             //dnsEntry.Unresolvable = true;
                             dnsResponse.Error = "Exception lookup. " + lookupExcp.Message;
-                            logger.Error("Exception ProcessLookups Lookup (thread, " + threadName + ", hostname=" + hostname + "). " + lookupExcp.GetType().ToString() + "-" + lookupExcp.Message);
+                            logger.Error("Exception DNSManager ProcessLookups Lookup (thread, " + threadName + ", hostname=" + hostname + "). " + lookupExcp.GetType().ToString() + "-" + lookupExcp.Message);
                         }
                         finally
                         {
@@ -409,7 +412,7 @@ namespace SIPSorcery.Net
                             }
                             catch (Exception excp)
                             {
-                                logger.Error("Exception ProcessLookup Adding DNS Response. " + excp.Message);
+                                logger.Error("Exception DNSManager ProcessLookup Adding DNS Response. " + excp.Message);
                             }
                         }
                     }

@@ -117,7 +117,7 @@ namespace SIPSorcery.Sys
 
 				byte[] sample = Encoding.ASCII.GetBytes("The quick brown fox jumped over...");
 
-				bool hasFox = ByteBufferInfo.HasString(sample, "fox", null);
+				bool hasFox = ByteBufferInfo.HasString(sample, 0, Int32.MaxValue, "fox", null);
 				
 				Assert.IsTrue(hasFox, "The string was not found in the buffer.");
 			}
@@ -129,7 +129,7 @@ namespace SIPSorcery.Sys
 
 				byte[] sample = Encoding.ASCII.GetBytes("The quick brown fox jumped over...");
 
-                bool hasFox = ByteBufferInfo.HasString(sample, "fox", "brown");
+                bool hasFox = ByteBufferInfo.HasString(sample, 0, Int32.MaxValue, "fox", "brown");
 				
 				Assert.IsTrue(!hasFox, "The string was not found in the buffer.");
 			}
@@ -154,7 +154,7 @@ namespace SIPSorcery.Sys
                 
                 byte[] sample = Encoding.ASCII.GetBytes(sipMsg);
 
-                int endOfMsgIndex = ByteBufferInfo.GetStringPosition(sample, "\r\n\r\n", null);
+                int endOfMsgIndex = ByteBufferInfo.GetStringPosition(sample, 0, Int32.MaxValue, "\r\n\r\n", null);
 
                 Assert.IsTrue(endOfMsgIndex == sample.Length - 4, "The string position was not correctly found in the buffer.");
             }
@@ -198,7 +198,7 @@ namespace SIPSorcery.Sys
 
                 byte[] sample = Encoding.ASCII.GetBytes(sipMsg);
 
-                int endOfMsgIndex = ByteBufferInfo.GetStringPosition(sample, "\r\n\r\n", null);
+                int endOfMsgIndex = ByteBufferInfo.GetStringPosition(sample, 0, Int32.MaxValue, "\r\n\r\n", null);
 
                 Assert.IsTrue(endOfMsgIndex == sipMsg.IndexOf("\r\n\r\n"), "The string position was not correctly found in the buffer. Index found was " + endOfMsgIndex + ", should have been " + sipMsg.IndexOf("\r\n\r\n") + ".");
             }
@@ -223,7 +223,7 @@ namespace SIPSorcery.Sys
 
                 byte[] sample = Encoding.ASCII.GetBytes(sipMsg);
 
-                int endOfMsgIndex = ByteBufferInfo.GetStringPosition(sample, "\r\n\r\n", null);
+                int endOfMsgIndex = ByteBufferInfo.GetStringPosition(sample, 0, Int32.MaxValue, "\r\n\r\n", null);
 
                 Assert.IsTrue(endOfMsgIndex == -1, "The string position was not correctly found in the buffer.");
             }

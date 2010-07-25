@@ -42,6 +42,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Security;
 using System.ServiceProcess;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
@@ -88,6 +89,8 @@ namespace SIPSorcery.SIPAppServer
         private string m_currentDirectory = AppState.CurrentDirectory;
         private string m_rubyScriptCommonPath = SIPAppServerState.RubyScriptCommonPath;
         private SIPEndPoint m_outboundProxy = SIPAppServerState.OutboundProxy;
+        private string m_dialplanImpersonationUsername = SIPAppServerState.DialPlanEngineImpersonationUsername;
+        private string m_dialplanImpersonationPassword = SIPAppServerState.DialPlanEngineImpersonationPassword;
 
         private SIPSorceryPersistor m_sipSorceryPersistor;
         private SIPMonitorEventWriter m_monitorEventWriter;
@@ -147,6 +150,7 @@ namespace SIPSorcery.SIPAppServer
                 logger.Debug("current directory=" + m_currentDirectory + ".");
                 logger.Debug("base directory=" + AppDomain.CurrentDomain.BaseDirectory + ".");
 
+                //SIPDNSManager.SIPMonitorLogEvent += FireSIPMonitorEvent;
                 m_sipSorceryPersistor = new SIPSorceryPersistor(m_storageType, m_connectionString);
                 m_customerSessionManager = new CustomerSessionManager(m_storageType, m_connectionString);
 
@@ -246,7 +250,7 @@ namespace SIPSorcery.SIPAppServer
 
                 #region Initialise the SIPTransport layers.
 
-                m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), true);
+                m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine(), true);
                 if (m_appServerEndPoint != null)
                 {
                     if (m_appServerEndPoint.Protocol == SIPProtocolsEnum.udp)
@@ -289,8 +293,11 @@ namespace SIPSorcery.SIPAppServer
                     m_sipSorceryPersistor.SIPAccountsPersistor,
                     m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
                     m_sipSorceryPersistor.SIPDialPlanPersistor,
+                    m_sipSorceryPersistor.SIPDialoguePersistor,
                     m_outboundProxy,
-                    m_rubyScriptCommonPath);
+                    m_rubyScriptCommonPath,
+                    m_dialplanImpersonationUsername,
+                    m_dialplanImpersonationPassword);
 
                 m_sipDialogueManager = new SIPDialogueManager(
                     m_sipTransport,

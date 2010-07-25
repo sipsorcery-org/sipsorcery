@@ -481,21 +481,35 @@ namespace SIPSorcery.SIP
                 throw new ApplicationException("No channels are configured in the SIP transport layer. The request could not be sent.");
             }
 
-            SIPEndPoint requestEndPoint = GetRequestEndPoint(sipRequest, null, true);
+            SIPDNSLookupResult dnsResult = GetRequestEndPoint(sipRequest, null, true);
 
-            if (requestEndPoint != null && requestEndPoint.Address == BlackholeAddress)
+            if (dnsResult.LookupError != null)
             {
-                // Ignore packet, it's destined for the blackhole.
-                return;
+                SIPResponse unresolvableResponse = GetResponse(sipRequest, SIPResponseStatusCodesEnum.AddressIncomplete, "DNS resolution for " + dnsResult.URI.Host + " failed " + dnsResult.LookupError);
+                SendResponse(unresolvableResponse);
             }
-
-            if (requestEndPoint != null)
+            else if (dnsResult.Pending)
             {
-                SendRequest(requestEndPoint, sipRequest);
+                // The DNS lookup is still in progress, ignore this request and rely on the fact that the transaction retransmit mechanism will send another request.
+                return;
             }
             else
             {
-                throw new ApplicationException("SIP Transport could not send request as end point could not be determined.\r\n" + sipRequest.ToString());
+                SIPEndPoint requestEndPoint = dnsResult.GetSIPEndPoint();
+
+                if (requestEndPoint != null && requestEndPoint.Address == BlackholeAddress)
+                {
+                    // Ignore packet, it's destined for the blackhole.
+                    return;
+                }
+                else if (requestEndPoint != null)
+                {
+                    SendRequest(requestEndPoint, sipRequest);
+                }
+                else
+                {
+                    throw new ApplicationException("SIP Transport could not send request as end point could not be determined.\r\n" + sipRequest.ToString());
+                }
             }
         }
 
@@ -623,16 +637,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    SIPEndPoint resolvedEndPoint = GetRequestEndPoint(sipTransaction.TransactionRequest, sipTransaction.OutboundProxy, true);
-                    if (resolvedEndPoint != null)
-                    {
-                        sipTransaction.RemoteEndPoint = resolvedEndPoint;
-                        SendRequest(sipTransaction.RemoteEndPoint, sipTransaction.TransactionRequest);
-                    }
-                    else
-                    {
-                        throw new ApplicationException("SIP Transport could not send request as end point could not be determined.\r\n" + sipTransaction.TransactionRequest.ToString());
-                    }
+                    SendRequest(sipTransaction.TransactionRequest);
                 }
             }
 
@@ -727,15 +732,35 @@ namespace SIPSorcery.SIP
             }
 
             SIPViaHeader topVia = sipResponse.Header.Vias.TopViaHeader;
-            SIPEndPoint dstEndPoint = GetHostEndPoint(topVia.ReceivedFromAddress, true);
+            SIPDNSLookupResult lookupResult = GetHostEndPoint(topVia.ReceivedFromAddress, false);
 
-            if (dstEndPoint != null && dstEndPoint.Address == BlackholeAddress)
+            if (lookupResult.LookupError != null)
             {
-                // Ignore packet, it's destined for the blackhole.
+                throw new ApplicationException("Could not resolve destination for response.\n" + sipResponse.ToString());
+            }
+            else if (lookupResult.Pending)
+            {
+                // Ignore this response transmission and wait for the transaction retransmit mechanism to try again when DNS will have hopefully resolved the end point.
                 return;
             }
+            else
+            {
+                SIPEndPoint dstEndPoint = lookupResult.GetSIPEndPoint();
 
-            SendResponse(sipChannel, new SIPEndPoint(topVia.Transport, dstEndPoint.GetIPEndPoint()), sipResponse);
+                if (dstEndPoint != null && dstEndPoint.Address == BlackholeAddress)
+                {
+                    // Ignore packet, it's destined for the blackhole.
+                    return;
+                }
+                else if (dstEndPoint != null)
+                {
+                    SendResponse(sipChannel, new SIPEndPoint(topVia.Transport, dstEndPoint.GetIPEndPoint()), sipResponse);
+                }
+                else
+                {
+                    throw new ApplicationException("SendResponse could not send a response as no end point was resolved.\n" + sipResponse.ToString());
+                }
+            }
         }
 
         private void SendResponse(SIPChannel sipChannel, SIPEndPoint dstEndPoint, SIPResponse sipResponse)
@@ -1770,40 +1795,33 @@ namespace SIPSorcery.SIP
 
         #region DNS resolution methods.
 
-        public SIPEndPoint GetHostEndPoint(string host, bool synchronous)
+        public SIPDNSLookupResult GetHostEndPoint(string host, bool async)
         {
-            return ResolveSIPEndPoint_External(SIPURI.ParseSIPURIRelaxed(host), synchronous);
+            return ResolveSIPEndPoint_External(SIPURI.ParseSIPURIRelaxed(host), async);
         }
 
-        public SIPEndPoint GetURIEndPoint(SIPURI uri, bool synchronous)
+        public SIPDNSLookupResult GetURIEndPoint(SIPURI uri, bool async)
         {
-            return ResolveSIPEndPoint_External(uri, synchronous);
+            return ResolveSIPEndPoint_External(uri, async);
         }
 
         /// <summary>
         /// Based on the information in the SIP request attempts to determine the end point the request should
         /// be sent to.
         /// </summary>
-        public SIPEndPoint GetRequestEndPoint(SIPRequest sipRequest, SIPEndPoint outboundProxy, bool synchronous)
+        public SIPDNSLookupResult GetRequestEndPoint(SIPRequest sipRequest, SIPEndPoint outboundProxy, bool async)
         {
-            SIPEndPoint requestEndPoint = null;
+            SIPURI lookupURI = (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0) ? sipRequest.Header.Routes.TopRoute.URI : sipRequest.URI;
 
             if (outboundProxy != null)
             {
-                requestEndPoint = outboundProxy;
-            }
-            else if (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0)
-            {
-                requestEndPoint = GetURIEndPoint(sipRequest.Header.Routes.TopRoute.URI, synchronous);
+                return new SIPDNSLookupResult(lookupURI, outboundProxy);
             }
             else
             {
-                requestEndPoint = GetURIEndPoint(sipRequest.URI, synchronous);
+                return GetURIEndPoint(sipRequest.URI, async);
             }
-
-            return requestEndPoint;
         }
-
 
         #endregion
     }

@@ -49,7 +49,7 @@ namespace SIPSorcery.SIP
     public delegate void SIPTransportResponseDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse);
     public delegate void SIPTransportSIPBadMessageDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remotePoint, string message, SIPValidationFieldsEnum errorField, string rawMessage);
     public delegate void STUNRequestReceivedDelegate(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] buffer, int bufferLength);
-    public delegate SIPEndPoint ResolveSIPEndPointDelegate(SIPURI uri, bool synchronous);
+    public delegate SIPDNSLookupResult ResolveSIPEndPointDelegate(SIPURI uri, bool async);
 
     // SIP Transaction delegates.
     public delegate void SIPTransactionStateChangeDelegate(SIPTransaction sipTransaction);

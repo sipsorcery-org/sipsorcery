@@ -74,7 +74,7 @@ namespace SIPSorcery.Servers
         private static ILog logger = AppState.logger;
         private static ILog execCountlogger = AppState.GetLogger("executioncount");
 
-        private static readonly string m_sipDialPlanExecutionCountPropertyName = SIPDialPlan.PROPERTY_EXECUTIONCOUNT_NAME;
+        //private static readonly string m_sipDialPlanExecutionCountPropertyName = SIPDialPlan.PROPERTY_EXECUTIONCOUNT_NAME;
 
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;

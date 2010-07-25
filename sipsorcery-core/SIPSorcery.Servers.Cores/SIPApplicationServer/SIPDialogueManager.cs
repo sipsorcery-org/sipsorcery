@@ -715,7 +715,15 @@ namespace SIPSorcery.Servers
                     }
                     else
                     {
-                        reinviteEndPoint = m_sipTransport.GetRequestEndPoint(reInviteReq, m_outboundProxy, true);
+                        SIPDNSLookupResult lookupResult = m_sipTransport.GetRequestEndPoint(reInviteReq, m_outboundProxy, false);
+                        if (lookupResult.LookupError != null)
+                        {
+                            logger.Warn("ReInvite Failed to resolve " + lookupResult.URI.Host + ".");
+                        }
+                        else
+                        {
+                            reinviteEndPoint = lookupResult.GetSIPEndPoint();
+                        }
                     }
 
                     if (reinviteEndPoint != null)
@@ -809,7 +817,15 @@ namespace SIPSorcery.Servers
                 }
                 else
                 {
-                    forwardEndPoint = m_sipTransport.GetRequestEndPoint(forwardedRequest, m_outboundProxy, true);
+                    SIPDNSLookupResult lookupResult = m_sipTransport.GetRequestEndPoint(forwardedRequest, m_outboundProxy, false);
+                    if (lookupResult.LookupError != null)
+                    {
+                        logger.Warn("ForwardInDialogueRequest Failed to resolve " + lookupResult.URI.Host + ".");
+                    }
+                    else
+                    {
+                        forwardEndPoint = lookupResult.GetSIPEndPoint();
+                    }
                 }
 
                 if (forwardEndPoint != null)
@@ -1234,7 +1250,17 @@ namespace SIPSorcery.Servers
                 m_sipDialoguePersistor.UpdateProperty(referDialogue.Id, "CSeq", referDialogue.CSeq);
 
                 SIPRequest notifyTryingRequest = GetNotifyRequest(referRequest, referDialogue, new SIPResponse(responseCode, responseReason, null), localEndPoint);
-                SIPEndPoint forwardEndPoint = m_sipTransport.GetRequestEndPoint(notifyTryingRequest, m_outboundProxy, true);
+                SIPEndPoint forwardEndPoint = null;
+                SIPDNSLookupResult lookupResult = m_sipTransport.GetRequestEndPoint(notifyTryingRequest, m_outboundProxy, false);
+                if (lookupResult.LookupError != null)
+                {
+                    logger.Warn("SendNotifyRequestForRefer Failed to resolve " + lookupResult.URI.Host + ".");
+                }
+                else
+                {
+                    forwardEndPoint = lookupResult.GetSIPEndPoint();
+                }
+
                 SIPNonInviteTransaction notifyTryingTransaction = m_sipTransport.CreateNonInviteTransaction(notifyTryingRequest, forwardEndPoint, localEndPoint, m_outboundProxy);
                 notifyTryingTransaction.SendReliableRequest();
             }

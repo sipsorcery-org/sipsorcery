@@ -79,6 +79,12 @@
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\AssemblyState.cs">
       <Link>AssemblyState.cs</Link>
     </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\DNS\SIPDNSConstants.cs">
+      <Link>DNS\SIPDNSConstants.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\DNS\SIPDNSLookupResult.cs">
+      <Link>DNS\SIPDNSLookupResult.cs</Link>
+    </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.Core\SIPAuthorisation\SIPAuthorisationDigest.cs">
       <Link>SIPAuthorisation\SIPAuthorisationDigest.cs</Link>
     </Compile>

@@ -133,7 +133,7 @@ namespace SIPSorcery.SIP.App
                 if (!m_callCancelled)
                 {
                     // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
-                    if(m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.Address))
+                    if (m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.Address))
                     {
                         m_serverEndPoint = m_outboundProxy;
                     }
@@ -168,15 +168,26 @@ namespace SIPSorcery.SIP.App
                     // No outbound proxy, determine the forward destination based on the SIP request.
                     if (m_serverEndPoint == null)
                     {
+                        SIPDNSLookupResult lookupResult = null;
+
                         if (routeSet == null || routeSet.Length == 0)
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Attempting to resolve " + callURI.Host + ".", Owner));
-                            m_serverEndPoint = m_sipTransport.GetURIEndPoint(callURI, true);
+                            lookupResult = m_sipTransport.GetURIEndPoint(callURI, false);
                         }
                         else
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Route set for call " + routeSet.ToString() + ".", Owner));
-                            m_serverEndPoint = m_sipTransport.GetURIEndPoint(routeSet.TopRoute.URI, true);
+                            lookupResult = m_sipTransport.GetURIEndPoint(routeSet.TopRoute.URI, false);
+                        }
+
+                        if (lookupResult.LookupError != null)
+                        {
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "DNS error resolving " + callURI.Host + ", " + lookupResult.LookupError + ". Call cannot proceed.", Owner));
+                        }
+                        else
+                        {
+                            m_serverEndPoint = lookupResult.GetSIPEndPoint();
                         }
                     }
 
@@ -270,7 +281,7 @@ namespace SIPSorcery.SIP.App
                             FireCallFailed(this, "unresolvable destination " + routeSet.TopRoute.Host);
                         }
                     }
-                }
+                }       
             }
             catch (ApplicationException appExcp)
             {
@@ -374,17 +385,17 @@ namespace SIPSorcery.SIP.App
                             SIPURI byeURI = sipResponse.Header.Contact[0].ContactURI;
                             SIPRequest byeRequest = GetByeRequest(sipResponse, byeURI, localSIPEndPoint);
 
-                            SIPEndPoint byeEndPoint = m_sipTransport.GetRequestEndPoint(byeRequest, m_outboundProxy, true);
+                            //SIPEndPoint byeEndPoint = m_sipTransport.GetRequestEndPoint(byeRequest, m_outboundProxy, true);
 
-                            if (byeEndPoint != null)
-                            {
-                                SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, byeEndPoint, localSIPEndPoint, m_outboundProxy);
-                                byeTransaction.SendReliableRequest();
-                            }
-                            else
-                            {
-                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Could not end BYE on cancelled call as request end point could not be determined " + byeRequest.URI.ToString(), Owner));
-                            }
+                            // if (byeEndPoint != null)
+                            // {
+                            SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, localSIPEndPoint, m_outboundProxy);
+                            byeTransaction.SendReliableRequest();
+                            // }
+                            // else
+                            // {
+                            //     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Could not end BYE on cancelled call as request end point could not be determined " + byeRequest.URI.ToString(), Owner));
+                            //}
                         }
                         else
                         {
@@ -538,6 +549,20 @@ namespace SIPSorcery.SIP.App
 
                         m_sipDialogue = new SIPDialogue(m_serverTransaction, Owner, AdminMemberId);
                         m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
+
+                        // Set switchboard dialogue values from the answered response or from dialplan set values.
+                        m_sipDialogue.SwitchboardCallerDescription = sipResponse.Header.SwitchboardCallerDescription;
+                        m_sipDialogue.SwitchboardDescription = sipResponse.Header.SwitchboardDescription;
+
+                        if (m_sipCallDescriptor.SwitchboardHeaders != null)
+                        {
+                            if (!m_sipCallDescriptor.SwitchboardHeaders.SwitchboardDialogueDescription.IsNullOrBlank())
+                            {
+                                m_sipDialogue.SwitchboardDescription = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardDialogueDescription;
+                            }
+
+                            m_sipDialogue.SwitchboardOwner = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardOwner;
+                        }
                     }
 
                     FireCallAnswered(this, sipResponse);
@@ -615,7 +640,8 @@ namespace SIPSorcery.SIP.App
                 inviteHeader.SwitchboardCallID = CallDescriptor.SwitchboardHeaders.SwitchboardCallID;
                 inviteHeader.SwitchboardCallerDescription = CallDescriptor.SwitchboardHeaders.SwitchboardCallerDescription;
                 inviteHeader.SwitchboardDescription = CallDescriptor.SwitchboardHeaders.SwitchboardDescription;
-                inviteHeader.SwitchboardOwner = CallDescriptor.SwitchboardHeaders.SwitchboardOwner;
+                //inviteHeader.SwitchboardOwner = CallDescriptor.SwitchboardHeaders.SwitchboardOwner;
+                inviteHeader.SwitchboardFrom = CallDescriptor.SwitchboardHeaders.SwitchboardFrom;
             }
 
             try

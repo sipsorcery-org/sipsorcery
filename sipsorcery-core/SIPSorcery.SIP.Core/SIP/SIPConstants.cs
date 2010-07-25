@@ -70,7 +70,7 @@ namespace SIPSorcery.SIP
  
         public const string NAT_SENDKEEPALIVES_VALUE = "y";
 
-        public const string SWITCHBOARD_USER_AGENT_PREFIX = "sipsorcery-switchboard";
+        //public const string SWITCHBOARD_USER_AGENT_PREFIX = "sipsorcery-switchboard";
 	}
 
 	public enum SIPMessageTypesEnum

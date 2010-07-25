@@ -35,25 +35,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using SIPSorcery.Sys;
-using Heijden.DNS;
 using log4net;
 
-namespace SIPSorcery.SIP.App
+namespace SIPSorcery.SIP
 {
-    /// <summary>
-    /// A list of the different combinations of SIP schemes and transports. 
-    /// </summary>
-    public enum SIPServicesEnum
-    {
-        none = 0,
-        sipudp = 1,     // sip over udp. SIP+D2U and _sip._udp
-        siptcp = 2,     // sip over tcp. SIP+D2T and _sip._tcp
-        sipsctp = 3,    // sip over sctp. SIP+D2S and _sip._sctp
-        siptls = 4,     // sip over tls. _sip._tls.
-        sipstcp = 5,    // sips over tcp. SIPS+D2T and _sips._tcp
-        sipssctp = 6,   // sips over sctp. SIPS+D2S and _sips._sctp
-    }
-
     public class SIPDNSServiceResult
     {
         public SIPServicesEnum SIPService;                  // The type of SIP NAPTR/SRV record that was resolved.
@@ -117,6 +102,18 @@ namespace SIPSorcery.SIP.App
             LookupError = lookupError;
         }
 
+        /// <summary>
+        /// Used when the result is already known such as when the lookup is for an IP address but a DNS lookup
+        /// object still needs to be returned.
+        /// </summary>
+        /// <param name="uri">The URI being looked up.</param>
+        /// <param name="resultEndPoint">The known result SIP end point.</param>
+        public SIPDNSLookupResult(SIPURI uri, SIPEndPoint resultEndPoint)
+        {
+            URI = uri;
+            EndPointResults = new List<SIPDNSLookupEndPoint>() { new SIPDNSLookupEndPoint(resultEndPoint, Int32.MaxValue) };
+        }
+
         public void AddLookupResult(SIPDNSLookupEndPoint lookupEndPoint)
         {
             //logger.Debug(" adding SIP end point result for " + URI.ToString() + " of " + lookupEndPoint.LookupEndPoint + ".");
@@ -131,46 +128,20 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public void AddNAPTRResult(RecordNAPTR naptrRecord)
+        public void AddNAPTRResult(SIPDNSServiceResult sipNAPTRResult)
         {
-            //logger.Debug("Checking NAPTR record for " + URI.ToString() + " " + naptrRecord.ToString() + ".");
-
-            SIPServicesEnum sipServicesEnum = SIPServicesEnum.none;
-
-            if (naptrRecord.Service == SIPDNSManager.NAPTR_SIP_UDP_SERVICE)
-            {
-                sipServicesEnum = SIPServicesEnum.sipudp;
-            }
-            else if (naptrRecord.Service == SIPDNSManager.NAPTR_SIP_TCP_SERVICE)
-            {
-                sipServicesEnum = SIPServicesEnum.siptcp;
-            }
-            else if (naptrRecord.Service == SIPDNSManager.NAPTR_SIPS_TCP_SERVICE)
-            {
-                sipServicesEnum = SIPServicesEnum.sipstcp;
-            }
-
-            if(sipServicesEnum != SIPServicesEnum.none)
-            {
-                //logger.Debug(" adding NAPTR lookup result for " + URI.ToString() + " of " + naptrRecord.ToString() + ".");
-                SIPDNSServiceResult sipNAPTRResult = new SIPDNSServiceResult(sipServicesEnum, naptrRecord.Order, naptrRecord.RR.TTL, naptrRecord.Replacement, 0, DateTime.Now);
-
                 if (SIPNAPTRResults == null)
                 {
-                    SIPNAPTRResults = new Dictionary<SIPServicesEnum, SIPDNSServiceResult>() { { sipServicesEnum, sipNAPTRResult } };
+                    SIPNAPTRResults = new Dictionary<SIPServicesEnum, SIPDNSServiceResult>() { { sipNAPTRResult.SIPService, sipNAPTRResult } };
                 }
                 else
                 {
-                    SIPNAPTRResults.Add(sipServicesEnum, sipNAPTRResult);
+                    SIPNAPTRResults.Add(sipNAPTRResult.SIPService, sipNAPTRResult);
                 }
-            }
         }
 
-        public void AddSRVResult(SIPServicesEnum service, RecordSRV srvRecord)
+        public void AddSRVResult(SIPDNSServiceResult sipSRVResult)
         {
-            //logger.Debug("Adding record for " + URI.ToString() + " " + srvRecord.ToString() + ".");
-            SIPDNSServiceResult sipSRVResult = new SIPDNSServiceResult(service, srvRecord.Priority, srvRecord.RR.TTL, srvRecord.Target, srvRecord.Port, DateTime.Now);
-
             if (SIPSRVResults == null)
             {
                 SIPSRVResults = new List<SIPDNSServiceResult>() { sipSRVResult };
@@ -201,6 +172,18 @@ namespace SIPSorcery.SIP.App
             }
 
             return null;
+        }
+
+        public SIPEndPoint GetSIPEndPoint()
+        {
+            if (EndPointResults != null && EndPointResults.Count > 0)
+            {
+                return EndPointResults[0].LookupEndPoint;
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }

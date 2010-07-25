@@ -199,31 +199,46 @@ namespace SIPSorcery.Servers
                                 }
                                 else
                                 {
-                                    dstSIPEndPoint = m_sipTransport.GetURIEndPoint(dstURI, true);
+                                    SIPDNSLookupResult lookupResult = m_sipTransport.GetURIEndPoint(dstURI, false);
+                                    if(lookupResult.LookupError != null)
+                                    {
+                                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.MWI, "A NOTIFY request from " + fromURI + " was not forwarded due to DNS failure for " + dstURI.Host + ", " + lookupResult.LookupError + ".", sipAccount.Owner));
+                                    }
+                                    else
+                                    {
+                                        dstSIPEndPoint = lookupResult.GetSIPEndPoint();
+                                    }
                                 }
 
-                                // Rather than create a brand new request copy the received one and modify the headers that need to be unique.
-                                SIPRequest notifyRequest = sipRequest.Copy();
-                                notifyRequest.URI = dstURI;
-                                notifyRequest.Header.Contact = SIPContactHeader.CreateSIPContactList(new SIPURI(dstURI.Scheme, localSIPEndPoint));
-                                notifyRequest.Header.To = new SIPToHeader(null, dstURI, null);
-                                notifyRequest.Header.CallId = CallProperties.CreateNewCallId();
-                                SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
-                                notifyRequest.Header.Vias = new SIPViaSet();
-                                notifyRequest.Header.Vias.PushViaHeader(viaHeader);
-
-                                // If the binding has a proxy socket defined set the header to ask the upstream proxy to use it.
-                                if (binding.ProxySIPEndPoint != null)
+                                if (dstSIPEndPoint != null)
                                 {
-                                    notifyRequest.Header.ProxySendFrom = binding.ProxySIPEndPoint.ToString();
+                                    // Rather than create a brand new request copy the received one and modify the headers that need to be unique.
+                                    SIPRequest notifyRequest = sipRequest.Copy();
+                                    notifyRequest.URI = dstURI;
+                                    notifyRequest.Header.Contact = SIPContactHeader.CreateSIPContactList(new SIPURI(dstURI.Scheme, localSIPEndPoint));
+                                    notifyRequest.Header.To = new SIPToHeader(null, dstURI, null);
+                                    notifyRequest.Header.CallId = CallProperties.CreateNewCallId();
+                                    SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
+                                    notifyRequest.Header.Vias = new SIPViaSet();
+                                    notifyRequest.Header.Vias.PushViaHeader(viaHeader);
 
-                                    // If the binding has a specific proxy end point sent then the request needs to be forwarded to the proxy's default end point for it to take care of.
-                                    dstSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(binding.ProxySIPEndPoint.Address, m_defaultSIPPort));
+                                    // If the binding has a proxy socket defined set the header to ask the upstream proxy to use it.
+                                    if (binding.ProxySIPEndPoint != null)
+                                    {
+                                        notifyRequest.Header.ProxySendFrom = binding.ProxySIPEndPoint.ToString();
+
+                                        // If the binding has a specific proxy end point sent then the request needs to be forwarded to the proxy's default end point for it to take care of.
+                                        dstSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(binding.ProxySIPEndPoint.Address, m_defaultSIPPort));
+                                    }
+
+                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.MWI, "Forwarding NOTIFY request from " + fromURI + " to registered binding at " + dstURI.ToString() + ", proxy " + dstSIPEndPoint.ToString() + ".", sipAccount.Owner));
+                                    SIPNonInviteTransaction notifyTransaction = m_sipTransport.CreateNonInviteTransaction(notifyRequest, dstSIPEndPoint, localSIPEndPoint, dstSIPEndPoint);
+                                    notifyTransaction.SendReliableRequest();
                                 }
-
-                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.MWI, "Forwarding NOTIFY request from " + fromURI + " to registered binding at " + dstURI.ToString() + ", proxy " + dstSIPEndPoint.ToString() + ".", sipAccount.Owner));
-                                SIPNonInviteTransaction notifyTransaction = m_sipTransport.CreateNonInviteTransaction(notifyRequest, dstSIPEndPoint, localSIPEndPoint, dstSIPEndPoint);
-                                notifyTransaction.SendReliableRequest();
+                                else
+                                {
+                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.MWI, "A NOTIFY request from " + fromURI + " was not forwarded as no destination end point was resolved.", sipAccount.Owner));
+                                }
                             }
 
                             // Send OK response to server.

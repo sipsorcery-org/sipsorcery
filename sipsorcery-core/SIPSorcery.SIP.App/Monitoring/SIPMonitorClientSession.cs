@@ -71,7 +71,11 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    Filter.Username = m_filterWildcard;
+                    // If the administrator has not requested a filter on a specific user set the wildcard.
+                    if (Filter.Username == null)
+                    {
+                        Filter.Username = m_filterWildcard;
+                    }
                 }
 
                 return SessionID;

@@ -98,6 +98,8 @@ namespace SIPSorcery.SIPRegistrationAgent
                     throw new ApplicationException("The SIP Registration Agent cannot start without at least one socket specified to listen on, please check config file.");
                 }
 
+                SIPDNSManager.SIPMonitorLogEvent += FireSIPMonitorEvent;
+
                 // Send events from this process to the monitoring socket.
                 if (m_monitorLoopbackPort != 0)
                 {
@@ -107,7 +109,7 @@ namespace SIPSorcery.SIPRegistrationAgent
                 }
 
                 // Configure the SIP transport layer.
-                m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine(), true);
+                m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine(), true);
                 List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipRegAgentSocketsNode);
                 m_sipTransport.AddSIPChannel(sipChannels);
 

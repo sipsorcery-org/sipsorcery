@@ -147,7 +147,9 @@ namespace SIPSorcery.SIP
                     if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0)
                     {
                         ackURI = sipResponse.Header.Contact[0].ContactURI;
-                        if (IPSocket.IsPrivateAddress(ackURI.Host) && !sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank())
+                        // Don't mangle private contacts if there is a Record-Route header. If a proxy is putting private IP's in a Record-Route header that's its problem.
+                        if ((sipResponse.Header.RecordRoutes == null || sipResponse.Header.RecordRoutes.Length == 0)
+                            && IPSocket.IsPrivateAddress(ackURI.Host) && !sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank())
                         {
                             // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
                             SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom);

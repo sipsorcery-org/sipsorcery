@@ -66,6 +66,11 @@ namespace Heijden.DNS
 		/// </summary>
 		public IPEndPoint Server;
 
+        /// <summary>
+        /// True if the DNS request timed out before a response was received.
+        /// </summary>
+        public bool Timedout;
+
 		public DNSResponse()
 		{
 			Questions = new List<Question>();
@@ -111,6 +116,11 @@ namespace Heijden.DNS
 			{
 				Additionals.Add(new AdditionalRR(rr));
 			}
+
+            if (header.RCODE != RCode.NOERROR)
+            {
+                Error = header.RCODE.ToString();
+            }
 		}
 
         public DNSResponse(IPAddress address)

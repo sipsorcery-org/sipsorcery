@@ -35,6 +35,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security;
 using System.Text;
 using System.Threading;
 using SIPSorcery.Net;
@@ -168,7 +169,7 @@ namespace SIPSorcery.AppServer.DialPlan
             call.CallAnswered += (s, r, toTag, h, t, b, d, transferMode) => { answeredDialogue = d; waitForCallCompleted.Set(); };
 
             try {
-                Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, null, null, null, null, null, null, null, null);
+                Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, null, null, null, null, null, null, null);
                 call.Start(callsQueue);
 
                 // Wait for an answer.

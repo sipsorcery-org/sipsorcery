@@ -38,10 +38,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -51,6 +53,7 @@ using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using System.Transactions;
 using Heijden.DNS;
 using log4net;
 using agsXMPP;
@@ -134,9 +137,12 @@ namespace SIPSorcery.AppServer.DialPlan
         private int m_emailCount = 0;               // Keeps count of the emails that have been sent during this dialpan execution.
         private int m_callInitialisationCount = 0;  // Keeps count of the number of call initialisations that have been attempted by a dialplan execution.
         private int m_callbackRequests = 0;         // Keeps count of the number of call back requests that have been attempted by a dialplan execution.
+        private IDbConnection m_userDataDBConnection;
+        private IDbTransaction m_userDataDBTransaction;
 
         private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
         private SIPAssetPersistor<SIPDialPlan> m_sipDialPlanPersistor;
+        private SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;   // This event must be wired up to an external function in order to be able to lookup bindings that have been registered for a SIP account.  
         private ISIPCallManager m_callManager;
 
@@ -168,9 +174,9 @@ namespace SIPSorcery.AppServer.DialPlan
         }
 
         // Switchboard descriptive fields.
-        public string SwitchboardCallerDescription;
-        public string SwitchboardDescription;
-        public string SwitchboardOwner;
+        //public string SwitchboardCallerDescription;
+        //public string SwitchboardDescription;
+        //public string SwitchboardOwner;
 
         public static IPAddress PublicIPAddress;    // If the app server is behind a NAT then it can set this address to be used in mangled SDP.
 
@@ -199,6 +205,7 @@ namespace SIPSorcery.AppServer.DialPlan
             ISIPCallManager callManager,
             SIPAssetPersistor<SIPAccount> sipAccountPersistor,
             SIPAssetPersistor<SIPDialPlan> sipDialPlanPersistor,
+            SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPAccountBindings,
             SIPEndPoint outboundProxySocket
             )
@@ -214,8 +221,11 @@ namespace SIPSorcery.AppServer.DialPlan
             m_callManager = callManager;
             m_sipAccountPersistor = sipAccountPersistor;
             m_sipDialPlanPersistor = sipDialPlanPersistor;
+            m_sipDialoguePersistor = sipDialoguePersistor;
             GetSIPAccountBindings_External = getSIPAccountBindings;
             m_outboundProxySocket = outboundProxySocket;
+
+            m_executingScript.Cleanup = Cleanup;
 
             if (m_dialPlanContext != null)
             {
@@ -235,8 +245,27 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
+        /// <summary>
+        /// A function that gets attached to the executing thread object and that will be called when the dialplan script is complete and 
+        /// immediately prior to a possible thread abortion.
+        /// </summary>
+        private void Cleanup()
+        {
+            try
+            {
+                if (m_userDataDBConnection != null)
+                {
+                    m_userDataDBConnection.Close();
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception DialPlanScriptFacade Cleanup. " + excp.Message);
+            }
+        }
+
         /// <remarks>
-        /// This method will be called on the thread that owns the dialplancontext object so it's critical that Thread abort 
+        /// This method will be called on the thread that owns the dialplan context object so it's critical that Thread abort 
         /// is not called in it or from it.
         /// </remarks>
         /// <param name="cancelCause"></param>
@@ -371,8 +400,6 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 try
                 {
-                    SwitchboardHeaders switchboardHeaders = new SwitchboardHeaders(m_sipRequest.Header.CallId, SwitchboardCallerDescription, SwitchboardDescription, SwitchboardOwner);
-
                     Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(
                         DialPlanContextsEnum.Script,
                         clientRequest,
@@ -383,8 +410,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_dialPlanContext.CallersNetworkId,
                         m_customFromName,
                         m_customFromUser,
-                        m_customFromHost,
-                        switchboardHeaders);
+                        m_customFromHost);
 
                     List<SIPCallDescriptor>[] callListArray = callsQueue.ToArray();
                     callsQueue.ToList().ForEach((list) => numberLegs += list.Count);
@@ -430,11 +456,6 @@ namespace SIPSorcery.AppServer.DialPlan
                                     answeredDialogue.CallDurationLimit = answeredCallLimit;
                                 }
 
-                                // Set switchboard dialogue values from the answered response or from dialplan set values.
-                                answeredDialogue.SwitchboardCallerDescription = SwitchboardCallerDescription ?? m_sipRequest.Header.SwitchboardCallerDescription;
-                                answeredDialogue.SwitchboardDescription = SwitchboardDescription ?? m_sipRequest.Header.SwitchboardDescription;
-                                answeredDialogue.SwitchboardOwner = SwitchboardOwner ?? m_sipRequest.Header.SwitchboardOwner;
-                                
                                 m_dialPlanContext.CallAnswered(answeredStatus, answeredReason, null, null, answeredContentType, answeredBody, answeredDialogue, uasTransferMode);
 
                                 // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
@@ -924,11 +945,6 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        //public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, bool notUsed)
-        //{
-        //    GoogleVoiceCall(emailAddress, password, forwardingNumber, destinationNumber, null, DEFAULT_GOOGLEVOICE_PHONETYPE, 0);
-        //}
-
         public void GoogleVoiceCall(string emailAddress, string password, string forwardingNumber, string destinationNumber)
         {
             GoogleVoiceCall(emailAddress, password, forwardingNumber, destinationNumber, null, DEFAULT_GOOGLEVOICE_PHONETYPE, 0);
@@ -1016,54 +1032,54 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <returns>The first 1024 bytes read from the response.</returns>
         public string WebGet(string url, int timeout)
         {
-           Timer cancelTimer = null;
+            Timer cancelTimer = null;
 
-           try
-           {
-               if (!url.IsNullOrBlank())
-               {
-                   using (WebClient webClient = new WebClient())
-                   {
+            try
+            {
+                if (!url.IsNullOrBlank())
+                {
+                    using (WebClient webClient = new WebClient())
+                    {
 
-                       if (timeout > 0)
-                       {
-                           timeout = (timeout > WEBGET_MAXIMUM_TIMEOUT) ? timeout = WEBGET_MAXIMUM_TIMEOUT : timeout;
-                           cancelTimer = new Timer(delegate
-                               {
-                                   Log("WebGet to " + url + " timed out after " + timeout + " seconds.");
-                                   webClient.CancelAsync();
-                               },
-                               null, timeout * 1000, Timeout.Infinite);
-                       }
+                        if (timeout > 0)
+                        {
+                            timeout = (timeout > WEBGET_MAXIMUM_TIMEOUT) ? timeout = WEBGET_MAXIMUM_TIMEOUT : timeout;
+                            cancelTimer = new Timer(delegate
+                                {
+                                    Log("WebGet to " + url + " timed out after " + timeout + " seconds.");
+                                    webClient.CancelAsync();
+                                },
+                                null, timeout * 1000, Timeout.Infinite);
+                        }
 
-                       Log("WebGet attempting to read from " + url + ".");
+                        Log("WebGet attempting to read from " + url + ".");
 
-                       System.IO.Stream responseStream = webClient.OpenRead(url);
-                       if (responseStream != null)
-                       {
-                           byte[] buffer = new byte[MAX_BYTES_WEB_GET];
-                           int bytesRead = responseStream.Read(buffer, 0, MAX_BYTES_WEB_GET);
-                           responseStream.Close();
-                           return Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                       }
-                   }
-               }
+                        System.IO.Stream responseStream = webClient.OpenRead(url);
+                        if (responseStream != null)
+                        {
+                            byte[] buffer = new byte[MAX_BYTES_WEB_GET];
+                            int bytesRead = responseStream.Read(buffer, 0, MAX_BYTES_WEB_GET);
+                            responseStream.Close();
+                            return Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                        }
+                    }
+                }
 
-               return null;
-           }
-           catch (Exception excp)
-           {
-               logger.Error("Exception WebGet. " + excp.Message);
-               Log("Error in WebGet for " + url + ".");
-               return null;
-           }
-           finally
-           {
-               if (cancelTimer != null)
-               {
-                   cancelTimer.Dispose();
-               }
-           }
+                return null;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception WebGet. " + excp.Message);
+                Log("Error in WebGet for " + url + ".");
+                return null;
+            }
+            finally
+            {
+                if (cancelTimer != null)
+                {
+                    cancelTimer.Dispose();
+                }
+            }
         }
 
         public string WebGet(string url)
@@ -1141,6 +1157,22 @@ namespace SIPSorcery.AppServer.DialPlan
             return m_callManager.GetCurrentCallCount(m_username);
         }
 
+        /// <summary>
+        /// Gets a list of currently active calls for the dial plan owner.
+        /// </summary>
+        /// <returns>A list of currently active calls.</returns>
+        public List<SIPDialogueAsset> GetCurrentCalls()
+        {
+            return m_sipDialoguePersistor.Get(d => d.Owner == m_username, null, 0, Int32.MaxValue);
+        }
+
+        private IDbConnection GetDatabaseConnection(StorageTypes storageType, string dbConnStr)
+        {
+            IDbConnection dbConn = StorageLayer.GetDbConnection(storageType, dbConnStr);
+            dbConn.Open();
+            return dbConn;
+        }
+
         public void DBWrite(string key, string value)
         {
             if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
@@ -1166,32 +1198,55 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
+                /* StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
 
-                Dictionary<string, object> parameters = new Dictionary<string, object>();
-                parameters.Add("dataowner", m_username);
-                int ownerKeyCount = Convert.ToInt32(storageLayer.ExecuteScalar("select count(*) from dialplandata where dataowner = @dataowner", parameters));
+                 Dictionary<string, object> parameters = new Dictionary<string, object>();
+                 parameters.Add("dataowner", m_username);
+                 int ownerKeyCount = Convert.ToInt32(storageLayer.ExecuteScalar("select count(*) from dialplandata where dataowner = @dataowner", parameters));
 
-                if (ownerKeyCount == MAX_DATA_ENTRIES_PER_USER)
+                 if (ownerKeyCount == MAX_DATA_ENTRIES_PER_USER)
+                 {
+                     Log("DBWrite failed, you have reached the maximum number of database entries allowed.");
+                 }
+                 else
+                 {*/
+                /*parameters.Add("datakey", key);
+                int count = Convert.ToInt32(storageLayer.ExecuteScalar("select count(*) from dialplandata where datakey = @datakey and dataowner = @dataowner", parameters));
+                parameters.Add("datavalue", value);
+
+                if (count == 0)
                 {
-                    Log("DBWrite failed, you have reached the maximum number of database entries allowed.");
+                    storageLayer.ExecuteNonQuery(storageType, dbConnStr, "insert into dialplandata (dataowner, datakey, datavalue) values (@dataowner, @datakey, @datavalue)", parameters);
                 }
                 else
                 {
-                    parameters.Add("datakey", key);
-                    int count = Convert.ToInt32(storageLayer.ExecuteScalar("select count(*) from dialplandata where datakey = @datakey and dataowner = @dataowner", parameters));
-                    parameters.Add("datavalue", value);
-
-                    if (count == 0)
-                    {
-                        storageLayer.ExecuteNonQuery(storageType, dbConnStr, "insert into dialplandata (dataowner, datakey, datavalue) values (@dataowner, @datakey, @datavalue)", parameters);
-                    }
-                    else
-                    {
-                        storageLayer.ExecuteNonQuery(storageType, dbConnStr, "update dialplandata set datavalue = @datavalue where dataowner = @dataowner and datakey = @datakey", parameters);
-                    }
-                    Log("DBWrite sucessful for datakey \"" + key + "\".");
+                    storageLayer.ExecuteNonQuery(storageType, dbConnStr, "update dialplandata set datavalue = @datavalue where dataowner = @dataowner and datakey = @datakey", parameters);
                 }
+                Log("DBWrite sucessful for datakey \"" + key + "\".");*/
+
+                if (m_userDataDBConnection == null)
+                {
+                    m_userDataDBConnection = GetDatabaseConnection(storageType, dbConnStr);
+                }
+
+                IDataParameter dataOwnerParameter = StorageLayer.GetDbParameter(storageType, "dataowner", m_username);
+                IDataParameter dataKeyParameter = StorageLayer.GetDbParameter(storageType, "datakey", key);
+                IDataParameter dataValueParameter = StorageLayer.GetDbParameter(storageType, "datavalue", value);
+
+                IDbCommand countCommand = StorageLayer.GetDbCommand(storageType, m_userDataDBConnection, "select count(*) from dialplandata where datakey = @datakey and dataowner = @dataowner");
+                countCommand.Parameters.Add(dataOwnerParameter);
+                countCommand.Parameters.Add(dataKeyParameter);
+                int count = Convert.ToInt32(countCommand.ExecuteScalar());
+
+                string sqlCommand = (count == 0) ? "insert into dialplandata (dataowner, datakey, datavalue) values (@dataowner, @datakey, @datavalue)" : "update dialplandata set datavalue = @datavalue where dataowner = @dataowner and datakey = @datakey";
+                IDbCommand dbCommand = StorageLayer.GetDbCommand(storageType, m_userDataDBConnection, sqlCommand);
+                dbCommand.Parameters.Add(dataOwnerParameter);
+                dbCommand.Parameters.Add(dataKeyParameter);
+                dbCommand.Parameters.Add(dataValueParameter);
+                dbCommand.ExecuteNonQuery();
+
+                Log("DBWrite sucessful for datakey \"" + key + "\".");
+                //}
             }
             catch (Exception excp)
             {
@@ -1224,17 +1279,170 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
+                /*StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
 
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("dataowner", m_username);
                 parameters.Add("datakey", key);
                 storageLayer.ExecuteNonQuery(storageType, dbConnStr, "delete from dialplandata where dataowner = @dataowner and datakey = @datakey", parameters);
+                Log("DBDelete sucessful for datakey \"" + key + "\".");*/
+
+                //using (IDbConnection dbConn = StorageLayer.GetDbConnection(storageType, dbConnStr))
+                //{
+                //    dbConn.Open();
+
+                if (m_userDataDBConnection == null)
+                {
+                    m_userDataDBConnection = GetDatabaseConnection(storageType, dbConnStr);
+                }
+
+                IDataParameter dataOwnerParameter = StorageLayer.GetDbParameter(storageType, "dataowner", m_username);
+                IDataParameter dataKeyParameter = StorageLayer.GetDbParameter(storageType, "datakey", key);
+                IDbCommand dbCommand = StorageLayer.GetDbCommand(storageType, m_userDataDBConnection, "delete from dialplandata where dataowner = @dataowner and datakey = @datakey");
+                dbCommand.Parameters.Add(dataOwnerParameter);
+                dbCommand.Parameters.Add(dataKeyParameter);
+                dbCommand.ExecuteNonQuery();
+                //}
+
                 Log("DBDelete sucessful for datakey \"" + key + "\".");
             }
             catch (Exception excp)
             {
                 Log("Exception DBDelete. " + excp.Message);
+            }
+        }
+
+        public string DBRead(string key)
+        {
+            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
+            {
+                Log("DBRead failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
+                return null;
+            }
+            else
+            {
+                return DBRead(m_userDataDBType, m_userDataDBConnStr, key, false);
+            }
+        }
+
+        public string DBRead(string dbType, string dbConnStr, string key)
+        {
+            StorageTypes storageType = GetStorageType(dbType);
+            if (storageType != StorageTypes.Unknown)
+            {
+                return DBRead(storageType, dbConnStr, key, false);
+            }
+            return null;
+        }
+
+        public string DBReadForUpdate(string key)
+        {
+            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
+            {
+                Log("DBRead failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
+                return null;
+            }
+            else
+            {
+                return DBRead(m_userDataDBType, m_userDataDBConnStr, key, true);
+            }
+        }
+
+        private string DBRead(StorageTypes storageType, string dbConnStr, string key, bool forUpdate)
+        {
+            try
+            {
+                /*StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
+
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("dataowner", m_username);
+                parameters.Add("datakey", key);
+                string result = storageLayer.ExecuteScalar("select datavalue from dialplandata where dataowner = @dataowner and datakey = @datakey", parameters) as string;
+                Log("DBRead sucessful for datakey \"" + key + "\", value=" + result + ".");
+                return result;*/
+
+                string result = null;
+
+                //using (IDbConnection dbConn = StorageLayer.GetDbConnection(storageType, dbConnStr))
+                //{
+                //    dbConn.Open();
+
+                if (m_userDataDBConnection == null)
+                {
+                    m_userDataDBConnection = GetDatabaseConnection(storageType, dbConnStr);
+                }
+
+                IDataParameter dataOwnerParameter = StorageLayer.GetDbParameter(storageType, "dataowner", m_username);
+                IDataParameter dataKeyParameter = StorageLayer.GetDbParameter(storageType, "datakey", key);
+                
+                string sqlCommandText = "select datavalue from dialplandata where dataowner = @dataowner and datakey = @datakey";
+                if(forUpdate)
+                {
+                    sqlCommandText += " for update";
+                }
+
+                IDbCommand dbCommand = StorageLayer.GetDbCommand(storageType, m_userDataDBConnection, sqlCommandText);
+                dbCommand.Parameters.Add(dataOwnerParameter);
+                dbCommand.Parameters.Add(dataKeyParameter);
+                result = dbCommand.ExecuteScalar() as string;
+                //}
+
+                if (forUpdate)
+                {
+                    Log("DBReadForUpdate sucessful for datakey \"" + key + "\", value=" + result + ".");
+                }
+                else
+                {
+                    Log("DBRead sucessful for datakey \"" + key + "\", value=" + result + ".");
+                }
+
+                return result;
+            }
+            catch (Exception excp)
+            {
+                Log("Exception DBRead. " + excp.Message);
+                return null;
+            }
+        }
+
+        public void StartTransaction()
+        {
+            if (m_userDataDBTransaction == null)
+            {
+                if (m_userDataDBConnection == null)
+                {
+                    m_userDataDBConnection = GetDatabaseConnection(m_userDataDBType, m_userDataDBConnStr);
+                }
+
+                m_userDataDBTransaction = m_userDataDBConnection.BeginTransaction();
+
+                Log("Transaction started.");
+            }
+            else
+            {
+                Log("An existing transaction was already in progress no new transaction was started.");
+            }
+        }
+
+        public void CommitTransaction()
+        {
+            if (m_userDataDBTransaction != null)
+            {
+                m_userDataDBTransaction.Commit();
+                m_userDataDBTransaction = null;
+
+                Log("Transaction committed.");
+            }
+        }
+
+        public void RollbackTransaction()
+        {
+            if (m_userDataDBTransaction != null)
+            {
+                m_userDataDBTransaction.Rollback();
+                m_userDataDBTransaction = null;
+
+                Log("Transaction rolled back.");
             }
         }
 
@@ -1264,49 +1472,6 @@ namespace SIPSorcery.AppServer.DialPlan
             catch (Exception excp)
             {
                 Log("Exception DBExecuteNonQuery. " + excp.Message);
-            }
-        }
-
-        public string DBRead(string key)
-        {
-            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
-            {
-                Log("DBRead failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
-                return null;
-            }
-            else
-            {
-                return DBRead(m_userDataDBType, m_userDataDBConnStr, key);
-            }
-        }
-
-        public string DBRead(string dbType, string dbConnStr, string key)
-        {
-            StorageTypes storageType = GetStorageType(dbType);
-            if (storageType != StorageTypes.Unknown)
-            {
-                return DBRead(storageType, dbConnStr, key);
-            }
-            return null;
-        }
-
-        private string DBRead(StorageTypes storageType, string dbConnStr, string key)
-        {
-            try
-            {
-                StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
-
-                Dictionary<string, object> parameters = new Dictionary<string, object>();
-                parameters.Add("dataowner", m_username);
-                parameters.Add("datakey", key);
-                string result = storageLayer.ExecuteScalar("select datavalue from dialplandata where dataowner = @dataowner and datakey = @datakey", parameters) as string;
-                Log("DBRead sucessful for datakey \"" + key + "\", value=" + result + ".");
-                return result;
-            }
-            catch (Exception excp)
-            {
-                Log("Exception DBRead. " + excp.Message);
-                return null;
             }
         }
 
@@ -1566,7 +1731,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
         #region Unit testing.
 
-        #if UNITTEST
+#if UNITTEST
 
         [TestFixture]
 		public class DialPlanScriptHelperUnitTest
@@ -1604,7 +1769,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        #endif
+#endif
 
         #endregion
     }

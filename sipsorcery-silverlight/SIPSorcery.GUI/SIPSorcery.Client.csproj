@@ -284,7 +284,9 @@
     <Compile Include="UserInterface\UserPage.xaml.cs">
       <DependentUpon>UserPage.xaml</DependentUpon>
     </Compile>
-    <None Include="Properties\AppManifest.xml" />
+    <None Include="Properties\AppManifest.xml">
+      <SubType>Designer</SubType>
+    </None>
     <Resource Include="Images\wizard-1.png" />
     <Resource Include="Images\wizard-2.png" />
   </ItemGroup>

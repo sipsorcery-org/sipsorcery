@@ -105,7 +105,7 @@ namespace SIPSorcery.SIPProxy
                 }
 
                 // Configure the SIP transport layer.
-                m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, null, false);
+                m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, null, false);
                 List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipProxySocketsNode);
                 m_sipTransport.AddSIPChannel(sipChannels);
 

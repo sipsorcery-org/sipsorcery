@@ -51,13 +51,18 @@
         </script>
     </head>
     <body style="background-color: black; color: #A0F927" onload="document.getElementById('silverlightControlHost').focus()">
-        <object id="silverlightControlHost" data="data:application/x-silverlight," type="application/x-silverlight" style="width: 100%; height: 100%">
-            <param name="source" value="ClientBin/sipsorcery.xap"/>
-            <param name="onerror" value="onSilverlightError" />
-            <param name="background" value="black" />
-            <a href="http://go.microsoft.com/fwlink/?LinkID=115261" style="text-decoration: none;">
-                <img src="http://go.microsoft.com/fwlink/?LinkId=108181" alt="Get Microsoft Silverlight" style="border-style: none"/>
-            </a>
-        </object>
+        <div>
+            <object id="silverlightControlHost" data="data:application/x-silverlight-2" type="application/x-silverlight-2" style="width: 100%; height: 100%px;">
+                <param name="source" value="ClientBin/sipsorcery.xap"/>
+                <param name="onerror" value="onSilverlightError" />
+                <param name="background" value="black" />
+                <param name="enableHtmlAccess" value="true" />
+                <param name="minRuntimeVersion" value="4.0.50401.0" />
+		        <param name="autoUpgrade" value="true" />
+                <a href="http://go.microsoft.com/fwlink/?LinkID=115261" style="text-decoration: none;">
+                    <img src="http://go.microsoft.com/fwlink/?LinkId=108181" alt="Get Microsoft Silverlight" style="border-style: none"/>
+                </a>
+            </object>
+        </div>
     </body>
 </html>

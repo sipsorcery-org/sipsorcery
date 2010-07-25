@@ -134,7 +134,6 @@
     <Compile Include="SIPDispatcherJob\SIPDispatcherJobLoader.cs" />
     <Compile Include="SIPDispatcherJob\SIPDispatcherJobFactory.cs" />
     <Compile Include="SIPDispatcherJob\SIPDispatcherJob.cs" />
-    <Compile Include="SIPDNS\SIPDNSLookupResult.cs" />
     <Compile Include="SIPDNS\SIPDNSManager.cs" />
     <Compile Include="SIPNotifications\SIPPresenceEventSubscription.cs" />
     <Compile Include="SIPNotifications\SIPDialogEventSubscription.cs" />

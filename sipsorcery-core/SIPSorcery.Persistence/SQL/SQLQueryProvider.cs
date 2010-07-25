@@ -10,6 +10,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Transactions;
 using SIPSorcery.Sys;
 using Amazon.SimpleDB;
 using Amazon.SimpleDB.Model;
@@ -70,17 +71,21 @@ namespace SIPSorcery.Persistence {
 
                 if (!queryString.IsNullOrBlank()) {
 
+                    using(TransactionScope transactionScope = new TransactionScope(TransactionScopeOption.Suppress))
+                    {
                     using (IDbConnection connection = m_dbFactory.CreateConnection()) {
                         connection.ConnectionString = m_dbConnStr;
                         connection.Open();
 
-                        if (elementType == typeof(Int32)) {
+                        if (elementType == typeof(Int32))
+                        {
                             // This is a count.
                             IDbCommand command = connection.CreateCommand();
                             command.CommandText = queryString;
                             return Convert.ToInt32(command.ExecuteScalar());
                         }
-                        else {
+                        else
+                        {
                             //logger.Debug("SimpleDB select: " + queryString + ".");
                             IDbCommand command = connection.CreateCommand();
                             command.CommandText = queryString;
@@ -89,7 +94,8 @@ namespace SIPSorcery.Persistence {
                             DataSet resultSet = new DataSet();
                             adapter.Fill(resultSet);
 
-                            if (resultSet != null && resultSet.Tables[0] != null) {
+                            if (resultSet != null && resultSet.Tables[0] != null)
+                            {
 
                                 object result = Activator.CreateInstance(
                                 typeof(SQLObjectReader<>).MakeGenericType(elementType),
@@ -97,19 +103,24 @@ namespace SIPSorcery.Persistence {
                                 new object[] { resultSet, m_setter },
                                 null);
 
-                                if (isIQueryable) {
+                                if (isIQueryable)
+                                {
                                     return result;
                                 }
-                                else {
+                                else
+                                {
                                     IEnumerator enumerator = ((IEnumerable)result).GetEnumerator();
-                                    if (enumerator.MoveNext()) {
+                                    if (enumerator.MoveNext())
+                                    {
                                         return enumerator.Current;
                                     }
-                                    else {
+                                    else
+                                    {
                                         return null;
                                     }
                                 }
                             }
+                        }
                         }
                         throw new ApplicationException("No results for SQL query.");
                     }

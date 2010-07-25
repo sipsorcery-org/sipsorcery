@@ -171,6 +171,12 @@ namespace SIPSorcery.SIP.App
                                 if (filterValue != null && Regex.Match(filterValue, @"\d{1,2}").Success)
                                 {
                                     ServerTypeId = Convert.ToInt32(filterValue);
+
+                                    // Help the user out and set a wildcard type on the event if none has been selected.
+                                    if (EventFilterDescr == null && EventTypeId == 0)
+                                    {
+                                        EventFilterDescr = WILDCARD;
+                                    }
                                 }
                             }
                             else if (filterName == FILELOG_REQUEST_KEY)
@@ -372,17 +378,13 @@ namespace SIPSorcery.SIP.App
             {
                 return true;
             }
-            else if (username == null)
+            else if (username.IsNullOrBlank())
             {
                 return false;
-            }
-            else if (username != null)
-            {
-                return username.ToUpper() == Username.ToUpper();
             }
             else
             {
-                return false;
+                return username.ToUpper() == Username.ToUpper();
             }
         }
 
@@ -426,6 +428,8 @@ namespace SIPSorcery.SIP.App
         {
             if (proxyEvent is SIPMonitorMachineEvent)
             {
+                #region Machine event filtering.
+
                 if (BaseType == MACHINE_BASE_TYPE)
                 {
                     if (EventFilterDescr == WILDCARD)
@@ -478,6 +482,8 @@ namespace SIPSorcery.SIP.App
                 {
                     return false;
                 }
+
+                #endregion
             }
             else if (BaseType == MACHINE_BASE_TYPE && !(proxyEvent is SIPMonitorMachineEvent))
             {
@@ -493,7 +499,7 @@ namespace SIPSorcery.SIP.App
 
                 if (SIPRequestFilter != WILDCARD && consoleEvent.Message != null && consoleEvent.EventType == SIPMonitorEventTypesEnum.FullSIPTrace)
                 {
-                    if (ShowEvent(consoleEvent.EventType, consoleEvent.ServerEndPoint))
+                    if (ShowEvent(consoleEvent.EventType, consoleEvent.ServerEndPoint) && ShowServer(consoleEvent.ServerType))
                     {
                         if (SIPRequestFilter == SIPREQUEST_INVITE_VALUE)
                         {
@@ -527,15 +533,15 @@ namespace SIPSorcery.SIP.App
                     }
                 }
 
-                if (ShowEvent(consoleEvent.EventType, consoleEvent.ServerEndPoint) &&
-                    (consoleEvent is SIPMonitorConsoleEvent && ShowServer(((SIPMonitorConsoleEvent)consoleEvent).ServerType)))
+                if (ShowEvent(consoleEvent.EventType, consoleEvent.ServerEndPoint))
                 {
                     bool showIPAddress = ShowIPAddress(remoteIPAddress) || ShowIPAddress(dstIPAddress);
-                    bool showUsername = ShowUsername(proxyEvent.Username);
+                    bool showUsername = ShowUsername(consoleEvent.Username);
                     bool showServerIP = ShowServerIPAddress(serverAddress);
                     bool showRegex = ShowRegex(consoleEvent.Message);
+                    bool showServer = ShowServer(consoleEvent.ServerType);
 
-                    if (showUsername && showServerIP && showRegex && showIPAddress)
+                    if (showUsername && showServerIP && showRegex && showIPAddress && showServer)
                     {
                         return true;
                     }

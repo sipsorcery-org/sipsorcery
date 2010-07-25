@@ -207,7 +207,8 @@ namespace SIPSorcery.SIP
                 if (!uasInviteTransaction.TransactionRequest.Header.ProxyReceivedFrom.IsNullOrBlank())
                 {
                     // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
-                    if (IPSocket.IsPrivateAddress(RemoteTarget.Host))
+                    // Don't mangle private contacts if there is a Record-Route header. If a proxy is putting private IP's in a Record-Route header that's its problem.
+                    if (RouteSet == null && IPSocket.IsPrivateAddress(RemoteTarget.Host))
                     {
                         SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(uasInviteTransaction.TransactionRequest.Header.ProxyReceivedFrom);
                         RemoteTarget.Host = remoteUASSIPEndPoint.GetIPEndPoint().ToString();
@@ -253,7 +254,8 @@ namespace SIPSorcery.SIP
                 if (!uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedFrom.IsNullOrBlank())
                 {
                     // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
-                    if (IPSocket.IsPrivateAddress(RemoteTarget.Host))
+                    // Don't mangle private contacts if there is a Record-Route header. If a proxy is putting private IP's in a Record-Route header that's its problem.
+                    if (RouteSet == null && IPSocket.IsPrivateAddress(RemoteTarget.Host))
                     {
                         SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedFrom);
                         RemoteTarget.Host = remoteUASSIPEndPoint.GetIPEndPoint().ToString();
@@ -293,8 +295,9 @@ namespace SIPSorcery.SIP
 
             if (!nonInviteRequest.Header.ProxyReceivedFrom.IsNullOrBlank())
             {
-                // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
-                if (IPSocket.IsPrivateAddress(RemoteTarget.Host))
+                // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact.
+                // Don't mangle private contacts if there is a Record-Route header. If a proxy is putting private IP's in a Record-Route header that's its problem.
+                if (RouteSet == null && IPSocket.IsPrivateAddress(RemoteTarget.Host))
                 {
                     SIPEndPoint remoteUASIPEndPoint = SIPEndPoint.ParseSIPEndPoint(nonInviteRequest.Header.ProxyReceivedFrom);
                     RemoteTarget.Host = remoteUASIPEndPoint.GetIPEndPoint().ToString();
@@ -332,7 +335,7 @@ namespace SIPSorcery.SIP
 
                 SIPEndPoint localEndPoint = (byeOutboundProxy != null) ? sipTransport.GetDefaultSIPEndPoint(byeOutboundProxy.Protocol) : sipTransport.GetDefaultSIPEndPoint(GetRemoteTargetProtocol());
                 SIPRequest byeRequest = GetByeRequest(localEndPoint);
-                SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(byeRequest, sipTransport.GetRequestEndPoint(byeRequest, byeOutboundProxy, true), localEndPoint, byeOutboundProxy);
+                SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(byeRequest, null, localEndPoint, byeOutboundProxy);
                 byeTransaction.SendReliableRequest();
             }
             catch (Exception excp)

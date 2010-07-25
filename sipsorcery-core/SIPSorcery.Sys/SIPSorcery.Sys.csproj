@@ -159,6 +159,7 @@
     <Compile Include="StorageTypes.cs" />
     <Compile Include="TypeExtensions.cs" />
     <Compile Include="WCFUtility.cs" />
+    <Compile Include="WrapperImpersonationContext.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

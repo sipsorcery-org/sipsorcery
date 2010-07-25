@@ -36,6 +36,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -45,10 +46,10 @@ using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.AppServer.DialPlan {
-    
-    public class GoogleVoiceCall {
-
+namespace SIPSorcery.AppServer.DialPlan
+{
+    public class GoogleVoiceCall
+    {
         private const string PRE_LOGIN_URL = "https://www.google.com/accounts/ServiceLogin";
         private const string LOGIN_URL = "https://www.google.com/accounts/ServiceLoginAuth?service=grandcentral";
         private const string VOICE_HOME_URL = "https://www.google.com/voice";
@@ -78,10 +79,11 @@ namespace SIPSorcery.AppServer.DialPlan {
         public GoogleVoiceCall(
             SIPTransport sipTransport,
             ISIPCallManager callManager,
-            SIPMonitorLogDelegate logDelegate, 
+            SIPMonitorLogDelegate logDelegate,
             string username,
             string adminMemberId,
-            SIPEndPoint outboundProxy) {
+            SIPEndPoint outboundProxy)
+        {
 
             m_sipTransport = sipTransport;
             m_callManager = callManager;
@@ -106,35 +108,43 @@ namespace SIPSorcery.AppServer.DialPlan {
         /// <param name="body">The content of the SIP call into sipsorcery that created the Google Voice call. It is
         /// what will be sent in the Ok response to the initial incoming callback.</param>
         /// <returns>If successful the dialogue of the established call otherwsie null.</returns>
-        public SIPDialogue InitiateCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromUserRegexMatch, int phoneType, int waitForCallbackTimeout, string contentType, string body) {
-            try {
+        public SIPDialogue InitiateCall(string emailAddress, string password, string forwardingNumber, string destinationNumber, string fromUserRegexMatch, int phoneType, int waitForCallbackTimeout, string contentType, string body)
+        {
+            try
+            {
                 m_forwardingNumber = forwardingNumber;
                 m_fromURIUserRegexMatch = fromUserRegexMatch;
 
-                if (CallProgress != null) {
+                if (CallProgress != null)
+                {
                     //CallProgress(SIPResponseStatusCodesEnum.Ringing, "Initiating Google Voice call", null, null, null);
                     CallProgress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
                 }
 
                 CookieContainer cookies = new CookieContainer();
                 string rnr = Login(cookies, emailAddress, password);
-                if (!rnr.IsNullOrBlank()) {
+                if (!rnr.IsNullOrBlank())
+                {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call key " + rnr + " successfully retrieved for " + emailAddress + ", proceeding with callback.", m_username));
                     return SendCallRequest(cookies, forwardingNumber, destinationNumber, rnr, phoneType, waitForCallbackTimeout, contentType, body);
                 }
-                else {
+                else
+                {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call key was not etrieved for " + emailAddress + " callback cannot proceed.", m_username));
                     return null;
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception GoogleVoiceCall InitiateCall. " + excp.Message);
                 throw;
             }
         }
 
-        private string Login(CookieContainer cookies, string emailAddress, string password) {
-            try {
+        private string Login(CookieContainer cookies, string emailAddress, string password)
+        {
+            try
+            {
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Logging into google.com for " + emailAddress + ".", m_username));
 
                 // Fetch GALX
@@ -143,11 +153,13 @@ namespace SIPSorcery.AppServer.DialPlan {
                 galxRequest.CookieContainer = cookies;
 
                 HttpWebResponse galxResponse = (HttpWebResponse)galxRequest.GetResponse();
-                if (galxResponse.StatusCode != HttpStatusCode.OK) {
+                if (galxResponse.StatusCode != HttpStatusCode.OK)
+                {
                     galxResponse.Close();
                     throw new ApplicationException("Load of the Google Voice pre-login page failed with response " + galxResponse.StatusCode + ".");
                 }
-                else {
+                else
+                {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice pre-login page loaded successfully.", m_username));
                 }
 
@@ -156,15 +168,17 @@ namespace SIPSorcery.AppServer.DialPlan {
                 galxResponse.Close();
 
                 Match galxMatch = Regex.Match(galxResponseFromServer, @"name=""GALX""\s+?value=""(?<galxvalue>.*?)""");
-                if (galxMatch.Success) {
+                if (galxMatch.Success)
+                {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "GALX key " + galxMatch.Result("${galxvalue}") + " successfully retrieved.", m_username));
                 }
-                else {
+                else
+                {
                     throw new ApplicationException("Could not find GALX key on your Google Voice pre-login page, callback cannot proceed.");
                 }
 
                 // Build login request.
-                string loginData = "Email=" + Uri.EscapeDataString(emailAddress) + "&Passwd=" + Uri.EscapeDataString(password) + "&GALX=" + Uri.EscapeDataString(galxMatch.Result("${galxvalue}")); 
+                string loginData = "Email=" + Uri.EscapeDataString(emailAddress) + "&Passwd=" + Uri.EscapeDataString(password) + "&GALX=" + Uri.EscapeDataString(galxMatch.Result("${galxvalue}"));
                 HttpWebRequest loginRequest = (HttpWebRequest)WebRequest.Create(LOGIN_URL);
                 loginRequest.CookieContainer = cookies;
                 loginRequest.ConnectionGroupName = "login";
@@ -177,7 +191,8 @@ namespace SIPSorcery.AppServer.DialPlan {
 
                 // Send login request and read response stream.
                 HttpWebResponse response = (HttpWebResponse)loginRequest.GetResponse();
-                if (response.StatusCode != HttpStatusCode.OK) {
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
                     response.Close();
                     throw new ApplicationException("Login to google.com failed for " + emailAddress + " with response " + response.StatusCode + ".");
                 }
@@ -191,28 +206,33 @@ namespace SIPSorcery.AppServer.DialPlan {
 
                 // Send the Google Voice account page request and read response stream.
                 response = (HttpWebResponse)rnrRequest.GetResponse();
-                if (response.StatusCode != HttpStatusCode.OK) {
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
                     response.Close();
                     throw new ApplicationException("Load of the Google Voice account page failed for " + emailAddress + " with response " + response.StatusCode + ".");
                 }
-                else {
+                else
+                {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice home page loaded successfully.", m_username));
                 }
-                
+
                 StreamReader reader = new StreamReader(response.GetResponseStream());
                 string responseFromServer = reader.ReadToEnd();
                 response.Close();
 
                 // Extract the rnr field from the HTML.
                 Match rnrMatch = Regex.Match(responseFromServer, @"name=""_rnr_se"".*?value=""(?<rnrvalue>.*?)""");
-                if(rnrMatch.Success) {
+                if (rnrMatch.Success)
+                {
                     return rnrMatch.Result("${rnrvalue}");
                 }
-                else {
+                else
+                {
                     throw new ApplicationException("Could not find _rnr_se key on your Google Voice account page, callback cannot proceed.");
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception GoogleVoiceCall Login. " + excp.Message);
                 throw;
             }
@@ -220,13 +240,14 @@ namespace SIPSorcery.AppServer.DialPlan {
 
         private SIPDialogue SendCallRequest(CookieContainer cookies, string forwardingNumber, string destinationNumber, string rnr, int phoneType, int waitForCallbackTimeout, string contentType, string body)
         {
-            try {
+            try
+            {
                 int callbackTimeout = (waitForCallbackTimeout < MIN_CALLBACK_TIMEOUT || waitForCallbackTimeout > MAX_CALLBACK_TIMEOUT) ? WAIT_FOR_CALLBACK_TIMEOUT : waitForCallbackTimeout;
 
                 CallbackWaiter callbackWaiter = new CallbackWaiter(m_username, CallbackWaiterEnum.GoogleVoice, forwardingNumber, MatchIncomingCall);
                 m_callManager.AddWaitingApplication(callbackWaiter);
-                
-                string callData = "outgoingNumber=" + Uri.EscapeDataString(destinationNumber) + "&forwardingNumber=" + Uri.EscapeDataString(forwardingNumber) + 
+
+                string callData = "outgoingNumber=" + Uri.EscapeDataString(destinationNumber) + "&forwardingNumber=" + Uri.EscapeDataString(forwardingNumber) +
                     "&subscriberNumber=undefined&remember=0&_rnr_se=" + Uri.EscapeDataString(rnr) + "&phoneType=" + phoneType;
                 //logger.Debug("call data=" + callData + ".");
 
@@ -243,10 +264,12 @@ namespace SIPSorcery.AppServer.DialPlan {
                 HttpWebResponse response = (HttpWebResponse)callRequest.GetResponse();
                 HttpStatusCode responseStatus = response.StatusCode;
                 response.Close();
-                if (responseStatus != HttpStatusCode.OK) {
+                if (responseStatus != HttpStatusCode.OK)
+                {
                     throw new ApplicationException("The call request failed with a " + responseStatus + " response.");
                 }
-                else {
+                else
+                {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call to " + destinationNumber + " forwarding to " + forwardingNumber + " successfully initiated, callback timeout=" + callbackTimeout + "s.", m_username));
                 }
 
@@ -255,20 +278,25 @@ namespace SIPSorcery.AppServer.DialPlan {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call callback received.", m_username));
                     return m_callbackCall.Answer(contentType, body, null, SIPDialogueTransferModesEnum.Default);
                 }
-                else {
+                else
+                {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call timed out waiting for callback.", m_username));
                     return null;
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception GoogleVoiceCall SendCallRequest. " + excp.Message);
                 throw;
             }
         }
 
-        private bool MatchIncomingCall(ISIPServerUserAgent incomingCall) {
-            try { 
-                if (incomingCall.SIPAccount.Owner != m_username) {
+        private bool MatchIncomingCall(ISIPServerUserAgent incomingCall)
+        {
+            try
+            {
+                if (incomingCall.SIPAccount.Owner != m_username)
+                {
                     return false;
                 }
                 else if (m_clientCallCancelled)
@@ -280,26 +308,32 @@ namespace SIPSorcery.AppServer.DialPlan {
                 SIPHeader callHeader = incomingCall.CallRequest.Header;
                 bool matchedCall = false;
 
-                if (!m_fromURIUserRegexMatch.IsNullOrBlank()) {
-                    if (Regex.Match(callHeader.From.FromURI.User, m_fromURIUserRegexMatch).Success) {
+                if (!m_fromURIUserRegexMatch.IsNullOrBlank())
+                {
+                    if (Regex.Match(callHeader.From.FromURI.User, m_fromURIUserRegexMatch).Success)
+                    {
                         matchedCall = true;
                     }
                 }
-                else if (callHeader.UnknownHeaders.Contains("X-GoogleVoice: true") && callHeader.To.ToURI.User == m_forwardingNumber.Substring(1)) {
+                else if (callHeader.UnknownHeaders.Contains("X-GoogleVoice: true") && callHeader.To.ToURI.User == m_forwardingNumber.Substring(1))
+                {
                     matchedCall = true;
                 }
 
-                if (matchedCall) {
+                if (matchedCall)
+                {
                     m_callbackCall = incomingCall;
                     m_callbackCall.SetOwner(m_username, m_adminMemberId);
                     m_waitForCallback.Set();
                     return true;
                 }
-                else {
+                else
+                {
                     return false;
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception GoogleVoiceCall MatchIncomingCall. " + excp.Message);
                 return false;
             }

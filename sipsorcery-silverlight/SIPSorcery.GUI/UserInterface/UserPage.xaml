@@ -32,7 +32,7 @@
 			<Button x:Name="m_extendSessionButton" HorizontalAlignment="Right" Margin="0,-7,0,0" Width="102" Content="Extend Session" Height="21" VerticalAlignment="Top" Click="ExtendSessionButton_Click" Visibility="Collapsed"/>
 			<TextBlock Cursor="Hand" x:Name="m_switchboardLink" Width="69" Text="Switchboard" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="SwitchboardLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="307,0,0,0" Foreground="{StaticResource NormalTextBrush}" Visibility="Collapsed"/>
 		</Grid>
-		<Border Height="Auto" Width="1014" Margin="0,0,0,5" BorderBrush="#FFA0F927" BorderThickness="2,2,2,2" CornerRadius="5,5,5,5">
+		<Border Height="Auto" Width="1018" Margin="0,0,0,5" BorderBrush="#FFA0F927" BorderThickness="2,2,2,2" CornerRadius="5,5,5,5">
 			<StackPanel Height="Auto" Width="1014">
 				<ScrollViewer Height="73" x:Name="m_activityLogScrollViewer" Width="1014" Background="#FF282828" BorderBrush="{x:Null}" BorderThickness="0,0,0,0">
 					<TextBlock Height="Auto" Width="983" Text="" TextWrapping="Wrap" x:Name="m_activityTextBlock" Foreground="{StaticResource NormalTextBrush}" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>

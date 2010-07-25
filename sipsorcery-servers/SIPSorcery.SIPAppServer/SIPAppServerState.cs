@@ -37,7 +37,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Security;
 using System.Text.RegularExpressions;
 using System.Xml;
 using SIPSorcery.SIP;
@@ -60,6 +62,8 @@ namespace SIPSorcery.SIPAppServer
         private const string RUBY_SCRIPT_COMMON_PATH_KEY = "RubyScriptCommonPath";
         private const string OUTBOUND_PROXY_KEY = "OutboundProxy";
         private const string SIPCALL_DISPATCHER_WORKERS_NODE_NAME = "sipdispatcherworkers";
+        private const string DIALPLAN_ENGINE_IMPERSONATION_USERNAME_KEY = "DialPlanEngineImpersonationUsername";
+        private const string DIALPLAN_ENGINE_IMPERSONATION_PASSWORD_KEY = "DialPlanEngineImpersonationPassword";
 
 		public static ILog logger = null;
 
@@ -70,6 +74,8 @@ namespace SIPSorcery.SIPAppServer
         public static readonly string RubyScriptCommonPath;
         public static readonly SIPEndPoint OutboundProxy;
         public static readonly XmlNode SIPCallDispatcherWorkersNode;
+        public static readonly string DialPlanEngineImpersonationUsername;
+        public static readonly string DialPlanEngineImpersonationPassword;
 
 		static SIPAppServerState()
 		{
@@ -96,6 +102,8 @@ namespace SIPSorcery.SIPAppServer
                     OutboundProxy = SIPEndPoint.ParseSIPEndPoint(AppState.GetConfigNodeValue(m_sipAppServerConfigNode, OUTBOUND_PROXY_KEY));
                 }
                 SIPCallDispatcherWorkersNode = m_sipAppServerConfigNode.SelectSingleNode(SIPCALL_DISPATCHER_WORKERS_NODE_NAME);
+                DialPlanEngineImpersonationUsername = AppState.GetConfigNodeValue(m_sipAppServerConfigNode, DIALPLAN_ENGINE_IMPERSONATION_USERNAME_KEY);
+                DialPlanEngineImpersonationPassword = AppState.GetConfigNodeValue(m_sipAppServerConfigNode, DIALPLAN_ENGINE_IMPERSONATION_PASSWORD_KEY);
 			}
 			catch(Exception excp)
 			{

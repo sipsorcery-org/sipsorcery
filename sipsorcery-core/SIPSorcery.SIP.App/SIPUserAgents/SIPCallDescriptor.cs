@@ -55,29 +55,25 @@ namespace SIPSorcery.SIP.App
         Replace = 2,    // (option=r)
     }
 
-    /*public enum SIPCallTransferModesEnum
-    {
-        NotAllowed = 0,     // (option=n) REFER requests for attended and blind transfers will be blocked.
-        BlindPassThru = 1,  // (option=p) Default. Attended processed by server, blind will be treated as an in-dialogue requests and passed through to user agents.
-        BlindPlaceCall = 2, // (option=c) Attended processed by server, blind will intiate a new call on server and then do an attended transfer.
-        //Caller = 2,     // (option=o) Only the caller can initiate transfers.
-        //Callee = 3,     // (option=d) Only the callee can initiate transfers.
-        //Both = 4,       // (option=b) Either end of the call can initiate a transfer.
-    }*/
-
     public class SwitchboardHeaders
     {
-        public string SwitchboardCallID;
-        public string SwitchboardCallerDescription;
-        public string SwitchboardDescription;
-        public string SwitchboardOwner;
+        public string SwitchboardCallID;                // If set holds a call identifier and is typically the SIP Call-ID of an associated INVITE.
+        public string SwitchboardCallerDescription;     // If set holds a general description of the caller.
+        public string SwitchboardDescription;           // If set holds a general description of the call.
+        public string SwitchboardDialogueDescription;   // Same as the SwitchboardDescription field but is used to differentiate when a SIP header should be set and when the value should only be recorded in the dialogue.
+        public string SwitchboardOwner;                 // If set indicates a specific SIP account is taking ownership of any call that gets established.
+        public string SwitchboardFrom;                  // If set indicates it should be used as the From header on calls to local extensions.
 
-        public SwitchboardHeaders(string callID, string callerDescription, string description, string owner)
+        public SwitchboardHeaders()
+        { }
+
+        public SwitchboardHeaders(string callID, string callerDescription, string description, string owner, string from)
         {
             SwitchboardCallID = callID;
             SwitchboardCallerDescription = callerDescription;
             SwitchboardDescription = description;
             SwitchboardOwner = owner;
+            SwitchboardFrom = from;
         }
     }
 
@@ -92,11 +88,17 @@ namespace SIPSorcery.SIP.App
         public const string FROM_HOST_KEY = "fh";               // Dial string option to customise the From header SIP URI Host on the call request.
         public const string TRANSFER_MODE_OPTION_KEY = "tr";    // Dial string option to dictate how REFER (transfer) requests will be handled.
 
+        // Switchboard dial string options.
+        public const string SWITCHBOARD_CALL_DESCRIPTION_KEY = "swcd";      // Dial string option to set the Switchboard-Description header on the call leg.
+        public const string SWITCHBOARD_DIALOGUE_DESCRIPTION_KEY = "swdd";  // Dial string option to set a value for the switchboard description field on the answered dialogue. It does not set a header.
+        public const string SWITCHBOARD_CALLID_KEY = "swcid";               // Dial string option to set the Switchboard-CallID header on the call leg.
+        public const string SWITCHBOARD_OWNER_KEY = "swo";                  // Dial string option to set the Switchboard-Owner header on the call leg.
+
         private readonly static string m_defaultFromURI = SIPConstants.SIP_DEFAULT_FROMURI;
         private static char m_customHeadersSeparator = SIPProvider.CUSTOM_HEADERS_SEPARATOR;
 
         private static ILog logger = AppState.logger;
-        
+
         public string Username;                 // The username that will be used in the From header and to authenticate the call unless overridden by AuthUsername.
         public string AuthUsername;             // The username that will be used from authentication. Optional setting only needed if the From header user needs to be different from the digest username.
         public string Password;                 // The password that will be used to authenticate the call if required.
@@ -120,7 +122,7 @@ namespace SIPSorcery.SIP.App
         public SIPDialogueTransferModesEnum TransferMode = SIPDialogueTransferModesEnum.Default;   // Determines how the call (dialogues) created by this descriptor will handle transfers (REFER requests).
 
         // Custom headers for sipsorcery switchboard application.
-        public SwitchboardHeaders SwitchboardHeaders;
+        public SwitchboardHeaders SwitchboardHeaders = new SwitchboardHeaders();
 
         public SIPAccount ToSIPAccount;         // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
 
@@ -135,7 +137,8 @@ namespace SIPSorcery.SIP.App
         /// <param name="fromHeader"></param>
         /// <param name="contentType"></param>
         /// <param name="content"></param>
-        public SIPCallDescriptor(SIPAccount toSIPAccount, string uri, string fromHeader, string contentType, string content) {
+        public SIPCallDescriptor(SIPAccount toSIPAccount, string uri, string fromHeader, string contentType, string content)
+        {
             ToSIPAccount = toSIPAccount;
             Uri = uri ?? toSIPAccount.SIPUsername + "@" + toSIPAccount.SIPDomain;
             From = fromHeader;
@@ -144,26 +147,26 @@ namespace SIPSorcery.SIP.App
         }
 
         public SIPCallDescriptor(
-            string username, 
-            string password, 
-            string uri, 
-            string from, 
-            string to, 
+            string username,
+            string password,
+            string uri,
+            string from,
+            string to,
             string routeSet,
-            List<string> customHeaders, 
-            string authUsername, 
-            SIPCallDirection callDirection, 
-            string contentType, 
+            List<string> customHeaders,
+            string authUsername,
+            SIPCallDirection callDirection,
+            string contentType,
             string content,
             IPAddress mangleIPAddress)
         {
-            Username = username;            
-            Password = password;            
+            Username = username;
+            Password = password;
             Uri = uri;
             From = from ?? m_defaultFromURI;
-            To = to ?? uri;                        
+            To = to ?? uri;
             RouteSet = routeSet;
-            CustomHeaders = customHeaders ?? new List<string>();   
+            CustomHeaders = customHeaders ?? new List<string>();
             AuthUsername = authUsername;
             CallDirection = callDirection;
             ContentType = contentType;
@@ -171,16 +174,30 @@ namespace SIPSorcery.SIP.App
             MangleIPAddress = mangleIPAddress;
         }
 
-        public SIPFromHeader GetFromHeader() {
-            SIPFromHeader fromHeader = SIPFromHeader.ParseFromHeader(From);
+        public SIPFromHeader GetFromHeader()
+        {
+            SIPFromHeader fromHeader = null;
 
-            if (!FromDisplayName.IsNullOrBlank()) {
+            // If the call is for a sipsorcery extension and a SwitchboardFrom header has been set use it.
+            if (CallDirection == SIPCallDirection.In && SwitchboardHeaders != null && !SwitchboardHeaders.SwitchboardFrom.IsNullOrBlank())
+            {
+                fromHeader = SIPFromHeader.ParseFromHeader(SwitchboardHeaders.SwitchboardFrom);
+            }
+            else
+            {
+                fromHeader = SIPFromHeader.ParseFromHeader(From);
+            }
+
+            if (!FromDisplayName.IsNullOrBlank())
+            {
                 fromHeader.FromName = FromDisplayName;
             }
-            if (!FromURIUsername.IsNullOrBlank()) {
+            if (!FromURIUsername.IsNullOrBlank())
+            {
                 fromHeader.FromURI.User = FromURIUsername;
             }
-            if (!FromURIHost.IsNullOrBlank()) {
+            if (!FromURIHost.IsNullOrBlank())
+            {
                 fromHeader.FromURI.Host = FromURIHost;
             }
 
@@ -193,16 +210,20 @@ namespace SIPSorcery.SIP.App
         /// <param name="fromDisplayName"></param>
         /// <param name="fromUsername"></param>
         /// <param name="fromhost"></param>
-        public void SetGeneralFromHeaderFields(string fromDisplayName, string fromUsername, string fromHost) {
-            if (!fromDisplayName.IsNullOrBlank() && FromDisplayName == null) {
+        public void SetGeneralFromHeaderFields(string fromDisplayName, string fromUsername, string fromHost)
+        {
+            if (!fromDisplayName.IsNullOrBlank() && FromDisplayName == null)
+            {
                 FromDisplayName = fromDisplayName.Trim();
             }
 
-            if (!fromUsername.IsNullOrBlank() && FromURIUsername == null) {
+            if (!fromUsername.IsNullOrBlank() && FromURIUsername == null)
+            {
                 FromURIUsername = fromUsername.Trim();
             }
 
-            if (!fromHost.IsNullOrBlank() && FromURIHost == null) {
+            if (!fromHost.IsNullOrBlank() && FromURIHost == null)
+            {
                 FromURIHost = fromHost.Trim();
             }
         }
@@ -244,19 +265,22 @@ namespace SIPSorcery.SIP.App
 
                 // Parse the mangle option.
                 Match mangleMatch = Regex.Match(options, MANGLE_MODE_OPTION_KEY + @"=(?<mangle>\w+)");
-                if (mangleMatch.Success) {
+                if (mangleMatch.Success)
+                {
                     Boolean.TryParse(mangleMatch.Result("${mangle}"), out MangleResponseSDP);
                 }
 
                 // Parse the From header display name option.
                 Match fromDisplayNameMatch = Regex.Match(options, FROM_DISPLAY_NAME_KEY + @"=(?<displayname>.+?)(,|$)");
-                if (fromDisplayNameMatch.Success) {
+                if (fromDisplayNameMatch.Success)
+                {
                     FromDisplayName = fromDisplayNameMatch.Result("${displayname}").Trim();
                 }
 
                 // Parse the From header URI username option.
                 Match fromUsernameNameMatch = Regex.Match(options, FROM_USERNAME_KEY + @"=(?<username>.+?)(,|$)");
-                if (fromUsernameNameMatch.Success) {
+                if (fromUsernameNameMatch.Success)
+                {
                     FromURIUsername = fromUsernameNameMatch.Result("${username}").Trim();
                 }
 
@@ -266,7 +290,7 @@ namespace SIPSorcery.SIP.App
                 {
                     FromURIHost = fromURIHostMatch.Result("${host}").Trim();
                 }
-                
+
                 // Parse the Transfer behaviour option.
                 Match transferMatch = Regex.Match(options, TRANSFER_MODE_OPTION_KEY + @"=(?<transfermode>.+?)(,|$)");
                 if (transferMatch.Success)
@@ -297,36 +321,73 @@ namespace SIPSorcery.SIP.App
                         TransferMode = SIPCallTransferModesEnum.Both;
                     }*/
                 }
+
+                // Parse the switchboard description value.
+                Match switchboardDescriptionMatch = Regex.Match(options, SWITCHBOARD_CALL_DESCRIPTION_KEY + @"=(?<description>.+?)(,|$)");
+                if (switchboardDescriptionMatch.Success)
+                {
+                    SwitchboardHeaders.SwitchboardDescription = switchboardDescriptionMatch.Result("${description}").Trim();
+                }
+
+                // Parse the switchboard dialogue description value.
+                Match switchboardDialogueDescriptionMatch = Regex.Match(options, SWITCHBOARD_DIALOGUE_DESCRIPTION_KEY + @"=(?<description>.+?)(,|$)");
+                if (switchboardDialogueDescriptionMatch.Success)
+                {
+                    SwitchboardHeaders.SwitchboardDialogueDescription = switchboardDialogueDescriptionMatch.Result("${description}").Trim();
+                }
+
+                // Parse the switchboard CallID value.
+                Match switchboardCallIDMatch = Regex.Match(options, SWITCHBOARD_CALLID_KEY + @"=(?<callid>.+?)(,|$)");
+                if (switchboardCallIDMatch.Success)
+                {
+                    SwitchboardHeaders.SwitchboardCallID = switchboardCallIDMatch.Result("${callid}").Trim();
+                }
+
+                // Parse the switchboard owner value.
+                Match switchboardOwnerMatch = Regex.Match(options, SWITCHBOARD_OWNER_KEY + @"=(?<owner>.+?)(,|$)");
+                if (switchboardOwnerMatch.Success)
+                {
+                    SwitchboardHeaders.SwitchboardOwner = switchboardOwnerMatch.Result("${owner}").Trim();
+                }
             }
         }
 
-        public static List<string> ParseCustomHeaders(string customHeaders) {
-
+        public static List<string> ParseCustomHeaders(string customHeaders)
+        {
             List<string> customHeaderList = new List<string>();
-            
-            try {
-                if (!customHeaders.IsNullOrBlank()) {
+
+            try
+            {
+                if (!customHeaders.IsNullOrBlank())
+                {
                     string[] customerHeadersList = customHeaders.Split(m_customHeadersSeparator);
 
-                    if (customerHeadersList != null && customerHeadersList.Length > 0) {
-                        foreach (string customHeader in customerHeadersList) {
-                            if (customHeader.IsNullOrBlank()) {
+                    if (customerHeadersList != null && customerHeadersList.Length > 0)
+                    {
+                        foreach (string customHeader in customerHeadersList)
+                        {
+                            if (customHeader.IsNullOrBlank())
+                            {
                                 continue;
                             }
-                            else if (customHeader.IndexOf(':') == -1) {
+                            else if (customHeader.IndexOf(':') == -1)
+                            {
                                 logger.Warn("ParseCustomHeaders skipping custom header due to missing colon, " + customHeader + ".");
                                 continue;
                             }
-                            else {
+                            else
+                            {
                                 //int colonIndex = customHeader.IndexOf(':');
                                 //string headerName = customHeader.Substring(0, colonIndex).Trim();
                                 //string headerValue = (customHeader.Length > colonIndex) ? customHeader.Substring(colonIndex + 1).Trim() : String.Empty;
 
-                                if (Regex.Match(customHeader.Trim(), "^(Via|From|To|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success) {
+                                if (Regex.Match(customHeader.Trim(), "^(Via|From|To|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success)
+                                {
                                     logger.Warn("ParseCustomHeaders skipping custom header due to an non-permitted string in header name, " + customHeader + ".");
                                     continue;
                                 }
-                                else {
+                                else
+                                {
                                     customHeaderList.Add(customHeader.Trim());
                                 }
                             }
@@ -334,7 +395,8 @@ namespace SIPSorcery.SIP.App
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception ParseCustomHeaders (" + customHeaders + "). " + excp.Message);
             }
 

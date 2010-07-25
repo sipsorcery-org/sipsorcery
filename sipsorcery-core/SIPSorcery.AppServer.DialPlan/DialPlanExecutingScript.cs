@@ -38,6 +38,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security;
 using System.Text;
 using System.Threading;
 using SIPSorcery.SIP;
@@ -72,12 +73,18 @@ namespace SIPSorcery.AppServer.DialPlan
         public SIPResponseStatusCodesEnum LastFailureStatus;
         public string LastFailureReason;
 
+        public Action Cleanup;  // A function delegate that will be called when the script is completed to allow any cleanup actions to take place.
+
         public DialPlanExecutingScript(SIPMonitorLogDelegate logDelegate)
         {
             ScriptNumber = ++ScriptCounter % Int32.MaxValue;
             Id = Guid.NewGuid();
-            
-            DialPlanScriptEngine = Ruby.CreateEngine();
+
+            var setup = ScriptRuntimeSetup.ReadConfiguration();
+            var scriptRuntime = Ruby.CreateRuntime(setup);
+            DialPlanScriptEngine = Ruby.GetEngine(scriptRuntime);
+
+            //DialPlanScriptEngine = Ruby.CreateEngine();
 
             DialPlanScriptScope = DialPlanScriptEngine.CreateScope();
 
@@ -103,13 +110,31 @@ namespace SIPSorcery.AppServer.DialPlan
         /// </remarks>
         public void StopExecution()
         {
-            try {
-                logger.Debug("DialPlanExecutingScript StopExecution on " + DialPlanScriptThread.Name + ".");
-                Complete = true;
-                DialPlanScriptThread.Abort();
+            try
+            {
+                if (!Complete)
+                {
+                    logger.Debug("DialPlanExecutingScript StopExecution on " + DialPlanScriptThread.Name + ".");
+                    Complete = true;
+
+                    if (Cleanup != null)
+                    {
+                        try
+                        {
+                            Cleanup();
+                        }
+                        catch (Exception cleanupExcp)
+                        {
+                            logger.Error("Exception StopExecution Cleanup. " + cleanupExcp.Message);
+                        }
+                    }
+
+                    DialPlanScriptThread.Abort();
+                }
             }
             catch (ThreadAbortException) { }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Warn("Exception DialPlanExecutingScript StopExecution. " + excp.Message);
             }
         }

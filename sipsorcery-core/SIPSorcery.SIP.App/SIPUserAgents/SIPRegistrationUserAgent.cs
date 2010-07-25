@@ -211,7 +211,19 @@ namespace SIPSorcery.SIP.App
                 {
                     m_attempts++;
 
-                    SIPEndPoint registrarSIPEndPoint = (m_outboundProxy == null) ? m_sipTransport.GetHostEndPoint(m_registrarHost, true) : m_outboundProxy;
+                    SIPEndPoint registrarSIPEndPoint = m_outboundProxy ;
+                    if(registrarSIPEndPoint == null) 
+                    {
+                        SIPDNSLookupResult lookupResult = m_sipTransport.GetHostEndPoint(m_registrarHost, false);
+                        if (lookupResult.LookupError != null)
+                        {
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve " + m_registrarHost + ", " + lookupResult.LookupError, m_owner));
+                        }
+                        else
+                        {
+                            registrarSIPEndPoint = lookupResult.GetSIPEndPoint();
+                        }
+                    }
 
                     if (registrarSIPEndPoint == null)
                     {

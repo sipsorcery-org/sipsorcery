@@ -415,7 +415,7 @@ namespace SIPSorcery.Persistence
             }
         }
 
-        private IDbConnection GetDbConnection(StorageTypes storageType, string dbConnStr) {
+        public static IDbConnection GetDbConnection(StorageTypes storageType, string dbConnStr) {
             if (storageType == StorageTypes.Postgresql) {
                 return new NpgsqlConnection(dbConnStr);
             }
@@ -432,7 +432,7 @@ namespace SIPSorcery.Persistence
             }
         }
 
-        private IDbCommand GetDbCommand(StorageTypes storageType, IDbConnection dbConn, string cmdText) {
+        public static IDbCommand GetDbCommand(StorageTypes storageType, IDbConnection dbConn, string cmdText) {
             if (storageType == StorageTypes.Postgresql) {
                 return new NpgsqlCommand(cmdText, (NpgsqlConnection)dbConn);
             }
@@ -466,7 +466,7 @@ namespace SIPSorcery.Persistence
             }
         }
 
-        private IDataParameter GetDbParameter(StorageTypes storageType, string name, object value) {
+        public static IDataParameter GetDbParameter(StorageTypes storageType, string name, object value) {
             if (storageType == StorageTypes.Postgresql) {
                 return new NpgsqlParameter(name, value);
             }

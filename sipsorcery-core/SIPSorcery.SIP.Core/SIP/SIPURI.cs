@@ -411,7 +411,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Reruens a string representation of the URI with any parameter and headers ommitted exceot for the transport
+        /// Returns a string representation of the URI with any parameter and headers ommitted exceot for the transport
         /// parameter. The string returned by this function is used amonst other things to match Route headers set by this
         /// SIP agent.
         /// </summary>
@@ -437,6 +437,15 @@ namespace SIPSorcery.SIP
                 logger.Error("Exception SIPURI ToParamaterlessString. " + excp.Message);
                 throw excp;
             }
+        }
+
+        /// <summary>
+        /// Returns an address of record for the SIP URI which is a string in the format user@host.
+        /// </summary>
+        /// <returns>A string representing the address of record for the URI.</returns>
+        public string ToAOR()
+        {
+            return User + USER_HOST_SEPARATOR + Host;
         }
 
         public SIPEndPoint ToSIPEndPoint()

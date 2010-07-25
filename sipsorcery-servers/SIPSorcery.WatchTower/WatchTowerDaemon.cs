@@ -78,7 +78,7 @@ namespace SIPSorcery.WatchTower
                 }
 
                 List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_transportNode);
-                m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine());
+                m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
                 m_sipTransport.AddSIPChannel(sipChannels);
 
                 if (m_sipAppServerWorkersNode != null)
