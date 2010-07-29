@@ -184,6 +184,8 @@ namespace SIPSorcery.Servers
                 }
                 else
                 {
+                    SIPSorceryPerformanceMonitor.IncrementCounter(SIPSorceryPerformanceMonitor.REGISTRAR_REGISTRATION_REQUESTS_PER_SECOND);
+
                     int requestedExpiry = GetRequestedExpiry(registerRequest);
 
                     if (registerRequest.Header.To == null)

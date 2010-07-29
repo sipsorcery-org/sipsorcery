@@ -351,6 +351,8 @@ namespace SIPSorcery.Servers
                 regTransaction.NonInviteTransactionTimedOut += (tn) => { ThreadPool.QueueUserWorkItem(delegate { RegistrationTimedOut(tn); }); };
 
                 m_sipTransport.SendSIPReliable(regTransaction);
+
+                SIPSorceryPerformanceMonitor.IncrementCounter(SIPSorceryPerformanceMonitor.REGISTRATION_AGENT_REGISTRATIONS_PER_SECOND);
             }
             catch (Exception excp)
             {
@@ -736,7 +738,7 @@ namespace SIPSorcery.Servers
             {
                 SIPProvider sipProvider = GetSIPProviderById_External(providerId);
                 sipProvider.RegisterEnabled = false;
-                sipProvider.RegisterDisabledReason = disabledReason;
+                sipProvider.RegisterDisabledReason = disabledReason ?? "disabled with no reason given";
                 UpdateSIPProvider_External(sipProvider);
             }
             catch (Exception excp)

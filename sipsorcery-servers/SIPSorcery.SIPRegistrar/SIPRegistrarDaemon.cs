@@ -104,6 +104,7 @@ namespace SIPSorcery.SIPRegistrar {
 
                 // Configure the SIP transport layer.
                 m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine(), false);
+                m_sipTransport.PerformanceMonitorPrefix = SIPSorceryPerformanceMonitor.REGISTRAR_PREFIX;
                 List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipRegistrarSocketsNode);
                 m_sipTransport.AddSIPChannel(sipChannels);
 

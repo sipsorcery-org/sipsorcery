@@ -110,6 +110,7 @@ namespace SIPSorcery.SIPRegistrationAgent
 
                 // Configure the SIP transport layer.
                 m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine(), true);
+                m_sipTransport.PerformanceMonitorPrefix = SIPSorceryPerformanceMonitor.REGISTRATION_AGENT_PREFIX;
                 List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipRegAgentSocketsNode);
                 m_sipTransport.AddSIPChannel(sipChannels);
 

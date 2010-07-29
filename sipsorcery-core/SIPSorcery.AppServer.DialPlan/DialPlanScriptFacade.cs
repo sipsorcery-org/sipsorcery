@@ -639,6 +639,14 @@ namespace SIPSorcery.AppServer.DialPlan
         }
 
         /// <summary>
+        /// Checks whether SIP account belonging to the default server domain is online (has any current bindings).
+        /// </summary>
+        public bool IsAvailable(string username)
+        {
+            return IsAvailable(username, DEFAULT_LOCAL_DOMAIN);
+        }
+
+        /// <summary>
         /// Checks whether the specified SIP account is online (has any current bindings).
         /// </summary>
         public bool IsAvailable(string username, string domain)
@@ -669,6 +677,48 @@ namespace SIPSorcery.AppServer.DialPlan
             catch (Exception excp)
             {
                 Log("Exception IsAvailable. " + excp.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Checks whether the specified SIP account and default domain belongs to the dialplan owner.
+        /// </summary>
+        public bool IsMine(string username)
+        {
+            return IsAvailable(username, DEFAULT_LOCAL_DOMAIN);
+        }
+
+        /// <summary>
+        /// Checks whether the specified SIP account belongs to the dialplan owner.
+        /// </summary>
+        public bool IsMine(string username, string domain)
+        {
+            try
+            {
+                string canonicalDomain = m_getCanonicalDomainDelegate(domain, false);
+                if (canonicalDomain.IsNullOrBlank())
+                {
+                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The " + domain + " is not a serviced domain.", Username));
+                    return false;
+                }
+                else
+                {
+                    SIPAccount sipAccount = m_sipAccountPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain);
+                    if (sipAccount == null)
+                    {
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in IsMine for " + username + "@" + canonicalDomain + ".", Username));
+                        return false;
+                    }
+                    else
+                    {
+                        return (sipAccount.Owner == Username);
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                Log("Exception IsMine. " + excp.Message);
                 return false;
             }
         }

@@ -142,6 +142,7 @@
     <Compile Include="Crypto\Crypto.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="SIPSorceryPerformanceMonitor.cs" />
     <Compile Include="SIPSorcerySMTP.cs">
       <SubType>Code</SubType>
     </Compile>

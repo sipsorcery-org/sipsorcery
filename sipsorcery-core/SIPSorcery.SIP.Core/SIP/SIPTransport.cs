@@ -141,6 +141,8 @@ namespace SIPSorcery.SIP
         public event SIPTransportSIPBadMessageDelegate SIPBadRequestInTraceEvent;
         public event SIPTransportSIPBadMessageDelegate SIPBadResponseInTraceEvent;
 
+        public string PerformanceMonitorPrefix;                              // Allows an application to set the prefix for the performance monitor counter it wants to use for tracking the SIP transport metrics.
+
         // Contains a list of the SIP Requests/Response that are being monitored or responses and retransmitted on when none is recieved to attempt a more reliable delivery
         // rather then just relying on the initial request to get through.
         private Dictionary<string, SIPTransaction> m_reliableTransmissions = new Dictionary<string, SIPTransaction>();
@@ -1192,6 +1194,11 @@ namespace SIPSorcery.SIP
                         if (STUNRequestReceived != null)
                         {
                             STUNRequestReceived(sipChannel.SIPChannelEndPoint.GetIPEndPoint(), remoteEndPoint.GetIPEndPoint(), buffer, buffer.Length);
+
+                            if (PerformanceMonitorPrefix != null)
+                            {
+                                SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_STUN_REQUESTS_PER_SECOND_SUFFIX);
+                            }
                         }
                     }
                     else
@@ -1203,6 +1210,11 @@ namespace SIPSorcery.SIP
                             FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "SIP message too large, " + buffer.Length + " bytes, maximum allowed is " + SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH + " bytes.", SIPValidationFieldsEnum.Request, rawErrorMessage);
                             SIPResponse tooLargeResponse = GetResponse(sipChannel.SIPChannelEndPoint, remoteEndPoint, SIPResponseStatusCodesEnum.MessageTooLarge, null);
                             SendResponse(tooLargeResponse);
+
+                            if (PerformanceMonitorPrefix != null)
+                            {
+                                SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
+                            }
                         }
                         else
                         {
@@ -1211,11 +1223,23 @@ namespace SIPSorcery.SIP
                             {
                                 // An emptry transmission has been received. More than likely this is a NAT keep alive and can be disregarded.
                                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "No printable characters, length " + buffer.Length + " bytes.", SIPValidationFieldsEnum.Unknown, null);
+
+                                if (PerformanceMonitorPrefix != null)
+                                {
+                                    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
+                                }
+
                                 return;
                             }
                             else if (!rawSIPMessage.Contains("SIP"))
                             {
                                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Missing SIP string.", SIPValidationFieldsEnum.NoSIPString, rawSIPMessage);
+
+                                if (PerformanceMonitorPrefix != null)
+                                {
+                                    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
+                                }
+
                                 return;
                             }
 
@@ -1229,6 +1253,11 @@ namespace SIPSorcery.SIP
 
                                     try
                                     {
+                                        if (PerformanceMonitorPrefix != null)
+                                        {
+                                            SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_RESPONSES_PER_SECOND_SUFFIX);
+                                        }
+
                                         SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessage);
 
                                         if (SIPResponseInTraceEvent != null)
@@ -1271,6 +1300,11 @@ namespace SIPSorcery.SIP
                                 else
                                 {
                                     #region SIP Request.
+
+                                    if (PerformanceMonitorPrefix != null)
+                                    {
+                                        SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_REQUESTS_PER_SECOND_SUFFIX);
+                                    }
 
                                     try
                                     {
@@ -1381,6 +1415,11 @@ namespace SIPSorcery.SIP
                             else
                             {
                                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Not parseable as SIP message.", SIPValidationFieldsEnum.Unknown, rawSIPMessage);
+
+                                if (PerformanceMonitorPrefix != null)
+                                {
+                                    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
+                                }
                             }
                         }
                     }
@@ -1389,6 +1428,11 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Exception SIPTransport. " + excp.Message, SIPValidationFieldsEnum.Unknown, rawSIPMessage);
+
+                if (PerformanceMonitorPrefix != null)
+                {
+                    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
+                }
             }
         }
 
