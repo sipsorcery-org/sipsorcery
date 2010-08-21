@@ -143,7 +143,7 @@ namespace SIPSorcery.SoftPhone
         private void InitialiseSIP(object state)
         {
             // Configure the SIP transport layer.
-            m_sipTransport = new SIPTransport(SIPDNSManager.Resolve, new SIPTransactionEngine());
+            m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
             List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipSocketsNode);
             m_sipTransport.AddSIPChannel(sipChannels);
 
@@ -335,10 +335,10 @@ namespace SIPSorcery.SoftPhone
         private void DNSLookup(object state)
         {
             string callURIStr = (string)state;
-            SIPEndPoint result = SIPDNSManager.Resolve(callURIStr);
+            List<SIPDNSLookupEndPoint> results = SIPDNSManager.ResolveSIPService(callURIStr).EndPointResults;
 
-            if (result != null) {
-                AppendTraceMessage("DNS result for " + callURIStr + " is " + result.ToString() + ".\n");
+            if (results != null) {
+                AppendTraceMessage("DNS result for " + callURIStr + " is " + results[0].LookupEndPoint.ToString() + ".\n");
             }
             else {
                 AppendTraceMessage("DNS lookup for " + callURIStr + " failed.\n");

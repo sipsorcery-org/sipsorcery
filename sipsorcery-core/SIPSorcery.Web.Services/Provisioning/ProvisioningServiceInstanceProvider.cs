@@ -8,6 +8,7 @@ using System.ServiceModel.Channels;
 using System.ServiceModel.Description;
 using System.ServiceModel.Dispatcher;
 using System.Text;
+using System.Xml;
 using SIPSorcery.CRM;
 using SIPSorcery.Persistence;
 using SIPSorcery.SIP.App;
@@ -19,12 +20,15 @@ namespace SIPSorcery.Web.Services {
     public class InstanceProviderExtensionElement : BehaviorExtensionElement {
 
         private const string DISABLED_PROVIDER_SERVERS_PATTERN = "DisabledProviderServersPattern";
+        private const string NEW_CUSTOMERS_ALLOWED_LIMIT_KEY = "NewCustomersAllowedLimit";
+        private const string INVITE_CODE_REQUIRED_KEY = "InviteCodeRequired";
+        private const string INVITE_CODES_NODE_NAME = "invitecodes";
 
         private static ILog logger = AppState.GetLogger("provisioningsvc");
 
         private static readonly string m_storageTypeKey = SIPSorceryConfiguration.PERSISTENCE_STORAGETYPE_KEY;
         private static readonly string m_connStrKey = SIPSorceryConfiguration.PERSISTENCE_STORAGECONNSTR_KEY;
-        private static readonly string m_newCustomersAllowedLimitKey = "NewCustomersAllowedLimit";
+
         private static readonly string m_providersStorageFileName = AssemblyState.XML_SIPPROVIDERS_FILENAME;
         private static readonly string m_providerBindingsStorageFileName = AssemblyState.XML_SIPPROVIDERS_FILENAME;
         private static readonly string m_sipAccountsStorageFileName = AssemblyState.XML_SIPACCOUNTS_FILENAME;
@@ -37,13 +41,16 @@ namespace SIPSorcery.Web.Services {
         private static string m_serverStorageConnStr;
         private static string m_disabledProviderServerPattern;
         private static int m_newCustomersAllowedLimit;
+        private static bool m_inviteCodeRequired;
+        private static List<string> m_inviteCodes = new List<string>();
 
         protected override object CreateBehavior() {
 
             try {
                 m_serverStorageType = (ConfigurationManager.AppSettings[m_storageTypeKey] != null) ? StorageTypesConverter.GetStorageType(ConfigurationManager.AppSettings[m_storageTypeKey]) : StorageTypes.Unknown;
                 m_serverStorageConnStr = ConfigurationManager.AppSettings[m_connStrKey];
-                Int32.TryParse(ConfigurationManager.AppSettings[m_newCustomersAllowedLimitKey], out m_newCustomersAllowedLimit);
+                Int32.TryParse(ConfigurationManager.AppSettings[NEW_CUSTOMERS_ALLOWED_LIMIT_KEY], out m_newCustomersAllowedLimit);
+                Boolean.TryParse(ConfigurationManager.AppSettings[INVITE_CODE_REQUIRED_KEY], out m_inviteCodeRequired);
 
                 if (m_serverStorageType == StorageTypes.Unknown || m_serverStorageConnStr.IsNullOrBlank()) {
                     throw new ApplicationException("The Provisioning Web Service cannot start with no persistence settings specified.");
@@ -53,6 +60,15 @@ namespace SIPSorcery.Web.Services {
                 m_disabledProviderServerPattern = ConfigurationManager.AppSettings[DISABLED_PROVIDER_SERVERS_PATTERN];
                 if (!m_disabledProviderServerPattern.IsNullOrBlank()) {
                     SIPProvider.DisallowedServerPatterns = m_disabledProviderServerPattern;
+                }
+
+                XmlNode inviteCodesNode = (XmlNode)AppState.GetSection(INVITE_CODES_NODE_NAME);
+                if (inviteCodesNode != null)
+                {
+                    foreach (XmlNode inviteCodeNode in inviteCodesNode)
+                    {
+                        m_inviteCodes.Add(inviteCodeNode.InnerText);
+                    }
                 }
 
                 // The Registration Agent wants to know about any changes to SIP Provider entries in order to update any SIP 
@@ -76,7 +92,9 @@ namespace SIPSorcery.Web.Services {
                     new CustomerSessionManager(m_serverStorageType, m_serverStorageConnStr),
                     new SIPDomainManager(m_serverStorageType, m_serverStorageConnStr),
                     (e) => { logger.Debug(e.Message); },
-                    m_newCustomersAllowedLimit);
+                    m_newCustomersAllowedLimit,
+                    m_inviteCodeRequired,
+                    m_inviteCodes);
             }
             catch (Exception excp) {
                 logger.Error("Exception InstanceProviderExtensionElement CreateBehavior. " + excp.Message);
@@ -103,6 +121,8 @@ namespace SIPSorcery.Web.Services {
         private SIPDomainManager m_sipDomainManager;
         private SIPMonitorLogDelegate m_logDelegate;
         private int m_newCustomersAllowedLimit;
+        private bool m_inviteCodeRequired;
+        private List<string> m_inviteCodes;
 
         public ProvisioningServiceInstanceProvider() {
         }
@@ -118,8 +138,10 @@ namespace SIPSorcery.Web.Services {
             CustomerSessionManager crmSessionManager,
             SIPDomainManager sipDomainManager,
             SIPMonitorLogDelegate log,
-            int newCustomersAllowedLimit) {
-
+            int newCustomersAllowedLimit,
+            bool inviteCodeRequired,
+            List<string> inviteCodes)
+        {
             m_sipAccountPersistor = sipAccountPersistor;
             m_sipDialPlanPersistor = sipDialPlanPersistor;
             m_sipProviderPersistor = sipProviderPersistor;
@@ -132,6 +154,8 @@ namespace SIPSorcery.Web.Services {
             m_sipDomainManager = sipDomainManager;
             m_logDelegate = log;
             m_newCustomersAllowedLimit = newCustomersAllowedLimit;
+            m_inviteCodeRequired = inviteCodeRequired;
+            m_inviteCodes = inviteCodes;
         }
 
         public object GetInstance(InstanceContext instanceContext) {
@@ -150,7 +174,9 @@ namespace SIPSorcery.Web.Services {
                 m_crmSessionManager,
                 m_sipDomainManager,
                 m_logDelegate,
-                m_newCustomersAllowedLimit);
+                m_newCustomersAllowedLimit,
+                m_inviteCodeRequired,
+                m_inviteCodes);
         }
 
         public void ReleaseInstance(InstanceContext instanceContext, object instance) { }

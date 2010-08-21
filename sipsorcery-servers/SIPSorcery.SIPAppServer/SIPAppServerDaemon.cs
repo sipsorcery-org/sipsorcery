@@ -363,7 +363,9 @@ namespace SIPSorcery.SIPAppServer
                                 m_customerSessionManager,
                                 m_sipSorceryPersistor.SIPDomainManager,
                                 FireSIPMonitorEvent,
-                                0);
+                                0,
+                                false,
+                                null);
 
                             m_sipProvisioningHost = new ServiceHost(typeof(SIPProvisioningWebService));
                             m_sipProvisioningHost.Description.Behaviors.Add(instanceProvider);

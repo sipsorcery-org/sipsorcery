@@ -15,6 +15,7 @@ namespace SIPSorcery.Web.Services {
         [OperationContract] bool IsAlive();        
         [OperationContract] void TestException();
         [OperationContract] bool AreNewAccountsEnabled();
+        [OperationContract] string CheckInviteCode(string inviteCode);
         [OperationContract] void CreateCustomer(Customer customer);
         [OperationContract] void DeleteCustomer(string customerUsername);
         [OperationContract] string Login(string username, string password);

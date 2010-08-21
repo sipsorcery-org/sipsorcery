@@ -12,6 +12,7 @@ create table customers
  website varchar(256),		
  active bit not null default 1,			-- Whether this account has been used in the last month (or specified period). 
  suspended bit not null default 0,		-- Whether this account has been suspended. If so it will not be authorised for logins. 
+ suspendedreason varchar(1024) null,
  securityquestion varchar(1024),
  securityanswer varchar(256),
  createdfromipaddress varchar(15),
@@ -22,6 +23,7 @@ create table customers
  authorisedapps varchar(2048),				-- A semi-colon delimited list of privileged apps that this customer's dialplan are authorised to use.
  timezone varchar(128),
  emailaddressconfirmed bit not null default 0,
+ invitecode varchar(36) null,
  inserted varchar(33) not null,
  Primary Key(id),
  Unique(customerusername)

@@ -52,7 +52,7 @@ namespace SIPSorcery.AppServer.DialPlan
 {
     public class DialPlanExecutingScript
     {
-        public const int MAX_SCRIPTPROCESSING_SECONDS = 5;           // The maximum amount of time a script will be able to execute for without completing or executing a Dial command.
+        public const int MAX_SCRIPTPROCESSING_SECONDS = 10;           // The maximum amount of time a script will be able to execute for without completing or executing a Dial command.
 
         private static int ScriptCounter;
 
@@ -62,7 +62,7 @@ namespace SIPSorcery.AppServer.DialPlan
         public Thread DialPlanScriptThread;
         public ScriptEngine DialPlanScriptEngine;
         public ScriptScope DialPlanScriptScope;
-        public bool Complete;
+        public bool Complete {get; private set;}
         public DialPlanContext ExecutingDialPlanContext;
         public string Owner;
         public DateTime StartTime;

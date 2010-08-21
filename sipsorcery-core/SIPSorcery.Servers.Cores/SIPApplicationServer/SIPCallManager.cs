@@ -469,7 +469,7 @@ namespace SIPSorcery.Servers
                             }
                             else
                             {
-                                dialPlan.AuthorisedApps = customer.AuthorisedApps + dialPlan.AuthorisedApps;
+                                dialPlan.AuthorisedApps = customer.AuthorisedApps + ";" + dialPlan.AuthorisedApps;
                                 DialPlanScriptContext scriptContext = new DialPlanScriptContext(
                                     Log_External,
                                     m_sipTransport,
@@ -612,6 +612,7 @@ namespace SIPSorcery.Servers
                                 uas = new SIPTransferServerUserAgent(Log_External, m_sipDialogueManager.DialogueTransfer, m_sipTransport, m_outboundProxy, replacesDialogue, oppositeDialogue, number, customer.CustomerUsername, customer.AdminId);
                             }
 
+                            dialPlan.AuthorisedApps = customer.AuthorisedApps + ";" + dialPlan.AuthorisedApps;
                             DialPlanScriptContext scriptContext = new DialPlanScriptContext(
                                     Log_External,
                                     m_sipTransport,

@@ -105,6 +105,9 @@ namespace SIPSorcery.CRM
         [Column(Name = "suspended", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
 	    public bool Suspended{get; set;}
 
+        [Column(Name = "suspendedreason", DbType = "varchar(1024)", UpdateCheck = UpdateCheck.Never)]
+        public string SuspendedReason { get; set; }
+
         [Column(Name = "securityquestion", DbType = "varchar(1024)", UpdateCheck = UpdateCheck.Never)]
         public string SecurityQuestion { get; set; }
 
@@ -134,6 +137,9 @@ namespace SIPSorcery.CRM
 
         [Column(Name = "authorisedapps", DbType = "varchar(2048)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         public string AuthorisedApps { get; set; }
+
+        [Column(Name = "invitecode", DbType = "varchar(36)", UpdateCheck = UpdateCheck.Never)]
+        public string InviteCode { get; set; }
 
         [Column(Name = "emailaddressconfirmed", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public bool EmailAddressConfirmed { get; set; }
@@ -222,11 +228,13 @@ namespace SIPSorcery.CRM
             table.Columns.Add(new DataColumn("inserted", typeof(DateTime)));
             table.Columns.Add(new DataColumn("active", typeof(Boolean)));
             table.Columns.Add(new DataColumn("suspended", typeof(Boolean)));
+            table.Columns.Add(new DataColumn("suspendedreason", typeof(String)));
             table.Columns.Add(new DataColumn("ipaddress", typeof(String)));
             table.Columns.Add(new DataColumn("executioncount", typeof(Int32)));
             table.Columns.Add(new DataColumn("maxexecutioncount", typeof(Int32)));
             table.Columns.Add(new DataColumn("authorisedapps", typeof(String)));
             table.Columns.Add(new DataColumn("timezone", typeof(String)));
+            table.Columns.Add(new DataColumn("invitecode", typeof(String)));
             table.Columns.Add(new DataColumn("emailaddressconfirmed", typeof(Boolean)));
             return table;
         }
@@ -249,10 +257,12 @@ namespace SIPSorcery.CRM
                 CreatedFromIPAddress = (customerRow.Table.Columns.Contains("createdfromipaddress") && customerRow["createdfromipaddress"] != null) ? customerRow["createdfromipaddress"] as string : null;
                 Inserted = (customerRow.Table.Columns.Contains("inserted") && customerRow["inserted"] != null) ? DateTimeOffset.Parse(customerRow["inserted"] as string) : DateTimeOffset.MinValue;
                 Suspended = (customerRow.Table.Columns.Contains("suspended") && customerRow["suspended"] != null) ? Convert.ToBoolean(customerRow["suspended"]) : false;
+                SuspendedReason = (customerRow.Table.Columns.Contains("suspendedreason") && customerRow["suspendedreason"] != null) ? customerRow["suspendedreason"] as string : null;
                 ExecutionCount = (customerRow.Table.Columns.Contains("executioncount") && customerRow["executioncount"] != null) ? Convert.ToInt32(customerRow["executioncount"]) : 0;
                 MaxExecutionCount = (customerRow.Table.Columns.Contains("maxexecutioncount") && customerRow["maxexecutioncount"] != null) ? Convert.ToInt32(customerRow["maxexecutioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
                 AuthorisedApps = (customerRow.Table.Columns.Contains("authorisedapps") && customerRow["authorisedapps"] != null) ? customerRow["authorisedapps"] as string : null;
                 EmailAddressConfirmed = (customerRow.Table.Columns.Contains("emailaddressconfirmed") && customerRow["emailaddressconfirmed"] != null) ? Convert.ToBoolean(customerRow["emailaddressconfirmed"]) : true;
+                InviteCode = (customerRow.Table.Columns.Contains("invitecode") && customerRow["invitecode"] != null) ? customerRow["invitecode"] as string : null;
                 TimeZone = (customerRow.Table.Columns.Contains("timezone") && customerRow["timezone"] != null) ? customerRow["timezone"] as string : null;
             }
             catch (Exception excp) {
@@ -296,9 +306,11 @@ namespace SIPSorcery.CRM
                 "  <inserted>" + Inserted.ToString() + "</inserted>" + m_newLine +
                 "  <active>" + Active + "</active>" + m_newLine +
                 "  <suspended>" + Suspended + "</suspended>" + m_newLine +
+                "  <suspendedreason>" + SuspendedReason + "</suspendedreason>" + m_newLine +
                 "  <executioncount>" + ExecutionCount + "</executioncount>" + m_newLine +
                 "  <maxexecutioncount>" + MaxExecutionCount + "</maxexecutioncount>" + m_newLine +
                 "  <authorisedapps>" + AuthorisedApps + "</authorisedapps>" + m_newLine +
+                "  <invitecode>" + InviteCode + "</invitecode>" + m_newLine +
                 "  <emailaddressconfirmed>" + EmailAddressConfirmed + "</emailaddressconfirmed>";
 
              return customerXML;

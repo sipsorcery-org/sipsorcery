@@ -440,7 +440,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
             finally
             {
-                executingScript.Complete = true;
+                executingScript.StopExecution();
             }
         }
 

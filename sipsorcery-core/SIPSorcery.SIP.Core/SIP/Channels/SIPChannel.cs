@@ -72,6 +72,8 @@ namespace SIPSorcery.SIP
 
         protected ILog logger = AssemblyState.logger;
 
+        public static List<string> LocalTCPSockets = new List<string>(); // Keeps a list of TCP sockets this process is listening on to prevent it establishing TCP connections to itself.
+
         protected SIPEndPoint m_localSIPEndPoint = null;
         public SIPEndPoint SIPChannelEndPoint
         {

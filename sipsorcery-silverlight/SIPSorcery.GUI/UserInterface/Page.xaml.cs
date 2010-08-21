@@ -57,6 +57,7 @@ namespace SIPSorcery
         private string m_authId;
         private string m_owner;
         private bool m_sessionExpired = true;   // Set to true after an unauthorised access exception.
+        private string m_inviteCode;
 
         private UserPage m_userPage;
 
@@ -73,6 +74,7 @@ namespace SIPSorcery
             //m_loginControl.Visibility = Visibility.Collapsed;
             m_loginControl.CreateNewAccountClicked += CreateNewAccountClicked;
             m_loginControl.Login_External = LoginAsync;
+            m_newAccountInviteControl.CheckInviteCode += CheckInviteCode;
 
             //int hostPort = Application.Current.Host.Source.Port;
             //if (hostPort == DEFAULT_WEB_PORT || hostPort == 0)
@@ -140,6 +142,7 @@ namespace SIPSorcery
             m_unauthorisedPersistor.TestExceptionComplete += TestExceptionComplete;
             m_unauthorisedPersistor.IsAliveComplete += PersistorIsAliveComplete;
             m_unauthorisedPersistor.AreNewAccountsEnabledComplete += AreNewAccountsEnabledComplete;
+            m_unauthorisedPersistor.CheckInviteCodeComplete +=CheckInviteCodeComplete;
             m_unauthorisedPersistor.LoginComplete += LoginComplete;
             m_unauthorisedPersistor.CreateCustomerComplete += CreateCustomerComplete;
             m_createAccountControl.CreateCustomer_External = m_unauthorisedPersistor.CreateCustomerAsync;
@@ -148,10 +151,50 @@ namespace SIPSorcery
             InitialiseServices(0);
         }
 
+        private void CheckInviteCode(string inviteCode)
+        {
+            try
+            {
+                m_inviteCode = inviteCode.Trim();
+                m_unauthorisedPersistor.CheckInviteCodeAsync(m_inviteCode);
+            }
+            catch (Exception provExcp)
+            {
+                m_persistorStatusMessage = provExcp.Message;
+                m_persistorStatus = ServiceConnectionStatesEnum.Error;
+                UpdateAppStatus();
+            }
+        }
+
+        private void CheckInviteCodeComplete(CheckInviteCodeCompletedEventArgs e)
+        {
+            try
+            {
+                if (e.Error != null)
+                {
+                    m_newAccountInviteControl.InviteCodeInvalid(e.Error.Message);
+                }
+                else if (e.Result != null)
+                {
+                    m_newAccountInviteControl.InviteCodeInvalid(e.Result);
+                }
+                else
+                {
+                    m_newAccountInviteControl.Visibility = Visibility.Collapsed;
+                    m_createAccountControl.Visibility = Visibility.Visible;
+                    m_createAccountControl.InviteCode = m_inviteCode;
+                }
+            }
+            catch (Exception excp)
+            {
+                m_newAccountInviteControl.InviteCodeInvalid(excp.Message);
+            }
+        }
+
         private void CreateNewAccountClicked()
         {
             m_createAccountControl.Visibility = (m_createAccountControl.Visibility == Visibility.Collapsed) ? Visibility.Visible : Visibility.Collapsed;
-            m_logo.Visibility = (m_createAccountControl.Visibility == Visibility.Collapsed) ? Visibility.Visible : Visibility.Collapsed;
+            //m_logo.Visibility = (m_createAccountControl.Visibility == Visibility.Collapsed) ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void TestExceptionComplete(System.ComponentModel.AsyncCompletedEventArgs e)
@@ -240,10 +283,10 @@ namespace SIPSorcery
                         m_userPage.SetProvisioningStatusMessage("Provisioning service ok: " + m_provisioningServiceURL + ".");
                     }
                 }
-                else
-                {
-                    m_unauthorisedPersistor.AreNewAccountsEnabledAsync();
-                }
+                //else
+                //{
+                //    m_unauthorisedPersistor.AreNewAccountsEnabledAsync();
+                //}
             }
         }
 

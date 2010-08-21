@@ -18,6 +18,34 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
     [System.ServiceModel.ServiceContractAttribute(Namespace="http://www.sipsorcery.com/provisioning", ConfigurationName="SIPSorceryProvisioningClient.IProvisioningService")]
     public interface IProvisioningService {
         
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AddDialPlan", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/AddDialPlanResponse")]
+        System.IAsyncResult BeginAddDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState);
+        
+        SIPSorcery.SIP.App.SIPDialPlan EndAddDialPlan(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateDialPlan", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateDialPlanRespons" +
+            "e")]
+        System.IAsyncResult BeginUpdateDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState);
+        
+        SIPSorcery.SIP.App.SIPDialPlan EndUpdateDialPlan(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteDialPlan", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteDialPlanRespons" +
+            "e")]
+        System.IAsyncResult BeginDeleteDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState);
+        
+        SIPSorcery.SIP.App.SIPDialPlan EndDeleteDialPlan(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsCount", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsCountResponse" +
+            "")]
+        System.IAsyncResult BeginGetCallsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
+        
+        int EndGetCallsCount(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCalls", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsResponse")]
+        System.IAsyncResult BeginGetCalls(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
+        
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> EndGetCalls(System.IAsyncResult result);
+        
         [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRsCount", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRsCountResponse")]
         System.IAsyncResult BeginGetCDRsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
         
@@ -58,6 +86,12 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         System.IAsyncResult BeginAreNewAccountsEnabled(System.AsyncCallback callback, object asyncState);
         
         bool EndAreNewAccountsEnabled(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/CheckInviteCode", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/CheckInviteCodeRespon" +
+            "se")]
+        System.IAsyncResult BeginCheckInviteCode(string inviteCode, System.AsyncCallback callback, object asyncState);
+        
+        string EndCheckInviteCode(System.IAsyncResult result);
         
         [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/CreateCustomer", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/CreateCustomerRespons" +
             "e")]
@@ -203,38 +237,105 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         System.IAsyncResult BeginGetDialPlans(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
         
         System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan> EndGetDialPlans(System.IAsyncResult result);
-        
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/AddDialPlan", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/AddDialPlanResponse")]
-        System.IAsyncResult BeginAddDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState);
-        
-        SIPSorcery.SIP.App.SIPDialPlan EndAddDialPlan(System.IAsyncResult result);
-        
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateDialPlan", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateDialPlanRespons" +
-            "e")]
-        System.IAsyncResult BeginUpdateDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState);
-        
-        SIPSorcery.SIP.App.SIPDialPlan EndUpdateDialPlan(System.IAsyncResult result);
-        
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteDialPlan", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteDialPlanRespons" +
-            "e")]
-        System.IAsyncResult BeginDeleteDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState);
-        
-        SIPSorcery.SIP.App.SIPDialPlan EndDeleteDialPlan(System.IAsyncResult result);
-        
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsCount", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsCountResponse" +
-            "")]
-        System.IAsyncResult BeginGetCallsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
-        
-        int EndGetCallsCount(System.IAsyncResult result);
-        
-        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCalls", ReplyAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsResponse")]
-        System.IAsyncResult BeginGetCalls(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
-        
-        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> EndGetCalls(System.IAsyncResult result);
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
     public interface IProvisioningServiceChannel : SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService, System.ServiceModel.IClientChannel {
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class AddDialPlanCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public AddDialPlanCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public SIPSorcery.SIP.App.SIPDialPlan Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((SIPSorcery.SIP.App.SIPDialPlan)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class UpdateDialPlanCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public UpdateDialPlanCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public SIPSorcery.SIP.App.SIPDialPlan Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((SIPSorcery.SIP.App.SIPDialPlan)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class DeleteDialPlanCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public DeleteDialPlanCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public SIPSorcery.SIP.App.SIPDialPlan Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((SIPSorcery.SIP.App.SIPDialPlan)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetCallsCountCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetCallsCountCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public int Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((int)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetCallsCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetCallsCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset>)(this.results[0]));
+            }
+        }
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
@@ -328,6 +429,25 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             get {
                 base.RaiseExceptionIfNecessary();
                 return ((bool)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class CheckInviteCodeCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public CheckInviteCodeCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public string Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((string)(this.results[0]));
             }
         }
     }
@@ -695,102 +815,37 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    public partial class AddDialPlanCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
-        
-        private object[] results;
-        
-        public AddDialPlanCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
-                base(exception, cancelled, userState) {
-            this.results = results;
-        }
-        
-        public SIPSorcery.SIP.App.SIPDialPlan Result {
-            get {
-                base.RaiseExceptionIfNecessary();
-                return ((SIPSorcery.SIP.App.SIPDialPlan)(this.results[0]));
-            }
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    public partial class UpdateDialPlanCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
-        
-        private object[] results;
-        
-        public UpdateDialPlanCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
-                base(exception, cancelled, userState) {
-            this.results = results;
-        }
-        
-        public SIPSorcery.SIP.App.SIPDialPlan Result {
-            get {
-                base.RaiseExceptionIfNecessary();
-                return ((SIPSorcery.SIP.App.SIPDialPlan)(this.results[0]));
-            }
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    public partial class DeleteDialPlanCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
-        
-        private object[] results;
-        
-        public DeleteDialPlanCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
-                base(exception, cancelled, userState) {
-            this.results = results;
-        }
-        
-        public SIPSorcery.SIP.App.SIPDialPlan Result {
-            get {
-                base.RaiseExceptionIfNecessary();
-                return ((SIPSorcery.SIP.App.SIPDialPlan)(this.results[0]));
-            }
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    public partial class GetCallsCountCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
-        
-        private object[] results;
-        
-        public GetCallsCountCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
-                base(exception, cancelled, userState) {
-            this.results = results;
-        }
-        
-        public int Result {
-            get {
-                base.RaiseExceptionIfNecessary();
-                return ((int)(this.results[0]));
-            }
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    public partial class GetCallsCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
-        
-        private object[] results;
-        
-        public GetCallsCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
-                base(exception, cancelled, userState) {
-            this.results = results;
-        }
-        
-        public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> Result {
-            get {
-                base.RaiseExceptionIfNecessary();
-                return ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset>)(this.results[0]));
-            }
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
     public partial class ProvisioningServiceClient : System.ServiceModel.ClientBase<SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService>, SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService {
+        
+        private BeginOperationDelegate onBeginAddDialPlanDelegate;
+        
+        private EndOperationDelegate onEndAddDialPlanDelegate;
+        
+        private System.Threading.SendOrPostCallback onAddDialPlanCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginUpdateDialPlanDelegate;
+        
+        private EndOperationDelegate onEndUpdateDialPlanDelegate;
+        
+        private System.Threading.SendOrPostCallback onUpdateDialPlanCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginDeleteDialPlanDelegate;
+        
+        private EndOperationDelegate onEndDeleteDialPlanDelegate;
+        
+        private System.Threading.SendOrPostCallback onDeleteDialPlanCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetCallsCountDelegate;
+        
+        private EndOperationDelegate onEndGetCallsCountDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetCallsCountCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetCallsDelegate;
+        
+        private EndOperationDelegate onEndGetCallsDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetCallsCompletedDelegate;
         
         private BeginOperationDelegate onBeginGetCDRsCountDelegate;
         
@@ -833,6 +888,12 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         private EndOperationDelegate onEndAreNewAccountsEnabledDelegate;
         
         private System.Threading.SendOrPostCallback onAreNewAccountsEnabledCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginCheckInviteCodeDelegate;
+        
+        private EndOperationDelegate onEndCheckInviteCodeDelegate;
+        
+        private System.Threading.SendOrPostCallback onCheckInviteCodeCompletedDelegate;
         
         private BeginOperationDelegate onBeginCreateCustomerDelegate;
         
@@ -978,36 +1039,6 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         
         private System.Threading.SendOrPostCallback onGetDialPlansCompletedDelegate;
         
-        private BeginOperationDelegate onBeginAddDialPlanDelegate;
-        
-        private EndOperationDelegate onEndAddDialPlanDelegate;
-        
-        private System.Threading.SendOrPostCallback onAddDialPlanCompletedDelegate;
-        
-        private BeginOperationDelegate onBeginUpdateDialPlanDelegate;
-        
-        private EndOperationDelegate onEndUpdateDialPlanDelegate;
-        
-        private System.Threading.SendOrPostCallback onUpdateDialPlanCompletedDelegate;
-        
-        private BeginOperationDelegate onBeginDeleteDialPlanDelegate;
-        
-        private EndOperationDelegate onEndDeleteDialPlanDelegate;
-        
-        private System.Threading.SendOrPostCallback onDeleteDialPlanCompletedDelegate;
-        
-        private BeginOperationDelegate onBeginGetCallsCountDelegate;
-        
-        private EndOperationDelegate onEndGetCallsCountDelegate;
-        
-        private System.Threading.SendOrPostCallback onGetCallsCountCompletedDelegate;
-        
-        private BeginOperationDelegate onBeginGetCallsDelegate;
-        
-        private EndOperationDelegate onEndGetCallsDelegate;
-        
-        private System.Threading.SendOrPostCallback onGetCallsCompletedDelegate;
-        
         private BeginOperationDelegate onBeginOpenDelegate;
         
         private EndOperationDelegate onEndOpenDelegate;
@@ -1061,6 +1092,16 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             }
         }
         
+        public event System.EventHandler<AddDialPlanCompletedEventArgs> AddDialPlanCompleted;
+        
+        public event System.EventHandler<UpdateDialPlanCompletedEventArgs> UpdateDialPlanCompleted;
+        
+        public event System.EventHandler<DeleteDialPlanCompletedEventArgs> DeleteDialPlanCompleted;
+        
+        public event System.EventHandler<GetCallsCountCompletedEventArgs> GetCallsCountCompleted;
+        
+        public event System.EventHandler<GetCallsCompletedEventArgs> GetCallsCompleted;
+        
         public event System.EventHandler<GetCDRsCountCompletedEventArgs> GetCDRsCountCompleted;
         
         public event System.EventHandler<GetCDRsCompletedEventArgs> GetCDRsCompleted;
@@ -1074,6 +1115,8 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> TestExceptionCompleted;
         
         public event System.EventHandler<AreNewAccountsEnabledCompletedEventArgs> AreNewAccountsEnabledCompleted;
+        
+        public event System.EventHandler<CheckInviteCodeCompletedEventArgs> CheckInviteCodeCompleted;
         
         public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> CreateCustomerCompleted;
         
@@ -1123,19 +1166,243 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
         
         public event System.EventHandler<GetDialPlansCompletedEventArgs> GetDialPlansCompleted;
         
-        public event System.EventHandler<AddDialPlanCompletedEventArgs> AddDialPlanCompleted;
-        
-        public event System.EventHandler<UpdateDialPlanCompletedEventArgs> UpdateDialPlanCompleted;
-        
-        public event System.EventHandler<DeleteDialPlanCompletedEventArgs> DeleteDialPlanCompleted;
-        
-        public event System.EventHandler<GetCallsCountCompletedEventArgs> GetCallsCountCompleted;
-        
-        public event System.EventHandler<GetCallsCompletedEventArgs> GetCallsCompleted;
-        
         public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> OpenCompleted;
         
         public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> CloseCompleted;
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginAddDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginAddDialPlan(dialPlan, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        SIPSorcery.SIP.App.SIPDialPlan SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndAddDialPlan(System.IAsyncResult result) {
+            return base.Channel.EndAddDialPlan(result);
+        }
+        
+        private System.IAsyncResult OnBeginAddDialPlan(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            SIPSorcery.SIP.App.SIPDialPlan dialPlan = ((SIPSorcery.SIP.App.SIPDialPlan)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginAddDialPlan(dialPlan, callback, asyncState);
+        }
+        
+        private object[] OnEndAddDialPlan(System.IAsyncResult result) {
+            SIPSorcery.SIP.App.SIPDialPlan retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndAddDialPlan(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnAddDialPlanCompleted(object state) {
+            if ((this.AddDialPlanCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.AddDialPlanCompleted(this, new AddDialPlanCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void AddDialPlanAsync(SIPSorcery.SIP.App.SIPDialPlan dialPlan) {
+            this.AddDialPlanAsync(dialPlan, null);
+        }
+        
+        public void AddDialPlanAsync(SIPSorcery.SIP.App.SIPDialPlan dialPlan, object userState) {
+            if ((this.onBeginAddDialPlanDelegate == null)) {
+                this.onBeginAddDialPlanDelegate = new BeginOperationDelegate(this.OnBeginAddDialPlan);
+            }
+            if ((this.onEndAddDialPlanDelegate == null)) {
+                this.onEndAddDialPlanDelegate = new EndOperationDelegate(this.OnEndAddDialPlan);
+            }
+            if ((this.onAddDialPlanCompletedDelegate == null)) {
+                this.onAddDialPlanCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnAddDialPlanCompleted);
+            }
+            base.InvokeAsync(this.onBeginAddDialPlanDelegate, new object[] {
+                        dialPlan}, this.onEndAddDialPlanDelegate, this.onAddDialPlanCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginUpdateDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginUpdateDialPlan(dialPlan, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        SIPSorcery.SIP.App.SIPDialPlan SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndUpdateDialPlan(System.IAsyncResult result) {
+            return base.Channel.EndUpdateDialPlan(result);
+        }
+        
+        private System.IAsyncResult OnBeginUpdateDialPlan(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            SIPSorcery.SIP.App.SIPDialPlan dialPlan = ((SIPSorcery.SIP.App.SIPDialPlan)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginUpdateDialPlan(dialPlan, callback, asyncState);
+        }
+        
+        private object[] OnEndUpdateDialPlan(System.IAsyncResult result) {
+            SIPSorcery.SIP.App.SIPDialPlan retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndUpdateDialPlan(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnUpdateDialPlanCompleted(object state) {
+            if ((this.UpdateDialPlanCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.UpdateDialPlanCompleted(this, new UpdateDialPlanCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void UpdateDialPlanAsync(SIPSorcery.SIP.App.SIPDialPlan dialPlan) {
+            this.UpdateDialPlanAsync(dialPlan, null);
+        }
+        
+        public void UpdateDialPlanAsync(SIPSorcery.SIP.App.SIPDialPlan dialPlan, object userState) {
+            if ((this.onBeginUpdateDialPlanDelegate == null)) {
+                this.onBeginUpdateDialPlanDelegate = new BeginOperationDelegate(this.OnBeginUpdateDialPlan);
+            }
+            if ((this.onEndUpdateDialPlanDelegate == null)) {
+                this.onEndUpdateDialPlanDelegate = new EndOperationDelegate(this.OnEndUpdateDialPlan);
+            }
+            if ((this.onUpdateDialPlanCompletedDelegate == null)) {
+                this.onUpdateDialPlanCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnUpdateDialPlanCompleted);
+            }
+            base.InvokeAsync(this.onBeginUpdateDialPlanDelegate, new object[] {
+                        dialPlan}, this.onEndUpdateDialPlanDelegate, this.onUpdateDialPlanCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginDeleteDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginDeleteDialPlan(dialPlan, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        SIPSorcery.SIP.App.SIPDialPlan SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndDeleteDialPlan(System.IAsyncResult result) {
+            return base.Channel.EndDeleteDialPlan(result);
+        }
+        
+        private System.IAsyncResult OnBeginDeleteDialPlan(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            SIPSorcery.SIP.App.SIPDialPlan dialPlan = ((SIPSorcery.SIP.App.SIPDialPlan)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginDeleteDialPlan(dialPlan, callback, asyncState);
+        }
+        
+        private object[] OnEndDeleteDialPlan(System.IAsyncResult result) {
+            SIPSorcery.SIP.App.SIPDialPlan retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndDeleteDialPlan(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnDeleteDialPlanCompleted(object state) {
+            if ((this.DeleteDialPlanCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.DeleteDialPlanCompleted(this, new DeleteDialPlanCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void DeleteDialPlanAsync(SIPSorcery.SIP.App.SIPDialPlan dialPlan) {
+            this.DeleteDialPlanAsync(dialPlan, null);
+        }
+        
+        public void DeleteDialPlanAsync(SIPSorcery.SIP.App.SIPDialPlan dialPlan, object userState) {
+            if ((this.onBeginDeleteDialPlanDelegate == null)) {
+                this.onBeginDeleteDialPlanDelegate = new BeginOperationDelegate(this.OnBeginDeleteDialPlan);
+            }
+            if ((this.onEndDeleteDialPlanDelegate == null)) {
+                this.onEndDeleteDialPlanDelegate = new EndOperationDelegate(this.OnEndDeleteDialPlan);
+            }
+            if ((this.onDeleteDialPlanCompletedDelegate == null)) {
+                this.onDeleteDialPlanCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnDeleteDialPlanCompleted);
+            }
+            base.InvokeAsync(this.onBeginDeleteDialPlanDelegate, new object[] {
+                        dialPlan}, this.onEndDeleteDialPlanDelegate, this.onDeleteDialPlanCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetCallsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetCallsCount(whereExpression, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetCallsCount(System.IAsyncResult result) {
+            return base.Channel.EndGetCallsCount(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetCallsCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetCallsCount(whereExpression, callback, asyncState);
+        }
+        
+        private object[] OnEndGetCallsCount(System.IAsyncResult result) {
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetCallsCount(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetCallsCountCompleted(object state) {
+            if ((this.GetCallsCountCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetCallsCountCompleted(this, new GetCallsCountCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetCallsCountAsync(string whereExpression) {
+            this.GetCallsCountAsync(whereExpression, null);
+        }
+        
+        public void GetCallsCountAsync(string whereExpression, object userState) {
+            if ((this.onBeginGetCallsCountDelegate == null)) {
+                this.onBeginGetCallsCountDelegate = new BeginOperationDelegate(this.OnBeginGetCallsCount);
+            }
+            if ((this.onEndGetCallsCountDelegate == null)) {
+                this.onEndGetCallsCountDelegate = new EndOperationDelegate(this.OnEndGetCallsCount);
+            }
+            if ((this.onGetCallsCountCompletedDelegate == null)) {
+                this.onGetCallsCountCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetCallsCountCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetCallsCountDelegate, new object[] {
+                        whereExpression}, this.onEndGetCallsCountDelegate, this.onGetCallsCountCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetCalls(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetCalls(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetCalls(System.IAsyncResult result) {
+            return base.Channel.EndGetCalls(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetCalls(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            int offset = ((int)(inValues[1]));
+            int count = ((int)(inValues[2]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetCalls(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        private object[] OnEndGetCalls(System.IAsyncResult result) {
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetCalls(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetCallsCompleted(object state) {
+            if ((this.GetCallsCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetCallsCompleted(this, new GetCallsCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetCallsAsync(string whereExpression, int offset, int count) {
+            this.GetCallsAsync(whereExpression, offset, count, null);
+        }
+        
+        public void GetCallsAsync(string whereExpression, int offset, int count, object userState) {
+            if ((this.onBeginGetCallsDelegate == null)) {
+                this.onBeginGetCallsDelegate = new BeginOperationDelegate(this.OnBeginGetCalls);
+            }
+            if ((this.onEndGetCallsDelegate == null)) {
+                this.onEndGetCallsDelegate = new EndOperationDelegate(this.OnEndGetCalls);
+            }
+            if ((this.onGetCallsCompletedDelegate == null)) {
+                this.onGetCallsCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetCallsCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetCallsDelegate, new object[] {
+                        whereExpression,
+                        offset,
+                        count}, this.onEndGetCallsDelegate, this.onGetCallsCompletedDelegate, userState);
+        }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
         System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetCDRsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
@@ -1451,6 +1718,52 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
                 this.onAreNewAccountsEnabledCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnAreNewAccountsEnabledCompleted);
             }
             base.InvokeAsync(this.onBeginAreNewAccountsEnabledDelegate, null, this.onEndAreNewAccountsEnabledDelegate, this.onAreNewAccountsEnabledCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginCheckInviteCode(string inviteCode, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginCheckInviteCode(inviteCode, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        string SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndCheckInviteCode(System.IAsyncResult result) {
+            return base.Channel.EndCheckInviteCode(result);
+        }
+        
+        private System.IAsyncResult OnBeginCheckInviteCode(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string inviteCode = ((string)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginCheckInviteCode(inviteCode, callback, asyncState);
+        }
+        
+        private object[] OnEndCheckInviteCode(System.IAsyncResult result) {
+            string retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndCheckInviteCode(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnCheckInviteCodeCompleted(object state) {
+            if ((this.CheckInviteCodeCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.CheckInviteCodeCompleted(this, new CheckInviteCodeCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void CheckInviteCodeAsync(string inviteCode) {
+            this.CheckInviteCodeAsync(inviteCode, null);
+        }
+        
+        public void CheckInviteCodeAsync(string inviteCode, object userState) {
+            if ((this.onBeginCheckInviteCodeDelegate == null)) {
+                this.onBeginCheckInviteCodeDelegate = new BeginOperationDelegate(this.OnBeginCheckInviteCode);
+            }
+            if ((this.onEndCheckInviteCodeDelegate == null)) {
+                this.onEndCheckInviteCodeDelegate = new EndOperationDelegate(this.OnEndCheckInviteCode);
+            }
+            if ((this.onCheckInviteCodeCompletedDelegate == null)) {
+                this.onCheckInviteCodeCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnCheckInviteCodeCompleted);
+            }
+            base.InvokeAsync(this.onBeginCheckInviteCodeDelegate, new object[] {
+                        inviteCode}, this.onEndCheckInviteCodeDelegate, this.onCheckInviteCodeCompletedDelegate, userState);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
@@ -2580,240 +2893,6 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
                         count}, this.onEndGetDialPlansDelegate, this.onGetDialPlansCompletedDelegate, userState);
         }
         
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginAddDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
-            return base.Channel.BeginAddDialPlan(dialPlan, callback, asyncState);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        SIPSorcery.SIP.App.SIPDialPlan SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndAddDialPlan(System.IAsyncResult result) {
-            return base.Channel.EndAddDialPlan(result);
-        }
-        
-        private System.IAsyncResult OnBeginAddDialPlan(object[] inValues, System.AsyncCallback callback, object asyncState) {
-            SIPSorcery.SIP.App.SIPDialPlan dialPlan = ((SIPSorcery.SIP.App.SIPDialPlan)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginAddDialPlan(dialPlan, callback, asyncState);
-        }
-        
-        private object[] OnEndAddDialPlan(System.IAsyncResult result) {
-            SIPSorcery.SIP.App.SIPDialPlan retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndAddDialPlan(result);
-            return new object[] {
-                    retVal};
-        }
-        
-        private void OnAddDialPlanCompleted(object state) {
-            if ((this.AddDialPlanCompleted != null)) {
-                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
-                this.AddDialPlanCompleted(this, new AddDialPlanCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
-            }
-        }
-        
-        public void AddDialPlanAsync(SIPSorcery.SIP.App.SIPDialPlan dialPlan) {
-            this.AddDialPlanAsync(dialPlan, null);
-        }
-        
-        public void AddDialPlanAsync(SIPSorcery.SIP.App.SIPDialPlan dialPlan, object userState) {
-            if ((this.onBeginAddDialPlanDelegate == null)) {
-                this.onBeginAddDialPlanDelegate = new BeginOperationDelegate(this.OnBeginAddDialPlan);
-            }
-            if ((this.onEndAddDialPlanDelegate == null)) {
-                this.onEndAddDialPlanDelegate = new EndOperationDelegate(this.OnEndAddDialPlan);
-            }
-            if ((this.onAddDialPlanCompletedDelegate == null)) {
-                this.onAddDialPlanCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnAddDialPlanCompleted);
-            }
-            base.InvokeAsync(this.onBeginAddDialPlanDelegate, new object[] {
-                        dialPlan}, this.onEndAddDialPlanDelegate, this.onAddDialPlanCompletedDelegate, userState);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginUpdateDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
-            return base.Channel.BeginUpdateDialPlan(dialPlan, callback, asyncState);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        SIPSorcery.SIP.App.SIPDialPlan SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndUpdateDialPlan(System.IAsyncResult result) {
-            return base.Channel.EndUpdateDialPlan(result);
-        }
-        
-        private System.IAsyncResult OnBeginUpdateDialPlan(object[] inValues, System.AsyncCallback callback, object asyncState) {
-            SIPSorcery.SIP.App.SIPDialPlan dialPlan = ((SIPSorcery.SIP.App.SIPDialPlan)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginUpdateDialPlan(dialPlan, callback, asyncState);
-        }
-        
-        private object[] OnEndUpdateDialPlan(System.IAsyncResult result) {
-            SIPSorcery.SIP.App.SIPDialPlan retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndUpdateDialPlan(result);
-            return new object[] {
-                    retVal};
-        }
-        
-        private void OnUpdateDialPlanCompleted(object state) {
-            if ((this.UpdateDialPlanCompleted != null)) {
-                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
-                this.UpdateDialPlanCompleted(this, new UpdateDialPlanCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
-            }
-        }
-        
-        public void UpdateDialPlanAsync(SIPSorcery.SIP.App.SIPDialPlan dialPlan) {
-            this.UpdateDialPlanAsync(dialPlan, null);
-        }
-        
-        public void UpdateDialPlanAsync(SIPSorcery.SIP.App.SIPDialPlan dialPlan, object userState) {
-            if ((this.onBeginUpdateDialPlanDelegate == null)) {
-                this.onBeginUpdateDialPlanDelegate = new BeginOperationDelegate(this.OnBeginUpdateDialPlan);
-            }
-            if ((this.onEndUpdateDialPlanDelegate == null)) {
-                this.onEndUpdateDialPlanDelegate = new EndOperationDelegate(this.OnEndUpdateDialPlan);
-            }
-            if ((this.onUpdateDialPlanCompletedDelegate == null)) {
-                this.onUpdateDialPlanCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnUpdateDialPlanCompleted);
-            }
-            base.InvokeAsync(this.onBeginUpdateDialPlanDelegate, new object[] {
-                        dialPlan}, this.onEndUpdateDialPlanDelegate, this.onUpdateDialPlanCompletedDelegate, userState);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginDeleteDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
-            return base.Channel.BeginDeleteDialPlan(dialPlan, callback, asyncState);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        SIPSorcery.SIP.App.SIPDialPlan SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndDeleteDialPlan(System.IAsyncResult result) {
-            return base.Channel.EndDeleteDialPlan(result);
-        }
-        
-        private System.IAsyncResult OnBeginDeleteDialPlan(object[] inValues, System.AsyncCallback callback, object asyncState) {
-            SIPSorcery.SIP.App.SIPDialPlan dialPlan = ((SIPSorcery.SIP.App.SIPDialPlan)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginDeleteDialPlan(dialPlan, callback, asyncState);
-        }
-        
-        private object[] OnEndDeleteDialPlan(System.IAsyncResult result) {
-            SIPSorcery.SIP.App.SIPDialPlan retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndDeleteDialPlan(result);
-            return new object[] {
-                    retVal};
-        }
-        
-        private void OnDeleteDialPlanCompleted(object state) {
-            if ((this.DeleteDialPlanCompleted != null)) {
-                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
-                this.DeleteDialPlanCompleted(this, new DeleteDialPlanCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
-            }
-        }
-        
-        public void DeleteDialPlanAsync(SIPSorcery.SIP.App.SIPDialPlan dialPlan) {
-            this.DeleteDialPlanAsync(dialPlan, null);
-        }
-        
-        public void DeleteDialPlanAsync(SIPSorcery.SIP.App.SIPDialPlan dialPlan, object userState) {
-            if ((this.onBeginDeleteDialPlanDelegate == null)) {
-                this.onBeginDeleteDialPlanDelegate = new BeginOperationDelegate(this.OnBeginDeleteDialPlan);
-            }
-            if ((this.onEndDeleteDialPlanDelegate == null)) {
-                this.onEndDeleteDialPlanDelegate = new EndOperationDelegate(this.OnEndDeleteDialPlan);
-            }
-            if ((this.onDeleteDialPlanCompletedDelegate == null)) {
-                this.onDeleteDialPlanCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnDeleteDialPlanCompleted);
-            }
-            base.InvokeAsync(this.onBeginDeleteDialPlanDelegate, new object[] {
-                        dialPlan}, this.onEndDeleteDialPlanDelegate, this.onDeleteDialPlanCompletedDelegate, userState);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetCallsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
-            return base.Channel.BeginGetCallsCount(whereExpression, callback, asyncState);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetCallsCount(System.IAsyncResult result) {
-            return base.Channel.EndGetCallsCount(result);
-        }
-        
-        private System.IAsyncResult OnBeginGetCallsCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
-            string whereExpression = ((string)(inValues[0]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetCallsCount(whereExpression, callback, asyncState);
-        }
-        
-        private object[] OnEndGetCallsCount(System.IAsyncResult result) {
-            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetCallsCount(result);
-            return new object[] {
-                    retVal};
-        }
-        
-        private void OnGetCallsCountCompleted(object state) {
-            if ((this.GetCallsCountCompleted != null)) {
-                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
-                this.GetCallsCountCompleted(this, new GetCallsCountCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
-            }
-        }
-        
-        public void GetCallsCountAsync(string whereExpression) {
-            this.GetCallsCountAsync(whereExpression, null);
-        }
-        
-        public void GetCallsCountAsync(string whereExpression, object userState) {
-            if ((this.onBeginGetCallsCountDelegate == null)) {
-                this.onBeginGetCallsCountDelegate = new BeginOperationDelegate(this.OnBeginGetCallsCount);
-            }
-            if ((this.onEndGetCallsCountDelegate == null)) {
-                this.onEndGetCallsCountDelegate = new EndOperationDelegate(this.OnEndGetCallsCount);
-            }
-            if ((this.onGetCallsCountCompletedDelegate == null)) {
-                this.onGetCallsCountCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetCallsCountCompleted);
-            }
-            base.InvokeAsync(this.onBeginGetCallsCountDelegate, new object[] {
-                        whereExpression}, this.onEndGetCallsCountDelegate, this.onGetCallsCountCompletedDelegate, userState);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.BeginGetCalls(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
-            return base.Channel.BeginGetCalls(whereExpression, offset, count, callback, asyncState);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService.EndGetCalls(System.IAsyncResult result) {
-            return base.Channel.EndGetCalls(result);
-        }
-        
-        private System.IAsyncResult OnBeginGetCalls(object[] inValues, System.AsyncCallback callback, object asyncState) {
-            string whereExpression = ((string)(inValues[0]));
-            int offset = ((int)(inValues[1]));
-            int count = ((int)(inValues[2]));
-            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).BeginGetCalls(whereExpression, offset, count, callback, asyncState);
-        }
-        
-        private object[] OnEndGetCalls(System.IAsyncResult result) {
-            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService)(this)).EndGetCalls(result);
-            return new object[] {
-                    retVal};
-        }
-        
-        private void OnGetCallsCompleted(object state) {
-            if ((this.GetCallsCompleted != null)) {
-                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
-                this.GetCallsCompleted(this, new GetCallsCompletedEventArgs(e.Results, e.Error, e.Cancelled, e.UserState));
-            }
-        }
-        
-        public void GetCallsAsync(string whereExpression, int offset, int count) {
-            this.GetCallsAsync(whereExpression, offset, count, null);
-        }
-        
-        public void GetCallsAsync(string whereExpression, int offset, int count, object userState) {
-            if ((this.onBeginGetCallsDelegate == null)) {
-                this.onBeginGetCallsDelegate = new BeginOperationDelegate(this.OnBeginGetCalls);
-            }
-            if ((this.onEndGetCallsDelegate == null)) {
-                this.onEndGetCallsDelegate = new EndOperationDelegate(this.OnEndGetCalls);
-            }
-            if ((this.onGetCallsCompletedDelegate == null)) {
-                this.onGetCallsCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetCallsCompleted);
-            }
-            base.InvokeAsync(this.onBeginGetCallsDelegate, new object[] {
-                        whereExpression,
-                        offset,
-                        count}, this.onEndGetCallsDelegate, this.onGetCallsCompletedDelegate, userState);
-        }
-        
         private System.IAsyncResult OnBeginOpen(object[] inValues, System.AsyncCallback callback, object asyncState) {
             return ((System.ServiceModel.ICommunicationObject)(this)).BeginOpen(callback, asyncState);
         }
@@ -2888,6 +2967,73 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             
             public ProvisioningServiceClientChannel(System.ServiceModel.ClientBase<SIPSorcery.SIPSorceryProvisioningClient.IProvisioningService> client) : 
                     base(client) {
+            }
+            
+            public System.IAsyncResult BeginAddDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = dialPlan;
+                System.IAsyncResult _result = base.BeginInvoke("AddDialPlan", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public SIPSorcery.SIP.App.SIPDialPlan EndAddDialPlan(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                SIPSorcery.SIP.App.SIPDialPlan _result = ((SIPSorcery.SIP.App.SIPDialPlan)(base.EndInvoke("AddDialPlan", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginUpdateDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = dialPlan;
+                System.IAsyncResult _result = base.BeginInvoke("UpdateDialPlan", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public SIPSorcery.SIP.App.SIPDialPlan EndUpdateDialPlan(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                SIPSorcery.SIP.App.SIPDialPlan _result = ((SIPSorcery.SIP.App.SIPDialPlan)(base.EndInvoke("UpdateDialPlan", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginDeleteDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = dialPlan;
+                System.IAsyncResult _result = base.BeginInvoke("DeleteDialPlan", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public SIPSorcery.SIP.App.SIPDialPlan EndDeleteDialPlan(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                SIPSorcery.SIP.App.SIPDialPlan _result = ((SIPSorcery.SIP.App.SIPDialPlan)(base.EndInvoke("DeleteDialPlan", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetCallsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = whereExpression;
+                System.IAsyncResult _result = base.BeginInvoke("GetCallsCount", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public int EndGetCallsCount(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                int _result = ((int)(base.EndInvoke("GetCallsCount", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetCalls(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[3];
+                _args[0] = whereExpression;
+                _args[1] = offset;
+                _args[2] = count;
+                System.IAsyncResult _result = base.BeginInvoke("GetCalls", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> EndGetCalls(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> _result = ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset>)(base.EndInvoke("GetCalls", _args, result)));
+                return _result;
             }
             
             public System.IAsyncResult BeginGetCDRsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
@@ -2974,6 +3120,19 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             public bool EndAreNewAccountsEnabled(System.IAsyncResult result) {
                 object[] _args = new object[0];
                 bool _result = ((bool)(base.EndInvoke("AreNewAccountsEnabled", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginCheckInviteCode(string inviteCode, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = inviteCode;
+                System.IAsyncResult _result = base.BeginInvoke("CheckInviteCode", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public string EndCheckInviteCode(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                string _result = ((string)(base.EndInvoke("CheckInviteCode", _args, result)));
                 return _result;
             }
             
@@ -3297,43 +3456,1789 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
                 System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan> _result = ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan>)(base.EndInvoke("GetDialPlans", _args, result)));
                 return _result;
             }
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    [System.ServiceModel.ServiceContractAttribute(Namespace="http://www.sipsorcery.com/provisioning/rest", ConfigurationName="SIPSorceryProvisioningClient.IProvisioningServiceREST")]
+    public interface IProvisioningServiceREST {
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/IsAlive", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/IsAliveRespo" +
+            "nse")]
+        System.IAsyncResult BeginIsAlive(System.AsyncCallback callback, object asyncState);
+        
+        bool EndIsAlive(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/Login", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/LoginRespons" +
+            "e")]
+        System.IAsyncResult BeginLogin(string username, string password, System.AsyncCallback callback, object asyncState);
+        
+        string EndLogin(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/Logout", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/LogoutRespon" +
+            "se")]
+        System.IAsyncResult BeginLogout(System.AsyncCallback callback, object asyncState);
+        
+        void EndLogout(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPDomain" +
+            "s", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPDomain" +
+            "sResponse")]
+        System.IAsyncResult BeginGetSIPDomains(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
+        
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain> EndGetSIPDomains(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPAccoun" +
+            "tsCount", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPAccoun" +
+            "tsCountResponse")]
+        System.IAsyncResult BeginGetSIPAccountsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
+        
+        int EndGetSIPAccountsCount(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPAccoun" +
+            "ts", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPAccoun" +
+            "tsResponse")]
+        System.IAsyncResult BeginGetSIPAccounts(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
+        
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount> EndGetSIPAccounts(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPRegist" +
+            "rarBindingsCount", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPRegist" +
+            "rarBindingsCountResponse")]
+        System.IAsyncResult BeginGetSIPRegistrarBindingsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
+        
+        int EndGetSIPRegistrarBindingsCount(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPRegist" +
+            "rarBindings", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPRegist" +
+            "rarBindingsResponse")]
+        System.IAsyncResult BeginGetSIPRegistrarBindings(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
+        
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding> EndGetSIPRegistrarBindings(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPProvid" +
+            "ersCount", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPProvid" +
+            "ersCountResponse")]
+        System.IAsyncResult BeginGetSIPProvidersCount(string whereExpression, System.AsyncCallback callback, object asyncState);
+        
+        int EndGetSIPProvidersCount(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPProvid" +
+            "ers", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPProvid" +
+            "ersResponse")]
+        System.IAsyncResult BeginGetSIPProviders(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
+        
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider> EndGetSIPProviders(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPProvid" +
+            "erBindingsCount", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPProvid" +
+            "erBindingsCountResponse")]
+        System.IAsyncResult BeginGetSIPProviderBindingsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
+        
+        int EndGetSIPProviderBindingsCount(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPProvid" +
+            "erBindings", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetSIPProvid" +
+            "erBindingsResponse")]
+        System.IAsyncResult BeginGetSIPProviderBindings(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
+        
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding> EndGetSIPProviderBindings(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetDialPlans" +
+            "Count", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetDialPlans" +
+            "CountResponse")]
+        System.IAsyncResult BeginGetDialPlansCount(string whereExpression, System.AsyncCallback callback, object asyncState);
+        
+        int EndGetDialPlansCount(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetDialPlans" +
+            "", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetDialPlans" +
+            "Response")]
+        System.IAsyncResult BeginGetDialPlans(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
+        
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan> EndGetDialPlans(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetCallsCoun" +
+            "t", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetCallsCoun" +
+            "tResponse")]
+        System.IAsyncResult BeginGetCallsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
+        
+        int EndGetCallsCount(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetCalls", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetCallsResp" +
+            "onse")]
+        System.IAsyncResult BeginGetCalls(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
+        
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> EndGetCalls(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetCDRsCount" +
+            "", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetCDRsCount" +
+            "Response")]
+        System.IAsyncResult BeginGetCDRsCount(string whereExpression, System.AsyncCallback callback, object asyncState);
+        
+        int EndGetCDRsCount(System.IAsyncResult result);
+        
+        [System.ServiceModel.OperationContractAttribute(AsyncPattern=true, Action="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetCDRs", ReplyAction="http://www.sipsorcery.com/provisioning/rest/IProvisioningServiceREST/GetCDRsRespo" +
+            "nse")]
+        System.IAsyncResult BeginGetCDRs(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState);
+        
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> EndGetCDRs(System.IAsyncResult result);
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public interface IProvisioningServiceRESTChannel : SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST, System.ServiceModel.IClientChannel {
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class IsAliveCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public IsAliveCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public bool Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((bool)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class LoginCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public LoginCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public string Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((string)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetSIPDomainsCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetSIPDomainsCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain> Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain>)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetSIPAccountsCountCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetSIPAccountsCountCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public int Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((int)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetSIPAccountsCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetSIPAccountsCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount> Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount>)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetSIPRegistrarBindingsCountCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetSIPRegistrarBindingsCountCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public int Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((int)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetSIPRegistrarBindingsCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetSIPRegistrarBindingsCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding> Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding>)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetSIPProvidersCountCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetSIPProvidersCountCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public int Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((int)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetSIPProvidersCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetSIPProvidersCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider> Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider>)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetSIPProviderBindingsCountCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetSIPProviderBindingsCountCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public int Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((int)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetSIPProviderBindingsCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetSIPProviderBindingsCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding> Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding>)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetDialPlansCountCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetDialPlansCountCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public int Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((int)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetDialPlansCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetDialPlansCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan> Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan>)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetCallsCountCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetCallsCountCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public int Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((int)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetCallsCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetCallsCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset>)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetCDRsCountCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetCDRsCountCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public int Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((int)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class GetCDRsCompletedEventArgs1 : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        public GetCDRsCompletedEventArgs1(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> Result {
+            get {
+                base.RaiseExceptionIfNecessary();
+                return ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset>)(this.results[0]));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    public partial class ProvisioningServiceRESTClient : System.ServiceModel.ClientBase<SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST>, SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST {
+        
+        private BeginOperationDelegate onBeginIsAliveDelegate;
+        
+        private EndOperationDelegate onEndIsAliveDelegate;
+        
+        private System.Threading.SendOrPostCallback onIsAliveCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginLoginDelegate;
+        
+        private EndOperationDelegate onEndLoginDelegate;
+        
+        private System.Threading.SendOrPostCallback onLoginCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginLogoutDelegate;
+        
+        private EndOperationDelegate onEndLogoutDelegate;
+        
+        private System.Threading.SendOrPostCallback onLogoutCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetSIPDomainsDelegate;
+        
+        private EndOperationDelegate onEndGetSIPDomainsDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetSIPDomainsCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetSIPAccountsCountDelegate;
+        
+        private EndOperationDelegate onEndGetSIPAccountsCountDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetSIPAccountsCountCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetSIPAccountsDelegate;
+        
+        private EndOperationDelegate onEndGetSIPAccountsDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetSIPAccountsCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetSIPRegistrarBindingsCountDelegate;
+        
+        private EndOperationDelegate onEndGetSIPRegistrarBindingsCountDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetSIPRegistrarBindingsCountCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetSIPRegistrarBindingsDelegate;
+        
+        private EndOperationDelegate onEndGetSIPRegistrarBindingsDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetSIPRegistrarBindingsCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetSIPProvidersCountDelegate;
+        
+        private EndOperationDelegate onEndGetSIPProvidersCountDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetSIPProvidersCountCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetSIPProvidersDelegate;
+        
+        private EndOperationDelegate onEndGetSIPProvidersDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetSIPProvidersCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetSIPProviderBindingsCountDelegate;
+        
+        private EndOperationDelegate onEndGetSIPProviderBindingsCountDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetSIPProviderBindingsCountCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetSIPProviderBindingsDelegate;
+        
+        private EndOperationDelegate onEndGetSIPProviderBindingsDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetSIPProviderBindingsCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetDialPlansCountDelegate;
+        
+        private EndOperationDelegate onEndGetDialPlansCountDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetDialPlansCountCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetDialPlansDelegate;
+        
+        private EndOperationDelegate onEndGetDialPlansDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetDialPlansCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetCallsCountDelegate;
+        
+        private EndOperationDelegate onEndGetCallsCountDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetCallsCountCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetCallsDelegate;
+        
+        private EndOperationDelegate onEndGetCallsDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetCallsCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetCDRsCountDelegate;
+        
+        private EndOperationDelegate onEndGetCDRsCountDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetCDRsCountCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginGetCDRsDelegate;
+        
+        private EndOperationDelegate onEndGetCDRsDelegate;
+        
+        private System.Threading.SendOrPostCallback onGetCDRsCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginOpenDelegate;
+        
+        private EndOperationDelegate onEndOpenDelegate;
+        
+        private System.Threading.SendOrPostCallback onOpenCompletedDelegate;
+        
+        private BeginOperationDelegate onBeginCloseDelegate;
+        
+        private EndOperationDelegate onEndCloseDelegate;
+        
+        private System.Threading.SendOrPostCallback onCloseCompletedDelegate;
+        
+        public ProvisioningServiceRESTClient() {
+        }
+        
+        public ProvisioningServiceRESTClient(string endpointConfigurationName) : 
+                base(endpointConfigurationName) {
+        }
+        
+        public ProvisioningServiceRESTClient(string endpointConfigurationName, string remoteAddress) : 
+                base(endpointConfigurationName, remoteAddress) {
+        }
+        
+        public ProvisioningServiceRESTClient(string endpointConfigurationName, System.ServiceModel.EndpointAddress remoteAddress) : 
+                base(endpointConfigurationName, remoteAddress) {
+        }
+        
+        public ProvisioningServiceRESTClient(System.ServiceModel.Channels.Binding binding, System.ServiceModel.EndpointAddress remoteAddress) : 
+                base(binding, remoteAddress) {
+        }
+        
+        public System.Net.CookieContainer CookieContainer {
+            get {
+                System.ServiceModel.Channels.IHttpCookieContainerManager httpCookieContainerManager = this.InnerChannel.GetProperty<System.ServiceModel.Channels.IHttpCookieContainerManager>();
+                if ((httpCookieContainerManager != null)) {
+                    return httpCookieContainerManager.CookieContainer;
+                }
+                else {
+                    return null;
+                }
+            }
+            set {
+                System.ServiceModel.Channels.IHttpCookieContainerManager httpCookieContainerManager = this.InnerChannel.GetProperty<System.ServiceModel.Channels.IHttpCookieContainerManager>();
+                if ((httpCookieContainerManager != null)) {
+                    httpCookieContainerManager.CookieContainer = value;
+                }
+                else {
+                    throw new System.InvalidOperationException("Unable to set the CookieContainer. Please make sure the binding contains an HttpC" +
+                            "ookieContainerBindingElement.");
+                }
+            }
+        }
+        
+        public event System.EventHandler<IsAliveCompletedEventArgs1> IsAliveCompleted;
+        
+        public event System.EventHandler<LoginCompletedEventArgs1> LoginCompleted;
+        
+        public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> LogoutCompleted;
+        
+        public event System.EventHandler<GetSIPDomainsCompletedEventArgs1> GetSIPDomainsCompleted;
+        
+        public event System.EventHandler<GetSIPAccountsCountCompletedEventArgs1> GetSIPAccountsCountCompleted;
+        
+        public event System.EventHandler<GetSIPAccountsCompletedEventArgs1> GetSIPAccountsCompleted;
+        
+        public event System.EventHandler<GetSIPRegistrarBindingsCountCompletedEventArgs1> GetSIPRegistrarBindingsCountCompleted;
+        
+        public event System.EventHandler<GetSIPRegistrarBindingsCompletedEventArgs1> GetSIPRegistrarBindingsCompleted;
+        
+        public event System.EventHandler<GetSIPProvidersCountCompletedEventArgs1> GetSIPProvidersCountCompleted;
+        
+        public event System.EventHandler<GetSIPProvidersCompletedEventArgs1> GetSIPProvidersCompleted;
+        
+        public event System.EventHandler<GetSIPProviderBindingsCountCompletedEventArgs1> GetSIPProviderBindingsCountCompleted;
+        
+        public event System.EventHandler<GetSIPProviderBindingsCompletedEventArgs1> GetSIPProviderBindingsCompleted;
+        
+        public event System.EventHandler<GetDialPlansCountCompletedEventArgs1> GetDialPlansCountCompleted;
+        
+        public event System.EventHandler<GetDialPlansCompletedEventArgs1> GetDialPlansCompleted;
+        
+        public event System.EventHandler<GetCallsCountCompletedEventArgs1> GetCallsCountCompleted;
+        
+        public event System.EventHandler<GetCallsCompletedEventArgs1> GetCallsCompleted;
+        
+        public event System.EventHandler<GetCDRsCountCompletedEventArgs1> GetCDRsCountCompleted;
+        
+        public event System.EventHandler<GetCDRsCompletedEventArgs1> GetCDRsCompleted;
+        
+        public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> OpenCompleted;
+        
+        public event System.EventHandler<System.ComponentModel.AsyncCompletedEventArgs> CloseCompleted;
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginIsAlive(System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginIsAlive(callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        bool SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndIsAlive(System.IAsyncResult result) {
+            return base.Channel.EndIsAlive(result);
+        }
+        
+        private System.IAsyncResult OnBeginIsAlive(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginIsAlive(callback, asyncState);
+        }
+        
+        private object[] OnEndIsAlive(System.IAsyncResult result) {
+            bool retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndIsAlive(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnIsAliveCompleted(object state) {
+            if ((this.IsAliveCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.IsAliveCompleted(this, new IsAliveCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void IsAliveAsync() {
+            this.IsAliveAsync(null);
+        }
+        
+        public void IsAliveAsync(object userState) {
+            if ((this.onBeginIsAliveDelegate == null)) {
+                this.onBeginIsAliveDelegate = new BeginOperationDelegate(this.OnBeginIsAlive);
+            }
+            if ((this.onEndIsAliveDelegate == null)) {
+                this.onEndIsAliveDelegate = new EndOperationDelegate(this.OnEndIsAlive);
+            }
+            if ((this.onIsAliveCompletedDelegate == null)) {
+                this.onIsAliveCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnIsAliveCompleted);
+            }
+            base.InvokeAsync(this.onBeginIsAliveDelegate, null, this.onEndIsAliveDelegate, this.onIsAliveCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginLogin(string username, string password, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginLogin(username, password, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        string SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndLogin(System.IAsyncResult result) {
+            return base.Channel.EndLogin(result);
+        }
+        
+        private System.IAsyncResult OnBeginLogin(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string username = ((string)(inValues[0]));
+            string password = ((string)(inValues[1]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginLogin(username, password, callback, asyncState);
+        }
+        
+        private object[] OnEndLogin(System.IAsyncResult result) {
+            string retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndLogin(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnLoginCompleted(object state) {
+            if ((this.LoginCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.LoginCompleted(this, new LoginCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void LoginAsync(string username, string password) {
+            this.LoginAsync(username, password, null);
+        }
+        
+        public void LoginAsync(string username, string password, object userState) {
+            if ((this.onBeginLoginDelegate == null)) {
+                this.onBeginLoginDelegate = new BeginOperationDelegate(this.OnBeginLogin);
+            }
+            if ((this.onEndLoginDelegate == null)) {
+                this.onEndLoginDelegate = new EndOperationDelegate(this.OnEndLogin);
+            }
+            if ((this.onLoginCompletedDelegate == null)) {
+                this.onLoginCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnLoginCompleted);
+            }
+            base.InvokeAsync(this.onBeginLoginDelegate, new object[] {
+                        username,
+                        password}, this.onEndLoginDelegate, this.onLoginCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginLogout(System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginLogout(callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        void SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndLogout(System.IAsyncResult result) {
+            base.Channel.EndLogout(result);
+        }
+        
+        private System.IAsyncResult OnBeginLogout(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginLogout(callback, asyncState);
+        }
+        
+        private object[] OnEndLogout(System.IAsyncResult result) {
+            ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndLogout(result);
+            return null;
+        }
+        
+        private void OnLogoutCompleted(object state) {
+            if ((this.LogoutCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.LogoutCompleted(this, new System.ComponentModel.AsyncCompletedEventArgs(e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void LogoutAsync() {
+            this.LogoutAsync(null);
+        }
+        
+        public void LogoutAsync(object userState) {
+            if ((this.onBeginLogoutDelegate == null)) {
+                this.onBeginLogoutDelegate = new BeginOperationDelegate(this.OnBeginLogout);
+            }
+            if ((this.onEndLogoutDelegate == null)) {
+                this.onEndLogoutDelegate = new EndOperationDelegate(this.OnEndLogout);
+            }
+            if ((this.onLogoutCompletedDelegate == null)) {
+                this.onLogoutCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnLogoutCompleted);
+            }
+            base.InvokeAsync(this.onBeginLogoutDelegate, null, this.onEndLogoutDelegate, this.onLogoutCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetSIPDomains(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetSIPDomains(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetSIPDomains(System.IAsyncResult result) {
+            return base.Channel.EndGetSIPDomains(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetSIPDomains(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            int offset = ((int)(inValues[1]));
+            int count = ((int)(inValues[2]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetSIPDomains(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        private object[] OnEndGetSIPDomains(System.IAsyncResult result) {
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetSIPDomains(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetSIPDomainsCompleted(object state) {
+            if ((this.GetSIPDomainsCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetSIPDomainsCompleted(this, new GetSIPDomainsCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetSIPDomainsAsync(string whereExpression, int offset, int count) {
+            this.GetSIPDomainsAsync(whereExpression, offset, count, null);
+        }
+        
+        public void GetSIPDomainsAsync(string whereExpression, int offset, int count, object userState) {
+            if ((this.onBeginGetSIPDomainsDelegate == null)) {
+                this.onBeginGetSIPDomainsDelegate = new BeginOperationDelegate(this.OnBeginGetSIPDomains);
+            }
+            if ((this.onEndGetSIPDomainsDelegate == null)) {
+                this.onEndGetSIPDomainsDelegate = new EndOperationDelegate(this.OnEndGetSIPDomains);
+            }
+            if ((this.onGetSIPDomainsCompletedDelegate == null)) {
+                this.onGetSIPDomainsCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetSIPDomainsCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetSIPDomainsDelegate, new object[] {
+                        whereExpression,
+                        offset,
+                        count}, this.onEndGetSIPDomainsDelegate, this.onGetSIPDomainsCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetSIPAccountsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetSIPAccountsCount(whereExpression, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetSIPAccountsCount(System.IAsyncResult result) {
+            return base.Channel.EndGetSIPAccountsCount(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetSIPAccountsCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetSIPAccountsCount(whereExpression, callback, asyncState);
+        }
+        
+        private object[] OnEndGetSIPAccountsCount(System.IAsyncResult result) {
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetSIPAccountsCount(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetSIPAccountsCountCompleted(object state) {
+            if ((this.GetSIPAccountsCountCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetSIPAccountsCountCompleted(this, new GetSIPAccountsCountCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetSIPAccountsCountAsync(string whereExpression) {
+            this.GetSIPAccountsCountAsync(whereExpression, null);
+        }
+        
+        public void GetSIPAccountsCountAsync(string whereExpression, object userState) {
+            if ((this.onBeginGetSIPAccountsCountDelegate == null)) {
+                this.onBeginGetSIPAccountsCountDelegate = new BeginOperationDelegate(this.OnBeginGetSIPAccountsCount);
+            }
+            if ((this.onEndGetSIPAccountsCountDelegate == null)) {
+                this.onEndGetSIPAccountsCountDelegate = new EndOperationDelegate(this.OnEndGetSIPAccountsCount);
+            }
+            if ((this.onGetSIPAccountsCountCompletedDelegate == null)) {
+                this.onGetSIPAccountsCountCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetSIPAccountsCountCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetSIPAccountsCountDelegate, new object[] {
+                        whereExpression}, this.onEndGetSIPAccountsCountDelegate, this.onGetSIPAccountsCountCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetSIPAccounts(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetSIPAccounts(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetSIPAccounts(System.IAsyncResult result) {
+            return base.Channel.EndGetSIPAccounts(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetSIPAccounts(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            int offset = ((int)(inValues[1]));
+            int count = ((int)(inValues[2]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetSIPAccounts(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        private object[] OnEndGetSIPAccounts(System.IAsyncResult result) {
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetSIPAccounts(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetSIPAccountsCompleted(object state) {
+            if ((this.GetSIPAccountsCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetSIPAccountsCompleted(this, new GetSIPAccountsCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetSIPAccountsAsync(string whereExpression, int offset, int count) {
+            this.GetSIPAccountsAsync(whereExpression, offset, count, null);
+        }
+        
+        public void GetSIPAccountsAsync(string whereExpression, int offset, int count, object userState) {
+            if ((this.onBeginGetSIPAccountsDelegate == null)) {
+                this.onBeginGetSIPAccountsDelegate = new BeginOperationDelegate(this.OnBeginGetSIPAccounts);
+            }
+            if ((this.onEndGetSIPAccountsDelegate == null)) {
+                this.onEndGetSIPAccountsDelegate = new EndOperationDelegate(this.OnEndGetSIPAccounts);
+            }
+            if ((this.onGetSIPAccountsCompletedDelegate == null)) {
+                this.onGetSIPAccountsCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetSIPAccountsCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetSIPAccountsDelegate, new object[] {
+                        whereExpression,
+                        offset,
+                        count}, this.onEndGetSIPAccountsDelegate, this.onGetSIPAccountsCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetSIPRegistrarBindingsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetSIPRegistrarBindingsCount(whereExpression, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetSIPRegistrarBindingsCount(System.IAsyncResult result) {
+            return base.Channel.EndGetSIPRegistrarBindingsCount(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetSIPRegistrarBindingsCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetSIPRegistrarBindingsCount(whereExpression, callback, asyncState);
+        }
+        
+        private object[] OnEndGetSIPRegistrarBindingsCount(System.IAsyncResult result) {
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetSIPRegistrarBindingsCount(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetSIPRegistrarBindingsCountCompleted(object state) {
+            if ((this.GetSIPRegistrarBindingsCountCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetSIPRegistrarBindingsCountCompleted(this, new GetSIPRegistrarBindingsCountCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetSIPRegistrarBindingsCountAsync(string whereExpression) {
+            this.GetSIPRegistrarBindingsCountAsync(whereExpression, null);
+        }
+        
+        public void GetSIPRegistrarBindingsCountAsync(string whereExpression, object userState) {
+            if ((this.onBeginGetSIPRegistrarBindingsCountDelegate == null)) {
+                this.onBeginGetSIPRegistrarBindingsCountDelegate = new BeginOperationDelegate(this.OnBeginGetSIPRegistrarBindingsCount);
+            }
+            if ((this.onEndGetSIPRegistrarBindingsCountDelegate == null)) {
+                this.onEndGetSIPRegistrarBindingsCountDelegate = new EndOperationDelegate(this.OnEndGetSIPRegistrarBindingsCount);
+            }
+            if ((this.onGetSIPRegistrarBindingsCountCompletedDelegate == null)) {
+                this.onGetSIPRegistrarBindingsCountCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetSIPRegistrarBindingsCountCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetSIPRegistrarBindingsCountDelegate, new object[] {
+                        whereExpression}, this.onEndGetSIPRegistrarBindingsCountDelegate, this.onGetSIPRegistrarBindingsCountCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetSIPRegistrarBindings(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetSIPRegistrarBindings(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetSIPRegistrarBindings(System.IAsyncResult result) {
+            return base.Channel.EndGetSIPRegistrarBindings(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetSIPRegistrarBindings(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            int offset = ((int)(inValues[1]));
+            int count = ((int)(inValues[2]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetSIPRegistrarBindings(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        private object[] OnEndGetSIPRegistrarBindings(System.IAsyncResult result) {
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetSIPRegistrarBindings(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetSIPRegistrarBindingsCompleted(object state) {
+            if ((this.GetSIPRegistrarBindingsCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetSIPRegistrarBindingsCompleted(this, new GetSIPRegistrarBindingsCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetSIPRegistrarBindingsAsync(string whereExpression, int offset, int count) {
+            this.GetSIPRegistrarBindingsAsync(whereExpression, offset, count, null);
+        }
+        
+        public void GetSIPRegistrarBindingsAsync(string whereExpression, int offset, int count, object userState) {
+            if ((this.onBeginGetSIPRegistrarBindingsDelegate == null)) {
+                this.onBeginGetSIPRegistrarBindingsDelegate = new BeginOperationDelegate(this.OnBeginGetSIPRegistrarBindings);
+            }
+            if ((this.onEndGetSIPRegistrarBindingsDelegate == null)) {
+                this.onEndGetSIPRegistrarBindingsDelegate = new EndOperationDelegate(this.OnEndGetSIPRegistrarBindings);
+            }
+            if ((this.onGetSIPRegistrarBindingsCompletedDelegate == null)) {
+                this.onGetSIPRegistrarBindingsCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetSIPRegistrarBindingsCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetSIPRegistrarBindingsDelegate, new object[] {
+                        whereExpression,
+                        offset,
+                        count}, this.onEndGetSIPRegistrarBindingsDelegate, this.onGetSIPRegistrarBindingsCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetSIPProvidersCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetSIPProvidersCount(whereExpression, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetSIPProvidersCount(System.IAsyncResult result) {
+            return base.Channel.EndGetSIPProvidersCount(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetSIPProvidersCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetSIPProvidersCount(whereExpression, callback, asyncState);
+        }
+        
+        private object[] OnEndGetSIPProvidersCount(System.IAsyncResult result) {
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetSIPProvidersCount(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetSIPProvidersCountCompleted(object state) {
+            if ((this.GetSIPProvidersCountCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetSIPProvidersCountCompleted(this, new GetSIPProvidersCountCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetSIPProvidersCountAsync(string whereExpression) {
+            this.GetSIPProvidersCountAsync(whereExpression, null);
+        }
+        
+        public void GetSIPProvidersCountAsync(string whereExpression, object userState) {
+            if ((this.onBeginGetSIPProvidersCountDelegate == null)) {
+                this.onBeginGetSIPProvidersCountDelegate = new BeginOperationDelegate(this.OnBeginGetSIPProvidersCount);
+            }
+            if ((this.onEndGetSIPProvidersCountDelegate == null)) {
+                this.onEndGetSIPProvidersCountDelegate = new EndOperationDelegate(this.OnEndGetSIPProvidersCount);
+            }
+            if ((this.onGetSIPProvidersCountCompletedDelegate == null)) {
+                this.onGetSIPProvidersCountCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetSIPProvidersCountCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetSIPProvidersCountDelegate, new object[] {
+                        whereExpression}, this.onEndGetSIPProvidersCountDelegate, this.onGetSIPProvidersCountCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetSIPProviders(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetSIPProviders(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetSIPProviders(System.IAsyncResult result) {
+            return base.Channel.EndGetSIPProviders(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetSIPProviders(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            int offset = ((int)(inValues[1]));
+            int count = ((int)(inValues[2]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetSIPProviders(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        private object[] OnEndGetSIPProviders(System.IAsyncResult result) {
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetSIPProviders(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetSIPProvidersCompleted(object state) {
+            if ((this.GetSIPProvidersCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetSIPProvidersCompleted(this, new GetSIPProvidersCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetSIPProvidersAsync(string whereExpression, int offset, int count) {
+            this.GetSIPProvidersAsync(whereExpression, offset, count, null);
+        }
+        
+        public void GetSIPProvidersAsync(string whereExpression, int offset, int count, object userState) {
+            if ((this.onBeginGetSIPProvidersDelegate == null)) {
+                this.onBeginGetSIPProvidersDelegate = new BeginOperationDelegate(this.OnBeginGetSIPProviders);
+            }
+            if ((this.onEndGetSIPProvidersDelegate == null)) {
+                this.onEndGetSIPProvidersDelegate = new EndOperationDelegate(this.OnEndGetSIPProviders);
+            }
+            if ((this.onGetSIPProvidersCompletedDelegate == null)) {
+                this.onGetSIPProvidersCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetSIPProvidersCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetSIPProvidersDelegate, new object[] {
+                        whereExpression,
+                        offset,
+                        count}, this.onEndGetSIPProvidersDelegate, this.onGetSIPProvidersCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetSIPProviderBindingsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetSIPProviderBindingsCount(whereExpression, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetSIPProviderBindingsCount(System.IAsyncResult result) {
+            return base.Channel.EndGetSIPProviderBindingsCount(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetSIPProviderBindingsCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetSIPProviderBindingsCount(whereExpression, callback, asyncState);
+        }
+        
+        private object[] OnEndGetSIPProviderBindingsCount(System.IAsyncResult result) {
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetSIPProviderBindingsCount(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetSIPProviderBindingsCountCompleted(object state) {
+            if ((this.GetSIPProviderBindingsCountCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetSIPProviderBindingsCountCompleted(this, new GetSIPProviderBindingsCountCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetSIPProviderBindingsCountAsync(string whereExpression) {
+            this.GetSIPProviderBindingsCountAsync(whereExpression, null);
+        }
+        
+        public void GetSIPProviderBindingsCountAsync(string whereExpression, object userState) {
+            if ((this.onBeginGetSIPProviderBindingsCountDelegate == null)) {
+                this.onBeginGetSIPProviderBindingsCountDelegate = new BeginOperationDelegate(this.OnBeginGetSIPProviderBindingsCount);
+            }
+            if ((this.onEndGetSIPProviderBindingsCountDelegate == null)) {
+                this.onEndGetSIPProviderBindingsCountDelegate = new EndOperationDelegate(this.OnEndGetSIPProviderBindingsCount);
+            }
+            if ((this.onGetSIPProviderBindingsCountCompletedDelegate == null)) {
+                this.onGetSIPProviderBindingsCountCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetSIPProviderBindingsCountCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetSIPProviderBindingsCountDelegate, new object[] {
+                        whereExpression}, this.onEndGetSIPProviderBindingsCountDelegate, this.onGetSIPProviderBindingsCountCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetSIPProviderBindings(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetSIPProviderBindings(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetSIPProviderBindings(System.IAsyncResult result) {
+            return base.Channel.EndGetSIPProviderBindings(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetSIPProviderBindings(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            int offset = ((int)(inValues[1]));
+            int count = ((int)(inValues[2]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetSIPProviderBindings(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        private object[] OnEndGetSIPProviderBindings(System.IAsyncResult result) {
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetSIPProviderBindings(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetSIPProviderBindingsCompleted(object state) {
+            if ((this.GetSIPProviderBindingsCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetSIPProviderBindingsCompleted(this, new GetSIPProviderBindingsCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetSIPProviderBindingsAsync(string whereExpression, int offset, int count) {
+            this.GetSIPProviderBindingsAsync(whereExpression, offset, count, null);
+        }
+        
+        public void GetSIPProviderBindingsAsync(string whereExpression, int offset, int count, object userState) {
+            if ((this.onBeginGetSIPProviderBindingsDelegate == null)) {
+                this.onBeginGetSIPProviderBindingsDelegate = new BeginOperationDelegate(this.OnBeginGetSIPProviderBindings);
+            }
+            if ((this.onEndGetSIPProviderBindingsDelegate == null)) {
+                this.onEndGetSIPProviderBindingsDelegate = new EndOperationDelegate(this.OnEndGetSIPProviderBindings);
+            }
+            if ((this.onGetSIPProviderBindingsCompletedDelegate == null)) {
+                this.onGetSIPProviderBindingsCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetSIPProviderBindingsCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetSIPProviderBindingsDelegate, new object[] {
+                        whereExpression,
+                        offset,
+                        count}, this.onEndGetSIPProviderBindingsDelegate, this.onGetSIPProviderBindingsCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetDialPlansCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetDialPlansCount(whereExpression, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetDialPlansCount(System.IAsyncResult result) {
+            return base.Channel.EndGetDialPlansCount(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetDialPlansCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetDialPlansCount(whereExpression, callback, asyncState);
+        }
+        
+        private object[] OnEndGetDialPlansCount(System.IAsyncResult result) {
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetDialPlansCount(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetDialPlansCountCompleted(object state) {
+            if ((this.GetDialPlansCountCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetDialPlansCountCompleted(this, new GetDialPlansCountCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetDialPlansCountAsync(string whereExpression) {
+            this.GetDialPlansCountAsync(whereExpression, null);
+        }
+        
+        public void GetDialPlansCountAsync(string whereExpression, object userState) {
+            if ((this.onBeginGetDialPlansCountDelegate == null)) {
+                this.onBeginGetDialPlansCountDelegate = new BeginOperationDelegate(this.OnBeginGetDialPlansCount);
+            }
+            if ((this.onEndGetDialPlansCountDelegate == null)) {
+                this.onEndGetDialPlansCountDelegate = new EndOperationDelegate(this.OnEndGetDialPlansCount);
+            }
+            if ((this.onGetDialPlansCountCompletedDelegate == null)) {
+                this.onGetDialPlansCountCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetDialPlansCountCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetDialPlansCountDelegate, new object[] {
+                        whereExpression}, this.onEndGetDialPlansCountDelegate, this.onGetDialPlansCountCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetDialPlans(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetDialPlans(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetDialPlans(System.IAsyncResult result) {
+            return base.Channel.EndGetDialPlans(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetDialPlans(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            int offset = ((int)(inValues[1]));
+            int count = ((int)(inValues[2]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetDialPlans(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        private object[] OnEndGetDialPlans(System.IAsyncResult result) {
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetDialPlans(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetDialPlansCompleted(object state) {
+            if ((this.GetDialPlansCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetDialPlansCompleted(this, new GetDialPlansCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetDialPlansAsync(string whereExpression, int offset, int count) {
+            this.GetDialPlansAsync(whereExpression, offset, count, null);
+        }
+        
+        public void GetDialPlansAsync(string whereExpression, int offset, int count, object userState) {
+            if ((this.onBeginGetDialPlansDelegate == null)) {
+                this.onBeginGetDialPlansDelegate = new BeginOperationDelegate(this.OnBeginGetDialPlans);
+            }
+            if ((this.onEndGetDialPlansDelegate == null)) {
+                this.onEndGetDialPlansDelegate = new EndOperationDelegate(this.OnEndGetDialPlans);
+            }
+            if ((this.onGetDialPlansCompletedDelegate == null)) {
+                this.onGetDialPlansCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetDialPlansCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetDialPlansDelegate, new object[] {
+                        whereExpression,
+                        offset,
+                        count}, this.onEndGetDialPlansDelegate, this.onGetDialPlansCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetCallsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetCallsCount(whereExpression, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetCallsCount(System.IAsyncResult result) {
+            return base.Channel.EndGetCallsCount(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetCallsCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetCallsCount(whereExpression, callback, asyncState);
+        }
+        
+        private object[] OnEndGetCallsCount(System.IAsyncResult result) {
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetCallsCount(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetCallsCountCompleted(object state) {
+            if ((this.GetCallsCountCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetCallsCountCompleted(this, new GetCallsCountCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetCallsCountAsync(string whereExpression) {
+            this.GetCallsCountAsync(whereExpression, null);
+        }
+        
+        public void GetCallsCountAsync(string whereExpression, object userState) {
+            if ((this.onBeginGetCallsCountDelegate == null)) {
+                this.onBeginGetCallsCountDelegate = new BeginOperationDelegate(this.OnBeginGetCallsCount);
+            }
+            if ((this.onEndGetCallsCountDelegate == null)) {
+                this.onEndGetCallsCountDelegate = new EndOperationDelegate(this.OnEndGetCallsCount);
+            }
+            if ((this.onGetCallsCountCompletedDelegate == null)) {
+                this.onGetCallsCountCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetCallsCountCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetCallsCountDelegate, new object[] {
+                        whereExpression}, this.onEndGetCallsCountDelegate, this.onGetCallsCountCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetCalls(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetCalls(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetCalls(System.IAsyncResult result) {
+            return base.Channel.EndGetCalls(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetCalls(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            int offset = ((int)(inValues[1]));
+            int count = ((int)(inValues[2]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetCalls(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        private object[] OnEndGetCalls(System.IAsyncResult result) {
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetCalls(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetCallsCompleted(object state) {
+            if ((this.GetCallsCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetCallsCompleted(this, new GetCallsCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetCallsAsync(string whereExpression, int offset, int count) {
+            this.GetCallsAsync(whereExpression, offset, count, null);
+        }
+        
+        public void GetCallsAsync(string whereExpression, int offset, int count, object userState) {
+            if ((this.onBeginGetCallsDelegate == null)) {
+                this.onBeginGetCallsDelegate = new BeginOperationDelegate(this.OnBeginGetCalls);
+            }
+            if ((this.onEndGetCallsDelegate == null)) {
+                this.onEndGetCallsDelegate = new EndOperationDelegate(this.OnEndGetCalls);
+            }
+            if ((this.onGetCallsCompletedDelegate == null)) {
+                this.onGetCallsCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetCallsCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetCallsDelegate, new object[] {
+                        whereExpression,
+                        offset,
+                        count}, this.onEndGetCallsDelegate, this.onGetCallsCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetCDRsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetCDRsCount(whereExpression, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        int SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetCDRsCount(System.IAsyncResult result) {
+            return base.Channel.EndGetCDRsCount(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetCDRsCount(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetCDRsCount(whereExpression, callback, asyncState);
+        }
+        
+        private object[] OnEndGetCDRsCount(System.IAsyncResult result) {
+            int retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetCDRsCount(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetCDRsCountCompleted(object state) {
+            if ((this.GetCDRsCountCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetCDRsCountCompleted(this, new GetCDRsCountCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetCDRsCountAsync(string whereExpression) {
+            this.GetCDRsCountAsync(whereExpression, null);
+        }
+        
+        public void GetCDRsCountAsync(string whereExpression, object userState) {
+            if ((this.onBeginGetCDRsCountDelegate == null)) {
+                this.onBeginGetCDRsCountDelegate = new BeginOperationDelegate(this.OnBeginGetCDRsCount);
+            }
+            if ((this.onEndGetCDRsCountDelegate == null)) {
+                this.onEndGetCDRsCountDelegate = new EndOperationDelegate(this.OnEndGetCDRsCount);
+            }
+            if ((this.onGetCDRsCountCompletedDelegate == null)) {
+                this.onGetCDRsCountCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetCDRsCountCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetCDRsCountDelegate, new object[] {
+                        whereExpression}, this.onEndGetCDRsCountDelegate, this.onGetCDRsCountCompletedDelegate, userState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.IAsyncResult SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.BeginGetCDRs(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+            return base.Channel.BeginGetCDRs(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST.EndGetCDRs(System.IAsyncResult result) {
+            return base.Channel.EndGetCDRs(result);
+        }
+        
+        private System.IAsyncResult OnBeginGetCDRs(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            string whereExpression = ((string)(inValues[0]));
+            int offset = ((int)(inValues[1]));
+            int count = ((int)(inValues[2]));
+            return ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).BeginGetCDRs(whereExpression, offset, count, callback, asyncState);
+        }
+        
+        private object[] OnEndGetCDRs(System.IAsyncResult result) {
+            System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> retVal = ((SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST)(this)).EndGetCDRs(result);
+            return new object[] {
+                    retVal};
+        }
+        
+        private void OnGetCDRsCompleted(object state) {
+            if ((this.GetCDRsCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.GetCDRsCompleted(this, new GetCDRsCompletedEventArgs1(e.Results, e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void GetCDRsAsync(string whereExpression, int offset, int count) {
+            this.GetCDRsAsync(whereExpression, offset, count, null);
+        }
+        
+        public void GetCDRsAsync(string whereExpression, int offset, int count, object userState) {
+            if ((this.onBeginGetCDRsDelegate == null)) {
+                this.onBeginGetCDRsDelegate = new BeginOperationDelegate(this.OnBeginGetCDRs);
+            }
+            if ((this.onEndGetCDRsDelegate == null)) {
+                this.onEndGetCDRsDelegate = new EndOperationDelegate(this.OnEndGetCDRs);
+            }
+            if ((this.onGetCDRsCompletedDelegate == null)) {
+                this.onGetCDRsCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnGetCDRsCompleted);
+            }
+            base.InvokeAsync(this.onBeginGetCDRsDelegate, new object[] {
+                        whereExpression,
+                        offset,
+                        count}, this.onEndGetCDRsDelegate, this.onGetCDRsCompletedDelegate, userState);
+        }
+        
+        private System.IAsyncResult OnBeginOpen(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            return ((System.ServiceModel.ICommunicationObject)(this)).BeginOpen(callback, asyncState);
+        }
+        
+        private object[] OnEndOpen(System.IAsyncResult result) {
+            ((System.ServiceModel.ICommunicationObject)(this)).EndOpen(result);
+            return null;
+        }
+        
+        private void OnOpenCompleted(object state) {
+            if ((this.OpenCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.OpenCompleted(this, new System.ComponentModel.AsyncCompletedEventArgs(e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void OpenAsync() {
+            this.OpenAsync(null);
+        }
+        
+        public void OpenAsync(object userState) {
+            if ((this.onBeginOpenDelegate == null)) {
+                this.onBeginOpenDelegate = new BeginOperationDelegate(this.OnBeginOpen);
+            }
+            if ((this.onEndOpenDelegate == null)) {
+                this.onEndOpenDelegate = new EndOperationDelegate(this.OnEndOpen);
+            }
+            if ((this.onOpenCompletedDelegate == null)) {
+                this.onOpenCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnOpenCompleted);
+            }
+            base.InvokeAsync(this.onBeginOpenDelegate, null, this.onEndOpenDelegate, this.onOpenCompletedDelegate, userState);
+        }
+        
+        private System.IAsyncResult OnBeginClose(object[] inValues, System.AsyncCallback callback, object asyncState) {
+            return ((System.ServiceModel.ICommunicationObject)(this)).BeginClose(callback, asyncState);
+        }
+        
+        private object[] OnEndClose(System.IAsyncResult result) {
+            ((System.ServiceModel.ICommunicationObject)(this)).EndClose(result);
+            return null;
+        }
+        
+        private void OnCloseCompleted(object state) {
+            if ((this.CloseCompleted != null)) {
+                InvokeAsyncCompletedEventArgs e = ((InvokeAsyncCompletedEventArgs)(state));
+                this.CloseCompleted(this, new System.ComponentModel.AsyncCompletedEventArgs(e.Error, e.Cancelled, e.UserState));
+            }
+        }
+        
+        public void CloseAsync() {
+            this.CloseAsync(null);
+        }
+        
+        public void CloseAsync(object userState) {
+            if ((this.onBeginCloseDelegate == null)) {
+                this.onBeginCloseDelegate = new BeginOperationDelegate(this.OnBeginClose);
+            }
+            if ((this.onEndCloseDelegate == null)) {
+                this.onEndCloseDelegate = new EndOperationDelegate(this.OnEndClose);
+            }
+            if ((this.onCloseCompletedDelegate == null)) {
+                this.onCloseCompletedDelegate = new System.Threading.SendOrPostCallback(this.OnCloseCompleted);
+            }
+            base.InvokeAsync(this.onBeginCloseDelegate, null, this.onEndCloseDelegate, this.onCloseCompletedDelegate, userState);
+        }
+        
+        protected override SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST CreateChannel() {
+            return new ProvisioningServiceRESTClientChannel(this);
+        }
+        
+        private class ProvisioningServiceRESTClientChannel : ChannelBase<SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST>, SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST {
             
-            public System.IAsyncResult BeginAddDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
-                object[] _args = new object[1];
-                _args[0] = dialPlan;
-                System.IAsyncResult _result = base.BeginInvoke("AddDialPlan", _args, callback, asyncState);
-                return _result;
+            public ProvisioningServiceRESTClientChannel(System.ServiceModel.ClientBase<SIPSorcery.SIPSorceryProvisioningClient.IProvisioningServiceREST> client) : 
+                    base(client) {
             }
             
-            public SIPSorcery.SIP.App.SIPDialPlan EndAddDialPlan(System.IAsyncResult result) {
+            public System.IAsyncResult BeginIsAlive(System.AsyncCallback callback, object asyncState) {
                 object[] _args = new object[0];
-                SIPSorcery.SIP.App.SIPDialPlan _result = ((SIPSorcery.SIP.App.SIPDialPlan)(base.EndInvoke("AddDialPlan", _args, result)));
+                System.IAsyncResult _result = base.BeginInvoke("IsAlive", _args, callback, asyncState);
                 return _result;
             }
             
-            public System.IAsyncResult BeginUpdateDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
-                object[] _args = new object[1];
-                _args[0] = dialPlan;
-                System.IAsyncResult _result = base.BeginInvoke("UpdateDialPlan", _args, callback, asyncState);
-                return _result;
-            }
-            
-            public SIPSorcery.SIP.App.SIPDialPlan EndUpdateDialPlan(System.IAsyncResult result) {
+            public bool EndIsAlive(System.IAsyncResult result) {
                 object[] _args = new object[0];
-                SIPSorcery.SIP.App.SIPDialPlan _result = ((SIPSorcery.SIP.App.SIPDialPlan)(base.EndInvoke("UpdateDialPlan", _args, result)));
+                bool _result = ((bool)(base.EndInvoke("IsAlive", _args, result)));
                 return _result;
             }
             
-            public System.IAsyncResult BeginDeleteDialPlan(SIPSorcery.SIP.App.SIPDialPlan dialPlan, System.AsyncCallback callback, object asyncState) {
-                object[] _args = new object[1];
-                _args[0] = dialPlan;
-                System.IAsyncResult _result = base.BeginInvoke("DeleteDialPlan", _args, callback, asyncState);
+            public System.IAsyncResult BeginLogin(string username, string password, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[2];
+                _args[0] = username;
+                _args[1] = password;
+                System.IAsyncResult _result = base.BeginInvoke("Login", _args, callback, asyncState);
                 return _result;
             }
             
-            public SIPSorcery.SIP.App.SIPDialPlan EndDeleteDialPlan(System.IAsyncResult result) {
+            public string EndLogin(System.IAsyncResult result) {
                 object[] _args = new object[0];
-                SIPSorcery.SIP.App.SIPDialPlan _result = ((SIPSorcery.SIP.App.SIPDialPlan)(base.EndInvoke("DeleteDialPlan", _args, result)));
+                string _result = ((string)(base.EndInvoke("Login", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginLogout(System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[0];
+                System.IAsyncResult _result = base.BeginInvoke("Logout", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public void EndLogout(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                base.EndInvoke("Logout", _args, result);
+            }
+            
+            public System.IAsyncResult BeginGetSIPDomains(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[3];
+                _args[0] = whereExpression;
+                _args[1] = offset;
+                _args[2] = count;
+                System.IAsyncResult _result = base.BeginInvoke("GetSIPDomains", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain> EndGetSIPDomains(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain> _result = ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDomain>)(base.EndInvoke("GetSIPDomains", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetSIPAccountsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = whereExpression;
+                System.IAsyncResult _result = base.BeginInvoke("GetSIPAccountsCount", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public int EndGetSIPAccountsCount(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                int _result = ((int)(base.EndInvoke("GetSIPAccountsCount", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetSIPAccounts(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[3];
+                _args[0] = whereExpression;
+                _args[1] = offset;
+                _args[2] = count;
+                System.IAsyncResult _result = base.BeginInvoke("GetSIPAccounts", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount> EndGetSIPAccounts(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount> _result = ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPAccount>)(base.EndInvoke("GetSIPAccounts", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetSIPRegistrarBindingsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = whereExpression;
+                System.IAsyncResult _result = base.BeginInvoke("GetSIPRegistrarBindingsCount", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public int EndGetSIPRegistrarBindingsCount(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                int _result = ((int)(base.EndInvoke("GetSIPRegistrarBindingsCount", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetSIPRegistrarBindings(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[3];
+                _args[0] = whereExpression;
+                _args[1] = offset;
+                _args[2] = count;
+                System.IAsyncResult _result = base.BeginInvoke("GetSIPRegistrarBindings", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding> EndGetSIPRegistrarBindings(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding> _result = ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPRegistrarBinding>)(base.EndInvoke("GetSIPRegistrarBindings", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetSIPProvidersCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = whereExpression;
+                System.IAsyncResult _result = base.BeginInvoke("GetSIPProvidersCount", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public int EndGetSIPProvidersCount(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                int _result = ((int)(base.EndInvoke("GetSIPProvidersCount", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetSIPProviders(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[3];
+                _args[0] = whereExpression;
+                _args[1] = offset;
+                _args[2] = count;
+                System.IAsyncResult _result = base.BeginInvoke("GetSIPProviders", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider> EndGetSIPProviders(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider> _result = ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProvider>)(base.EndInvoke("GetSIPProviders", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetSIPProviderBindingsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = whereExpression;
+                System.IAsyncResult _result = base.BeginInvoke("GetSIPProviderBindingsCount", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public int EndGetSIPProviderBindingsCount(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                int _result = ((int)(base.EndInvoke("GetSIPProviderBindingsCount", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetSIPProviderBindings(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[3];
+                _args[0] = whereExpression;
+                _args[1] = offset;
+                _args[2] = count;
+                System.IAsyncResult _result = base.BeginInvoke("GetSIPProviderBindings", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding> EndGetSIPProviderBindings(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding> _result = ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPProviderBinding>)(base.EndInvoke("GetSIPProviderBindings", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetDialPlansCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = whereExpression;
+                System.IAsyncResult _result = base.BeginInvoke("GetDialPlansCount", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public int EndGetDialPlansCount(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                int _result = ((int)(base.EndInvoke("GetDialPlansCount", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetDialPlans(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[3];
+                _args[0] = whereExpression;
+                _args[1] = offset;
+                _args[2] = count;
+                System.IAsyncResult _result = base.BeginInvoke("GetDialPlans", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan> EndGetDialPlans(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan> _result = ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialPlan>)(base.EndInvoke("GetDialPlans", _args, result)));
                 return _result;
             }
             
@@ -3362,6 +5267,34 @@ namespace SIPSorcery.SIPSorceryProvisioningClient {
             public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> EndGetCalls(System.IAsyncResult result) {
                 object[] _args = new object[0];
                 System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset> _result = ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPDialogueAsset>)(base.EndInvoke("GetCalls", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetCDRsCount(string whereExpression, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[1];
+                _args[0] = whereExpression;
+                System.IAsyncResult _result = base.BeginInvoke("GetCDRsCount", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public int EndGetCDRsCount(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                int _result = ((int)(base.EndInvoke("GetCDRsCount", _args, result)));
+                return _result;
+            }
+            
+            public System.IAsyncResult BeginGetCDRs(string whereExpression, int offset, int count, System.AsyncCallback callback, object asyncState) {
+                object[] _args = new object[3];
+                _args[0] = whereExpression;
+                _args[1] = offset;
+                _args[2] = count;
+                System.IAsyncResult _result = base.BeginInvoke("GetCDRs", _args, callback, asyncState);
+                return _result;
+            }
+            
+            public System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> EndGetCDRs(System.IAsyncResult result) {
+                object[] _args = new object[0];
+                System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset> _result = ((System.Collections.ObjectModel.ObservableCollection<SIPSorcery.SIP.App.SIPCDRAsset>)(base.EndInvoke("GetCDRs", _args, result)));
                 return _result;
             }
         }

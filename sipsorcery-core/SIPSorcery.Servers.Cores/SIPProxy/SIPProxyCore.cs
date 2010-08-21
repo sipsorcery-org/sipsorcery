@@ -250,10 +250,10 @@ namespace SIPSorcery.Servers
                 // If the second Via header on the response was also set by this proxy it means the request was originally received and forwarded
                 // on different sockets. To get the response to travel the same path in reverse it must be forwarded from the proxy socket indicated
                 // by the second top Via.
-                if (sipResponse.Header.Vias.Length > 0)
+                if (sipResponse.Header.Vias.Length > 1)
                 {
                     SIPViaHeader nextTopVia = sipResponse.Header.Vias.TopViaHeader;
-                    SIPEndPoint nextTopViaSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(nextTopVia.Transport + ":" + nextTopVia.ContactAddress);
+                    SIPEndPoint nextTopViaSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(nextTopVia.Transport + ":" + nextTopVia.ReceivedFromAddress);
                     //if (!(PublicIPAddress != null && nextTopVia.ReceivedFromIPAddress != null && nextTopVia.ReceivedFromIPAddress != PublicIPAddress.ToString())
                     //    && 
                     //    (m_sipTransport.IsLocalSIPEndPoint(nextTopViaSIPEndPoint) || (PublicIPAddress != null && nextTopVia.ReceivedFromIPAddress == PublicIPAddress.ToString())))

@@ -58,6 +58,7 @@ namespace SIPSorcery.SIPRegistrationAgent
         private const string MONITOR_LOOPBACK_PORT_KEY = "MonitorLoopbackPort";
         private const string OUTBOUND_PROXY_KEY = "OutboundProxy";
         private const string THREAD_COUNT_KEY = "ThreadCount";
+        private const string DISALLOW_PRIVATE_IP_REGISTRARS_KEY = "DisallowPrivateIPRegistrars";
 
         public static ILog logger;
 
@@ -66,6 +67,7 @@ namespace SIPSorcery.SIPRegistrationAgent
         public static readonly int MonitorLoopbackPort;
         public static readonly SIPEndPoint OutboundProxy;
         public static readonly int ThreadCount = 1;
+        public static readonly bool DisallowPrivateIPRegistrars;
 
         static SIPRegAgentState()
         {
@@ -106,6 +108,10 @@ namespace SIPSorcery.SIPRegistrationAgent
                     if (!AppState.GetConfigNodeValue(m_sipRegAgentNode, THREAD_COUNT_KEY).IsNullOrBlank())
                     {
                         Int32.TryParse(AppState.GetConfigNodeValue(m_sipRegAgentNode, THREAD_COUNT_KEY), out ThreadCount);
+                    }
+                    if (!AppState.GetConfigNodeValue(m_sipRegAgentNode, DISALLOW_PRIVATE_IP_REGISTRARS_KEY).IsNullOrBlank())
+                    {
+                        Boolean.TryParse(AppState.GetConfigNodeValue(m_sipRegAgentNode, DISALLOW_PRIVATE_IP_REGISTRARS_KEY), out DisallowPrivateIPRegistrars);
                     }
                 }
             }

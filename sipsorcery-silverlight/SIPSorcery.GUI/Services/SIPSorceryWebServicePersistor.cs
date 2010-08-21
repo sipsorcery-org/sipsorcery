@@ -20,6 +20,7 @@ namespace SIPSorcery.Persistence {
         public override event IsAliveCompleteDelegate IsAliveComplete;
         public override event TestExceptionCompleteDelegate TestExceptionComplete;
         public override event AreNewAccountsEnabledCompleteDelegate AreNewAccountsEnabledComplete;
+        public override event CheckInviteCodeCompleteDelegate CheckInviteCodeComplete;
         public override event LoginCompleteDelegate LoginComplete;
         public override event LogoutCompleteDelegate LogoutComplete;
         public override event GetCustomerCompleteDelegate GetCustomerComplete;
@@ -73,6 +74,7 @@ namespace SIPSorcery.Persistence {
             m_provisioningServiceProxy.IsAliveCompleted += IsAliveCompleted;
             m_provisioningServiceProxy.TestExceptionCompleted += TestExceptionCompleted;
             m_provisioningServiceProxy.AreNewAccountsEnabledCompleted += AreNewAccountsEnabledCompleted;
+            m_provisioningServiceProxy.CheckInviteCodeCompleted += CheckInviteCodeCompleted;
             m_provisioningServiceProxy.LoginCompleted += LoginCompleted;
             m_provisioningServiceProxy.LogoutCompleted += LogoutCompleted;
             m_provisioningServiceProxy.GetCustomerCompleted += GetCustomerCompleted;
@@ -147,6 +149,17 @@ namespace SIPSorcery.Persistence {
 
         private void AreNewAccountsEnabledCompleted(object sender, AreNewAccountsEnabledCompletedEventArgs e) {
             AreNewAccountsEnabledComplete(e);
+        }
+
+        public override void CheckInviteCodeAsync(string inviteCode)
+        {
+            m_provisioningServiceProxy.CheckInviteCodeAsync(inviteCode);
+        }
+
+
+        private void CheckInviteCodeCompleted(object sender, CheckInviteCodeCompletedEventArgs e)
+        {
+            CheckInviteCodeComplete(e);
         }
 
         public override void LoginAsync(string username, string password) {

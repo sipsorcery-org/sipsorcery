@@ -86,6 +86,8 @@ namespace SIPSorcery.Web.Services
         private SIPMonitorLogDelegate LogDelegate_External = (e) => { };
 
         private int m_newCustomersAllowedLimit;
+        private bool m_inviteCodeRequired;
+        private List<string> m_inviteCodes;
 
         //public SIPProvisioningWebService() { }
 
@@ -100,7 +102,9 @@ namespace SIPSorcery.Web.Services
             CustomerSessionManager crmSessionManager,
             SIPDomainManager sipDomainManager,
             SIPMonitorLogDelegate log,
-            int newCustomersAllowedLimit) :
+            int newCustomersAllowedLimit,
+            bool inviteCodeRequired,
+            List<string> inviteCodes) :
             base(crmSessionManager)
         {
             SIPAccountPersistor = sipAccountPersistor;
@@ -113,6 +117,8 @@ namespace SIPSorcery.Web.Services
             SIPDomainManager = sipDomainManager;
             LogDelegate_External = log;
             m_newCustomersAllowedLimit = newCustomersAllowedLimit;
+            m_inviteCodeRequired = inviteCodeRequired;
+            m_inviteCodes = inviteCodes;
         }
 
         private string GetAuthorisedWhereExpression(Customer customer, string whereExpression)
@@ -185,17 +191,54 @@ namespace SIPSorcery.Web.Services
             return m_newCustomersAllowedLimit == 0 || CRMCustomerPersistor.Count(c => !c.Suspended) < m_newCustomersAllowedLimit;
         }
 
+        public string CheckInviteCode(string inviteCode)
+        {
+            logger.Debug("CheckInviteCode called from " + OperationContext.Current.Channel.RemoteAddress + ".");
+
+            if (inviteCode.IsNullOrBlank())
+            {
+                return "No invite code was specified";
+            }
+
+            if (m_inviteCodes == null || !m_inviteCodes.Contains(inviteCode))
+            {
+                return "The invite code was not recognised.";
+            }
+
+            // The invite code is valid, check that it hasn't already been used to create a new account.
+            if (CRMCustomerPersistor.Count(c => c.InviteCode == inviteCode) > 0)
+            {
+                return "The invite code has already been used.";
+            }
+
+            return null;
+        }
+
         public void CreateCustomer(Customer customer)
         {
             try
             {
                 // Check whether the number of customers is within the allowed limit.
-                if (m_newCustomersAllowedLimit != 0 && CRMCustomerPersistor.Count(null) >= m_newCustomersAllowedLimit)
+                if (customer.InviteCode == null && m_newCustomersAllowedLimit != 0 && CRMCustomerPersistor.Count(null) >= m_newCustomersAllowedLimit)
                 {
-                    throw new ApplicationException("Sorry new account creations are currently disabled. Please monitor sipsorcery.wordpress.com for updates.");
+                    throw new ApplicationException("Sorry new account creations are currently disabled, please see http://sipsorcery.wordpress.com/new-accounts/.");
                 }
                 else
                 {
+                    // If an invite code is specified check whether it's valid.
+                    if(!customer.InviteCode.IsNullOrBlank())
+                    {
+                        string inviteCodeError = CheckInviteCode(customer.InviteCode);
+                        if (inviteCodeError != null)
+                        {
+                            throw new ApplicationException(inviteCodeError);
+                        }
+                    }
+                    else if (m_inviteCodeRequired)
+                    {
+                        throw new ApplicationException("New accounts can only be created with an invite code, please see http://sipsorcery.wordpress.com/new-accounts/.");
+                    }
+
                     // Check whether the username is already taken.
                     customer.CustomerUsername = customer.CustomerUsername.ToLower();
                     Customer existingCustomer = CRMCustomerPersistor.Get(c => c.CustomerUsername == customer.CustomerUsername);

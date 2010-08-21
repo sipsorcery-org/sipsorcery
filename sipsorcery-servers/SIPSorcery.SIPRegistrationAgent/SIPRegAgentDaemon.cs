@@ -58,6 +58,7 @@ namespace SIPSorcery.SIPRegistrationAgent
         private int m_monitorLoopbackPort = SIPRegAgentState.MonitorLoopbackPort;
         private SIPEndPoint m_outboundProxy = SIPRegAgentState.OutboundProxy;
         private int m_threadCount = SIPRegAgentState.ThreadCount;
+        private bool m_disallowPrivateIPRegistrars = SIPRegAgentState.DisallowPrivateIPRegistrars;
 
         private SIPTransport m_sipTransport;
         private SIPMonitorEventWriter m_monitorEventWriter;
@@ -121,7 +122,8 @@ namespace SIPSorcery.SIPRegistrationAgent
                     m_providerPersistor.Get,
                     m_providerPersistor.Update,
                     m_providerPersistor.UpdateProperty,
-                    m_bindingPersistor);
+                    m_bindingPersistor,
+                    m_disallowPrivateIPRegistrars);
                 m_sipRegAgentCore.Start(m_threadCount);
 
                 logger.Debug("SIP Registration Agent successfully started.");

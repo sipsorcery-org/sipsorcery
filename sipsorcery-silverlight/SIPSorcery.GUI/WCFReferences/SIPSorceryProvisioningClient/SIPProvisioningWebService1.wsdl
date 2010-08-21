@@ -1,9 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<wsdl:definitions xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:tns="http://tempuri.org/" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:i0="http://www.sipsorcery.com/provisioning" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="SIPProvisioningWebService" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
-  <wsdl:import namespace="http://www.sipsorcery.com/provisioning" location="http://suzannes-pc:8080/provisioning.svc?wsdl=wsdl0" />
+<wsdl:definitions xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:tns="http://tempuri.org/" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:i0="http://www.sipsorcery.com/provisioning" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:i1="http://www.sipsorcery.com/provisioning/rest" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="SIPProvisioningWebService" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:import namespace="http://www.sipsorcery.com/provisioning" location="http://localhost/Provisioning.svc?wsdl=wsdl0" />
+  <wsdl:import namespace="http://www.sipsorcery.com/provisioning/rest" location="http://localhost/Provisioning.svc?wsdl=wsdl1" />
   <wsdl:types />
   <wsdl:binding name="BasicHttpBinding_IProvisioningService" type="i0:IProvisioningService">
     <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="AddDialPlan">
+      <soap:operation soapAction="http://www.sipsorcery.com/provisioning/IProvisioningService/AddDialPlan" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="UpdateDialPlan">
+      <soap:operation soapAction="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateDialPlan" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DeleteDialPlan">
+      <soap:operation soapAction="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteDialPlan" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetCallsCount">
+      <soap:operation soapAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsCount" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetCalls">
+      <soap:operation soapAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCalls" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
     <wsdl:operation name="GetCDRsCount">
       <soap:operation soapAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCDRsCount" style="document" />
       <wsdl:input>
@@ -60,6 +106,15 @@
     </wsdl:operation>
     <wsdl:operation name="AreNewAccountsEnabled">
       <soap:operation soapAction="http://www.sipsorcery.com/provisioning/IProvisioningService/AreNewAccountsEnabled" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CheckInviteCode">
+      <soap:operation soapAction="http://www.sipsorcery.com/provisioning/IProvisioningService/CheckInviteCode" style="document" />
       <wsdl:input>
         <soap:body use="literal" />
       </wsdl:input>
@@ -283,55 +338,10 @@
         <soap:body use="literal" />
       </wsdl:output>
     </wsdl:operation>
-    <wsdl:operation name="AddDialPlan">
-      <soap:operation soapAction="http://www.sipsorcery.com/provisioning/IProvisioningService/AddDialPlan" style="document" />
-      <wsdl:input>
-        <soap:body use="literal" />
-      </wsdl:input>
-      <wsdl:output>
-        <soap:body use="literal" />
-      </wsdl:output>
-    </wsdl:operation>
-    <wsdl:operation name="UpdateDialPlan">
-      <soap:operation soapAction="http://www.sipsorcery.com/provisioning/IProvisioningService/UpdateDialPlan" style="document" />
-      <wsdl:input>
-        <soap:body use="literal" />
-      </wsdl:input>
-      <wsdl:output>
-        <soap:body use="literal" />
-      </wsdl:output>
-    </wsdl:operation>
-    <wsdl:operation name="DeleteDialPlan">
-      <soap:operation soapAction="http://www.sipsorcery.com/provisioning/IProvisioningService/DeleteDialPlan" style="document" />
-      <wsdl:input>
-        <soap:body use="literal" />
-      </wsdl:input>
-      <wsdl:output>
-        <soap:body use="literal" />
-      </wsdl:output>
-    </wsdl:operation>
-    <wsdl:operation name="GetCallsCount">
-      <soap:operation soapAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCallsCount" style="document" />
-      <wsdl:input>
-        <soap:body use="literal" />
-      </wsdl:input>
-      <wsdl:output>
-        <soap:body use="literal" />
-      </wsdl:output>
-    </wsdl:operation>
-    <wsdl:operation name="GetCalls">
-      <soap:operation soapAction="http://www.sipsorcery.com/provisioning/IProvisioningService/GetCalls" style="document" />
-      <wsdl:input>
-        <soap:body use="literal" />
-      </wsdl:input>
-      <wsdl:output>
-        <soap:body use="literal" />
-      </wsdl:output>
-    </wsdl:operation>
   </wsdl:binding>
   <wsdl:service name="SIPProvisioningWebService">
     <wsdl:port name="BasicHttpBinding_IProvisioningService" binding="tns:BasicHttpBinding_IProvisioningService">
-      <soap:address location="http://suzannes-pc:8080/provisioning.svc" />
+      <soap:address location="http://localhost/Provisioning.svc" />
     </wsdl:port>
   </wsdl:service>
 </wsdl:definitions>

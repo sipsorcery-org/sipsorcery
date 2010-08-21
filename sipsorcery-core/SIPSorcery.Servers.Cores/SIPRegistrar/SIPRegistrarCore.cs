@@ -152,12 +152,6 @@ namespace SIPSorcery.Servers
             m_userAgentConfigs = userAgentConfigs;
             SIPRequestAuthenticator_External = sipRequestAuthenticator;
 
-            ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + "1"); });
-            ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + "2"); });
-            ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + "3"); });
-            ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + "4"); });
-            ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + "5"); });
-
             try
             {
                 if (!switchboardCertificateName.IsNullOrBlank())
@@ -173,6 +167,17 @@ namespace SIPSorcery.Servers
             }
         }
 
+        public void Start(int threadCount)
+        {
+            logger.Debug("SIPRegistrarCore thread started with " + threadCount + " threads.");
+
+            for (int index = 1; index <= threadCount; index++)
+            {
+                string threadSuffix = index.ToString();
+                ThreadPool.QueueUserWorkItem(delegate { ProcessRegisterRequest(REGISTRAR_THREAD_NAME_PREFIX + threadSuffix); });
+            }
+        }
+        
         public void AddRegisterRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest registerRequest)
         {
             try
@@ -266,6 +271,11 @@ namespace SIPSorcery.Servers
                                 TimeSpan duration = DateTime.Now.Subtract(startTime);
                                 FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "register result=" + result.ToString() + ", time=" + duration.TotalMilliseconds + "ms, user=" + registrarTransaction.TransactionRequest.Header.To.ToURI.User + ".", null));
                             }
+                        }
+                        catch (InvalidOperationException invalidOpExcp)
+                        {
+                            // This occurs when the queue is empty.
+                            logger.Warn("InvalidOperationException ProcessRegisterRequest Register Job. " + invalidOpExcp.Message);
                         }
                         catch (Exception regExcp)
                         {

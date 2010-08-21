@@ -73,6 +73,7 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\SIPProvisioningWebService1.wsdl" />
     <Reference Include="mscorlib" />
     <Reference Include="SIPSorcery.Net, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -181,6 +182,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="UserInterface\NewAccountInviteControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UserInterface\Page.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -227,6 +232,9 @@
     </Compile>
     <Compile Include="UserInterface\CustomerSettingsControl.xaml.cs">
       <DependentUpon>CustomerSettingsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\NewAccountInviteControl.xaml.cs">
+      <DependentUpon>NewAccountInviteControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="WCFReferences\SIPSorceryNotificationService\Reference.cs">
       <AutoGen>True</AutoGen>
@@ -294,15 +302,7 @@
     <WCFMetadata Include="WCFReferences\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="SIPSorcery.CRM.Customer.datasource" />
-    <None Include="SIPSorcery.SIP.App.SIPAccount.datasource" />
-    <None Include="SIPSorcery.SIP.App.SIPCDRAsset.datasource" />
-    <None Include="SIPSorcery.SIP.App.SIPDialogueAsset.datasource" />
-    <None Include="SIPSorcery.SIP.App.SIPDialPlan.datasource" />
-    <None Include="SIPSorcery.SIP.App.SIPDomain.datasource" />
-    <None Include="SIPSorcery.SIP.App.SIPProvider.datasource" />
-    <None Include="SIPSorcery.SIP.App.SIPProviderBinding.datasource" />
-    <None Include="SIPSorcery.SIP.App.SIPRegistrarBinding.datasource" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning1.disco" />
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull.disco" />
     <Resource Include="Images\wizard-logo.png" />
     <Resource Include="Images\small_logo.png" />
@@ -324,19 +324,30 @@
     <None Include="WCFReferences\SIPSorceryNotificationService\SIPNotifierService11.wsdl" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\configuration91.svcinfo" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\configuration.svcinfo" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning1.wsdl" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning4.xsd" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning41.xsd" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning42.xsd" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning43.xsd" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning7.xsd">
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning1.wsdl" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning2.wsdl" />
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning4.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning6.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning7.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning8.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning9.xsd">
       <SubType>Designer</SubType>
     </None>
     <None Include="WCFReferences\SIPSorceryProvisioningClient\Reference.svcmap">
       <Generator>WCF Proxy Generator</Generator>
       <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\SIPProvisioningWebService1.wsdl" />
     <Content Include="ServiceReferences.ClientConfig" />
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull1.disco" />
     <None Include="WCFReferences\SIPSorceryNotificationService\Reference.svcmap">
@@ -345,7 +356,6 @@
     </None>
     <None Include="WCFReferences\SIPSorceryNotificationService\configuration.svcinfo" />
     <None Include="WCFReferences\SIPSorceryNotificationService\configuration91.svcinfo" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\provisioning1.disco" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery.Messaging\SIPSorcery.Silverlight.Messaging.csproj">
@@ -398,6 +408,7 @@
     </VisualStudio>
   </ProjectExtensions>
   <PropertyGroup>
-    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-silverlight\SIPSorcery.GUI\bin\debug\sipsorcery.xap" "c:\temp\sipsorcery\clientbin\"</PostBuildEvent>
+    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-silverlight\SIPSorcery.GUI\bin\debug\sipsorcery.xap" "c:\temp\sipsorcery\clientbin\"
+copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-silverlight\SIPSorcery.GUI\bin\debug\sipsorcery.xap" "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-web\MainSite\SIPSorcery.Web.MainSite\SIPSorcery.Web.MainSite\clientbin\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

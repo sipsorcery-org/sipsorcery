@@ -122,6 +122,10 @@
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="UserInterface\NewAccountInviteControl.xaml">
+      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UserInterface\CreateAccountControl.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
@@ -196,6 +200,9 @@
     </Compile>
     <Compile Include="UserInterface\CityLightsDisplay.xaml.cs">
       <DependentUpon>CityLightsDisplay.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\NewAccountInviteControl.xaml.cs">
+      <DependentUpon>NewAccountInviteControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\CreateAccountControl.xaml.cs">
       <DependentUpon>CreateAccountControl.xaml</DependentUpon>

@@ -19,6 +19,7 @@ namespace SIPSorcery
         //public LoginDelegate Login_External;
 
         private string m_emailAddress;
+        public string InviteCode;
 
         public CreateAccountControl() {
             InitializeComponent();
@@ -70,6 +71,7 @@ namespace SIPSorcery
                     Country = ((TextBlock)m_countryListBox.SelectedItem).Text,
                     WebSite = m_webSiteTextBox.Text.Trim(),
                     TimeZone = ((TextBlock)m_timezoneListBox.SelectedItem).Text,
+                    InviteCode = InviteCode,
                     Inserted = DateTime.Now.ToUniversalTime()
                 };
 

@@ -54,6 +54,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private const string LOGIN_URL = "https://www.google.com/accounts/ServiceLoginAuth?service=grandcentral";
         private const string VOICE_HOME_URL = "https://www.google.com/voice";
         private const string VOICE_CALL_URL = "https://www.google.com/voice/call/connect";
+        private const string CANCEL_CALL_URL = "https://www.google.com/voice/call/cancel";
         private const int MIN_CALLBACK_TIMEOUT = 3;
         private const int MAX_CALLBACK_TIMEOUT = 60;
         private const int WAIT_FOR_CALLBACK_TIMEOUT = 30;
@@ -70,9 +71,13 @@ namespace SIPSorcery.AppServer.DialPlan
 
         private string m_forwardingNumber;
         private string m_fromURIUserRegexMatch;
+        private string m_destinationNumber;
         private ManualResetEvent m_waitForCallback = new ManualResetEvent(false);
         private ISIPServerUserAgent m_callbackCall;
         private bool m_clientCallCancelled;
+        private bool m_hasBeenCancelled;
+        private CookieContainer m_cookies;
+        private string m_rnrKey;
 
         internal event CallProgressDelegate CallProgress;
 
@@ -113,6 +118,7 @@ namespace SIPSorcery.AppServer.DialPlan
             try
             {
                 m_forwardingNumber = forwardingNumber;
+                m_destinationNumber = destinationNumber;
                 m_fromURIUserRegexMatch = fromUserRegexMatch;
 
                 if (CallProgress != null)
@@ -121,16 +127,16 @@ namespace SIPSorcery.AppServer.DialPlan
                     CallProgress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
                 }
 
-                CookieContainer cookies = new CookieContainer();
-                string rnr = Login(cookies, emailAddress, password);
-                if (!rnr.IsNullOrBlank())
+                m_cookies = new CookieContainer();
+                m_rnrKey = Login(emailAddress, password);
+                if (!m_rnrKey.IsNullOrBlank())
                 {
-                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call key " + rnr + " successfully retrieved for " + emailAddress + ", proceeding with callback.", m_username));
-                    return SendCallRequest(cookies, forwardingNumber, destinationNumber, rnr, phoneType, waitForCallbackTimeout, contentType, body);
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call key " + m_rnrKey + " successfully retrieved for " + emailAddress + ", proceeding with callback.", m_username));
+                    return SendCallRequest(forwardingNumber, destinationNumber, phoneType, waitForCallbackTimeout, contentType, body);
                 }
                 else
                 {
-                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call key was not etrieved for " + emailAddress + " callback cannot proceed.", m_username));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call key was not retrieved for " + emailAddress + " callback cannot proceed.", m_username));
                     return null;
                 }
             }
@@ -141,7 +147,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        private string Login(CookieContainer cookies, string emailAddress, string password)
+        private string Login(string emailAddress, string password)
         {
             try
             {
@@ -150,7 +156,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 // Fetch GALX
                 HttpWebRequest galxRequest = (HttpWebRequest)WebRequest.Create(PRE_LOGIN_URL);
                 galxRequest.ConnectionGroupName = "prelogin";
-                galxRequest.CookieContainer = cookies;
+                galxRequest.CookieContainer = m_cookies;
 
                 HttpWebResponse galxResponse = (HttpWebResponse)galxRequest.GetResponse();
                 if (galxResponse.StatusCode != HttpStatusCode.OK)
@@ -180,7 +186,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 // Build login request.
                 string loginData = "Email=" + Uri.EscapeDataString(emailAddress) + "&Passwd=" + Uri.EscapeDataString(password) + "&GALX=" + Uri.EscapeDataString(galxMatch.Result("${galxvalue}"));
                 HttpWebRequest loginRequest = (HttpWebRequest)WebRequest.Create(LOGIN_URL);
-                loginRequest.CookieContainer = cookies;
+                loginRequest.CookieContainer = m_cookies;
                 loginRequest.ConnectionGroupName = "login";
                 loginRequest.AllowAutoRedirect = true;
                 loginRequest.Method = "POST";
@@ -202,7 +208,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 // the HTTP call requests.
                 HttpWebRequest rnrRequest = (HttpWebRequest)WebRequest.Create(VOICE_HOME_URL);
                 rnrRequest.ConnectionGroupName = "call";
-                rnrRequest.CookieContainer = cookies;
+                rnrRequest.CookieContainer = m_cookies;
 
                 // Send the Google Voice account page request and read response stream.
                 response = (HttpWebResponse)rnrRequest.GetResponse();
@@ -238,7 +244,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        private SIPDialogue SendCallRequest(CookieContainer cookies, string forwardingNumber, string destinationNumber, string rnr, int phoneType, int waitForCallbackTimeout, string contentType, string body)
+        private SIPDialogue SendCallRequest(string forwardingNumber, string destinationNumber, int phoneType, int waitForCallbackTimeout, string contentType, string body)
         {
             try
             {
@@ -248,13 +254,13 @@ namespace SIPSorcery.AppServer.DialPlan
                 m_callManager.AddWaitingApplication(callbackWaiter);
 
                 string callData = "outgoingNumber=" + Uri.EscapeDataString(destinationNumber) + "&forwardingNumber=" + Uri.EscapeDataString(forwardingNumber) +
-                    "&subscriberNumber=undefined&remember=0&_rnr_se=" + Uri.EscapeDataString(rnr) + "&phoneType=" + phoneType;
+                    "&subscriberNumber=undefined&remember=0&_rnr_se=" + Uri.EscapeDataString(m_rnrKey) + "&phoneType=" + phoneType;
                 //logger.Debug("call data=" + callData + ".");
 
                 // Build the call request.
                 HttpWebRequest callRequest = (HttpWebRequest)WebRequest.Create(VOICE_CALL_URL);
                 callRequest.ConnectionGroupName = "call";
-                callRequest.CookieContainer = cookies;
+                callRequest.CookieContainer = m_cookies;
                 callRequest.Method = "POST";
                 callRequest.ContentType = "application/x-www-form-urlencoded;charset=utf-8";
                 callRequest.ContentLength = callData.Length;
@@ -275,18 +281,67 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 if (m_waitForCallback.WaitOne(callbackTimeout * 1000))
                 {
-                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call callback received.", m_username));
-                    return m_callbackCall.Answer(contentType, body, null, SIPDialogueTransferModesEnum.Default);
+                    if (!m_hasBeenCancelled)
+                    {
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call callback received.", m_username));
+                        return m_callbackCall.Answer(contentType, body, null, SIPDialogueTransferModesEnum.Default);
+                    }
+                    else
+                    {
+                        return null;
+                    }
                 }
                 else
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call timed out waiting for callback.", m_username));
+                    CancelCall();
                     return null;
                 }
             }
             catch (Exception excp)
             {
                 logger.Error("Exception GoogleVoiceCall SendCallRequest. " + excp.Message);
+                throw;
+            }
+        }
+
+        private void CancelCall()
+        {
+            try
+            {
+                if (!m_hasBeenCancelled)
+                {
+                    m_hasBeenCancelled = true;
+                    m_waitForCallback.Set();
+
+                    string callData = "outgoingNumber=undefined&forwardingNumber=undefined&_rnr_se=" + Uri.EscapeDataString(m_rnrKey);
+
+                    // Build the call request.
+                    HttpWebRequest cancelRequest = (HttpWebRequest)WebRequest.Create(CANCEL_CALL_URL);
+                    cancelRequest.ConnectionGroupName = "cancel";
+                    cancelRequest.CookieContainer = m_cookies;
+                    cancelRequest.Method = "POST";
+                    cancelRequest.ContentType = "application/x-www-form-urlencoded;charset=utf-8";
+                    cancelRequest.ContentLength = callData.Length;
+                    cancelRequest.GetRequestStream().Write(Encoding.UTF8.GetBytes(callData), 0, callData.Length);
+                    cancelRequest.Timeout = HTTP_REQUEST_TIMEOUT * 1000;
+
+                    HttpWebResponse response = (HttpWebResponse)cancelRequest.GetResponse();
+                    HttpStatusCode responseStatus = response.StatusCode;
+                    response.Close();
+                    if (responseStatus != HttpStatusCode.OK)
+                    {
+                       logger.Warn("The GoogleVoiceCall cancel request failed with a " + responseStatus + " response.");
+                    }
+                    else
+                    {
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call to " + m_destinationNumber + " was successfully cancelled.", m_username));
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception GoogleVoiceCall CancelCall. " + excp.Message);
                 throw;
             }
         }
@@ -343,6 +398,7 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "GoogleVoiceCall client call cancelled, " + cancelCause + ".", m_username));
             m_clientCallCancelled = true;
+            CancelCall();
         }
     }
 }

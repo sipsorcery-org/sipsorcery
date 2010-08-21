@@ -81,6 +81,7 @@ namespace SIPSorcery.SIP
             }
 
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tls, endPoint);
+            LocalTCPSockets.Add(endPoint.ToString());
             m_isReliable = true;
             m_isTLS = true;
             //m_certificatePath = certificateFileName;
@@ -206,6 +207,11 @@ namespace SIPSorcery.SIP
                 if (buffer == null)
                 {
                     throw new ApplicationException("An empty buffer was specified to Send in SIPTLSChannel.");
+                }
+                else if (LocalTCPSockets.Contains(dstEndPoint.ToString()))
+                {
+                    logger.Error("SIPTLSChannel blocked Send to " + dstEndPoint.ToString() + " as it was identified as a locally hosted TCP socket.\r\n" + Encoding.UTF8.GetString(buffer));
+                    throw new ApplicationException("A Send call was made in SIPTLSChannel to send to another local TCP socket.");
                 }
                 else
                 {

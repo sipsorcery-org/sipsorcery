@@ -19,6 +19,7 @@ namespace SIPSorcery.Persistence
 {
     public delegate void MethodInvokerDelegate();
     public delegate void IsAliveCompleteDelegate(IsAliveCompletedEventArgs e);
+    public delegate void CheckInviteCodeCompleteDelegate(CheckInviteCodeCompletedEventArgs e);
     public delegate void TestExceptionCompleteDelegate(AsyncCompletedEventArgs e);
     public delegate void AreNewAccountsEnabledCompleteDelegate(AreNewAccountsEnabledCompletedEventArgs e);
     public delegate void LoginCompleteDelegate(LoginCompletedEventArgs e);
@@ -86,6 +87,7 @@ namespace SIPSorcery.Persistence
         public abstract event IsAliveCompleteDelegate IsAliveComplete;
         public abstract event TestExceptionCompleteDelegate TestExceptionComplete;
         public abstract event AreNewAccountsEnabledCompleteDelegate AreNewAccountsEnabledComplete;
+        public abstract event CheckInviteCodeCompleteDelegate CheckInviteCodeComplete;
         public abstract event LoginCompleteDelegate LoginComplete;
         public abstract event LogoutCompleteDelegate LogoutComplete;
         public abstract event GetCustomerCompleteDelegate GetCustomerComplete;
@@ -125,6 +127,7 @@ namespace SIPSorcery.Persistence
         public abstract void IsAliveAsync();
         public abstract void TestExceptionAsync();
         public abstract void AreNewAccountsEnabledAsync();
+        public abstract void CheckInviteCodeAsync(string inviteCode);
         public abstract void LoginAsync(string username, string password);
         public abstract void LogoutAsync();
         public abstract void GetCustomerAsync(string username);

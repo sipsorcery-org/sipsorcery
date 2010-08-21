@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SoftPhone", "SIPSorcery.SoftPhone\SIPSorcery.SoftPhone.csproj", "{45ECFC1D-26F4-453C-B840-1B877B14F3CF}"
 EndProject
 Global

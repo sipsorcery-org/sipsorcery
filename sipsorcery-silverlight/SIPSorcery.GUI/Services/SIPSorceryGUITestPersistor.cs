@@ -58,6 +58,7 @@ namespace SIPSorcery.Persistence
         public override event IsAliveCompleteDelegate IsAliveComplete;
         public override event TestExceptionCompleteDelegate TestExceptionComplete;
         public override event AreNewAccountsEnabledCompleteDelegate AreNewAccountsEnabledComplete;
+        public override event CheckInviteCodeCompleteDelegate CheckInviteCodeComplete;
         public override event LoginCompleteDelegate LoginComplete;
         public override event LogoutCompleteDelegate LogoutComplete;
         public override event GetCustomerCompleteDelegate GetCustomerComplete;
@@ -106,6 +107,11 @@ namespace SIPSorcery.Persistence
 
         public override void AreNewAccountsEnabledAsync() {
             AreNewAccountsEnabledComplete(new AreNewAccountsEnabledCompletedEventArgs(new object[]{true}, null, false, null));
+        }
+
+        public override void CheckInviteCodeAsync(string inviteCode)
+        {
+            CheckInviteCodeComplete(new CheckInviteCodeCompletedEventArgs(null, null, false, null));
         }
 
         public override void LoginAsync(string username, string password) {

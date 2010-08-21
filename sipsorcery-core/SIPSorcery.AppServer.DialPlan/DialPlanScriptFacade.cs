@@ -44,6 +44,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security;
+using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -87,6 +88,8 @@ namespace SIPSorcery.AppServer.DialPlan
         private const int MAX_CALLBACKS_ALLOWED = 3;    // The maximum number of callback method calls that will be alowed per dialplan instance.
         private const int WEBGET_MAXIMUM_TIMEOUT = 300; // The maximum number of seconds a web get can be set to wait for a response.
         private const int DEFAULT_GOOGLEVOICE_PHONETYPE = 2;
+        private const int GTALK_DEFAULT_CONNECTION_TIMEOUT = 5000;
+        private const int GTALK_MAX_CONNECTION_TIMEOUT = 30000;
 
         private static int m_maxRingTime = SIPTimings.MAX_RING_TIME;
 
@@ -139,12 +142,15 @@ namespace SIPSorcery.AppServer.DialPlan
         private int m_callbackRequests = 0;         // Keeps count of the number of call back requests that have been attempted by a dialplan execution.
         private IDbConnection m_userDataDBConnection;
         private IDbTransaction m_userDataDBTransaction;
+        private Dictionary<string, XmppClientConnection> m_gtalkConnections = new Dictionary<string, XmppClientConnection>();
 
         private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
         private SIPAssetPersistor<SIPDialPlan> m_sipDialPlanPersistor;
         private SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;   // This event must be wired up to an external function in order to be able to lookup bindings that have been registered for a SIP account.  
         private ISIPCallManager m_callManager;
+        private bool m_autoCleanup = true;  // Set to false if the Ruby dialplan wants to take care of handling the cleanup from a rescue or ensure block.
+        private bool m_hasBeenCleanedUp;
 
         private DialPlanContext m_dialPlanContext;
         public DialPlanContext DialPlanContext
@@ -225,7 +231,7 @@ namespace SIPSorcery.AppServer.DialPlan
             GetSIPAccountBindings_External = getSIPAccountBindings;
             m_outboundProxySocket = outboundProxySocket;
 
-            m_executingScript.Cleanup = Cleanup;
+            m_executingScript.Cleanup = CleanupDialPlanScript;
 
             if (m_dialPlanContext != null)
             {
@@ -245,23 +251,60 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
+        public void TurnOffAutoCleanup()
+        {
+            m_autoCleanup = false;
+        }
+
+        public void Cleanup()
+        {
+            m_autoCleanup = true;
+            CleanupDialPlanScript();
+        }
+
         /// <summary>
         /// A function that gets attached to the executing thread object and that will be called when the dialplan script is complete and 
         /// immediately prior to a possible thread abortion.
         /// </summary>
-        private void Cleanup()
+        private void CleanupDialPlanScript()
         {
             try
             {
-                if (m_userDataDBConnection != null)
+                if (m_hasBeenCleanedUp)
                 {
-                    m_userDataDBConnection.Close();
+                    Log("Dialplan cleanup has already been run, ignoring subsequent cleanup call for " + Username + ".");
+                }
+                else if (m_autoCleanup)
+                {
+                    m_hasBeenCleanedUp = true;
+                    Log("Dialplan cleanup for " + Username + ".");
+
+                    if (m_userDataDBConnection != null)
+                    {
+                        Log("Closing user database connection for " + Username + ".");
+                        m_userDataDBConnection.Close();
+                    }
+
+                    if (m_gtalkConnections.Count > 0)
+                    {
+                        foreach (KeyValuePair<string, XmppClientConnection> connection in m_gtalkConnections)
+                        {
+                            Log("Closing gTalk connection for " + connection.Key + ".");
+                            connection.Value.Close();
+                        }
+                    }
                 }
             }
             catch (Exception excp)
             {
                 logger.Error("Exception DialPlanScriptFacade Cleanup. " + excp.Message);
+                Log("Exception DialPlanScriptFacade Cleanup. " + excp.Message);
             }
+        }
+
+        public string WhoAmI()
+        {
+            return WindowsIdentity.GetCurrent().Name;
         }
 
         /// <remarks>
@@ -950,43 +993,69 @@ namespace SIPSorcery.AppServer.DialPlan
             m_customContent = null;
         }
 
+        public void GTalk(string username, string password, string sendToUser, string message)
+        {
+            GTalk(username, password, sendToUser, message, GTALK_DEFAULT_CONNECTION_TIMEOUT);
+        }
+
         /// <summary>
         /// Attempts to send a gTalk IM to the specified account.
         /// </summary>
-        public void GTalk(string username, string password, string sendToUser, string message)
+        public void GTalk(string username, string password, string sendToUser, string message, int connectionTimeout)
         {
             try
             {
-                XmppClientConnection xmppCon = new XmppClientConnection();
-                xmppCon.Password = password;
-                xmppCon.Username = username;
-                xmppCon.Server = "gmail.com";
-                xmppCon.ConnectServer = "talk.google.com";
-                xmppCon.AutoAgents = false;
-                xmppCon.AutoPresence = false;
-                xmppCon.AutoRoster = false;
-                xmppCon.AutoResolveConnectServer = true;
-
-                Log("Attempting to connect to gTalk for " + username + ".");
-
-                ManualResetEvent waitForConnect = new ManualResetEvent(false);
-
-                xmppCon.OnLogin += new ObjectHandler((sender) => waitForConnect.Set());
-                xmppCon.Open();
-
-                if (waitForConnect.WaitOne(5000, false))
+                if (connectionTimeout > GTALK_MAX_CONNECTION_TIMEOUT)
                 {
-                    Log("Connected to gTalk for " + username + "@gmail.com.");
+                    connectionTimeout = GTALK_MAX_CONNECTION_TIMEOUT;
+                }
+                else if (connectionTimeout < GTALK_DEFAULT_CONNECTION_TIMEOUT)
+                {
+                    connectionTimeout = GTALK_DEFAULT_CONNECTION_TIMEOUT;
+                }
+
+                XmppClientConnection xmppCon = null;
+
+                if (m_gtalkConnections.ContainsKey(username))
+                {
+                    xmppCon = m_gtalkConnections[username];
+                    Log("Using existing gTalk connection for " + username + "@gmail.com.");
                     xmppCon.Send(new Message(new Jid(sendToUser + "@gmail.com"), MessageType.chat, message));
-                    // Give the message time to be sent.
-                    Thread.Sleep(1000);
                 }
                 else
                 {
-                    Log("Connection to gTalk for " + username + " timed out.");
-                }
+                    xmppCon = new XmppClientConnection();
+                    xmppCon.Password = password;
+                    xmppCon.Username = username;
+                    xmppCon.Server = "gmail.com";
+                    xmppCon.ConnectServer = "talk.google.com";
+                    xmppCon.AutoAgents = false;
+                    xmppCon.AutoPresence = false;
+                    xmppCon.AutoRoster = false;
+                    xmppCon.AutoResolveConnectServer = true;
 
-                xmppCon.Close();
+                    Log("Attempting to connect to gTalk for " + username + ".");
+
+                    ManualResetEvent waitForConnect = new ManualResetEvent(false);
+
+                    xmppCon.OnLogin += new ObjectHandler((sender) => waitForConnect.Set());
+                    xmppCon.Open();
+
+                    if (waitForConnect.WaitOne(connectionTimeout, false))
+                    {
+                        Log("Connected to gTalk for " + username + "@gmail.com.");
+                        if (!m_gtalkConnections.ContainsKey(username))
+                        {
+                            m_gtalkConnections.Add(username, xmppCon);
+                        }
+                        xmppCon.Send(new Message(new Jid(sendToUser + "@gmail.com"), MessageType.chat, message));
+                    }
+                    else
+                    {
+                        Log("Connection to gTalk for " + username + " timed out.");
+                    }
+                }
+                //xmppCon.Close();
             }
             catch (Exception excp)
             {
@@ -1726,6 +1795,8 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
+                logger.Debug("Checking IsAppAuthorised with authorisedApps=" + authorisedApps + ", applicationName=" + applicationName + ".");
+
                 if (authorisedApps.IsNullOrBlank() || applicationName.IsNullOrBlank())
                 {
                     return false;

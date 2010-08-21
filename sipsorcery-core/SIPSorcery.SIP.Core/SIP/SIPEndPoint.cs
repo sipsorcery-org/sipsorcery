@@ -142,7 +142,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ParseSIPEndPoint. " + excp.Message);
+                logger.Error("Exception ParseSIPEndPoint (sipEndPointStr=" + sipEndPointStr + "). " + excp.Message);
                 throw;
             }
         }
