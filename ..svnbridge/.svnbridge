@@ -9,4 +9,12 @@ sipsorcery-tools
 sipsorcery-biz
 sipsorcery-samples
 sipsorcery-web
+</Value></Property><Property><Name>svn:ignore</Name><Value>Old
+Patches
+sipsorcery-logs
+sipsorcery-tools
+sipsorcery-biz
+sipsorcery-samples
+sipsorcery-web
+Releases
 </Value></Property></Properties></ItemProperties>
