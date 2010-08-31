@@ -114,7 +114,6 @@ namespace SIPSorcery.AppServer.DialPlan
         private string m_customFromName;
         private string m_customFromUser;
         private string m_customFromHost;
-        //private List<string> m_switchboardHeaders = new List<string>();
         private SIPCallDirection m_callDirection;
         private DialStringParser m_dialStringParser;
         private bool m_clientCallCancelled;
@@ -178,11 +177,6 @@ namespace SIPSorcery.AppServer.DialPlan
             get { return m_dialPlanContext.SendTrace; }
             set { m_dialPlanContext.SendTrace = value; }
         }
-
-        // Switchboard descriptive fields.
-        //public string SwitchboardCallerDescription;
-        //public string SwitchboardDescription;
-        //public string SwitchboardOwner;
 
         public static IPAddress PublicIPAddress;    // If the app server is behind a NAT then it can set this address to be used in mangled SDP.
 
@@ -1140,6 +1134,20 @@ namespace SIPSorcery.AppServer.DialPlan
             catch (Exception excp)
             {
                 Log("Exception on GoogleVoiceCall. " + excp.Message);
+            }
+        }
+
+        public void GoogleVoiceSMS(string emailAddress, string password, string destinationNumber, string message)
+        {
+            try
+            {
+                GoogleVoiceSMS googleSMS = new GoogleVoiceSMS(m_dialPlanLogDelegate, m_username, m_adminMemberId);
+                googleSMS.SendSMS(emailAddress, password, destinationNumber, message);
+            }
+            catch (ThreadAbortException) { }
+            catch (Exception excp)
+            {
+                Log("Exception on GoogleVoiceSMS. " + excp.Message);
             }
         }
 

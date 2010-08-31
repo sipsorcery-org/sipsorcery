@@ -93,6 +93,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DialPlanApps\CallbackApp.cs" />
+    <Compile Include="DialPlanApps\GoogleVoiceSMS.cs" />
     <Compile Include="DialPlanApps\GoogleVoiceCall.cs" />
     <Compile Include="DialPlanApps\RTSPApp.cs" />
     <Compile Include="DialPlanApps\ForkCall.cs" />
