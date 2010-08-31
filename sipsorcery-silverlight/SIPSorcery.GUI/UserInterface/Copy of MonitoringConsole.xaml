@@ -1,0 +1,18 @@
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	x:Class="SIPSorcery.MonitoringConsole"
+	d:DesignWidth="640" Width="1024" Height="Auto" MinHeight="700" d:DesignHeight="700">
+
+	<Grid x:Name="LayoutRoot" Background="#FF000000" Width="1024" Height="Auto" >
+		<Border Margin="16,7.575,16,179.425" Width="992" BorderThickness="1,1,1,1" OpacityMask="#FF000000" BorderBrush="#FFA1FA28">
+			<TextBox Text="" TextWrapping="Wrap" AcceptsReturn="True" TabNavigation="Local" Background="#FF000000" x:Name="m_monitoringEventsTextBox" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" BorderThickness="0,0,0,0" FontFamily="Courier New" Foreground="#FFA1FA28" Height="517" Width="988.469" IsReadOnly="True"/>
+		</Border>
+		<TextBox Background="#FF000000" AcceptsReturn="True" BorderThickness="2,2,2,2" FontFamily="Courier New" FontWeight="Bold" Foreground="#FF000000" Height="30" x:Name="m_commandEntryTextBox" Text="" TextWrapping="NoWrap" FontSize="14" KeyUp="CommandEntry_KeyUp" d:LayoutOverrides="Height" VerticalAlignment="Bottom" Margin="16,0,208,132" HorizontalAlignment="Stretch" BorderBrush="#FFA1FA28" LostFocus="CommandEntryTextBox_LostFocus" GotFocus="CommandEntryTextBox_GotFocus" MaxLength="256" SelectionBackground="#FFA1FA28" SelectionForeground="#FFFFFFFF" TabIndex="10"/>
+		<Button Height="30" HorizontalAlignment="Right" Margin="0,0,16,133" VerticalAlignment="Bottom" Width="82.979" Content="Connect" d:LayoutOverrides="Width" Click="CloseButton_Click" x:Name="m_closeSocketButton" TabIndex="12" IsTabStop="False"/>
+		<Button Height="30" HorizontalAlignment="Right" Margin="0,0,103,133" VerticalAlignment="Bottom" Width="82.979" Content="Clear" Click="ClearButton_Click" x:Name="m_clearButton" TabIndex="11"/>
+	</Grid>
+</UserControl>

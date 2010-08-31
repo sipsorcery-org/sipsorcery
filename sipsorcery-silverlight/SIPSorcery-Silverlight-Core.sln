@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Net", "SIPSorcery.Net\SIPSorcery.Net.csproj", "{B9A3E915-302F-4433-8696-85368A5496B4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Persistence", "SIPSorcery.Persistence\SIPSorcery.Persistence.csproj", "{6ED5020C-A823-4EA6-B01C-C505CE80E970}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Silverlight.CRM", "SIPSorcery.Silverlight.CRM\SIPSorcery.Silverlight.CRM.csproj", "{FDC64126-97E7-4076-910B-E842F730CF3E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Silverlight.SIP", "SIPSorcery.Silverlight.SIP\SIPSorcery.Silverlight.SIP.csproj", "{F996B6D4-3731-44A5-A35A-A6CE4010BC64}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Silverlight.SIP.App", "SIPSorcery.Silverlight.SIP.App\SIPSorcery.Silverlight.SIP.App.csproj", "{F1D7E6F6-4887-407C-BFCC-10ED5FA2C704}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Sys", "SIPSorcery.Sys\SIPSorcery.Sys.csproj", "{27E8B3BB-0C0F-473E-AFED-DCE76F73A65D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9A3E915-302F-4433-8696-85368A5496B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6ED5020C-A823-4EA6-B01C-C505CE80E970}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6ED5020C-A823-4EA6-B01C-C505CE80E970}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6ED5020C-A823-4EA6-B01C-C505CE80E970}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6ED5020C-A823-4EA6-B01C-C505CE80E970}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDC64126-97E7-4076-910B-E842F730CF3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDC64126-97E7-4076-910B-E842F730CF3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDC64126-97E7-4076-910B-E842F730CF3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDC64126-97E7-4076-910B-E842F730CF3E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F996B6D4-3731-44A5-A35A-A6CE4010BC64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F996B6D4-3731-44A5-A35A-A6CE4010BC64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F996B6D4-3731-44A5-A35A-A6CE4010BC64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F996B6D4-3731-44A5-A35A-A6CE4010BC64}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1D7E6F6-4887-407C-BFCC-10ED5FA2C704}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1D7E6F6-4887-407C-BFCC-10ED5FA2C704}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1D7E6F6-4887-407C-BFCC-10ED5FA2C704}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1D7E6F6-4887-407C-BFCC-10ED5FA2C704}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27E8B3BB-0C0F-473E-AFED-DCE76F73A65D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27E8B3BB-0C0F-473E-AFED-DCE76F73A65D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27E8B3BB-0C0F-473E-AFED-DCE76F73A65D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27E8B3BB-0C0F-473E-AFED-DCE76F73A65D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

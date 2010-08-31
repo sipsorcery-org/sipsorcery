@@ -1,0 +1,12 @@
+﻿<Application
+  xmlns="http://schemas.microsoft.com/client/2007"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  x:Class="SIPSorcery.App">
+  <Application.Resources>
+		<SolidColorBrush x:Key="NormalTextBrush" Color="#FFA0F927"/>
+		<SolidColorBrush x:Key="WarningTextBrush" Color="#FFFFE500"/>
+		<SolidColorBrush x:Key="InfoTextBrush" Color="#FFFF9900"/>
+		<SolidColorBrush x:Key="ErrorTextBrush" Color="Red"/>
+		<SolidColorBrush x:Key="SelectedTextBrush" Color="Purple"/>
+  </Application.Resources>
+</Application>

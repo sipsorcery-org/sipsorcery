@@ -1,0 +1,88 @@
+<Canvas x:Class="System.Windows.Controls.Canvas"
+    xmlns="http://schemas.microsoft.com/client/2007"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Opacity="0" x:Name="parentCanvas">
+
+  <Canvas.Triggers>
+    <EventTrigger RoutedEvent="Canvas.Loaded">
+      <EventTrigger.Actions>
+        <BeginStoryboard>
+          <Storyboard>
+            <DoubleAnimation x:Name="hour_animation" Storyboard.TargetName="hourHandTransform" Storyboard.TargetProperty="Angle" From="180" To="540" Duration="12:0:0" RepeatBehavior="Forever"/>
+            <DoubleAnimation x:Name="minute_animation" Storyboard.TargetName="minuteHandTransform" Storyboard.TargetProperty="Angle" From="180" To="540" Duration="1:0:0" RepeatBehavior="Forever"/>
+            <DoubleAnimation x:Name="second_animation" Storyboard.TargetName="secondHandTransform" Storyboard.TargetProperty="Angle" From="180" To="540" Duration="0:1:0" RepeatBehavior="Forever"/>
+            <DoubleAnimation Storyboard.TargetName="parentCanvas" Storyboard.TargetProperty="Opacity" From="0" To="0.7" Duration="0:0:4"/>
+          </Storyboard>
+        </BeginStoryboard>
+      </EventTrigger.Actions>
+    </EventTrigger>
+  </Canvas.Triggers>
+  
+  <!-- Drop shadow -->
+  <Path Data="M 157, 5 a 150,150 0 1,0 1,0 z">
+    <Path.Fill>
+      <SolidColorBrush Color="Black" Opacity="0.3"/>
+    </Path.Fill>
+  </Path>
+  
+  <!-- Clock bezel -->
+  <Path Data="M 150, 0 a 150,150 0 1,0 1,0 z" Fill="black" />
+  <Path Data="M 150, 1 a 149,149 0 1,0 1,0 z" >
+    <Path.Fill>
+      <LinearGradientBrush>
+        <LinearGradientBrush.GradientStops>
+          <GradientStopCollection>
+            <GradientStop Color="silver" Offset="0.05"/>
+            <GradientStop Color="#333333" Offset="0.95"/>
+          </GradientStopCollection>
+        </LinearGradientBrush.GradientStops>
+      </LinearGradientBrush>
+    </Path.Fill>
+  </Path>
+  <Path Data="M 150, 15 a 135,135 0 1,0 1,0 z" Fill="black" Opacity="1"/>
+  <Path Data="M 150, 16 a 134,134 0 1,0 1,0 z" Opacity="1">
+    <Path.Fill>
+      <LinearGradientBrush>
+        <LinearGradientBrush.GradientStops>
+          <GradientStopCollection>
+            <GradientStop Color="#333333" Offset="0.05"/>
+            <GradientStop Color="silver" Offset="0.95"/>
+          </GradientStopCollection>
+        </LinearGradientBrush.GradientStops>
+      </LinearGradientBrush>
+    </Path.Fill>
+  </Path>
+  
+  <!-- Clock face -->
+  <Path Data="M 150, 23 a 127,127 0 1,0 1,0 z" Fill="black" Opacity="1"/>
+  <!-- Hour hand -->
+  <Path Data="M -4, 16 l 3 40 3 0 2 -40 z" Fill="white">
+    <Path.RenderTransform>
+      <TransformGroup>
+        <RotateTransform x:Name="hourHandTransform" Angle="180"/>
+        <TranslateTransform X="150.5" Y="145"/>
+      </TransformGroup>
+    </Path.RenderTransform>
+  </Path>
+  
+  <!-- Minute hand -->
+  <Path Data="M -4, 16 l 3 70 3 0 2 -70 z" Fill="white">
+    <Path.RenderTransform>
+      <TransformGroup>
+        <RotateTransform x:Name="minuteHandTransform" Angle="180"/>
+        <TranslateTransform X="150.5" Y="145"/>
+      </TransformGroup>
+    </Path.RenderTransform>
+  </Path>
+  
+  <!-- Second hand -->
+  <Path Data="M -1, 16 l 0 70 2 0 0 -70 z" Fill="red">
+    <Path.RenderTransform>
+      <TransformGroup>
+        <RotateTransform x:Name="secondHandTransform" Angle="180"/>
+        <TranslateTransform X="150.5" Y="145"/>
+      </TransformGroup>
+    </Path.RenderTransform>
+  </Path>
+  
+</Canvas>

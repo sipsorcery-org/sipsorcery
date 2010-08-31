@@ -1,0 +1,66 @@
+﻿<configuration>
+    <system.serviceModel>
+        <bindings>
+            <basicHttpBinding>
+                <binding name="ProvisioningServiceSoap" maxBufferSize="65536"
+                    maxReceivedMessageSize="65536">
+                    <security mode="None" />
+                </binding>
+                <binding name="BasicHttpBinding_IProvisioningService1" maxBufferSize="2147483647"
+                    maxReceivedMessageSize="2147483647">
+                    <security mode="Transport" />
+                </binding>
+                <binding name="BasicHttpBinding_IProvisioningService" maxBufferSize="2147483647"
+                    maxReceivedMessageSize="2147483647">
+                    <security mode="Transport" />
+                </binding>
+                <binding name="BasicHttpBinding_IProvisioningService2" maxBufferSize="2147483647"
+                    maxReceivedMessageSize="2147483647">
+                    <security mode="None" />
+                </binding>
+                <binding name="BasicHttpBinding_INotifications" maxBufferSize="2147483647"
+                    maxReceivedMessageSize="2147483647">
+                    <security mode="None">
+                        <message algorithmSuite="Default" />
+                    </security>
+                </binding>
+            </basicHttpBinding>
+            <customBinding>
+                <binding name="ProvisioningServiceSoap12">
+                    <textMessageEncoding maxReadPoolSize="64" maxWritePoolSize="16"
+                        messageVersion="Soap12" writeEncoding="utf-8">
+                        <readerQuotas maxDepth="32" maxStringContentLength="8192" maxArrayLength="16384"
+                            maxBytesPerRead="4096" maxNameTableCharCount="16384" />
+                    </textMessageEncoding>
+                    <httpTransport manualAddressing="false" maxBufferPoolSize="524288"
+                        maxReceivedMessageSize="65536" allowCookies="false" authenticationScheme="Anonymous"
+                        bypassProxyOnLocal="false" hostNameComparisonMode="StrongWildcard"
+                        keepAliveEnabled="true" maxBufferSize="65536" proxyAuthenticationScheme="Anonymous"
+                        realm="" transferMode="Buffered" unsafeConnectionNtlmAuthentication="false"
+                        useDefaultWebProxy="true" />
+                </binding>
+            </customBinding>
+        </bindings>
+        <client>
+            <endpoint address="http://localhost/provisioning/provisioning.asmx"
+                binding="basicHttpBinding" bindingConfiguration="ProvisioningServiceSoap"
+                contract="SIPSyrup.Provisioning.Services.ProvisioningServiceSoap"
+                name="ProvisioningServiceSoap" />
+            <endpoint address="https://www.sipsorcery.com/provisioning.svc"
+                binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_IProvisioningService1"
+                contract="SIPSorceryProvisioningClient.IProvisioningService"
+                name="BasicHttpBinding_IProvisioningService1" />
+            <endpoint address="https://www.sipsorcery.com/provisioning.svc"
+                binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_IProvisioningService"
+                contract="SIPSorceryProvisioningClient.IProvisioningService"
+                name="BasicHttpBinding_IProvisioningService" />
+            <endpoint address="http://suzannes-pc:8080/notificationspull.svc"
+                binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_INotifications"
+                contract="SIPSorceryNotificationService.INotifications" name="BasicHttpBinding_INotifications" />
+            <endpoint address="http://localhost/Provisioning.svc" binding="basicHttpBinding"
+                bindingConfiguration="BasicHttpBinding_IProvisioningService2"
+                contract="SIPSorceryProvisioningClient.IProvisioningService"
+                name="BasicHttpBinding_IProvisioningService2" />
+        </client>
+    </system.serviceModel>
+</configuration>

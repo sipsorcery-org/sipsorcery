@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+
+FILE_PATH = File.expand_path(File.dirname(__FILE__))
+usage = <<-EOS
+
+Usage: sl [ruby|python|jscript] <application_name>
+  Creates a Silverlight application in the "application_name" directory.
+EOS
+require 'fileutils'
+
+class Generator
+  TEMPLATES_DIR = "#{FILE_PATH}/templates"
+
+  def self.discover_templates
+    Dir["#{TEMPLATES_DIR}/*"].collect { |d| d.split("/").last.to_sym }
+  end
+
+  def initialize(template, name)
+    @name = "#{name}/"
+    @template = "#{TEMPLATES_DIR}/#{template}"
+    @language = template.to_s.capitalize
+    generate
+  end
+
+  def generate
+    if File.directory? @name
+      puts "\nError: '#{@name}' already exists! Application not created."
+    else
+      FileUtils.mkdir @name
+      FileUtils.cp_r @template + "/.", @name
+      puts "\n#{@language} Silverlight application created in '#{@name}' directory."
+    end
+  end
+end
+
+if ARGV.size != 2
+  puts usage
+elsif !Generator.discover_templates.include?(ARGV.first.to_sym)
+  puts "\nError: No templates found for '#{ARGV.first}'."
+else
+  Generator.new ARGV.first, ARGV.last
+end

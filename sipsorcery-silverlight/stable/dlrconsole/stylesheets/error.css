@@ -1,0 +1,114 @@
+div.silverlightDlrErrorReport {
+  font-size: 12px;
+  font-weight: normal;
+  font-family: Consolas, "Courier New", serif;
+  color: black;
+  background-color: white;
+  text-align: left;
+  /*position: absolute;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  background-color: #ccc;*/
+}
+
+div.silverlightDlrErrorReport a,
+div.silverlightDlrErrorReport a:link,
+div.silverlightDlrErrorReport a:visited {
+  padding: 2px;
+  background-color: none;
+  color: black;
+}
+div.silverlightDlrErrorReport a:hover {
+  background-color: black;
+  color: white;
+}
+
+div.silverlightDlrErrorWrapper {
+  overflow: auto;
+  background-color: white;
+
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+
+  border-top: 2px solid black;
+  border-right: 2px solid black;
+  border-left: 2px solid black;
+  margin-bottom: 15px;
+  padding-bottom: 5px;
+}
+
+h2.silverlightDlrErrorMessage {
+  margin: 0px;
+  background-color: black;
+  color: white;
+  padding: 5px;
+  font-size: 18px;
+}
+
+div.silverlightDlrErrorSource {
+  margin: 10px;
+}
+
+div.silverlightDlrErrorSourceFile,
+div.silverlightDlrErrorType {
+  font-weight: bold;
+  font-size: 14px;
+  padding-left: 5px;
+}
+
+code.silverlightDlrErrorSourceCode {
+  color: #ccc;
+  background-color: #222;
+  display: block;
+  padding: 10px;
+}
+
+span.silverlightDlrErrorLine {
+  color: red;
+}
+
+div.silverlightDlrErrorType {
+  border-bottom: 1px solid gray;
+}
+
+code.silverlightDlrErrorStackTrace {
+  display: block;
+  padding: 5px 10px;
+}
+div.silverlightDlrErrorStackTraceLine {
+  border-bottom: 1px solid #bbb;
+}
+
+div.silverlightDlrErrorMenu {
+  background-color: #440000;
+  color: white;
+  font-size: 12px;
+  padding: 5px;
+
+  position: absolute;
+  height: 15px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  margin-top: 15px;
+}
+div.silverlightDlrErrorMenu a,
+div.silverlightDlrErrorMenu a:link,
+div.silverlightDlrErrorMenu a:visited {
+  padding: 2px;
+  background-color: none;
+  color: white;
+}
+div.silverlightDlrErrorMenu a:hover {
+  background-color: white;
+  color: #440000;
+}
+
+div.silverlightDlrErrorMenu, 
+div.silverlightDlrErrorWrapper {
+  position: fixed;
+}
