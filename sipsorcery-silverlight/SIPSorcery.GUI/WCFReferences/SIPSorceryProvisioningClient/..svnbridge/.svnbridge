@@ -1,8 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?><ItemProperties xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><Properties><Property><Name>svn:ignore</Name><Value>Provisioning10.xsd
-Provisioning2.wsdl
-provisioning5.xsd
-Provisioning6.xsd
-Provisioning7.xsd
-Provisioning8.xsd
-Provisioning9.xsd
-</Value></Property></Properties></ItemProperties>
