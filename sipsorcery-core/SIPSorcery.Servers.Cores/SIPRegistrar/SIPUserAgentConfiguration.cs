@@ -53,7 +53,7 @@ namespace SIPSorcery.Servers {
 
     public class SIPUserAgentConfiguration {
 
-        public const int DEFAULT_MAX_EXPIRY_SECONDS = 180;
+        public const int DEFAULT_MAX_EXPIRY_SECONDS = 3600;
 
         public int MaxAllowedExpiryTime = 3600;     // Overrules the default max expiry time the Registrar is using and allows specific user agents to have expirys up to this value.
         public bool ContactListSupported = true;    // If false means the user agent wants only the Contact header it supplied returned in the Ok response.

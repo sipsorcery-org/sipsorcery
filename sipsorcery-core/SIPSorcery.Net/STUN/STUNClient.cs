@@ -23,41 +23,50 @@ namespace SIPSorcery.Net
 
                 logger.Debug("STUNClient attempting to determine public IP from " + stunServer + ".");
 
-                UdpClient udpClient = new UdpClient(stunServer, m_defaultSTUNPort);
-                STUNMessage initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
-                byte[] stunMessageBytes = initMessage.ToByteBuffer();
-                udpClient.Send(stunMessageBytes, stunMessageBytes.Length);
+                using (UdpClient udpClient = new UdpClient(stunServer, m_defaultSTUNPort))
+                {
+                    STUNMessage initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
+                    byte[] stunMessageBytes = initMessage.ToByteBuffer();
+                    udpClient.Send(stunMessageBytes, stunMessageBytes.Length);
 
-                IPAddress publicIPAddress = null;
-                ManualResetEvent gotResponseMRE = new ManualResetEvent(false);
+                    IPAddress publicIPAddress = null;
+                    ManualResetEvent gotResponseMRE = new ManualResetEvent(false);
 
-                 udpClient.BeginReceive((ar) => {          
-                    IPEndPoint stunResponseEndPoint = null;
-                    byte[] stunResponseBuffer = udpClient.EndReceive(ar, ref stunResponseEndPoint);
+                    udpClient.BeginReceive((ar) =>
+                    {
+                        IPEndPoint stunResponseEndPoint = null;
+                        byte[] stunResponseBuffer = udpClient.EndReceive(ar, ref stunResponseEndPoint);
 
-                    if (stunResponseBuffer != null && stunResponseBuffer.Length > 0) {
-                        logger.Debug("STUNClient Response to initial STUN message received from " + stunResponseEndPoint + ".");
-                        STUNMessage stunResponse = STUNMessage.ParseSTUNMessage(stunResponseBuffer, stunResponseBuffer.Length);
+                        if (stunResponseBuffer != null && stunResponseBuffer.Length > 0)
+                        {
+                            logger.Debug("STUNClient Response to initial STUN message received from " + stunResponseEndPoint + ".");
+                            STUNMessage stunResponse = STUNMessage.ParseSTUNMessage(stunResponseBuffer, stunResponseBuffer.Length);
 
-                        if (stunResponse.Attributes.Count > 0) {
-                            foreach (STUNAttribute stunAttribute in stunResponse.Attributes) {
-                                if (stunAttribute.AttributeType == STUNAttributeTypesEnum.MappedAddress) {
-                                     publicIPAddress = ((STUNAddressAttribute)stunAttribute).Address;
-                                    logger.Debug("STUNClient Public IP=" +  publicIPAddress.ToString() + ".");
+                            if (stunResponse.Attributes.Count > 0)
+                            {
+                                foreach (STUNAttribute stunAttribute in stunResponse.Attributes)
+                                {
+                                    if (stunAttribute.AttributeType == STUNAttributeTypesEnum.MappedAddress)
+                                    {
+                                        publicIPAddress = ((STUNAddressAttribute)stunAttribute).Address;
+                                        logger.Debug("STUNClient Public IP=" + publicIPAddress.ToString() + ".");
+                                    }
                                 }
                             }
                         }
-                    }
- 
-                     gotResponseMRE.Set();
-                }, null);
 
-                if(gotResponseMRE.WaitOne(STUN_SERVER_RESPONSE_TIMEOUT * 1000)) {
-                    return publicIPAddress;
-                }
-                else {
-                    logger.Warn("STUNClient server response timedout after " + STUN_SERVER_RESPONSE_TIMEOUT + "s.");
-                    return null;
+                        gotResponseMRE.Set();
+                    }, null);
+
+                    if (gotResponseMRE.WaitOne(STUN_SERVER_RESPONSE_TIMEOUT * 1000))
+                    {
+                        return publicIPAddress;
+                    }
+                    else
+                    {
+                        logger.Warn("STUNClient server response timedout after " + STUN_SERVER_RESPONSE_TIMEOUT + "s.");
+                        return null;
+                    }
                 }
             }
             catch (Exception excp) {

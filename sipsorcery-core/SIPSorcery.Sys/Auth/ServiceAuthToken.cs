@@ -60,10 +60,13 @@ namespace SIPSorcery.Sys.Auth
         {
             string authId = null;
 
-            SIPSorcerySecurityHeader securityheader = SIPSorcerySecurityHeader.ParseHeader(OperationContext.Current);
-            if (securityheader != null)
+            if (OperationContext.Current != null)
             {
-                authId = securityheader.AuthID;
+                SIPSorcerySecurityHeader securityheader = SIPSorcerySecurityHeader.ParseHeader(OperationContext.Current);
+                if (securityheader != null)
+                {
+                    authId = securityheader.AuthID;
+                }
             }
 
             // HTTP Context is available for ?? binding.

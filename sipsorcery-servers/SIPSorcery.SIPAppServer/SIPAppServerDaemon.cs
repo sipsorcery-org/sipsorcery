@@ -352,6 +352,11 @@ namespace SIPSorcery.SIPAppServer
                         }
                         else
                         {
+                            SIPProviderBindingSynchroniser sipProviderBindingSynchroniser = new SIPProviderBindingSynchroniser(m_sipSorceryPersistor.SIPProviderBindingsPersistor);
+                            m_sipSorceryPersistor.SIPProvidersPersistor.Added += sipProviderBindingSynchroniser.SIPProviderAdded;
+                            m_sipSorceryPersistor.SIPProvidersPersistor.Updated += sipProviderBindingSynchroniser.SIPProviderUpdated;
+                            m_sipSorceryPersistor.SIPProvidersPersistor.Deleted += sipProviderBindingSynchroniser.SIPProviderDeleted;
+
                             ProvisioningServiceInstanceProvider instanceProvider = new ProvisioningServiceInstanceProvider(
                                 m_sipSorceryPersistor.SIPAccountsPersistor,
                                 m_sipSorceryPersistor.SIPDialPlanPersistor,
@@ -364,8 +369,7 @@ namespace SIPSorcery.SIPAppServer
                                 m_sipSorceryPersistor.SIPDomainManager,
                                 FireSIPMonitorEvent,
                                 0,
-                                false,
-                                null);
+                                false);
 
                             m_sipProvisioningHost = new ServiceHost(typeof(SIPProvisioningWebService));
                             m_sipProvisioningHost.Description.Behaviors.Add(instanceProvider);

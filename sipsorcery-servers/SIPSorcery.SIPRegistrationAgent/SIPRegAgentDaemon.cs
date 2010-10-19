@@ -72,14 +72,6 @@ namespace SIPSorcery.SIPRegistrationAgent
         {
             m_providerPersistor = providerPersistor;
             m_bindingPersistor = bindingPersistor;
-
-            // The Registration Agent wants to know about any changes to SIP Provider entries in order to update any SIP 
-            // Provider bindings it is maintaining or needs to add or remove.
-            // This is already taken care of in the WCF service instance provisioning provider and is not needed for the standalone registration agent.
-            //SIPProviderBindingSynchroniser sipProviderBindingSynchroniser = new SIPProviderBindingSynchroniser(m_bindingPersistor);
-            //m_providerPersistor.Added += sipProviderBindingSynchroniser.SIPProviderAdded;
-            //m_providerPersistor.Updated += sipProviderBindingSynchroniser.SIPProviderUpdated;
-            //m_providerPersistor.Deleted += sipProviderBindingSynchroniser.SIPProviderDeleted;
         }
 
         public void Start()

@@ -319,7 +319,7 @@ namespace SIPSorcery.Servers
                         else
                         {
                             FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Registrar, "Binding update request for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ", expiry requested " + requestedExpiry + "s granted " + bindingExpiry + "s.", sipAccount.Owner));
-                            binding.RefreshBinding(bindingExpiry, remoteSIPEndPoint, proxySIPEndPoint, registrarSIPEndPoint);
+                            binding.RefreshBinding(bindingExpiry, remoteSIPEndPoint, proxySIPEndPoint, registrarSIPEndPoint, sipAccount.DontMangleEnabled);
 
                             DateTime startTime = DateTime.Now;
                             m_bindingsPersistor.Update(binding);

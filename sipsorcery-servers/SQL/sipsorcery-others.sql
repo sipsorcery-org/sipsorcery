@@ -76,6 +76,7 @@ create table sipaccounts
  ipaddressacl varchar(256),
  inserted varchar(33) not null,
  isswitchboardenabled bit not null default 1,
+ dontmangleenabled bit not null default 0,
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Foreign Key(sipdomain) references sipdomains(domain) on delete cascade on update cascade,
@@ -244,7 +245,8 @@ create index providerbindings_nextregtime_index on sipproviderbindings(nextregis
 create index regbindings_sipaccid_index on sipregistrarbindings(sipaccountid);
 create index regbindings_contact_index on sipregistrarbindings(contacturi);
 
---insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;174.129.236.7;174.129.236.7:5060', null, ‘2010-02-09T13:01:21.3540000+00:00’);
+--insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;174.129.236.7;174.129.236.7:5060', null, '2010-02-09T13:01:21.3540000+00:00');
+-- insert into sipdomains values ('9822C7A7-5358-42DD-8905-DC7ABAE3EC3A', 'demo.sipsorcery.com', 'local;demo.sipsorcery.com:5060;199.230.56.92;199.230.56.92:5060', null, '2010-10-15T00:00:00.0000000+00:00');
 
 -- SIP Sorcery User Data DDL
 

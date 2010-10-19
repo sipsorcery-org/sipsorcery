@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: SIPSOrceryAuthenticatedService.cs
+// Filename: SIPSorceryAuthenticatedService.cs
 //
 // Description: This class servces as a base class for higher level services that
 // require authentication.
@@ -88,12 +88,20 @@ namespace SIPSorcery.Web.Services
             else
             {
                 string ipAddress = null;
-                OperationContext context = OperationContext.Current;
-                MessageProperties properties = context.IncomingMessageProperties;
-                RemoteEndpointMessageProperty endpoint = properties[RemoteEndpointMessageProperty.Name] as RemoteEndpointMessageProperty;
-                if (endpoint != null)
+
+                if (OperationContext.Current != null)
                 {
-                    ipAddress = endpoint.Address;
+                    OperationContext context = OperationContext.Current;
+                    MessageProperties properties = context.IncomingMessageProperties;
+                    RemoteEndpointMessageProperty endpoint = properties[RemoteEndpointMessageProperty.Name] as RemoteEndpointMessageProperty;
+                    if (endpoint != null)
+                    {
+                        ipAddress = endpoint.Address;
+                    }
+                }
+                else if (HttpContext.Current != null)
+                {
+                    ipAddress = HttpContext.Current.Request.UserHostAddress;
                 }
 
                 CustomerSession customerSession = CRMSessionManager.Authenticate(username, password, ipAddress);

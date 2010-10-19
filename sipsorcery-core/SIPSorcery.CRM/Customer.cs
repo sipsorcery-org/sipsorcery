@@ -60,12 +60,12 @@ namespace SIPSorcery.CRM
         public const string TOPLEVEL_ADMIN_ID = "*";                    // If a customer record has their AdminId set to this value they are in charge!
         public const int DEFAULT_MAXIMUM_EXECUTION_COUNT = 5;           // The default value for the maximum allowed simultaneous executions of all the customer's dial plans.
         
-        private const int MAX_FIELD_LENGTH = 64;
-        private const int MIN_USERNAME_LENGTH = 5;
-        private const int MAX_USERNAME_LENGTH = 20;
-        private const int MIN_PASSWORD_LENGTH = 6;
-        private const int MAX_PASSWORD_LENGTH = 20;
-        private const int MAX_WEBSITE_FIELD_LENGTH = 256;
+        public const int MAX_FIELD_LENGTH = 64;
+        public const int MIN_USERNAME_LENGTH = 5;
+        public const int MAX_USERNAME_LENGTH = 20;
+        public const int MIN_PASSWORD_LENGTH = 6;
+        public const int MAX_PASSWORD_LENGTH = 20;
+        public const int MAX_WEBSITE_FIELD_LENGTH = 256;
         
         public static readonly string USERNAME_ALLOWED_CHARS = @"a-zA-Z0-9_\-";     // The '.' character is not allowed in customer usernames in order to support a domain like structure for SIP account usernames.
 

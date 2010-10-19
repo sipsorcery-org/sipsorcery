@@ -60,6 +60,9 @@ using log4net;
 using agsXMPP;
 using agsXMPP.protocol;
 using agsXMPP.protocol.client;
+using GaDotNet.Common.Data;
+using GaDotNet.Common.Helpers;
+using GaDotNet.Common;
 
 #if UNITTEST
 using NUnit.Framework;
@@ -497,6 +500,10 @@ namespace SIPSorcery.AppServer.DialPlan
 
                                 // Dial plan script stops once there is an answered call to bridge to or the client call is cancelled.
                                 Log("Dial command was successfully answered in " + DateTime.Now.Subtract(startTime).TotalSeconds.ToString("0.00") + "s.");
+
+                                // Do some Google Analytics call tracking.
+                                SendGoogleAnalyticsEvent("Call", "Answered", answeredDialogue.RemoteUserField.URI.Host, 1);
+
                                 m_executingScript.StopExecution();
                             }
                         }
@@ -1830,6 +1837,24 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 logger.Error("Exception IsAppAuthorised. " + excp.Message);
                 return false;
+            }
+        }
+
+        private void SendGoogleAnalyticsEvent(string category, string action, string label, int? value)
+        {
+            try
+            {
+                GoogleEvent googleEvent = new GoogleEvent("www.sipsorcery.com",
+                    category,
+                    action,
+                    label,
+                    value);
+                TrackingRequest request = new RequestFactory().BuildRequest(googleEvent);
+                ThreadPool.QueueUserWorkItem(delegate { GoogleTracking.FireTrackingEvent(request); });
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SendGoogleAnalyticsEvent. " + excp.Message);
             }
         }
 

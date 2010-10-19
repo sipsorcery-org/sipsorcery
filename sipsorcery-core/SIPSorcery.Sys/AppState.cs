@@ -242,7 +242,7 @@ namespace SIPSorcery.Sys
                     string encryptedSettingsCertName = ConfigurationManager.AppSettings[ENCRYPTED_SETTINGS_CERTIFICATE_NAME];
                     if (!encryptedSettingsCertName.IsNullOrBlank())
                     {
-                        X509Certificate2 encryptedSettingsCertificate = LoadCertificate(StoreLocation.LocalMachine, encryptedSettingsCertName, true);
+                        X509Certificate2 encryptedSettingsCertificate = LoadCertificate(StoreLocation.LocalMachine, encryptedSettingsCertName, false);
                         if (encryptedSettingsCertificate != null)
                         {
                             logger.Debug("Encrypted settings certificate successfully loaded for " + encryptedSettingsCertName + ".");

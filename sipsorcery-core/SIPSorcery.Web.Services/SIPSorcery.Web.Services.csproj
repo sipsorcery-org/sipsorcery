@@ -105,6 +105,7 @@
     <Compile Include="CrossDomainWebService.cs" />
     <Compile Include="Provisioning\IProvisioningService.cs" />
     <Compile Include="Provisioning\IProvisioningServiceREST.cs" />
+    <Compile Include="Provisioning\ProvisioningServiceFactory.cs" />
     <Compile Include="Provisioning\ProvisioningServiceInstanceProvider.cs" />
     <Compile Include="Notifications\SIPNotifierService.svc.cs">
       <DependentUpon>SIPNotifierService.svc</DependentUpon>

@@ -79,6 +79,7 @@ create table sipaccounts
  ipaddressacl varchar(256),
  inserted datetimeoffset not null,
  isswitchboardenabled bit not null default 1,
+ dontmangleenabled bit not null default 0,
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Foreign Key(sipdomain) references sipdomains(domain) on delete cascade on update cascade,

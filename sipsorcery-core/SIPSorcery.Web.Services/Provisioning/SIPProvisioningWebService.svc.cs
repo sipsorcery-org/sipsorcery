@@ -62,16 +62,15 @@ namespace SIPSorcery.Web.Services
     public class SIPProvisioningWebService : SIPSorceryAuthorisationService, IProvisioningService, IProvisioningServiceREST
     {
         private const string NEW_ACCOUNT_EMAIL_FROM_ADDRESS = "admin@sipsorcery.com";
-        private const string NEW_ACCOUNT_EMAIL_SUBJECT = "SIPSorcery Account Confirmation";
+        private const string NEW_ACCOUNT_EMAIL_SUBJECT = "SIP Sorcery Account Confirmation";
 
         private const string NEW_ACCOUNT_EMAIL_BODY =
             "Hi {0},\r\n\r\n" +
-            "This is your automated SIPSorcery new account confirmation email.\r\n\r\n" +
+            "This is your automated SIP Sorcery new account confirmation email.\r\n\r\n" +
             "To confirm your account please visit the link below. If you did not request this email please ignore it.\r\n\r\n" +
-            //"http://www.sipsorcery.com/customer/confirm/{1}\r\n\r\n" +
             "http://www.sipsorcery.com/customerconfirm.aspx?id={1}\r\n\r\n" +
             "Regards,\r\n\r\n" +
-            "SIPSorcery";
+            "SIP Sorcery";
 
         private ILog logger = AppState.GetLogger("provisioning");
 
@@ -87,9 +86,6 @@ namespace SIPSorcery.Web.Services
 
         private int m_newCustomersAllowedLimit;
         private bool m_inviteCodeRequired;
-        private List<string> m_inviteCodes;
-
-        //public SIPProvisioningWebService() { }
 
         public SIPProvisioningWebService(
             SIPAssetPersistor<SIPAccount> sipAccountPersistor,
@@ -103,8 +99,7 @@ namespace SIPSorcery.Web.Services
             SIPDomainManager sipDomainManager,
             SIPMonitorLogDelegate log,
             int newCustomersAllowedLimit,
-            bool inviteCodeRequired,
-            List<string> inviteCodes) :
+            bool inviteCodeRequired) :
             base(crmSessionManager)
         {
             SIPAccountPersistor = sipAccountPersistor;
@@ -118,7 +113,6 @@ namespace SIPSorcery.Web.Services
             LogDelegate_External = log;
             m_newCustomersAllowedLimit = newCustomersAllowedLimit;
             m_inviteCodeRequired = inviteCodeRequired;
-            m_inviteCodes = inviteCodes;
         }
 
         private string GetAuthorisedWhereExpression(Customer customer, string whereExpression)
@@ -191,54 +185,21 @@ namespace SIPSorcery.Web.Services
             return m_newCustomersAllowedLimit == 0 || CRMCustomerPersistor.Count(c => !c.Suspended) < m_newCustomersAllowedLimit;
         }
 
-        public string CheckInviteCode(string inviteCode)
-        {
-            logger.Debug("CheckInviteCode called from " + OperationContext.Current.Channel.RemoteAddress + ".");
-
-            if (inviteCode.IsNullOrBlank())
-            {
-                return "No invite code was specified";
-            }
-
-            if (m_inviteCodes == null || !m_inviteCodes.Contains(inviteCode))
-            {
-                return "The invite code was not recognised.";
-            }
-
-            // The invite code is valid, check that it hasn't already been used to create a new account.
-            if (CRMCustomerPersistor.Count(c => c.InviteCode == inviteCode) > 0)
-            {
-                return "The invite code has already been used.";
-            }
-
-            return null;
-        }
-
         public void CreateCustomer(Customer customer)
         {
             try
             {
-                // Check whether the number of customers is within the allowed limit.
-                if (customer.InviteCode == null && m_newCustomersAllowedLimit != 0 && CRMCustomerPersistor.Count(null) >= m_newCustomersAllowedLimit)
+                if (m_inviteCodeRequired && customer.InviteCode == null)
                 {
+                    throw new ApplicationException("Sorry new account creations currently require an invite code, please see http://sipsorcery.wordpress.com/new-accounts/.");
+                }
+                else if (m_newCustomersAllowedLimit != 0 && CRMCustomerPersistor.Count(null) >= m_newCustomersAllowedLimit)
+                {
+                    // Check whether the number of customers is within the allowed limit.
                     throw new ApplicationException("Sorry new account creations are currently disabled, please see http://sipsorcery.wordpress.com/new-accounts/.");
                 }
                 else
                 {
-                    // If an invite code is specified check whether it's valid.
-                    if(!customer.InviteCode.IsNullOrBlank())
-                    {
-                        string inviteCodeError = CheckInviteCode(customer.InviteCode);
-                        if (inviteCodeError != null)
-                        {
-                            throw new ApplicationException(inviteCodeError);
-                        }
-                    }
-                    else if (m_inviteCodeRequired)
-                    {
-                        throw new ApplicationException("New accounts can only be created with an invite code, please see http://sipsorcery.wordpress.com/new-accounts/.");
-                    }
-
                     // Check whether the username is already taken.
                     customer.CustomerUsername = customer.CustomerUsername.ToLower();
                     Customer existingCustomer = CRMCustomerPersistor.Get(c => c.CustomerUsername == customer.CustomerUsername);
