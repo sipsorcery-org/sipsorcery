@@ -100,160 +100,19 @@ using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
 using log4net;
 
-#if UNITTEST
-using NUnit.Framework;
-#endif
-
 namespace SIPSorcery.Net
 {
-	public enum SDPMediaTypesEnum
-	{
-		audio = 1,
-		video = 2,
-		application = 3,
-		data = 4,
-		control = 5,
-	}
-
-    public class SDPMediaTypes
-    {
-        public static SDPMediaTypesEnum GetSDPMediaType(string mediaType)
-        {
-            return (SDPMediaTypesEnum)Enum.Parse(typeof(SDPMediaTypesEnum), mediaType, true);
-        }
-    }
-
-	public enum SDPMediaFormatTypesEnum
-	{
-		PCMU = 0,
-		GSM = 3,
-		PCMA = 8,
-		G723 = 96,
-	}
-
-	public class SDPMediaFormatAttributes
-	{	
-		private static Dictionary<string, string> m_formatAttributes = new Dictionary<string,string>();
-
-		static SDPMediaFormatAttributes()
-		{
-			m_formatAttributes.Add("PCMU", "a=rtpmap:0 PCMU/8000");
-			m_formatAttributes.Add("GSM", "a=rtpmap:3 GSM/8000");
-			m_formatAttributes.Add("PCMA", "a=rtpmap:8 PCMA/8000");
-			m_formatAttributes.Add("G723", "a=rtpmap:96 G723/8000");
-		}
-
-		public static string GetFormatAttribute(SDPMediaFormatTypesEnum mediaType)
-		{
-			//int mediaTypeInt = (int)mediaType;
-
-			try
-			{
-				return m_formatAttributes[mediaType.ToString()] as string;
-			}
-			catch
-			{
-				return null;
-			}
-		}
-	}
-
-	public class MediaAnnouncement
-	{
-		// Connection Data fields (one for each media stream).
-		public const string m_CRLF = "\r\n";
-		public string ConnectionNetworkType = "IN";		// Type of network, IN = Internet.
-		public string ConnectionAddressType = "IP4";	// Address type, typically IP4 or IP6.
-		public string ConnectionAddress;				// IP or mulitcast address for the media connection.
-		
-		// Media Announcement fields.
-		public SDPMediaTypesEnum Media = SDPMediaTypesEnum.audio;	// Media type for the stream.
-		public int Port;						// For UDP transports should be in the range 1024 to 65535 and for RTP compliance should be even (only even ports used for data).
-		public string Transport = "RTP/AVP";	// Defined types RTP/AVP (RTP Audio Visual Profile) and udp.
-		public string FormatList;				// For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
-
-        public List<SDPMediaFormatTypesEnum> MediaFormats = new List<SDPMediaFormatTypesEnum>();
-
-        public MediaAnnouncement()
-        { }
-
-		public MediaAnnouncement(string address, int port)
-		{
-			ConnectionAddress = address;
-			Port = port;
-		}
-
-        public override string ToString()
-        {
-            string announcement =
-                "c=" + ConnectionNetworkType + " " + ConnectionAddressType + " " + ConnectionAddress + m_CRLF +
-                "m=" + Media + " " + Port + " " + Transport + " " + FormatList + m_CRLF;
-                
-            /*GetFormatListAttributesToString();
-
-            foreach (string attribute in MediaFormats)
-            {
-                announcement += (attribute == null) ? null : "a=" + attribute + m_CRLF;
-            }*/
-
-            return announcement;
-        }
-
-        public void AddMediaFormats(SDPMediaFormatTypesEnum[] mediaFormats)
-        {
-            foreach (SDPMediaFormatTypesEnum mediaFormat in mediaFormats)
-            {
-                MediaFormats.Add(mediaFormat);
-            }
-        }
-
-		public string GetFormatListToString()
-		{
-			string formatString = null;
-
-			if(MediaFormats != null)
-			{
-				foreach(SDPMediaFormatTypesEnum mediaFormat in MediaFormats)
-				{
-					int mediaFormatInt = (int)mediaFormat;
-					formatString += " " + mediaFormatInt;
-				}
-			}
-
-			return formatString;
-		}
-
-		public string GetFormatListAttributesToString()
-		{
-			string formatAttributes = null;
-			
-			if(MediaFormats != null)
-			{
-				foreach(SDPMediaFormatTypesEnum mediaFormat in MediaFormats)
-				{
-					string formatAttribute = SDPMediaFormatAttributes.GetFormatAttribute(mediaFormat);
-
-					if(formatAttribute != null)
-					{
-						formatAttributes += formatAttribute + m_CRLF;
-					}
-				}
-			}
-
-			return formatAttributes;
-		}
-
-	}
-	
 	public class SDP
 	{		
-		public const string m_CRLF = "\r\n";
+		public const string CRLF = "\r\n";
 		public const string SDP_MIME_CONTENTTYPE = "application/sdp";
-		public const int SDP_PROTOCOL_VERSION = 0;
+		public const decimal SDP_PROTOCOL_VERSION = 0M;
+        public const string ICE_UFRAG_ATTRIBUTE_PREFIX = "ice-ufrag";
+        public const string ICE_PWD_ATTRIBUTE_PREFIX = "ice-pwd";
 
         private static ILog logger = AppState.logger;
 
-        public int Version = SDP_PROTOCOL_VERSION;
+        public decimal Version = SDP_PROTOCOL_VERSION;
 
 		// Owner fields.
 		public string Username = "-";		// Username of the session originator.
@@ -275,11 +134,15 @@ namespace SIPSorcery.Net
 		public string URI;							// URI for additional information about the session.
 		public string[] OriginatorEmailAddresses;	// Email addresses for the person responsible for the session.
 		public string[] OriginatorPhoneNumbers;		// Phone numbers for the person responsible for the session.
+        public string IceUfrag;                     // If ICE is being used the username for the STUN requests.
+        public string IcePwd;                       // If ICE is being used the password for the STUN requests.
+
+        public SDPConnectionInformation Connection;
 
 		// Media.
-        public List<MediaAnnouncement> Media = new List<MediaAnnouncement>();
+        public List<SDPMediaAnnouncement> Media = new List<SDPMediaAnnouncement>();
 
-        private List<string> ExtraAttributes = new List<string>();  // Attributes that were note recognised.
+        public List<string> ExtraAttributes = new List<string>();  // Attributes that were not recognised.
 	
 		public SDP()
 		{}
@@ -289,20 +152,6 @@ namespace SIPSorcery.Net
 			Address = address;
 		}
 
-		public SDP(IPEndPoint clientEndPoint, string username, int netTestPktSize, int netTestFrameSize, int netTestNumChannels)
-		{
-			Address = clientEndPoint.Address.ToString();
-			AddMedia(clientEndPoint.Address.ToString(), clientEndPoint.Port);
-			Username = username;
-				
-			//SDPMediaFormatTypesEnum[] mediaFormats = new SDPMediaFormatTypesEnum[]{SDPMediaFormatTypesEnum.PCMU, SDPMediaFormatTypesEnum.GSM};
-			//SDPMediaFormatTypesEnum[] mediaFormats = new SDPMediaFormatTypesEnum[]{SDPMediaFormatTypesEnum.PCMA};
-			//AddMediaFormats(mediaFormats);
-
-			string extraAttribute = "bfnettest: pktsize=" + netTestPktSize + ",framesize=" + netTestFrameSize + ",channels=" + netTestNumChannels;
-            ExtraAttributes.Add(extraAttribute);
-		}
-
 		public static SDP ParseSDPDescription(string sdpDescription)
 		{
             try
@@ -310,17 +159,17 @@ namespace SIPSorcery.Net
                 if (sdpDescription != null && sdpDescription.Trim().Length > 0)
                 {
                     SDP sdp = new SDP();
-                    MediaAnnouncement media = new MediaAnnouncement();
+                    SDPMediaAnnouncement media = new SDPMediaAnnouncement();
 
-                    string[] sdpLines = Regex.Split(sdpDescription, m_CRLF);
+                    string[] sdpLines = Regex.Split(sdpDescription, CRLF);
 
                     foreach (string sdpLine in sdpLines)
                     {
                         if (sdpLine.Trim().StartsWith("v="))
                         {
-                            if(!Int32.TryParse(sdpLine.Substring(2), out sdp.Version))
+                            if(!Decimal.TryParse(sdpLine.Substring(2), out sdp.Version))
                             {
-                                logger.Warn("The Version value in an SDP description could not be parsed as an Int32: " + sdpLine + ".");
+                                logger.Warn("The Version value in an SDP description could not be parsed as a decimal: " + sdpLine + ".");
                             }
                         }
                         else if (sdpLine.Trim().StartsWith("o="))
@@ -339,10 +188,7 @@ namespace SIPSorcery.Net
                         }
                         else if (sdpLine.Trim().StartsWith("c="))
                         {
-                            string[] connectionFields = sdpLine.Substring(2).Trim().Split(' ');
-                            media.ConnectionNetworkType = connectionFields[0].Trim();
-                            media.ConnectionAddressType = connectionFields[1].Trim();
-                            media.ConnectionAddress = connectionFields[2].Trim();
+                            sdp.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLine);
                         }
                         else if (sdpLine.Trim().StartsWith("t="))
                         {
@@ -350,23 +196,45 @@ namespace SIPSorcery.Net
                         }
                         else if (sdpLine.Trim().StartsWith("m="))
                         {
-                            /*string[] mediaFields = sdpLine.Substring(2).Trim().Split(new char[]{' '}, 4, StringSplitOptions.None);
-                            media.Media = SDPMediaTypes.GetSDPMediaType(mediaFields[0]);
-                            Int32.TryParse(mediaFields[1], out media.Port);
-                            media.Transport = mediaFields[2];
-                            media.FormatList = mediaFields[3].Trim();*/
-
                             Match mediaMatch = Regex.Match(sdpLine.Substring(2).Trim(), @"(?<type>\w+)\s+(?<port>\d+)\s+(?<transport>\S+)\s+(?<formats>.*)$");
                             if (mediaMatch.Success)
                             {
                                 media.Media = SDPMediaTypes.GetSDPMediaType(mediaMatch.Result("${type}"));
                                 Int32.TryParse(mediaMatch.Result("${port}"), out media.Port);
                                 media.Transport = mediaMatch.Result("${transport}");
-                                media.FormatList = mediaMatch.Result("${formats}");
+                                media.ParseMediaFormats(mediaMatch.Result("${formats}"));
                             }
                             else
                             {
                                 logger.Warn("A media line in SDP was invalid: " + sdpLine.Substring(2) + ".");
+                            }
+                        }
+                        else if (sdpLine.Trim().StartsWith("a=" + ICE_UFRAG_ATTRIBUTE_PREFIX))
+                        {
+                            sdp.IceUfrag = sdpLine.Substring(sdpLine.IndexOf(':') + 1);
+                        }
+                        else if (sdpLine.Trim().StartsWith("a=" + ICE_PWD_ATTRIBUTE_PREFIX))
+                        {
+                            sdp.IcePwd = sdpLine.Substring(sdpLine.IndexOf(':') + 1);
+                        }
+                        else if (sdpLine.Trim().StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX))
+                        {
+                            Match formatAttributeMatch = Regex.Match(sdpLine.Trim(), SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
+                            if (formatAttributeMatch.Success)
+                            {
+                                int formatID;
+                                if (Int32.TryParse(formatAttributeMatch.Result("${id}"), out formatID))
+                                {
+                                    media.AddFormatAttribute(formatID, formatAttributeMatch.Result("${attribute}"));
+                                }
+                                else
+                                {
+                                    logger.Warn("Invalid media format attribute in SDP: " + sdpLine);
+                                }
+                            }
+                            else
+                            {
+                                sdp.ExtraAttributes.Add(sdpLine);
                             }
                         }
                         else
@@ -390,14 +258,6 @@ namespace SIPSorcery.Net
             }
 		}
 
-        public MediaAnnouncement AddMedia(string address, int port)
-		{
-			MediaAnnouncement announcement = new MediaAnnouncement(address, port);	
-			Media.Add(announcement);
-
-            return announcement;
-		}
-
 		public void AddExtra(string attribute)
 		{
             ExtraAttributes.Add(attribute);
@@ -406,19 +266,22 @@ namespace SIPSorcery.Net
         public override string ToString()
         {
             string sdp =
-                "v=" + SDP_PROTOCOL_VERSION + m_CRLF +
-                "o=" + Owner + m_CRLF +
-                "s=" + SessionName + m_CRLF +
-                "t=" + Timing + m_CRLF;
+                "v=" + SDP_PROTOCOL_VERSION + CRLF +
+                "o=" + Owner + CRLF +
+                "s=" + SessionName + CRLF +
+                ((Connection != null) ? Connection.ToString() : null) +
+                "t=" + Timing + CRLF;
 
-            sdp += (SessionDescription == null) ? null : "i=" + SessionDescription + m_CRLF;
-            sdp += (URI == null) ? null : "u=" + URI + m_CRLF;
+            sdp += (IceUfrag != null) ? "a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + CRLF : null;
+            sdp += (IcePwd != null) ? "a=" + ICE_PWD_ATTRIBUTE_PREFIX + ":" + IcePwd + CRLF : null;
+            sdp += (SessionDescription == null) ? null : "i=" + SessionDescription + CRLF;
+            sdp += (URI == null) ? null : "u=" + URI + CRLF;
 
             if (OriginatorEmailAddresses != null && OriginatorEmailAddresses.Length > 0)
             {
                 foreach (string originatorAddress in OriginatorEmailAddresses)
                 {
-                    sdp += (originatorAddress == null) ? null : "e=" + originatorAddress + m_CRLF;
+                    sdp += (originatorAddress == null) ? null : "e=" + originatorAddress + CRLF;
                 }
             }
 
@@ -426,18 +289,18 @@ namespace SIPSorcery.Net
             {
                 foreach (string originatorNumber in OriginatorPhoneNumbers)
                 {
-                    sdp += (originatorNumber == null) ? null : "p=" + originatorNumber + m_CRLF;
+                    sdp += (originatorNumber == null) ? null : "p=" + originatorNumber + CRLF;
                 }
             }
 
-            foreach (MediaAnnouncement media in Media)
+            foreach (SDPMediaAnnouncement media in Media)
             {
                 sdp += (media == null) ? null : media.ToString();
             }
 
             foreach (string extra in ExtraAttributes)
             {
-                sdp += (extra == null) ? null : extra + m_CRLF; ;
+                sdp += (extra == null) ? null : extra + CRLF; ;
             }
 
             return sdp;
@@ -452,106 +315,5 @@ namespace SIPSorcery.Net
 	
 			return serverEndPoint;
 		}
-
-		public void AddNetTestAttribute(int pktSize, int pktSpacing)
-		{
-			string extraAttribute = "bfnettest: pktsize=" + pktSize + " pktspace=" + pktSpacing;
-            ExtraAttributes.Add(extraAttribute);
-		}
-
-		public int GetNetTestPktSize(string sdpMessage)
-		{
-			try
-			{
-				int netTestPktSize = Convert.ToInt32(Regex.Match(sdpMessage, @"bfnettest:.*pktsize=(?<size>\d+)", RegexOptions.Singleline).Result("${size}"));
-				return netTestPktSize;
-			}
-			catch
-			{
-				return 160;
-			}
-		}
-
-		public int GetNetTestFrameSize(string sdpMessage)
-		{
-			try
-			{
-				int netTestPktSpacing = Convert.ToInt32(Regex.Match(sdpMessage, @"bfnettest:.*framesize=(?<space>\d+)", RegexOptions.Singleline).Result("${space}"));
-				return netTestPktSpacing;
-			}
-			catch
-			{
-				return 15;
-			}
-		}
-
-		public int GetNetTestChannels(string sdpMessage)
-		{
-			try
-			{
-				int netTestPktSpacing = Convert.ToInt32(Regex.Match(sdpMessage, @"bfnettest:.*channels=(?<space>\d+)", RegexOptions.Singleline).Result("${space}"));
-				return netTestPktSpacing;
-			}
-			catch
-			{
-				return 1;
-			}
-		}
-
-		#region Unit testing.
-
-		#if UNITTEST
-	
-		[TestFixture]
-		public class SDPMessageUnitTest
-		{
-			[TestFixtureSetUp]
-			public void Init()
-			{}
-
-			[TestFixtureTearDown]
-			public void Dispose()
-			{}
-
-			[Test]
-			public void SampleTest()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);	
-				Assert.IsTrue(true, "True was false.");
-			}
-
-            [Test]
-            public void SDPParseUnitTest()
-            {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                string sdpStr =
-                    "v=0" + m_CRLF +
-                    "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                    "s=session" + m_CRLF +
-                    "c=IN IP4 10.0.0.4" + m_CRLF +
-                    "t=0 0" + m_CRLF +
-                    "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
-                    "a=rtpmap:0 PCMU/8000" + m_CRLF +
-                    "a=rtpmap:101 telephone-event/8000" + m_CRLF +
-                    "a=fmtp:101 0-16" + m_CRLF +
-                    "a=silenceSupp:off - - - -" + m_CRLF +
-                    "a=ptime:20" + m_CRLF +
-                    "a=sendrecv";
-
-                SDP sdp = SDP.ParseSDPDescription(sdpStr);
-
-                Console.WriteLine(sdp.ToString());
-
-                Assert.IsTrue(sdp.Media[0].ConnectionAddress == "10.0.0.4", "The connection address was not parsed correctly.");
-                Assert.IsTrue(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
-                Assert.IsTrue(sdp.Media[0].Port == 12228, "The connection port was not parsed correctly.");
-                Assert.IsTrue(sdp.Media[0].FormatList == "0 101", "The media format list was incorrect.");
-            }
-		}
-
-		#endif
-
-		#endregion
 	}
 }

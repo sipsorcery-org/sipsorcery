@@ -46,6 +46,7 @@ namespace SIPSorcery.SIP
     {
         private const string CERTIFICATE_PATH_PARAMETER = "certificatepath";
         private const string CERTIFICATE_TYPE_PARAMETER = "certificatetype";    // Can be file or store, defaults to store.
+        private const string CERTIFICATE_KEY_PASSWORD_PARAMETER = "certificatekeypassword";
         private const string SIP_PROTOCOL_PARAMETER = "protocol";
 
         private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
@@ -106,8 +107,9 @@ namespace SIPSorcery.SIP
                                 }
 
                                 string certificatePath = (sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_PATH_PARAMETER) != null) ? sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_PATH_PARAMETER).Value : null;
+                                string certificateKeyPassword = (sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_KEY_PASSWORD_PARAMETER) != null) ? sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_KEY_PASSWORD_PARAMETER).Value : String.Empty;
                                 logger.Debug(" attempting to create SIP TLS channel for " + sipEndPoint.GetIPEndPoint() + " and certificate type of " + certificateType + " at " + certificatePath + ".");
-                                X509Certificate2 certificate = LoadCertificate(certificateType, certificatePath);
+                                X509Certificate2 certificate = LoadCertificate(certificateType, certificatePath, certificateKeyPassword);
                                 if (certificate != null)
                                 {
                                     SIPTLSChannel tlsChannel = new SIPTLSChannel(certificate, sipEndPoint.GetIPEndPoint());
@@ -134,14 +136,14 @@ namespace SIPSorcery.SIP
             return sipChannels;
         }
 
-        private static X509Certificate2 LoadCertificate(string certificateType, string certifcateLocation)
+        private static X509Certificate2 LoadCertificate(string certificateType, string certifcateLocation, string certKeyPassword)
         {
             try
             {
 
                 if (certificateType == "file")
                 {
-                    X509Certificate2 serverCertificate = new X509Certificate2(certifcateLocation, String.Empty);
+                    X509Certificate2 serverCertificate = new X509Certificate2(certifcateLocation, certKeyPassword);
                     //DisplayCertificateChain(m_serverCertificate);
                     bool verifyCert = serverCertificate.Verify();
                     logger.Debug("Server Certificate loaded from file, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");

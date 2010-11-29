@@ -135,6 +135,7 @@
     <Compile Include="Auth\ServiceAuthToken.cs" />
     <Compile Include="Auth\SIPSorcerySecurityHeader.cs" />
     <Compile Include="AzureTraceAppender.cs" />
+    <Compile Include="CRC32.cs" />
     <Compile Include="SIPSorceryConfiguration.cs" />
     <Compile Include="Net\ByteBufferInfo.cs">
       <SubType>Code</SubType>

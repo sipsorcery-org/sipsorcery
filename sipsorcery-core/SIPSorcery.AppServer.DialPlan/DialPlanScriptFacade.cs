@@ -502,7 +502,10 @@ namespace SIPSorcery.AppServer.DialPlan
                                 Log("Dial command was successfully answered in " + DateTime.Now.Subtract(startTime).TotalSeconds.ToString("0.00") + "s.");
 
                                 // Do some Google Analytics call tracking.
-                                SendGoogleAnalyticsEvent("Call", "Answered", answeredDialogue.RemoteUserField.URI.Host, 1);
+                                if (answeredDialogue.RemoteUserField != null)
+                                {
+                                    SendGoogleAnalyticsEvent("Call", "Answered", answeredDialogue.RemoteUserField.URI.Host, 1);
+                                }
 
                                 m_executingScript.StopExecution();
                             }

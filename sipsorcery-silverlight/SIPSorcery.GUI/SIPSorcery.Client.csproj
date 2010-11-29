@@ -73,6 +73,18 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite.wsdl" />
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite1.wsdl" />
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite2.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInviteService.wsdl" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\SIPProvisioningWebService1.wsdl" />
     <Reference Include="mscorlib" />
     <Reference Include="SIPSorcery.Net, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -236,6 +248,11 @@
     <Compile Include="UserInterface\NewAccountInviteControl.xaml.cs">
       <DependentUpon>NewAccountInviteControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="WCFReferences\SIPSorceryInvite\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Compile>
     <Compile Include="WCFReferences\SIPSorceryNotificationService\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -302,6 +319,13 @@
     <WCFMetadata Include="WCFReferences\" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="WCFReferences\SIPSorceryInvite\Reference.svcmap">
+      <Generator>WCF Proxy Generator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
+    <None Include="WCFReferences\SIPSorceryInvite\configuration.svcinfo" />
+    <None Include="WCFReferences\SIPSorceryInvite\configuration91.svcinfo" />
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite.disco" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning1.disco" />
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull.disco" />
     <Resource Include="Images\wizard-logo.png" />
@@ -396,6 +420,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <WCFMetadataStorage Include="WCFReferences\SIPSorceryInvite\" />
     <WCFMetadataStorage Include="WCFReferences\SIPSorceryNotificationService\" />
     <WCFMetadataStorage Include="WCFReferences\SIPSorceryProvisioningClient\" />
   </ItemGroup>

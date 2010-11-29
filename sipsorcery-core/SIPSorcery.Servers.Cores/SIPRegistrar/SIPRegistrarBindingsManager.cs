@@ -223,15 +223,15 @@ namespace SIPSorcery.Servers
         /// <param name="registrarEndPoint">The registrar end point the registration request was received on.</param>
         /// <param name="maxAllowedExpiry">The maximum allowed expiry that can be granted to this binding request.</param>
         /// <returns>If the binding update was successful the expiry time for it is returned otherwise 0.</returns>
-        public List<SIPRegistrarBinding> UpdateBinding(
+        public List<SIPRegistrarBinding> UpdateBindings(
             SIPAccount sipAccount,
             SIPEndPoint proxySIPEndPoint,
             SIPEndPoint remoteSIPEndPoint,
             SIPEndPoint registrarSIPEndPoint,
-            SIPURI bindingURI,
+            List<SIPContactHeader> contactHeaders,
             string callId,
             int cseq,
-            int contactHeaderExpiresValue,
+            //int contactHeaderExpiresValue,
             int expiresHeaderValue,
             string userAgent,
             out SIPResponseStatusCodesEnum responseStatus,
@@ -239,10 +239,10 @@ namespace SIPSorcery.Servers
         {
             //logger.Debug("UpdateBinding " + bindingURI.ToString() + ".");
 
-            int bindingExpiry = 0;
             int maxAllowedExpiry = m_userAgentConfigs.GetMaxAllowedExpiry(userAgent);
             responseMessage = null;
             string sipAccountAOR = sipAccount.SIPUsername + "@" + sipAccount.SIPDomain;
+            responseStatus = SIPResponseStatusCodesEnum.Ok;
 
             try
             {
@@ -250,133 +250,148 @@ namespace SIPSorcery.Servers
 
                 List<SIPRegistrarBinding> bindings = m_bindingsPersistor.Get(b => b.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
 
-                if (bindingURI.Host == m_sipRegisterRemoveAll)
+                foreach (SIPContactHeader contactHeader in contactHeaders)
                 {
-                    #region Process remove all bindings.
+                    SIPURI bindingURI = contactHeader.ContactURI.CopyOf();
+                    int contactHeaderExpiresValue = contactHeader.Expires;
+                    int bindingExpiry = 0;
 
-                    if (expiresHeaderValue == 0)
+                    if (bindingURI.Host == m_sipRegisterRemoveAll)
                     {
-                        // Removing all bindings for user.
-                        FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingRemoval, "Remove all bindings requested for " + sipAccountAOR + ".", sipAccount.SIPUsername));
-
-                        // Mark all the current bindings as expired.
-                        if (bindings != null && bindings.Count > 0)
+                        if (contactHeaders.Count > 1)
                         {
-                            for (int index = 0; index < bindings.Count; index++)
-                            {
-                                bindings[index].RemovalReason = SIPBindingRemovalReason.ClientExpiredAll;
-                                bindings[index].Expiry = 0;
-                                m_bindingsPersistor.Update(bindings[index]);
-
-                                // Remove the NAT keep-alive job if present.
-                                if (m_natKeepAliveJobs.ContainsKey(bindings[index].RemoteSIPSocket))
-                                {
-                                    m_natKeepAliveJobs[bindings[index].RemoteSIPSocket].CancelJob();
-                                }
-                            }
+                            // If a register request specifies remove all it cannot contain any other binding requests.
+                            FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingRemoval, "Remove all bindings requested for " + sipAccountAOR + " but mutliple bindings specified, rejecting as a bad request.", sipAccount.SIPUsername));
+                            responseStatus = SIPResponseStatusCodesEnum.BadRequest;
+                            break;
                         }
 
-                        FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingRemoval, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
+                        #region Process remove all bindings.
 
-                        responseStatus = SIPResponseStatusCodesEnum.Ok;
-                    }
-                    else
-                    {
-                        // Remove all header cannot be present with other headers and must have an Expiry equal to 0.
-                        responseStatus = SIPResponseStatusCodesEnum.BadRequest;
-                    }
-
-                    #endregion
-                }
-                else
-                {
-                    int requestedExpiry = (contactHeaderExpiresValue != -1) ? contactHeaderExpiresValue : expiresHeaderValue;
-                    requestedExpiry = (requestedExpiry == -1) ? maxAllowedExpiry : requestedExpiry;   // This will happen if the Expires header and the Expiry on the Contact are both missing.
-                    bindingExpiry = (requestedExpiry > maxAllowedExpiry) ? maxAllowedExpiry : requestedExpiry;
-                    bindingExpiry = (bindingExpiry < MINIMUM_EXPIRY_SECONDS) ? MINIMUM_EXPIRY_SECONDS : bindingExpiry;
-
-                    bindingURI.Parameters.Remove(m_sipExpiresParameterKey);
-
-                    SIPRegistrarBinding binding = GetBindingForContactURI(bindings, bindingURI.ToString());
-
-                    if (binding != null)
-                    {
-                        if (requestedExpiry <= 0)
+                        if (expiresHeaderValue == 0)
                         {
-                            FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingExpired, "Binding expired by client for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ".", sipAccount.SIPUsername));
-                            bindings.Remove(binding);
-                            m_bindingsPersistor.Delete(binding);
-                            bindingExpiry = 0;
+                            // Removing all bindings for user.
+                            FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingRemoval, "Remove all bindings requested for " + sipAccountAOR + ".", sipAccount.SIPUsername));
+
+                            // Mark all the current bindings as expired.
+                            if (bindings != null && bindings.Count > 0)
+                            {
+                                for (int index = 0; index < bindings.Count; index++)
+                                {
+                                    bindings[index].RemovalReason = SIPBindingRemovalReason.ClientExpiredAll;
+                                    bindings[index].Expiry = 0;
+                                    m_bindingsPersistor.Update(bindings[index]);
+
+                                    // Remove the NAT keep-alive job if present.
+                                    if (m_natKeepAliveJobs.ContainsKey(bindings[index].RemoteSIPSocket))
+                                    {
+                                        m_natKeepAliveJobs[bindings[index].RemoteSIPSocket].CancelJob();
+                                    }
+                                }
+                            }
 
                             FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingRemoval, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
 
-                            // Remove the NAT keep-alive job if present.
-                            if (m_natKeepAliveJobs.ContainsKey(binding.RemoteSIPSocket))
-                            {
-                                m_natKeepAliveJobs[binding.RemoteSIPSocket].CancelJob();
-                            }
+                            responseStatus = SIPResponseStatusCodesEnum.Ok;
                         }
                         else
                         {
-                            FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Registrar, "Binding update request for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ", expiry requested " + requestedExpiry + "s granted " + bindingExpiry + "s.", sipAccount.Owner));
-                            binding.RefreshBinding(bindingExpiry, remoteSIPEndPoint, proxySIPEndPoint, registrarSIPEndPoint, sipAccount.DontMangleEnabled);
-
-                            DateTime startTime = DateTime.Now;
-                            m_bindingsPersistor.Update(binding);
-                            TimeSpan duration = DateTime.Now.Subtract(startTime);
-                            //FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding database update time for " + sipAccountAOR + " took " + duration.TotalMilliseconds + "ms.", null));
-                            FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
-
-                            // Add a NAT keep-alive job if required.
-                            if (sipAccount.SendNATKeepAlives && proxySIPEndPoint != null)
-                            {
-                                AddNATKeepAliveJob(sipAccount, remoteSIPEndPoint, proxySIPEndPoint, binding, bindingExpiry);
-                            }
+                            // Remove all header cannot be present with other headers and must have an Expiry equal to 0.
+                            responseStatus = SIPResponseStatusCodesEnum.BadRequest;
                         }
+
+                        #endregion
                     }
                     else
                     {
-                        if (requestedExpiry > 0)
+                        int requestedExpiry = (contactHeaderExpiresValue != -1) ? contactHeaderExpiresValue : expiresHeaderValue;
+                        requestedExpiry = (requestedExpiry == -1) ? maxAllowedExpiry : requestedExpiry;   // This will happen if the Expires header and the Expiry on the Contact are both missing.
+                        bindingExpiry = (requestedExpiry > maxAllowedExpiry) ? maxAllowedExpiry : requestedExpiry;
+                        bindingExpiry = (bindingExpiry < MINIMUM_EXPIRY_SECONDS) ? MINIMUM_EXPIRY_SECONDS : bindingExpiry;
+
+                        bindingURI.Parameters.Remove(m_sipExpiresParameterKey);
+
+                        SIPRegistrarBinding binding = GetBindingForContactURI(bindings, bindingURI.ToString());
+
+                        if (binding != null)
                         {
-                            FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingInProgress, "New binding request for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ", expiry requested " + requestedExpiry + "s granted " + bindingExpiry + "s.", sipAccount.Owner));
-
-                            if (bindings.Count >= m_maxBindingsPerAccount)
+                            if (requestedExpiry <= 0)
                             {
-                                // Need to remove the oldest binding to stay within limit.
-                                //SIPRegistrarBinding oldestBinding = m_bindingsPersistor.Get(b => b.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue).OrderBy(x => x.LastUpdateUTC).Last();
-                                SIPRegistrarBinding oldestBinding = bindings.OrderBy(x => x.LastUpdate).Last();
-                                FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingInProgress, "Binding limit exceeded for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + " removing oldest binding to stay within limit of " + m_maxBindingsPerAccount + ".", sipAccount.Owner));
-                                m_bindingsPersistor.Delete(oldestBinding);
+                                FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingExpired, "Binding expired by client for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ".", sipAccount.SIPUsername));
+                                bindings.Remove(binding);
+                                m_bindingsPersistor.Delete(binding);
+                                bindingExpiry = 0;
 
+                                FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingRemoval, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
+
+                                // Remove the NAT keep-alive job if present.
                                 if (m_natKeepAliveJobs.ContainsKey(binding.RemoteSIPSocket))
                                 {
                                     m_natKeepAliveJobs[binding.RemoteSIPSocket].CancelJob();
                                 }
                             }
-
-                            SIPRegistrarBinding newBinding = new SIPRegistrarBinding(sipAccount, bindingURI, callId, cseq, userAgent, remoteSIPEndPoint, proxySIPEndPoint, registrarSIPEndPoint, bindingExpiry);
-                            DateTime startTime = DateTime.Now;
-                            bindings.Add(newBinding);
-                            m_bindingsPersistor.Add(newBinding);
-                            TimeSpan duration = DateTime.Now.Subtract(startTime);
-                            //FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding database add time for " + sipAccountAOR + " took " + duration.TotalMilliseconds + "ms.", null));
-
-                            // Add a NAT keep-alive job if required.
-                            if (sipAccount.SendNATKeepAlives && proxySIPEndPoint != null)
+                            else
                             {
-                                AddNATKeepAliveJob(sipAccount, remoteSIPEndPoint, proxySIPEndPoint, newBinding, bindingExpiry);
-                            }
+                                FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Registrar, "Binding update request for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ", expiry requested " + requestedExpiry + "s granted " + bindingExpiry + "s.", sipAccount.Owner));
+                                binding.RefreshBinding(bindingExpiry, remoteSIPEndPoint, proxySIPEndPoint, registrarSIPEndPoint, sipAccount.DontMangleEnabled);
 
-                            FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
+                                DateTime startTime = DateTime.Now;
+                                m_bindingsPersistor.Update(binding);
+                                TimeSpan duration = DateTime.Now.Subtract(startTime);
+                                //FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding database update time for " + sipAccountAOR + " took " + duration.TotalMilliseconds + "ms.", null));
+                                FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
+
+                                // Add a NAT keep-alive job if required.
+                                if (sipAccount.SendNATKeepAlives && proxySIPEndPoint != null)
+                                {
+                                    AddNATKeepAliveJob(sipAccount, remoteSIPEndPoint, proxySIPEndPoint, binding, bindingExpiry);
+                                }
+                            }
                         }
                         else
                         {
-                            FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingFailed, "New binding received for " + sipAccountAOR + " with expired contact," + bindingURI.ToString() + " no update.", sipAccount.Owner));
-                            bindingExpiry = 0;
-                        }
-                    }
+                            if (requestedExpiry > 0)
+                            {
+                                FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingInProgress, "New binding request for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ", expiry requested " + requestedExpiry + "s granted " + bindingExpiry + "s.", sipAccount.Owner));
 
-                    responseStatus = SIPResponseStatusCodesEnum.Ok;
+                                if (bindings.Count >= m_maxBindingsPerAccount)
+                                {
+                                    // Need to remove the oldest binding to stay within limit.
+                                    //SIPRegistrarBinding oldestBinding = m_bindingsPersistor.Get(b => b.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue).OrderBy(x => x.LastUpdateUTC).Last();
+                                    SIPRegistrarBinding oldestBinding = bindings.OrderBy(x => x.LastUpdate).Last();
+                                    FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingInProgress, "Binding limit exceeded for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + " removing oldest binding to stay within limit of " + m_maxBindingsPerAccount + ".", sipAccount.Owner));
+                                    m_bindingsPersistor.Delete(oldestBinding);
+
+                                    if (m_natKeepAliveJobs.ContainsKey(binding.RemoteSIPSocket))
+                                    {
+                                        m_natKeepAliveJobs[binding.RemoteSIPSocket].CancelJob();
+                                    }
+                                }
+
+                                SIPRegistrarBinding newBinding = new SIPRegistrarBinding(sipAccount, bindingURI, callId, cseq, userAgent, remoteSIPEndPoint, proxySIPEndPoint, registrarSIPEndPoint, bindingExpiry);
+                                DateTime startTime = DateTime.Now;
+                                bindings.Add(newBinding);
+                                m_bindingsPersistor.Add(newBinding);
+                                TimeSpan duration = DateTime.Now.Subtract(startTime);
+                                //FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding database add time for " + sipAccountAOR + " took " + duration.TotalMilliseconds + "ms.", null));
+
+                                // Add a NAT keep-alive job if required.
+                                if (sipAccount.SendNATKeepAlives && proxySIPEndPoint != null)
+                                {
+                                    AddNATKeepAliveJob(sipAccount, remoteSIPEndPoint, proxySIPEndPoint, newBinding, bindingExpiry);
+                                }
+
+                                FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
+                            }
+                            else
+                            {
+                                FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.BindingFailed, "New binding received for " + sipAccountAOR + " with expired contact," + bindingURI.ToString() + " no update.", sipAccount.Owner));
+                                bindingExpiry = 0;
+                            }
+                        }
+
+                        responseStatus = SIPResponseStatusCodesEnum.Ok;
+                    }
                 }
 
                 return bindings;

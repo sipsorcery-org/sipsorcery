@@ -98,7 +98,6 @@ namespace SIPSorcery.Net
             }
 
             Buffer.BlockCopy(Header.TransactionId, 0, buffer, 4, STUNHeader.TRANSACTION_ID_LENGTH);
-            //Buffer.BlockCopy(Encoding.ASCII.GetBytes(Header.TransactionId), 0, buffer, 4, 16);
 
             int attributeIndex = 20;
             foreach (STUNAttribute attr in Attributes)
@@ -119,6 +118,12 @@ namespace SIPSorcery.Net
             }
 
             return messageDescr;
+        }
+
+        public void AddUsernameAttribute(string username)
+        {
+            byte[] usernameBytes = Encoding.UTF8.GetBytes(username);
+            Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Username, usernameBytes));
         }
         
 		#region Unit testing.

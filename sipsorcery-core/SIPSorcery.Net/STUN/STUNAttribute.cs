@@ -83,6 +83,13 @@ namespace SIPSorcery.Net
         public UInt16 Length;
         public byte[] Value;
 
+        public STUNAttribute(STUNAttributeTypesEnum attributeType, byte[] value)
+        {
+            AttributeType = attributeType;
+            Value = value;
+            Length = Convert.ToUInt16(Value.Length);
+        }
+
         public STUNAttribute(STUNAttributeTypesEnum attributeType, UInt16 length, byte[] value)
         {
             AttributeType = attributeType;
@@ -111,8 +118,18 @@ namespace SIPSorcery.Net
 
                     if (stunAttributeLength > 0)
                     {
-                        stunAttributeValue = new byte[stunAttributeLength];
-                        Buffer.BlockCopy(buffer, startIndex + 4, stunAttributeValue, 0, stunAttributeLength);
+                        if (stunAttributeType == (int)STUNAttributeTypesEnum.Username && stunAttributeLength > buffer.Length - startIndex - 4)
+                        {
+                            // Received some STUN messages where the username is shorter than the claimed length.
+                            int realLength = buffer.Length - startIndex - 4;
+                            stunAttributeValue = new byte[realLength];
+                            Buffer.BlockCopy(buffer, startIndex + 4, stunAttributeValue, 0, realLength);
+                        }
+                        else
+                        {
+                            stunAttributeValue = new byte[stunAttributeLength];
+                            Buffer.BlockCopy(buffer, startIndex + 4, stunAttributeValue, 0, stunAttributeLength);
+                        }
                     }
 
                     STUNAttributeTypesEnum attributeType = STUNAttributeTypes.GetSTUNAttributeTypeForId(stunAttributeType);
@@ -146,7 +163,27 @@ namespace SIPSorcery.Net
 
         public virtual int ToByteBuffer(byte[] buffer, int startIndex)
         {
-            return 0;
+            if (BitConverter.IsLittleEndian)
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes(Utility.ReverseEndian((ushort)AttributeType)), 0, buffer, startIndex, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(Utility.ReverseEndian(Length)), 0, buffer, startIndex + 2, 2);
+            }
+            else
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes((ushort)AttributeType), 0, buffer, startIndex, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(Length), 0, buffer, startIndex + 2, 2);
+            }
+
+            if (BitConverter.IsLittleEndian)
+            {
+                Buffer.BlockCopy(Value, 0, buffer, startIndex + 4, Length);
+            }
+            else
+            {
+                Buffer.BlockCopy(Value, 0, buffer, startIndex + 4, Length);
+            }
+
+            return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + Length;
         }
 
         public new virtual string ToString()

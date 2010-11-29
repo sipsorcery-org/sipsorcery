@@ -64,6 +64,7 @@ namespace SIPSorcery.SIPAppServer
         private const string SIPCALL_DISPATCHER_WORKERS_NODE_NAME = "sipdispatcherworkers";
         private const string DIALPLAN_ENGINE_IMPERSONATION_USERNAME_KEY = "DialPlanEngineImpersonationUsername";
         private const string DIALPLAN_ENGINE_IMPERSONATION_PASSWORD_KEY = "DialPlanEngineImpersonationPassword";
+        private const string DAILY_CALL_LIMIT_KEY = "DailyCallLimit";
 
 		public static ILog logger = null;
 
@@ -76,6 +77,7 @@ namespace SIPSorcery.SIPAppServer
         public static readonly XmlNode SIPCallDispatcherWorkersNode;
         public static readonly string DialPlanEngineImpersonationUsername;
         public static readonly string DialPlanEngineImpersonationPassword;
+        public static readonly int DailyCallLimit = -1;
 
 		static SIPAppServerState()
 		{
@@ -104,6 +106,10 @@ namespace SIPSorcery.SIPAppServer
                 SIPCallDispatcherWorkersNode = m_sipAppServerConfigNode.SelectSingleNode(SIPCALL_DISPATCHER_WORKERS_NODE_NAME);
                 DialPlanEngineImpersonationUsername = AppState.GetConfigNodeValue(m_sipAppServerConfigNode, DIALPLAN_ENGINE_IMPERSONATION_USERNAME_KEY);
                 DialPlanEngineImpersonationPassword = AppState.GetConfigNodeValue(m_sipAppServerConfigNode, DIALPLAN_ENGINE_IMPERSONATION_PASSWORD_KEY);
+                if (!AppState.GetConfigNodeValue(m_sipAppServerConfigNode, DAILY_CALL_LIMIT_KEY).IsNullOrBlank())
+                {
+                    Int32.TryParse(AppState.GetConfigNodeValue(m_sipAppServerConfigNode, DAILY_CALL_LIMIT_KEY), out DailyCallLimit);
+                }
 			}
 			catch(Exception excp)
 			{

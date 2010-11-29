@@ -29,8 +29,11 @@ namespace SIPSorcery
         private const int REINITIALISE_WAIT_PERIOD = 10000;
         private const int DEFAULT_WEB_PORT = 80;
         private const int DEFAULT_PROVISIONING_WEBSERVICE_PORT = 8080;
+        private const string SERVICE_URL_KEY = "ServiceURL";
+        private const string SHOW_INVITE_PANEL_KEY = "ShowInvitePanel";
         private const string DEFAULT_PROVISIONING_FILE = "provisioning.svc";
         private const string DEFAULT_NOTIFICATIONS_FILE = "notificationspull.svc";
+        private const string DEFAULT_INVITE_SERIVCE = "sipsorceryinvite.svc";
         private const string DEFAULT_MONITOR_HOST = "www.sipsorcery.com";
         private const string LOCALHOST_MONITOR_HOST = "localhost";
         private const string DEFAULT_PROVISIONING_HOST = "https://www.sipsorcery.com/";
@@ -40,6 +43,7 @@ namespace SIPSorcery
 
         private string m_provisioningServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;
         private string m_notificationsServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_NOTIFICATIONS_FILE;
+        private string m_inviteServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_INVITE_SERIVCE;
         private string m_sipMonitorHost = DEFAULT_MONITOR_HOST;
         private int m_sipControlMonitorPort = 4502;
         private int m_sipMachineMonitorPort = 4503;
@@ -47,6 +51,7 @@ namespace SIPSorcery
 
         private SIPSorceryPersistor m_unauthorisedPersistor;
         private SIPSorceryPersistor m_authorisedPersistor;
+        private SIPSorceryInvite.SIPSorceryInviteServiceClient m_inviteProxy;
         //private SocketClient m_sipEventMonitorClient;
         private ServiceConnectionStatesEnum m_persistorStatus = ServiceConnectionStatesEnum.Initialising;
         private string m_persistorStatusMessage = "Initialising...";
@@ -58,6 +63,7 @@ namespace SIPSorcery
         private string m_owner;
         private bool m_sessionExpired = true;   // Set to true after an unauthorised access exception.
         private string m_inviteCode;
+        private bool m_showInvitePanel = true;
 
         private UserPage m_userPage;
 
@@ -74,7 +80,19 @@ namespace SIPSorcery
             //m_loginControl.Visibility = Visibility.Collapsed;
             m_loginControl.CreateNewAccountClicked += CreateNewAccountClicked;
             m_loginControl.Login_External = LoginAsync;
-            m_newAccountInviteControl.CheckInviteCode += CheckInviteCode;
+
+            Boolean.TryParse(App.Current.Resources[SHOW_INVITE_PANEL_KEY].ToString(), out m_showInvitePanel);
+
+            if (m_showInvitePanel)
+            {
+                m_createAccountControl.Visibility = Visibility.Collapsed;
+                m_newAccountInviteControl.CheckInviteCode += CheckInviteCode;
+            }
+            else
+            {
+                m_newAccountInviteControl.Visibility = Visibility.Collapsed;
+                m_createAccountControl.Visibility = Visibility.Visible;
+            }
 
             //int hostPort = Application.Current.Host.Source.Port;
             //if (hostPort == DEFAULT_WEB_PORT || hostPort == 0)
@@ -86,11 +104,20 @@ namespace SIPSorcery
 
             try
             {
-                if (server.StartsWith(LOCALHOST_MONITOR_HOST) || Application.Current.Host.Source.Scheme == "file")
+                if (!App.Current.Resources[SERVICE_URL_KEY].ToString().IsNullOrBlank())
+                {
+                    string serviceHost = App.Current.Resources[SERVICE_URL_KEY].ToString();
+                    m_sipMonitorHost = serviceHost;
+                    m_provisioningServiceURL = serviceHost + DEFAULT_PROVISIONING_FILE;
+                    m_notificationsServiceURL = serviceHost + DEFAULT_NOTIFICATIONS_FILE;
+                    m_inviteServiceURL = serviceHost + DEFAULT_INVITE_SERIVCE;
+                }
+                else if (server.StartsWith(LOCALHOST_MONITOR_HOST) || Application.Current.Host.Source.Scheme == "file")
                 {
                     m_sipMonitorHost = LOCALHOST_MONITOR_HOST;
                     m_provisioningServiceURL = LOCALHOST_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;
                     m_notificationsServiceURL = LOCALHOST_PROVISIONING_HOST + DEFAULT_NOTIFICATIONS_FILE;
+                    m_inviteServiceURL = LOCALHOST_PROVISIONING_HOST + DEFAULT_INVITE_SERIVCE;
                 }
                 
                 /*if (server != DEFAULT_MONITOR_HOST)
@@ -111,6 +138,7 @@ namespace SIPSorcery
                 m_sipMonitorHost = DEFAULT_MONITOR_HOST;
                 m_provisioningServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_PROVISIONING_FILE;
                 m_notificationsServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_NOTIFICATIONS_FILE;
+                m_inviteServiceURL = DEFAULT_PROVISIONING_HOST + DEFAULT_INVITE_SERIVCE;
             }
 
             if (server != DEFAULT_MONITOR_HOST)
@@ -122,6 +150,7 @@ namespace SIPSorcery
             // Use the Silverlight network stack so that SOAP faults can get through.
             HttpWebRequest.RegisterPrefix(m_provisioningServiceURL, WebRequestCreator.ClientHttp);
             HttpWebRequest.RegisterPrefix(m_notificationsServiceURL, WebRequestCreator.ClientHttp);
+            HttpWebRequest.RegisterPrefix(m_inviteServiceURL, WebRequestCreator.ClientHttp);
 
             ThreadPool.QueueUserWorkItem(delegate { Initialise(); });
 
@@ -134,6 +163,10 @@ namespace SIPSorcery
 #if !BLEND
             m_unauthorisedPersistor = SIPSorceryPersistorFactory.CreateSIPSorceryPersistor(SIPPersistorTypesEnum.WebService, m_provisioningServiceURL, null);
             m_machineMonitorEndPoint = new DnsEndPoint(m_sipMonitorHost, m_sipMachineMonitorPort);
+            
+            EndpointAddress address = new EndpointAddress(m_inviteServiceURL);
+            BasicHttpBinding binding = new BasicHttpBinding(BasicHttpSecurityMode.Transport);
+            m_inviteProxy = new SIPSorceryInvite.SIPSorceryInviteServiceClient(binding, address);
 #else
             m_unauthorisedPersistor = SIPSorceryPersistorFactory.CreateSIPSorceryPersistor(SIPPersistorTypesEnum.GUITest, m_provisioningServiceURL, null);
             //ThreadPool.QueueUserWorkItem(new WaitCallback(m_sipMonitorDisplay.RunHitPointSimulation), null);
@@ -142,11 +175,11 @@ namespace SIPSorcery
             m_unauthorisedPersistor.TestExceptionComplete += TestExceptionComplete;
             m_unauthorisedPersistor.IsAliveComplete += PersistorIsAliveComplete;
             m_unauthorisedPersistor.AreNewAccountsEnabledComplete += AreNewAccountsEnabledComplete;
-            m_unauthorisedPersistor.CheckInviteCodeComplete +=CheckInviteCodeComplete;
+            //m_unauthorisedPersistor.CheckInviteCodeComplete +=CheckInviteCodeComplete;
             m_unauthorisedPersistor.LoginComplete += LoginComplete;
             m_unauthorisedPersistor.CreateCustomerComplete += CreateCustomerComplete;
             m_createAccountControl.CreateCustomer_External = m_unauthorisedPersistor.CreateCustomerAsync;
-            UIHelper.SetVisibility(m_createAccountControl, Visibility.Collapsed);
+            m_inviteProxy.IsInviteCodeValidCompleted += CheckInviteCodeComplete;
 
             InitialiseServices(0);
         }
@@ -156,7 +189,8 @@ namespace SIPSorcery
             try
             {
                 m_inviteCode = inviteCode.Trim();
-                m_unauthorisedPersistor.CheckInviteCodeAsync(m_inviteCode);
+                //m_unauthorisedPersistor.CheckInviteCodeAsync(m_inviteCode);
+                m_inviteProxy.IsInviteCodeValidAsync(m_inviteCode);
             }
             catch (Exception provExcp)
             {
@@ -166,7 +200,7 @@ namespace SIPSorcery
             }
         }
 
-        private void CheckInviteCodeComplete(CheckInviteCodeCompletedEventArgs e)
+        private void CheckInviteCodeComplete(object sender, SIPSorceryInvite.IsInviteCodeValidCompletedEventArgs1 e)
         {
             try
             {

@@ -120,7 +120,7 @@ namespace SIPSorcery.Net
         public STUNHeader(STUNMessageTypesEnum messageType)
         {
             MessageType = messageType;
-            TransactionId = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString().Substring(0,TRANSACTION_ID_LENGTH));
+            TransactionId = GenerateNewTransactionID();
         }
 
         public static STUNHeader ParseSTUNHeader(byte[] buffer)
@@ -147,6 +147,11 @@ namespace SIPSorcery.Net
             }
 
             return null;
+        }
+
+        public static byte[] GenerateNewTransactionID()
+        {
+            return Encoding.ASCII.GetBytes(Guid.NewGuid().ToString().Substring(0, TRANSACTION_ID_LENGTH));
         }
 
         public string GetTransactionId()

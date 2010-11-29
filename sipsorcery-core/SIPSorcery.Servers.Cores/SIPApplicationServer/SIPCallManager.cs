@@ -81,6 +81,7 @@ namespace SIPSorcery.Servers
         private SIPDialogueManager m_sipDialogueManager;
         private string m_traceDirectory;
         private bool m_monitorCalls;        // If true this call manager instance will monitor the sip dialogues table and hangup any expired calls.
+        private int m_dailyCallLimit;       // If not -1 indicates a limit on the number of calls for each owner account is being enforced.
         private bool m_stop;
         private SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
         private SIPAssetPersistor<SIPCDRAsset> m_sipCDRPersistor;
@@ -118,7 +119,8 @@ namespace SIPSorcery.Servers
             SIPAssetPersistor<Customer> customerPersistor,
             SIPAssetPersistor<SIPDialPlan> dialPlanPersistor,
             string traceDirectory,
-            bool monitorCalls)
+            bool monitorCalls,
+            int dailyCallLimit)
         {
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
@@ -137,6 +139,7 @@ namespace SIPSorcery.Servers
             m_traceDirectory = traceDirectory;
             m_monitorCalls = monitorCalls;
             m_pid = Process.GetCurrentProcess().Id;
+            m_dailyCallLimit = dailyCallLimit;
         }
 
         public void Start()
@@ -788,7 +791,25 @@ namespace SIPSorcery.Servers
                     }
                     else
                     {
-                        return true;
+                        if (m_dailyCallLimit == -1)
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            // Check whether the number of CDR's exceeds the daily call limit.
+                            DateTime yesterday = DateTime.Now.AddDays(-1);
+                            int cdrCount = m_sipCDRPersistor.Count(x => x.Owner == owner && x.Created > yesterday);
+                            if (cdrCount >= m_dailyCallLimit)
+                            {
+                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of call for " + owner + " was not processed as daily call limit reached.", owner));
+                                uas.Reject(SIPResponseStatusCodesEnum.TemporarilyUnavailable, "Daily call limit reached", null);
+                            }
+                            else
+                            {
+                                return true;
+                            }
+                        }
                     }
                 }
 

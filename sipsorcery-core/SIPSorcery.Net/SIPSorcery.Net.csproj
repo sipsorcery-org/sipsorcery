@@ -120,6 +120,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="STUNv2\STUNAttributes\STUNv2AddressAttribute.cs" />
+    <Compile Include="STUNv2\STUNAttributes\STUNv2Attribute.cs" />
+    <Compile Include="STUNv2\STUNAttributes\STUNv2ChangeRequestAttribute.cs" />
+    <Compile Include="STUNv2\STUNv2Header.cs" />
+    <Compile Include="STUNv2\STUNv2Message.cs" />
     <Compile Include="DNS\DNSManager.cs" />
     <Compile Include="DNS\DNSRequest.cs" />
     <Compile Include="DNS\DNSResponse.cs" />
@@ -177,10 +182,11 @@
     <Compile Include="RTSP\RTSPRequest.cs" />
     <Compile Include="RTSP\RTSPResponse.cs" />
     <Compile Include="RTSP\RTSPURL.cs" />
-    <Compile Include="SDP\NetTestDescription.cs" />
-    <Compile Include="SDP\NetTestDescriptor.cs" />
     <Compile Include="SDP\SDP.cs" />
-    <Compile Include="SDP\SessionDescriptionTypes.cs" />
+    <Compile Include="SDP\SDPConnectionInformation.cs" />
+    <Compile Include="SDP\SDPMediaAnnouncement.cs" />
+    <Compile Include="SDP\SDPMediaFormat.cs" />
+    <Compile Include="SDP\SDPMediaTypes.cs" />
     <Compile Include="STUN\Program.cs" />
     <Compile Include="STUN\STUNAppState.cs" />
     <Compile Include="STUN\STUNAttribute.cs" />
@@ -191,10 +197,6 @@
     <Compile Include="STUN\STUNServer.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
-      <Project>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</Project>
-      <Name>SIPSorcery.SIP.Core</Name>
-    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
       <Project>{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}</Project>
       <Name>SIPSorcery.Sys</Name>

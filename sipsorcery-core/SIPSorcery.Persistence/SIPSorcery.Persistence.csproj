@@ -59,7 +59,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="MySql.Data, Version=6.0.4.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="MySql.Data, Version=6.3.5.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\MySql.Data.dll</HintPath>
     </Reference>

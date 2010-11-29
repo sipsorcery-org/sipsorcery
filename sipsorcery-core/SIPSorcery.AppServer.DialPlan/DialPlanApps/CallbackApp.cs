@@ -116,7 +116,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
 
                 SDP firstLegSDP = SDP.ParseSDPDescription(m_firstLegDialogue.RemoteSDP);
-                string call1SDPIPAddress = firstLegSDP.Media[0].ConnectionAddress;
+                string call1SDPIPAddress = firstLegSDP.Connection.ConnectionAddress;
                 int call1SDPPort = firstLegSDP.Media[0].Port;
                 Log("The first call leg to " + dest1 + " was successful, audio socket=" + call1SDPIPAddress + ":" + call1SDPPort + ".");
 
@@ -132,7 +132,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
 
                 SDP secondLegSDP = SDP.ParseSDPDescription(secondLegDialogue.RemoteSDP);
-                string call2SDPIPAddress = secondLegSDP.Media[0].ConnectionAddress;
+                string call2SDPIPAddress = secondLegSDP.Connection.ConnectionAddress;
                 int call2SDPPort = secondLegSDP.Media[0].Port;
                 Log("The second call leg to " + dest2 + " was successful, audio socket=" + call2SDPIPAddress + ":" + call2SDPPort + ".");
 

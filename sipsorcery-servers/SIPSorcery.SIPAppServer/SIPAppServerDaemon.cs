@@ -91,6 +91,7 @@ namespace SIPSorcery.SIPAppServer
         private SIPEndPoint m_outboundProxy = SIPAppServerState.OutboundProxy;
         private string m_dialplanImpersonationUsername = SIPAppServerState.DialPlanEngineImpersonationUsername;
         private string m_dialplanImpersonationPassword = SIPAppServerState.DialPlanEngineImpersonationPassword;
+        private int m_dailyCallLimit = SIPAppServerState.DailyCallLimit;
 
         private SIPSorceryPersistor m_sipSorceryPersistor;
         private SIPMonitorEventWriter m_monitorEventWriter;
@@ -325,7 +326,8 @@ namespace SIPSorcery.SIPAppServer
                      m_customerSessionManager.CustomerPersistor,
                      m_sipSorceryPersistor.SIPDialPlanPersistor,
                      m_traceDirectory,
-                     m_monitorCalls);
+                     m_monitorCalls,
+                     m_dailyCallLimit);
                 m_callManager.Start();
 
                 m_appServerCore = new SIPAppServerCore(

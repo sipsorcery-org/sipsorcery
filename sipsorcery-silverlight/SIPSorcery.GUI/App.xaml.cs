@@ -7,7 +7,11 @@ namespace SIPSorcery
 
 	public partial class App : Application 
 	{
+        private const string DISABLE_PROVIDER_REGISTRATIONS_KEY = "DisableProviderRegistrations";
+
         public static event AppUnhandledExceptionDelegate AppUnhandledException;
+
+        public static bool DisableProviderRegistrations = false;
 
 		public App() 
 		{
@@ -30,6 +34,19 @@ namespace SIPSorcery
 		{
 			// Load the main control here
 			this.RootVisual = new Page();
+
+            if (e.InitParams != null)
+            {
+                foreach (var data in e.InitParams)
+                {
+                    this.Resources.Add(data.Key, data.Value);
+                }
+
+                if (App.Current.Resources[DISABLE_PROVIDER_REGISTRATIONS_KEY] != null)
+                {
+                    Boolean.TryParse(App.Current.Resources[DISABLE_PROVIDER_REGISTRATIONS_KEY].ToString(), out DisableProviderRegistrations);
+                }
+            }
 		}
 
 		private void OnExit(object sender, EventArgs e) 

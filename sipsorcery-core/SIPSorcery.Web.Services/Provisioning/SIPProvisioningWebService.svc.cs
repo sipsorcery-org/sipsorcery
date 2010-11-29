@@ -64,11 +64,14 @@ namespace SIPSorcery.Web.Services
         private const string NEW_ACCOUNT_EMAIL_FROM_ADDRESS = "admin@sipsorcery.com";
         private const string NEW_ACCOUNT_EMAIL_SUBJECT = "SIP Sorcery Account Confirmation";
 
+        private static string m_customerConfirmLink = AppState.GetConfigSetting("CustomerConfirmLink");
+        private static string m_providerRegistrationsDisabled = AppState.GetConfigSetting("ProviderRegistrationsDisabled");
+
         private const string NEW_ACCOUNT_EMAIL_BODY =
             "Hi {0},\r\n\r\n" +
             "This is your automated SIP Sorcery new account confirmation email.\r\n\r\n" +
             "To confirm your account please visit the link below. If you did not request this email please ignore it.\r\n\r\n" +
-            "http://www.sipsorcery.com/customerconfirm.aspx?id={1}\r\n\r\n" +
+            "{1}?id={2}\r\n\r\n" +
             "Regards,\r\n\r\n" +
             "SIP Sorcery";
 
@@ -86,7 +89,8 @@ namespace SIPSorcery.Web.Services
 
         private int m_newCustomersAllowedLimit;
         private bool m_inviteCodeRequired;
-
+        private bool m_providerRegDisabled;
+        
         public SIPProvisioningWebService(
             SIPAssetPersistor<SIPAccount> sipAccountPersistor,
             SIPAssetPersistor<SIPDialPlan> sipDialPlanPersistor,
@@ -113,6 +117,11 @@ namespace SIPSorcery.Web.Services
             LogDelegate_External = log;
             m_newCustomersAllowedLimit = newCustomersAllowedLimit;
             m_inviteCodeRequired = inviteCodeRequired;
+           
+            if (!String.IsNullOrEmpty(m_providerRegistrationsDisabled))
+            {
+                Boolean.TryParse(m_providerRegistrationsDisabled, out m_providerRegDisabled);
+            }
         }
 
         private string GetAuthorisedWhereExpression(Customer customer, string whereExpression)
@@ -262,8 +271,15 @@ namespace SIPSorcery.Web.Services
                         }
                     }
 
-                    logger.Debug("Sending new account confirmation email to " + customer.EmailAddress + ".");
-                    SIPSorcerySMTP.SendEmail(customer.EmailAddress, NEW_ACCOUNT_EMAIL_FROM_ADDRESS, NEW_ACCOUNT_EMAIL_SUBJECT, String.Format(NEW_ACCOUNT_EMAIL_BODY, customer.FirstName, customer.Id));
+                    if (!m_customerConfirmLink.IsNullOrBlank())
+                    {
+                        logger.Debug("Sending new account confirmation email to " + customer.EmailAddress + ".");
+                        SIPSorcerySMTP.SendEmail(customer.EmailAddress, NEW_ACCOUNT_EMAIL_FROM_ADDRESS, NEW_ACCOUNT_EMAIL_SUBJECT, String.Format(NEW_ACCOUNT_EMAIL_BODY, customer.FirstName, m_customerConfirmLink, customer.Id));
+                    }
+                    else
+                    {
+                        logger.Debug("Customer confirmation email was not sent as no confirmation link has been set.");
+                    }
                 }
             }
             catch (Exception excp)
@@ -591,7 +607,15 @@ namespace SIPSorcery.Web.Services
             }
             else
             {
-                return SIPProviderPersistor.Update(sipProvider);
+                if (m_providerRegDisabled && sipProvider.RegisterEnabled)
+                {
+                    logger.Warn("A SIP provider for customer " + customer.CustomerUsername + " had registrations enabled on a disabled registrations service.");
+                    throw new ApplicationException("SIP provider registrations are disabled on this system.");
+                }
+                else
+                {
+                    return SIPProviderPersistor.Update(sipProvider);
+                }
             }
         }
 

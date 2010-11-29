@@ -260,6 +260,8 @@ namespace SIPSorcery.AppServer.DialPlan
                         uacCall = new SIPB2BUserAgent(m_statefulProxyLogEvent, QueueNewCall_External, m_sipTransport, m_username, m_adminMemberId);
                     }
 
+                    //ISIPClientUserAgent uacCall = new JingleUserAgent(m_username, m_adminMemberId, m_statefulProxyLogEvent);
+
                     lock (m_switchCalls)
                     {
                         m_switchCalls.Add(uacCall);
@@ -311,7 +313,7 @@ namespace SIPSorcery.AppServer.DialPlan
             m_lastFailureStatus = SIPResponseStatusCodesEnum.TemporarilyUnavailable;
             m_lastFailureReason = errorMessage;
 
-            if (m_switchCallTransactions != null)
+            if (m_switchCallTransactions != null && uac.ServerTransaction != null)
             {
                 m_switchCallTransactions.Add(uac.ServerTransaction);
             }
@@ -446,7 +448,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     m_lastFailureStatus = answeredResponse.Status;
                     m_lastFailureReason = answeredResponse.ReasonPhrase;
 
-                    if (m_switchCallTransactions != null)
+                    if (m_switchCallTransactions != null && answeredUAC.ServerTransaction != null)
                     {
                         m_switchCallTransactions.Add(answeredUAC.ServerTransaction);
                     }

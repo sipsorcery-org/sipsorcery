@@ -20,7 +20,7 @@ using System.Net.Sockets;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
-using SIPSorcery.SIP;
+//using SIPSorcery.SIP;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -87,7 +87,7 @@ namespace SIPSorcery.Net
 
         // Properties to be set by classes that use the RTCPReport and are not set by the sampler.
         public Guid TestId;
-        public SIPUserAgentRoles UserAgentRole;
+        //public SIPUserAgentRoles UserAgentRole;
 
         public RTCPReport()
         { }

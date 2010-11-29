@@ -1,0 +1,157 @@
+//-----------------------------------------------------------------------------
+// Filename: STUNv2Message.cs
+//
+// Description: Implements STUN Message as defined in RFC3489.
+//
+// History:
+// 26 Nov 2010	Aaron Clauson	Created.
+//
+// License: 
+// This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
+//
+// Copyright (c) 2006 Aaron Clauson (aaronc@blueface.ie), Blue Face Ltd, Dublin, Ireland (www.blueface.ie)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
+// the following conditions are met:
+//
+// Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
+// Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following 
+// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of Blue Face Ltd. 
+// nor the names of its contributors may be used to endorse or promote products derived from this software without specific 
+// prior written permission. 
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, 
+// BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+// IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
+// OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
+// OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// POSSIBILITY OF SUCH DAMAGE.
+//-----------------------------------------------------------------------------
+
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Security.Cryptography;
+using System.Text;
+using SIPSorcery.Sys;
+using log4net;
+
+#if UNITTEST
+using NUnit.Framework;
+#endif
+
+namespace SIPSorcery.Net
+{
+    public class STUNv2Message
+	{
+        private const int FINGERPRINT_XOR = 0x5354554e;
+
+        private static ILog logger = STUNAppState.logger;
+        
+        public STUNv2Header Header = new STUNv2Header();
+        public List<STUNv2Attribute> Attributes = new List<STUNv2Attribute>();
+
+        public STUNv2Message()
+        { }
+
+        public STUNv2Message(STUNv2MessageTypesEnum stunMessageType)
+        {
+            Header = new STUNv2Header(stunMessageType);
+        }
+
+        public void AddUsernameAttribute(string username)
+        {
+            byte[] usernameBytes = Encoding.UTF8.GetBytes(username);
+            Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Username, (ushort)usernameBytes.Length, usernameBytes));
+        }
+
+        public void AddMessageIntegrityAttribute(string key)
+        {
+            MD5 md5 = new MD5CryptoServiceProvider();
+            byte[] hmacKey = md5.ComputeHash(Encoding.UTF8.GetBytes(key));
+            HMACSHA1 hmacSHA = new HMACSHA1(hmacKey, true);
+            byte[] hmac = hmacSHA.ComputeHash(ToByteBuffer());
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(hmac);
+            }
+            Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.MessageIntegrity, (ushort)hmac.Length, hmac));
+        }
+
+        public void AddFingerPrintAttribute()
+        {
+            byte[] messageBytes = ToByteBuffer();
+            uint crc = Crc32.Compute(messageBytes) ^ FINGERPRINT_XOR;
+            byte[] fingerPrint = (BitConverter.IsLittleEndian) ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);
+            Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.FingerPrint, 4, fingerPrint));
+        }
+
+        public static STUNv2Message ParseSTUNMessage(byte[] buffer, int bufferLength)
+        {
+            if (buffer != null && buffer.Length > 0 && buffer.Length >= bufferLength)
+            {
+                STUNv2Message stunMessage = new STUNv2Message();
+                stunMessage.Header = STUNv2Header.ParseSTUNHeader(buffer);
+
+                if (stunMessage.Header.MessageLength > 0)
+                {
+                    stunMessage.Attributes = STUNv2Attribute.ParseMessageAttributes(buffer, STUNv2Header.STUN_HEADER_LENGTH, bufferLength);
+                }
+
+                return stunMessage;
+            }
+
+            return null;
+        }
+
+        public byte[] ToByteBuffer()
+        {
+            UInt16 attributesLength = 0;
+            foreach (STUNv2Attribute attribute in Attributes)
+            {
+                attributesLength += Convert.ToUInt16(STUNv2Attribute.STUNATTRIBUTE_HEADER_LENGTH + attribute.Length);
+            }
+
+            int messageLength = STUNv2Header.STUN_HEADER_LENGTH + attributesLength;
+            byte[] buffer = new byte[messageLength];
+
+            if (BitConverter.IsLittleEndian)
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes(Utility.ReverseEndian((UInt16)Header.MessageType)), 0, buffer, 0, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(Utility.ReverseEndian(attributesLength)), 0, buffer, 2, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(STUNv2Header.MAGIC_COOKIE)), 0, buffer, 4, 4);
+            }
+            else
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes((UInt16)Header.MessageType), 0, buffer, 0, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(attributesLength), 0, buffer, 2, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(STUNv2Header.MAGIC_COOKIE), 0, buffer, 4, 4);
+            }
+
+
+            Buffer.BlockCopy(Header.TransactionId, 0, buffer, 8, STUNv2Header.TRANSACTION_ID_LENGTH);
+
+            int attributeIndex = 20;
+            foreach (STUNv2Attribute attr in Attributes)
+            {
+                attributeIndex += attr.ToByteBuffer(buffer, attributeIndex);
+            }
+
+            return buffer;
+        }
+
+        public new string ToString()
+        {
+            string messageDescr = "STUN Message: " + Header.MessageType.ToString() + ", length=" + Header.MessageLength;
+
+            foreach (STUNv2Attribute attribute in Attributes)
+            {
+                messageDescr += "\n " + attribute.ToString();
+            }
+
+            return messageDescr;
+        }
+	}
+}

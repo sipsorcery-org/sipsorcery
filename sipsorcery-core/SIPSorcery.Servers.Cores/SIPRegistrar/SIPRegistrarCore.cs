@@ -370,29 +370,38 @@ namespace SIPSorcery.Servers
 
                         DateTime startTime = DateTime.Now;
 
-                        List<SIPRegistrarBinding> bindingsList = m_registrarBindingsManager.UpdateBinding(
+                        List<SIPRegistrarBinding> bindingsList = m_registrarBindingsManager.UpdateBindings(
                             sipAccount,
                             proxySIPEndPoint,
                             uacRemoteEndPoint,
                             registrarEndPoint,
-                            sipRequest.Header.Contact[0].ContactURI.CopyOf(),
+                            //sipRequest.Header.Contact[0].ContactURI.CopyOf(),
+                            sipRequest.Header.Contact,
                             sipRequest.Header.CallId,
                             sipRequest.Header.CSeq,
-                            sipRequest.Header.Contact[0].Expires,
+                            //sipRequest.Header.Contact[0].Expires,
                             sipRequest.Header.Expires,
                             sipRequest.Header.UserAgent,
                             out updateResult,
                             out updateMessage);
 
-                        int bindingExpiry = GetBindingExpiry(bindingsList, sipRequest.Header.Contact[0].ContactURI.ToString());
+                        //int bindingExpiry = GetBindingExpiry(bindingsList, sipRequest.Header.Contact[0].ContactURI.ToString());
                         TimeSpan duration = DateTime.Now.Subtract(startTime);
                         FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding update time for " + toUser + "@" + canonicalDomain + " took " + duration.TotalMilliseconds + "ms.", null));
 
                         if (updateResult == SIPResponseStatusCodesEnum.Ok)
                         {
                             string proxySocketStr = (proxySIPEndPoint != null) ? " (proxy=" + proxySIPEndPoint.ToString() + ")" : null;
-                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Registration successful for " + toUser + "@" + canonicalDomain + " from " + uacRemoteEndPoint + proxySocketStr + ", expiry " + bindingExpiry + "s.", toUser));
-                            //FireProxyLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, toUser, uacRemoteEndPoint, sipAccount.Id.ToString()));
+
+                            int bindingCount = 1;
+                            foreach (SIPRegistrarBinding binding in bindingsList)
+                            {
+                                string bindingIndex = (bindingsList.Count == 1) ? String.Empty : " (" + bindingCount + ")";
+                                //FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Registration successful for " + toUser + "@" + canonicalDomain + " from " + uacRemoteEndPoint + proxySocketStr + ", binding " + binding.ContactSIPURI.ToParameterlessString() + ";expiry=" + binding.Expiry + bindingIndex + ".", toUser));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Registration successful for " + toUser + "@" + canonicalDomain + " from " + uacRemoteEndPoint + ", binding " + binding.ContactSIPURI.ToParameterlessString() + ";expiry=" + binding.Expiry + bindingIndex + ".", toUser));
+                                //FireProxyLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, toUser, uacRemoteEndPoint, sipAccount.Id.ToString()));
+                                bindingCount++;
+                            }
 
                             // The standard states that the Ok response should contain the list of current bindings but that breaks some UAs. As a 
                             // compromise the list is returned with the Contact that UAC sent as the first one in the list.
@@ -404,12 +413,12 @@ namespace SIPSorcery.Servers
                             else
                             {
                                 // Some user agents can't match the contact header if the expiry is added to it.
-                                sipRequest.Header.Contact[0].Expires = bindingExpiry;
+                                sipRequest.Header.Contact[0].Expires = GetBindingExpiry(bindingsList, sipRequest.Header.Contact[0].ContactURI.ToString()); ;
                             }
 
                             SIPResponse okResponse = GetOkResponse(sipRequest);
 
-                            // If a request was made for a switchboard token and a certificate is available to sign the tokens generate it.
+                            // If a request was made for a switchboard token and a certificate is available to sign the tokens then generate it.
                             if (sipRequest.Header.SwitchboardTokenRequest > 0 && m_switchbboardRSAProvider != null)
                             {
                                 SwitchboardToken token = new SwitchboardToken(sipRequest.Header.SwitchboardTokenRequest, sipAccount.Owner, uacRemoteEndPoint.Address.ToString());
@@ -429,7 +438,7 @@ namespace SIPSorcery.Servers
                         else
                         {
                             // The binding update failed even though the REGISTER request was authorised. This is probably due to a 
-                            // temporary problem connecting to the bindings data store. SendOk but set the binding expiry to the minimum so
+                            // temporary problem connecting to the bindings data store. Send Ok but set the binding expiry to the minimum so
                             // that the UA will try again as soon as possible.
                             FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Error, "Registration request successful but binding update failed for " + toUser + "@" + canonicalDomain + " from " + registerTransaction.RemoteEndPoint + ".", toUser));
                             sipRequest.Header.Contact[0].Expires = m_minimumBindingExpiry;

@@ -21,6 +21,8 @@ namespace SIPSorcery
         //private const string BANNED_PROVIDER_SERVER_PATTERN = "sipsorcery";
         private const string DEFAULT_CONTACT_HOST = "sipsorcery.com";
 
+        private static bool m_disableProviderRegistrations = App.DisableProviderRegistrations;
+
         private static char m_customHeadersSeparator = SIPProvider.CUSTOM_HEADERS_SEPARATOR;
         private static int m_defaultRegisterExpiry = SIPProvider.REGISTER_DEFAULT_EXPIRY;
         private static int m_minimumRegisterExpiry = SIPProvider.REGISTER_MINIMUM_EXPIRY;
@@ -57,6 +59,14 @@ namespace SIPSorcery
             SIPProviderUpdate_External = sipProviderUpdate;
             ControlClosed_External = closed;
 
+            if (m_disableProviderRegistrations)
+            {
+                m_providerRegister.IsEnabled = false;
+                m_providerRegisterContact.IsEnabled = false;
+                m_providerRegisterExpiry.IsEnabled = false;
+                m_providerRegisterServer.IsEnabled = false;
+            }
+
             if (mode == DetailsControlModesEnum.Edit)
             {
                 m_applyButton.Content = "Update";
@@ -92,17 +102,21 @@ namespace SIPSorcery
             m_providerUsername.Text = sipProvider.ProviderUsername;
             m_providerPassword.Text = sipProvider.ProviderPassword;
             m_providerServer.Text = sipProvider.ProviderServer.ToString();
-            m_providerRegister.IsChecked = sipProvider.RegisterEnabled;
-            m_providerRegisterContact.Text = (sipProvider.RegisterContact != null) ? sipProvider.RegisterContact.ToString() : String.Empty;
             m_providerAuthUsername.Text = (sipProvider.ProviderAuthUsername != null) ? sipProvider.ProviderAuthUsername : String.Empty;
             m_providerFromHeader.Text = (sipProvider.ProviderFrom != null) ? sipProvider.ProviderFrom : String.Empty;
-            m_providerRegisterExpiry.Text = sipProvider.RegisterExpiry.ToString();
             m_providerRegisterRealm.Text = (sipProvider.RegisterRealm != null) ? sipProvider.RegisterRealm : String.Empty;
-            m_providerRegisterServer.Text = (sipProvider.RegisterServer != null) ? sipProvider.RegisterServer.ToString() : String.Empty;
 
-            m_providerRegisterContact.IsEnabled = m_providerRegister.IsChecked.Value;
-            m_providerRegisterExpiry.IsEnabled = m_providerRegister.IsChecked.Value;
-            m_providerRegisterServer.IsEnabled = m_providerRegister.IsChecked.Value;
+            if (!m_disableProviderRegistrations)
+            {
+                m_providerRegister.IsChecked = sipProvider.RegisterEnabled;
+                m_providerRegisterContact.Text = (sipProvider.RegisterContact != null) ? sipProvider.RegisterContact.ToString() : String.Empty;
+                m_providerRegisterExpiry.Text = sipProvider.RegisterExpiry.ToString();
+                m_providerRegisterServer.Text = (sipProvider.RegisterServer != null) ? sipProvider.RegisterServer.ToString() : String.Empty;
+
+                m_providerRegisterContact.IsEnabled = m_providerRegister.IsChecked.Value;
+                m_providerRegisterExpiry.IsEnabled = m_providerRegister.IsChecked.Value;
+                m_providerRegisterServer.IsEnabled = m_providerRegister.IsChecked.Value;
+            }
 
             if (sipProvider.CustomHeaders != null && sipProvider.CustomHeaders.Trim().Length > 0)
             {
@@ -256,17 +270,23 @@ namespace SIPSorcery
         }
 
         private void ProviderRegister_Checked(object sender, System.Windows.RoutedEventArgs e) {
-            m_providerRegisterContact.IsEnabled = true;
-            m_providerRegisterExpiry.IsEnabled = true;
-            m_providerRegisterServer.IsEnabled = true;
+            if (!m_disableProviderRegistrations)
+            {
+                m_providerRegisterContact.IsEnabled = true;
+                m_providerRegisterExpiry.IsEnabled = true;
+                m_providerRegisterServer.IsEnabled = true;
 
-            if (m_providerRegisterExpiry.Text.Trim().Length == 0) {
-                m_providerRegisterExpiry.Text = m_defaultRegisterExpiry.ToString();
+                if (m_providerRegisterExpiry.Text.Trim().Length == 0)
+                {
+                    m_providerRegisterExpiry.Text = m_defaultRegisterExpiry.ToString();
+                }
+
+                if (m_providerRegisterContact.Text.Trim().Length == 0)
+                {
+                    m_providerRegisterContact.Text = m_owner + "@" + DEFAULT_CONTACT_HOST;
+                }
             }
 
-            if (m_providerRegisterContact.Text.Trim().Length == 0) {
-                m_providerRegisterContact.Text = m_owner + "@" + DEFAULT_CONTACT_HOST;
-            }
         }
 
         private void ProviderRegister_Unchecked(object sender, System.Windows.RoutedEventArgs e)
