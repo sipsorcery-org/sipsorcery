@@ -318,7 +318,7 @@ namespace SIPSorcery.SIP.App
             m_registrarSIPEndPoint = registrarSIPEndPoint;
 
             //if (SIPTransport.IsPrivateAddress(sipRequest.Header.Contact[0].ContactURI.Host) && m_mangleUACContact)
-            if (Regex.Match(m_mangledContactURI.Host, @"(\d+\.){3}\d+").Success)
+            if (!sipAccount.DontMangleEnabled && Regex.Match(m_mangledContactURI.Host, @"(\d+\.){3}\d+").Success)
             {
                 // The Contact URI Host is used by registrars as the contact socket for the user so it needs to be changed to reflect the socket
                 // the intial request was received on in order to work around NAT. It's no good just relying on private addresses as a lot of User Agents
@@ -394,7 +394,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Refreshes a binding when the remote network information of the remote or proxy end point has changed.
         /// </summary>
-        public void RefreshBinding(int expiry, SIPEndPoint remoteSIPEndPoint, SIPEndPoint proxySIPEndPoint, SIPEndPoint registrarSIPEndPoint)
+        public void RefreshBinding(int expiry, SIPEndPoint remoteSIPEndPoint, SIPEndPoint proxySIPEndPoint, SIPEndPoint registrarSIPEndPoint, bool dontMangle)
         {
             LastUpdate = DateTimeOffset.UtcNow;
             RemoteSIPEndPoint = remoteSIPEndPoint;
@@ -404,7 +404,7 @@ namespace SIPSorcery.SIP.App
             m_expiry = expiry;
 
             //if (SIPTransport.IsPrivateAddress(sipRequest.Header.Contact[0].ContactURI.Host) && m_mangleUACContact)
-            if (Regex.Match(m_mangledContactURI.Host, @"(\d+\.){3}\d+").Success)
+            if (!dontMangle && Regex.Match(m_mangledContactURI.Host, @"(\d+\.){3}\d+").Success)
             {
                 // The Contact URI Host is used by registrars as the contact socket for the user so it needs to be changed to reflect the socket
                 // the intial request was received on in order to work around NAT. It's no good just relying on private addresses as a lot of User Agents

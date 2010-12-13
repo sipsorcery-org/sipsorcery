@@ -67,6 +67,7 @@ namespace SIPSorcery.SIP.App
         private SIPEndPoint m_outboundProxy;                   // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
         private SIPDialogue m_sipDialogue;
         private bool m_isAuthenticated;
+        private bool m_isCancelled;
         private string m_owner;
         private string m_adminMemberId;
         private string m_sipUsername;
@@ -96,6 +97,11 @@ namespace SIPSorcery.SIP.App
         {
             get { return m_isAuthenticated; }
             set { m_isAuthenticated = value; }
+        }
+
+        public bool IsCancelled
+        {
+            get { return m_isCancelled; }
         }
 
         public SIPRequest CallRequest
@@ -300,8 +306,10 @@ namespace SIPSorcery.SIP.App
                             UASStateChanged(this, progressStatus, reasonPhrase);
                         }
 
-                        // Allow all Trying responses through as some may contain additional useful information on the call state for the caller.
-                        if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding && progressStatus != SIPResponseStatusCodesEnum.Trying)
+                        // Allow all Trying responses through as some may contain additional useful information on the call state for the caller. 
+                        // Also if the response is a 183 Session Progress with audio forward it.
+                        if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding && progressStatus != SIPResponseStatusCodesEnum.Trying &&
+                            !(progressStatus == SIPResponseStatusCodesEnum.SessionProgress && progressBody != null))
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "UAS call ignoring progress response with status of " + (int)progressStatus + " as already in " + m_uasTransaction.TransactionState + ".", m_owner));
                         }
@@ -464,6 +472,7 @@ namespace SIPSorcery.SIP.App
         private void UASTransactionCancelled(SIPTransaction sipTransaction)
         {
             logger.Debug("SIPServerUserAgent got cancellation request.");
+            m_isCancelled = true;
             if (CallCancelled != null)
             {
                 CallCancelled(this);

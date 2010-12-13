@@ -1,4 +1,4 @@
-// ============================================================================
+ // ============================================================================
 // FileName: SIPMonitorConsoleEvent.cs
 //
 // Description:
@@ -37,6 +37,7 @@
 
 using System;
 using System.Collections;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -76,6 +77,9 @@ namespace SIPSorcery.SIP.App
         {
             m_serialisationPrefix = SERIALISATION_PREFIX;
             ClientType = SIPMonitorClientTypesEnum.Console;
+#if !SILVERLIGHT
+            ProcessID = Process.GetCurrentProcess().Id;
+#endif
         }
 
         public SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, string username)
@@ -88,6 +92,9 @@ namespace SIPSorcery.SIP.App
             Message = message;
             Username = username;
             Created = DateTimeOffset.UtcNow;
+#if !SILVERLIGHT
+            ProcessID = Process.GetCurrentProcess().Id;
+#endif
         }
 
         public SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, string username, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint)
@@ -102,6 +109,9 @@ namespace SIPSorcery.SIP.App
             Created = DateTimeOffset.UtcNow;
             ServerEndPoint = localEndPoint;
             RemoteEndPoint = remoteEndPoint;
+#if !SILVERLIGHT
+            ProcessID = Process.GetCurrentProcess().Id;
+#endif
         }
 
         public SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, SIPEndPoint serverSocket, SIPEndPoint fromSocket, SIPEndPoint toSocket)
@@ -116,6 +126,9 @@ namespace SIPSorcery.SIP.App
             RemoteEndPoint = fromSocket;
             DestinationEndPoint = toSocket;
             Created = DateTimeOffset.UtcNow;
+#if !SILVERLIGHT
+            ProcessID = Process.GetCurrentProcess().Id;
+#endif
         }
 
         public SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum serverType, SIPMonitorEventTypesEnum eventType, string message, SIPRequest sipRequest, SIPResponse sipResponse, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, SIPCallDirection callDirection)
@@ -129,6 +142,9 @@ namespace SIPSorcery.SIP.App
             RemoteEndPoint = remoteEndPoint;
             ServerEndPoint = localEndPoint;
             Created = DateTimeOffset.UtcNow;
+#if !SILVERLIGHT
+            ProcessID = Process.GetCurrentProcess().Id;
+#endif
 
             string dirn = (callDirection == SIPCallDirection.In) ? CALLDIRECTION_IN_STRING : CALLDIRECTION_OUT_STRING;
             if (sipRequest != null)
@@ -179,7 +195,8 @@ namespace SIPSorcery.SIP.App
                 }
 
                 monitorEvent.Username = eventFields[9];
-                monitorEvent.Message = eventFields[10].Trim('#');
+                Int32.TryParse(eventFields[10], out monitorEvent.ProcessID);
+                monitorEvent.Message = eventFields[11].Trim('#');
 
                 return monitorEvent;
             }
@@ -209,6 +226,7 @@ namespace SIPSorcery.SIP.App
                     remoteEndPointValue + "|" +
                     dstEndPointValue + "|" +
                     Username + "|" +
+                    ProcessID + "|" +
                     Message + END_MESSAGE_DELIMITER;
 
                 return csvEvent;
@@ -226,11 +244,11 @@ namespace SIPSorcery.SIP.App
 
             if (!MonitorServerID.IsNullOrBlank())
             {
-                consoleString += " " + MonitorServerID;
+                consoleString += " " + MonitorServerID + "(" + ProcessID + ")";
             }
 
             // Special case for dialplan events and super user. Add the username of the event to the start of the monitor message.
-            if (adminId == m_topLevelAdminID && Username != null)
+            if (adminId == m_topLevelAdminID && !Username.IsNullOrBlank())
             {
                 consoleString += " " + Username;
             }

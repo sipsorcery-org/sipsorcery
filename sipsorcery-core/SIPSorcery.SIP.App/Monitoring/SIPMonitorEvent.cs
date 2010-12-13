@@ -219,6 +219,7 @@ namespace SIPSorcery.SIP.App
 		public DateTimeOffset Created;
         public string Username;
         public string MonitorServerID;                  // The ID of the monitoring server that received this event. Useful when there are multiple monitoring servers.
+        public int ProcessID;                        // The ID of the process that generated this event.
 
         //public int GeographicId;
         //public string GeographicDescription;

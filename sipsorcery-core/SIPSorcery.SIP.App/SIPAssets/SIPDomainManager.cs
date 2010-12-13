@@ -97,10 +97,18 @@ namespace SIPSorcery.SIP.App
             try
             {
                 List<SIPDomain> sipDomains = m_sipDomainPersistor.Get(null, null, 0, Int32.MaxValue);
-                m_domains.Clear();
-                foreach (SIPDomain sipDomain in sipDomains)
+                
+                if(sipDomains == null || sipDomains.Count == 0)
                 {
-                    AddDomain(sipDomain);
+                    throw new ApplicationException("No SIP domains could be loaded from the persistence store. There needs to be at least one domain.");
+                }
+                else
+                {
+                    m_domains.Clear();
+                    foreach (SIPDomain sipDomain in sipDomains)
+                    {
+                        AddDomain(sipDomain);
+                    }
                 }
             }
             catch (Exception excp)
