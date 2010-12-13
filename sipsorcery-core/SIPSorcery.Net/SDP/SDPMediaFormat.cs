@@ -38,7 +38,7 @@ namespace SIPSorcery.Net
             FormatID = formatID;
             if (Enum.IsDefined(typeof(SDPMediaFormatsEnum), formatID))
             {
-                Name = Enum.Parse(typeof(SDPMediaFormatsEnum), formatID.ToString()).ToString();
+                Name = Enum.Parse(typeof(SDPMediaFormatsEnum), formatID.ToString(), true).ToString();
             }
             ClockRate = DEFAULT_CLOCK_RATE;
         }

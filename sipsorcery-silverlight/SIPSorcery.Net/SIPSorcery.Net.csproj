@@ -76,6 +76,21 @@
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\SDP\SDP.cs">
       <Link>SDP\SDP.cs</Link>
     </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\SDP\SDPConnectionInformation.cs">
+      <Link>SDP\SDPConnectionInformation.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\SDP\SDPMediaAnnouncement.cs">
+      <Link>SDP\SDPMediaAnnouncement.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\SDP\SDPMediaFormat.cs">
+      <Link>SDP\SDPMediaFormat.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\SDP\SDPMediaTypes.cs">
+      <Link>SDP\SDPMediaTypes.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\SDP\SessionDescriptionTypes.cs">
+      <Link>SDP\SessionDescriptionTypes.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -28,6 +28,12 @@ create table customers
  emailaddressconfirmed bit not null default 0,
  invitecode varchar(36) null,
  inserted datetimeoffset not null,
+  passwordresetid varchar(36) null,
+ passwordresetidsetat varchar(33) null,			-- Time the password reset id was generated at.
+ usernamerecoveryid varchar(36) null,
+ usernamerecoveryidsetat varchar(33) null,		-- Time the username recovery id was generated at.
+ usernamerecoveryfailurecount int null,			-- Number of failed attempts at answering the security question when attempting a username recovery.
+ usernamerecoverylastattemptat varchar(33) null,-- Time the last username recovery was attempted at.
  Primary Key(id),
  Unique(customerusername)
 );

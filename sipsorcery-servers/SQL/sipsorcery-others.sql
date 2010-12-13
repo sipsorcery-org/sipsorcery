@@ -25,6 +25,12 @@ create table customers
  emailaddressconfirmed bit not null default 0,
  invitecode varchar(36) null,
  inserted varchar(33) not null,
+ passwordresetid varchar(36) null,
+ passwordresetidsetat varchar(33) null,			-- Time the password reset id was generated at.
+ usernamerecoveryid varchar(36) null,
+ usernamerecoveryidsetat varchar(33) null,		-- Time the username recovery id was generated at.
+ usernamerecoveryfailurecount int null,			-- Number of failed attempts at answering the security question when attempting a username recovery.
+ usernamerecoverylastattemptat varchar(33) null,-- Time the last username recovery was attempted at.
  Primary Key(id),
  Unique(customerusername)
 );
@@ -247,6 +253,13 @@ create index regbindings_contact_index on sipregistrarbindings(contacturi);
 
 --insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;174.129.236.7;174.129.236.7:5060', null, '2010-02-09T13:01:21.3540000+00:00');
 -- insert into sipdomains values ('9822C7A7-5358-42DD-8905-DC7ABAE3EC3A', 'demo.sipsorcery.com', 'local;demo.sipsorcery.com:5060;199.230.56.92;199.230.56.92:5060', null, '2010-10-15T00:00:00.0000000+00:00');
+
+alter table customers add column passwordresetid varchar(36) null;
+alter table customers add column passwordresetidsetat varchar(33) null;
+alter table customers add column usernamerecoveryid varchar(36) null;
+alter table customers add column usernamerecoveryidsetat varchar(33) null;
+alter table customers add column usernamerecoveryfailurecount int null;
+alter table customers add column usernamerecoverylastattemptat varchar(33) null;
 
 -- SIP Sorcery User Data DDL
 
