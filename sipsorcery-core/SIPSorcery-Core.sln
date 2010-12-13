@@ -26,11 +26,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Persistence", "S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Web.Services", "SIPSorcery.Web.Services\SIPSorcery.Web.Services.csproj", "{5D73FBAC-897F-4FEA-BAF9-61823545FE70}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIP.Core.UnitTests", "SIPSorcery.SIP.Core.UnitTests\SIPSorcery.SIP.Core.UnitTests.csproj", "{13B2C19A-621A-4404-99E1-8345B7283CB6}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{5A855FE1-8B93-429D-95A5-B8215CF62A9D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Net.UnitTests", "Tests\SIPSorcery.Net.UnitTests\SIPSorcery.Net.UnitTests.csproj", "{FE8521C9-8F01-44C5-BD8C-2920E9AAC906}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIP.Core.UnitTests", "Tests\SIPSorcery.SIP.Core.UnitTests\SIPSorcery.SIP.Core.UnitTests.csproj", "{13B2C19A-621A-4404-99E1-8345B7283CB6}"
 EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
@@ -135,16 +135,6 @@ Global
 		{5D73FBAC-897F-4FEA-BAF9-61823545FE70}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{5D73FBAC-897F-4FEA-BAF9-61823545FE70}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{5D73FBAC-897F-4FEA-BAF9-61823545FE70}.Release|x86.ActiveCfg = Release|Any CPU
-		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Release|x86.ActiveCfg = Release|Any CPU
 		{FE8521C9-8F01-44C5-BD8C-2920E9AAC906}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FE8521C9-8F01-44C5-BD8C-2920E9AAC906}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FE8521C9-8F01-44C5-BD8C-2920E9AAC906}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -155,12 +145,22 @@ Global
 		{FE8521C9-8F01-44C5-BD8C-2920E9AAC906}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{FE8521C9-8F01-44C5-BD8C-2920E9AAC906}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{FE8521C9-8F01-44C5-BD8C-2920E9AAC906}.Release|x86.ActiveCfg = Release|Any CPU
+		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{13B2C19A-621A-4404-99E1-8345B7283CB6}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{13B2C19A-621A-4404-99E1-8345B7283CB6} = {5A855FE1-8B93-429D-95A5-B8215CF62A9D}
 		{FE8521C9-8F01-44C5-BD8C-2920E9AAC906} = {5A855FE1-8B93-429D-95A5-B8215CF62A9D}
+		{13B2C19A-621A-4404-99E1-8345B7283CB6} = {5A855FE1-8B93-429D-95A5-B8215CF62A9D}
 	EndGlobalSection
 EndGlobal
