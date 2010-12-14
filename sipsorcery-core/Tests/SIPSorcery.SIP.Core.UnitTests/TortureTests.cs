@@ -29,7 +29,6 @@ namespace SIPSorcery.SIP.Core.UnitTests
         public SIPTortureTests()
         { }
 
-        [TestMethod]
         public void TestMethod1()
         {
              Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
