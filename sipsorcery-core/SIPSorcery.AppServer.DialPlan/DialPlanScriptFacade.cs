@@ -1197,7 +1197,7 @@ namespace SIPSorcery.AppServer.DialPlan
                             byte[] buffer = new byte[MAX_BYTES_WEB_GET];
                             int bytesRead = responseStream.Read(buffer, 0, MAX_BYTES_WEB_GET);
                             responseStream.Close();
-                            return Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                            return Encoding.UTF8.GetString(buffer, 0, bytesRead);
                         }
                     }
                 }
