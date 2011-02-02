@@ -120,7 +120,7 @@ create table sipproviders
  providername varchar(50) not null,
  providerusername varchar(32) not null,
  providerpassword varchar(32),
- providerserver varchar(256) not null,
+ providerserver varchar(256) null,
  providerauthusername varchar(32),
  provideroutboundproxy varchar(256),
  providerfrom varchar(256),
@@ -134,6 +134,10 @@ create table sipproviders
  registerdisabledreason varchar(256),				-- If a registration has been disabled by the RegistrationAgent the reason will be specified here. Examples are 403 Forbidden responses.
  inserted varchar(33) not null,
  lastupdate varchar(33) not null,
+ providertype varchar(16) not null default 'sip',
+ gvcallbacknumber varchar(16) null,
+ gvcallbackpattern varchar(32) null,
+ gvcallbacktype varchar(16) null,
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Unique(owner, providername)

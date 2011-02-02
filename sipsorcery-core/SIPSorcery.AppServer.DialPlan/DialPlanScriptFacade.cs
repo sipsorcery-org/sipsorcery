@@ -93,11 +93,13 @@ namespace SIPSorcery.AppServer.DialPlan
         private const int DEFAULT_GOOGLEVOICE_PHONETYPE = 2;
         private const int GTALK_DEFAULT_CONNECTION_TIMEOUT = 5000;
         private const int GTALK_MAX_CONNECTION_TIMEOUT = 30000;
+        private const string GOOGLE_ANALYTICS_KEY = "GoogleAnalyticsAccountCode";   // If this key does not exist in App.Config there's no point sending Google Analytics requests.
 
         private static int m_maxRingTime = SIPTimings.MAX_RING_TIME;
 
         private static readonly StorageTypes m_userDataDBType = StorageTypes.Unknown;
         private static readonly string m_userDataDBConnStr;
+        private static bool m_sendAnalytics = true;
 
         private static ILog logger = AppState.logger;
         private SIPMonitorLogDelegate m_dialPlanLogDelegate;
@@ -153,7 +155,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private ISIPCallManager m_callManager;
         private bool m_autoCleanup = true;  // Set to false if the Ruby dialplan wants to take care of handling the cleanup from a rescue or ensure block.
         private bool m_hasBeenCleanedUp;
-
+        
         private DialPlanContext m_dialPlanContext;
         public DialPlanContext DialPlanContext
         {
@@ -189,6 +191,7 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 m_userDataDBType = (AppState.GetConfigSetting(USERDATA_DBTYPE_KEY) != null) ? StorageTypesConverter.GetStorageType(AppState.GetConfigSetting(USERDATA_DBTYPE_KEY)) : StorageTypes.Unknown;
                 m_userDataDBConnStr = AppState.GetConfigSetting(USERDATA_DBCONNSTR_KEY);
+                m_sendAnalytics = !AppState.GetConfigSetting(GOOGLE_ANALYTICS_KEY).IsNullOrBlank();
             }
             catch (Exception excp)
             {
@@ -367,7 +370,17 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <returns>A code that best represents how the dial command ended.</returns>
         public DialPlanAppResult Dial(string data, int ringTimeout, int answeredCallLimit)
         {
-            return Dial(data, ringTimeout, answeredCallLimit, m_sipRequest);
+            return Dial(data, ringTimeout, answeredCallLimit, m_sipRequest, null);
+        }
+
+        //public DialPlanAppResult Dial(string data, CRMHeaders contact)
+        //{
+        //    return Dial(data, m_maxRingTime, 0, m_sipRequest, null);
+        //}
+
+        public DialPlanAppResult Dial(string data, int ringTimeout, int answeredCallLimit, CRMHeaders contact)
+        {
+            return Dial(data, ringTimeout, answeredCallLimit, m_sipRequest, contact);
         }
 
         /// <summary>
@@ -385,7 +398,8 @@ namespace SIPSorcery.AppServer.DialPlan
             string data,
             int ringTimeout,
             int answeredCallLimit,
-            SIPRequest clientRequest)
+            SIPRequest clientRequest,
+            CRMHeaders contact)
         {
             if (m_dialPlanContext.IsAnswered)
             {
@@ -417,7 +431,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 SIPDialogueTransferModesEnum uasTransferMode = SIPDialogueTransferModesEnum.Default;
                 int numberLegs = 0;
 
-                m_currentCall = new ForkCall(m_sipTransport, FireProxyLogEvent, m_callManager.QueueNewCall, m_dialStringParser, Username, m_adminMemberId, m_outboundProxySocket, out LastDialled);
+                m_currentCall = new ForkCall(m_sipTransport, FireProxyLogEvent, m_callManager.QueueNewCall, m_dialStringParser, Username, m_adminMemberId, m_outboundProxySocket, m_callManager, out LastDialled);
                 m_currentCall.CallProgress += m_dialPlanContext.CallProgress;
                 m_currentCall.CallFailed += (status, reason, headers) =>
                 {
@@ -450,7 +464,8 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_dialPlanContext.CallersNetworkId,
                         m_customFromName,
                         m_customFromUser,
-                        m_customFromHost);
+                        m_customFromHost,
+                        contact);
 
                     List<SIPCallDescriptor>[] callListArray = callsQueue.ToArray();
                     callsQueue.ToList().ForEach((list) => numberLegs += list.Count);
@@ -481,7 +496,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         ringTimeout = ringTimeout * 1000;
                     }
-                    ExtendScriptTimeout(ringTimeout + DEFAULT_CREATECALL_RINGTIME);
+                    ExtendScriptTimeout(ringTimeout/1000 + DEFAULT_CREATECALL_RINGTIME);
                     DateTime startTime = DateTime.Now;
 
                     if (m_waitForCallCompleted.WaitOne(ringTimeout, false))
@@ -1847,13 +1862,16 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                GoogleEvent googleEvent = new GoogleEvent("www.sipsorcery.com",
-                    category,
-                    action,
-                    label,
-                    value);
-                TrackingRequest request = new RequestFactory().BuildRequest(googleEvent);
-                ThreadPool.QueueUserWorkItem(delegate { GoogleTracking.FireTrackingEvent(request); });
+                if (m_sendAnalytics)
+                {
+                    GoogleEvent googleEvent = new GoogleEvent("www.sipsorcery.com",
+                        category,
+                        action,
+                        label,
+                        value);
+                    TrackingRequest request = new RequestFactory().BuildRequest(googleEvent);
+                    ThreadPool.QueueUserWorkItem(delegate { GoogleTracking.FireTrackingEvent(request); });
+                }
             }
             catch (Exception excp)
             {

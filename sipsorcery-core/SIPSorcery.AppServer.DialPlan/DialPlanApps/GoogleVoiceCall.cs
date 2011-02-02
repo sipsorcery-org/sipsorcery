@@ -89,7 +89,6 @@ namespace SIPSorcery.AppServer.DialPlan
             string adminMemberId,
             SIPEndPoint outboundProxy)
         {
-
             m_sipTransport = sipTransport;
             m_callManager = callManager;
             Log_External = logDelegate;
@@ -276,7 +275,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call to " + destinationNumber + " forwarding to " + forwardingNumber + " successfully initiated, callback timeout=" + callbackTimeout + "s.", m_username));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice Call to " + destinationNumber + " initiated, callback #" + forwardingNumber + ", phone type " + phoneType + ", timeout " + callbackTimeout + "s.", m_username));
                 }
 
                 if (m_waitForCallback.WaitOne(callbackTimeout * 1000))

@@ -42,17 +42,20 @@ namespace SIPSorcery.SIP
     public class SIPDNSServiceResult
     {
         public SIPServicesEnum SIPService;                  // The type of SIP NAPTR/SRV record that was resolved.
-        public int Order;                                   // The order value assigned to the NAPTR/SRV record.
+        public int Priority;                                // The priority value assigned to the NAPTR/SRV record. A client MUST attempt to contact the target host with the lowest-numbered priority it can
+                                                            // reach; target hosts with the same priority SHOULD be tried in an order defined by the weight field.
+        public int Weight;                                  // The weight value assigned to the SRV record. Larger weights SHOULD be given a proportionately higher probability of being selected.
         public int TTL;                                     // The time-to-live in seconds for this record.
         public string Data;                                 // The SRV record for the NAPTR record and target for a SRV record.
         public int Port;                                    // The SRV record port.
         public DateTime? ResolvedAt;                        // Time this record was created.
         public DateTime? EndPointsResolvedAt;               // The time an attempt was made to resolve the A records for the SRV.
 
-        public SIPDNSServiceResult(SIPServicesEnum sipService, int order, int ttl, string data, int port, DateTime resolvedAt)
+        public SIPDNSServiceResult(SIPServicesEnum sipService, int priority, int weight, int ttl, string data, int port, DateTime resolvedAt)
         {
             SIPService = sipService;
-            Order = order;
+            Priority = priority;
+            Weight = weight;
             TTL = ttl;
             Data = data;
             Port = port;
@@ -156,19 +159,7 @@ namespace SIPSorcery.SIP
         {
             if (SIPSRVResults != null && SIPSRVResults.Count > 0)
             {
-                SIPDNSServiceResult nextSRVRecord = null;
-                foreach (SIPDNSServiceResult sipSRVResult in SIPSRVResults)
-                {
-                    if (sipSRVResult.EndPointsResolvedAt == null)
-                    {
-                        if (nextSRVRecord == null || nextSRVRecord.Order < sipSRVResult.Order)
-                        {
-                            nextSRVRecord = sipSRVResult;
-                        }
-                    }
-                }
-
-                return nextSRVRecord;
+                return (from srv in SIPSRVResults where srv.EndPointsResolvedAt == null orderby srv.Priority select srv).FirstOrDefault();
             }
 
             return null;

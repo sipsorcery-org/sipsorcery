@@ -440,24 +440,5 @@ namespace SIPSorcery.SIP
                 logger.Error("Exception Disposing SIPTCPChannel. " + excp.Message);
             }
         }
-
-        #region Unit testing.
-
-        #if UNITTEST
-	
-		[TestFixture]
-		public class SIPTCPChannelUnitTest
-		{
-			[Test]
-			public void SampleTest()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-				Assert.IsTrue(true, "True was false.");
-			}
-		}
-
-        #endif
-
-        #endregion
     }
 }

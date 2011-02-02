@@ -76,10 +76,13 @@ namespace SIPSorcery.Persistence
         {
             try
             {
-                using (DataContext dataContext = new DataContext(m_dbConnectionStr))
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
                 {
-                    dataContext.GetTable<T>().InsertOnSubmit(asset);
-                    dataContext.SubmitChanges();
+                    using (DataContext dataContext = new DataContext(connection))
+                    {
+                        dataContext.GetTable<T>().InsertOnSubmit(asset);
+                        dataContext.SubmitChanges();
+                    }
                 }
 
                 if (Added != null)
@@ -100,10 +103,13 @@ namespace SIPSorcery.Persistence
         {
             try
             {
-                using (DataContext dataContext = new DataContext(m_dbConnectionStr))
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
                 {
-                    dataContext.GetTable<T>().Attach(asset, true);
-                    dataContext.SubmitChanges();
+                    using (DataContext dataContext = new DataContext(connection))
+                    {
+                        dataContext.GetTable<T>().Attach(asset, true);
+                        dataContext.SubmitChanges();
+                    }
                 }
 
                 if (Updated != null)
@@ -188,10 +194,13 @@ namespace SIPSorcery.Persistence
         {
             try
             {
-                using (DataContext dataContext = new DataContext(m_dbConnectionStr))
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
                 {
-                    dataContext.GetTable<T>().DeleteAllOnSubmit(from asset in dataContext.GetTable<T>().Where(whereClause) select asset);
-                    dataContext.SubmitChanges();
+                    using (DataContext dataContext = new DataContext(connection))
+                    {
+                        dataContext.GetTable<T>().DeleteAllOnSubmit(from asset in dataContext.GetTable<T>().Where(whereClause) select asset);
+                        dataContext.SubmitChanges();
+                    }
                 }
             }
             catch (Exception excp)
@@ -205,10 +214,13 @@ namespace SIPSorcery.Persistence
         {
             try
             {
-                using (DataContext dataContext = new DataContext(m_dbConnectionStr) { ObjectTrackingEnabled = false })
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
                 {
-                    //return (from asset in dataContext.GetTable<T>() where asset.Id == id select asset).FirstOrDefault();
-                    return (from asset in dataContext.GetTable<T>() where asset.Id.Equals(id) select asset).FirstOrDefault();
+                    using (DataContext dataContext = new DataContext(connection) { ObjectTrackingEnabled = false })
+                    {
+                        //return (from asset in dataContext.GetTable<T>() where asset.Id == id select asset).FirstOrDefault();
+                        return (from asset in dataContext.GetTable<T>() where asset.Id.Equals(id) select asset).FirstOrDefault();
+                    }
                 }
             }
             catch (Exception excp)
@@ -244,15 +256,18 @@ namespace SIPSorcery.Persistence
         {
             try
             {
-                using (DataContext dataContext = new DataContext(m_dbConnectionStr) { ObjectTrackingEnabled = false })
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
                 {
-                    if (whereClause != null)
+                    using (DataContext dataContext = new DataContext(connection) { ObjectTrackingEnabled = false })
                     {
-                        return (from asset in dataContext.GetTable<T>().Where(whereClause) select asset).Count();
-                    }
-                    else
-                    {
-                        return (from asset in dataContext.GetTable<T>() select asset).Count();
+                        if (whereClause != null)
+                        {
+                            return (from asset in dataContext.GetTable<T>().Where(whereClause) select asset).Count();
+                        }
+                        else
+                        {
+                            return (from asset in dataContext.GetTable<T>() select asset).Count();
+                        }
                     }
                 }
             }
@@ -267,18 +282,21 @@ namespace SIPSorcery.Persistence
         {
             try
             {
-                using (DataContext dataContext = new DataContext(m_dbConnectionStr) { ObjectTrackingEnabled = false })
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
                 {
-                    IQueryable<T> getList = null;
-                    if (whereClause != null)
+                    using (DataContext dataContext = new DataContext(connection) { ObjectTrackingEnabled = false })
                     {
-                        getList = from asset in dataContext.GetTable<T>().Where(whereClause) select asset;
+                        IQueryable<T> getList = null;
+                        if (whereClause != null)
+                        {
+                            getList = from asset in dataContext.GetTable<T>().Where(whereClause) select asset;
+                        }
+                        else
+                        {
+                            getList = from asset in dataContext.GetTable<T>() select asset;
+                        }
+                        return getList.FirstOrDefault();
                     }
-                    else
-                    {
-                        getList = from asset in dataContext.GetTable<T>() select asset;
-                    }
-                    return getList.FirstOrDefault();
                 }
             }
             catch (Exception excp)
@@ -293,34 +311,37 @@ namespace SIPSorcery.Persistence
         {
             try
             {
-                using (DataContext dataContext = new DataContext(m_dbConnectionStr) { ObjectTrackingEnabled = false })
+                using (IDbConnection connection = m_dbProviderFactory.CreateConnection())
                 {
-                    IQueryable<T> getList = null;
-                    if (whereClause != null)
+                    using (DataContext dataContext = new DataContext(connection) { ObjectTrackingEnabled = false })
                     {
-                        getList = from asset in dataContext.GetTable<T>().Where(whereClause) select asset;
-                    }
-                    else
-                    {
-                        getList = from asset in dataContext.GetTable<T>() select asset;
-                    }
+                        IQueryable<T> getList = null;
+                        if (whereClause != null)
+                        {
+                            getList = from asset in dataContext.GetTable<T>().Where(whereClause) select asset;
+                        }
+                        else
+                        {
+                            getList = from asset in dataContext.GetTable<T>() select asset;
+                        }
 
-                    if (!orderByField.IsNullOrBlank())
-                    {
-                        getList = getList.OrderBy(orderByField);
-                    }
+                        if (!orderByField.IsNullOrBlank())
+                        {
+                            getList = getList.OrderBy(orderByField);
+                        }
 
-                    if (offset != 0)
-                    {
-                        getList = getList.Skip(offset);
-                    }
+                        if (offset != 0)
+                        {
+                            getList = getList.Skip(offset);
+                        }
 
-                    if (count != Int32.MaxValue)
-                    {
-                        getList = getList.Take(count);
-                    }
+                        if (count != Int32.MaxValue)
+                        {
+                            getList = getList.Take(count);
+                        }
 
-                    return getList.ToList() ?? new List<T>();
+                        return getList.ToList() ?? new List<T>();
+                    }
                 }
             }
             catch (Exception excp)

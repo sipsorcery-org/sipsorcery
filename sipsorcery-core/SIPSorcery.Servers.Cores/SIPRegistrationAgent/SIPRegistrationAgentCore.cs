@@ -70,7 +70,7 @@ namespace SIPSorcery.Servers
         public const int REGISTRATION_RENEWAL_PERIOD = 1000;        // Time in milliseconds between the registration agent checking registrations.
         public const int REGISTRATION_HEAD_TIME = 5;                // Time in seconds to go to next registration to initate.
         public const int REGISTER_FAILURERETRY_INTERVAL = 300;      // Number of seconds between consecutive register requests in the event of failures or timeouts.
-        public const int REGISTER_DNSTIMEOUT_RETRY_INTERVAL = 120;  // The number of seconds between consecutive register requests in the event of a DNS timeout resolving the registrar server.
+        public const int REGISTER_DNSTIMEOUT_RETRY_INTERVAL = 300;  // The number of seconds between consecutive register requests in the event of a DNS timeout resolving the registrar server.
         public const int REGISTER_EMPTYDNS_RETRY_INTERVAL = 10;      // When the DNS manager has not yet had time to do the lookup wait this number of seconds and try again.
         public const int REGISTER_CHECKTIME_THRESHOLD = 3;          // Time the user registration checks should be taking less than. If exceeded a log message is produced.
         public const int REGISTER_EXPIREALL_WAITTIME = 2000;        // When stopping the registration agent the time to give after the initial request for all requests to complete.
@@ -80,6 +80,7 @@ namespace SIPSorcery.Servers
         //private const int DNS_SYNCHRONOUS_TIMEOUT = 3;              // For operations that need to so a synchronous DNS lookup such as binding removals the amount of time for the lookup.
         //private const int MAX_DNS_FAILURE_ATTEMPTS = 6;
         //private const string DNS_FAILURE_MESSAGE_PREFIX = "DNS Failure:";
+        public const int DNS_FAILURE_RETRY_WINDOW = 180;            // If a provider's DNS lookups fail for this length of time the binding will be disabled.
         private const string THREAD_NAME_PREFIX = "regagent-";
         private const int NUMBER_BINDINGS_PER_DB_ROUNDTRIP = 20;
 
@@ -222,14 +223,25 @@ namespace SIPSorcery.Servers
                                             RemoveCachedBinding(binding.Id);
                                             m_bindingPersistor.Delete(binding);
                                         }
-                                        /*else if (timedout)
+                                        else if (lookupResult.ATimedoutAt != null)
                                         {
-                                            // DNS timeouts can be caused by network or server issues. Delay the registration to give the probelm a chance to clear up.
-                                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "DNS resolution for " + binding.RegistrarServer.ToString() + " timed out, delaying by " + REGISTER_DNSTIMEOUT_RETRY_INTERVAL + "s.", binding.Owner));
-                                            binding.RegistrationFailureMessage = "DNS resolution for " + binding.RegistrarServer.ToString() + " timed out.";
-                                            binding.NextRegistrationTime = DateTimeOffset.UtcNow.AddSeconds(REGISTER_DNSTIMEOUT_RETRY_INTERVAL);
-                                            m_bindingPersistor.Update(binding);
-                                        }*/
+                                            if (binding.LastRegisterTime == null && DateTimeOffset.UtcNow.Subtract(provider.LastUpdate).TotalMinutes > DNS_FAILURE_RETRY_WINDOW)
+                                            {
+                                                // The DNS retry window has expired and the binding has never successfully registered so it's highly likely it's an invalid hostname.
+                                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " +  DNS_FAILURE_RETRY_WINDOW + " minutes. DISABLING.", binding.Owner));
+                                                DisableSIPProviderRegistration(provider.Id, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " +  DNS_FAILURE_RETRY_WINDOW + " minutes.");
+                                                RemoveCachedBinding(binding.Id);
+                                                m_bindingPersistor.Delete(binding);
+                                            }
+                                            else
+                                            {
+                                                // DNS timeouts can be caused by network or server issues. Delay the registration to give the problem a chance to clear up.
+                                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "DNS resolution for " + binding.RegistrarServer.ToString() + " timed out, delaying by " + REGISTER_DNSTIMEOUT_RETRY_INTERVAL + "s.", binding.Owner));
+                                                binding.RegistrationFailureMessage = "DNS resolution for " + binding.RegistrarServer.ToString() + " timed out.";
+                                                binding.NextRegistrationTime = DateTimeOffset.UtcNow.AddSeconds(REGISTER_DNSTIMEOUT_RETRY_INTERVAL);
+                                                m_bindingPersistor.Update(binding);
+                                            }
+                                        }
                                         else if (lookupResult.Pending)
                                         {
                                             // DNS lookup is pending, delay the registration attempt until the lookup is likely to have been completed.

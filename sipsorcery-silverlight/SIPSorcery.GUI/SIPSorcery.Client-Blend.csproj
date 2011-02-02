@@ -27,7 +27,7 @@
     <SilverlightApplication>true</SilverlightApplication>
     <ValidateXaml>true</ValidateXaml>
     <ThrowErrorsInValidation>false</ThrowErrorsInValidation>
-    <ExpressionBlendVersion>4.0.20310.0</ExpressionBlendVersion>
+    <ExpressionBlendVersion>4.0.20525.0</ExpressionBlendVersion>
     <TargetFrameworkIdentifier>Silverlight</TargetFrameworkIdentifier>
     <SilverlightVersion>$(TargetFrameworkVersion)</SilverlightVersion>
     <Utf8Output>true</Utf8Output>
@@ -110,15 +110,7 @@
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="UserInterface\CallManager\SIPSwitchboard.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="UserInterface\CallManager\SIPCallManager.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="UserInterface\CityLightsDisplay.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -192,14 +184,8 @@
     <Compile Include="UserInterface\AssetManagers\SIPProviderManager.xaml.cs">
       <DependentUpon>SIPProviderManager.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UserInterface\CallManager\SIPSwitchboard.xaml.cs">
-      <DependentUpon>SIPSwitchboard.xaml</DependentUpon>
-    </Compile>
     <Compile Include="UserInterface\CallManager\SIPCallManager.xaml.cs">
       <DependentUpon>SIPCallManager.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserInterface\CityLightsDisplay.xaml.cs">
-      <DependentUpon>CityLightsDisplay.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\NewAccountInviteControl.xaml.cs">
       <DependentUpon>NewAccountInviteControl.xaml</DependentUpon>

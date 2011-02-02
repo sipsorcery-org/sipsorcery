@@ -216,7 +216,8 @@ namespace SIPSorcery.Servers
             }
             catch (Exception excp)
             {
-                string reqExcpError = "Exception SIPProxyCore GotRequest. " + excp.Message;
+                string remoteEndPointStr = (remoteEndPoint != null) ? remoteEndPoint.ToString() : null;
+                string reqExcpError = "Exception SIPProxyCore GotRequest (from " + remoteEndPointStr + "). " + excp.Message;
                 logger.Error(reqExcpError);
                 SIPMonitorEvent reqExcpEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.SIPProxy, SIPMonitorEventTypesEnum.Error, reqExcpError, localSIPEndPoint, remoteEndPoint, null);
                 SendMonitorEvent(reqExcpEvent);

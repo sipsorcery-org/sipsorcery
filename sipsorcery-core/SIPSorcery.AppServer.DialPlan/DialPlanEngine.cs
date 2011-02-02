@@ -81,6 +81,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private const string MONITOR_THREAD_NAME = "dialplanengine-monitor";
         public const string SCRIPT_REQUESTOBJECT_NAME = "req";        // Access using $req from the Ruby script.
         public const string SCRIPT_HELPEROBJECT_NAME = "sys";         // Access using $sys from the Ruby script.
+        public const string SCRIPT_CRMOBJECT_NAME = "crm";            // Access using $crm from the Ruby script.
         public const int ABSOLUTEMAX_SCRIPTPROCESSING_SECONDS = 300;  // The absolute maximum amount of seconds a script thread will be allowed to execute for.
         public const int MAX_ALLOWED_SCRIPTSCOPES = 20;               // The maximum allowed number of scopes one if which is required for each simultaneously executing script.
         private const string RUBY_COMMON_COPY_EXTEN = ".tmp";
@@ -234,11 +235,11 @@ namespace SIPSorcery.AppServer.DialPlan
                     if (matchedCommand.Data != null && matchedCommand.Data.Trim().Length > 0)
                     {
                         DialStringParser dialStringParser = new DialStringParser(m_sipTransport, dialPlanContext.Owner, dialPlanContext.SIPAccount, dialPlanContext.SIPProviders, m_sipAccountPersistor.Get, GetSIPAccountBindings_External, GetCanonicalDomainDelegate_External, LogDelegate_External, dialPlanContext.SIPDialPlan.DialPlanName);
-                        ForkCall ForkCall = new ForkCall(m_sipTransport, FireProxyLogEvent, callManager.QueueNewCall, dialStringParser, dialPlanContext.Owner, dialPlanContext.AdminMemberId, m_outboundProxySocket);
+                        ForkCall ForkCall = new ForkCall(m_sipTransport, FireProxyLogEvent, callManager.QueueNewCall, dialStringParser, dialPlanContext.Owner, dialPlanContext.AdminMemberId, m_outboundProxySocket, null);
                         ForkCall.CallProgress += dialPlanContext.CallProgress;
                         ForkCall.CallFailed += dialPlanContext.CallFailed;
                         ForkCall.CallAnswered += dialPlanContext.CallAnswered;
-                        Queue<List<SIPCallDescriptor>> calls = dialStringParser.ParseDialString(DialPlanContextsEnum.Line, uas.CallRequest.Copy(), matchedCommand.Data, null, null, null, dialPlanContext.CallersNetworkId, null, null, null);
+                        Queue<List<SIPCallDescriptor>> calls = dialStringParser.ParseDialString(DialPlanContextsEnum.Line, uas.CallRequest.Copy(), matchedCommand.Data, null, null, null, dialPlanContext.CallersNetworkId, null, null, null, null);
                         ForkCall.Start(calls);
                     }
                     else
@@ -349,8 +350,11 @@ namespace SIPSorcery.AppServer.DialPlan
                             GetSIPAccountBindings_External,
                             m_outboundProxySocket);
 
+                        DialPlanCRMFacade crmFacade = new DialPlanCRMFacade();
+
                         ScriptScope rubyScope = dialPlanExecutionScript.DialPlanScriptScope;
                         rubyScope.SetVariable(SCRIPT_HELPEROBJECT_NAME, planFacade);
+                        rubyScope.SetVariable(SCRIPT_CRMOBJECT_NAME, crmFacade);
                         if (uas.CallRequest != null)
                         {
                             rubyScope.SetVariable(SCRIPT_REQUESTOBJECT_NAME, uas.CallRequest.Copy());

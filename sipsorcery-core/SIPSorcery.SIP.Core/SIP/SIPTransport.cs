@@ -113,7 +113,6 @@ namespace SIPSorcery.SIP
         private static readonly int m_t6 = SIPTimings.T6;
         private static string m_looseRouteParameter = SIPConstants.SIP_LOOSEROUTER_PARAMETER;
         public static IPAddress BlackholeAddress = IPAddress.Any;                               // (IPAddress.Any is 0.0.0.0) Any SIP messages with this IP address will be dropped.
-        //public static readonly SIPEndPoint Blackhole = new SIPEndPoint(new IPEndPoint(BlackholeAddress, 0));   
 
         private static ILog logger = AssemblyState.logger;
 
@@ -453,7 +452,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         public void SendRaw(SIPEndPoint localSIPEndPoint, SIPEndPoint destinationEndPoint, byte[] buffer)
         {
-            if (destinationEndPoint != null && destinationEndPoint.Address == BlackholeAddress)
+            if (destinationEndPoint != null && destinationEndPoint.Address.Equals(BlackholeAddress))
             {
                 // Ignore packet, it's destined for the blackhole.
                 return;
@@ -499,7 +498,7 @@ namespace SIPSorcery.SIP
             {
                 SIPEndPoint requestEndPoint = dnsResult.GetSIPEndPoint();
 
-                if (requestEndPoint != null && requestEndPoint.Address == BlackholeAddress)
+                if (requestEndPoint != null && requestEndPoint.Address.Equals(BlackholeAddress))
                 {
                     // Ignore packet, it's destined for the blackhole.
                     return;
@@ -517,7 +516,7 @@ namespace SIPSorcery.SIP
 
         public void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
-            if (dstEndPoint != null && dstEndPoint.Address == BlackholeAddress)
+            if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
             {
                 // Ignore packet, it's destined for the blackhole.
                 return;
@@ -554,7 +553,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (dstEndPoint != null && dstEndPoint.Address == BlackholeAddress)
+                if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
                 {
                     // Ignore packet, it's destined for the blackhole.
                     return;
@@ -615,7 +614,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         public void SendSIPReliable(SIPTransaction sipTransaction)
         {
-            if (sipTransaction.RemoteEndPoint != null && sipTransaction.RemoteEndPoint.Address == BlackholeAddress)
+            if (sipTransaction.RemoteEndPoint != null && sipTransaction.RemoteEndPoint.Address.Equals(BlackholeAddress))
             {
                 sipTransaction.Retransmits = 1;
                 sipTransaction.InitialTransmit = DateTime.Now;
@@ -686,7 +685,7 @@ namespace SIPSorcery.SIP
 
         public void SendResponse(SIPEndPoint dstEndPoint, SIPResponse sipResponse)
         {
-            if (dstEndPoint != null && dstEndPoint.Address == BlackholeAddress)
+            if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
             {
                 // Ignore packet, it's destined for the blackhole.
             }
@@ -713,7 +712,7 @@ namespace SIPSorcery.SIP
 
         public void SendResponse(SIPResponse sipResponse)
         {
-            if (sipResponse.LocalSIPEndPoint != null && sipResponse.LocalSIPEndPoint.Address == BlackholeAddress)
+            if (sipResponse.LocalSIPEndPoint != null && sipResponse.LocalSIPEndPoint.Address.Equals(BlackholeAddress))
             {
                 // Ignore packet, it's destined for the blackhole.
                 return;
@@ -771,7 +770,7 @@ namespace SIPSorcery.SIP
             {
                 SIPEndPoint dstEndPoint = lookupResult.GetSIPEndPoint();
 
-                if (dstEndPoint != null && dstEndPoint.Address == BlackholeAddress)
+                if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
                 {
                     // Ignore packet, it's destined for the blackhole.
                     return;
@@ -791,7 +790,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (dstEndPoint != null && dstEndPoint.Address == BlackholeAddress)
+                if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
                 {
                     // Ignore packet, it's destined for the blackhole.
                     return;
@@ -1248,12 +1247,12 @@ namespace SIPSorcery.SIP
                             if (rawSIPMessage.IsNullOrBlank())
                             {
                                 // An emptry transmission has been received. More than likely this is a NAT keep alive and can be disregarded.
-                                FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "No printable characters, length " + buffer.Length + " bytes.", SIPValidationFieldsEnum.Unknown, null);
+                                //FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "No printable characters, length " + buffer.Length + " bytes.", SIPValidationFieldsEnum.Unknown, null);
 
 #if !SILVERLIGHT
                                 if (PerformanceMonitorPrefix != null)
                                 {
-                                    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
+                                   // SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
                                 }
 #endif
 

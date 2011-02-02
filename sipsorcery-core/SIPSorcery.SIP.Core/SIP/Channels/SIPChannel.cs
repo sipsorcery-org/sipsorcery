@@ -67,8 +67,8 @@ namespace SIPSorcery.SIP
     public abstract class SIPChannel
     {
         private const int INITIALPRUNE_CONNECTIONS_DELAY = 60000;   // Wait this long before starting the prune checks, there will be no connections to prune initially and the CPU is needed elsewhere.
-        private const int PRUNE_CONNECTIONS_INTERVAL = 5000;        // The period at which to prune the connections.
-        private const int PRUNE_NOTRANSMISSION_MINUTES = 5;         // The number of minutes after which if no transmissions are sent or received a connection will be pruned.
+        private const int PRUNE_CONNECTIONS_INTERVAL = 60000;        // The period at which to prune the connections.
+        private const int PRUNE_NOTRANSMISSION_MINUTES = 70;         // The number of minutes after which if no transmissions are sent or received a connection will be pruned.
 
         protected ILog logger = AssemblyState.logger;
 

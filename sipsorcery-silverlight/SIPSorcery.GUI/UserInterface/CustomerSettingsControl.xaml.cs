@@ -73,7 +73,11 @@ namespace SIPSorcery
                 UIHelper.SetText(m_emailAddressTextBox, m_customer.EmailAddress);
                 UIHelper.SetText(m_securityAnswerTextBox, m_customer.SecurityAnswer);
                 UIHelper.SetText(m_cityTextBox, m_customer.City);
-                UIHelper.SetText(m_webSiteTextBox, m_customer.WebSite);
+
+                if (m_customer.WebSite != null)
+                {
+                    UIHelper.SetText(m_webSiteTextBox, m_customer.WebSite);
+                }
 
                 for (int questionIndex = 0; questionIndex < m_securityQuestionListBox.Items.Count; questionIndex++) {
                     if (((TextBlock)m_securityQuestionListBox.Items[questionIndex]).Text == m_customer.SecurityQuestion) {

@@ -58,31 +58,31 @@ namespace SIPSorcery.SIP
 	/// parameters, not URI parameters.
 	/// </summary>
     [DataContract]
-	public class SIPUserField
-	{
+    public class SIPUserField
+    {
         private const char PARAM_TAG_DELIMITER = ';';
 
         private static ILog logger = AssemblyState.logger;
 
         [DataMember]
-		public string Name;
-		
+        public string Name;
+
         [DataMember]
         public SIPURI URI;
 
         [DataMember]
         public SIPParameters Parameters = new SIPParameters(null, PARAM_TAG_DELIMITER);
 
-		public SIPUserField()
-		{}
-	
-		public SIPUserField(string name, SIPURI uri, string paramsAndHeaders)
-		{
-			Name = name;
-			URI = uri;
+        public SIPUserField()
+        { }
+
+        public SIPUserField(string name, SIPURI uri, string paramsAndHeaders)
+        {
+            Name = name;
+            URI = uri;
 
             Parameters = new SIPParameters(paramsAndHeaders, PARAM_TAG_DELIMITER);
-		}
+        }
 
         public static SIPUserField ParseSIPUserField(string userFieldStr)
         {
@@ -139,43 +139,43 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    logger.Warn("A SIPUserField was missing the right quote, " + userFieldStr + ".");
+                    throw new SIPValidationException(SIPValidationFieldsEnum.ContactHeader, "A SIPUserField was missing the right quote, " + userFieldStr + ".");
                 }
             }
 
             return userField;
         }
 
-		public override string ToString()
-		{
-			try
-			{
-				string userFieldStr = null;
-			
-				if(Name != null)
-				{
-					/*if(Regex.Match(Name, @"\s").Success)
-					{
-						userFieldStr = "\"" + Name + "\" ";
-					}
-					else
-					{
-						userFieldStr = Name + " ";
-					}*/
+        public override string ToString()
+        {
+            try
+            {
+                string userFieldStr = null;
+
+                if (Name != null)
+                {
+                    /*if(Regex.Match(Name, @"\s").Success)
+                    {
+                        userFieldStr = "\"" + Name + "\" ";
+                    }
+                    else
+                    {
+                        userFieldStr = Name + " ";
+                    }*/
 
                     userFieldStr = "\"" + Name + "\" ";
-				}
-			
-				userFieldStr += "<" + URI.ToString() + ">" + Parameters.ToString();
+                }
 
-				return userFieldStr;
-			}
-			catch(Exception excp)
-			{
-				logger.Error("Exception SIPUserField ToString. " + excp.Message);
+                userFieldStr += "<" + URI.ToString() + ">" + Parameters.ToString();
+
+                return userFieldStr;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPUserField ToString. " + excp.Message);
                 throw;
-			}
-		}
+            }
+        }
 
         public string ToParameterlessString()
         {
@@ -208,46 +208,5 @@ namespace SIPSorcery.SIP
 
             return copy;
         }
-		
-		#region Unit testing.
-
-		#if UNITTEST
-	
-		[TestFixture]
-		public class SIPUserFieldUnitTest
-		{
-			[TestFixtureSetUp]
-			public void Init()
-			{}
-        
-            [TestFixtureTearDown]
-			public void Dispose()
-			{}
-			
-			[Test]
-			public void SampleTest()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-				
-				Assert.IsTrue(true, "True was false.");
-			}
-
-            [Test]
-            public void ParamsInUserPortionURITest()
-            {
-                Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                SIPUserField userField = SIPUserField.ParseSIPUserField("<sip:C=on;t=DLPAN@10.0.0.1:5060;lr>");
-
-                Assert.IsTrue("C=on;t=DLPAN" == userField.URI.User, "SIP user portion parsed incorrectly.");
-                Assert.IsTrue("10.0.0.1:5060" == userField.URI.Host, "SIP host portion parsed incorrectly.");
-
-                Console.WriteLine("-----------------------------------------");
-            }
-		}
-
-		#endif
-
-		#endregion
-	}
+    }
 }

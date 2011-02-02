@@ -422,5 +422,16 @@ namespace SIPSorcery.SIP.Core.UnitTests
             Assert.IsTrue(sipURI.ToString() == "sip:TRUNKa1d2ce524d44cd54f39ac78bcdba85c7@65.98.14.50:5069", "The SIP URI was not ToString'ed correctly.");
             Console.WriteLine("-----------------------------------------");
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(SIPValidationException))]
+        public void ParseMalformedContactUnitTest()
+        {
+            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI sipURI = SIPURI.ParseSIPURIRelaxed("sip:twolmsted@24.183.120.253, sip:5060");
+            Console.WriteLine(sipURI.ToString());
+            Console.WriteLine("-----------------------------------------");
+        }
     }
 }

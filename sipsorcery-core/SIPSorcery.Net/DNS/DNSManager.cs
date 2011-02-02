@@ -194,7 +194,7 @@ namespace SIPSorcery.Net
                 {
                     // If this block gets called it's because the DNS resolver class did not return within twice the timeout period it
                     // was asked to do so in. If this happens a lot further investigation into the DNS resolver class is warranted.
-                    logger.Error("DNSManager timed out waiting for the DNS resovler to complete the lookup for " + queryType.ToString() + " " + hostname + ".");
+                    logger.Error("DNSManager timed out waiting for the DNS resolver to complete the lookup for " + queryType.ToString() + " " + hostname + ".");
 
                     // Timeout.
                     DNSResponse timeoutResponse = new DNSResponse();

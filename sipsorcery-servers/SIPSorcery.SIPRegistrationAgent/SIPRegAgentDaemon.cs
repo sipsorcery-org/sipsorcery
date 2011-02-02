@@ -91,8 +91,6 @@ namespace SIPSorcery.SIPRegistrationAgent
                     throw new ApplicationException("The SIP Registration Agent cannot start without at least one socket specified to listen on, please check config file.");
                 }
 
-                SIPDNSManager.SIPMonitorLogEvent += FireSIPMonitorEvent;
-
                 // Send events from this process to the monitoring socket.
                 if (m_monitorLoopbackPort != 0)
                 {

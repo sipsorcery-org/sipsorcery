@@ -57,7 +57,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\debug\</OutputPath>
+    <OutputPath>..\Build\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -216,12 +216,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="UserInterface\CityLightsDisplay.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="UserInterface\UserPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -302,9 +296,6 @@
     </Compile>
     <Compile Include="UserInterface\AssetManagers\SIPAccountManager.xaml.cs">
       <DependentUpon>SIPAccountManager.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserInterface\CityLightsDisplay.xaml.cs">
-      <DependentUpon>CityLightsDisplay.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\UserPage.xaml.cs">
       <DependentUpon>UserPage.xaml</DependentUpon>
@@ -433,7 +424,7 @@
     </VisualStudio>
   </ProjectExtensions>
   <PropertyGroup>
-    <PostBuildEvent>copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-silverlight\SIPSorcery.GUI\bin\debug\sipsorcery.xap" "c:\temp\sipsorcery\clientbin\"
-copy "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-silverlight\SIPSorcery.GUI\bin\debug\sipsorcery.xap" "C:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-web\MainSite\SIPSorcery.Web.MainSite\SIPSorcery.Web.MainSite\clientbin\"</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
 </Project>

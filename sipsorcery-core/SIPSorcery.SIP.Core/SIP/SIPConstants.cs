@@ -67,6 +67,7 @@ namespace SIPSorcery.SIP
 		public const int DEFAULT_REGISTEREXPIRY_SECONDS = 600;
 		public const int DEFAULT_SIP_PORT = 5060;
         public const int DEFAULT_SIP_TLS_PORT = 5061;
+        public const int MAX_SIP_PORT = 65535;
  
         public const string NAT_SENDKEEPALIVES_VALUE = "y";
 
@@ -234,6 +235,11 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_SWITCHBOARD_TERMINATE = "Switchboard-Terminate";
         public const string SIP_HEADER_SWITCHBOARD_TOKEN = "Switchboard-Token";
         public const string SIP_HEADER_SWITCHBOARD_TOKENREQUEST = "Switchboard-TokenRequest";
+
+        // Custom SIP headers for CRM integration.
+        public const string SIP_HEADER_CRM_PERSON_NAME = "CRM-PersonName";
+        public const string SIP_HEADER_CRM_COMPANY_NAME = "CRM-CompanyName";
+        public const string SIP_HEADER_CRM_AVATAR_URL = "CRM-AvatarURL";
 	}
 
 	public class SIPHeaderAncillary

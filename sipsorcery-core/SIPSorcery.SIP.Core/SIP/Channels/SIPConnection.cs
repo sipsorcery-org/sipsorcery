@@ -41,10 +41,6 @@ using System.Text;
 using SIPSorcery.Sys;
 using log4net;
 
-#if UNITTEST
-using NUnit.Framework;
-#endif
-
 namespace SIPSorcery.SIP
 {
     public delegate void SIPConnectionDisconnectedDelegate(IPEndPoint remoteEndPoint);
@@ -235,8 +231,8 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                byte[] contentHeaderBytes = Encoding.UTF8.GetBytes(m_sipEOL + SIPHeaders.SIP_HEADER_CONTENTLENGTH);
-                byte[] compactContentHeaderBytes = Encoding.UTF8.GetBytes(m_sipEOL + SIPHeaders.SIP_COMPACTHEADER_CONTENTLENGTH);
+                byte[] contentHeaderBytes = Encoding.UTF8.GetBytes(m_sipEOL + SIPHeaders.SIP_HEADER_CONTENTLENGTH.ToUpper());
+                byte[] compactContentHeaderBytes = Encoding.UTF8.GetBytes(m_sipEOL + SIPHeaders.SIP_COMPACTHEADER_CONTENTLENGTH.ToUpper());
 
                 int inContentHeaderPosn = 0;
                 int inCompactContentHeaderPosn = 0;
@@ -268,7 +264,7 @@ namespace SIPSorcery.SIP
                         }
                     }
 
-                    if (buffer[index] == contentHeaderBytes[inContentHeaderPosn])
+                    if (buffer[index] == contentHeaderBytes[inContentHeaderPosn] || buffer[index] == contentHeaderBytes[inContentHeaderPosn] + 32)
                     {
                         inContentHeaderPosn++;
 
@@ -282,7 +278,7 @@ namespace SIPSorcery.SIP
                         inContentHeaderPosn = 0;
                     }
 
-                    if (buffer[index] == compactContentHeaderBytes[inCompactContentHeaderPosn])
+                    if (buffer[index] == compactContentHeaderBytes[inCompactContentHeaderPosn] || buffer[index] == compactContentHeaderBytes[inCompactContentHeaderPosn] + 32)
                     {
                         inCompactContentHeaderPosn++;
 
@@ -296,7 +292,6 @@ namespace SIPSorcery.SIP
                         inCompactContentHeaderPosn = 0;
                     }
                 }
-
 
                 if (contentLengthValueStartPosn != 0)
                 {

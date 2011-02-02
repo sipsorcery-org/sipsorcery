@@ -685,5 +685,65 @@ SUBSCRIBE sip:aaron@10.1.1";
             Assert.IsTrue(testConnection.SocketBufferEndPosition == 26, "The receive buffer end position was incorrect.");
             Assert.IsTrue(remainingBytes == "SUBSCRIBE sip:aaron@10.1.1", "The leftover bytes in the socket buffer were incorrect.");
         }
+
+        /// <summary>
+        /// Tests that the Content-Length is correctly parsed when a compact header form is used.
+        /// </summary>
+        [TestMethod]
+        public void ContentLengthParseWhenUpperCaseTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string notifyRequest =
+@"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0
+Via: SIP/2.0/TCP 10.1.1.5:4506;branch=z9hG4bKa4d17f991015b1d8b788f2ac54d66ec66811226a;rport
+Via: SIP/2.0/UDP 127.0.0.1:5060;branch=z9hG4bKc2224b79f5af4c4a9b1cd649890c6497;rport
+Via: SIP/2.0/UDP 127.0.0.1:5003;branch=z9hG4bK0495dc29b7eb40008779a75c3734c4c5;rport=5003;received=127.0.0.1
+To: <sip:10.1.1.5:62647;transport=tcp>;tag=1892981968
+From: <sip:127.0.0.1:5003>;tag=1555449860
+Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a
+CSeq: 4 NOTIFY
+CONTENT-LENGTH: 2393
+Contact: <sip:127.0.0.1:5003>
+Max-Forwards: 69
+Event: dialog
+
+";
+            byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
+
+            int contentLength = SIPConnection.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
+
+            Assert.IsTrue(contentLength == 2393, "The content length was parsed incorrectly.");
+        }
+
+        /// <summary>
+        /// Tests that the Content-Length is correctly parsed when a compact header form is used.
+        /// </summary>
+        [TestMethod]
+        public void ContentLengthParseWhenMixedCaseTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string notifyRequest =
+@"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0
+Via: SIP/2.0/TCP 10.1.1.5:4506;branch=z9hG4bKa4d17f991015b1d8b788f2ac54d66ec66811226a;rport
+Via: SIP/2.0/UDP 127.0.0.1:5060;branch=z9hG4bKc2224b79f5af4c4a9b1cd649890c6497;rport
+Via: SIP/2.0/UDP 127.0.0.1:5003;branch=z9hG4bK0495dc29b7eb40008779a75c3734c4c5;rport=5003;received=127.0.0.1
+To: <sip:10.1.1.5:62647;transport=tcp>;tag=1892981968
+From: <sip:127.0.0.1:5003>;tag=1555449860
+Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a
+CSeq: 4 NOTIFY
+CoNtENT-LengTH: 2393
+Contact: <sip:127.0.0.1:5003>
+Max-Forwards: 69
+Event: dialog
+
+";
+            byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
+
+            int contentLength = SIPConnection.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
+
+            Assert.IsTrue(contentLength == 2393, "The content length was parsed incorrectly.");
+        }
     }
 }

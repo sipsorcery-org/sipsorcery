@@ -65,6 +65,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private static ILog logger = AppState.logger;
 
         private SIPTransport m_sipTransport;
+        private ISIPCallManager m_callManager;
         private event SIPMonitorLogDelegate m_statefulProxyLogEvent;    // Used to send log messages back to the application server core.
         private QueueNewCallDelegate QueueNewCall_External;             // Function delegate to allow new calls to be placed on teh call manager and run through the dialplan logic.              
 
@@ -124,7 +125,8 @@ namespace SIPSorcery.AppServer.DialPlan
             DialStringParser dialStringParser,
             string username,
             string adminMemberId,
-            SIPEndPoint outboundProxy)
+            SIPEndPoint outboundProxy,
+            ISIPCallManager callManager)
         {
             m_sipTransport = sipTransport;
             m_statefulProxyLogEvent = statefulProxyLogEvent;
@@ -133,6 +135,7 @@ namespace SIPSorcery.AppServer.DialPlan
             m_username = username;
             m_adminMemberId = adminMemberId;
             m_outboundProxySocket = outboundProxy;
+            m_callManager = callManager;
         }
 
         /// <summary>
@@ -149,8 +152,9 @@ namespace SIPSorcery.AppServer.DialPlan
             string username,
             string adminMemberId,
             SIPEndPoint outboundProxy,
+            ISIPCallManager callManager,
             out List<SIPTransaction> switchCallTransactions) :
-            this(sipTransport, statefulProxyLogEvent, queueNewCall, dialStringParser, username, adminMemberId, outboundProxy)
+            this(sipTransport, statefulProxyLogEvent, queueNewCall, dialStringParser, username, adminMemberId, outboundProxy, callManager)
         {
             switchCallTransactions = m_switchCallTransactions;
         }
@@ -252,7 +256,15 @@ namespace SIPSorcery.AppServer.DialPlan
 
                     if (callDescriptor.ToSIPAccount == null)
                     {
-                        uacCall = new SIPClientUserAgent(m_sipTransport, m_outboundProxySocket, m_username, m_adminMemberId, m_statefulProxyLogEvent);
+                        if (callDescriptor.IsGoogleVoiceCall)
+                        {
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Creating Google Voice user agent for " + callDescriptor.Uri + ".", m_username));
+                            uacCall = new GoogleVoiceUserAgent(m_sipTransport, m_callManager, m_statefulProxyLogEvent, m_username, m_adminMemberId, m_outboundProxySocket);
+                        }
+                        else
+                        {
+                            uacCall = new SIPClientUserAgent(m_sipTransport, m_outboundProxySocket, m_username, m_adminMemberId, m_statefulProxyLogEvent);
+                        }
                     }
                     else
                     {
@@ -355,7 +367,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     m_switchCalls.Remove(answeredUAC);
                 }
 
-                if (m_switchCallTransactions != null)
+                if (m_switchCallTransactions != null && answeredUAC.ServerTransaction != null)
                 {
                     m_switchCallTransactions.Add(answeredUAC.ServerTransaction);
                 }
@@ -414,7 +426,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     }
                     else
                     {
-                        // Call already answered or cancelled already, hangup (send BYE).
+                        // Call already answered or cancelled, hangup (send BYE).
                         FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg " + answeredUAC.CallDescriptor.Uri + " answered but call was already answered or cancelled, hanging up.", m_username));
                         SIPDialogue sipDialogue = new SIPDialogue(answeredUAC.ServerTransaction, m_username, m_adminMemberId);
                         sipDialogue.Hangup(m_sipTransport, m_outboundProxySocket);
@@ -423,6 +435,33 @@ namespace SIPSorcery.AppServer.DialPlan
                     #endregion
 
                     CallLegCompleted();
+                }
+                else if (answeredUAC.SIPDialogue != null)
+                {
+                    // Google Voice calls create the dialogue without using a SIP response.
+                    if (!m_callAnswered && !m_commandCancelled)
+                    {
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg for Google Voice call to " + answeredUAC.CallDescriptor.Uri + " answered.", m_username));
+
+                        // This is the first call we've got an answer on.
+                        m_callAnswered = true;
+                        m_answeredUAC = answeredUAC;
+
+                        if (CallAnswered != null)
+                        {
+                            CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, null, answeredUAC.SIPDialogue.ContentType, answeredUAC.SIPDialogue.RemoteSDP, answeredUAC.SIPDialogue, SIPDialogueTransferModesEnum.NotAllowed);
+                        }
+
+                        // Cancel/hangup and other calls on this leg that are still around.
+                        CancelNotRequiredCallLegs(CallCancelCause.NormalClearing);
+                    }
+                    else
+                    {
+                        // Call already answered or cancelled, hangup (send BYE).
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg for Google Voice call to " + answeredUAC.CallDescriptor.Uri + " answered but call was already answered or cancelled, hanging up.", m_username));
+                        answeredUAC.SIPDialogue.Hangup(m_sipTransport, m_outboundProxySocket);
+                    }
+
                 }
                 else if (answeredResponse != null && answeredResponse.StatusCode >= 300 && answeredResponse.StatusCode <= 399)
                 {
@@ -480,7 +519,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         // If there is a dial string parser available it will be used to generate a list of call destination from the redirect URI.
                         SIPCallDescriptor redirectCallDescriptor = answeredUAC.CallDescriptor.CopyOf();
                         Queue<List<SIPCallDescriptor>> redirectQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, null, redirectURI.ToString(), redirectCallDescriptor.CustomHeaders,
-                            redirectCallDescriptor.ContentType, redirectCallDescriptor.Content, null, redirectCallDescriptor.FromDisplayName, redirectCallDescriptor.FromURIUsername, redirectCallDescriptor.FromURIHost);
+                            redirectCallDescriptor.ContentType, redirectCallDescriptor.Content, null, redirectCallDescriptor.FromDisplayName, redirectCallDescriptor.FromURIUsername, redirectCallDescriptor.FromURIHost, null);
 
                         if (redirectQueue != null && redirectQueue.Count > 0)
                         {
@@ -620,35 +659,5 @@ namespace SIPSorcery.AppServer.DialPlan
                 logger.Error("Exception FireProxyLogEvent ForkCall. " + excp.Message);
             }
         }
-
-        #region Unit testing.
-
-#if UNITTEST
-
-		[TestFixture]
-		public class ForkCallUnitTest
-		{			
-			[TestFixtureSetUp]
-			public void Init()
-			{ }
-
-            [TestFixtureTearDown]
-            public void Dispose()
-            { }
-
-			[Test]
-			public void SampleTest()
-			{
-				Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-				
-				Assert.IsTrue(true, "True was false.");
-
-				Console.WriteLine("---------------------------------"); 
-			}
-        }
-
-#endif
-
-        #endregion
     }
 }

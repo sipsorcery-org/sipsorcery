@@ -521,32 +521,5 @@ namespace SIPSorcery.SIP
                 logger.Error("Exception Disposing SIPTLSChannel. " + excp.Message);
             }
         }
-
-        #region Unit testing.
-
-#if UNITTEST
-	
-		[TestFixture]
-		public class SIPTLSChannelUnitTest
-		{
-			[TestFixtureSetUp]
-			public void Init()
-			{}
-
-			[TestFixtureTearDown]
-			public void Dispose()
-			{}
-
-			[Test]
-			public void SampleTest()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);	
-				Assert.IsTrue(true, "True was false.");
-			}
-		}
-
-#endif
-
-        #endregion
     }
 }

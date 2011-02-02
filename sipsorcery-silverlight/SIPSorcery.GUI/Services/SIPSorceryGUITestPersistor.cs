@@ -45,7 +45,7 @@ namespace SIPSorcery.Persistence
 
         private static ObservableCollection<SIPProvider> m_sipProviders = new ObservableCollection<SIPProvider>()
         {
-            new SIPProvider(DUMMY_OWNER, "Provider1", "dummy", "password", SIPURI.ParseSIPURIRelaxed("dummy.com"), null, null, null, null, 0, null, null, null, false, true)
+            new SIPProvider(ProviderTypes.SIP, DUMMY_OWNER, "Provider1", "dummy", "password", SIPURI.ParseSIPURIRelaxed("dummy.com"), null, null, null, null, 0, null, null, null, false, true, null, null, null)
         };
 
         private static ObservableCollection<SIPDialPlan> m_dialPlans = new ObservableCollection<SIPDialPlan>()

@@ -78,6 +78,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private const char CALLLEG_OPTIONS_END_CHAR = ']';
         public const char DESTINATION_PROVIDER_SEPARATOR = '@';
         private const string ANON_CALLERS = @"anonymous\.invalid|anonymous|anon";
+        private const int DEFAULT_GVCALLBACK_TYPE = 1;  // The default phone type for a Google Voice callback.
 
         private static ILog logger = AppState.logger;
 
@@ -163,7 +164,8 @@ namespace SIPSorcery.AppServer.DialPlan
             string callersNetworkId,
             string fromDisplayName,
             string fromUsername,
-            string fromHost)
+            string fromHost,
+            CRMHeaders contact)
         {
             try
             {
@@ -187,7 +189,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         // Multi legged call (Script sys.Dial format).
                         //string providersString = (command.IndexOf(',') == -1) ? command : command.Substring(0, command.IndexOf(','));
-                        prioritisedCallList = ParseScriptDialString(sipRequest, command, customHeaders, customContentType, customContent, callersNetworkId, fromDisplayName, fromUsername, fromHost);
+                        prioritisedCallList = ParseScriptDialString(sipRequest, command, customHeaders, customContentType, customContent, callersNetworkId, fromDisplayName, fromUsername, fromHost, contact);
                     }
 
                     return prioritisedCallList;
@@ -287,7 +289,8 @@ namespace SIPSorcery.AppServer.DialPlan
             string callersNetworkId,
             string fromDisplayName,
             string fromUsername,
-            string fromHost)
+            string fromHost,
+            CRMHeaders contact)
         {
             try
             {
@@ -340,7 +343,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                         if (calledSIPAccount.InDialPlanName.IsNullOrBlank() || (m_username == calledSIPAccount.Owner && m_dialPlanName == calledSIPAccount.InDialPlanName))
                                         {
                                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg is for local domain looking up bindings for " + callLegSIPURI.User + "@" + localDomain + " for call leg " + callLegDestination + ".", m_username));
-                                            switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, calledSIPAccount, customHeaders, customContentType, customContent, options, callersNetworkId, fromDisplayName, fromUsername, fromHost));
+                                            switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, calledSIPAccount, customHeaders, customContentType, customContent, options, callersNetworkId, fromDisplayName, fromUsername, fromHost, contact));
                                         }
                                         else
                                         {
@@ -377,7 +380,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                 else
                                 {
                                     // Construct a call forward for a remote destination.
-                                    SIPCallDescriptor sipCallDescriptor = GetForwardsForExternalLeg(sipRequest, callLegSIPURI, customContentType, customContent, fromDisplayName, fromUsername, fromHost);
+                                    SIPCallDescriptor sipCallDescriptor = GetForwardsForExternalLeg(sipRequest, callLegSIPURI, customContentType, customContent, fromDisplayName, fromUsername, fromHost, contact);
 
                                     if (sipCallDescriptor != null)
                                     {
@@ -446,7 +449,8 @@ namespace SIPSorcery.AppServer.DialPlan
             string callersNetworkId,
             string fromDisplayName,
             string fromUsername,
-            string fromHost)
+            string fromHost,
+            CRMHeaders contact)
         {
             List<SIPCallDescriptor> localUserSwitchCalls = new List<SIPCallDescriptor>();
 
@@ -504,6 +508,7 @@ namespace SIPSorcery.AppServer.DialPlan
                             contentType,
                             content,
                             publicSDPAddress);
+                        switchCall.CRMHeaders = contact;
 
                         // If the binding for the call is a switchboard add the custom switchboard headers.
                         if (!sipRequest.Header.SwitchboardFrom.IsNullOrBlank())
@@ -552,7 +557,8 @@ namespace SIPSorcery.AppServer.DialPlan
             string customContent,
             string fromDisplayName,
             string fromUsername,
-            string fromHost)
+            string fromHost,
+            CRMHeaders contact)
         {
             try
             {
@@ -586,67 +592,87 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         if (callLegURI.Host.ToUpper() == provider.ProviderName.ToUpper())
                         {
-                            SIPURI providerURI = SIPURI.ParseSIPURI(provider.ProviderServer);
-                            if (providerURI != null)
+                            if (provider.ProviderType == ProviderTypes.GoogleVoice)
                             {
-                                providerURI.User = callLegURI.User;
-
-                                if (callLegURI.Parameters.Count > 0)
-                                {
-                                    foreach (string parameterName in callLegURI.Parameters.GetKeys())
-                                    {
-                                        if (!providerURI.Parameters.Has(parameterName))
-                                        {
-                                            providerURI.Parameters.Set(parameterName, callLegURI.Parameters.Get(parameterName));
-                                        }
-                                    }
-                                }
-
-                                if (callLegURI.Headers.Count > 0)
-                                {
-                                    foreach (string headerName in callLegURI.Headers.GetKeys())
-                                    {
-                                        if (!providerURI.Headers.Has(headerName))
-                                        {
-                                            providerURI.Headers.Set(headerName, callLegURI.Headers.Get(headerName));
-                                        }
-                                    }
-                                }
-
-                                SIPFromHeader fromHeader = ParseFromHeaderOption(provider.ProviderFrom, sipRequest, provider.ProviderUsername, providerURI.Host);
-
                                 sipCallDescriptor = new SIPCallDescriptor(
-                                    provider.ProviderUsername,
-                                    provider.ProviderPassword,
-                                    providerURI.ToString(),
-                                    fromHeader.ToString(),
-                                    providerURI.ToString(),
-                                    null,
-                                    SIPCallDescriptor.ParseCustomHeaders(SubstituteRequestVars(sipRequest, provider.CustomHeaders)),
-                                    provider.ProviderAuthUsername,
-                                    SIPCallDirection.Out,
-                                    contentType,
-                                    content,
-                                    publicSDPAddress);
+                                        provider.ProviderUsername,
+                                        provider.ProviderPassword,
+                                        callLegURI.User + "@" + provider.ProviderName,
+                                        provider.GVCallbackNumber,
+                                        provider.GVCallbackPattern,
+                                        (provider.GVCallbackType != null) ? (int)provider.GVCallbackType.Value : DEFAULT_GVCALLBACK_TYPE,
+                                        content,
+                                        contentType);
 
-                                if (!provider.ProviderOutboundProxy.IsNullOrBlank())
-                                {
-                                    sipCallDescriptor.ProxySendFrom = provider.ProviderOutboundProxy.Trim();
-                                }
-
+                                sipCallDescriptor.CRMHeaders = contact;
                                 providerFound = true;
-
-                                if (provider.ProviderFrom.IsNullOrBlank())
-                                {
-                                    // If there is already a custom From header set on the provider that overrides the general settings.
-                                    sipCallDescriptor.SetGeneralFromHeaderFields(fromDisplayName, fromUsername, fromHost);
-                                }
-
                                 break;
                             }
                             else
                             {
-                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Could not parse SIP URI from Provider Server " + provider.ProviderServer + " in GetForwardsForExternalLeg.", m_username));
+                                SIPURI providerURI = SIPURI.ParseSIPURI(provider.ProviderServer);
+                                if (providerURI != null)
+                                {
+                                    providerURI.User = callLegURI.User;
+
+                                    if (callLegURI.Parameters.Count > 0)
+                                    {
+                                        foreach (string parameterName in callLegURI.Parameters.GetKeys())
+                                        {
+                                            if (!providerURI.Parameters.Has(parameterName))
+                                            {
+                                                providerURI.Parameters.Set(parameterName, callLegURI.Parameters.Get(parameterName));
+                                            }
+                                        }
+                                    }
+
+                                    if (callLegURI.Headers.Count > 0)
+                                    {
+                                        foreach (string headerName in callLegURI.Headers.GetKeys())
+                                        {
+                                            if (!providerURI.Headers.Has(headerName))
+                                            {
+                                                providerURI.Headers.Set(headerName, callLegURI.Headers.Get(headerName));
+                                            }
+                                        }
+                                    }
+
+                                    SIPFromHeader fromHeader = ParseFromHeaderOption(provider.ProviderFrom, sipRequest, provider.ProviderUsername, providerURI.Host);
+
+                                    sipCallDescriptor = new SIPCallDescriptor(
+                                        provider.ProviderUsername,
+                                        provider.ProviderPassword,
+                                        providerURI.ToString(),
+                                        fromHeader.ToString(),
+                                        providerURI.ToString(),
+                                        null,
+                                        SIPCallDescriptor.ParseCustomHeaders(SubstituteRequestVars(sipRequest, provider.CustomHeaders)),
+                                        provider.ProviderAuthUsername,
+                                        SIPCallDirection.Out,
+                                        contentType,
+                                        content,
+                                        publicSDPAddress);
+                                    sipCallDescriptor.CRMHeaders = contact;
+
+                                    if (!provider.ProviderOutboundProxy.IsNullOrBlank())
+                                    {
+                                        sipCallDescriptor.ProxySendFrom = provider.ProviderOutboundProxy.Trim();
+                                    }
+
+                                    providerFound = true;
+
+                                    if (provider.ProviderFrom.IsNullOrBlank())
+                                    {
+                                        // If there is already a custom From header set on the provider that overrides the general settings.
+                                        sipCallDescriptor.SetGeneralFromHeaderFields(fromDisplayName, fromUsername, fromHost);
+                                    }
+
+                                    break;
+                                }
+                                else
+                                {
+                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Could not parse SIP URI from Provider Server " + provider.ProviderServer + " in GetForwardsForExternalLeg.", m_username));
+                                }
                             }
                         }
                     }
@@ -674,6 +700,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         contentType,
                         content,
                         publicSDPAddress);
+                    sipCallDescriptor.CRMHeaders = contact;
 
                     sipCallDescriptor.SetGeneralFromHeaderFields(fromDisplayName, fromUsername, fromHost);
                 }

@@ -72,10 +72,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ThirtySevenSignals\People.cs" />
+    <Compile Include="ThirtySevenSignals\Person.cs" />
     <Compile Include="Customer.cs" />
     <Compile Include="CustomerSession.cs" />
     <Compile Include="CustomerSessionManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ThirtySevenSignals\ContactData.cs" />
+    <Compile Include="ThirtySevenSignals\PersonRequest.cs" />
+    <Compile Include="ThirtySevenSignals\PhoneNumber.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">

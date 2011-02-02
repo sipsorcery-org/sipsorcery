@@ -126,6 +126,7 @@ namespace SIPSorcery.SIP
         private static ILog logger = AssemblyState.logger;
 
         private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
+        private static char[] m_invalidSIPHostChars = new char[] { ',', '"' };
 
         private static SIPProtocolsEnum m_defaultSIPTransport = SIPProtocolsEnum.udp;
         private static SIPSchemesEnum m_defaultSIPScheme = SIPSchemesEnum.sip;
@@ -319,6 +320,7 @@ namespace SIPSorcery.SIP
                             else if (ampPosn == -1 && paramHeaderPosn != -1)
                             {
                                 sipURI.Host = uriHostPortion.Substring(0, paramHeaderPosn);
+
                                 string paramsAndHeaders = uriHostPortion.Substring(paramHeaderPosn);
 
                                 sipURI.ParseParamsAndHeaders(paramsAndHeaders);
@@ -332,15 +334,20 @@ namespace SIPSorcery.SIP
                             {
                                 sipURI.Host = uriHostPortion;
                             }
+
+                            if (sipURI.Host.IndexOfAny(m_invalidSIPHostChars) != -1)
+                            {
+                                throw new SIPValidationException(SIPValidationFieldsEnum.URI, "The SIP URI host portion contained an invalid character.");
+                            }
                         }
                     }
 
                     return sipURI;
                 }
             }
-            catch (SIPValidationException validationExcp)
+            catch (SIPValidationException)
             {
-                throw validationExcp;
+                throw;
             }
             catch (Exception excp)
             {

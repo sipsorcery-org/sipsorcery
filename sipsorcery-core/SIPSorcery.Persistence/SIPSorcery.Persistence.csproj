@@ -62,6 +62,7 @@
     <Reference Include="MySql.Data, Version=6.3.5.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\MySql.Data.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Npgsql, Version=2.0.1.0, Culture=neutral, PublicKeyToken=5d8b90d52f46fda7, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
