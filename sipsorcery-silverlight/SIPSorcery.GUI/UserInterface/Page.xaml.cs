@@ -81,7 +81,11 @@ namespace SIPSorcery
             m_loginControl.CreateNewAccountClicked += CreateNewAccountClicked;
             m_loginControl.Login_External = LoginAsync;
 
-            Boolean.TryParse(App.Current.Resources[SHOW_INVITE_PANEL_KEY].ToString(), out m_showInvitePanel);
+            string initShowInivtePanel = App.Current.Resources[SHOW_INVITE_PANEL_KEY] as string;
+            if(!initShowInivtePanel.IsNullOrBlank())
+            {
+                Boolean.TryParse(initShowInivtePanel, out m_showInvitePanel);
+            }
 
             if (m_showInvitePanel)
             {
@@ -104,9 +108,10 @@ namespace SIPSorcery
 
             try
             {
-                if (!App.Current.Resources[SERVICE_URL_KEY].ToString().IsNullOrBlank())
+                string initServiceURL = App.Current.Resources[SERVICE_URL_KEY] as string;
+                if (!initServiceURL.ToString().IsNullOrBlank())
                 {
-                    string serviceHost = App.Current.Resources[SERVICE_URL_KEY].ToString();
+                    string serviceHost = initServiceURL;
                     m_sipMonitorHost = serviceHost;
                     m_provisioningServiceURL = serviceHost + DEFAULT_PROVISIONING_FILE;
                     m_notificationsServiceURL = serviceHost + DEFAULT_NOTIFICATIONS_FILE;

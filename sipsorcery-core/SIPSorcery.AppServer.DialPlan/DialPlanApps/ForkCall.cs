@@ -348,7 +348,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    CallProgress(progressResponse.Status, progressResponse.ReasonPhrase, null, progressResponse.Header.ContentType, progressResponse.Body);
+                    CallProgress(progressResponse.Status, progressResponse.ReasonPhrase, null, progressResponse.Header.ContentType, progressResponse.Body, uac);
                 }
             }
             catch (Exception excp)

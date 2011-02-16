@@ -81,7 +81,7 @@ namespace SIPSorcery.SIPAppServer
         private static bool m_sipMonitorEnabled = (AppState.GetSection(SIPMonitorState.SIPMONITOR_CONFIGNODE_NAME) != null);
         private static bool m_sipRegistrarEnabled = (AppState.GetSection(SIPRegistrarState.SIPREGISTRAR_CONFIGNODE_NAME) != null);
         private static bool m_sipRegAgentEnabled = (AppState.GetSection(SIPRegAgentState.SIPREGAGENT_CONFIGNODE_NAME) != null);
-        private static bool m_sshServerEnabled = (AppState.GetSection(SSHServerState.SSHSERVER_CONFIGNODE_NAME) != null);
+        //private static bool m_sshServerEnabled = (AppState.GetSection(SSHServerState.SSHSERVER_CONFIGNODE_NAME) != null);
         private static bool m_sipNotifierEnabled = (AppState.GetSection(SIPNotifierState.SIPNOTIFIER_CONFIGNODE_NAME) != null);
 
         private static int m_monitorEventLoopbackPort = SIPAppServerState.MonitorLoopbackPort;
@@ -151,7 +151,7 @@ namespace SIPSorcery.SIPAppServer
                 logger.Debug("current directory=" + m_currentDirectory + ".");
                 logger.Debug("base directory=" + AppDomain.CurrentDomain.BaseDirectory + ".");
 
-                //SIPDNSManager.SIPMonitorLogEvent += FireSIPMonitorEvent;
+                SIPDNSManager.SIPMonitorLogEvent = FireSIPMonitorEvent;
                 m_sipSorceryPersistor = new SIPSorceryPersistor(m_storageType, m_connectionString);
                 m_customerSessionManager = new CustomerSessionManager(m_storageType, m_connectionString);
 
@@ -225,12 +225,12 @@ namespace SIPSorcery.SIPAppServer
                     m_sipNotifierDaemon.Start();
                 }
 
-                if (m_sshServerEnabled)
-                {
-                    SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, m_sipMonitorPublisher); // Uses memory to transfer events. 
-                    //SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, new SIPMonitorUDPSink("127.0.0.1:10002"));
-                    daemon.Start();
-                }
+                //if (m_sshServerEnabled)
+                //{
+                //    SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, m_sipMonitorPublisher); // Uses memory to transfer events. 
+                //    //SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, new SIPMonitorUDPSink("127.0.0.1:10002"));
+                //    daemon.Start();
+                //}
 
                 #region Initialise the SIP Application Server and its logging mechanisms including CDRs.
 

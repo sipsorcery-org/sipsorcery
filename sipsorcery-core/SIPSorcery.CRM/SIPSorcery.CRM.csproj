@@ -72,8 +72,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ThirtySevenSignals\People.cs" />
+    <Compile Include="ThirtySevenSignals\NoteRequest.cs" />
+    <Compile Include="ThirtySevenSignals\Notes.cs" />
+    <Compile Include="ThirtySevenSignals\Note.cs" />
+    <Compile Include="ThirtySevenSignals\HighriseRequest.cs" />
+    <Compile Include="ThirtySevenSignals\CompanyRequest.cs" />
+    <Compile Include="ThirtySevenSignals\Companies.cs" />
     <Compile Include="ThirtySevenSignals\Person.cs" />
+    <Compile Include="ThirtySevenSignals\People.cs" />
+    <Compile Include="ThirtySevenSignals\Company.cs" />
     <Compile Include="Customer.cs" />
     <Compile Include="CustomerSession.cs" />
     <Compile Include="CustomerSessionManager.cs" />

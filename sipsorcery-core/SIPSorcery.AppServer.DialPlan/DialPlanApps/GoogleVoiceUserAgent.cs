@@ -76,7 +76,7 @@ namespace SIPSorcery.AppServer.DialPlan
             m_googleVoiceCall.CallProgress += new CallProgressDelegate(CallProgress);
         }
 
-        private void CallProgress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody)
+        private void CallProgress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody, ISIPClientUserAgent uac)
         {
             SIPResponse progressResponse = new SIPResponse(progressStatus, reasonPhrase, null);
             CallRinging(this, progressResponse);
@@ -109,6 +109,11 @@ namespace SIPSorcery.AppServer.DialPlan
         public void Cancel()
         {
             m_googleVoiceCall.ClientCallTerminated(CallCancelCause.Unknown);
+        }
+
+        public void Update(CRMHeaders crmHeaders)
+        {
+            throw new NotImplementedException();
         }
     }
 }

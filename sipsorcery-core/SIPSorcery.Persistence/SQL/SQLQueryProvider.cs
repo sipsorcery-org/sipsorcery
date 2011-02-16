@@ -12,13 +12,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Transactions;
 using SIPSorcery.Sys;
-using Amazon.SimpleDB;
-using Amazon.SimpleDB.Model;
 using log4net;
-
-#if UNITTEST
-using NUnit.Framework;
-#endif
 
 namespace SIPSorcery.Persistence {
 

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:tns="http://www.sipsorcery.com/invite/rest" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.sipsorcery.com/invite/rest" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.sipsorcery.com/invite/rest/Imports">
+      <xsd:import schemaLocation="https://www.sipsorcery.com/SIPSorceryInvite.svc?xsd=xsd2" namespace="http://www.sipsorcery.com/invite/rest" />
+      <xsd:import schemaLocation="https://www.sipsorcery.com/SIPSorceryInvite.svc?xsd=xsd0" namespace="http://www.sipsorcery.com/invite" />
+      <xsd:import schemaLocation="https://www.sipsorcery.com/SIPSorceryInvite.svc?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="ISIPSorceryInviteServiceREST_IsInviteCodeValid_InputMessage">
+    <wsdl:part name="parameters" element="tns:IsInviteCodeValid" />
+  </wsdl:message>
+  <wsdl:message name="ISIPSorceryInviteServiceREST_IsInviteCodeValid_OutputMessage">
+    <wsdl:part name="parameters" element="tns:IsInviteCodeValidResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISIPSorceryInviteServiceREST_IsAlive_InputMessage">
+    <wsdl:part name="parameters" element="tns:IsAlive" />
+  </wsdl:message>
+  <wsdl:message name="ISIPSorceryInviteServiceREST_IsAlive_OutputMessage">
+    <wsdl:part name="parameters" element="tns:IsAliveResponse" />
+  </wsdl:message>
+  <wsdl:portType name="ISIPSorceryInviteServiceREST">
+    <wsdl:operation name="IsInviteCodeValid">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/invite/rest/ISIPSorceryInviteServiceREST/IsInviteCodeValid" message="tns:ISIPSorceryInviteServiceREST_IsInviteCodeValid_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/invite/rest/ISIPSorceryInviteServiceREST/IsInviteCodeValidResponse" message="tns:ISIPSorceryInviteServiceREST_IsInviteCodeValid_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="IsAlive">
+      <wsdl:input wsaw:Action="http://www.sipsorcery.com/invite/rest/ISIPSorceryInviteServiceREST/IsAlive" message="tns:ISIPSorceryInviteServiceREST_IsAlive_InputMessage" />
+      <wsdl:output wsaw:Action="http://www.sipsorcery.com/invite/rest/ISIPSorceryInviteServiceREST/IsAliveResponse" message="tns:ISIPSorceryInviteServiceREST_IsAlive_OutputMessage" />
+    </wsdl:operation>
+  </wsdl:portType>
+</wsdl:definitions>

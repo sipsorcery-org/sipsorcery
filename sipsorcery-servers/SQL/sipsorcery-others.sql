@@ -248,6 +248,56 @@ create table cdr
  Primary Key(id)
 );
 
+-- Dial Plan Wizard Tables.
+
+create table sipdialplanlookups
+(
+  id varchar(36) not null,
+  owner varchar(32) not null,
+  lookupkey varchar(128) not null,
+  lookupvalue varchar(128) null,
+  description varchar(256) null,
+  lookuptype int not null,						-- 1=SpeedDial, 2=CNAM, 3=ENUM
+  Primary Key(id)
+);
+
+create table sipdialplanproviders
+(
+  id varchar(36) not null,
+  owner varchar(32) not null,
+  providername varchar(32) not null,
+  providerprefix varchar(8) null,
+  providerdialstring varchar(1024) not null,
+  providerdescription varchar(256) null,
+  Primary Key(id)
+);
+
+create table sipdialplanroutes
+(
+  id varchar(36) not null,
+  owner varchar(32) not null,
+  routename varchar(32) not null,
+  routepattern varchar(256) not null,
+  routedestination varchar(1024) not null,
+  routedescription varchar(256) null,
+  Primary Key(id)
+);
+
+create table sipdialplanoptions
+(
+  id varchar(36) not null,
+  owner varchar(32) not null,
+  timezone varchar(128) null,
+  countrycode int null,
+  areacode int null,
+  allowedcountrycodes varchar(1024) null,
+  excludedprefixes varchar(2048) null,
+  enumservers varchar(2048) null,
+  whitepageskey varchar(256) null,
+  enablesafeguards bit default 0 not null,
+  Primary Key(id)
+);
+
 create index customers_custid_index on customers(customerusername);
 create index cdrs_lastname_index on cdr(created);
 create index cdrs_owner_index on cdr(owner);
@@ -257,13 +307,6 @@ create index regbindings_contact_index on sipregistrarbindings(contacturi);
 
 --insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;174.129.236.7;174.129.236.7:5060', null, '2010-02-09T13:01:21.3540000+00:00');
 -- insert into sipdomains values ('9822C7A7-5358-42DD-8905-DC7ABAE3EC3A', 'demo.sipsorcery.com', 'local;demo.sipsorcery.com:5060;199.230.56.92;199.230.56.92:5060', null, '2010-10-15T00:00:00.0000000+00:00');
-
-alter table customers add column passwordresetid varchar(36) null;
-alter table customers add column passwordresetidsetat varchar(33) null;
-alter table customers add column usernamerecoveryid varchar(36) null;
-alter table customers add column usernamerecoveryidsetat varchar(33) null;
-alter table customers add column usernamerecoveryfailurecount int null;
-alter table customers add column usernamerecoverylastattemptat varchar(33) null;
 
 -- SIP Sorcery User Data DDL
 

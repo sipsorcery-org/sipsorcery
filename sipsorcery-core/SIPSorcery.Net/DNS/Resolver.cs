@@ -339,12 +339,14 @@ namespace Heijden.DNS
                 }
             }
 
-            int TimeLived = (int)((DateTime.Now.Ticks - response.TimeStamp.Ticks) / TimeSpan.TicksPerSecond);
+            //int TimeLived = (int)((DateTime.Now.Ticks - response.TimeStamp.Ticks) / TimeSpan.TicksPerSecond);
+            int secondsLived = (int)(DateTime.Now.Subtract(response.TimeStamp).TotalSeconds % Int32.MaxValue);
+            //logger.Debug("Seconds lived=" + secondsLived + ".");
             foreach (RR rr in response.RecordsRR)
             {
-                rr.TimeLived = TimeLived;
+                //rr.TimeLived = TimeLived;
                 // The TTL property calculates its actual time to live
-                if (rr.TTL == 0)
+                if (secondsLived >= rr.TTL)
                 {
                     //logger.Debug("DNS cache out of date result found for " + strKey + ".");
                     return null; // out of date
@@ -378,7 +380,7 @@ namespace Heijden.DNS
             if (response.Error != null)
             {
                 // Cache error responses for a short period of time to avoid overloading the server with failing DNS lookups.
-                //logger.Debug("Caching DNS lookup failure for " + questionKey + " error was " + response.Error + ".");
+                logger.Debug("Caching DNS lookup failure for " + questionKey + " error was " + response.Error + ".");
                 lock (m_lookupFailures)
                 {
                     if (m_lookupFailures.ContainsKey(questionKey))
@@ -392,7 +394,7 @@ namespace Heijden.DNS
             else if(!response.Timedout && response.Answers.Count > 0)
             {
                 // Cache non-error responses.
-                //logger.Debug("Caching DNS lookup success for " + questionKey + ".");
+                logger.Debug("Caching DNS lookup success for " + questionKey + ".");
                 lock (m_ResponseCache)
                 {
                     if (m_ResponseCache.ContainsKey(questionKey))

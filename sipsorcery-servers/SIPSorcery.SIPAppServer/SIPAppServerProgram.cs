@@ -9,6 +9,7 @@ using SIPSorcery.CRM;
 using SIPSorcery.Net;
 using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
+using SIPSorcery.SIP.App.Entities;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -48,8 +49,15 @@ namespace SIPSorcery.SIPAppServer
                     throw new ApplicationException("The SIP Application Service cannot start with no persistence settings specified.");
                 }
 
-                if (args != null && args.Length > 0)
+                // Need to force the System.Data.Entity assembly to load before a dialplan instantiation. The assembly will fail to load if
+                // requested from the Dynamic Language Runtime which is what happens if the first time it's requested is in an IronRuby dialplan.
+                using (SIPSorceryAppEntities appEntities = new SIPSorceryAppEntities())
                 {
+                    logger.Debug("Lookups count=" + (from lookup in appEntities.SIPDialplanLookups select lookup).Count() + ", forcing entity framework assemblies to load.");
+                }
+
+                //if (args != null && args.Length > 0)
+                //{
                     isConsole = true;
                     Console.WriteLine("SIP App Server starting");
                     logger.Debug("SIP App Server Console starting...");
@@ -82,15 +90,15 @@ namespace SIPSorcery.SIPAppServer
                     daemonThread.Start();
 
                     m_proxyUp.WaitOne();
-                }
-                else
-                {
-                    logger.Debug("SIP App Server Windows Service Starting...");
-                    System.ServiceProcess.ServiceBase[] ServicesToRun;
-                    SIPAppServerDaemon daemon = new SIPAppServerDaemon(m_serverStorageType, m_serverStorageConnStr);
-                    ServicesToRun = new System.ServiceProcess.ServiceBase[] { new Service(daemon) };
-                    System.ServiceProcess.ServiceBase.Run(ServicesToRun);
-                }
+                //}
+                //else
+                //{
+                //    logger.Debug("SIP App Server Windows Service Starting...");
+                //    System.ServiceProcess.ServiceBase[] ServicesToRun;
+                //    SIPAppServerDaemon daemon = new SIPAppServerDaemon(m_serverStorageType, m_serverStorageConnStr);
+                //    ServicesToRun = new System.ServiceProcess.ServiceBase[] { new Service(daemon) };
+                //    System.ServiceProcess.ServiceBase.Run(ServicesToRun);
+                //}
             }
             catch (Exception excp)
             {

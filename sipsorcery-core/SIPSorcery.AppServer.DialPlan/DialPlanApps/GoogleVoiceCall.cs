@@ -123,7 +123,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 if (CallProgress != null)
                 {
                     //CallProgress(SIPResponseStatusCodesEnum.Ringing, "Initiating Google Voice call", null, null, null);
-                    CallProgress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
+                    CallProgress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null, null);
                 }
 
                 m_cookies = new CookieContainer();

@@ -83,6 +83,7 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
       <Aliases>global</Aliases>
     </Reference>
+    <Reference Include="System.Data.Entity" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq">
@@ -103,12 +104,14 @@
     <Compile Include="DialPlanApps\ForkCall.cs" />
     <Compile Include="DialPlanCommand.cs" />
     <Compile Include="DialPlanContext.cs" />
-    <Compile Include="DialPlanCRMFacade.cs" />
+    <Compile Include="DialPlanFacades\DialPlanLookupFacade.cs" />
+    <Compile Include="DialPlanFacades\DialPlanCRMFacade.cs" />
     <Compile Include="DialPlanEngine.cs" />
     <Compile Include="DialPlanExecutingScript.cs" />
+    <Compile Include="DialPlanFacades\DialPlanSettings.cs" />
     <Compile Include="DialPlanLineContext.cs" />
     <Compile Include="DialPlanScriptContext.cs" />
-    <Compile Include="DialPlanScriptFacade.cs" />
+    <Compile Include="DialPlanFacades\DialPlanScriptFacade.cs" />
     <Compile Include="DialStringParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

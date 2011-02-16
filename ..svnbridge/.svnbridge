@@ -17,4 +17,13 @@ sipsorcery-biz
 sipsorcery-samples
 sipsorcery-web
 Releases
+</Value></Property><Property><Name>svn:ignore</Name><Value>Old
+Patches
+sipsorcery-logs
+sipsorcery-tools
+sipsorcery-biz
+sipsorcery-samples
+sipsorcery-web
+Releases
+sipsorcery-monitoring
 </Value></Property></Properties></ItemProperties>

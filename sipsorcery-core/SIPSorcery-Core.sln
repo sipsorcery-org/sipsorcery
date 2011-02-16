@@ -36,6 +36,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIP.App.UnitTest
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.CRM.UnitTests", "SIPSorcery.CRM.UnitTests\SIPSorcery.CRM.UnitTests.csproj", "{1F5CAE96-9ABC-4F9C-964A-86DDD9AC272E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.AppServer.DialPlan.UnitTests", "SIPSorcery.AppServer.DialPlan.UnitTests\SIPSorcery.AppServer.DialPlan.UnitTests.csproj", "{976A21FD-126C-409E-A9E8-4E2278D67360}"
+EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = SIPSorcery-Core2.vsmdi
@@ -179,6 +181,16 @@ Global
 		{1F5CAE96-9ABC-4F9C-964A-86DDD9AC272E}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{1F5CAE96-9ABC-4F9C-964A-86DDD9AC272E}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{1F5CAE96-9ABC-4F9C-964A-86DDD9AC272E}.Release|x86.ActiveCfg = Release|Any CPU
+		{976A21FD-126C-409E-A9E8-4E2278D67360}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{976A21FD-126C-409E-A9E8-4E2278D67360}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{976A21FD-126C-409E-A9E8-4E2278D67360}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{976A21FD-126C-409E-A9E8-4E2278D67360}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{976A21FD-126C-409E-A9E8-4E2278D67360}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{976A21FD-126C-409E-A9E8-4E2278D67360}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{976A21FD-126C-409E-A9E8-4E2278D67360}.Release|Any CPU.Build.0 = Release|Any CPU
+		{976A21FD-126C-409E-A9E8-4E2278D67360}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{976A21FD-126C-409E-A9E8-4E2278D67360}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{976A21FD-126C-409E-A9E8-4E2278D67360}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -188,5 +200,6 @@ Global
 		{13B2C19A-621A-4404-99E1-8345B7283CB6} = {5A855FE1-8B93-429D-95A5-B8215CF62A9D}
 		{87A3270B-0362-4323-851A-5BA5D8CD3752} = {5A855FE1-8B93-429D-95A5-B8215CF62A9D}
 		{1F5CAE96-9ABC-4F9C-964A-86DDD9AC272E} = {5A855FE1-8B93-429D-95A5-B8215CF62A9D}
+		{976A21FD-126C-409E-A9E8-4E2278D67360} = {5A855FE1-8B93-429D-95A5-B8215CF62A9D}
 	EndGlobalSection
 EndGlobal

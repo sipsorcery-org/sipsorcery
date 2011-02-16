@@ -56,7 +56,7 @@ namespace SIPSorcery.SIPRegistrationAgent
                 SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor = SIPAssetPersistorFactory<SIPProviderBinding>.CreateSIPAssetPersistor(m_sipRegAgentStorageType, m_sipRegAgentStorageConnStr, m_sipProviderBindingsXMLFilename);
 
                 SIPRegAgentDaemon daemon = new SIPRegAgentDaemon(sipProvidersPersistor, sipProviderBindingsPersistor);
-                SIPDNSManager.SIPMonitorLogEvent += daemon.FireSIPMonitorEvent;
+                SIPDNSManager.SIPMonitorLogEvent = daemon.FireSIPMonitorEvent;
 
                 if (args != null && args.Length == 1 && args[0].StartsWith("-c"))
                 {

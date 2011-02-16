@@ -69,7 +69,19 @@ namespace SIPSorcery.Servers
             {
                 if (m_transactionEndPoints.ContainsKey(sipRequest.Header.CallId))
                 {
-                    return;
+                    if (m_transactionEndPoints[sipRequest.Header.CallId] == internalEndPoint.ToString())
+                    {
+                        // The application server end point has not changed for this Call-Id
+                        return;
+                    }
+                    else
+                    {
+                        // The application server end point has changed within the lifetime of the Call-Id. Remove the old mapping.
+                        lock (m_transactionEndPoints)
+                        {
+                            m_transactionEndPoints.Remove(sipRequest.Header.CallId);
+                        }
+                    }
                 }
 
                 m_transactionEndPoints.Add(sipRequest.Header.CallId, internalEndPoint.ToString());

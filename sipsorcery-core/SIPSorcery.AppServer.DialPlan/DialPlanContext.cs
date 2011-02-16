@@ -13,7 +13,7 @@ using log4net;
 namespace SIPSorcery.AppServer.DialPlan
 {
     public delegate void CallCancelledDelegate(CallCancelCause cancelCause);
-    public delegate void CallProgressDelegate(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody);
+    public delegate void CallProgressDelegate(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody, ISIPClientUserAgent uac);
     public delegate void CallFailedDelegate(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders);
     public delegate void CallAnsweredDelegate(SIPResponseStatusCodesEnum answeredStatus, string reasonPhrase, string toTag, string[] customHeaders, string answeredContentType, string answeredBody, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum uasTransferMode);
 
@@ -111,6 +111,11 @@ namespace SIPSorcery.AppServer.DialPlan
             get { return m_sipServerUserAgent.SIPAccount; }
         }
 
+        public CRMHeaders CallerCRMDetails = null;  // Can be populated asynchronously by looking up the caller's details in a CRM system.
+
+        private List<ISIPClientUserAgent> m_uacWaitingForCallDetails = new List<ISIPClientUserAgent>();     // UACs can indicate they would like the call details when available.
+        private List<ISIPClientUserAgent> m_uacCallDetailsSent = new List<ISIPClientUserAgent>();           // List of UAC's that the caller details have already been sent to.
+
         internal event CallCancelledDelegate CallCancelledByClient;
 
         private bool m_dialPlanComplete;
@@ -145,11 +150,24 @@ namespace SIPSorcery.AppServer.DialPlan
             m_sipServerUserAgent.SetTraceDelegate(TransactionTraceMessage);
         }
 
-        public void CallProgress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody)
+        public void CallProgress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody, ISIPClientUserAgent uac)
         {
             if (!m_isAnswered)
             {
                 m_sipServerUserAgent.Progress(progressStatus, reasonPhrase, customHeaders, progressContentType, progressBody);
+
+                if (uac != null && uac.CallDescriptor.RequestCallerDetails && CallerCRMDetails != null)
+                {
+                    if (CallerCRMDetails.Pending && !m_uacWaitingForCallDetails.Contains(uac) && !m_uacCallDetailsSent.Contains(uac))
+                    {
+                        m_uacWaitingForCallDetails.Add(uac);
+                    }
+                    else if (!CallerCRMDetails.Pending && !m_uacCallDetailsSent.Contains(uac))
+                    {
+                        // Send the call details to the client user agent.
+                        uac.Update(CallerCRMDetails);
+                    }
+                }
             }
         }
 
@@ -235,6 +253,36 @@ namespace SIPSorcery.AppServer.DialPlan
                 {
                     DialPlanComplete();
                 }
+            }
+        }
+
+        public void SetCallerDetails(CRMHeaders crmHeaders)
+        {
+            try
+            {
+                CallerCRMDetails = crmHeaders;
+
+                if (!CallerCRMDetails.Pending)
+                {
+                    lock (m_uacWaitingForCallDetails)
+                    {
+                        if (m_uacWaitingForCallDetails.Count > 0)
+                        {
+                            foreach (var waitingUAC in m_uacWaitingForCallDetails)
+                            {
+                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Sending CRM caller details to " + waitingUAC.CallDescriptor.Uri + ".", Owner));
+                                waitingUAC.Update(crmHeaders);
+                                m_uacCallDetailsSent.Add(waitingUAC);
+                            }
+
+                            m_uacWaitingForCallDetails.Clear();
+                        }
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SetCallerDetails. " + excp.Message);
             }
         }
 
@@ -346,7 +394,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 if (monitorEvent is SIPMonitorConsoleEvent)
                 {
                     SIPMonitorConsoleEvent consoleEvent = monitorEvent as SIPMonitorConsoleEvent;
-                    
+
                     if (TraceLog != null)
                     {
                         TraceLog.AppendLine(consoleEvent.EventType + "=> " + monitorEvent.Message);

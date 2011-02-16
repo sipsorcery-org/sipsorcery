@@ -73,10 +73,10 @@ namespace SIPSorcery.Persistence
                 {
                     return new SQLAssetPersistor<T>(Npgsql.NpgsqlFactory.Instance, storageConnectionStr);
                 }
-                else if (storageType == StorageTypes.SimpleDBLinq)
-                {
-                    return new SimpleDBAssetPersistor<T>(storageConnectionStr);
-                }
+                //else if (storageType == StorageTypes.SimpleDBLinq)
+                //{
+                //    return new SimpleDBAssetPersistor<T>(storageConnectionStr);
+                //}
                 else if (storageType == StorageTypes.SQLLinqMSSQL)
                 {
                     return new MSSQLAssetPersistor<T>(System.Data.SqlClient.SqlClientFactory.Instance, storageConnectionStr);

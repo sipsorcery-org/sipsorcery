@@ -106,6 +106,7 @@ namespace SIPSorcery.SIPProxy
 
                 // Configure the SIP transport layer.
                 m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, null, false);
+                SIPDNSManager.SIPMonitorLogEvent = FireSIPMonitorEvent;
                 m_sipTransport.PerformanceMonitorPrefix = SIPSorceryPerformanceMonitor.PROXY_PREFIX;
                 List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipProxySocketsNode);
                 m_sipTransport.AddSIPChannel(sipChannels);

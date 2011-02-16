@@ -187,7 +187,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        private void CallProgress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody)
+        private void CallProgress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody, ISIPClientUserAgent uac)
         {
             try
             {

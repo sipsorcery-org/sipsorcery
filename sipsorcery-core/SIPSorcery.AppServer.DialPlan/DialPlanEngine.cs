@@ -82,6 +82,7 @@ namespace SIPSorcery.AppServer.DialPlan
         public const string SCRIPT_REQUESTOBJECT_NAME = "req";        // Access using $req from the Ruby script.
         public const string SCRIPT_HELPEROBJECT_NAME = "sys";         // Access using $sys from the Ruby script.
         public const string SCRIPT_CRMOBJECT_NAME = "crm";            // Access using $crm from the Ruby script.
+        public const string SCRIPT_LOOKUPOBJECT_NAME = "lookup";      // Access using $lookup from the Ruby script.
         public const int ABSOLUTEMAX_SCRIPTPROCESSING_SECONDS = 300;  // The absolute maximum amount of seconds a script thread will be allowed to execute for.
         public const int MAX_ALLOWED_SCRIPTSCOPES = 20;               // The maximum allowed number of scopes one if which is required for each simultaneously executing script.
         private const string RUBY_COMMON_COPY_EXTEN = ".tmp";
@@ -263,7 +264,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     }
                     else if ((int)status < 200)
                     {
-                        dialPlanContext.CallProgress(status, statusMessage, null, null, null);
+                        dialPlanContext.CallProgress(status, statusMessage, null, null, null, null);
                     }
                 }
                 else
@@ -350,11 +351,13 @@ namespace SIPSorcery.AppServer.DialPlan
                             GetSIPAccountBindings_External,
                             m_outboundProxySocket);
 
-                        DialPlanCRMFacade crmFacade = new DialPlanCRMFacade();
+                        DialPlanCRMFacade crmFacade = new DialPlanCRMFacade(FireProxyLogEvent, dialPlanContext);
+                        DialPlanLookupFacade lookupFacade = new DialPlanLookupFacade(FireProxyLogEvent, dialPlanContext.Owner);
 
                         ScriptScope rubyScope = dialPlanExecutionScript.DialPlanScriptScope;
                         rubyScope.SetVariable(SCRIPT_HELPEROBJECT_NAME, planFacade);
                         rubyScope.SetVariable(SCRIPT_CRMOBJECT_NAME, crmFacade);
+                        rubyScope.SetVariable(SCRIPT_LOOKUPOBJECT_NAME, lookupFacade);
                         if (uas.CallRequest != null)
                         {
                             rubyScope.SetVariable(SCRIPT_REQUESTOBJECT_NAME, uas.CallRequest.Copy());

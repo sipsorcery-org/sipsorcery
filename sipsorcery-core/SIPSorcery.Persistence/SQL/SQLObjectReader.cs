@@ -9,8 +9,6 @@ using System.Data.Linq.Mapping;
 using System.Reflection;
 using System.Text;
 using SIPSorcery.Sys;
-using Amazon.SimpleDB;
-using Amazon.SimpleDB.Model;
 using log4net;
 
 namespace SIPSorcery.Persistence {

@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery
 {
@@ -44,7 +45,11 @@ namespace SIPSorcery
 
                 if (App.Current.Resources[DISABLE_PROVIDER_REGISTRATIONS_KEY] != null)
                 {
-                    Boolean.TryParse(App.Current.Resources[DISABLE_PROVIDER_REGISTRATIONS_KEY].ToString(), out DisableProviderRegistrations);
+                    string initDisableProviderReg = App.Current.Resources[DISABLE_PROVIDER_REGISTRATIONS_KEY] as string;
+                    if(!initDisableProviderReg.IsNullOrBlank())
+                    {
+                        Boolean.TryParse(initDisableProviderReg, out DisableProviderRegistrations);
+                    }
                 }
             }
 		}

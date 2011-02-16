@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReferenceGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ID="a495512c-1802-46c7-b1d2-078216099b7a" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+  <ClientOptions>
+    <GenerateAsynchronousMethods>true</GenerateAsynchronousMethods>
+    <EnableDataBinding>true</EnableDataBinding>
+    <ExcludedTypes />
+    <ImportXmlTypes>false</ImportXmlTypes>
+    <GenerateInternalTypes>false</GenerateInternalTypes>
+    <GenerateMessageContracts>false</GenerateMessageContracts>
+    <NamespaceMappings />
+    <CollectionMappings>
+      <CollectionMapping TypeName="System.Collections.ObjectModel.ObservableCollection`1" Category="List" />
+    </CollectionMappings>
+    <GenerateSerializableTypes>false</GenerateSerializableTypes>
+    <Serializer>Auto</Serializer>
+    <UseSerializerForFaults>true</UseSerializerForFaults>
+    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferencedAssemblies />
+    <ReferencedDataContractTypes />
+    <ServiceContractMappings />
+  </ClientOptions>
+  <MetadataSources>
+    <MetadataSource Address="https://www.sipsorcery.com/sipsorceryinvite.svc" Protocol="http" SourceId="1" />
+  </MetadataSources>
+  <Metadata>
+    <MetadataFile FileName="SIPSorceryInvite.xsd" MetadataType="Schema" ID="ca9a338f-305e-4b71-a95b-fcd777f64b32" SourceId="1" SourceUrl="https://www.sipsorcery.com/SIPSorceryInvite.svc?xsd=xsd0" />
+    <MetadataFile FileName="SIPSorceryInvite1.xsd" MetadataType="Schema" ID="55f52905-9f00-4c42-9db2-6041e20a53cc" SourceId="1" SourceUrl="https://www.sipsorcery.com/SIPSorceryInvite.svc?xsd=xsd2" />
+    <MetadataFile FileName="SIPSorceryInviteService.wsdl" MetadataType="Wsdl" ID="78493476-4f6c-4af6-a5ca-4bb3bb742dca" SourceId="1" SourceUrl="https://www.sipsorcery.com/SIPSorceryInvite.svc?wsdl" />
+    <MetadataFile FileName="SIPSorceryInvite2.xsd" MetadataType="Schema" ID="00c910e8-86c8-4918-8db4-dc4719b1bb07" SourceId="1" SourceUrl="https://www.sipsorcery.com/SIPSorceryInvite.svc?xsd=xsd1" />
+    <MetadataFile FileName="SIPSorceryInvite.wsdl" MetadataType="Wsdl" ID="0114de7c-1ddf-47dc-9c3d-e20e88211d46" SourceId="1" SourceUrl="https://www.sipsorcery.com/SIPSorceryInvite.svc?wsdl=wsdl1" />
+    <MetadataFile FileName="SIPSorceryInvite1.wsdl" MetadataType="Wsdl" ID="e9309ac3-70d1-425e-b0f0-23de7ae26d94" SourceId="1" SourceUrl="https://www.sipsorcery.com/SIPSorceryInvite.svc?wsdl=wsdl0" />
+    <MetadataFile FileName="SIPSorceryInvite.disco" MetadataType="Disco" ID="a719abdc-28b8-4dfc-a393-02f836bcf7ac" SourceId="1" SourceUrl="https://www.sipsorcery.com/SIPSorceryInvite.svc?disco" />
+  </Metadata>
+  <Extensions>
+    <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
+    <ExtensionFile FileName="configuration.svcinfo" Name="configuration.svcinfo" />
+  </Extensions>
+</ReferenceGroup>
