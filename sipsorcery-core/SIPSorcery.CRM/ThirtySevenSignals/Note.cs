@@ -49,7 +49,6 @@ namespace SIPSorcery.CRM.ThirtySevenSignals
         Kase
     }
 
-    [Serializable()]
     [XmlRootAttribute("note", Namespace = "", IsNullable = false)]
     public class Note
     {

@@ -144,7 +144,7 @@ namespace SIPSorcery
             if (serviceStatus == ServiceConnectionStatesEnum.Ok)
             {
                 UIHelper.SetFill(m_notificationsStatusIcon, Colors.Green);
-                UIHelper.SetText(m_notificationsStatusMessage, "Notifications service ok.");
+                UIHelper.SetText(m_notificationsStatusMessage, "Notifications service ok: " + m_notificationsURL);
             }
             else
             {
@@ -277,16 +277,6 @@ namespace SIPSorcery
         public void SetProvisioningStatusMessage(string message)
         {
             UIHelper.SetText(m_provisioningStatusMessage, message);
-        }
-
-        public void SetNotificationsStatusIconColour(Color colour)
-        {
-            UIHelper.SetFill(m_notificationsStatusIcon, colour);
-        }
-
-        public void SetNotificationsStatusMessage(string message)
-        {
-            UIHelper.SetText(m_notificationsStatusMessage, message);
         }
 
         private void AppUnhandledException(ApplicationUnhandledExceptionEventArgs e)

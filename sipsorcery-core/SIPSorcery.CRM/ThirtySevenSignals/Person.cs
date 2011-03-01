@@ -42,7 +42,6 @@ using System.Xml.Serialization;
 
 namespace SIPSorcery.CRM.ThirtySevenSignals
 {
-    [Serializable()]
     [XmlRootAttribute("person", Namespace = "", IsNullable = false)]
     public class Person
     {

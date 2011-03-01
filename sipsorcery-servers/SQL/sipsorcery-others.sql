@@ -254,6 +254,7 @@ create table sipdialplanlookups
 (
   id varchar(36) not null,
   owner varchar(32) not null,
+  dialplanname varchar(64),				-- The wizard dialplan the lookup entries will be used in.
   lookupkey varchar(128) not null,
   lookupvalue varchar(128) null,
   description varchar(256) null,
@@ -265,6 +266,7 @@ create table sipdialplanproviders
 (
   id varchar(36) not null,
   owner varchar(32) not null,
+  dialplanname varchar(64),				-- The wizard dialplan the provider entries will be used in.
   providername varchar(32) not null,
   providerprefix varchar(8) null,
   providerdialstring varchar(1024) not null,
@@ -276,6 +278,7 @@ create table sipdialplanroutes
 (
   id varchar(36) not null,
   owner varchar(32) not null,
+  dialplanname varchar(64),				-- The wizard dialplan the route entries will be used in.
   routename varchar(32) not null,
   routepattern varchar(256) not null,
   routedestination varchar(1024) not null,
@@ -287,6 +290,7 @@ create table sipdialplanoptions
 (
   id varchar(36) not null,
   owner varchar(32) not null,
+  dialplanname varchar(64),				-- The wizard dialplan the options will be used in.
   timezone varchar(128) null,
   countrycode int null,
   areacode int null,

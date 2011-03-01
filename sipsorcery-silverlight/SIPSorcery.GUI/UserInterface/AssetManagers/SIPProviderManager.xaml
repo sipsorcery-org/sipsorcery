@@ -27,7 +27,12 @@
 		                    Width="SizeToCells"
 		                    Binding="{Binding ProviderName}" 
 							IsReadOnly="True"
-							MinWidth="100"/>
+							MinWidth="110"/>
+						<data:DataGridTextColumn 
+		                    Header="Type" 
+		                    Binding="{Binding ProviderType}" 
+							IsReadOnly="True"
+							Width="80"/>
 						<data:DataGridTextColumn 
 		                    Header="Owner" 
 		                    Width="SizeToCells"
@@ -56,12 +61,12 @@
 		                    Binding="{Binding ProviderServer}" 
 							IsReadOnly="True"
 							MinWidth="120"/>
-						<data:DataGridTextColumn 
+						<!--<data:DataGridTextColumn 
 		                    Header="Proxy" 
 		                    Width="SizeToCells"
 		                    Binding="{Binding ProviderOutboundProxy}" 
 							IsReadOnly="True"
-							MinWidth="120"/>
+							MinWidth="120"/>-->
 						<data:DataGridCheckBoxColumn 
 		                    Header="Register" 
 		                    Width="SizeToCells"

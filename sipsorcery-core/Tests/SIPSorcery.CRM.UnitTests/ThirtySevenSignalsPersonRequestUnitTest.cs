@@ -46,7 +46,7 @@ namespace SIPSorcery.CRM.UnitTests
     [TestClass]
     public class ThirtySevenSignalsPersonRequestUnitTest
     {
-        private string m_highriseURL = "";
+        private string m_highriseURL = "https://x.highrisehq.com";
         private string m_highriseAuthToken = "";
 
         [TestMethod]

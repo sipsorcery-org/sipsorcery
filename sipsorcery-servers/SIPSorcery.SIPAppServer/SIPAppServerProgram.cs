@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using SIPSorcery.CRM;
@@ -55,7 +56,7 @@ namespace SIPSorcery.SIPAppServer
                 {
                     logger.Debug("Lookups count=" + (from lookup in appEntities.SIPDialplanLookups select lookup).Count() + ", forcing entity framework assemblies to load.");
                 }
-
+                
                 //if (args != null && args.Length > 0)
                 //{
                     isConsole = true;

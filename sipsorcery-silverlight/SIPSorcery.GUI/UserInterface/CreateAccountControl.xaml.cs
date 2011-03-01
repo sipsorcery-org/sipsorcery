@@ -13,19 +13,21 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery
 {
-	public partial class CreateAccountControl : UserControl
-	{
+    public partial class CreateAccountControl : UserControl
+    {
         public CreateCustomerDelegate CreateCustomer_External;
-        //public LoginDelegate Login_External;
+        public ClickedDelegate CancelCreateCustomer_External;
 
         private string m_emailAddress;
         public string InviteCode;
 
-        public CreateAccountControl() {
+        public CreateAccountControl()
+        {
             InitializeComponent();
         }
 
-        public void SetDataEntryEnabled(bool enabled) {
+        public void SetDataEntryEnabled(bool enabled)
+        {
             Visibility dataEntryVisibility = (enabled) ? Visibility.Visible : Visibility.Collapsed;
             UIHelper.SetVisibility(m_firstNameTextBox, dataEntryVisibility);
             UIHelper.SetVisibility(m_lastNameTextBox, dataEntryVisibility);
@@ -54,11 +56,14 @@ namespace SIPSorcery
             UIHelper.SetVisibility(m_timezoneListBox, dataEntryVisibility);
         }
 
-        private void CreateCustomerButton_Click(object sender, System.Windows.RoutedEventArgs e) {
-            try {
+        private void CreateCustomerButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            try
+            {
                 m_statusTextBlock.Text = String.Empty;
 
-                Customer customer = new Customer() {
+                Customer customer = new Customer()
+                {
                     Id = Guid.NewGuid(),
                     FirstName = m_firstNameTextBox.Text.Trim(),
                     LastName = m_lastNameTextBox.Text.Trim(),
@@ -76,18 +81,23 @@ namespace SIPSorcery
                 };
 
                 string validationError = Customer.ValidateAndClean(customer);
-                if (validationError != null) {
+                if (validationError != null)
+                {
                     m_statusTextBlock.Text = validationError;
                 }
-                else {
+                else
+                {
 
-                    if (m_retypePasswordTextBox.Password.IsNullOrBlank()) {
+                    if (m_retypePasswordTextBox.Password.IsNullOrBlank())
+                    {
                         m_statusTextBlock.Text = "The retyped password must be specified.";
                     }
-                    else if (m_retypePasswordTextBox.Password.Trim() != customer.CustomerPassword.Trim()) {
+                    else if (m_retypePasswordTextBox.Password.Trim() != customer.CustomerPassword.Trim())
+                    {
                         m_statusTextBlock.Text = "The password and retyped password did not match.";
                     }
-                    else {
+                    else
+                    {
                         SetDataEntryEnabled(false);
                         UIHelper.SetText(m_statusTextBlock, "Attempting to create new customer, please wait...");
 
@@ -97,25 +107,30 @@ namespace SIPSorcery
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 SetDataEntryEnabled(true);
                 m_statusTextBlock.Text = "Exception creating customer. " + excp.Message;
             }
         }
 
-        public void CustomerCreated(System.ComponentModel.AsyncCompletedEventArgs e) {
-            if (e.Error == null) {
+        public void CustomerCreated(System.ComponentModel.AsyncCompletedEventArgs e)
+        {
+            if (e.Error == null)
+            {
                 Clear();
                 UIHelper.SetText(m_statusTextBlock, "A comfirmation email has been sent to " + m_emailAddress + ". " +
                     "Please click on the link contained in the email to activate your account. Accounts not activated within 24 hours are removed.");
             }
-            else {
+            else
+            {
                 SetDataEntryEnabled(true);
                 m_statusTextBlock.Text = e.Error.Message;
             }
         }
 
-        public void Clear() {
+        public void Clear()
+        {
             UIHelper.SetText(m_statusTextBlock, String.Empty);
             UIHelper.SetText(m_firstNameTextBox, String.Empty);
             UIHelper.SetText(m_lastNameTextBox, String.Empty);
@@ -130,5 +145,15 @@ namespace SIPSorcery
             UIHelper.SetComboBoxSelectedId(m_countryListBox, 14);
             UIHelper.SetComboBoxSelectedId(m_timezoneListBox, 31);
         }
-	}
+
+        public void ClearError()
+        {
+            UIHelper.SetText(m_statusTextBlock, String.Empty);
+        }
+
+        private void CancelButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            CancelCreateCustomer_External();
+        }
+    }
 }

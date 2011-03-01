@@ -62,21 +62,35 @@ namespace SIPSorcery.AppServer.DialPlan
             m_context = context;
         }
 
-        public void LookupHighriseContact(string url, string authToken, SIPFromHeader from)
+        /// <summary>
+        /// Looks up a person contact in the 37 Signals Highrise application.
+        /// </summary>
+        /// <param name="url">The URL of the Highrise account to attempt the lookup on.</param>
+        /// <param name="authToken">The auth token for the Highrise account to attempt the lookup with.</param>
+        /// <param name="from">The SIP from header of the incoming call to attempt to match on.</param>
+        /// <param name="addCallNote">If true it indicates a Highrise note should be created if a matching contact is found.</param>
+        public void LookupHighriseContact(string url, string authToken, SIPFromHeader from, bool addCallNote)
         {
-            LookupHighriseContact(url, authToken, from.FromName);
+            LookupHighriseContact(url, authToken, from.FromName, addCallNote);
         }
 
-        public void LookupHighriseContact(string url, string authToken, string name)
+        /// <summary>
+        /// Looks up a person contact in the 37 Signals Highrise application.
+        /// </summary>
+        /// <param name="url">The URL of the Highrise account to attempt the lookup on.</param>
+        /// <param name="authToken">The auth token for the Highrise account to attempt the lookup with.</param>
+        /// <param name="name">The name of the person to attempt a match on.</param>
+        /// <param name="addCallNote">If true it indicates a Highrise note should be created if a matching contact is found.</param>
+        public void LookupHighriseContact(string url, string authToken, string name, bool addCallNote)
         {
             LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Looking up Highrise contact on " + url + " for " + name + ".", m_context.Owner));
 
             m_context.SetCallerDetails(new CRMHeaders() { Pending = true });
 
-            ThreadPool.QueueUserWorkItem(delegate { DoLookup(url, authToken, name); });
+            ThreadPool.QueueUserWorkItem(delegate { DoLookup(url, authToken, name, addCallNote); });
         }
 
-        private void DoLookup(string url, string authToken, string name)
+        private void DoLookup(string url, string authToken, string name, bool addCallNote)
         {
             try
             {
@@ -101,6 +115,11 @@ namespace SIPSorcery.AppServer.DialPlan
 
                     LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Highrise contact match " + person.FirstName + " " + person.LastName + " of " + companyName + ".", m_context.Owner));
                     m_context.SetCallerDetails(new CRMHeaders(person.FirstName + " " + person.LastName, companyName, person.AvatarURL));
+
+                    if (addCallNote)
+                    {
+                        ThreadPool.QueueUserWorkItem(delegate { AddHighriseCallNote(url, authToken, person); });
+                    }
                 }
                 else
                 {
@@ -113,6 +132,29 @@ namespace SIPSorcery.AppServer.DialPlan
                 logger.Error("Exception LookupHighriseContact. " + excp.Message);
                 LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Error looking up Highrise contact.", m_context.Owner));
                 m_context.SetCallerDetails(new CRMHeaders() { Pending = false, LookupError = "Error looking up Highrise contact." });
+            }
+        }
+
+        private void AddHighriseCallNote(string url, string authToken, Person person)
+        {
+            try
+            {
+                NoteRequest request = new NoteRequest(url, authToken);
+                string result = request.CreateNoteForPerson(person.ID, "Called at " + DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss") + " UTC.");
+                string personName = person.FirstName + " " + person.LastName;
+
+                if(result != null)
+                {
+                    LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Highrise call received note added for " + personName + ".", m_context.Owner));
+                }
+                else
+                {
+                    LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Failed to add Highrise call received note for " + personName + ".", m_context.Owner));
+                }
+            }
+            catch (Exception excp)
+            {
+                LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Exception attempting to add Highrise call received note.", m_context.Owner));
             }
         }
     }

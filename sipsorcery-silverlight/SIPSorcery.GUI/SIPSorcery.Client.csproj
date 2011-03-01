@@ -52,6 +52,8 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <UsePlatformExtensions>false</UsePlatformExtensions>
     <TargetFrameworkProfile />
+    <Utf8Output>true</Utf8Output>
+    <ExpressionBlendVersion>4.0.20525.0</ExpressionBlendVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -73,18 +75,18 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite.wsdl" />
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite.xsd">
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite2.wsdl" />
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite21.wsdl" />
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite3.xsd">
       <SubType>Designer</SubType>
     </None>
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite1.wsdl" />
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite1.xsd">
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite31.xsd">
       <SubType>Designer</SubType>
     </None>
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite2.xsd">
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite32.xsd">
       <SubType>Designer</SubType>
     </None>
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInviteService.wsdl" />
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInviteService1.wsdl" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\SIPProvisioningWebService1.wsdl" />
     <Reference Include="mscorlib" />
     <Reference Include="SIPSorcery.Net, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -310,13 +312,13 @@
     <WCFMetadata Include="WCFReferences\" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite1.disco" />
     <None Include="WCFReferences\SIPSorceryInvite\Reference.svcmap">
       <Generator>WCF Proxy Generator</Generator>
       <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
     <None Include="WCFReferences\SIPSorceryInvite\configuration.svcinfo" />
     <None Include="WCFReferences\SIPSorceryInvite\configuration91.svcinfo" />
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite.disco" />
     <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning1.disco" />
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull.disco" />
     <Resource Include="Images\wizard-logo.png" />

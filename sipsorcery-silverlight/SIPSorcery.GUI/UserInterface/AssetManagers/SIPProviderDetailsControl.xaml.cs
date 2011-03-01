@@ -75,6 +75,7 @@ namespace SIPSorcery
             else
             {
                 m_providerIdCanvas.Visibility = Visibility.Collapsed;
+                m_providerTypeNameCanvas.Visibility = Visibility.Collapsed;
                 m_gvSettingsPanel.Visibility = System.Windows.Visibility.Collapsed;
                 m_applyButton.Content = "Add";
             }
@@ -99,6 +100,7 @@ namespace SIPSorcery
         private void PopulateDataFields(SIPProvider sipProvider)
         {
             m_providerId.Text = sipProvider.Id.ToString();
+            m_providerTypeName.Text = sipProvider.ProviderType.ToString();
             m_providerName.Text = sipProvider.ProviderName;
             m_providerUsername.Text = sipProvider.ProviderUsername;
             m_providerPassword.Text = sipProvider.ProviderPassword;

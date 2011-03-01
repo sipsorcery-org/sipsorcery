@@ -24,10 +24,6 @@
                         <message algorithmSuite="Default" />
                     </security>
                 </binding>
-                <binding name="BasicHttpBinding_ISIPSorceryInviteService" maxBufferSize="2147483647"
-                    maxReceivedMessageSize="2147483647">
-                    <security mode="Transport" />
-                </binding>
             </basicHttpBinding>
             <customBinding>
                 <binding name="ProvisioningServiceSoap12">
@@ -65,9 +61,6 @@
                 bindingConfiguration="BasicHttpBinding_IProvisioningService2"
                 contract="SIPSorceryProvisioningClient.IProvisioningService"
                 name="BasicHttpBinding_IProvisioningService2" />
-            <endpoint address="https://www.sipsorcery.com/SIPSorceryInvite.svc"
-                binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_ISIPSorceryInviteService"
-                contract="SIPSorceryInvite.ISIPSorceryInviteService" name="BasicHttpBinding_ISIPSorceryInviteService" />
         </client>
     </system.serviceModel>
 </configuration>

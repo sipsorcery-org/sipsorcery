@@ -25,6 +25,10 @@
 						<TextBlock TextWrapping="Wrap" Text="00-00-00-00" FontSize="12" Height="20" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" x:Name="m_providerId" Width="337" Canvas.Left="120" Canvas.Top="0" />
 						<TextBlock TextWrapping="Wrap" Text="Id" FontSize="12" Height="20" Width="47" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" d:LayoutOverrides="Width" x:Name="m_providerIdHeading" Canvas.Left="8" Canvas.Top="0" />
 					</Canvas>
+					<Canvas Height="20" x:Name="m_providerTypeNameCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="SIP" FontSize="12" Height="20" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" x:Name="m_providerTypeName" Width="337" Canvas.Left="120" Canvas.Top="0" />
+						<TextBlock TextWrapping="Wrap" Text="Provider Type" FontSize="12" Height="20" Width="96" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerIdHeading1" Canvas.Left="8" Canvas.Top="0" />
+					</Canvas>
 					<Canvas Height="20" x:Name="m_providerNameCanvas" Width="457" Margin="0,2,0,2">
 						<TextBlock TextWrapping="Wrap" Text="Provider Name" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerNameHeading" Canvas.Left="8" Canvas.Top="0" />
 						<TextBox Text="" FontSize="12" x:Name="m_providerName" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="200" Canvas.Left="120"/>

@@ -31,7 +31,8 @@
 					<Canvas Height="20" x:Name="m_dialPlanScriptTypeCanvas" Width="457" Margin="0,2,0,2">
 						<TextBlock TextWrapping="Wrap" Text="Script Type" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_dialPlanScriptTypeHeading" Canvas.Left="8" Canvas.Top="0" />
 						<RadioButton Height="20" Foreground="#FFA0F927" Width="52" Canvas.Left="141" Content="Ruby" GroupName="m_dialPlanScriptType" IsChecked="True" x:Name="m_dialPlanTypeRuby" />
-						<RadioButton Height="20" Foreground="#FFA0F927" Width="79" Content="Extension" GroupName="m_dialPlanScriptType" Canvas.Left="206" x:Name="m_dialPlanTypeExtension" />			
+						<RadioButton Height="20" Foreground="#FFA0F927" Width="79" Content="Extension" GroupName="m_dialPlanScriptType" Canvas.Left="206" x:Name="m_dialPlanTypeExtension" />
+						<RadioButton Height="20" Foreground="#FFA0F927" Width="79" Content="Wizard" GroupName="m_dialPlanScriptType" Canvas.Left="293" x:Name="m_dialPlanTypeExtension_Copy" />			
 					</Canvas>
 					<Button Content="Update" Height="22" x:Name="m_updateButton2" Click="UpdateButtonClicked" Width="47" Canvas.Left="500" Canvas.Top="486" Padding="3,3,3,3" Margin="0,0,0,5" />
 					<Border Height="413.516" Width="994" Canvas.Left="7.999" Canvas.Top="64.518" Background="#FF272727" BorderBrush="#FFA0F927" BorderThickness="1,1,1,1">

@@ -6,19 +6,17 @@
 
 	<ScrollViewer Height="Auto" MinHeight="0" x:Name="m_mainPageBorder" VerticalAlignment="Stretch" Background="#FF000000" ScrollViewer.VerticalScrollBarVisibility="Auto" BorderBrush="#FF000000" HorizontalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
 		<Grid Height="Auto" x:Name="m_topCanvas" Width="Auto">
-			<SIPSorcery:LoginControl Height="132.911" x:Name="m_loginControl" VerticalAlignment="Top" IsTabStop="True" TabIndex="1" VerticalContentAlignment="Top" Padding="0,0,0,140" HorizontalAlignment="Right" Width="Auto" HorizontalContentAlignment="Right" Margin="0,45.297,0,0"/>
-			<Canvas Height="41" HorizontalAlignment="Right" VerticalAlignment="Top" Width="267" x:Name="m_appStatusCanvas">
-				<TextBlock Height="30" Width="240.565" Canvas.Left="24" Text="Persistor service connection message" TextWrapping="Wrap" Foreground="#FFA0F927" x:Name="m_appStatusMessage" Canvas.Top="4"/>
-				<Ellipse Height="12" Width="12" Canvas.Left="8" Fill="#FF00FFFD" Stroke="#FF000000" Canvas.Top="6" x:Name="m_appStatusIcon"/>
-			</Canvas>
-			<SIPSorcery:CreateAccountControl x:Name="m_createAccountControl" VerticalAlignment="Top" Margin="0,120,0,0" HorizontalAlignment="Center" Visibility="Collapsed"/>
-			<Image Height="40" HorizontalAlignment="Center" VerticalAlignment="Top" Width="185" Source="../Images/small_logo.png" Stretch="Fill"/>
-			<TextBlock Height="22" HorizontalAlignment="Left" Margin="21,8,0,0" VerticalAlignment="Top" Width="376" Text="" TextWrapping="Wrap" Foreground="#FF85DB02" x:Name="m_versionTextBlock"/>
-			<TextBox x:Name="m_provisioningSvcTextBox" Text="https://www.sipsorcery.com/provisioning.svc" TextWrapping="Wrap" Width="302" TabIndex="1" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" HorizontalAlignment="Left" Margin="82,49,0,0" VerticalAlignment="Top" Visibility="Collapsed"/>
-			<TextBlock Height="16" Width="69.853" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Set Service" TextWrapping="Wrap" TextDecorations="Underline" MouseLeftButtonUp="DisplaySetServiceTextBox" Cursor="Hand" HorizontalAlignment="Left" Margin="8,49,0,0" VerticalAlignment="Top" x:Name="m_setSvcLink" d:LayoutOverrides="Width" Visibility="Collapsed"/>
-			<TextBlock Height="16" Width="33.853" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Apply" TextWrapping="Wrap" TextDecorations="Underline" MouseLeftButtonUp="ApplySetService" Cursor="Hand" HorizontalAlignment="Left" Margin="388,49,0,0" x:Name="m_setSvcLinkApply" VerticalAlignment="Top" Visibility="Collapsed"/>
-			<TextBlock Cursor="Hand" x:Name="m_aboutLink" Foreground="{StaticResource NormalTextBrush}" Text="About" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="AboutLink_MouseLeftButtonUp" Margin="0,54,0,0" Height="15" VerticalAlignment="Top" HorizontalAlignment="Center"/>
-			<SIPSorcery:NewAccountInviteControl x:Name="m_newAccountInviteControl" Margin="0,120,0,0" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+			<SIPSorcery:CreateAccountControl x:Name="m_createAccountControl" VerticalAlignment="Top" Margin="0,162,0,0" HorizontalAlignment="Center" Visibility="Collapsed"/>
+			<TextBlock Height="14" HorizontalAlignment="Left" Margin="24,8,0,0" VerticalAlignment="Top" Width="123" Text="Version x.x.x.x" TextWrapping="Wrap" Foreground="#FF85DB02" x:Name="m_versionTextBlock"/>
+			<Image Height="102" Source="/SIPSorcery;component/Images/wizard-2.png" Stretch="Fill" VerticalAlignment="Top" Margin="0,34,0,0" d:LayoutOverrides="Width" HorizontalAlignment="Center"/>
+			<Ellipse Height="12" Width="12" Fill="#FF00FFFD" Stroke="#FF000000" x:Name="m_appStatusIcon" HorizontalAlignment="Left" Margin="8,9,0,0" VerticalAlignment="Top" Cursor="Hand">
+				<ToolTipService.ToolTip>
+					<ToolTip x:Name="m_provisioningStatusMessage" Content="Provisioning service status" />
+				</ToolTipService.ToolTip>
+			</Ellipse>
+			<TextBlock Height="14" TextWrapping="Wrap" Foreground="#FF85DB02" x:Name="m_copyrightTextBlock" Margin="0,0,0,27" VerticalAlignment="Bottom" HorizontalAlignment="Center"><Run Text="Copyright"/><Run Text=" "/><Run Text="©"/><Run Text=" SIP Sorcery "/><Run Text="2011"/></TextBlock>
+			<HyperlinkButton Content="www.sipsorcery.com" NavigateUri="http://www.sipsorcery.com" Foreground="{StaticResource NormalTextBrush}" Margin="0,0,0,10" VerticalAlignment="Bottom" d:LayoutOverrides="Width" HorizontalAlignment="Center"/>
+			<SIPSorcery:LoginControl x:Name="m_loginControl" IsTabStop="True" TabIndex="1" VerticalContentAlignment="Top" Padding="0,0,0,140" Width="587" HorizontalContentAlignment="Right" HorizontalAlignment="Center" Height="Auto" Margin="0,140,0,69" d:LayoutOverrides="Height" VerticalAlignment="Top"/>
 		</Grid>
 	</ScrollViewer>
 </UserControl>
