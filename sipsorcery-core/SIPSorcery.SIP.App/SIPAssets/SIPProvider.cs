@@ -58,6 +58,20 @@ using NUnit.Framework;
 
 namespace SIPSorcery.SIP.App
 {
+    public enum ProviderTypes
+    {
+        SIP = 0,
+        GoogleVoice = 1,
+    }
+
+    public enum GoogleVoiceCallbackTypes
+    {
+        Home = 1,
+        Mobile = 2,
+        Work = 3,
+        Gizmo = 7,
+    }
+
     [Table(Name = "sipproviders")]
     [DataContractAttribute]
     public class SIPProvider : INotifyPropertyChanged, ISIPAsset
@@ -76,6 +90,19 @@ namespace SIPSorcery.SIP.App
 
         private static string m_newLine = AppState.NewLine;
         private static ILog logger = AppState.logger;
+
+        private ProviderTypes m_providerType;            // Identifies whether the provider entry is a SIP or Google Voice entry.
+        [Column(Name = "providertype", DbType = "varchar(16)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public ProviderTypes ProviderType
+        {
+            get { return m_providerType; }
+            set
+            {
+                m_providerType = value;
+                NotifyPropertyChanged("ProviderType");
+            }
+        }
 
         private Guid m_id;
         [Column(Name = "id", DbType = "varchar(36)", IsPrimaryKey = true, CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
@@ -302,6 +329,45 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+        private string m_gvCallbackNumber;            // The callback number for Google Voice calls.
+        [Column(Name = "gvcallbacknumber", DbType = "varchar(16)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public string GVCallbackNumber
+        {
+            get { return m_gvCallbackNumber; }
+            set
+            {
+                m_gvCallbackNumber = value;
+                NotifyPropertyChanged("GVCallbackNumber");
+            }
+        }
+
+        private string m_gvCallbackPattern;            // The callback number for Google Voice calls.
+        [Column(Name = "gvcallbackpattern", DbType = "varchar(32)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public string GVCallbackPattern
+        {
+            get { return m_gvCallbackPattern; }
+            set
+            {
+                m_gvCallbackPattern = value;
+                NotifyPropertyChanged("GVCallbackPattern");
+            }
+        }
+
+        private GoogleVoiceCallbackTypes? m_gvCallbackType;
+        [Column(Name = "gvcallbacktype", DbType = "varchar(16)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public GoogleVoiceCallbackTypes? GVCallbackType
+        {
+            get { return m_gvCallbackType; }
+            set
+            {
+                m_gvCallbackType = value;
+                NotifyPropertyChanged("GVCallbackType");
+            }
+        }
+
         private DateTimeOffset m_lastUpdate;
         [Column(Name = "lastupdate", DbType = "datetimeoffset", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
@@ -338,6 +404,7 @@ namespace SIPSorcery.SIP.App
         { }
 
         public SIPProvider(
+            ProviderTypes providerType,
             string owner,
             string name,
             string username,
@@ -352,8 +419,12 @@ namespace SIPSorcery.SIP.App
             string authUsername,
             string registerRealm,
             bool registerEnabled,
-            bool registerEnabledAdmin)
+            bool registerEnabledAdmin,
+            string gvCallbackNumber,
+            string gvCallbackPattern,
+            GoogleVoiceCallbackTypes? gvCallbackType)
         {
+            m_providerType = providerType;
             m_owner = owner;
             m_id = Guid.NewGuid();
             m_providerName = name;
@@ -370,6 +441,9 @@ namespace SIPSorcery.SIP.App
             m_registerRealm = registerRealm;
             m_registerEnabled = registerEnabled;
             m_registerAdminEnabled = registerEnabledAdmin;
+            m_gvCallbackNumber = gvCallbackNumber;
+            m_gvCallbackPattern = gvCallbackPattern;
+            m_gvCallbackType = gvCallbackType;
             Inserted = DateTimeOffset.UtcNow;
             LastUpdate = DateTimeOffset.UtcNow;
 
@@ -388,7 +462,6 @@ namespace SIPSorcery.SIP.App
 
         public static string ValidateAndClean(SIPProvider sipProvider)
         {
-
             if (sipProvider.ProviderName.IsNullOrBlank())
             {
                 return "A value for Provider Name must be specified.";
@@ -397,37 +470,60 @@ namespace SIPSorcery.SIP.App
             {
                 return "The Provider Name cannot contain a full stop '.' in order to avoid ambiguity with DNS host names, please remove the '.'.";
             }
-            else if (sipProvider.ProviderServer.IsNullOrBlank())
+
+            if (sipProvider.ProviderType == ProviderTypes.SIP)
             {
-                return "A value for Server must be specified.";
+                if (sipProvider.ProviderServer.IsNullOrBlank())
+                {
+                    return "A value for Server must be specified.";
+                }
+                if (sipProvider.RegisterEnabled && sipProvider.m_registerContact == null)
+                {
+                    return "A valid contact must be supplied to enable a provider registration.";
+                }
+                else if (sipProvider.m_providerServer.Host.IndexOf('.') == -1)
+                {
+                    return "Your provider server entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
+                }
+                else if (sipProvider.m_registerServer != null && sipProvider.m_registerServer.Host.IndexOf('.') == -1)
+                {
+                    return "Your register server entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
+                }
+                else if (sipProvider.m_registerContact != null && sipProvider.m_registerContact.Host.IndexOf('.') == -1)
+                {
+                    return "Your register contact entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
+                }
+                else if (sipProvider.m_registerContact != null && sipProvider.m_registerContact.User.IsNullOrBlank())
+                {
+                    return "Your register contact entry appears to be invalid, the user portion was missing. Contacts must be of the form user@host.com, e.g. joe@sipsorcery.com.";
+                }
+                else if (DisallowedServerPatterns != null && Regex.Match(sipProvider.m_providerServer.Host, DisallowedServerPatterns).Success)
+                {
+                    return "The Provider Server contains a disallowed string. If you are trying to create a Provider entry pointing to sipsorcery.com it is not permitted.";
+                }
+                else if (DisallowedServerPatterns != null && sipProvider.m_registerServer != null && Regex.Match(sipProvider.m_registerServer.Host, DisallowedServerPatterns).Success)
+                {
+                    return "The Provider Register Server contains a disallowed string. If you are trying to create a Provider entry pointing to sipsorcery.com it is not permitted.";
+                }
             }
-            if (sipProvider.RegisterEnabled && sipProvider.m_registerContact == null)
+            else
             {
-                return "A valid contact must be supplied to enable a provider registration.";
-            }
-            else if (sipProvider.m_providerServer.Host.IndexOf('.') == -1)
-            {
-                return "Your provider server entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
-            }
-            else if (sipProvider.m_registerServer != null && sipProvider.m_registerServer.Host.IndexOf('.') == -1)
-            {
-                return "Your register server entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
-            }
-            else if (sipProvider.m_registerContact != null && sipProvider.m_registerContact.Host.IndexOf('.') == -1)
-            {
-                return "Your register contact entry appears to be invalid. A valid hostname or IP address should contain at least one '.'.";
-            }
-            else if (sipProvider.m_registerContact != null && sipProvider.m_registerContact.User.IsNullOrBlank())
-            {
-                return "Your register contact entry appears to be invalid, the user portion was missing. Contacts must be of the form user@host.com, e.g. joe@sipsorcery.com.";
-            }
-            else if (DisallowedServerPatterns != null && Regex.Match(sipProvider.m_providerServer.Host, DisallowedServerPatterns).Success)
-            {
-                throw new ApplicationException("The Provider Server contains a disallowed string. If you are trying to create a Provider entry pointing to sipsorcery.com it is not permitted.");
-            }
-            else if (DisallowedServerPatterns != null && sipProvider.m_registerServer != null && Regex.Match(sipProvider.m_registerServer.Host, DisallowedServerPatterns).Success)
-            {
-                throw new ApplicationException("The Provider Register Server contains a disallowed string. If you are trying to create a Provider entry pointing to sipsorcery.com it is not permitted.");
+                if (sipProvider.ProviderUsername.IsNullOrBlank())
+                {
+                    return "A username is required for Google Voice entries.";
+                }
+                else if (sipProvider.ProviderPassword.IsNullOrBlank())
+                {
+                    return "A password is required for Google Voice entries.";
+                }
+                else if (sipProvider.GVCallbackNumber.IsNullOrBlank())
+                {
+                    return "A callback number is required for Google Voice entries.";
+                }
+                else if (Regex.Match(sipProvider.GVCallbackNumber, @"\D").Success)
+                {
+                    return "The callback number contains an invalid character. Only digits are permitted.";
+                }
             }
 
             return null;
@@ -444,6 +540,7 @@ namespace SIPSorcery.SIP.App
         {
             DataTable table = new DataTable();
             table.Columns.Add(new DataColumn("id", typeof(String)));
+            table.Columns.Add(new DataColumn("providertype", typeof(String)));
             table.Columns.Add(new DataColumn("owner", typeof(String)));
             table.Columns.Add(new DataColumn("adminmemberid", typeof(String)));
             table.Columns.Add(new DataColumn("providername", typeof(String)));
@@ -462,6 +559,9 @@ namespace SIPSorcery.SIP.App
             table.Columns.Add(new DataColumn("registeradminenabled", typeof(Boolean)));
             table.Columns.Add(new DataColumn("registerdisabledreason", typeof(String)));
             table.Columns.Add(new DataColumn("maxexecutioncount", typeof(Int32)));
+            table.Columns.Add(new DataColumn("gvcallbacknumber", typeof(String)));
+            table.Columns.Add(new DataColumn("gvcallbackpattern", typeof(String)));
+            table.Columns.Add(new DataColumn("gvcallbacktype", typeof(String)));
             table.Columns.Add(new DataColumn("inserted", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("lastupdate", typeof(DateTimeOffset)));
             return table;
@@ -472,6 +572,7 @@ namespace SIPSorcery.SIP.App
             try
             {
                 m_id = (providerRow.Table.Columns.Contains("id") && providerRow["id"] != DBNull.Value && providerRow["id"] != null) ? new Guid(providerRow["id"] as string) : Guid.NewGuid();
+                m_providerType = (ProviderTypes)Enum.Parse(typeof(ProviderTypes), providerRow["providertype"] as string, true);
                 m_owner = providerRow["owner"] as string;
                 AdminMemberId = (providerRow.Table.Columns.Contains("adminmemberid") && providerRow["adminmemberid"] != null) ? providerRow["adminmemberid"] as string : null;
                 m_providerName = providerRow["providername"] as string;
@@ -489,6 +590,9 @@ namespace SIPSorcery.SIP.App
                 m_registerEnabled = (providerRow.Table.Columns.Contains("registerenabled") && providerRow["registerenabled"] != DBNull.Value && providerRow["registerenabled"] != null) ? StorageLayer.ConvertToBoolean(providerRow["registerenabled"]) : false;
                 m_registerAdminEnabled = (providerRow.Table.Columns.Contains("registeradminenabled") && providerRow["registeradminenabled"] != DBNull.Value && providerRow["registeradminenabled"] != null) ? StorageLayer.ConvertToBoolean(providerRow["registeradminenabled"]) : true;
                 m_registerDisabledReason = (providerRow.Table.Columns.Contains("registerdisabledreason") && providerRow["registerdisabledreason"] != DBNull.Value && providerRow["registerdisabledreason"] != null) ? providerRow["registerdisabledreason"] as string : null;
+                m_gvCallbackNumber = (providerRow.Table.Columns.Contains("gvcallbacknumber") && providerRow["gvcallbacknumber"] != null) ? providerRow["gvcallbacknumber"] as string : null;
+                m_gvCallbackPattern = (providerRow.Table.Columns.Contains("gvcallbackpattern") && providerRow["gvcallbackpattern"] != null) ? providerRow["gvcallbackpattern"] as string : null;
+                m_gvCallbackType = (providerRow.Table.Columns.Contains("gvcallbacktype") && providerRow["gvcallbacktype"] != DBNull.Value && providerRow["gvcallbacktype"] != null) ? (GoogleVoiceCallbackTypes)Enum.Parse(typeof(GoogleVoiceCallbackTypes), providerRow["gvcallbacktype"] as string, true) : (GoogleVoiceCallbackTypes?)null;
                 LastUpdate = (providerRow.Table.Columns.Contains("lastupdate") && providerRow["lastupdate"] != DBNull.Value && providerRow["lastupdate"] != null) ? DateTimeOffset.Parse(providerRow["lastupdate"] as string) : DateTimeOffset.UtcNow;
                 Inserted = (providerRow.Table.Columns.Contains("inserted") && providerRow["inserted"] != DBNull.Value && providerRow["inserted"] != null) ? DateTimeOffset.Parse(providerRow["inserted"] as string) : DateTimeOffset.UtcNow;
 
@@ -530,6 +634,7 @@ namespace SIPSorcery.SIP.App
 
             string providerXML =
                 "   <id>" + m_id + "</id>" + m_newLine +
+                "   <providertype>" + m_providerType + "<providertype>" + m_newLine +
                 "   <owner>" + m_owner + "</owner>" + m_newLine +
                 "   <adminmemberid>" + AdminMemberId + "</adminmemberid>" + m_newLine +
                 "   <providername>" + m_providerName + "</providername>" + m_newLine +

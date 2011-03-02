@@ -56,7 +56,7 @@ namespace SIPSorcery.SIP.App
     /// </remarks>
     public class SIPServerUserAgent : ISIPServerUserAgent
     {
-        private static ILog logger = AssemblyState.logger;
+        private static ILog logger = AppState.logger;
 
         private SIPMonitorLogDelegate Log_External = (e) => { }; //SIPMonitorEvent.DefaultSIPMonitorLogger;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;

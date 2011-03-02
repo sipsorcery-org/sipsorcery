@@ -48,6 +48,7 @@ namespace SIPSorcery.SIP.App
         Ruby = 2,
         Python = 3,
         JScript = 4,
+        Wizard = 5,
     }
 
     public class SIPDialPlanScriptTypes

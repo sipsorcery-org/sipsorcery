@@ -53,5 +53,6 @@ namespace SIPSorcery.SIP.App {
 
         void Call(SIPCallDescriptor sipCallDescriptor);
         void Cancel();
+        void Update(CRMHeaders crmHeaders);
     }
 }

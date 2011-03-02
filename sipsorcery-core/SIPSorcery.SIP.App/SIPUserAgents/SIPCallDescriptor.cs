@@ -55,6 +55,26 @@ namespace SIPSorcery.SIP.App
         Replace = 2,    // (option=r)
     }
 
+    public class CRMHeaders
+    {
+        public string PersonName;
+        public string CompanyName;
+        public string AvatarURL;
+        public bool Pending = true;
+        public string LookupError;
+
+        public CRMHeaders()
+        { }
+
+        public CRMHeaders(string personName, string companyName, string avatarURL)
+        {
+            PersonName = personName;
+            CompanyName = companyName;
+            AvatarURL = avatarURL;
+            Pending = false;
+        }
+    }
+
     public class SwitchboardHeaders
     {
         public string SwitchboardCallID;                // If set holds a call identifier and is typically the SIP Call-ID of an associated INVITE.
@@ -87,6 +107,7 @@ namespace SIPSorcery.SIP.App
         public const string FROM_USERNAME_KEY = "fu";           // Dial string option to customise the From header SIP URI User on the call request.
         public const string FROM_HOST_KEY = "fh";               // Dial string option to customise the From header SIP URI Host on the call request.
         public const string TRANSFER_MODE_OPTION_KEY = "tr";    // Dial string option to dictate how REFER (transfer) requests will be handled.
+        public const string REQUEST_CALLER_DETAILS = "rcd";     // Dial string option to indicate the client agent would like any caller details if/when available.
 
         // Switchboard dial string options.
         public const string SWITCHBOARD_CALL_DESCRIPTION_KEY = "swcd";      // Dial string option to set the Switchboard-Description header on the call leg.
@@ -120,9 +141,18 @@ namespace SIPSorcery.SIP.App
         public string FromURIUsername;
         public string FromURIHost;
         public SIPDialogueTransferModesEnum TransferMode = SIPDialogueTransferModesEnum.Default;   // Determines how the call (dialogues) created by this descriptor will handle transfers (REFER requests).
+        public bool RequestCallerDetails;       // If true indicates the client agent would like to pass on any caller details if/when available.
 
         // Custom headers for sipsorcery switchboard application.
         public SwitchboardHeaders SwitchboardHeaders = new SwitchboardHeaders();
+
+        public CRMHeaders CRMHeaders;
+
+        // Properties needed for Google Voice calls.
+        public bool IsGoogleVoiceCall;
+        public string CallbackNumber;
+        public string CallbackPattern;
+        public int CallbackPhoneType;
 
         public SIPAccount ToSIPAccount;         // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
 
@@ -172,6 +202,27 @@ namespace SIPSorcery.SIP.App
             ContentType = contentType;
             Content = content;
             MangleIPAddress = mangleIPAddress;
+        }
+
+        public SIPCallDescriptor(
+            string username,
+            string password,
+            string uri,
+            string callbackNumber,
+            string callbackPattern,
+            int callbackPhoneType,
+            string content,
+            string contentType)
+        {
+            IsGoogleVoiceCall = true;
+            Username = username;
+            Password = password;
+            Uri = uri;
+            CallbackNumber = callbackNumber;
+            CallbackPattern = callbackPattern;
+            CallbackPhoneType = callbackPhoneType;
+            ContentType = contentType;
+            Content = content;
         }
 
         public SIPFromHeader GetFromHeader()
@@ -348,6 +399,13 @@ namespace SIPSorcery.SIP.App
                 if (switchboardOwnerMatch.Success)
                 {
                     SwitchboardHeaders.SwitchboardOwner = switchboardOwnerMatch.Result("${owner}").Trim();
+                }
+
+                // Parse the request caller details option.
+                Match callerDetailsMatch = Regex.Match(options,REQUEST_CALLER_DETAILS + @"=(?<callerdetails>\w+)");
+                if (callerDetailsMatch.Success)
+                {
+                    Boolean.TryParse(callerDetailsMatch.Result("${callerdetails}"), out RequestCallerDetails);
                 }
             }
         }

@@ -54,7 +54,7 @@ namespace SIPSorcery.SIP.App
         private const int DNS_LOOKUP_TIMEOUT = 5000;
         private const char OUTBOUNDPROXY_AS_ROUTESET_CHAR = '<';    // If this character exists in the call descriptor OutboundProxy setting it gets treated as a Route set.
 
-        private static ILog logger = AssemblyState.logger;
+        private static ILog logger = AppState.logger;
 
         private static string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
         private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
@@ -344,6 +344,16 @@ namespace SIPSorcery.SIP.App
             {
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Exception CancelServerCall. " + excp.Message, Owner));
             }
+        }
+
+        public void Update(CRMHeaders crmHeaders)
+        {
+            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Sending UPDATE to " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
+
+            SIPRequest updateRequest = GetUpdateRequest(m_serverTransaction.TransactionRequest, crmHeaders);
+            SIPNonInviteTransaction updateTransaction = m_sipTransport.CreateNonInviteTransaction(updateRequest, m_serverEndPoint, m_serverTransaction.LocalSIPEndPoint, m_outboundProxy);
+            updateTransaction.TransactionTraceMessage += TransactionTraceMessage;
+            updateTransaction.SendReliableRequest();
         }
 
         private void ServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
@@ -644,6 +654,14 @@ namespace SIPSorcery.SIP.App
                 inviteHeader.SwitchboardFrom = CallDescriptor.SwitchboardHeaders.SwitchboardFrom;
             }
 
+            // Add custom CRM headers.
+            if (CallDescriptor.CRMHeaders != null)
+            {
+                inviteHeader.CRMPersonName = CallDescriptor.CRMHeaders.PersonName;
+                inviteHeader.CRMCompanyName = CallDescriptor.CRMHeaders.CompanyName;
+                inviteHeader.CRMAvatarURL = CallDescriptor.CRMHeaders.AvatarURL;
+            }
+
             try
             {
                 if (sipCallDescriptor.CustomHeaders != null && sipCallDescriptor.CustomHeaders.Count > 0)
@@ -709,6 +727,33 @@ namespace SIPSorcery.SIP.App
             byeRequest.Header.Vias.PushViaHeader(viaHeader);
 
             return byeRequest;
+        }
+
+        private SIPRequest GetUpdateRequest(SIPRequest inviteRequest, CRMHeaders crmHeaders)
+        {
+            SIPRequest updateRequest = new SIPRequest(SIPMethodsEnum.UPDATE, inviteRequest.URI);
+            updateRequest.LocalSIPEndPoint = inviteRequest.LocalSIPEndPoint;
+
+            SIPHeader inviteHeader = inviteRequest.Header;
+            SIPHeader updateHeader = new SIPHeader(inviteHeader.From, inviteHeader.To, inviteHeader.CSeq + 1, inviteHeader.CallId);
+            inviteRequest.Header.CSeq++;
+            updateRequest.Header = updateHeader;
+            updateHeader.CSeqMethod = SIPMethodsEnum.UPDATE;
+            updateHeader.Routes = inviteHeader.Routes;
+            updateHeader.ProxySendFrom = inviteHeader.ProxySendFrom;
+
+            SIPViaHeader viaHeader = new SIPViaHeader(inviteRequest.LocalSIPEndPoint, CallProperties.CreateBranchId());
+            updateHeader.Vias.PushViaHeader(viaHeader);
+
+            // Add custom CRM headers.
+            if (crmHeaders != null)
+            {
+                updateHeader.CRMPersonName = crmHeaders.PersonName;
+                updateHeader.CRMCompanyName = crmHeaders.CompanyName;
+                updateHeader.CRMAvatarURL = crmHeaders.AvatarURL;
+            }
+
+            return updateRequest;
         }
 
         private void TransactionTraceMessage(SIPTransaction sipTransaction, string message)
