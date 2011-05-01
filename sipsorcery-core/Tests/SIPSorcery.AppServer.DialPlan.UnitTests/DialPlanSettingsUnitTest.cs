@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SIPSorcery.AppServer.DialPlan;
-using SIPSorcery.SIP.App.Entities;
+using SIPSorcery.Entities;
 
 namespace SIPSorcery.AppServer.DialPlan.UnitTests
 {
@@ -33,7 +33,7 @@ namespace SIPSorcery.AppServer.DialPlan.UnitTests
         {
             SIPDialplanOption options = new SIPDialplanOption()
             {
-                enumservers = "e164.org\r\n\r\ne164.info\r\n\r\ne164.arpa\r\n\r\ne164.televolution.net\r\n\r\nenum.org\r\n\r\n"
+                ENUMServers = "e164.org\r\n\r\ne164.info\r\n\r\ne164.arpa\r\n\r\ne164.televolution.net\r\n\r\nenum.org\r\n\r\n"
             };
 
             DialPlanSettings settings = new DialPlanSettings(null, null, null, options);
@@ -50,7 +50,7 @@ namespace SIPSorcery.AppServer.DialPlan.UnitTests
         {
             SIPDialplanOption options = new SIPDialplanOption()
             {
-                excludedprefixes = " 1 (900 | 809)\r\n\r\n 1 \\d\\d\\d 555 1212\r\n\r\n44 (9 | 55 | 70 | 84 | 87)"
+                ExcludedPrefixes = " 1 (900 | 809)\r\n\r\n 1 \\d\\d\\d 555 1212\r\n\r\n44 (9 | 55 | 70 | 84 | 87)"
             };
 
             DialPlanSettings settings = new DialPlanSettings(null, null, null, options);
@@ -68,7 +68,7 @@ namespace SIPSorcery.AppServer.DialPlan.UnitTests
         {
             SIPDialplanOption options = new SIPDialplanOption()
             {
-                timezone = "(UTC+10:00) Hobart"
+                Timezone = "(UTC+10:00) Hobart"
             };
 
             DialPlanSettings settings = new DialPlanSettings(null, null, null, options);
@@ -83,7 +83,7 @@ namespace SIPSorcery.AppServer.DialPlan.UnitTests
         {
             SIPDialplanOption options = new SIPDialplanOption()
             {
-                allowedcountrycodes = "1 33 36 37[0-2] 380 39 41 420 44 49 61 7 86 883 886 90 972 998"
+                AllowedCountryCodes = "1 33 36 37[0-2] 380 39 41 420 44 49 61 7 86 883 886 90 972 998"
             };
 
             DialPlanSettings settings = new DialPlanSettings(null, null, null, options);
@@ -93,7 +93,7 @@ namespace SIPSorcery.AppServer.DialPlan.UnitTests
             Assert.AreEqual(18, allowedCountriesList.Count, "The number of allowed countries extracted from the list was incorrect.");
             Assert.AreEqual("1", allowedCountriesList[0], "The allowed countries at index 0 was not extracted correctly.");
             Assert.AreEqual("37[0-2]", allowedCountriesList[3], "The allowed countries at index 3 was not extracted correctly.");
-            Assert.AreEqual("998", allowedCountriesList[17], "The allowed countries at index `7 was not extracted correctly.");
+            Assert.AreEqual("998", allowedCountriesList[17], "The allowed countries at index 7 was not extracted correctly.");
         }
     }
 }

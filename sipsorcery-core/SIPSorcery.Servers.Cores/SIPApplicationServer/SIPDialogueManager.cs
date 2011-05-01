@@ -787,6 +787,11 @@ namespace SIPSorcery.Servers
                 IPAddress remoteUAIPAddress = (inDialogueTransaction.TransactionRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? remoteEndPoint.Address : SIPEndPoint.ParseSIPEndPoint(inDialogueTransaction.TransactionRequest.Header.ProxyReceivedFrom).Address;
 
                 SIPRequest forwardedRequest = inDialogueTransaction.TransactionRequest.Copy();
+               
+                // Need to remove or reset headers from the copied request that conflict with the existing dialogue requests.
+                forwardedRequest.Header.RecordRoutes = null;
+                forwardedRequest.Header.MaxForwards = SIPConstants.DEFAULT_MAX_FORWARDS;
+
                 forwardedRequest.URI = bridgedDialogue.RemoteTarget;
                 forwardedRequest.Header.Routes = bridgedDialogue.RouteSet;
                 forwardedRequest.Header.CallId = bridgedDialogue.CallId;

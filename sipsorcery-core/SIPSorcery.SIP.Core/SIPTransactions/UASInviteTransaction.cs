@@ -85,8 +85,9 @@ namespace SIPSorcery.SIP
             }
 
             //logger.Debug("New UASTransaction (" + TransactionId + ") for " + TransactionRequest.URI.ToString() + " to " + RemoteEndPoint + ".");
-
-            CDR = new SIPCDR(SIPCallDirection.In, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, LocalSIPEndPoint, dstEndPoint);
+            SIPEndPoint localEP = SIPEndPoint.TryParse(sipRequest.Header.ProxyReceivedOn) ?? localSIPEndPoint;
+            SIPEndPoint remoteEP = SIPEndPoint.TryParse(sipRequest.Header.ProxyReceivedFrom) ?? dstEndPoint;
+            CDR = new SIPCDR(SIPCallDirection.In, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, localEP, remoteEP);
 
             //UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
 
@@ -176,7 +177,7 @@ namespace SIPSorcery.SIP
 
                 if (CDR != null)
                 {
-                    CDR.Progress(sipResponse.Status, sipResponse.ReasonPhrase);
+                    CDR.Progress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
                 }
             }
             catch (Exception excp)
@@ -194,7 +195,7 @@ namespace SIPSorcery.SIP
 
                 if (CDR != null)
                 {
-                    CDR.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase);
+                    CDR.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase, null, null);
                 }
             }
             catch (Exception excp)

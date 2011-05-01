@@ -103,14 +103,14 @@
     <Compile Include="DialPlanApps\RTSPApp.cs" />
     <Compile Include="DialPlanApps\ForkCall.cs" />
     <Compile Include="DialPlanCommand.cs" />
-    <Compile Include="DialPlanContext.cs" />
+    <Compile Include="DialPlanContexts\DialPlanContext.cs" />
     <Compile Include="DialPlanFacades\DialPlanLookupFacade.cs" />
     <Compile Include="DialPlanFacades\DialPlanCRMFacade.cs" />
     <Compile Include="DialPlanEngine.cs" />
     <Compile Include="DialPlanExecutingScript.cs" />
     <Compile Include="DialPlanFacades\DialPlanSettings.cs" />
-    <Compile Include="DialPlanLineContext.cs" />
-    <Compile Include="DialPlanScriptContext.cs" />
+    <Compile Include="DialPlanContexts\DialPlanLineContext.cs" />
+    <Compile Include="DialPlanContexts\DialPlanScriptContext.cs" />
     <Compile Include="DialPlanFacades\DialPlanScriptFacade.cs" />
     <Compile Include="DialStringParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -119,6 +119,10 @@
     <ProjectReference Include="..\SIPSorcery.CRM\SIPSorcery.CRM.csproj">
       <Project>{F951789F-1ABB-42E8-BB51-F028DC4824EF}</Project>
       <Name>SIPSorcery.CRM</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Entities\SIPSorcery.Entities.csproj">
+      <Project>{8EB4E07E-76C8-445A-8252-5B392A9C12FB}</Project>
+      <Name>SIPSorcery.Entities %28SIPSorcery.Entities\SIPSorcery.Entities%29</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">
       <Project>{55898587-8456-40D4-BB88-C9FC8BD6BA9C}</Project>
@@ -172,6 +176,6 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>copy "$(TargetPath)" "c:\temp\sipsorcery\"</PostBuildEvent>
+    <PostBuildEvent>copy "$(TargetPath)" "d:\temp\sipsorcery\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

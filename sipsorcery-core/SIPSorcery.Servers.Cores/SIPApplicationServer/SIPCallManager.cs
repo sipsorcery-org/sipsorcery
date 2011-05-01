@@ -263,7 +263,7 @@ namespace SIPSorcery.Servers
                         {
                             if (newCall.CallDirection == SIPCallDirection.In)
                             {
-                                if (newCall.CallRequest.URI.User == DISPATCHER_SIPACCOUNT_NAME)
+                                if (newCall.CallRequest.Method == SIPMethodsEnum.INVITE && newCall.CallRequest.URI.User == DISPATCHER_SIPACCOUNT_NAME)
                                 {
                                     // This is a special system account used by monitoring or dispatcher agents that want to check
                                     // the state of the application server.
@@ -282,7 +282,7 @@ namespace SIPSorcery.Servers
 
                                         try
                                         {
-                                            if (m_waitingForCallbacks.Count > 0)
+                                            if (newCall.CallRequest.Method == SIPMethodsEnum.INVITE && m_waitingForCallbacks.Count > 0)
                                             {
                                                 List<CallbackWaiter> expiredWaiters = new List<CallbackWaiter>();
                                                 lock (m_waitingForCallbacks)
@@ -434,7 +434,7 @@ namespace SIPSorcery.Servers
                             null,
                             null,
                             null,
-                            Guid.Empty);
+                            null);
                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, null, this);
 
                     #endregion
@@ -452,40 +452,58 @@ namespace SIPSorcery.Servers
 
                         if (dialPlan != null)
                         {
-                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Using dialplan " + dialPlanName + " for " + uas.CallDirection + " call to " + callURI.ToString() + ".", owner));
-
-                            if (dialPlan.ScriptType == SIPDialPlanScriptTypesEnum.Asterisk)
+                            if (!uas.IsInvite && !dialPlan.AcceptNonInvite)
                             {
-                                DialPlanLineContext lineContext = new DialPlanLineContext(
-                                    Log_External,
-                                    m_sipTransport,
-                                    CreateDialogueBridge,
-                                    m_outboundProxy,
-                                    uas,
-                                    dialPlan,
-                                    GetSIPProviders_External(p => p.Owner == owner, null, 0, Int32.MaxValue),
-                                    m_traceDirectory,
-                                    (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.NetworkId : null,
-                                    customer.Id);
-                                //lineContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer);} ;
-                                m_dialPlanEngine.Execute(lineContext, uas, uas.CallDirection, CreateDialogueBridge, this);
+                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A " + uas.CallRequest.Method + " was rejected for dialplan " + dialPlanName + " as it does not accept non-INVITE requests.", owner));
+                                uas.Reject(SIPResponseStatusCodesEnum.MethodNotAllowed, "User has chosen not to accept request type", null);
+                                return;
                             }
                             else
                             {
-                                dialPlan.AuthorisedApps = customer.AuthorisedApps + ";" + dialPlan.AuthorisedApps;
-                                DialPlanScriptContext scriptContext = new DialPlanScriptContext(
-                                    Log_External,
-                                    m_sipTransport,
-                                    CreateDialogueBridge,
-                                    m_outboundProxy,
-                                    uas,
-                                    dialPlan,
-                                    GetSIPProviders_External(p => p.Owner == owner, null, 0, Int32.MaxValue),
-                                    m_traceDirectory,
-                                    (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.NetworkId : null,
-                                    customer.Id);
-                                //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer);};
-                                m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
+                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Using dialplan " + dialPlanName + " for " + uas.CallDirection + " call to " + callURI.ToString() + ".", owner));
+
+                                if (dialPlan.ScriptType == SIPDialPlanScriptTypesEnum.Asterisk)
+                                {
+                                    if (customer.ServiceLevel == CustomerServiceLevels.Free.ToString())
+                                    {
+                                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Your service level does not permit the use of Asterisk dial plans.", owner));
+                                        uas.Reject(SIPResponseStatusCodesEnum.PaymentRequired, "Free plans cannot use Asterisk dial plans", null);
+                                        return;
+                                    }
+                                    else
+                                    {
+                                        DialPlanLineContext lineContext = new DialPlanLineContext(
+                                            Log_External,
+                                            m_sipTransport,
+                                            CreateDialogueBridge,
+                                            m_outboundProxy,
+                                            uas,
+                                            dialPlan,
+                                            GetSIPProviders_External(p => p.Owner == owner, null, 0, Int32.MaxValue),
+                                            m_traceDirectory,
+                                            (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.NetworkId : null,
+                                            customer);
+                                        //lineContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer);} ;
+                                        m_dialPlanEngine.Execute(lineContext, uas, uas.CallDirection, CreateDialogueBridge, this);
+                                    }
+                                }
+                                else
+                                {
+                                    dialPlan.AuthorisedApps = customer.AuthorisedApps + ";" + dialPlan.AuthorisedApps;
+                                    DialPlanScriptContext scriptContext = new DialPlanScriptContext(
+                                        Log_External,
+                                        m_sipTransport,
+                                        CreateDialogueBridge,
+                                        m_outboundProxy,
+                                        uas,
+                                        dialPlan,
+                                        GetSIPProviders_External(p => p.Owner == owner, null, 0, Int32.MaxValue),
+                                        m_traceDirectory,
+                                        (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.NetworkId : null,
+                                        customer);
+                                    //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer);};
+                                    m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
+                                }
                             }
                         }
                         else if (uas.CallDirection == SIPCallDirection.In)
@@ -519,7 +537,7 @@ namespace SIPSorcery.Servers
                                             null,
                                             m_traceDirectory,
                                             null,
-                                            customer.Id);
+                                            customer);
                                     //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
                                 }
@@ -626,7 +644,7 @@ namespace SIPSorcery.Servers
                                     GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
                                     m_traceDirectory,
                                     null,
-                                    customer.Id);
+                                    customer);
                             //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                             m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
 
@@ -732,7 +750,7 @@ namespace SIPSorcery.Servers
                                     GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
                                     m_traceDirectory,
                                     null,
-                                    customer.Id);
+                                    customer);
                             //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                             m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
 

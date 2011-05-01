@@ -39,9 +39,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using SIPSorcery.Entities;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorcery.SIP.App.Entities;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -60,25 +60,36 @@ namespace SIPSorcery.AppServer.DialPlan
             m_owner = owner;
         }
 
-        public DialPlanSettings GetSettings()
+        public DialPlanSettings GetSettings(string dialplanName)
         {
-            List<SIPDialplanLookup> lookups = GetLookups();
-            List<SIPDialplanRoute> routes = GetRoutes();
-            Dictionary<string, SIPDialplanProvider> providers = GetProviders();
-            SIPDialplanOption options = GetOptions();
+            List<SIPDialplanLookup> lookups = GetLookups(dialplanName);
+            List<SIPDialplanRoute> routes = GetRoutes(dialplanName);
+            Dictionary<string, SIPDialplanProvider> providers = GetProviders(dialplanName);
+            SIPDialplanOption options = GetOptions(dialplanName);
 
             return new DialPlanSettings(lookups, routes, providers, options);
         }
 
-        public List<SIPDialplanLookup> GetLookups()
+        public List<SIPDialplanLookup> GetLookups(string dialplanName)
         {
             try
             {
-                var dialplanLookupEntities = new SIPSorceryAppEntities();
-
-                return (from lookup in dialplanLookupEntities.SIPDialplanLookups
-                                  where lookup.owner == m_owner
-                                  select lookup).ToList();
+                using (var ssEntities = new SIPSorceryEntities())
+                {
+                    if (!dialplanName.IsNullOrBlank())
+                    {
+                        return (from lookup in ssEntities.SIPDialplanLookups
+                                join dialplan in ssEntities.SIPDialPlans on lookup.DialPlanID equals dialplan.ID
+                                where lookup.Owner == m_owner && dialplan.DialPlanName.Contains(dialplanName)
+                                select lookup).ToList();
+                    }
+                    else
+                    {
+                        return (from lookup in ssEntities.SIPDialplanLookups
+                                where lookup.Owner == m_owner
+                                select lookup).ToList();
+                    }
+                }
             }
             catch (Exception excp)
             {
@@ -87,29 +98,26 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        public List<SIPDialplanRoute> GetRoutes()
+        public List<SIPDialplanRoute> GetRoutes(string dialplanName)
         {
             try
             {
-                var appEntities = new SIPSorceryAppEntities();
-
-                var routes = (from route in appEntities.SIPDialplanRoutes
-                                  where route.owner == m_owner
-                                  select route).ToList();
-
-                if (routes != null && routes.Count > 0)
+                using (var ssEntities = new SIPSorceryEntities())
                 {
-                    List<SIPDialplanRoute> routesList = new List<SIPDialplanRoute>();
-
-                    foreach (SIPDialplanRoute route in routes)
+                    if (!dialplanName.IsNullOrBlank())
                     {
-                        routesList.Add(route);
+                        return (from route in ssEntities.SIPDialplanRoutes
+                                join dialplan in ssEntities.SIPDialPlans on route.DialPlanID equals dialplan.ID
+                                where route.Owner == m_owner && dialplan.DialPlanName.Contains(dialplanName)
+                                select route).ToList();
                     }
-
-                    return routesList;
+                    else
+                    {
+                        return (from route in ssEntities.SIPDialplanRoutes
+                                where route.Owner == m_owner
+                                select route).ToList();
+                    }
                 }
-
-                return null;
             }
             catch (Exception excp)
             {
@@ -118,29 +126,26 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        public Dictionary<string, SIPDialplanProvider> GetProviders()
+        public Dictionary<string, SIPDialplanProvider> GetProviders(string dialplanName)
         {
             try
             {
-                var appEntities = new SIPSorceryAppEntities();
-
-                var providers = (from provider in appEntities.SIPDialplanProviders
-                              where provider.owner == m_owner
-                              select provider).ToList();
-
-                if (providers != null && providers.Count > 0)
+                using (var ssEntities = new SIPSorceryEntities())
                 {
-                    Dictionary<string, SIPDialplanProvider> providersList = new Dictionary<string, SIPDialplanProvider>();
-
-                    foreach (SIPDialplanProvider provider in providers)
+                    if (!dialplanName.IsNullOrBlank())
                     {
-                        providersList.Add(provider.providername, provider);
+                        return (from provider in ssEntities.SIPDialplanProviders
+                                join dialplan in ssEntities.SIPDialPlans on provider.DialPlanID equals dialplan.ID
+                                where provider.Owner == m_owner && dialplan.DialPlanName.Contains(dialplanName)
+                                select provider).ToDictionary(x => x.ProviderName);
                     }
-
-                    return providersList;
-                }
-
-                return null;
+                    else
+                    {
+                        return (from provider in ssEntities.SIPDialplanProviders
+                                where provider.Owner == m_owner
+                                select provider).ToDictionary(x => x.ProviderName);
+                    }
+               }
             }
             catch (Exception excp)
             {
@@ -149,15 +154,26 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        public SIPDialplanOption GetOptions()
+        public SIPDialplanOption GetOptions(string dialplanName)
         {
             try
             {
-                var appEntities = new SIPSorceryAppEntities();
-
-                return (from option in appEntities.SIPDialplanOptions
-                        where option.owner == m_owner
-                        select option).FirstOrDefault();
+                using (var ssEntities = new SIPSorceryEntities())
+                {
+                    if (!dialplanName.IsNullOrBlank())
+                    {
+                        return (from option in ssEntities.SIPDialplanOptions
+                                join dialplan in ssEntities.SIPDialPlans on option.DialPlanID equals dialplan.ID
+                                where option.Owner == m_owner && dialplan.DialPlanName == dialplanName
+                                select option).FirstOrDefault();
+                    }
+                    else
+                    {
+                        return (from option in ssEntities.SIPDialplanOptions
+                                where option.Owner == m_owner
+                                select option).FirstOrDefault();
+                    }
+                }
             }
             catch (Exception excp)
             {

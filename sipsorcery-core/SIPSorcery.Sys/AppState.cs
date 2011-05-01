@@ -189,6 +189,13 @@ namespace SIPSorcery.Sys
             }
         }
 
+        public static bool GetConfigSettingAsBool(string key)
+        {
+            bool boolVal = false;
+            Boolean.TryParse(GetConfigSetting(key), out boolVal);
+            return boolVal;
+        }
+
         public static string GetConfigNodeValue(XmlNode configNode, string nodeName)
         {
             XmlNode valueNode = configNode.SelectSingleNode(nodeName);

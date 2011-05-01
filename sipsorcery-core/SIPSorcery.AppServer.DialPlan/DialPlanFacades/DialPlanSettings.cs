@@ -41,8 +41,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using SIPSorcery.Entities;
 using SIPSorcery.SIP.App;
-using SIPSorcery.SIP.App.Entities;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -90,7 +90,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 if (Lookups != null)
                 {
                     var lookups = (from lookup in Lookups
-                                   where lookup.lookuptype == (int)lookupType
+                                   where lookup.LookupType == (int)lookupType
                                    select lookup).ToList();
 
                     if (lookups != null && lookups.Count > 0)
@@ -99,7 +99,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                         foreach (SIPDialplanLookup lookup in lookups)
                         {
-                            lookupsTable.Add(lookup.lookupkey, lookup.lookupvalue);
+                            lookupsTable.Add(lookup.LookupKey, lookup.LookupValue);
                         }
 
                         return lookupsTable;
@@ -122,11 +122,11 @@ namespace SIPSorcery.AppServer.DialPlan
         /// is set 0 is returned meaning any time calculations will assume UTC.</returns>
         public int GetTimezoneOffset()
         {
-            if (Options != null && !Options.timezone.IsNullOrBlank())
+            if (Options != null && !Options.Timezone.IsNullOrBlank())
             {
                 foreach (TimeZoneInfo timezone in TimeZoneInfo.GetSystemTimeZones())
                 {
-                    if (timezone.DisplayName == Options.timezone)
+                    if (timezone.DisplayName == Options.Timezone)
                     {
                         return (int)timezone.GetUtcOffset(DateTimeOffset.UtcNow).TotalMinutes;
                     }
@@ -144,9 +144,9 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <returns>If available a list of ENUM servers or null if none have been specified.</returns>
         public List<string> GetExcludedPrefixes()
         {
-            if (!Options.excludedprefixes.IsNullOrBlank())
+            if (Options != null && !Options.ExcludedPrefixes.IsNullOrBlank())
             {
-                string[] excludedPrefixes = Regex.Split(Options.excludedprefixes, @"\r\n", RegexOptions.Multiline);
+                string[] excludedPrefixes = Regex.Split(Options.ExcludedPrefixes, @"\r\n", RegexOptions.Multiline);
                 return excludedPrefixes.Where(x => !x.Trim().IsNullOrBlank()).ToList();
             }
 
@@ -160,9 +160,9 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <returns>If available a list of ENUM servers or null if none have been specified.</returns>
         public List<string> GetENUMServers()
         {
-            if (!Options.enumservers.IsNullOrBlank())
+            if (Options != null && !Options.ENUMServers.IsNullOrBlank())
             {
-                string[] enumServers = Regex.Split(Options.enumservers, @"\r\n", RegexOptions.Multiline);
+                string[] enumServers = Regex.Split(Options.ENUMServers, @"\r\n", RegexOptions.Multiline);
                 return enumServers.Where(x => !x.Trim().IsNullOrBlank()).Select(x => x.Trim()).ToList();
             }
 
@@ -175,9 +175,9 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <returns>A list of strings that represent country codes for white listed call destinations.</returns>
         public List<string> GetAllowedCountries()
         {
-            if (!Options.allowedcountrycodes.IsNullOrBlank())
+            if (Options != null && !Options.AllowedCountryCodes.IsNullOrBlank())
             {
-                string[] allowedCodes = Regex.Split(Options.allowedcountrycodes, @"\s+", RegexOptions.Multiline);
+                string[] allowedCodes = Regex.Split(Options.AllowedCountryCodes, @"\s+", RegexOptions.Multiline);
                 return allowedCodes.Where(x => !x.Trim().IsNullOrBlank()).Select(x => x.Trim()).ToList();
             }
 

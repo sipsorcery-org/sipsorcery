@@ -94,6 +94,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private const int GTALK_DEFAULT_CONNECTION_TIMEOUT = 5000;
         private const int GTALK_MAX_CONNECTION_TIMEOUT = 30000;
         private const string GOOGLE_ANALYTICS_KEY = "GoogleAnalyticsAccountCode";   // If this key does not exist in App.Config there's no point sending Google Analytics requests.
+        private const int NON_INVITE_MAX_RESPONSE_TIMEOUT = 8;   // The amount of time to wait for a response when sending a new non-INVITE request.
 
         private static int m_maxRingTime = SIPTimings.MAX_RING_TIME;
 
@@ -155,7 +156,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private ISIPCallManager m_callManager;
         private bool m_autoCleanup = true;  // Set to false if the Ruby dialplan wants to take care of handling the cleanup from a rescue or ensure block.
         private bool m_hasBeenCleanedUp;
-        
+
         private DialPlanContext m_dialPlanContext;
         public DialPlanContext DialPlanContext
         {
@@ -181,6 +182,22 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             get { return m_dialPlanContext.SendTrace; }
             set { m_dialPlanContext.SendTrace = value; }
+        }
+        public string DialPlanName
+        {
+            get { return DialPlanContext.SIPDialPlan.DialPlanName; }
+        }
+        public CustomerServiceLevels ServiceLevel
+        {
+            get
+            {
+                if (m_dialPlanContext.Customer != null && m_dialPlanContext.Customer.ServiceLevel != null)
+                {
+                    return (CustomerServiceLevels)Enum.Parse(typeof(CustomerServiceLevels), m_dialPlanContext.Customer.ServiceLevel, true);
+                }
+
+                return CustomerServiceLevels.None;
+            }
         }
 
         public static IPAddress PublicIPAddress;    // If the app server is behind a NAT then it can set this address to be used in mangled SDP.
@@ -465,7 +482,8 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_customFromName,
                         m_customFromUser,
                         m_customFromHost,
-                        contact);
+                        contact,
+                        ServiceLevel);
 
                     List<SIPCallDescriptor>[] callListArray = callsQueue.ToArray();
                     callsQueue.ToList().ForEach((list) => numberLegs += list.Count);
@@ -496,7 +514,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         ringTimeout = ringTimeout * 1000;
                     }
-                    ExtendScriptTimeout(ringTimeout/1000 + DEFAULT_CREATECALL_RINGTIME);
+                    ExtendScriptTimeout(ringTimeout / 1000 + DEFAULT_CREATECALL_RINGTIME);
                     DateTime startTime = DateTime.Now;
 
                     if (m_waitForCallCompleted.WaitOne(ringTimeout, false))
@@ -607,9 +625,9 @@ namespace SIPSorcery.AppServer.DialPlan
                 {
                     Log("The call has already been answered the Respond command was not processed.");
                 }
-                else if (statusCode >= 200 && statusCode < 300)
+                else if (statusCode >= 200 && statusCode < 300 && m_sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
-                    Log("Respond cannot be used for 2xx responses.");
+                    Log("Respond cannot be used for 2xx responses to INVITE requests.");
                 }
                 else
                 {
@@ -628,6 +646,10 @@ namespace SIPSorcery.AppServer.DialPlan
                     else if (statusCode < 200)
                     {
                         m_dialPlanContext.CallProgress(status, reason, customHeadersList, null, null, null);
+                    }
+                    else if (statusCode >= 200 && statusCode < 300 && m_sipRequest.Method != SIPMethodsEnum.INVITE)
+                    {
+                        m_dialPlanContext.CallAnswered(SIPResponseStatusCodesEnum.Ok, reason, null, customHeadersList, null, null, null, SIPDialogueTransferModesEnum.NotAllowed);
                     }
                 }
             }
@@ -1250,9 +1272,13 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "email"))
+                //if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "email"))
+                //{
+                //    Log("You are not authorised to use the Email application, please contact admin@sipsorcery.com.");
+                //}
+                if (ServiceLevel == CustomerServiceLevels.Free)
                 {
-                    Log("You are not authorised to use the Email application, please contact admin@sipsorcery.com.");
+                    Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " application.");
                 }
                 else if (m_emailCount >= ALLOWED_EMAILS_PER_EXECUTION)
                 {
@@ -1327,7 +1353,11 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public void DBWrite(string key, string value)
         {
-            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
+            if (ServiceLevel == CustomerServiceLevels.Free)
+            {
+                Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
+            }
+            else if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
             {
                 Log("DBWrite failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
             }
@@ -1339,10 +1369,17 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public void DBWrite(string dbType, string dbConnStr, string key, string value)
         {
-            StorageTypes storageType = GetStorageType(dbType);
-            if (storageType != StorageTypes.Unknown)
+            if (ServiceLevel == CustomerServiceLevels.Free)
             {
-                DBWrite(storageType, dbConnStr, key, value);
+                Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
+            }
+            else
+            {
+                StorageTypes storageType = GetStorageType(dbType);
+                if (storageType != StorageTypes.Unknown)
+                {
+                    DBWrite(storageType, dbConnStr, key, value);
+                }
             }
         }
 
@@ -1350,55 +1387,62 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                /* StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
-
-                 Dictionary<string, object> parameters = new Dictionary<string, object>();
-                 parameters.Add("dataowner", m_username);
-                 int ownerKeyCount = Convert.ToInt32(storageLayer.ExecuteScalar("select count(*) from dialplandata where dataowner = @dataowner", parameters));
-
-                 if (ownerKeyCount == MAX_DATA_ENTRIES_PER_USER)
-                 {
-                     Log("DBWrite failed, you have reached the maximum number of database entries allowed.");
-                 }
-                 else
-                 {*/
-                /*parameters.Add("datakey", key);
-                int count = Convert.ToInt32(storageLayer.ExecuteScalar("select count(*) from dialplandata where datakey = @datakey and dataowner = @dataowner", parameters));
-                parameters.Add("datavalue", value);
-
-                if (count == 0)
+                if (ServiceLevel == CustomerServiceLevels.Free)
                 {
-                    storageLayer.ExecuteNonQuery(storageType, dbConnStr, "insert into dialplandata (dataowner, datakey, datavalue) values (@dataowner, @datakey, @datavalue)", parameters);
+                    Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
                 }
                 else
                 {
-                    storageLayer.ExecuteNonQuery(storageType, dbConnStr, "update dialplandata set datavalue = @datavalue where dataowner = @dataowner and datakey = @datakey", parameters);
+                    /* StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
+
+                     Dictionary<string, object> parameters = new Dictionary<string, object>();
+                     parameters.Add("dataowner", m_username);
+                     int ownerKeyCount = Convert.ToInt32(storageLayer.ExecuteScalar("select count(*) from dialplandata where dataowner = @dataowner", parameters));
+
+                     if (ownerKeyCount == MAX_DATA_ENTRIES_PER_USER)
+                     {
+                         Log("DBWrite failed, you have reached the maximum number of database entries allowed.");
+                     }
+                     else
+                     {*/
+                    /*parameters.Add("datakey", key);
+                    int count = Convert.ToInt32(storageLayer.ExecuteScalar("select count(*) from dialplandata where datakey = @datakey and dataowner = @dataowner", parameters));
+                    parameters.Add("datavalue", value);
+
+                    if (count == 0)
+                    {
+                        storageLayer.ExecuteNonQuery(storageType, dbConnStr, "insert into dialplandata (dataowner, datakey, datavalue) values (@dataowner, @datakey, @datavalue)", parameters);
+                    }
+                    else
+                    {
+                        storageLayer.ExecuteNonQuery(storageType, dbConnStr, "update dialplandata set datavalue = @datavalue where dataowner = @dataowner and datakey = @datakey", parameters);
+                    }
+                    Log("DBWrite sucessful for datakey \"" + key + "\".");*/
+
+                    if (m_userDataDBConnection == null)
+                    {
+                        m_userDataDBConnection = GetDatabaseConnection(storageType, dbConnStr);
+                    }
+
+                    IDataParameter dataOwnerParameter = StorageLayer.GetDbParameter(storageType, "dataowner", m_username);
+                    IDataParameter dataKeyParameter = StorageLayer.GetDbParameter(storageType, "datakey", key);
+                    IDataParameter dataValueParameter = StorageLayer.GetDbParameter(storageType, "datavalue", value);
+
+                    IDbCommand countCommand = StorageLayer.GetDbCommand(storageType, m_userDataDBConnection, "select count(*) from dialplandata where datakey = @datakey and dataowner = @dataowner");
+                    countCommand.Parameters.Add(dataOwnerParameter);
+                    countCommand.Parameters.Add(dataKeyParameter);
+                    int count = Convert.ToInt32(countCommand.ExecuteScalar());
+
+                    string sqlCommand = (count == 0) ? "insert into dialplandata (dataowner, datakey, datavalue) values (@dataowner, @datakey, @datavalue)" : "update dialplandata set datavalue = @datavalue where dataowner = @dataowner and datakey = @datakey";
+                    IDbCommand dbCommand = StorageLayer.GetDbCommand(storageType, m_userDataDBConnection, sqlCommand);
+                    dbCommand.Parameters.Add(dataOwnerParameter);
+                    dbCommand.Parameters.Add(dataKeyParameter);
+                    dbCommand.Parameters.Add(dataValueParameter);
+                    dbCommand.ExecuteNonQuery();
+
+                    Log("DBWrite sucessful for datakey \"" + key + "\".");
+                    //}
                 }
-                Log("DBWrite sucessful for datakey \"" + key + "\".");*/
-
-                if (m_userDataDBConnection == null)
-                {
-                    m_userDataDBConnection = GetDatabaseConnection(storageType, dbConnStr);
-                }
-
-                IDataParameter dataOwnerParameter = StorageLayer.GetDbParameter(storageType, "dataowner", m_username);
-                IDataParameter dataKeyParameter = StorageLayer.GetDbParameter(storageType, "datakey", key);
-                IDataParameter dataValueParameter = StorageLayer.GetDbParameter(storageType, "datavalue", value);
-
-                IDbCommand countCommand = StorageLayer.GetDbCommand(storageType, m_userDataDBConnection, "select count(*) from dialplandata where datakey = @datakey and dataowner = @dataowner");
-                countCommand.Parameters.Add(dataOwnerParameter);
-                countCommand.Parameters.Add(dataKeyParameter);
-                int count = Convert.ToInt32(countCommand.ExecuteScalar());
-
-                string sqlCommand = (count == 0) ? "insert into dialplandata (dataowner, datakey, datavalue) values (@dataowner, @datakey, @datavalue)" : "update dialplandata set datavalue = @datavalue where dataowner = @dataowner and datakey = @datakey";
-                IDbCommand dbCommand = StorageLayer.GetDbCommand(storageType, m_userDataDBConnection, sqlCommand);
-                dbCommand.Parameters.Add(dataOwnerParameter);
-                dbCommand.Parameters.Add(dataKeyParameter);
-                dbCommand.Parameters.Add(dataValueParameter);
-                dbCommand.ExecuteNonQuery();
-
-                Log("DBWrite sucessful for datakey \"" + key + "\".");
-                //}
             }
             catch (Exception excp)
             {
@@ -1408,22 +1452,36 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public void DBDelete(string key)
         {
-            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
+            if (ServiceLevel == CustomerServiceLevels.Free)
             {
-                Log("DBDelete failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
+                Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
             }
             else
             {
-                DBDelete(m_userDataDBType, m_userDataDBConnStr, key);
+                if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
+                {
+                    Log("DBDelete failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
+                }
+                else
+                {
+                    DBDelete(m_userDataDBType, m_userDataDBConnStr, key);
+                }
             }
         }
 
         public void DBDelete(string dbType, string dbConnStr, string key)
         {
-            StorageTypes storageType = GetStorageType(dbType);
-            if (storageType != StorageTypes.Unknown)
+            if (ServiceLevel == CustomerServiceLevels.Free)
             {
-                DBDelete(storageType, dbConnStr, key);
+                Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
+            }
+            else
+            {
+                StorageTypes storageType = GetStorageType(dbType);
+                if (storageType != StorageTypes.Unknown)
+                {
+                    DBDelete(storageType, dbConnStr, key);
+                }
             }
         }
 
@@ -1431,32 +1489,39 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                /*StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
-
-                Dictionary<string, object> parameters = new Dictionary<string, object>();
-                parameters.Add("dataowner", m_username);
-                parameters.Add("datakey", key);
-                storageLayer.ExecuteNonQuery(storageType, dbConnStr, "delete from dialplandata where dataowner = @dataowner and datakey = @datakey", parameters);
-                Log("DBDelete sucessful for datakey \"" + key + "\".");*/
-
-                //using (IDbConnection dbConn = StorageLayer.GetDbConnection(storageType, dbConnStr))
-                //{
-                //    dbConn.Open();
-
-                if (m_userDataDBConnection == null)
+                if (ServiceLevel == CustomerServiceLevels.Free)
                 {
-                    m_userDataDBConnection = GetDatabaseConnection(storageType, dbConnStr);
+                    Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
                 }
+                else
+                {
+                    /*StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
 
-                IDataParameter dataOwnerParameter = StorageLayer.GetDbParameter(storageType, "dataowner", m_username);
-                IDataParameter dataKeyParameter = StorageLayer.GetDbParameter(storageType, "datakey", key);
-                IDbCommand dbCommand = StorageLayer.GetDbCommand(storageType, m_userDataDBConnection, "delete from dialplandata where dataowner = @dataowner and datakey = @datakey");
-                dbCommand.Parameters.Add(dataOwnerParameter);
-                dbCommand.Parameters.Add(dataKeyParameter);
-                dbCommand.ExecuteNonQuery();
-                //}
+                    Dictionary<string, object> parameters = new Dictionary<string, object>();
+                    parameters.Add("dataowner", m_username);
+                    parameters.Add("datakey", key);
+                    storageLayer.ExecuteNonQuery(storageType, dbConnStr, "delete from dialplandata where dataowner = @dataowner and datakey = @datakey", parameters);
+                    Log("DBDelete sucessful for datakey \"" + key + "\".");*/
 
-                Log("DBDelete sucessful for datakey \"" + key + "\".");
+                    //using (IDbConnection dbConn = StorageLayer.GetDbConnection(storageType, dbConnStr))
+                    //{
+                    //    dbConn.Open();
+
+                    if (m_userDataDBConnection == null)
+                    {
+                        m_userDataDBConnection = GetDatabaseConnection(storageType, dbConnStr);
+                    }
+
+                    IDataParameter dataOwnerParameter = StorageLayer.GetDbParameter(storageType, "dataowner", m_username);
+                    IDataParameter dataKeyParameter = StorageLayer.GetDbParameter(storageType, "datakey", key);
+                    IDbCommand dbCommand = StorageLayer.GetDbCommand(storageType, m_userDataDBConnection, "delete from dialplandata where dataowner = @dataowner and datakey = @datakey");
+                    dbCommand.Parameters.Add(dataOwnerParameter);
+                    dbCommand.Parameters.Add(dataKeyParameter);
+                    dbCommand.ExecuteNonQuery();
+                    //}
+
+                    Log("DBDelete sucessful for datakey \"" + key + "\".");
+                }
             }
             catch (Exception excp)
             {
@@ -1466,37 +1531,61 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public string DBRead(string key)
         {
-            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
+            if (ServiceLevel == CustomerServiceLevels.Free)
             {
-                Log("DBRead failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
+                Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
                 return null;
             }
             else
             {
-                return DBRead(m_userDataDBType, m_userDataDBConnStr, key, false);
+                if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
+                {
+                    Log("DBRead failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
+                    return null;
+                }
+                else
+                {
+                    return DBRead(m_userDataDBType, m_userDataDBConnStr, key, false);
+                }
             }
         }
 
         public string DBRead(string dbType, string dbConnStr, string key)
         {
-            StorageTypes storageType = GetStorageType(dbType);
-            if (storageType != StorageTypes.Unknown)
+            if (ServiceLevel == CustomerServiceLevels.Free)
             {
-                return DBRead(storageType, dbConnStr, key, false);
-            }
-            return null;
-        }
-
-        public string DBReadForUpdate(string key)
-        {
-            if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
-            {
-                Log("DBRead failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
+                Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
                 return null;
             }
             else
             {
-                return DBRead(m_userDataDBType, m_userDataDBConnStr, key, true);
+                StorageTypes storageType = GetStorageType(dbType);
+                if (storageType != StorageTypes.Unknown)
+                {
+                    return DBRead(storageType, dbConnStr, key, false);
+                }
+                return null;
+            }
+        }
+
+        public string DBReadForUpdate(string key)
+        {
+            if (ServiceLevel == CustomerServiceLevels.Free)
+            {
+                Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
+                return null;
+            }
+            else
+            {
+                if (m_userDataDBType == StorageTypes.Unknown || m_userDataDBConnStr.IsNullOrBlank())
+                {
+                    Log("DBRead failed as no default user database settings are configured. As an alternative you can specify your own database type and connection string.");
+                    return null;
+                }
+                else
+                {
+                    return DBRead(m_userDataDBType, m_userDataDBConnStr, key, true);
+                }
             }
         }
 
@@ -1504,51 +1593,59 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                /*StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
-
-                Dictionary<string, object> parameters = new Dictionary<string, object>();
-                parameters.Add("dataowner", m_username);
-                parameters.Add("datakey", key);
-                string result = storageLayer.ExecuteScalar("select datavalue from dialplandata where dataowner = @dataowner and datakey = @datakey", parameters) as string;
-                Log("DBRead sucessful for datakey \"" + key + "\", value=" + result + ".");
-                return result;*/
-
-                string result = null;
-
-                //using (IDbConnection dbConn = StorageLayer.GetDbConnection(storageType, dbConnStr))
-                //{
-                //    dbConn.Open();
-
-                if (m_userDataDBConnection == null)
+                if (ServiceLevel == CustomerServiceLevels.Free)
                 {
-                    m_userDataDBConnection = GetDatabaseConnection(storageType, dbConnStr);
-                }
-
-                IDataParameter dataOwnerParameter = StorageLayer.GetDbParameter(storageType, "dataowner", m_username);
-                IDataParameter dataKeyParameter = StorageLayer.GetDbParameter(storageType, "datakey", key);
-                
-                string sqlCommandText = "select datavalue from dialplandata where dataowner = @dataowner and datakey = @datakey";
-                if(forUpdate)
-                {
-                    sqlCommandText += " for update";
-                }
-
-                IDbCommand dbCommand = StorageLayer.GetDbCommand(storageType, m_userDataDBConnection, sqlCommandText);
-                dbCommand.Parameters.Add(dataOwnerParameter);
-                dbCommand.Parameters.Add(dataKeyParameter);
-                result = dbCommand.ExecuteScalar() as string;
-                //}
-
-                if (forUpdate)
-                {
-                    Log("DBReadForUpdate sucessful for datakey \"" + key + "\", value=" + result + ".");
+                    Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
+                    return null;
                 }
                 else
                 {
-                    Log("DBRead sucessful for datakey \"" + key + "\", value=" + result + ".");
-                }
+                    /*StorageLayer storageLayer = new StorageLayer(storageType, dbConnStr);
 
-                return result;
+                    Dictionary<string, object> parameters = new Dictionary<string, object>();
+                    parameters.Add("dataowner", m_username);
+                    parameters.Add("datakey", key);
+                    string result = storageLayer.ExecuteScalar("select datavalue from dialplandata where dataowner = @dataowner and datakey = @datakey", parameters) as string;
+                    Log("DBRead sucessful for datakey \"" + key + "\", value=" + result + ".");
+                    return result;*/
+
+                    string result = null;
+
+                    //using (IDbConnection dbConn = StorageLayer.GetDbConnection(storageType, dbConnStr))
+                    //{
+                    //    dbConn.Open();
+
+                    if (m_userDataDBConnection == null)
+                    {
+                        m_userDataDBConnection = GetDatabaseConnection(storageType, dbConnStr);
+                    }
+
+                    IDataParameter dataOwnerParameter = StorageLayer.GetDbParameter(storageType, "dataowner", m_username);
+                    IDataParameter dataKeyParameter = StorageLayer.GetDbParameter(storageType, "datakey", key);
+
+                    string sqlCommandText = "select datavalue from dialplandata where dataowner = @dataowner and datakey = @datakey";
+                    if (forUpdate)
+                    {
+                        sqlCommandText += " for update";
+                    }
+
+                    IDbCommand dbCommand = StorageLayer.GetDbCommand(storageType, m_userDataDBConnection, sqlCommandText);
+                    dbCommand.Parameters.Add(dataOwnerParameter);
+                    dbCommand.Parameters.Add(dataKeyParameter);
+                    result = dbCommand.ExecuteScalar() as string;
+                    //}
+
+                    if (forUpdate)
+                    {
+                        Log("DBReadForUpdate sucessful for datakey \"" + key + "\", value=" + result + ".");
+                    }
+                    else
+                    {
+                        Log("DBRead sucessful for datakey \"" + key + "\", value=" + result + ".");
+                    }
+
+                    return result;
+                }
             }
             catch (Exception excp)
             {
@@ -1559,42 +1656,63 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public void StartTransaction()
         {
-            if (m_userDataDBTransaction == null)
+            if (ServiceLevel == CustomerServiceLevels.Free)
             {
-                if (m_userDataDBConnection == null)
-                {
-                    m_userDataDBConnection = GetDatabaseConnection(m_userDataDBType, m_userDataDBConnStr);
-                }
-
-                m_userDataDBTransaction = m_userDataDBConnection.BeginTransaction();
-
-                Log("Transaction started.");
+                Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
             }
             else
             {
-                Log("An existing transaction was already in progress no new transaction was started.");
+                if (m_userDataDBTransaction == null)
+                {
+                    if (m_userDataDBConnection == null)
+                    {
+                        m_userDataDBConnection = GetDatabaseConnection(m_userDataDBType, m_userDataDBConnStr);
+                    }
+
+                    m_userDataDBTransaction = m_userDataDBConnection.BeginTransaction();
+
+                    Log("Transaction started.");
+                }
+                else
+                {
+                    Log("An existing transaction was already in progress no new transaction was started.");
+                }
             }
         }
 
         public void CommitTransaction()
         {
-            if (m_userDataDBTransaction != null)
+            if (ServiceLevel == CustomerServiceLevels.Free)
             {
-                m_userDataDBTransaction.Commit();
-                m_userDataDBTransaction = null;
+                Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
+            }
+            else
+            {
+                if (m_userDataDBTransaction != null)
+                {
+                    m_userDataDBTransaction.Commit();
+                    m_userDataDBTransaction = null;
 
-                Log("Transaction committed.");
+                    Log("Transaction committed.");
+                }
             }
         }
 
         public void RollbackTransaction()
         {
-            if (m_userDataDBTransaction != null)
+            if (ServiceLevel == CustomerServiceLevels.Free)
             {
-                m_userDataDBTransaction.Rollback();
-                m_userDataDBTransaction = null;
+                Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
+            }
+            else
+            {
+                if (m_userDataDBTransaction != null)
+                {
+                    m_userDataDBTransaction.Rollback();
+                    m_userDataDBTransaction = null;
 
-                Log("Transaction rolled back.");
+                    Log("Transaction rolled back.");
+                }
             }
         }
 
@@ -1602,9 +1720,13 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "dbexecutenonquery"))
+                //if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "dbexecutenonquery"))
+                //{
+                //    Log("You are not authorised to use the DBExecuteNonQuery application, please contact admin@sipsorcery.com.");
+                //}
+                if (ServiceLevel == CustomerServiceLevels.Free)
                 {
-                    Log("You are not authorised to use the DBExecuteNonQuery application, please contact admin@sipsorcery.com.");
+                    Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
                 }
                 else
                 {
@@ -1631,9 +1753,14 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "dbexecutescalar"))
+                //if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "dbexecutescalar"))
+                //{
+                //    Log("You are not authorised to use the DBExecuteScalar application, please contact admin@sipsorcery.com.");
+                //    return null;
+                //}
+                if (ServiceLevel == CustomerServiceLevels.Free)
                 {
-                    Log("You are not authorised to use the DBExecuteScalar application, please contact admin@sipsorcery.com.");
+                    Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method.");
                     return null;
                 }
                 else
@@ -1815,6 +1942,73 @@ namespace SIPSorcery.AppServer.DialPlan
         public void ExtendScriptTimeout(int seconds)
         {
             m_executingScript.EndTime = DateTime.Now.AddSeconds(seconds + DialPlanExecutingScript.MAX_SCRIPTPROCESSING_SECONDS);
+        }
+
+        public void SendRequest(string methodStr, string destination, string contentType, string body, int responseTimeoutSeconds)
+        {
+            try
+            {
+                int timeout = (responseTimeoutSeconds > NON_INVITE_MAX_RESPONSE_TIMEOUT) ? NON_INVITE_MAX_RESPONSE_TIMEOUT * 1000 : responseTimeoutSeconds * 1000;
+
+                if (!Enum.IsDefined(typeof(SIPMethodsEnum), methodStr))
+                {
+                    Log("Error in SendRequest did not recognise the requested method " + methodStr + ".");
+                }
+                else if (destination.IsNullOrBlank())
+                {
+                    Log("Error in SendRequest a destination must be specified.");
+                }
+                else
+                {
+                    SIPMethodsEnum method = (SIPMethodsEnum)Enum.Parse(typeof(SIPMethodsEnum), methodStr, true);
+
+                    Queue<List<SIPCallDescriptor>> destinationQueue = m_dialStringParser.ParseDialString(
+                           DialPlanContextsEnum.Script,
+                           m_sipRequest,
+                           destination,
+                           m_customSIPHeaders,
+                           contentType,
+                           body,
+                           m_dialPlanContext.CallersNetworkId,
+                           m_customFromName,
+                           m_customFromUser,
+                           m_customFromHost,
+                           null,
+                           ServiceLevel);
+
+                    if (destinationQueue == null || destinationQueue.Count == 0)
+                    {
+                        Log("Error in SendRequest the request destination could not be extracted from " + destination + ".");
+                    }
+                    else if (method == SIPMethodsEnum.ACK || method == SIPMethodsEnum.BYE || method == SIPMethodsEnum.CANCEL ||
+                        method == SIPMethodsEnum.INVITE || method == SIPMethodsEnum.REGISTER)
+                    {
+                        Log("SendRequest cannot be used for " + method + " requests.");
+                    }
+                    else
+                    {
+                        SIPCallDescriptor callDescriptor = destinationQueue.Dequeue()[0];
+                        SIPNonInviteClientUserAgent nonInviteUserAgent = new SIPNonInviteClientUserAgent(m_sipTransport, m_outboundProxySocket, callDescriptor, m_username, m_adminMemberId, FireProxyLogEvent);
+                        ManualResetEvent waitForResponse = new ManualResetEvent(false);
+                        nonInviteUserAgent.ResponseReceived += (sipResponse) =>
+                            {
+                                string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
+                                Log("SendRequest " + sipResponse.StatusCode + " " + reasonPhrase + " response received for " + method + " to " + destination + ".");
+                                waitForResponse.Set();
+                            };
+                        nonInviteUserAgent.SendRequest(method);
+
+                        if (timeout > 0 && !waitForResponse.WaitOne(timeout))
+                        {
+                            Log("SendRequest timed out after " + timeout + "s waiting for " + method + " to " + destination + ".");
+                        }
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                Log("Exception in SendRequest. " + excp.Message);
+            }
         }
 
         /// <summary>

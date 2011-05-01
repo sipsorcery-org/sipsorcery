@@ -215,7 +215,7 @@ namespace SIPSorcery.Servers
                         }
                         else
                         {
-                            // Send the incoing call to the call manager for processing.
+                            // Send the incoming call to the call manager for processing.
                             string uriUser = sipRequest.URI.User;
                             string uriDomain = GetCanonicalDomain_External(sipRequest.URI.Host, true);
                             UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
@@ -231,6 +231,50 @@ namespace SIPSorcery.Servers
                         UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
                         SIPResponse notServicedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Domain not serviced");
                         uasTransaction.SendFinalResponse(notServicedResponse);
+                    }
+
+                    #endregion
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.MESSAGE)
+                {
+                    #region Processing non-INVITE requests that are accepted by the dialplan processing engine.
+
+                    if (GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host, false) != null)
+                    {
+                        // Call identified as outgoing request for application server serviced domain.
+                        string fromDomain = GetCanonicalDomain_External(sipRequest.Header.From.FromUserField.URI.Host, false);
+                        SIPNonInviteTransaction nonInviteTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                        SIPNonInviteServerUserAgent outgoingRequest = new SIPNonInviteServerUserAgent(m_sipTransport, m_outboundProxy, fromUser, fromDomain, SIPCallDirection.Out, GetSIPAccount_External, SIPRequestAuthenticator.AuthenticateSIPRequest, FireProxyLogEvent, nonInviteTransaction);
+                        nonInviteTransaction.NonInviteRequestReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(outgoingRequest); };
+                        nonInviteTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+                    }
+                    else if (GetCanonicalDomain_External(sipRequest.URI.Host, true) != null)
+                    {
+                        // Call identified as incoming call for application server serviced domain.
+                        if (sipRequest.URI.User.IsNullOrBlank())
+                        {
+                            // Cannot process incoming call if no user is specified.
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, sipRequest.Method + " request received with an empty URI user " + sipRequest.URI.ToString() + ", returning address incomplete.", null));
+                            SIPResponse addressIncompleteResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.AddressIncomplete, "No user specified");
+                            m_sipTransport.SendResponse(addressIncompleteResponse);
+                        }
+                        else
+                        {
+                            // Send the incoming call to the call manager for processing.
+                            string uriUser = sipRequest.URI.User;
+                            string uriDomain = GetCanonicalDomain_External(sipRequest.URI.Host, true);
+                            SIPNonInviteTransaction nonInviteTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                            SIPNonInviteServerUserAgent incomingRequest = new SIPNonInviteServerUserAgent(m_sipTransport, m_outboundProxy, uriUser, uriDomain, SIPCallDirection.In, GetSIPAccount_External, null, FireProxyLogEvent, nonInviteTransaction);
+                            nonInviteTransaction.NonInviteRequestReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(incomingRequest); };
+                            nonInviteTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+                        }
+                    }
+                    else
+                    {
+                        // Return not found for non-serviced domain.
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Domain not serviced " + sipRequest.URI.ToString() + ", returning not found.", null));
+                        SIPResponse notServicedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Domain not serviced");
+                        m_sipTransport.SendResponse(notServicedResponse);
                     }
 
                     #endregion

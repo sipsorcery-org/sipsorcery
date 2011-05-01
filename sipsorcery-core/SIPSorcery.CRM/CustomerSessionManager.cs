@@ -203,7 +203,6 @@ namespace SIPSorcery.CRM
 
         public void ExpireToken(string sessionId)
         {
-
             try
             {
                 CustomerSession customerSession = m_customerSessionPersistor.Get(s => s.SessionID == sessionId);

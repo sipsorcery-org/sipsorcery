@@ -134,7 +134,7 @@ namespace SIPSorcery.Web.Services
                 string authId = ServiceAuthToken.GetAuthId();
                 //logger.Debug("Authorising request for sessionid=" + authId + ".");
 
-                if (authId != null)
+                if (!authId.IsNullOrBlank())
                 {
                     CustomerSession customerSession = CRMSessionManager.Authenticate(authId);
                     if (customerSession == null)
@@ -150,8 +150,18 @@ namespace SIPSorcery.Web.Services
                 }
                 else
                 {
-                    logger.Warn("SIPSorceryAuthenticatedService AuthoriseRequest failed no authid header.");
-                    throw new UnauthorizedAccessException();
+                    string apiKey = ServiceAuthToken.GetAPIKey();
+
+                    if (!apiKey.IsNullOrBlank())
+                    {
+                        Customer customer = CRMCustomerPersistor.Get(c => c.APIKey == apiKey);
+                        return customer;
+                    }
+                    else
+                    {
+                        logger.Warn("SIPSorceryAuthenticatedService AuthoriseRequest failed no authid header.");
+                        throw new UnauthorizedAccessException();
+                    }
                 }
             }
             catch (UnauthorizedAccessException)

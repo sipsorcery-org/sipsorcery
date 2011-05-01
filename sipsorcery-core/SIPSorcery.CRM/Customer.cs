@@ -66,6 +66,7 @@ namespace SIPSorcery.CRM
         public const int MIN_PASSWORD_LENGTH = 6;
         public const int MAX_PASSWORD_LENGTH = 20;
         public const int MAX_WEBSITE_FIELD_LENGTH = 256;
+        public const int API_KEY_LENGTH = 96;                           // 384 bits of entropy.
         
         public static readonly string USERNAME_ALLOWED_CHARS = @"a-zA-Z0-9_\-";     // The '.' character is not allowed in customer usernames in order to support a domain like structure for SIP account usernames.
 
@@ -143,6 +144,12 @@ namespace SIPSorcery.CRM
 
         [Column(Name = "emailaddressconfirmed", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public bool EmailAddressConfirmed { get; set; }
+
+        [Column(Name = "apikey", DbType = "varchar(96)", UpdateCheck = UpdateCheck.Never)]
+        public string APIKey { get; set; }
+
+        [Column(Name = "servicelevel", DbType = "varchar(64)", UpdateCheck = UpdateCheck.Never)]
+        public string ServiceLevel { get; set; }
 
         public Customer() { }
 
@@ -236,6 +243,8 @@ namespace SIPSorcery.CRM
             table.Columns.Add(new DataColumn("timezone", typeof(String)));
             table.Columns.Add(new DataColumn("invitecode", typeof(String)));
             table.Columns.Add(new DataColumn("emailaddressconfirmed", typeof(Boolean)));
+            table.Columns.Add(new DataColumn("apikey", typeof(String)));
+            table.Columns.Add(new DataColumn("servicelevel", typeof(String)));
             return table;
         }
 
@@ -264,6 +273,8 @@ namespace SIPSorcery.CRM
                 EmailAddressConfirmed = (customerRow.Table.Columns.Contains("emailaddressconfirmed") && customerRow["emailaddressconfirmed"] != null) ? Convert.ToBoolean(customerRow["emailaddressconfirmed"]) : true;
                 InviteCode = (customerRow.Table.Columns.Contains("invitecode") && customerRow["invitecode"] != null) ? customerRow["invitecode"] as string : null;
                 TimeZone = (customerRow.Table.Columns.Contains("timezone") && customerRow["timezone"] != null) ? customerRow["timezone"] as string : null;
+                APIKey = (customerRow.Table.Columns.Contains("apikey") && customerRow["apikey"] != null) ? customerRow["apikey"] as string : null;
+                ServiceLevel = (customerRow.Table.Columns.Contains("servicelevel") && customerRow["servicelevel"] != null) ? customerRow["servicelevel"] as string : null;
             }
             catch (Exception excp) {
                 logger.Error("Exception Customer Load. " + excp.Message);
@@ -288,30 +299,32 @@ namespace SIPSorcery.CRM
         }
 
          public string ToXMLNoParent() {
-            string customerXML =
-                "  <id>" + Id + "</id>" + m_newLine +
-                "  <customerusername>" + CustomerUsername + "</customerusername>" + m_newLine +
-                "  <customerpassword>" + CustomerPassword + "</customerpassword>" + m_newLine +
-                "  <emailaddress>" + EmailAddress + "</emailaddress>" + m_newLine +
-                "  <firstname>" + SafeXML.MakeSafeXML(FirstName) + "</firstname>" + m_newLine +
-                "  <lastname>" + SafeXML.MakeSafeXML(LastName) + "</lastname>" + m_newLine +
-                "  <city>" + SafeXML.MakeSafeXML(City) + "</city>" + m_newLine +
-                "  <country>" + Country + "</country>" + m_newLine +
-                "  <adminid>" + AdminId + "</adminid>" + m_newLine +
-                "  <adminmemberid>" + AdminMemberId + "</adminmemberid>" + m_newLine +
-                "  <website>" + SafeXML.MakeSafeXML(WebSite) + "</website>" + m_newLine +
-                "  <securityquestion>" + SecurityQuestion + "</securityquestion>" + m_newLine +
-                "  <securityanswer>" + SafeXML.MakeSafeXML(SecurityAnswer) + "</securityanswer>" + m_newLine +
-                "  <createdfromipaddress>" + CreatedFromIPAddress + "</createdfromipaddress>" + m_newLine +
-                "  <inserted>" + Inserted.ToString() + "</inserted>" + m_newLine +
-                "  <active>" + Active + "</active>" + m_newLine +
-                "  <suspended>" + Suspended + "</suspended>" + m_newLine +
-                "  <suspendedreason>" + SuspendedReason + "</suspendedreason>" + m_newLine +
-                "  <executioncount>" + ExecutionCount + "</executioncount>" + m_newLine +
-                "  <maxexecutioncount>" + MaxExecutionCount + "</maxexecutioncount>" + m_newLine +
-                "  <authorisedapps>" + AuthorisedApps + "</authorisedapps>" + m_newLine +
-                "  <invitecode>" + InviteCode + "</invitecode>" + m_newLine +
-                "  <emailaddressconfirmed>" + EmailAddressConfirmed + "</emailaddressconfirmed>";
+             string customerXML =
+                 "  <id>" + Id + "</id>" + m_newLine +
+                 "  <customerusername>" + CustomerUsername + "</customerusername>" + m_newLine +
+                 "  <customerpassword>" + CustomerPassword + "</customerpassword>" + m_newLine +
+                 "  <emailaddress>" + EmailAddress + "</emailaddress>" + m_newLine +
+                 "  <firstname>" + SafeXML.MakeSafeXML(FirstName) + "</firstname>" + m_newLine +
+                 "  <lastname>" + SafeXML.MakeSafeXML(LastName) + "</lastname>" + m_newLine +
+                 "  <city>" + SafeXML.MakeSafeXML(City) + "</city>" + m_newLine +
+                 "  <country>" + Country + "</country>" + m_newLine +
+                 "  <adminid>" + AdminId + "</adminid>" + m_newLine +
+                 "  <adminmemberid>" + AdminMemberId + "</adminmemberid>" + m_newLine +
+                 "  <website>" + SafeXML.MakeSafeXML(WebSite) + "</website>" + m_newLine +
+                 "  <securityquestion>" + SecurityQuestion + "</securityquestion>" + m_newLine +
+                 "  <securityanswer>" + SafeXML.MakeSafeXML(SecurityAnswer) + "</securityanswer>" + m_newLine +
+                 "  <createdfromipaddress>" + CreatedFromIPAddress + "</createdfromipaddress>" + m_newLine +
+                 "  <inserted>" + Inserted.ToString() + "</inserted>" + m_newLine +
+                 "  <active>" + Active + "</active>" + m_newLine +
+                 "  <suspended>" + Suspended + "</suspended>" + m_newLine +
+                 "  <suspendedreason>" + SuspendedReason + "</suspendedreason>" + m_newLine +
+                 "  <executioncount>" + ExecutionCount + "</executioncount>" + m_newLine +
+                 "  <maxexecutioncount>" + MaxExecutionCount + "</maxexecutioncount>" + m_newLine +
+                 "  <authorisedapps>" + AuthorisedApps + "</authorisedapps>" + m_newLine +
+                 "  <invitecode>" + InviteCode + "</invitecode>" + m_newLine +
+                 "  <emailaddressconfirmed>" + EmailAddressConfirmed + "</emailaddressconfirmed>" +
+                 "  <apikey>" + APIKey + "</apikey>" +
+                 "  <servicelevel>" + ServiceLevel + "</servicelevel>";
 
              return customerXML;
          }

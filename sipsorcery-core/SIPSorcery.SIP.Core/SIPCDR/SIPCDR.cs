@@ -189,15 +189,25 @@ namespace SIPSorcery.SIP
             IsHungup = false;
         }
 
-        public void Progress(SIPResponseStatusCodesEnum progressStatus, string progressReason)
+        public void Progress(SIPResponseStatusCodesEnum progressStatus, string progressReason, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint)
         {
             InProgress = true;
             ProgressTime = DateTimeOffset.UtcNow;
             ProgressStatus = (int)progressStatus;
             ProgressReasonPhrase = progressReason;
+
+            if (localEndPoint != null)
+            {
+                LocalSIPEndPoint = localEndPoint;
+            }
+
+            if (remoteEndPoint != null)
+            {
+                RemoteEndPoint = remoteEndPoint;
+            }
         }
 
-        public void Answered(int answerStatusCode, SIPResponseStatusCodesEnum answerStatus, string answerReason)
+        public void Answered(int answerStatusCode, SIPResponseStatusCodesEnum answerStatus, string answerReason, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint)
         {
             try
             {
@@ -205,6 +215,16 @@ namespace SIPSorcery.SIP
                 AnswerTime = DateTimeOffset.UtcNow;
                 AnswerStatus = (int)answerStatus;
                 AnswerReasonPhrase = answerReason;
+
+                if (localEndPoint != null)
+                {
+                    LocalSIPEndPoint = localEndPoint;
+                }
+
+                if (remoteEndPoint != null)
+                {
+                    RemoteEndPoint = remoteEndPoint;
+                }
 
                 CDRAnswered(this);
             }

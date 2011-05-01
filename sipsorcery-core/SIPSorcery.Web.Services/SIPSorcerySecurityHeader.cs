@@ -13,25 +13,25 @@ namespace SIPSorcery.Web.Services
         private const string SECURITY_NAMESPACE = "http://www.sipsorcery.com/security";
         private const string SECURITY_HEADER_NAME = "Security";
         private const string SECURITY_PREFIX = "sssec";
-        private const string AUTHID_ELEMENT_NAME = "AuthID";
+        private const string APIKEY_ELEMENT_NAME = "apikey";
 
         private static ILog logger = AppState.logger;
 
-        public string AuthID;
+        public string APIKey;
 
         public override bool MustUnderstand { get { return true; } }
         public override string Name { get { return SECURITY_HEADER_NAME; } }
         public override string Namespace { get { return SECURITY_NAMESPACE; } }
 
-        public SIPSorcerySecurityHeader(string authID)
+        public SIPSorcerySecurityHeader(string apiKey)
         {
-            AuthID = authID;
+            APIKey = apiKey;
         }
 
         protected override void OnWriteHeaderContents(XmlDictionaryWriter writer, MessageVersion messageVersion)
         {
-            writer.WriteStartElement(SECURITY_PREFIX, AUTHID_ELEMENT_NAME, SECURITY_NAMESPACE);
-            writer.WriteString(AuthID);
+            writer.WriteStartElement(SECURITY_PREFIX, APIKEY_ELEMENT_NAME, SECURITY_NAMESPACE);
+            writer.WriteString(APIKey);
             writer.WriteEndElement();
         }
 
@@ -54,10 +54,10 @@ namespace SIPSorcery.Web.Services
                         reader.ReadStartElement();
                         reader.MoveToContent();
 
-                        if (reader.IsStartElement(AUTHID_ELEMENT_NAME, SECURITY_NAMESPACE))
+                        if (reader.IsStartElement(APIKEY_ELEMENT_NAME, SECURITY_NAMESPACE))
                         {
-                            string authID = reader.ReadElementContentAsString();
-                            return new SIPSorcerySecurityHeader(authID);
+                            string apiKey = reader.ReadElementContentAsString();
+                            return new SIPSorcerySecurityHeader(apiKey);
                         }
                     }
                 }

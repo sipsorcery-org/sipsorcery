@@ -361,8 +361,8 @@ namespace SIPSorcery.Servers
                     }
                     else
                     {
-                        SIPEndPoint uacRemoteEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : registerTransaction.RemoteEndPoint;
-                        SIPEndPoint proxySIPEndPoint = (!sipRequest.Header.ProxyReceivedOn.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedOn) : null;
+                        SIPEndPoint uacRemoteEndPoint = SIPEndPoint.TryParse(sipRequest.Header.ProxyReceivedFrom) ?? registerTransaction.RemoteEndPoint;
+                        SIPEndPoint proxySIPEndPoint = SIPEndPoint.TryParse(sipRequest.Header.ProxyReceivedOn);
                         SIPEndPoint registrarEndPoint = registerTransaction.LocalSIPEndPoint;
 
                         SIPResponseStatusCodesEnum updateResult = SIPResponseStatusCodesEnum.Ok;

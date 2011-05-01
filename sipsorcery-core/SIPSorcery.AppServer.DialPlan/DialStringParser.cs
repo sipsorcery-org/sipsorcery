@@ -165,7 +165,8 @@ namespace SIPSorcery.AppServer.DialPlan
             string fromDisplayName,
             string fromUsername,
             string fromHost,
-            CRMHeaders contact)
+            CRMHeaders contact,
+            CustomerServiceLevels serviceLevel)
         {
             try
             {
@@ -177,7 +178,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 {
                     Queue<List<SIPCallDescriptor>> prioritisedCallList = new Queue<List<SIPCallDescriptor>>();
 
-                    if (dialPlanType == DialPlanContextsEnum.Line || (!command.Contains("[") && Regex.Match(command, @"\S+,.*,\S+").Success))
+                    if (dialPlanType == DialPlanContextsEnum.Line || (serviceLevel != CustomerServiceLevels.Free && (!command.Contains("[") && Regex.Match(command, @"\S+,.*,\S+").Success)))
                     {
                         // Singled legged call (Asterisk format).
                         SIPCallDescriptor SIPCallDescriptor = ParseAsteriskDialString(command, sipRequest);

@@ -414,7 +414,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Returns a string representation of the URI with any parameter and headers ommitted exceot for the transport
+        /// Returns a string representation of the URI with any parameter and headers ommitted except for the transport
         /// parameter. The string returned by this function is used amonst other things to match Route headers set by this
         /// SIP agent.
         /// </summary>

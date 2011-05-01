@@ -54,6 +54,14 @@
       <Project>{DC87DB52-5C99-4282-ABEA-F7EC81AC6D4C}</Project>
       <Name>SIPSorcery.AppServer.DialPlan</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\SIPSorcery.Entities\SIPSorcery.Entities.csproj">
+      <Project>{8EB4E07E-76C8-445A-8252-5B392A9C12FB}</Project>
+      <Name>SIPSorcery.Entities %28SIPSorcery.Entities\SIPSorcery.Entities%29</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
+      <Project>{7194705F-5564-4040-BC8A-8FAD806F5408}</Project>
+      <Name>SIPSorcery.Persistence</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
       <Project>{339648E6-3B61-4A27-B4A2-38A8216B1D7E}</Project>
       <Name>SIPSorcery.SIP.App</Name>

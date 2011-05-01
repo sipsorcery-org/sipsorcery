@@ -52,58 +52,69 @@ namespace SIPSorcery.Sys.Auth
     public class ServiceAuthToken
     {
         public const string AUTH_TOKEN_KEY = "authid";
+        public const string API_KEY = "apikey";
         public const string COOKIES_KEY = "Cookie";
 
 #if !SILVERLIGHT
 
         public static string GetAuthId()
         {
-            string authId = null;
+            return GetToken(AUTH_TOKEN_KEY);
+        }
+
+        public static string GetAPIKey()
+        {
+            return GetToken(API_KEY);
+        }
+
+        private static string GetToken(string tokenName)
+        {
+            string token = null;
 
             if (OperationContext.Current != null)
             {
                 SIPSorcerySecurityHeader securityheader = SIPSorcerySecurityHeader.ParseHeader(OperationContext.Current);
                 if (securityheader != null)
                 {
-                    authId = securityheader.AuthID;
+                    token = (tokenName == AUTH_TOKEN_KEY) ? securityheader.AuthID  : securityheader.APIKey;
                 }
             }
 
             // HTTP Context is available for ?? binding.
-            if (authId.IsNullOrBlank() && HttpContext.Current != null)
+            if (token.IsNullOrBlank() && HttpContext.Current != null)
             {
                 // If running in IIS check for a cookie.
-                HttpCookie authIdCookie = HttpContext.Current.Request.Cookies[AUTH_TOKEN_KEY];
+                HttpCookie authIdCookie = HttpContext.Current.Request.Cookies[tokenName];
                 if (authIdCookie != null)
                 {
                     //logger.Debug("authid cookie found: " + authIdCookie.Value + ".");
-                    authId = authIdCookie.Value;
+                    token = authIdCookie.Value;
                 }
             }
 
             // No HTTP context available so try and get a cookie value from the operation context.
-            if (authId.IsNullOrBlank() && OperationContext.Current != null && OperationContext.Current.IncomingMessageProperties[HttpRequestMessageProperty.Name] != null)
+            if (token.IsNullOrBlank() && OperationContext.Current != null && OperationContext.Current.IncomingMessageProperties[HttpRequestMessageProperty.Name] != null)
             {
                 HttpRequestMessageProperty httpRequest = (HttpRequestMessageProperty)OperationContext.Current.IncomingMessageProperties[HttpRequestMessageProperty.Name];
                 // Check for the header in a case insensitive way. Allows matches on authid, Authid etc.
-                if (httpRequest.Headers.AllKeys.Contains(AUTH_TOKEN_KEY, StringComparer.InvariantCultureIgnoreCase))
+                if (httpRequest.Headers.AllKeys.Contains(tokenName, StringComparer.InvariantCultureIgnoreCase))
                 {
-                    string authIDHeader = httpRequest.Headers.AllKeys.First(h => { return String.Equals(h, AUTH_TOKEN_KEY, StringComparison.InvariantCultureIgnoreCase); });
-                    authId = httpRequest.Headers[authIDHeader];
+                    string authIDHeader = httpRequest.Headers.AllKeys.First(h => { return String.Equals(h, tokenName, StringComparison.InvariantCultureIgnoreCase); });
+                    token = httpRequest.Headers[authIDHeader];
                     //logger.Debug("authid HTTP header found: " + authId + ".");
                 }
                 else if (httpRequest.Headers.AllKeys.Contains(COOKIES_KEY, StringComparer.InvariantCultureIgnoreCase))
                 {
-                    Match authIDMatch = Regex.Match(httpRequest.Headers[COOKIES_KEY], @"authid=(?<authid>.+)");
+                    Match authIDMatch = Regex.Match(httpRequest.Headers[COOKIES_KEY], tokenName + @"=(?<token>.+)");
                     if (authIDMatch.Success)
                     {
-                        authId = authIDMatch.Result("${authid}");
+                        token = authIDMatch.Result("${token}");
                         //logger.Debug("authid HTTP cookie found: " + authId + ".");
                     }
                 }
             }
 
-            return authId;
+            return token;
         }
 #endif
     }

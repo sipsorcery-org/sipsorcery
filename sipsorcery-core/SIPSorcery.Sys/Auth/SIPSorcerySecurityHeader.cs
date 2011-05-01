@@ -14,25 +14,38 @@ namespace SIPSorcery.Sys.Auth
         private const string SECURITY_HEADER_NAME = "Security";
         private const string SECURITY_PREFIX = "sssec";
         private const string AUTHID_ELEMENT_NAME = "AuthID";
+        private const string APIKEY_ELEMENT_NAME = "apikey";
 
         private static ILog logger = AppState.logger;
 
         public string AuthID;
+        public string APIKey;
 
         public override bool MustUnderstand { get { return true; } }
         public override string Name { get { return SECURITY_HEADER_NAME; } }
         public override string Namespace { get { return SECURITY_NAMESPACE; } }
 
-        public SIPSorcerySecurityHeader(string authID)
+        public SIPSorcerySecurityHeader(string authID, string apiKey)
         {
             AuthID = authID;
+            APIKey = apiKey;
         }
 
         protected override void OnWriteHeaderContents(XmlDictionaryWriter writer, MessageVersion messageVersion)
         {
-            writer.WriteStartElement(SECURITY_PREFIX, AUTHID_ELEMENT_NAME, SECURITY_NAMESPACE);
-            writer.WriteString(AuthID);
-            writer.WriteEndElement();
+            if (!AuthID.IsNullOrBlank())
+            {
+                writer.WriteStartElement(SECURITY_PREFIX, AUTHID_ELEMENT_NAME, SECURITY_NAMESPACE);
+                writer.WriteString(AuthID);
+                writer.WriteEndElement();
+            }
+
+            if (!APIKey.IsNullOrBlank())
+            {
+                writer.WriteStartElement(SECURITY_PREFIX, APIKEY_ELEMENT_NAME, SECURITY_NAMESPACE);
+                writer.WriteString(AuthID);
+                writer.WriteEndElement();
+            }
         }
 
         protected override void OnWriteStartHeader(XmlDictionaryWriter writer, MessageVersion messageVersion)
@@ -57,7 +70,13 @@ namespace SIPSorcery.Sys.Auth
                         if (reader.IsStartElement(AUTHID_ELEMENT_NAME, SECURITY_NAMESPACE))
                         {
                             string authID = reader.ReadElementContentAsString();
-                            return new SIPSorcerySecurityHeader(authID);
+                            return new SIPSorcerySecurityHeader(authID, null);
+                        }
+
+                        if (reader.IsStartElement(APIKEY_ELEMENT_NAME, SECURITY_NAMESPACE))
+                        {
+                            string apiKey = reader.ReadElementContentAsString();
+                            return new SIPSorcerySecurityHeader(null, apiKey);
                         }
                     }
                 }

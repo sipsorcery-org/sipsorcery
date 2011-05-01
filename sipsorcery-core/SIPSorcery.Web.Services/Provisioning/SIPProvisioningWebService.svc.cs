@@ -122,6 +122,8 @@ namespace SIPSorcery.Web.Services
             {
                 Boolean.TryParse(m_providerRegistrationsDisabled, out m_providerRegDisabled);
             }
+
+            //SIPSorcery.Entities.Services.SIPEntitiesDomainService domainSvc = new Entities.Services.SIPEntitiesDomainService();
         }
 
         private string GetAuthorisedWhereExpression(Customer customer, string whereExpression)
@@ -232,6 +234,7 @@ namespace SIPSorcery.Web.Services
                     }
 
                     customer.MaxExecutionCount = Customer.DEFAULT_MAXIMUM_EXECUTION_COUNT;
+                    customer.APIKey = Crypto.GetRandomByteString(Customer.API_KEY_LENGTH / 2);
 
                     CRMCustomerPersistor.Add(customer);
                     logger.Debug("New customer record added for " + customer.CustomerUsername + ".");
@@ -576,6 +579,16 @@ namespace SIPSorcery.Web.Services
         public SIPProvider AddSIPProvider(SIPProvider sipProvider)
         {
             Customer customer = AuthoriseRequest();
+
+            if(!customer.ServiceLevel.IsNullOrBlank() &&  customer.ServiceLevel.ToLower() == "free")
+            {
+                // Check the number of SIP Provider is within limits.
+                if (GetSIPProvidersCount(null) >= 1)
+                {
+                    throw new ApplicationException("The SIP Provider cannot be added as your existing SIP Provider count has reached the allowed limit for your service level."); 
+                }
+            }
+
             sipProvider.Owner = customer.CustomerUsername;
 
             string validationError = SIPProvider.ValidateAndClean(sipProvider);
@@ -700,6 +713,15 @@ namespace SIPSorcery.Web.Services
         public SIPDialPlan AddDialPlan(SIPDialPlan dialPlan)
         {
             Customer customer = AuthoriseRequest();
+
+            if (!customer.ServiceLevel.IsNullOrBlank() && customer.ServiceLevel.ToLower() == "free")
+            {
+                // Check the number of SIP Provider is within limits.
+                if (GetDialPlansCount(null) >= 1)
+                {
+                    throw new ApplicationException("The dial plan cannot be added as your existing dial plan count has reached the allowed limit for your service level.");
+                }
+            }
 
             dialPlan.Owner = customer.CustomerUsername;
 

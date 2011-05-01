@@ -1,8 +1,7 @@
 //-----------------------------------------------------------------------------
 // Filename: SIPTransport.cs
 //
-// Description: SIP transport layer implementation. Handles different network
-// transport options, retransmits, timeouts and transaction matching.
+// Description: SIP transport layer implementation.
 // 
 // History:
 // 14 Feb 2006	Aaron Clauson	Created.
@@ -11,7 +10,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006-2008 Aaron Clauson (aaronc@blueface.ie), Blue Face Ltd, Dublin, Ireland (www.blueface.ie)
+// Copyright (c) 2006-2011 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery Ltd, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -19,7 +18,7 @@
 //
 // Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
 // Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following 
-// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of Blue Face Ltd. 
+// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of SIP Sorcery Ltd. 
 // nor the names of its contributors may be used to endorse or promote products derived from this software without specific 
 // prior written permission. 
 //
@@ -35,6 +34,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -43,60 +43,8 @@ using System.Threading;
 using SIPSorcery.Sys;
 using log4net;
 
-#if UNITTEST
-using NUnit.Framework;
-#endif
-
 namespace SIPSorcery.SIP
 {
-    /// <summary>
-    /// Record number of each type of request received.
-    /// </summary>
-    public struct SIPTransportMetric
-    {
-        public const string PACKET_VOLUMES_KEY = "pkts";
-        public const string SIPMETHOD_VOLUMES_KEY = "meth";
-        public const string TOPTALKERS_VOLUME_KEY = "talk";
-
-        public DateTime ReceivedAt;
-        public IPEndPoint RemoteEndPoint;
-        public SIPMessageTypesEnum SIPMessageType;
-        public SIPMethodsEnum SIPMethod;
-        public bool STUNRequest;
-        public bool UnrecognisedPacket;
-        public bool BadSIPMessage;                  // Set to true if the message appeared to be a SIP Message but then couldn't be parsed as one.
-        public bool Discard;                        // If true indicates the SIP message was not parsed due to the receive queue being full and was instead discarded.
-        public bool TooLarge;                       // If the message is greater than the max accepted length.
-        public bool Originated;                     // If true inidcates the SIP message was sent by the transport layer, false means it was received.
-        public double ParseDuration;                // Time it took to parse the message in milliseconds.
-
-        public SIPTransportMetric(
-            DateTime receivedAt,
-            IPEndPoint remoteEndPoint,
-            SIPMessageTypesEnum sipMessageType,
-            SIPMethodsEnum sipMethod,
-            bool stunRequest,
-            bool unrecognisedPacket,
-            bool badSIPMessage,
-            bool discard,
-            bool tooLarge,
-            bool originated,
-            double parseDuration)
-        {
-            ReceivedAt = receivedAt;
-            RemoteEndPoint = remoteEndPoint;
-            SIPMessageType = sipMessageType;
-            SIPMethod = sipMethod;
-            STUNRequest = stunRequest;
-            UnrecognisedPacket = unrecognisedPacket;
-            BadSIPMessage = badSIPMessage;
-            Discard = discard;
-            TooLarge = tooLarge;
-            Originated = originated;
-            ParseDuration = parseDuration;
-        }
-    }
-
     public class SIPTransport
     {
         private const string RECEIVE_THREAD_NAME = "siptransport-receive";
@@ -105,6 +53,7 @@ namespace SIPSorcery.SIP
         private const int PENDINGREQUESTS_CHECK_PERIOD = 500;       // Time between checking the pending requests queue to resend reliable requests that have not been responded to.
         private const int MAX_INMESSAGE_QUEUECOUNT = 5000;          // The maximum number of messages that can be stored in the incoming message queue.
         private const int MAX_RELIABLETRANSMISSIONS_COUNT = 5000;   // The maximum number of messages that can be maintained for reliable transmissions.
+        private const int NUMBER_MESSAGES_CLEANSE_TRANSACTIONS = 100;   // Cleanse the transaction engine of expired transactions each time this many SIP messages have been received.
 
         public const string ALLOWED_SIP_METHODS = "ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, REFER, REGISTER, SUBSCRIBE";
 
@@ -120,12 +69,12 @@ namespace SIPSorcery.SIP
         // Most SIP elements with the exception of Stateless Proxies would typically want to queue incoming SIP messages.
 
         private bool m_transportThreadStarted = false;
-        private Queue<IncomingMessage> m_inMessageQueue = new Queue<IncomingMessage>();
-        private ManualResetEvent m_inMessageArrived = new ManualResetEvent(false);
+        private BlockingCollection<IncomingMessage> m_inMessageQueue = new BlockingCollection<IncomingMessage>(new ConcurrentQueue<IncomingMessage>(), MAX_INMESSAGE_QUEUECOUNT);
+        //private ManualResetEvent m_inMessageArrived = new ManualResetEvent(false);
         private bool m_closed = false;
 
         private Dictionary<string, SIPChannel> m_sipChannels = new Dictionary<string, SIPChannel>();    // List of the physical channels that have been opened and are under management by this instance.
-        
+
         private SIPTransactionEngine m_transactionEngine;
 
         public event SIPTransportRequestDelegate SIPTransportRequestReceived;
@@ -144,7 +93,8 @@ namespace SIPSorcery.SIP
 
         // Contains a list of the SIP Requests/Response that are being monitored or responses and retransmitted on when none is recieved to attempt a more reliable delivery
         // rather then just relying on the initial request to get through.
-        private Dictionary<string, SIPTransaction> m_reliableTransmissions = new Dictionary<string, SIPTransaction>();
+        //private Dictionary<string, SIPTransaction> m_reliableTransmissions = new Dictionary<string, SIPTransaction>();
+        private ConcurrentDictionary<string, SIPTransaction> m_reliableTransmissions = new ConcurrentDictionary<string, SIPTransaction>();
         private bool m_reliablesThreadRunning = false;   // Only gets started when a request is made to send a reliable request.
 
         public int ReliableTrasmissionsCount
@@ -266,21 +216,7 @@ namespace SIPSorcery.SIP
                 else
                 {
                     IncomingMessage incomingMessage = new IncomingMessage(sipChannel, remoteEndPoint, buffer);
-
-                    // Keep the queue within size limits 
-                    if (m_inMessageQueue.Count >= MAX_INMESSAGE_QUEUECOUNT)
-                    {
-                        logger.Warn("SIPTransport queue full new message from " + remoteEndPoint + " being discarded.");
-                    }
-                    else
-                    {
-                        lock (m_inMessageQueue)
-                        {
-                            m_inMessageQueue.Enqueue(incomingMessage);
-                        }
-                    }
-
-                    m_inMessageArrived.Set();
+                    m_inMessageQueue.TryAdd(incomingMessage);
                 }
             }
             catch (Exception excp)
@@ -301,8 +237,7 @@ namespace SIPSorcery.SIP
                     channel.Close();
                 }
 
-                m_inMessageArrived.Set();
-                m_inMessageArrived.Set();
+                m_inMessageQueue.CompleteAdding();
 
                 logger.Debug("SIPTransport Shutdown Complete.");
             }
@@ -669,13 +604,7 @@ namespace SIPSorcery.SIP
             sipTransaction.LastTransmit = DateTime.Now;
             sipTransaction.DeliveryPending = true;
 
-            if (!m_reliableTransmissions.ContainsKey(sipTransaction.TransactionId))
-            {
-                lock (m_reliableTransmissions)
-                {
-                    m_reliableTransmissions.Add(sipTransaction.TransactionId, sipTransaction);
-                }
-            }
+            m_reliableTransmissions.TryAdd(sipTransaction.TransactionId, sipTransaction);
 
             if (!m_reliablesThreadRunning)
             {
@@ -818,28 +747,28 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                while (!m_closed)
+                int counter = 0;
+
+                foreach (IncomingMessage incomingMessage in m_inMessageQueue.GetConsumingEnumerable())
                 {
-                    m_transactionEngine.RemoveExpiredTransactions();
-
-                    while (m_inMessageQueue.Count > 0)
+                    if (incomingMessage != null)
                     {
-                        IncomingMessage incomingMessage = null;
-
-                        lock (m_inMessageQueue)
-                        {
-                            incomingMessage = m_inMessageQueue.Dequeue();
-                        }
-
-                        if (incomingMessage != null)
-                        {
-                            SIPMessageReceived(incomingMessage.LocalSIPChannel, incomingMessage.RemoteEndPoint, incomingMessage.Buffer);
-                        }
+                        SIPMessageReceived(incomingMessage.LocalSIPChannel, incomingMessage.RemoteEndPoint, incomingMessage.Buffer);
                     }
 
-                    m_inMessageArrived.Reset();
-                    //m_inMessageArrived.WaitOne(MAX_QUEUEWAIT_PERIOD, false);
-                    m_inMessageArrived.WaitOne(MAX_QUEUEWAIT_PERIOD);
+                    if (m_closed)
+                    {
+                        break;
+                    }
+                    else if (counter > NUMBER_MESSAGES_CLEANSE_TRANSACTIONS)
+                    {
+                        counter = 0;
+                        m_transactionEngine.RemoveExpiredTransactions();
+                    }
+                    else
+                    {
+                        counter++;
+                    }
                 }
 
                 logger.Warn("SIPTransport process received messsages thread stopped.");
@@ -850,242 +779,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        /*private void ProcessMetrics()
-        {
-            try
-            {
-                logger.Debug("SIPTransport ProcessMetrics thread started.");
-                
-                while (!m_closed)
-                {
-                    string sampleTimeString = DateTime.Now.ToString("dd MMM yyyy HH:mm:ss");
-                    
-                    if (m_sipTransportMeasurements.Count > 0)
-                    {
-                        lock (m_sipTransportMeasurements)
-                        {
-                            // Remove all samples older than current sample period.
-                            while (m_sipTransportMeasurements.Count > 0 && DateTime.Now.Subtract(m_sipTransportMeasurements.Peek().ReceivedAt).TotalSeconds > METRICS_SAMPLE_PERIOD)
-                            {
-                                m_sipTransportMeasurements.Dequeue();
-                            }
-
-                            if (m_sipTransportMeasurements.Count > 0)
-                            {
-                                #region Collate samples into single measurement.
-
-                                // Take sample.
-                                DateTime startSampleDate = DateTime.Now.AddSeconds(-1 * METRICS_SAMPLE_PERIOD);
-                                DateTime endSampleDate = DateTime.Now;
-                                int totalPackets = 0;
-                                double totalParsedPackets = 0;
-                                double totalParseTime = 0;
-                                int sipMessageCount = 0;
-                                int sipRequestCount = 0;
-                                int sipResponseCount = 0;
-                                int sipRequestSentCount = 0;
-                                int sipResponseSentCount = 0;
-                                int discardsCount = 0;
-                                int badSIPCount = 0;
-                                int tooLargeCount = 0;
-                                int stunRequestsCount = 0;
-                                int unrecognisedCount = 0;
-                                Dictionary<string, int> topTalkers = new Dictionary<string, int>();
-                                Dictionary<SIPMethodsEnum, int> sipMessageTypes = new Dictionary<SIPMethodsEnum, int>();
-
-                                SIPTransportMetric[] measurements = m_sipTransportMeasurements.ToArray();
-                                foreach (SIPTransportMetric measurement in measurements)
-                                {
-                                    totalPackets++;
-
-                                    if (measurement.RemoteEndPoint != null)
-                                    {
-                                        string talker = measurement.RemoteEndPoint.ToString();
-                                        if(topTalkers.ContainsKey(talker))
-                                        {
-                                            topTalkers[talker] = topTalkers[talker] + 1;
-                                        }
-                                        else
-                                        {
-                                            topTalkers.Add(talker, 1);
-                                        }
-                                    }
-
-                                    if (!measurement.Originated && !measurement.Discard)
-                                    {
-                                        totalParsedPackets++;
-                                        totalParseTime += measurement.ParseDuration;
-                                    }
-
-                                    if (measurement.Discard)
-                                    {
-                                        discardsCount++;
-                                    }
-                                    else if (measurement.BadSIPMessage)
-                                    {
-                                        badSIPCount++;
-                                    }
-                                    else if (measurement.UnrecognisedPacket)
-                                    {
-                                        unrecognisedCount++;
-                                    }
-                                    else if (measurement.STUNRequest)
-                                    {
-                                        stunRequestsCount++;
-                                    }
-                                    else if (measurement.TooLarge)
-                                    {
-                                        tooLargeCount++;
-                                    }
-                                    else
-                                    {
-                                        sipMessageCount++;
-
-                                        if (sipMessageTypes.ContainsKey(measurement.SIPMethod))
-                                        {
-                                            sipMessageTypes[measurement.SIPMethod] = sipMessageTypes[measurement.SIPMethod] + 1;
-                                        }
-                                        else
-                                        {
-                                            sipMessageTypes.Add(measurement.SIPMethod, 1);
-                                        }
-
-                                        if (measurement.SIPMessageType == SIPMessageTypesEnum.Request)
-                                        {
-                                            if (measurement.Originated)
-                                            {
-                                                sipRequestSentCount++;
-                                            }
-                                            else
-                                            {
-                                                sipRequestCount++;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            if (measurement.Originated)
-                                            {
-                                                sipResponseSentCount++;
-                                            }
-                                            else
-                                            {
-                                                sipResponseCount++;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                #endregion
-                                
-                                double avgParseTime = 0;
-                                if (totalParsedPackets > 0)
-                                {
-                                    avgParseTime = totalParseTime / totalParsedPackets;
-                                }
-
-                                metricsLogger.Info(
-                                    SIPTransportMetric.PACKET_VOLUMES_KEY + "," +
-                                    sampleTimeString + "," +
-                                    METRICS_SAMPLE_PERIOD + "," +
-                                    totalPackets + "," +
-                                    sipRequestCount + "," +
-                                    sipResponseCount + "," +
-                                    sipRequestSentCount + "," +
-                                    sipResponseSentCount + "," +
-                                    //SIPTransaction.Count + "," +
-                                    unrecognisedCount + "," +
-                                    badSIPCount + "," +
-                                    stunRequestsCount + "," +
-                                    discardsCount + "," +
-                                    tooLargeCount + "," +
-                                    totalParseTime.ToString("0.###") + "," +
-                                    avgParseTime.ToString("0.###"));
-
-                                #region Build SIP methods metric string.
-
-                                if (sipMessageTypes.Count > 0)
-                                {
-                                    string methodCountStr = SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString  + "," + METRICS_SAMPLE_PERIOD;
-                                    foreach (KeyValuePair<SIPMethodsEnum, int> methodCount in sipMessageTypes)
-                                    {
-                                        methodCountStr += "," + methodCount.Key + "=" + methodCount.Value;
-                                    }
-                                    metricsLogger.Info(methodCountStr);
-                                }
-                                else
-                                {
-                                    metricsLogger.Info(SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                                }
-
-                                #endregion
-
-                                #region Build top talkers metric string.
-
-                                if (topTalkers.Count > 0)
-                                {
-                                    string topTalkersStr = SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD;
-
-                                    for (int index = 0; index < 10; index++)
-                                    {
-                                        if (topTalkers.Count == 0)
-                                        {
-                                            break;
-                                        }
-
-                                        string curTopTalker = null;
-                                        int curTopTalkerCount = 0;
-                                        foreach (KeyValuePair<string, int> topTalker in topTalkers)
-                                        {
-                                            if (topTalker.Value > curTopTalkerCount)
-                                            {
-                                                curTopTalker = topTalker.Key;
-                                                curTopTalkerCount = topTalker.Value;
-                                            }
-                                        }
-                                        topTalkersStr += "," + curTopTalker + "=" + curTopTalkerCount;
-                                        topTalkers.Remove(curTopTalker);
-                                    }
-                                    metricsLogger.Info(topTalkersStr);
-                                }
-                                else
-                                {
-                                    metricsLogger.Info(SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                                }
-
-                                #endregion
-                            }
-                            else
-                            {
-                                //metricsLogger.Info(SIPTransportMetric.PACKET_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD + ",0,0,0,0,0,0," + SIPTransaction.Count + ",0,0,0,0,0,0");
-                                metricsLogger.Info(SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                                metricsLogger.Info(SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                            }
-                        }
-                    }
-                    else
-                    {
-                       // metricsLogger.Info(SIPTransportMetric.PACKET_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD + ",0,0,0,0,0,0," + SIPTransaction.Count + ",0,0,0,0,0,0");
-                        metricsLogger.Info(SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                        metricsLogger.Info(SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                    }
-
-                    //m_stopMetrics.WaitOne(METRICS_SAMPLE_PERIOD * 1000, false);
-                    m_stopMetrics.WaitOne(METRICS_SAMPLE_PERIOD * 1000);
-                }
-
-                logger.Debug("SIPTransport ProcessMetrics thread stopped.");
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SIPTransport ProcessMetrics. " + excp.Message);
-            }
-        }*/
-
         private void ProcessPendingReliableTransactions()
         {
             try
             {
                 m_reliablesThreadRunning = true;
+                SIPTransaction completedTransaction = null;
 
                 while (!m_closed)
                 {
@@ -1098,84 +797,67 @@ namespace SIPSorcery.SIP
 
                     try
                     {
-                        List<string> completedTransactions = new List<string>();
-
-                        lock (m_reliableTransmissions)
+                        foreach (SIPTransaction transaction in m_reliableTransmissions.Values)
                         {
-                            foreach (SIPTransaction transaction in m_reliableTransmissions.Values)
+                            if (!transaction.DeliveryPending)
                             {
-                                if (!transaction.DeliveryPending)
+                                m_reliableTransmissions.TryRemove(transaction.TransactionId, out completedTransaction);
+                            }
+                            else if (transaction.TransactionState == SIPTransactionStatesEnum.Terminated ||
+                                    transaction.TransactionState == SIPTransactionStatesEnum.Confirmed ||
+                                    transaction.TransactionState == SIPTransactionStatesEnum.Cancelled ||
+                                    transaction.HasTimedOut)
+                            {
+                                transaction.DeliveryPending = false;
+                                m_reliableTransmissions.TryRemove(transaction.TransactionId, out completedTransaction);
+                            }
+                            else
+                            {
+                                if (DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds >= m_t6)
                                 {
-                                    completedTransactions.Add(transaction.TransactionId);
-                                }
-                                else if (transaction.TransactionState == SIPTransactionStatesEnum.Terminated ||
-                                        transaction.TransactionState == SIPTransactionStatesEnum.Confirmed ||
-                                        transaction.TransactionState == SIPTransactionStatesEnum.Cancelled ||
-                                        transaction.HasTimedOut)
-                                {
+                                    //logger.Debug("Request timed out " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ".");
+
                                     transaction.DeliveryPending = false;
-                                    completedTransactions.Add(transaction.TransactionId);
+                                    transaction.DeliveryFailed = true;
+                                    transaction.TimedOutAt = DateTime.Now;
+                                    transaction.HasTimedOut = true;
+                                    transaction.FireTransactionTimedOut();
+                                    m_reliableTransmissions.TryRemove(transaction.TransactionId, out completedTransaction);
                                 }
                                 else
                                 {
-                                    if (DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds >= m_t6)
-                                    {
-                                        //logger.Debug("Request timed out " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ".");
+                                    double nextTransmitMilliseconds = Math.Pow(2, transaction.Retransmits - 1) * m_t1;
+                                    nextTransmitMilliseconds = (nextTransmitMilliseconds > m_t2) ? m_t2 : nextTransmitMilliseconds;
+                                    //logger.Debug("Time since retransmit " + transaction .RequestTransmits + " for " + transaction.InitialRequest.Method + " " + transaction.InitialRequest.URI.ToString() + " " + DateTime.Now.Subtract(transaction.LastRequestTransmit).TotalMilliseconds + ".");
 
-                                        transaction.DeliveryPending = false;
-                                        transaction.DeliveryFailed = true;
-                                        transaction.TimedOutAt = DateTime.Now;
-                                        transaction.HasTimedOut = true;
-                                        transaction.FireTransactionTimedOut();
-                                        completedTransactions.Add(transaction.TransactionId);
-                                    }
-                                    else
+                                    if (DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds >= nextTransmitMilliseconds)
                                     {
-                                        double nextTransmitMilliseconds = Math.Pow(2, transaction.Retransmits - 1) * m_t1;
-                                        nextTransmitMilliseconds = (nextTransmitMilliseconds > m_t2) ? m_t2 : nextTransmitMilliseconds;
-                                        //logger.Debug("Time since retransmit " + transaction .RequestTransmits + " for " + transaction.InitialRequest.Method + " " + transaction.InitialRequest.URI.ToString() + " " + DateTime.Now.Subtract(transaction.LastRequestTransmit).TotalMilliseconds + ".");
+                                        transaction.Retransmits = transaction.Retransmits + 1;
+                                        transaction.LastTransmit = DateTime.Now;
 
-                                        if (DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds >= nextTransmitMilliseconds)
+                                        if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionState == SIPTransactionStatesEnum.Completed)
                                         {
-                                            transaction.Retransmits = transaction.Retransmits + 1;
-                                            transaction.LastTransmit = DateTime.Now;
+                                            //logger.Debug("Retransmit " + transaction.Retransmits + "(" + transaction.TransactionId + ") for INVITE reponse " + transaction.TransactionRequest.URI.ToString() + ", last=" + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + "ms, first=" + DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds + "ms.");
 
-                                            if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionState == SIPTransactionStatesEnum.Completed)
+                                            // This is an INVITE transaction that wants to send a reliable response, once the ACK is received it will change the transaction state to confirmed.
+                                            //SIPViaHeader topViaHeader = transaction.TransactionFinalResponse.Header.Vias.TopViaHeader;
+                                            //SendResponse(transaction.TransactionFinalResponse);
+                                            //transaction.ResponseRetransmit();
+                                            transaction.RetransmitFinalResponse();
+                                        }
+                                        else
+                                        {
+                                            //logger.Debug("Retransmit " + transaction.Retransmits + " for request " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ", last=" + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + "ms, first=" + DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds + "ms.");
+                                            if (transaction.OutboundProxy != null)
                                             {
-                                                //logger.Debug("Retransmit " + transaction.Retransmits + "(" + transaction.TransactionId + ") for INVITE reponse " + transaction.TransactionRequest.URI.ToString() + ", last=" + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + "ms, first=" + DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds + "ms.");
-
-                                                // This is an INVITE transaction that wants to send a reliable response, once the ACK is received it will change the transaction state to confirmed.
-                                                //SIPViaHeader topViaHeader = transaction.TransactionFinalResponse.Header.Vias.TopViaHeader;
-                                                //SendResponse(transaction.TransactionFinalResponse);
-                                                //transaction.ResponseRetransmit();
-                                                transaction.RetransmitFinalResponse();
+                                                SendRequest(transaction.OutboundProxy, transaction.TransactionRequest);
                                             }
                                             else
                                             {
-                                                //logger.Debug("Retransmit " + transaction.Retransmits + " for request " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ", last=" + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + "ms, first=" + DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds + "ms.");
-                                                if (transaction.OutboundProxy != null)
-                                                {
-                                                    SendRequest(transaction.OutboundProxy, transaction.TransactionRequest);
-                                                }
-                                                else
-                                                {
-                                                    SendRequest(transaction.RemoteEndPoint, transaction.TransactionRequest);
-                                                }
-                                                transaction.RequestRetransmit();
+                                                SendRequest(transaction.RemoteEndPoint, transaction.TransactionRequest);
                                             }
+                                            transaction.RequestRetransmit();
                                         }
-                                    }
-                                }
-                            }
-
-                            // Remove timed out or complete transactions from reliable transmissions list.
-                            if (completedTransactions.Count > 0)
-                            {
-                                foreach (string transactionId in completedTransactions)
-                                {
-                                    if (m_reliableTransmissions.ContainsKey(transactionId))
-                                    {
-                                        m_reliableTransmissions.Remove(transactionId);
                                     }
                                 }
                             }
@@ -1204,6 +886,7 @@ namespace SIPSorcery.SIP
         private void SIPMessageReceived(SIPChannel sipChannel, SIPEndPoint remoteEndPoint, byte[] buffer)
         {
             string rawSIPMessage = null;
+            SIPTransaction completedTransaction = null;
 
             try
             {
@@ -1252,7 +935,7 @@ namespace SIPSorcery.SIP
 #if !SILVERLIGHT
                                 if (PerformanceMonitorPrefix != null)
                                 {
-                                   // SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
+                                    // SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
                                 }
 #endif
 
@@ -1303,13 +986,7 @@ namespace SIPSorcery.SIP
                                             if (transaction.TransactionState != SIPTransactionStatesEnum.Completed)
                                             {
                                                 transaction.DeliveryPending = false;
-                                                if (m_reliableTransmissions.ContainsKey(transaction.TransactionId))
-                                                {
-                                                    lock (m_reliableTransmissions)
-                                                    {
-                                                        m_reliableTransmissions.Remove(transaction.TransactionId);
-                                                    }
-                                                }
+                                                m_reliableTransmissions.TryRemove(transaction.TransactionId, out completedTransaction);
                                             }
 
                                             transaction.GotResponse(sipChannel.SIPChannelEndPoint, remoteEndPoint, sipResponse);
@@ -1342,10 +1019,10 @@ namespace SIPSorcery.SIP
                                     try
                                     {
                                         SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessage);
-                                        
+
                                         SIPValidationFieldsEnum sipRequestErrorField = SIPValidationFieldsEnum.Unknown;
                                         string sipRequestValidationError = null;
-                                        if(!sipRequest.IsValid(out sipRequestErrorField, out sipRequestValidationError) )
+                                        if (!sipRequest.IsValid(out sipRequestErrorField, out sipRequestValidationError))
                                         {
                                             throw new SIPValidationException(sipRequestErrorField, sipRequestValidationError);
                                         }
@@ -1761,7 +1438,7 @@ namespace SIPSorcery.SIP
             request.Header = header;
             header.CSeqMethod = method;
             header.Allow = ALLOWED_SIP_METHODS;
-            
+
             SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
             header.Vias.PushViaHeader(viaHeader);
 

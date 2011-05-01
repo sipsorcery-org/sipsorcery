@@ -147,6 +147,18 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public static SIPEndPoint TryParse(string sipEndPointStr)
+        {
+            try
+            {
+                return ParseSIPEndPoint(sipEndPointStr);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         /// <summary>
         /// Reverses ToString().
         /// </summary>

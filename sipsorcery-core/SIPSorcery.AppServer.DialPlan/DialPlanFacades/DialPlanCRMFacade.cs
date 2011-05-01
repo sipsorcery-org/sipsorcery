@@ -154,7 +154,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
             catch (Exception excp)
             {
-                LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Exception attempting to add Highrise call received note.", m_context.Owner));
+                LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Exception attempting to add Highrise call received note. " + excp.Message, m_context.Owner));
             }
         }
     }
