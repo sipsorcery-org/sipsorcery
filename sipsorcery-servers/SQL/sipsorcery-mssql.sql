@@ -28,12 +28,10 @@ create table customers
  emailaddressconfirmed bit not null default 0,
  invitecode varchar(36) null,
  inserted datetimeoffset not null,
-  passwordresetid varchar(36) null,
+ passwordresetid varchar(36) null,
  passwordresetidsetat varchar(33) null,			-- Time the password reset id was generated at.
- usernamerecoveryid varchar(36) null,
- usernamerecoveryidsetat varchar(33) null,		-- Time the username recovery id was generated at.
- usernamerecoveryfailurecount int null,			-- Number of failed attempts at answering the security question when attempting a username recovery.
- usernamerecoverylastattemptat varchar(33) null,-- Time the last username recovery was attempted at.
+ apikey varchar(96) null,
+ servicelevel varchar(64) not null default 'Free',
  Primary Key(id),
  Unique(customerusername)
 );
@@ -164,7 +162,7 @@ create table sipproviderbindings
  registrarsipsocket varchar(256),
  cseq int not null,
  Primary Key(id),
- Foreign Key(owner) references customers(customerusername),
+ Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Foreign Key(providerid) references sipproviders(id) on delete cascade on update cascade
 );
 
@@ -183,6 +181,7 @@ create table sipdialplans
  maxexecutioncount int not null,								-- The mamimum number of simultaneous executions of the dialplan that are permitted.
  executioncount int not null,									-- The current number of dialplan executions in progress.
  authorisedapps varchar(2048),									-- A semi-colon delimited list of privileged apps that this dialplan is authorised to use.
+ acceptnoninvite bit not null default 0,						-- If true the dialplan will accept non-INVITE requests.
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Unique(owner, dialplanname)
@@ -249,6 +248,64 @@ create table cdr
  hunguptime datetimeoffset null default null,	-- The time the call was hungup.
  hungupreason varchar(512),						-- The SIP response Reason header on the BYE request if present.
  Primary Key(id)
+);
+
+-- Dial Plan Wizard Tables.
+
+create table sipdialplanlookups
+(
+  id varchar(36) not null,
+  owner varchar(32) not null,
+  dialplanid varchar(36) not null,				-- The wizard dialplan the lookup entries will be used in.
+  lookupkey varchar(128) not null,
+  lookupvalue varchar(128) null,
+  description varchar(256) null,
+  lookuptype int not null,						-- 1=SpeedDial, 2=CNAM, 3=ENUM
+  Primary Key(id),
+  Foreign Key(dialplanid) references SIPDialPlans(id)
+);
+
+create table sipdialplanproviders
+(
+  id varchar(36) not null,
+  owner varchar(32) not null,
+  dialplanid varchar(36) not null,				-- The wizard dialplan the provider entries will be used in.
+  providername varchar(32) not null,
+  providerprefix varchar(8) null,
+  providerdialstring varchar(1024) not null,
+  providerdescription varchar(256) null,
+  Primary Key(id),
+  Foreign Key(dialplanid) references SIPDialPlans(id)
+);
+
+create table sipdialplanroutes
+(
+  id varchar(36) not null,
+  owner varchar(32) not null,
+  dialplanid varchar(36) not null,				-- The wizard dialplan the route entries will be used in.
+  routename varchar(32) not null,
+  routepattern varchar(256) not null,
+  routedestination varchar(1024) not null,
+  routedescription varchar(256) null,
+  Primary Key(id),
+  Foreign Key(dialplanid) references SIPDialPlans(id)
+);
+
+create table sipdialplanoptions
+(
+  id varchar(36) not null,
+  owner varchar(32) not null,
+  dialplanid varchar(36) not null,				-- The wizard dialplan the options will be used in.
+  timezone varchar(128) null,
+  countrycode int null,
+  areacode int null,
+  allowedcountrycodes varchar(1024) null,
+  excludedprefixes varchar(2048) null,
+  enumservers varchar(2048) null,
+  whitepageskey varchar(256) null,
+  enablesafeguards bit default 0 not null,
+  Primary Key(id),
+  Foreign Key(dialplanid) references SIPDialPlans(id)
 );
 
 create index customers_custid_index on customers(customerusername);

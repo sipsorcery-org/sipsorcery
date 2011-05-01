@@ -1,3 +1,5 @@
+use sipsorcery;
+
 -- Maps to class SIPSorcery.CRM.Customer.
 create table customers
 (
@@ -27,10 +29,8 @@ create table customers
  inserted varchar(33) not null,
  passwordresetid varchar(36) null,
  passwordresetidsetat varchar(33) null,			-- Time the password reset id was generated at.
- usernamerecoveryid varchar(36) null,
- usernamerecoveryidsetat varchar(33) null,		-- Time the username recovery id was generated at.
- usernamerecoveryfailurecount int null,			-- Number of failed attempts at answering the security question when attempting a username recovery.
- usernamerecoverylastattemptat varchar(33) null,-- Time the last username recovery was attempted at.
+ apikey varchar(96) null,
+ servicelevel varchar(64) not null default 'Free',
  Primary Key(id),
  Unique(customerusername)
 );
@@ -161,7 +161,7 @@ create table sipproviderbindings
  registrarsipsocket varchar(256),
  cseq int not null,
  Primary Key(id),
- Foreign Key(owner) references customers(customerusername),
+ Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Foreign Key(providerid) references sipproviders(id) on delete cascade on update cascade
 );
 
@@ -180,6 +180,7 @@ create table sipdialplans
  maxexecutioncount int not null,								-- The mamimum number of simultaneous executions of the dialplan that are permitted.
  executioncount int not null,									-- The current number of dialplan executions in progress.
  authorisedapps varchar(2048),									-- A semi-colon delimited list of privileged apps that this dialplan is authorised to use.
+ acceptnoninvite bit not null default 0,						-- If true the dialplan will accept non-INVITE requests.
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Unique(owner, dialplanname)
@@ -254,43 +255,46 @@ create table sipdialplanlookups
 (
   id varchar(36) not null,
   owner varchar(32) not null,
-  dialplanname varchar(64),				-- The wizard dialplan the lookup entries will be used in.
+  dialplanid varchar(36) not null,				-- The wizard dialplan the lookup entries will be used in.
   lookupkey varchar(128) not null,
   lookupvalue varchar(128) null,
   description varchar(256) null,
   lookuptype int not null,						-- 1=SpeedDial, 2=CNAM, 3=ENUM
-  Primary Key(id)
+  Primary Key(id),
+  Foreign Key(dialplanid) references SIPDialPlans(id) on delete cascade on update cascade
 );
 
 create table sipdialplanproviders
 (
   id varchar(36) not null,
   owner varchar(32) not null,
-  dialplanname varchar(64),				-- The wizard dialplan the provider entries will be used in.
+  dialplanid varchar(36) not null,				-- The wizard dialplan the provider entries will be used in.
   providername varchar(32) not null,
   providerprefix varchar(8) null,
   providerdialstring varchar(1024) not null,
   providerdescription varchar(256) null,
-  Primary Key(id)
+  Primary Key(id),
+  Foreign Key(dialplanid) references SIPDialPlans(id) on delete cascade on update cascade
 );
 
 create table sipdialplanroutes
 (
   id varchar(36) not null,
   owner varchar(32) not null,
-  dialplanname varchar(64),				-- The wizard dialplan the route entries will be used in.
+  dialplanid varchar(36) not null,				-- The wizard dialplan the route entries will be used in.
   routename varchar(32) not null,
   routepattern varchar(256) not null,
   routedestination varchar(1024) not null,
   routedescription varchar(256) null,
-  Primary Key(id)
+  Primary Key(id),
+  Foreign Key(dialplanid) references SIPDialPlans(id) on delete cascade on update cascade
 );
 
 create table sipdialplanoptions
 (
   id varchar(36) not null,
   owner varchar(32) not null,
-  dialplanname varchar(64),				-- The wizard dialplan the options will be used in.
+  dialplanid varchar(36) not null,				-- The wizard dialplan the options will be used in.
   timezone varchar(128) null,
   countrycode int null,
   areacode int null,
@@ -299,15 +303,9 @@ create table sipdialplanoptions
   enumservers varchar(2048) null,
   whitepageskey varchar(256) null,
   enablesafeguards bit default 0 not null,
-  Primary Key(id)
+  Primary Key(id),
+  Foreign Key(dialplanid) references SIPDialPlans(id) on delete cascade on update cascade
 );
-
-create index customers_custid_index on customers(customerusername);
-create index cdrs_lastname_index on cdr(created);
-create index cdrs_owner_index on cdr(owner);
-create index providerbindings_nextregtime_index on sipproviderbindings(nextregistrationtime);
-create index regbindings_sipaccid_index on sipregistrarbindings(sipaccountid);
-create index regbindings_contact_index on sipregistrarbindings(contacturi);
 
 --insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;174.129.236.7;174.129.236.7:5060', null, '2010-02-09T13:01:21.3540000+00:00');
 -- insert into sipdomains values ('9822C7A7-5358-42DD-8905-DC7ABAE3EC3A', 'demo.sipsorcery.com', 'local;demo.sipsorcery.com:5060;199.230.56.92;199.230.56.92:5060', null, '2010-10-15T00:00:00.0000000+00:00');
@@ -321,3 +319,10 @@ create table dialplandata
   datavalue varchar(1024) not null,
   Primary Key(dataowner, datakey)
 );
+
+create index cdrs_lastname_index on cdr(created);
+create index cdrs_owner_index on cdr(owner);
+create index providerbindings_nextregtime_index on sipproviderbindings(nextregistrationtime);
+create index regbindings_contact_index on sipregistrarbindings(contacturi);
+create index customers_custid_index on customers(customerusername);
+create index regbindings_sipaccid_index on sipregistrarbindings(sipaccountid);
