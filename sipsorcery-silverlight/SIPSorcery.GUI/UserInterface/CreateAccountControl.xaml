@@ -4,388 +4,69 @@
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	xmlns:sys="clr-namespace:System;assembly=System" 
+	xmlns:sdk="http://schemas.microsoft.com/winfx/2006/xaml/presentation/sdk" 
+	xmlns:System="clr-namespace:System;assembly=mscorlib" 
+	xmlns:ssentities="clr-namespace:SIPSorcery.Entities;assembly=SIPSorcery.Entities.Client" 
+	xmlns:toolkit="http://schemas.microsoft.com/winfx/2006/xaml/presentation/toolkit"
 	mc:Ignorable="d"
-	x:Class="SIPSorcery.CreateAccountControl" Width="587" Height="519">
+	x:Class="SIPSorcery.CreateAccountControl" Width="587">
+	
+	<UserControl.Resources>
+		<ssentities:SecurityQuestions x:Key="SecurityQuestions" />
+		<ssentities:TimezonesList x:Key="TimezonesList" />
+		<ssentities:CountriesList x:Key="CountriesList" />
+	</UserControl.Resources>
 
-	<Grid x:Name="LayoutRoot">
-		<TextBox x:Name="m_usernameTextBox" Text="" TextWrapping="Wrap" TabIndex="7" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,166,244,0" VerticalAlignment="Top"/>
-		<TextBlock x:Name="m_usernameLabel" Height="16" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Username" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,166,0,0" VerticalAlignment="Top"/>
-		<TextBlock Width="Auto" FontSize="26.667" Foreground="{StaticResource InfoTextBrush}" Text="Create New Account" TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,8,0,0" VerticalAlignment="Top"/>
-		<TextBlock x:Name="m_firstNameLabel" Height="16" Width="65.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="First Name" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,88,0,0" VerticalAlignment="Top"/>
-		<TextBox x:Name="m_firstNameTextBox" Text="" TextWrapping="Wrap" TabIndex="4" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,88,244,0" VerticalAlignment="Top"/>
-		<TextBlock x:Name="m_lastNameLabel" Height="16" Width="65.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Last Name" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,114,0,0" VerticalAlignment="Top"/>
-		<TextBox x:Name="m_lastNameTextBox" Text="" TextWrapping="Wrap" TabIndex="5" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,114,244,0" VerticalAlignment="Top"/>
-		<PasswordBox x:Name="m_passwordTextBox" TabIndex="8" TabNavigation="Local" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,192,244,0" VerticalAlignment="Top" Height="20"/>
-		<TextBlock x:Name="m_passwordLabel" Height="16" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Password" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,192,0,0" VerticalAlignment="Top"/>
-		<TextBlock x:Name="m_retypedPasswordLabel" Width="97.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Retype Password" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,218,0,0" VerticalAlignment="Top"/>
-		<PasswordBox x:Name="m_retypePasswordTextBox" TabIndex="9" TabNavigation="Local" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,219,244,0" Height="20" VerticalAlignment="Top" d:LayoutOverrides="Height"/>
-		<TextBox x:Name="m_emailAddressTextBox" Text="" TextWrapping="Wrap" TabIndex="6" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,140,244,0" VerticalAlignment="Top"/>
-		<TextBlock x:Name="m_emailAddressLabel" Height="16" Width="81.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Email Address" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,140,0,0" VerticalAlignment="Top"/>
-		<TextBlock x:Name="m_securityQuestionLabel" Width="110.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Security Question" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,246,0,0" VerticalAlignment="Top" Height="16"/>
-		<ComboBox Margin="145,244,144,0" VerticalAlignment="Top" Height="25" x:Name="m_securityQuestionListBox" TabIndex="10" SelectedIndex="0">
-			<TextBlock FontSize="11" Text="What is your mother's maiden name?" />
-			<TextBlock FontSize="11" Text="What is your favourite colour?" />
-			<TextBlock FontSize="11" Text="Which city were you born in?" />
-			<TextBlock FontSize="11" Text="What was the name of your high school?" />
-			<TextBlock FontSize="11" Text="Who is your favourite philosopher?" />
-		</ComboBox>
-		<TextBlock x:Name="m_securityAnswerLabel" Width="97.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Security Answer" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,275,0,0" Height="16" VerticalAlignment="Top"/>
-		<ComboBox Margin="145,327,144,0" VerticalAlignment="Top" Height="25" x:Name="m_countryListBox" TabIndex="13" SelectedIndex="14">
-			<TextBlock FontSize="11" Text="Afghanistan" />
-			<TextBlock FontSize="11" Text="Albania" />
-			<TextBlock FontSize="11" Text="Algeria" />
-			<TextBlock FontSize="11" Text="American Samoa" />
-			<TextBlock FontSize="11" Text="Andorra" />
-			<TextBlock FontSize="11" Text="Angola" />
-			<TextBlock FontSize="11" Text="Anguilla" />
-			<TextBlock FontSize="11" Text="Antartica" />
-			<TextBlock FontSize="11" Text="Antigua and Barbuda" />
-			<TextBlock FontSize="11" Text="Argentina" />
-			<TextBlock FontSize="11" Text="Armenia" />
-			<TextBlock FontSize="11" Text="Aruba" />
-			<TextBlock FontSize="11" Text="Ashmore and Cartier Islands" />
-			<TextBlock FontSize="11" Text="Atlantic Ocean" />
-			<TextBlock FontSize="11" Text="Australia" />
-			<TextBlock FontSize="11" Text="Austria" />
-			<TextBlock FontSize="11" Text="Azerbaijan" />
-			<TextBlock FontSize="11" Text="Bahamas" />
-			<TextBlock FontSize="11" Text="Bahrain" />
-			<TextBlock FontSize="11" Text="Baker Island" />
-			<TextBlock FontSize="11" Text="Bangladesh" />
-			<TextBlock FontSize="11" Text="Barbados" />
-			<TextBlock FontSize="11" Text="Bassas da India" />
-			<TextBlock FontSize="11" Text="Belarus" />
-			<TextBlock FontSize="11" Text="Belgium" />
-			<TextBlock FontSize="11" Text="Benin" />
-			<TextBlock FontSize="11" Text="Bermuda" />
-			<TextBlock FontSize="11" Text="Bhutan" />
-			<TextBlock FontSize="11" Text="Bhutan" />
-			<TextBlock FontSize="11" Text="Bolivia" />
-			<TextBlock FontSize="11" Text="Bosnia and Herzegovina" />
-			<TextBlock FontSize="11" Text="Botswana" />
-			<TextBlock FontSize="11" Text="Bouvet Island" />
-			<TextBlock FontSize="11" Text="Brazil" />
-			<TextBlock FontSize="11" Text="British Virgin Islands" />
-			<TextBlock FontSize="11" Text="Brunei" />
-			<TextBlock FontSize="11" Text="Bulgaria" />
-			<TextBlock FontSize="11" Text="Burkina Faso" />
-			<TextBlock FontSize="11" Text="Burma" />
-			<TextBlock FontSize="11" Text="Burundi" />
-			<TextBlock FontSize="11" Text="Cambodia" />
-			<TextBlock FontSize="11" Text="Cameroon" />
-			<TextBlock FontSize="11" Text="Canada" />
-			<TextBlock FontSize="11" Text="Cape Verde" />
-			<TextBlock FontSize="11" Text="Cayman Islands" />
-			<TextBlock FontSize="11" Text="Central African Republic" />
-			<TextBlock FontSize="11" Text="Chad" />
-			<TextBlock FontSize="11" Text="Chile" />
-			<TextBlock FontSize="11" Text="China" />
-			<TextBlock FontSize="11" Text="Christmas Island" />
-			<TextBlock FontSize="11" Text="Clipperton Island" />
-			<TextBlock FontSize="11" Text="Cocos Keeling Islands" />
-			<TextBlock FontSize="11" Text="Colombia" />
-			<TextBlock FontSize="11" Text="Comoros" />
-			<TextBlock FontSize="11" Text="Congo" />
-			<TextBlock FontSize="11" Text="Cook Islands" />
-			<TextBlock FontSize="11" Text="Coral Sea Islands" />
-			<TextBlock FontSize="11" Text="Costa Rica" />
-			<TextBlock FontSize="11" Text="Cote divoire" />
-			<TextBlock FontSize="11" Text="Croatia" />
-			<TextBlock FontSize="11" Text="Cuba" />
-			<TextBlock FontSize="11" Text="Cyprus" />
-			<TextBlock FontSize="11" Text="Czech Republic" />
-			<TextBlock FontSize="11" Text="Denmark" />
-			<TextBlock FontSize="11" Text="Djibouti" />
-			<TextBlock FontSize="11" Text="Dominica" />
-			<TextBlock FontSize="11" Text="Dominican Republic" />
-			<TextBlock FontSize="11" Text="Ecuador" />
-			<TextBlock FontSize="11" Text="Egypt" />
-			<TextBlock FontSize="11" Text="El Salvador" />
-			<TextBlock FontSize="11" Text="Equatorial Guinea" />
-			<TextBlock FontSize="11" Text="Eritrea" />
-			<TextBlock FontSize="11" Text="Estonia" />
-			<TextBlock FontSize="11" Text="Ethiopia" />
-			<TextBlock FontSize="11" Text="Europa Island" />
-			<TextBlock FontSize="11" Text="Falkland Islands" />
-			<TextBlock FontSize="11" Text="Faroe Islands" />
-			<TextBlock FontSize="11" Text="Fiji" />
-			<TextBlock FontSize="11" Text="Finland" />
-			<TextBlock FontSize="11" Text="France" />
-			<TextBlock FontSize="11" Text="French Guiana" />
-			<TextBlock FontSize="11" Text="French Polynesia" />
-			<TextBlock FontSize="11" Text="Gabon" />
-			<TextBlock FontSize="11" Text="Gambia" />
-			<TextBlock FontSize="11" Text="Gaza" />
-			<TextBlock FontSize="11" Text="Georgia" />
-			<TextBlock FontSize="11" Text="Germany" />
-			<TextBlock FontSize="11" Text="Ghana" />
-			<TextBlock FontSize="11" Text="Gibraltar" />
-			<TextBlock FontSize="11" Text="Glorioso Islands" />
-			<TextBlock FontSize="11" Text="Greece" />
-			<TextBlock FontSize="11" Text="Greenland" />
-			<TextBlock FontSize="11" Text="Grenada" />
-			<TextBlock FontSize="11" Text="Guadeloupe" />
-			<TextBlock FontSize="11" Text="Guam" />
-			<TextBlock FontSize="11" Text="Guatemala" />
-			<TextBlock FontSize="11" Text="Guernsey" />
-			<TextBlock FontSize="11" Text="Guinea" />
-			<TextBlock FontSize="11" Text="Guinea Bissau" />
-			<TextBlock FontSize="11" Text="Guyana" />
-			<TextBlock FontSize="11" Text="Haiti" />
-			<TextBlock FontSize="11" Text="Honduras" />
-			<TextBlock FontSize="11" Text="Hong Kong" />
-			<TextBlock FontSize="11" Text="Howland Island" />
-			<TextBlock FontSize="11" Text="Hungary" />
-			<TextBlock FontSize="11" Text="Iceland" />
-			<TextBlock FontSize="11" Text="India" />
-			<TextBlock FontSize="11" Text="Indonesia" />
-			<TextBlock FontSize="11" Text="Iran" />
-			<TextBlock FontSize="11" Text="Iraq" />
-			<TextBlock FontSize="11" Text="Ireland" />
-			<TextBlock FontSize="11" Text="Israel" />
-			<TextBlock FontSize="11" Text="Italy" />
-			<TextBlock FontSize="11" Text="Jamaica" />
-			<TextBlock FontSize="11" Text="Jan Mayen" />
-			<TextBlock FontSize="11" Text="Japan" />
-			<TextBlock FontSize="11" Text="Jarvis Island" />
-			<TextBlock FontSize="11" Text="Jersey" />
-			<TextBlock FontSize="11" Text="Johnston Atoll" />
-			<TextBlock FontSize="11" Text="Jordan" />
-			<TextBlock FontSize="11" Text="Juan de Nova Island" />
-			<TextBlock FontSize="11" Text="Kazakhstan" />
-			<TextBlock FontSize="11" Text="Kenya" />
-			<TextBlock FontSize="11" Text="Kingman Reef" />
-			<TextBlock FontSize="11" Text="Kiribati" />
-			<TextBlock FontSize="11" Text="Kuwait" />
-			<TextBlock FontSize="11" Text="Kyrgyzstan" />
-			<TextBlock FontSize="11" Text="Laos" />
-			<TextBlock FontSize="11" Text="Latvia" />
-			<TextBlock FontSize="11" Text="Lebanon" />
-			<TextBlock FontSize="11" Text="Lesotho" />
-			<TextBlock FontSize="11" Text="Liberia" />
-			<TextBlock FontSize="11" Text="Libya" />
-			<TextBlock FontSize="11" Text="Liechtenstein" />
-			<TextBlock FontSize="11" Text="Lithuania" />
-			<TextBlock FontSize="11" Text="Luxembourg" />
-			<TextBlock FontSize="11" Text="Macau" />
-			<TextBlock FontSize="11" Text="Macedonia" />
-			<TextBlock FontSize="11" Text="Madagascar" />
-			<TextBlock FontSize="11" Text="Malawi" />
-			<TextBlock FontSize="11" Text="Malaysia" />
-			<TextBlock FontSize="11" Text="Maldives" />
-			<TextBlock FontSize="11" Text="Mali" />
-			<TextBlock FontSize="11" Text="Malta" />
-			<TextBlock FontSize="11" Text="Marshall Islands" />
-			<TextBlock FontSize="11" Text="Martinique" />
-			<TextBlock FontSize="11" Text="Mauritania" />
-			<TextBlock FontSize="11" Text="Mauritius" />
-			<TextBlock FontSize="11" Text="Mayotte" />
-			<TextBlock FontSize="11" Text="Mexico" />
-			<TextBlock FontSize="11" Text="Micronesia" />
-			<TextBlock FontSize="11" Text="Midway Islands" />
-			<TextBlock FontSize="11" Text="Moldova" />
-			<TextBlock FontSize="11" Text="Monaco" />
-			<TextBlock FontSize="11" Text="Mongolia" />
-			<TextBlock FontSize="11" Text="Montserrat" />
-			<TextBlock FontSize="11" Text="Morocco" />
-			<TextBlock FontSize="11" Text="Mozambique" />
-			<TextBlock FontSize="11" Text="Namibia" />
-			<TextBlock FontSize="11" Text="Nauru" />
-			<TextBlock FontSize="11" Text="Navassa Island" />
-			<TextBlock FontSize="11" Text="Nepal" />
-			<TextBlock FontSize="11" Text="Netherlands" />
-			<TextBlock FontSize="11" Text="Netherlands Antilles" />
-			<TextBlock FontSize="11" Text="New Caledonia" />
-			<TextBlock FontSize="11" Text="New Zealand" />
-			<TextBlock FontSize="11" Text="Nicaragua" />
-			<TextBlock FontSize="11" Text="Niger" />
-			<TextBlock FontSize="11" Text="Nigeria" />
-			<TextBlock FontSize="11" Text="Niue" />
-			<TextBlock FontSize="11" Text="Norfolk Island" />
-			<TextBlock FontSize="11" Text="North Korea" />
-			<TextBlock FontSize="11" Text="Northern Mariana Islands" />
-			<TextBlock FontSize="11" Text="Norway" />
-			<TextBlock FontSize="11" Text="Oman" />
-			<TextBlock FontSize="11" Text="Pakistan" />
-			<TextBlock FontSize="11" Text="Palau" />
-			<TextBlock FontSize="11" Text="Palmyra Atoll" />
-			<TextBlock FontSize="11" Text="Panama" />
-			<TextBlock FontSize="11" Text="Papua New Guinea" />
-			<TextBlock FontSize="11" Text="Paracel Islands" />
-			<TextBlock FontSize="11" Text="Paraguay" />
-			<TextBlock FontSize="11" Text="Peru" />
-			<TextBlock FontSize="11" Text="Philippines" />
-			<TextBlock FontSize="11" Text="Pitcairn Islands" />
-			<TextBlock FontSize="11" Text="Poland" />
-			<TextBlock FontSize="11" Text="Portugal" />
-			<TextBlock FontSize="11" Text="Puerto Rico" />
-			<TextBlock FontSize="11" Text="Qatar" />
-			<TextBlock FontSize="11" Text="Reunion" />
-			<TextBlock FontSize="11" Text="Romania" />
-			<TextBlock FontSize="11" Text="Russia" />
-			<TextBlock FontSize="11" Text="Rwanda" />
-			<TextBlock FontSize="11" Text="Saint Helena" />
-			<TextBlock FontSize="11" Text="Saint Kitts and Nevis" />
-			<TextBlock FontSize="11" Text="Saint Lucia" />
-			<TextBlock FontSize="11" Text="Saint Pierre and Miquelon" />
-			<TextBlock FontSize="11" Text="Saint Vincent and The Grenadines" />
-			<TextBlock FontSize="11" Text="Samoa" />
-			<TextBlock FontSize="11" Text="Sanmarino" />
-			<TextBlock FontSize="11" Text="Sao Tome and Principe" />
-			<TextBlock FontSize="11" Text="Saudi Arabia" />
-			<TextBlock FontSize="11" Text="Senegal" />
-			<TextBlock FontSize="11" Text="Seychelle" />
-			<TextBlock FontSize="11" Text="Sierraleone" />
-			<TextBlock FontSize="11" Text="Singapore" />
-			<TextBlock FontSize="11" Text="Slovakia" />
-			<TextBlock FontSize="11" Text="Slovenia" />
-			<TextBlock FontSize="11" Text="Solomon Islands" />
-			<TextBlock FontSize="11" Text="Somalia" />
-			<TextBlock FontSize="11" Text="South Africa" />
-			<TextBlock FontSize="11" Text="South Korea" />
-			<TextBlock FontSize="11" Text="Spain" />
-			<TextBlock FontSize="11" Text="Spratly Islands" />
-			<TextBlock FontSize="11" Text="Sri Lanka" />
-			<TextBlock FontSize="11" Text="Sudan" />
-			<TextBlock FontSize="11" Text="Suriname" />
-			<TextBlock FontSize="11" Text="Svalbard" />
-			<TextBlock FontSize="11" Text="Swaziland" />
-			<TextBlock FontSize="11" Text="Sweden" />
-			<TextBlock FontSize="11" Text="Switzerland" />
-			<TextBlock FontSize="11" Text="Syria" />
-			<TextBlock FontSize="11" Text="Taiwan" />
-			<TextBlock FontSize="11" Text="Tajikistan" />
-			<TextBlock FontSize="11" Text="Tanzania" />
-			<TextBlock FontSize="11" Text="Thailand" />
-			<TextBlock FontSize="11" Text="Togo" />
-			<TextBlock FontSize="11" Text="Tokelau" />
-			<TextBlock FontSize="11" Text="Tonga" />
-			<TextBlock FontSize="11" Text="Trinidad and Tobago" />
-			<TextBlock FontSize="11" Text="Tromelin Island" />
-			<TextBlock FontSize="11" Text="Tunisia" />
-			<TextBlock FontSize="11" Text="Turkey" />
-			<TextBlock FontSize="11" Text="Turkmenistan" />
-			<TextBlock FontSize="11" Text="Turks and Caicos Islands" />
-			<TextBlock FontSize="11" Text="Tuvalu" />
-			<TextBlock FontSize="11" Text="Uganda" />
-			<TextBlock FontSize="11" Text="Ukraine" />
-			<TextBlock FontSize="11" Text="United Arab Emirates" />
-			<TextBlock FontSize="11" Text="United Kingdom" />
-			<TextBlock FontSize="11" Text="United States" />
-			<TextBlock FontSize="11" Text="Uruguay" />
-			<TextBlock FontSize="11" Text="Uzbekistan" />
-			<TextBlock FontSize="11" Text="Vanuatu" />
-			<TextBlock FontSize="11" Text="Vatican" />
-			<TextBlock FontSize="11" Text="Venezuela" />
-			<TextBlock FontSize="11" Text="Vietnam" />
-			<TextBlock FontSize="11" Text="Virgin Islands" />
-			<TextBlock FontSize="11" Text="Wake Island" />
-			<TextBlock FontSize="11" Text="Wallis and Futuna" />
-			<TextBlock FontSize="11" Text="West Bank" />
-			<TextBlock FontSize="11" Text="Western Sahara" />
-			<TextBlock FontSize="11" Text="Yemen" />
-			<TextBlock FontSize="11" Text="Zambia" />
-			<TextBlock FontSize="11" Text="Zimbabwe" />
-		</ComboBox>
-		<TextBlock x:Name="m_countryLabel" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Country" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,327,0,0" Height="16" VerticalAlignment="Top"/>
-		<TextBlock x:Name="m_cityLabel" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="City" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,301,0,0" Height="16" VerticalAlignment="Top"/>
-		<TextBox x:Name="m_cityTextBox" Text="" TextWrapping="Wrap" TabIndex="12" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,301,244,0" VerticalAlignment="Top"/>
-		<Button x:Name="m_createAccountButton" Height="44" Margin="0,446,108,0" VerticalAlignment="Top" Content="Create Account" Click="CreateCustomerButton_Click" TabIndex="15" FontSize="21.333" HorizontalAlignment="Right" Width="185"/>
-		<TextBlock Height="48" Margin="0,36,0,0" VerticalAlignment="Top" Text="" TextWrapping="Wrap" x:Name="m_statusTextBlock" Foreground="{StaticResource WarningTextBrush}" TextAlignment="Left" HorizontalAlignment="Center" FontSize="16"/>
-		<TextBox x:Name="m_securityAnswerTextBox" Text="" TextWrapping="Wrap" TabIndex="11" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,275,244,0" VerticalAlignment="Top"/>
-		<TextBox x:Name="m_webSiteTextBox" Text="" TextWrapping="Wrap" TabIndex="14" IsTabStop="True" TabNavigation="Local" Height="20" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="145,358,244,0" VerticalAlignment="Top"/>
-		<TextBlock x:Name="m_webSiteLabel" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Web Site" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,358,0,0" Height="16" VerticalAlignment="Top"/>
-		<ComboBox Margin="145,384,47,0" VerticalAlignment="Top" Height="25" x:Name="m_timezoneListBox" TabIndex="13" SelectedIndex="31">
-			<TextBlock FontSize="11" Text="(GMT-12:00) International Date Line West"/>
-			<TextBlock FontSize="11" Text="(GMT-11:00) Midway Island, Samoa"/>
-			<TextBlock FontSize="11" Text="(GMT-10:00) Hawaii"/>
-			<TextBlock FontSize="11" Text="(GMT-09:00) Alaska"/>
-			<TextBlock FontSize="11" Text="(GMT-08:00) Pacific Time (US &amp; Canada)"/>
-			<TextBlock FontSize="11" Text="(GMT-08:00) Tijuana, Baja California"/>
-			<TextBlock FontSize="11" Text="(GMT-07:00) Arizona"/>
-			<TextBlock FontSize="11" Text="(GMT-07:00) Chihuahua, La Paz, Mazatlan"/>
-			<TextBlock FontSize="11" Text="(GMT-07:00) Mountain Time (US &amp; Canada)"/>
-			<TextBlock FontSize="11" Text="(GMT-06:00) Central America"/>
-			<TextBlock FontSize="11" Text="(GMT-06:00) Central Time (US &amp; Canada)"/>
-			<TextBlock FontSize="11" Text="(GMT-06:00) Guadalajara, Mexico City, Monterrey"/>
-			<TextBlock FontSize="11" Text="(GMT-06:00) Saskatchewan"/>
-			<TextBlock FontSize="11" Text="(GMT-05:00) Bogota, Lima, Quito, Rio Branco"/>
-			<TextBlock FontSize="11" Text="(GMT-05:00) Eastern Time (US &amp; Canada)"/>
-			<TextBlock FontSize="11" Text="(GMT-05:00) Indiana (East)"/>
-			<TextBlock FontSize="11" Text="(GMT-04:30) Caracas"/>
-			<TextBlock FontSize="11" Text="(GMT-04:00) Atlantic Time (Canada)"/>
-			<TextBlock FontSize="11" Text="(GMT-04:00) La Paz"/>
-			<TextBlock FontSize="11" Text="(GMT-04:00) Manaus"/>
-			<TextBlock FontSize="11" Text="(GMT-04:00) Santiago"/>
-			<TextBlock FontSize="11" Text="(GMT-03:30) Newfoundland"/>
-			<TextBlock FontSize="11" Text="(GMT-03:00) Brasilia"/>
-			<TextBlock FontSize="11" Text="(GMT-03:00) Buenos Aires"/>
-			<TextBlock FontSize="11" Text="(GMT-03:00) Georgetown"/>
-			<TextBlock FontSize="11" Text="(GMT-03:00) Greenland"/>
-			<TextBlock FontSize="11" Text="(GMT-03:00) Montevideo"/>
-			<TextBlock FontSize="11" Text="(GMT-02:00) Mid-Atlantic"/>
-			<TextBlock FontSize="11" Text="(GMT-01:00) Azores"/>
-			<TextBlock FontSize="11" Text="(GMT-01:00) Cape Verde Is."/>
-			<TextBlock FontSize="11" Text="(GMT) Casablanca"/>
-			<TextBlock FontSize="11" Text="(GMT) Greenwich Mean Time : Dublin, Edinburgh, Lisbon, London"/>
-			<TextBlock FontSize="11" Text="(GMT) Monrovia, Reykjavik"/>
-			<TextBlock FontSize="11" Text="(GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna"/>
-			<TextBlock FontSize="11" Text="(GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague"/>
-			<TextBlock FontSize="11" Text="(GMT+01:00) Brussels, Copenhagen, Madrid, Paris"/>
-			<TextBlock FontSize="11" Text="(GMT+01:00) Sarajevo, Skopje, Warsaw, Zagreb"/>
-			<TextBlock FontSize="11" Text="(GMT+01:00) West Central Africa"/>
-			<TextBlock FontSize="11" Text="(GMT+02:00) Amman"/>
-			<TextBlock FontSize="11" Text="(GMT+02:00) Athens, Bucharest, Istanbul"/>
-			<TextBlock FontSize="11" Text="(GMT+02:00) Beirut"/>
-			<TextBlock FontSize="11" Text="(GMT+02:00) Cairo"/>
-			<TextBlock FontSize="11" Text="(GMT+02:00) Harare, Pretoria"/>
-			<TextBlock FontSize="11" Text="(GMT+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius"/>
-			<TextBlock FontSize="11" Text="(GMT+02:00) Jerusalem"/>
-			<TextBlock FontSize="11" Text="(GMT+02:00) Minsk"/>
-			<TextBlock FontSize="11" Text="(GMT+02:00) Windhoek"/>
-			<TextBlock FontSize="11" Text="(GMT+03:00) Baghdad"/>
-			<TextBlock FontSize="11" Text="(GMT+03:00) Kuwait, Riyadh"/>
-			<TextBlock FontSize="11" Text="(GMT+03:00) Moscow, St. Petersburg, Volgograd"/>
-			<TextBlock FontSize="11" Text="(GMT+03:00) Nairobi"/>
-			<TextBlock FontSize="11" Text="(GMT+03:00) Tbilisi"/>
-			<TextBlock FontSize="11" Text="(GMT+03:30) Tehran"/>
-			<TextBlock FontSize="11" Text="(GMT+04:00) Abu Dhabi, Muscat"/>
-			<TextBlock FontSize="11" Text="(GMT+04:00) Baku"/>
-			<TextBlock FontSize="11" Text="(GMT+04:00) Port Louis"/>
-			<TextBlock FontSize="11" Text="(GMT+04:00) Yerevan"/>
-			<TextBlock FontSize="11" Text="(GMT+04:30) Kabul"/>
-			<TextBlock FontSize="11" Text="(GMT+05:00) Ekaterinburg"/>
-			<TextBlock FontSize="11" Text="(GMT+05:00) Islamabad, Karachi"/>
-			<TextBlock FontSize="11" Text="(GMT+05:00) Tashkent"/>
-			<TextBlock FontSize="11" Text="(GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi"/>
-			<TextBlock FontSize="11" Text="(GMT+05:30) Sri Jayawardenepura"/>
-			<TextBlock FontSize="11" Text="(GMT+05:45) Kathmandu"/>
-			<TextBlock FontSize="11" Text="(GMT+06:00) Almaty, Novosibirsk"/>
-			<TextBlock FontSize="11" Text="(GMT+06:00) Astana, Dhaka"/>
-			<TextBlock FontSize="11" Text="(GMT+06:30) Yangon (Rangoon)"/>
-			<TextBlock FontSize="11" Text="(GMT+07:00) Bangkok, Hanoi, Jakarta"/>
-			<TextBlock FontSize="11" Text="(GMT+07:00) Krasnoyarsk"/>
-			<TextBlock FontSize="11" Text="(GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi"/>
-			<TextBlock FontSize="11" Text="(GMT+08:00) Irkutsk, Ulaan Bataar"/>
-			<TextBlock FontSize="11" Text="(GMT+08:00) Kuala Lumpur, Singapore"/>
-			<TextBlock FontSize="11" Text="(GMT+08:00) Perth"/>
-			<TextBlock FontSize="11" Text="(GMT+08:00) Taipei"/>
-			<TextBlock FontSize="11" Text="(GMT+09:00) Osaka, Sapporo, Tokyo"/>
-			<TextBlock FontSize="11" Text="(GMT+09:00) Seoul"/>
-			<TextBlock FontSize="11" Text="(GMT+09:00) Yakutsk"/>
-			<TextBlock FontSize="11" Text="(GMT+09:30) Adelaide"/>
-			<TextBlock FontSize="11" Text="(GMT+09:30) Darwin"/>
-			<TextBlock FontSize="11" Text="(GMT+10:00) Brisbane"/>
-			<TextBlock FontSize="11" Text="(GMT+10:00) Canberra, Melbourne, Sydney"/>
-			<TextBlock FontSize="11" Text="(GMT+10:00) Guam, Port Moresby"/>
-			<TextBlock FontSize="11" Text="(GMT+10:00) Hobart"/>
-			<TextBlock FontSize="11" Text="(GMT+10:00) Vladivostok"/>
-			<TextBlock FontSize="11" Text="(GMT+11:00) Magadan, Solomon Is., New Caledonia"/>
-			<TextBlock FontSize="11" Text="(GMT+12:00) Auckland, Wellington"/>
-			<TextBlock FontSize="11" Text="(GMT+12:00) Fiji, Kamchatka, Marshall Is."/>
-			<TextBlock FontSize="11" Text="(GMT+13:00) Nuku'alofa"/>
-		</ComboBox>
-		<TextBlock x:Name="m_timezoneLabel" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Timezone" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="18,384,0,0" Height="16" VerticalAlignment="Top"/>
-		<Button x:Name="m_cancelButton" Height="44" Margin="110,446,0,0" VerticalAlignment="Top" Content="Cancel" Click="CancelButton_Click" TabIndex="15" FontSize="21.333" HorizontalAlignment="Left" Width="118"/>
-	</Grid>
+	<StackPanel x:Name="LayoutRoot" Margin="0,0,0,-84">
+		<Canvas Height="40" Margin="8,0">
+			<TextBlock Width="Auto" FontSize="26.667" Foreground="{StaticResource InfoTextBrush}" Text="Create New Account" TextWrapping="Wrap" Canvas.Left="148" Canvas.Top="1"/>
+			<Button x:Name="m_cancelButton" Content="X" Height="31" Width="33" FontSize="16" Click="CloseButton_Click" Canvas.Left="534" Canvas.Top="5"/>
+		</Canvas>
+		<TextBlock Text="" TextWrapping="Wrap" Margin="0,8,0,8" x:Name="m_statusTextBlock" Foreground="{StaticResource WarningTextBrush}" TextAlignment="Left" HorizontalAlignment="Center" FontSize="16"/>
+		<toolkit:DataForm x:Name="m_newCustomerDataForm" Margin="4,36,4,8" CommandButtonsVisibility="Commit,Cancel" AutoGenerateFields="False" 
+							AutoEdit="True" AutoCommit="False" EditEnded="EditEnded" Background="Black" BorderBrush="{x:Null}">
+			<toolkit:DataForm.EditTemplate>
+				<DataTemplate>
+					<StackPanel>
+						<toolkit:DataField Label="First Name" Foreground="{StaticResource NormalTextBrush}">
+							<TextBox Height="23" HorizontalAlignment="Left" Margin="0,0,0,0" Text="{Binding Firstname, Mode=TwoWay}" VerticalAlignment="Top" Width="280" />
+						</toolkit:DataField>
+						<toolkit:DataField Label="Last Name" Foreground="{StaticResource NormalTextBrush}">
+							<TextBox Height="23" HorizontalAlignment="Left" Margin="0,0,0,0" Text="{Binding Lastname, Mode=TwoWay}" VerticalAlignment="Top" Width="280" />
+						</toolkit:DataField>
+						<toolkit:DataField Label="Email Address" Foreground="{StaticResource NormalTextBrush}">
+							<TextBox Height="23" HorizontalAlignment="Left" Margin="0,0,0,0" Text="{Binding EmailAddress, Mode=TwoWay}" VerticalAlignment="Top" Width="280" />
+						</toolkit:DataField>
+						<toolkit:DataField Label="Username" Foreground="{StaticResource NormalTextBrush}">
+							<TextBox Height="23" HorizontalAlignment="Left" Margin="0,0,0,0" Text="{Binding Name, Mode=TwoWay}" VerticalAlignment="Top" Width="280" />
+						</toolkit:DataField>
+						<toolkit:DataField Label="Password" Foreground="{StaticResource NormalTextBrush}">
+							<PasswordBox Height="23" HorizontalAlignment="Left" Margin="0,0,0,0" Password="{Binding CustomerPassword, Mode=TwoWay}" VerticalAlignment="Top" Width="280" />
+						</toolkit:DataField>
+						<toolkit:DataField Label="Retyped Password" Foreground="{StaticResource NormalTextBrush}">
+							<PasswordBox Height="23" HorizontalAlignment="Left" Margin="0,0,0,0" Password="{Binding RetypedPassword, Mode=TwoWay}" VerticalAlignment="Top" Width="280" />
+						</toolkit:DataField>
+						<toolkit:DataField Label="Security Question" Foreground="{StaticResource NormalTextBrush}">
+							<ComboBox Height="23" Foreground="Black" HorizontalAlignment="Left" Margin="0,0,0,0" ItemsSource="{StaticResource SecurityQuestions}" SelectedValue="{Binding SecurityQuestion, Mode=TwoWay}" VerticalAlignment="Top" Width="260" />
+						</toolkit:DataField>
+						<toolkit:DataField Label="Security Answer" Foreground="{StaticResource NormalTextBrush}">
+							<TextBox Height="23" HorizontalAlignment="Left" Margin="0,0,0,0" Text="{Binding SecurityAnswer, Mode=TwoWay}" VerticalAlignment="Top" Width="280" />
+						</toolkit:DataField>
+						<toolkit:DataField Label="City" Foreground="{StaticResource NormalTextBrush}">
+							<TextBox Height="23" HorizontalAlignment="Left" Margin="0,0,0,0" Text="{Binding City, Mode=TwoWay}" VerticalAlignment="Top" Width="280" />
+						</toolkit:DataField>
+						<toolkit:DataField Label="Country" Foreground="{StaticResource NormalTextBrush}">
+							<ComboBox Height="23" Foreground="Black" HorizontalAlignment="Left" Margin="0,0,0,0" ItemsSource="{StaticResource CountriesList}" SelectedValue="{Binding Country, Mode=TwoWay}" VerticalAlignment="Top" Width="180"/>
+						</toolkit:DataField>
+						<toolkit:DataField Label="Web Site" Foreground="{StaticResource NormalTextBrush}">
+							<TextBox Height="23" HorizontalAlignment="Left" Margin="0,0,0,0" Text="{Binding Web Site, Mode=TwoWay}" VerticalAlignment="Top" Width="280" />
+						</toolkit:DataField>
+						<toolkit:DataField Label="Time Zone" Foreground="{StaticResource NormalTextBrush}">
+							<ComboBox Height="23" Foreground="Black" HorizontalAlignment="Left" Margin="0,0,0,0" ItemsSource="{StaticResource TimezonesList}" SelectedValue="{Binding Timezone, Mode=TwoWay}" VerticalAlignment="Top" Width="300"/>
+						</toolkit:DataField>
+					</StackPanel>
+				</DataTemplate>
+			</toolkit:DataForm.EditTemplate>
+		</toolkit:DataForm>
+	</StackPanel>
 </UserControl>

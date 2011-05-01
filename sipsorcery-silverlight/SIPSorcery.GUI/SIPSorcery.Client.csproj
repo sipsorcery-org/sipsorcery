@@ -54,13 +54,16 @@
     <TargetFrameworkProfile />
     <Utf8Output>true</Utf8Output>
     <ExpressionBlendVersion>4.0.20525.0</ExpressionBlendVersion>
+    <LinkedServerProject>..\SIPSorcery.TestWeb\SIPSorcery.TestWeb.csproj</LinkedServerProject>
+    <OutOfBrowserSettingsFile>Properties\OutOfBrowserSettings.xml</OutOfBrowserSettingsFile>
+    <EnableOutOfBrowser>true</EnableOutOfBrowser>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>..\Build\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;SILVERLIGHT</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
@@ -87,8 +90,10 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInviteService1.wsdl" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\SIPProvisioningWebService1.wsdl" />
     <Reference Include="mscorlib" />
+    <Reference Include="SIPSorcery.Entities.Client">
+      <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Entities.Client.dll</HintPath>
+    </Reference>
     <Reference Include="SIPSorcery.Net, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Build\SIPSorcery.Net.dll</HintPath>
@@ -105,23 +110,28 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Build\SIPSorcery.Silverlight.SIP.dll</HintPath>
     </Reference>
-    <Reference Include="SIPSorcery.Silverlight.SIP.App, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Build\SIPSorcery.Silverlight.SIP.App.dll</HintPath>
-    </Reference>
+    <Reference Include="SIPSorcery.Silverlight.SIP.App, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL" />
     <Reference Include="SIPSorcery.Sys, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Build\SIPSorcery.Sys.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations, Version=2.0.5.0, Culture=neutral, PublicKeyToken=ddd0da4d3e678217, processorArchitecture=MSIL" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
+    <Reference Include="System.ServiceModel.DomainServices.Client, Version=2.0.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="System.ServiceModel.DomainServices.Client.Web, Version=2.0.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="System.ServiceModel.Web.Extensions, Version=2.0.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.Windows" />
     <Reference Include="System.Windows.Browser" />
     <Reference Include="System.Windows.Controls, Version=2.0.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.Windows.Controls.Data, Version=2.0.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="System.Windows.Controls.Data.DataForm.Toolkit" />
+    <Reference Include="System.Windows.Controls.Data.Input" />
+    <Reference Include="System.Windows.Controls.DomainServices, Version=2.0.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="System.Windows.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Serialization, Version=2.0.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <ApplicationDefinition Include="App.xaml">
@@ -136,10 +146,18 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="UserInterface\AssetManagers\DialPlanDetailsControl.xaml">
+    <Page Include="UserInterface\AssetManagers\DialPlanAddControl.xaml">
+      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserInterface\AssetManagers\DialPlanUpdateControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserInterface\AssetManagers\DialPlanWizard.xaml">
+      <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\SIPProviderDetailsControl.xaml">
@@ -234,6 +252,12 @@
     <Compile Include="UserInterface\About.xaml.cs">
       <DependentUpon>About.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UserInterface\AssetManagers\DialPlanAddControl.xaml.cs">
+      <DependentUpon>DialPlanAddControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\AssetManagers\DialPlanWizard.xaml.cs">
+      <DependentUpon>DialPlanWizard.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserInterface\CallManager\SIPCallManager.xaml.cs">
       <DependentUpon>SIPCallManager.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -254,20 +278,12 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
-    <Compile Include="WCFReferences\SIPSorceryProvisioningClient\Reference.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Compile>
-    <Compile Include="Services\SIPSorceryGUITestPersistor.cs" />
     <Compile Include="Sockets\SocketClient.cs" />
     <Compile Include="UIControls\AssetViewPanel.cs" />
     <Compile Include="UIHelper.cs" />
-    <Compile Include="Services\SIPSorceryPersistor.cs" />
-    <Compile Include="Services\SIPSorceryWebServicePersistor.cs" />
     <Compile Include="UIControls\DataGridConverters.cs" />
-    <Compile Include="UserInterface\AssetManagers\DialPlanDetailsControl.xaml.cs">
-      <DependentUpon>DialPlanDetailsControl.xaml</DependentUpon>
+    <Compile Include="UserInterface\AssetManagers\DialPlanUpdateControl.xaml.cs">
+      <DependentUpon>DialPlanUpdateControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\AssetManagers\SIPProviderDetailsControl.xaml.cs">
       <DependentUpon>SIPProviderDetailsControl.xaml</DependentUpon>
@@ -319,7 +335,6 @@
     </None>
     <None Include="WCFReferences\SIPSorceryInvite\configuration.svcinfo" />
     <None Include="WCFReferences\SIPSorceryInvite\configuration91.svcinfo" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning1.disco" />
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull.disco" />
     <Resource Include="Images\wizard-logo.png" />
     <Resource Include="Images\small_logo.png" />
@@ -339,32 +354,7 @@
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull5.xsd" />
     <None Include="WCFReferences\SIPSorceryNotificationService\SIPNotifierService1.wsdl" />
     <None Include="WCFReferences\SIPSorceryNotificationService\SIPNotifierService11.wsdl" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\configuration91.svcinfo" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\configuration.svcinfo" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning1.wsdl" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning10.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning2.wsdl" />
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning4.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning6.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning7.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning8.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\Provisioning9.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="WCFReferences\SIPSorceryProvisioningClient\Reference.svcmap">
-      <Generator>WCF Proxy Generator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
-    </None>
+    <None Include="Properties\OutOfBrowserSettings.xml" />
     <Content Include="ServiceReferences.ClientConfig" />
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull1.disco" />
     <None Include="WCFReferences\SIPSorceryNotificationService\Reference.svcmap">
@@ -415,7 +405,6 @@
   <ItemGroup>
     <WCFMetadataStorage Include="WCFReferences\SIPSorceryInvite\" />
     <WCFMetadataStorage Include="WCFReferences\SIPSorceryNotificationService\" />
-    <WCFMetadataStorage Include="WCFReferences\SIPSorceryProvisioningClient\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Silverlight\$(SilverlightVersion)\Microsoft.Silverlight.CSharp.targets" />
   <ProjectExtensions>

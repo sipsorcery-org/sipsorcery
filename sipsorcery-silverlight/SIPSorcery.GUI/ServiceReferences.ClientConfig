@@ -14,10 +14,6 @@
                     maxReceivedMessageSize="2147483647">
                     <security mode="Transport" />
                 </binding>
-                <binding name="BasicHttpBinding_IProvisioningService2" maxBufferSize="2147483647"
-                    maxReceivedMessageSize="2147483647">
-                    <security mode="None" />
-                </binding>
                 <binding name="BasicHttpBinding_INotifications" maxBufferSize="2147483647"
                     maxReceivedMessageSize="2147483647">
                     <security mode="None">
@@ -57,10 +53,6 @@
             <endpoint address="http://suzannes-pc:8080/notificationspull.svc"
                 binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_INotifications"
                 contract="SIPSorceryNotificationService.INotifications" name="BasicHttpBinding_INotifications" />
-            <endpoint address="http://localhost/Provisioning.svc" binding="basicHttpBinding"
-                bindingConfiguration="BasicHttpBinding_IProvisioningService2"
-                contract="SIPSorceryProvisioningClient.IProvisioningService"
-                name="BasicHttpBinding_IProvisioningService2" />
         </client>
     </system.serviceModel>
 </configuration>

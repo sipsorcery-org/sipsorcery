@@ -40,12 +40,12 @@ namespace SIPSorcery.Silverlight.Services
             get { return m_isConnected;}
         }
 
-        public SIPSorceryNotificationClient(ActivityMessageDelegate logActivityMessage, string serverURL, string authid)
+        public SIPSorceryNotificationClient(ActivityMessageDelegate logActivityMessage, string serverURL, string apiKey)
         {
             LogActivityMessage_External = logActivityMessage;
             m_address = Guid.NewGuid().ToString();
             BasicHttpSecurityMode securitymode = (serverURL.StartsWith("https")) ? BasicHttpSecurityMode.Transport : BasicHttpSecurityMode.None;
-            SIPSorcerySecurityHeader securityHeader = new SIPSorcerySecurityHeader(authid);
+            SIPSorcerySecurityHeader securityHeader = new SIPSorcerySecurityHeader(apiKey);
             PullNotificationHeader notificationHeader = new PullNotificationHeader(m_address);
             SIPSorceryCustomHeader sipSorceryHeader = new SIPSorceryCustomHeader(new List<MessageHeader>() { securityHeader, notificationHeader });
             BasicHttpCustomHeaderBinding binding = new BasicHttpCustomHeaderBinding(sipSorceryHeader, securitymode);
@@ -125,11 +125,6 @@ namespace SIPSorcery.Silverlight.Services
             }
         }
 
-        private void IsAliveAsync()
-        {
-            m_notificationClient.IsAliveAsync();
-        }
-
         private void IsAliveCompleted(object sender, IsAliveCompletedEventArgs e)
         {
             if (e.Error == null)
@@ -185,7 +180,8 @@ namespace SIPSorcery.Silverlight.Services
             }
             else
             {
-                LogActivityMessage_External(MessageLevelsEnum.Warn, "Error subscribing for notifications. " + e.Error.Message);
+                //LogActivityMessage_External(MessageLevelsEnum.Warn, "Error subscribing for notifications. " + e.Error.Message);
+                StatusChanged(ServiceConnectionStatesEnum.Error, "Error subscribing for notifications. " + e.Error.Message);
             }
         }
 

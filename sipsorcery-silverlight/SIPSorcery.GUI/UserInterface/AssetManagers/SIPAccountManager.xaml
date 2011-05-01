@@ -14,6 +14,7 @@
 		<sipsorcery:SIPURIConverter x:Key="SIPURIStringConverter" />
 		<sipsorcery:SIPParameterlessURIConverter x:Key="SIPParameterlessURIStringConverter" />
 		<sipsorcery:DateTimeOffsetConverter x:Key="DateTimeOffsetConverter" />
+		<sipsorcery:DateTimeConverter x:Key="DateTimeConverter" />
 		<sipsorcery:PasswordConverter x:Key="PasswordConverter" />
 	</UserControl.Resources>
 
@@ -85,7 +86,7 @@
 						<data:DataGridTextColumn 
 							Header="Created" 
 							Width="SizeToCells"
-							Binding="{Binding Path=Inserted, Converter={StaticResource DateTimeOffsetConverter}}" 
+							Binding="{Binding Path=InsertedLocal, Converter={StaticResource DateTimeConverter}}" 
 							IsReadOnly="True"
 							MinWidth="100" />
 						<data:DataGridTemplateColumn Header="Delete" MinWidth="100">
@@ -126,7 +127,7 @@
 					<data:DataGridTextColumn 
 						Header="Last Update" 
 						Width="SizeToCells"
-						Binding="{Binding Path=LastUpdateLocal, Converter={StaticResource DateTimeOffsetConverter}}" 
+						Binding="{Binding Path=LastUpdateLocal, Converter={StaticResource DateTimeConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100" />
 					<data:DataGridTextColumn 

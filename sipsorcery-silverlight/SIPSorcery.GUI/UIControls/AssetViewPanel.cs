@@ -16,7 +16,7 @@ using SIPSorcery.Persistence;
 
 namespace SIPSorcery.UIControls
 {
-    public delegate void GetAssetListDelegate(int start, int count);
+    public delegate void GetAssetListDelegate(int offset, int count);
 
     public class AssetViewPanel : StackPanel 
     {
@@ -26,13 +26,14 @@ namespace SIPSorcery.UIControls
         private Border m_detailsBorder;
         private DataGrid m_dataGrid;
         private double m_heightAdjustment = 0;
+        private bool m_isLoaded;
 
         private int m_listOffset;
         private int m_listCount;    // The actual number of items being displayed. Normally the same as the display count except for the last block.
 
         public GetAssetListDelegate GetAssetList;
-        public event MenuButtonClickedDelegate Add;
-        public event MenuButtonClickedDelegate Delete;
+        public event Action Add;
+        public event Action Help;
 
         private int m_displayCount = DEFAULT_DISPLAY_COUNT;
         public int DisplayCount
@@ -53,29 +54,46 @@ namespace SIPSorcery.UIControls
             m_menuBar = new AssetListMenuBar();
             m_detailsBorder = new Border();
             this.Children.Add(m_menuBar);
-            m_menuBar.Add += new MenuButtonClickedDelegate(MenuBar_Add);
-            m_menuBar.Delete += new MenuButtonClickedDelegate(MenuBar_Delete);
+            m_menuBar.Add += MenuBar_Add;
+            m_menuBar.Help += MenuBar_Help;
             this.Loaded += new RoutedEventHandler(AssetViewPanel_Loaded);
             m_detailsBorder.SizeChanged += new SizeChangedEventHandler(DetailsBorder_SizeChanged);
 
-            m_menuBar.Refresh += new MenuButtonClickedDelegate(() => { RefreshAsync(); });
-            m_menuBar.PageFirst += new MenuButtonClickedDelegate(MenuBar_PageFirst);
-            m_menuBar.PagePrevious += new MenuButtonClickedDelegate(MenuBar_PagePrevious);
-            m_menuBar.PageNext += new MenuButtonClickedDelegate(MenuBar_PageNext);
-            m_menuBar.PageLast += new MenuButtonClickedDelegate(MenuBar_PageLast);
+            m_menuBar.Refresh += () => { RefreshAsync(); };
+            m_menuBar.PageFirst += MenuBar_PageFirst;
+            m_menuBar.PagePrevious += MenuBar_PagePrevious;
+            m_menuBar.PageNext += MenuBar_PageNext;
+            m_menuBar.PageLast += MenuBar_PageLast;
         }
 
         private void AssetViewPanel_Loaded(object sender, RoutedEventArgs e)
         {
-            foreach (UIElement element in this.Children)
+            if (!m_isLoaded)
             {
-                if (element.GetType() == typeof(Border))
+                foreach (UIElement element in this.Children)
                 {
-                    m_dataGrid = (DataGrid)((Border)element).Child;
+                    if (element is Border)
+                    {
+                        m_dataGrid = (element as Border).Child as DataGrid;
+                    }
                 }
-            }
 
-            this.Children.Add(m_detailsBorder);
+                // No border->grid combination exists so use the first available grid instead.
+                if (m_dataGrid == null)
+                {
+                    foreach (UIElement element in this.Children)
+                    {
+                        if (element is DataGrid)
+                        {
+                            m_dataGrid = element as DataGrid;
+                        }
+                    }
+                }
+
+                this.Children.Add(m_detailsBorder);
+
+                m_isLoaded = true;
+            }
         }
 
         public void SetAssetListSource(IEnumerable list)
@@ -137,11 +155,11 @@ namespace SIPSorcery.UIControls
             }
         }
 
-        private void MenuBar_Delete()
+        private void MenuBar_Help()
         {
-            if (Delete != null)
+            if (Help != null)
             {
-                Delete();
+                Help();
             }
         }
 
@@ -193,14 +211,24 @@ namespace SIPSorcery.UIControls
             m_menuBar.EnableFilter(isEnabled);
         }
 
-        public void MenuEnableDelete(bool isEnabled)
+        public void MenuEnableHelp(bool isEnabled)
         {
-            m_menuBar.EnableDelete(isEnabled);
+            m_menuBar.EnableHelp(isEnabled);
         }
 
         public void SetTitle(string title)
         {
             m_menuBar.SetTitle(title);
+        }
+
+        public void SetMenuBarWdth(double width)
+        {
+            m_menuBar.Width = width;
+        }
+
+        public void SetHeight(double height)
+        {
+            m_detailsBorder.Height = height;
         }
 
         /// <summary>

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.ServiceModel.DomainServices.Client;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,8 +12,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
-using SIPSorcery.SIP.App;
+using SIPSorcery.Entities;
 using SIPSorcery.Sys;
+using SIPSorcery.Entities.Services;
 
 namespace SIPSorcery
 {
@@ -24,9 +27,10 @@ namespace SIPSorcery
         private SIPAccountUpdateDelegate AddSIPAccount_External;
         private SIPAccountUpdateDelegate UpdateSIPAccount_External;
         private ControlClosedDelegate Closed_External;
-        private GetDialPlanNamesDelegate GetDialPlanNames_External;
-        private GetSIPDomainsDelegate GetSIPDomains_External;
+        //private GetDialPlanNamesDelegate GetDialPlanNames_External;
+        //private GetSIPDomainsDelegate GetSIPDomains_External;
 
+        private SIPEntitiesDomainContext m_riaContext;
         private DetailsControlModesEnum m_detailsMode;
         private string m_owner;
         private SIPAccount m_sipAccount;
@@ -43,8 +47,10 @@ namespace SIPSorcery
             SIPAccountUpdateDelegate add,
             SIPAccountUpdateDelegate update,
             ControlClosedDelegate closed,
-            GetDialPlanNamesDelegate getDialPlanNames,
-            GetSIPDomainsDelegate getSIPDomains)
+            SIPEntitiesDomainContext riaContext
+            //GetDialPlanNamesDelegate getDialPlanNames,
+            //GetSIPDomainsDelegate getSIPDomains
+            )
         {
             InitializeComponent();
 
@@ -54,8 +60,9 @@ namespace SIPSorcery
             AddSIPAccount_External = add;
             UpdateSIPAccount_External = update;
             Closed_External = closed;
-            GetDialPlanNames_External = getDialPlanNames;
-            GetSIPDomains_External = getSIPDomains;
+            m_riaContext = riaContext;
+            //GetDialPlanNames_External = getDialPlanNames;
+            //GetSIPDomains_External = getSIPDomains;
 
             if (m_detailsMode == DetailsControlModesEnum.Edit)
             {
@@ -140,20 +147,20 @@ namespace SIPSorcery
                 }
             }
 
-            m_sipAccountId.Text = sipAccount.Id.ToString();
+            m_sipAccountId.Text = sipAccount.ID;
             m_sipAccountOwner.Text = sipAccount.Owner;
             m_sipAccountUsernameText.Text = sipAccount.SIPUsername;
             m_sipAccountPassword.Text = sipAccount.SIPPassword;
             m_sipAccountDomain.Text = sipAccount.SIPDomain;
             m_keepAlivesCheckBox.IsChecked = sipAccount.SendNATKeepAlives;
-            m_sipAccountNetworkId.Text = (sipAccount.NetworkId != null) ? sipAccount.NetworkId : String.Empty;
+            m_sipAccountNetworkId.Text = (sipAccount.NetworkID != null) ? sipAccount.NetworkID : String.Empty;
             m_sipAccountIPAddressACL.Text = (sipAccount.IPAddressACL != null) ? sipAccount.IPAddressACL : String.Empty;
             m_isSwitchboardEnabledCheckBox.IsChecked = sipAccount.IsSwitchboardEnabled;
         }
 
         private void SetDialPlanNames(object state)
         {
-            List<string> dialPlanNames = GetDialPlanNames_External(m_owner);
+            //List<string> dialPlanNames = GetDialPlanNames_External(m_owner);
 
             int inDialPlanSelectedIndex = -1;
             int outDialPlanSelectedIndex = -1;
@@ -161,9 +168,9 @@ namespace SIPSorcery
 
             // Populate the dialplan combox boxes.
             m_inDialPlan.Items.Add(" ");    // Allows the incoming dialplan setting to be set empty to indicate bindings should be used instead of the dialplan.
-            if (dialPlanNames != null)
+            if (m_riaContext.SIPDialPlans != null && m_riaContext.SIPDialPlans.Count() > 0)
             {
-                foreach (string dialPlanName in dialPlanNames)
+                foreach (string dialPlanName in m_riaContext.SIPDialPlans.Select(x => x.DialPlanName).ToList())
                 {
                     m_outDialPlan.Items.Add(dialPlanName);
                     m_inDialPlan.Items.Add(dialPlanName);
@@ -196,11 +203,11 @@ namespace SIPSorcery
 
         private void SetDomainNames(object state)
         {
-            List<string> domains = GetSIPDomains_External(m_owner);
+            //List<string> domains = GetSIPDomains_External(m_owner);
 
-            if (domains != null && domains.Count > 0)
+            if (m_riaContext.SIPDomains != null && m_riaContext.SIPDomains.Count > 0)
             {
-                foreach (string domain in domains)
+                foreach (string domain in m_riaContext.SIPDomains.Select(x => x.Domain).ToList())
                 {
                     m_domainNames.Items.Add(domain);
                 }
@@ -211,7 +218,7 @@ namespace SIPSorcery
             }
             else
             {
-                UIHelper.SetText(m_sipAccountDomain, "No domains were found.");
+               WriteStatusMessage(MessageLevelsEnum.Error, "No SIP domains were available.");
             }
         }
 
@@ -242,21 +249,28 @@ namespace SIPSorcery
                 bool isIncomingOnly = m_statusIncomingOnlyRadio.IsChecked.Value;
                 bool isSwitchboardEnabled = m_isSwitchboardEnabledCheckBox.IsChecked.Value;
 
-                SIPAccount sipAccount = new SIPAccount(m_owner, domain, username, password, outDialPlan);
+                SIPAccount sipAccount = new SIPAccount();
+                sipAccount.ID = Guid.NewGuid().ToString();
+                sipAccount.Owner = m_owner;
+                sipAccount.SIPDomain = domain;
+                sipAccount.SIPUsername = username;
+                sipAccount.SIPPassword = password;
+                sipAccount.OutDialPlanName = outDialPlan;
                 sipAccount.InDialPlanName = inDialPlan;
                 sipAccount.SendNATKeepAlives = sendKeepAlives;
                 sipAccount.IsIncomingOnly = isIncomingOnly;
-                sipAccount.NetworkId = networkId;
+                sipAccount.NetworkID = networkId;
                 sipAccount.IPAddressACL = ipAddressACL;
-                sipAccount.Inserted = DateTime.UtcNow;
-
-                string validationError = SIPAccount.ValidateAndClean(sipAccount);
-                if (validationError != null)
+                sipAccount.IsSwitchboardEnabled = isSwitchboardEnabled;
+                sipAccount.Inserted = DateTime.UtcNow.ToString("o");
+               
+                if (sipAccount.HasValidationErrors)
                 {
-                    WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
+                    WriteStatusMessage(MessageLevelsEnum.Warn, sipAccount.ValidationErrors.First().ErrorMessage);
                 }
                 else
                 {
+                    SIPAccount.Clean(sipAccount);
                     WriteStatusMessage(MessageLevelsEnum.Info, "Adding SIP Account please wait...");
                     AddSIPAccount_External(sipAccount);
                 }
@@ -277,17 +291,17 @@ namespace SIPSorcery
                 m_sipAccount.IsIncomingOnly = m_statusIncomingOnlyRadio.IsChecked.Value;
                 m_sipAccount.SendNATKeepAlives = m_keepAlivesCheckBox.IsChecked.Value;
                 m_sipAccount.IsUserDisabled = m_statusDisabledRadio.IsChecked.Value;
-                m_sipAccount.NetworkId = m_sipAccountNetworkId.Text.Trim();
+                m_sipAccount.NetworkID = m_sipAccountNetworkId.Text.Trim();
                 m_sipAccount.IPAddressACL = m_sipAccountIPAddressACL.Text.Trim();
                 m_sipAccount.IsSwitchboardEnabled = m_isSwitchboardEnabledCheckBox.IsChecked.Value;
 
-                string validationError = SIPAccount.ValidateAndClean(m_sipAccount);
-                if (validationError != null)
+                if (m_sipAccount.HasValidationErrors)
                 {
-                    WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
+                    WriteStatusMessage(MessageLevelsEnum.Warn, m_sipAccount.ValidationErrors.First().ErrorMessage);
                 }
                 else
                 {
+                    SIPAccount.Clean(m_sipAccount);
                     WriteStatusMessage(MessageLevelsEnum.Info, "Attempting to update SIP Account " + m_sipAccount.SIPUsername + "@" + m_sipAccount.SIPDomain + " please wait...");
                     UpdateSIPAccount_External(m_sipAccount);
                 }

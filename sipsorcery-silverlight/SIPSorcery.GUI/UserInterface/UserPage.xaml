@@ -9,6 +9,7 @@
 
 	<StackPanel x:Name="LayoutRoot" Width="Auto" Background="#FF000000" ScrollViewer.VerticalScrollBarVisibility="Disabled" Margin="0,0,0,0">
 		<Grid Height="40" Background="#FF000000" x:Name="m_menuGrid" Width="1024" Margin="0,10,0,10">
+			<TextBlock HorizontalAlignment="Right" Margin="0,2,339,0" TextWrapping="Wrap" Text="Service Level" Width="76" Foreground="#FF64646D" Height="16" VerticalAlignment="Top" FontSize="10.667"/>
 			<TextBlock Cursor="Hand" x:Name="m_sipAccountsLink" Width="75.761" Foreground="{StaticResource NormalTextBrush}" Text="SIP Accounts" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="SIPAccountsLink_MouseLeftButtonUp" HorizontalAlignment="Left" Margin="5,0,0,0" d:LayoutOverrides="Width" Height="15" VerticalAlignment="Bottom"/>
 			<TextBlock Cursor="Hand" x:Name="m_dialplansLink" Width="59" Foreground="{StaticResource NormalTextBrush}" Text="Dial Plans" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="DialPlansLink_MouseLeftButtonUp" HorizontalAlignment="Left" Margin="165.079,0,0,0" Height="15" VerticalAlignment="Bottom"/>
 			<TextBlock Cursor="Hand" x:Name="m_sipProvidersLink" Width="76" Foreground="{StaticResource NormalTextBrush}" Text="SIP Providers" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="SIPProvidersLink_MouseLeftButtonUp" HorizontalAlignment="Left" Margin="85.079,0,0,0" Height="15" VerticalAlignment="Bottom"/>
@@ -29,15 +30,13 @@
 			<TextBlock Cursor="Hand" x:Name="m_helpLink" Width="29" Foreground="{StaticResource NormalTextBrush}" Text="Help" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="HelpLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,202,0"/>
 			<TextBlock Cursor="Hand" x:Name="m_settingsLink" Width="95" Foreground="{StaticResource NormalTextBrush}" Text="Account Settings" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="SettingsLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,76,0"/>
 			<TextBlock Cursor="Hand" x:Name="m_aboutLink" Foreground="{StaticResource NormalTextBrush}" Text="About" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="AboutLink_MouseLeftButtonUp" Margin="0,0,266,0" HorizontalAlignment="Right" Width="39" Height="15" VerticalAlignment="Bottom"/>
-			<Button x:Name="m_extendSessionButton" HorizontalAlignment="Right" Margin="0,-7,0,0" Width="102" Content="Extend Session" Height="21" VerticalAlignment="Top" Click="ExtendSessionButton_Click" Visibility="Collapsed"/>
-			<TextBlock Cursor="Hand" x:Name="m_switchboardLink" Width="69" Text="Switchboard" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="SwitchboardLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="307,0,0,0" Foreground="{StaticResource NormalTextBrush}" Visibility="Collapsed"/>
-		</Grid>
+			<TextBlock x:Name="m_serviceLevelTextBlock" HorizontalAlignment="Right" Margin="0,18,339,0" TextWrapping="Wrap" Text="Free" Width="76" Foreground="{StaticResource InfoTextBrush}" FontSize="13.333"/>
+        </Grid>
 		<Border Height="Auto" Width="1018" Margin="0,0,0,5" BorderBrush="#FFA0F927" BorderThickness="2,2,2,2" CornerRadius="5,5,5,5">
 			<StackPanel Height="Auto" Width="1014">
 				<ScrollViewer Height="73" x:Name="m_activityLogScrollViewer" Width="1014" Background="#FF282828" BorderBrush="{x:Null}" BorderThickness="0,0,0,0">
 					<TextBlock Height="Auto" Width="983" Text="" TextWrapping="Wrap" x:Name="m_activityTextBlock" Foreground="{StaticResource NormalTextBrush}" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
 				</ScrollViewer>
-				<ProgressBar Height="15" Width="1014" Margin="0,4,0,0" x:Name="m_activityPorgressBar" Foreground="#FFA0F927" Value="40" Background="#FF000000" Visibility="Collapsed"/>
 			</StackPanel>
 		</Border>
 		<Grid Height="Auto" x:Name="m_mainCanvas" Width="1024" Background="#FF000000" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>

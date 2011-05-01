@@ -12,6 +12,7 @@
 
 	<UserControl.Resources>
 		<sipsorcery:DateTimeOffsetConverter x:Key="DateTimeOffsetConverter" />
+		<sipsorcery:DateTimeConverter x:Key="DateTimeConverter" />
 	</UserControl.Resources>
 
 	<StackPanel Height="Auto" x:Name="m_dialPlansManagerGrid" Width="Auto" Background="#FF000000" ScrollViewer.VerticalScrollBarVisibility="Disabled">
@@ -48,7 +49,7 @@
 						<data:DataGridTextColumn 
 							Header="Last Update" 
 							Width="SizeToCells"
-							Binding="{Binding Path=LastUpdate, Converter={StaticResource DateTimeOffsetConverter}}" 
+							Binding="{Binding Path=LastUpdateLocal, Converter={StaticResource DateTimeConverter}}" 
 							IsReadOnly="True"
 							MinWidth="100" />
 						<data:DataGridTemplateColumn Header="Delete" MinWidth="100">

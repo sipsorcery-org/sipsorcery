@@ -10,25 +10,22 @@ using System.Windows.Shapes;
 
 namespace SIPSorcery
 {
-    public delegate void MenuButtonClickedDelegate();
-    public delegate void FilterButtonClickedDelegate(string filter);
-    
     public partial class AssetListMenuBar : UserControl
-	{
-        public event MenuButtonClickedDelegate Add;
-        public event MenuButtonClickedDelegate Refresh;
-        public event FilterButtonClickedDelegate Filter;
-        public event MenuButtonClickedDelegate Delete;
-        public event MenuButtonClickedDelegate PageFirst;
-        public event MenuButtonClickedDelegate PagePrevious;
-        public event MenuButtonClickedDelegate PageNext;
-        public event MenuButtonClickedDelegate PageLast;
+    {
+        public event Action Add;
+        public event Action Refresh;
+        public event Action<string> Filter;
+        public event Action Help;
+        public event Action PageFirst;
+        public event Action PagePrevious;
+        public event Action PageNext;
+        public event Action PageLast;
 
-		public AssetListMenuBar()
-		{
-			InitializeComponent();
+        public AssetListMenuBar()
+        {
+            InitializeComponent();
             DisablePagingButtons();
-		}
+        }
 
         /// <summary>
         /// Used to enable or disable the Add button on the menu bar.
@@ -81,18 +78,18 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        /// Used to enable or disable the Delete button and text box on the menu bar.
+        /// Used to enable or disable the Help button on the menu bar.
         /// </summary>
         /// <param name="isEnabled">True to enable the Delete button so it appears on the menu bar, false to disable it.</param>
-        public void EnableDelete(bool isEnabled)
+        public void EnableHelp(bool isEnabled)
         {
             if (isEnabled)
             {
-                UIHelper.SetVisibility(m_deleteButton, Visibility.Visible);
+                UIHelper.SetVisibility(m_helpButton, Visibility.Visible);
             }
             else
             {
-                UIHelper.SetVisibility(m_deleteButton, Visibility.Collapsed);
+                UIHelper.SetVisibility(m_helpButton, Visibility.Collapsed);
             }
         }
 
@@ -183,14 +180,11 @@ namespace SIPSorcery
             }
         }
 
-        private void DeleteButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        private void HelpButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            if (MessageBox.Show("Are you sure you want to delete the selected items?", "Confirm Delete", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+            if (Help != null)
             {
-                if (Delete != null)
-                {
-                    Delete();
-                }
+                Help();
             }
         }
 
@@ -225,5 +219,5 @@ namespace SIPSorcery
                 PageLast();
             }
         }
-	}
+    }
 }

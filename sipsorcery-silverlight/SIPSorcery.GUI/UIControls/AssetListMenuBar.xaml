@@ -8,17 +8,17 @@
 
 	<Grid x:Name="LayoutRoot">
 		<Canvas Background="#FFA0F927">
-			<Button Content="Add" x:Name="m_addButton" Width="50" Height="20" Canvas.Left="212.977" Click="AddButton_Click" Canvas.Top="0.031" />
-			<Button Content="&lt;&lt;" x:Name="m_pageFirstButton" Width="33.333" Height="20" Canvas.Left="320.977" Click="PageFirstButton_Click" Canvas.Top="0.364" />
-			<Button Content="&lt;" x:Name="m_pagePreviousButton" Width="33" Height="20" Canvas.Left="357.977" Click="PagePreviousButton_Click" Canvas.Top="0.364" />
-			<Button Content="&gt;" x:Name="m_pageNextButton" Width="33" Height="20" Canvas.Left="597.46" Click="PageNextButton_Click" Canvas.Top="0.364" />
-			<Button Content="&gt;&gt;" x:Name="m_pageLastButton" Width="33" Height="20" Canvas.Left="634.46" Canvas.Top="0.031" Click="PageLastButton_Click" />
-			<TextBlock Height="18" VerticalAlignment="Center" Width="196.811" Canvas.Left="394.977" Canvas.Top="2.031" Text="Initialising..." TextAlignment="Center" TextWrapping="Wrap" x:Name="m_displayedRecordsTextBlock"/>
+			<Button Content="Add" x:Name="m_addButton" Width="50" Height="20" Canvas.Left="203" Click="AddButton_Click" />
+			<Button Content="&lt;&lt;" x:Name="m_pageFirstButton" Width="33.333" Height="20" Canvas.Left="312" Click="PageFirstButton_Click" />
+			<Button Content="&lt;" x:Name="m_pagePreviousButton" Width="33" Height="20" Canvas.Left="349" Click="PagePreviousButton_Click" />
+			<Button Content="&gt;" x:Name="m_pageNextButton" Width="33" Height="20" Canvas.Left="589" Click="PageNextButton_Click" />
+			<Button Content="&gt;&gt;" x:Name="m_pageLastButton" Width="33" Height="20" Canvas.Left="625" Click="PageLastButton_Click" />
+			<TextBlock Height="18" VerticalAlignment="Center" Width="196.811" Canvas.Left="387" Canvas.Top="2" Text="Initialising..." TextAlignment="Center" TextWrapping="Wrap" x:Name="m_displayedRecordsTextBlock"/>
 			<TextBox Height="20" Width="118.172" Canvas.Left="737" Text="" TextWrapping="Wrap" FontSize="10" FontFamily="Verdana" Canvas.Top="-1.136" x:Name="m_filterTextBox"/>
 			<Button Content="Filter" x:Name="m_filterButton" Width="33" Height="20" Canvas.Left="859" Click="FilterButton_Click" Canvas.Top="0.364" />
-			<Button Content="Refresh" x:Name="m_refreshButton" Width="50" Height="20" Canvas.Left="266.977" Click="RefreshButton_Click" Canvas.Top="0.031" />
+			<Button Content="Refresh" x:Name="m_refreshButton" Width="50" Height="20" Canvas.Left="258" Click="RefreshButton_Click" />
 			<TextBlock Width="190.113" Text="Asset Menu Bar Title" TextAlignment="Left" TextWrapping="Wrap" x:Name="m_assetTitle" Height="20" Canvas.Top="0" FontWeight="Normal" FontFamily="Portable User Interface" Canvas.Left="8" FontSize="14"/>
-			<Button Content="Delete" x:Name="m_deleteButton" Width="42" Click="DeleteButton_Click" Height="20" Canvas.Top="0" Canvas.Left="681" />
+			<Button Content="Help" x:Name="m_helpButton" Width="42" Click="HelpButton_Click" Height="20" Canvas.Top="0" Canvas.Left="662" />
 		</Canvas>
 	</Grid>
 </UserControl>

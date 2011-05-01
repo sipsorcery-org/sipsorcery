@@ -1,27 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Ink;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Shapes;
+using SIPSorcery.Entities;
 using SIPSorcery.SIP;
-using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery
 {
     public partial class SIPProviderDetailsControl : UserControl
     {
-        private const string DEFAULT_CONTACT_HOST = "sipsorcery.com";
-        private const string DEFAULT_GV_CALLBACK_PATTERN = ".*";
-
-        private static bool m_disableProviderRegistrations = App.DisableProviderRegistrations;
+        private static readonly string m_defaultContactHost = App.DefaultSIPDomain;
+        //private static bool m_disableProviderRegistrations = App.DisableProviderRegistrations;
 
         private static char m_customHeadersSeparator = SIPProvider.CUSTOM_HEADERS_SEPARATOR;
         private static int m_defaultRegisterExpiry = SIPProvider.REGISTER_DEFAULT_EXPIRY;
@@ -57,13 +51,13 @@ namespace SIPSorcery
             SIPProviderUpdate_External = sipProviderUpdate;
             ControlClosed_External = closed;
 
-            if (m_disableProviderRegistrations)
-            {
-                m_providerRegister.IsEnabled = false;
-                m_providerRegisterContact.IsEnabled = false;
-                m_providerRegisterExpiry.IsEnabled = false;
-                m_providerRegisterServer.IsEnabled = false;
-            }
+            //if (m_disableProviderRegistrations)
+            //{
+            //    m_providerRegister.IsEnabled = false;
+            //    m_providerRegisterContact.IsEnabled = false;
+            //    m_providerRegisterExpiry.IsEnabled = false;
+            //    m_providerRegisterServer.IsEnabled = false;
+            //}
 
             if (mode == DetailsControlModesEnum.Edit)
             {
@@ -99,21 +93,21 @@ namespace SIPSorcery
 
         private void PopulateDataFields(SIPProvider sipProvider)
         {
-            m_providerId.Text = sipProvider.Id.ToString();
+            m_providerId.Text = sipProvider.ID.ToString();
             m_providerTypeName.Text = sipProvider.ProviderType.ToString();
             m_providerName.Text = sipProvider.ProviderName;
             m_providerUsername.Text = sipProvider.ProviderUsername;
             m_providerPassword.Text = sipProvider.ProviderPassword;
 
-            if (sipProvider.ProviderType == ProviderTypes.SIP)
+            if (String.Equals(sipProvider.ProviderType, ProviderTypes.SIP.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 m_providerServer.Text = sipProvider.ProviderServer.ToString();
                 m_providerAuthUsername.Text = (sipProvider.ProviderAuthUsername != null) ? sipProvider.ProviderAuthUsername : String.Empty;
                 m_providerFromHeader.Text = (sipProvider.ProviderFrom != null) ? sipProvider.ProviderFrom : String.Empty;
                 m_providerRegisterRealm.Text = (sipProvider.RegisterRealm != null) ? sipProvider.RegisterRealm : String.Empty;
 
-                if (!m_disableProviderRegistrations)
-                {
+                //if (!m_disableProviderRegistrations)
+                //{
                     m_providerRegister.IsChecked = sipProvider.RegisterEnabled;
                     m_providerRegisterContact.Text = (sipProvider.RegisterContact != null) ? sipProvider.RegisterContact.ToString() : String.Empty;
                     m_providerRegisterExpiry.Text = sipProvider.RegisterExpiry.ToString();
@@ -122,7 +116,7 @@ namespace SIPSorcery
                     m_providerRegisterContact.IsEnabled = m_providerRegister.IsChecked.Value;
                     m_providerRegisterExpiry.IsEnabled = m_providerRegister.IsChecked.Value;
                     m_providerRegisterServer.IsEnabled = m_providerRegister.IsChecked.Value;
-                }
+                //}
 
                 if (sipProvider.CustomHeaders != null && sipProvider.CustomHeaders.Trim().Length > 0)
                 {
@@ -151,7 +145,7 @@ namespace SIPSorcery
                 {
                     for (int index = 0; index < m_gvCallbackType.Items.Count; index++)
                     {
-                        if (((TextBlock)m_gvCallbackType.Items[index]).Text == sipProvider.GVCallbackType.Value.ToString())
+                        if (((TextBlock)m_gvCallbackType.Items[index]).Text == sipProvider.GVCallbackType)
                         {
                             m_gvCallbackType.SelectedIndex = index;
                             break;
@@ -207,26 +201,56 @@ namespace SIPSorcery
                         }
                     }
 
-                    sipProvider = new SIPProvider(ProviderTypes.SIP, m_owner, providerName, providerUsername, providerPassword, providerServer, null, providerFrom, customHeaders,
-                            registerContact, registerExpiry, registerServer, authUsername, registerRealm, registerEnabled, true, null, null, null);
+                    sipProvider = new SIPProvider()
+                    {
+                        ID = Guid.NewGuid().ToString(),
+                        ProviderType = ProviderTypes.SIP.ToString(),
+                        Owner = m_owner,
+                        ProviderName = providerName,
+                        ProviderUsername = providerUsername,
+                        ProviderPassword = providerPassword,
+                        ProviderServer = (providerServer != null) ? providerServer.ToString() : null,
+                        ProviderFrom = providerFrom,
+                        CustomHeaders = customHeaders,
+                        RegisterContact = (registerContact != null) ? registerContact.ToString() : null,
+                        RegisterExpiry = registerExpiry,
+                        RegisterServer = (registerServer != null) ? registerServer.ToString() : null,
+                        ProviderAuthUsername = authUsername,
+                        RegisterRealm = registerRealm,
+                        RegisterEnabled = registerEnabled,
+                        RegisterAdminEnabled = true,
+                        Inserted = DateTime.Now.ToString("o"),
+                        LastUpdate = DateTime.Now.ToString("o")
+                    };
                 }
                 else
                 {
-                    string gvCallbackNumber = m_gvCallbackNumber.Text;
-                    string gvCallbackPattern = m_gvCallbackPattern.Text;
-                    GoogleVoiceCallbackTypes callbackType = (GoogleVoiceCallbackTypes)Enum.Parse(typeof(GoogleVoiceCallbackTypes), ((TextBlock)m_gvCallbackType.SelectedValue).Text, true);
+                    //string gvCallbackNumber = m_gvCallbackNumber.Text;
+                    //string gvCallbackPattern = m_gvCallbackNumber.Text;
+                    //GoogleVoiceCallbackTypes callbackType = (GoogleVoiceCallbackTypes)Enum.Parse(typeof(GoogleVoiceCallbackTypes), ((TextBlock)m_gvCallbackType.SelectedValue).Text, true);
 
-                    sipProvider = new SIPProvider(ProviderTypes.GoogleVoice, m_owner, providerName, providerUsername, providerPassword, null, null, null, null,
-                        null, 0, null, null, null, false, true, gvCallbackNumber, gvCallbackPattern, callbackType);
+                    //sipProvider = new SIPProvider(ProviderTypes.GoogleVoice, m_owner, providerName, providerUsername, providerPassword, null, null, null, null,
+                    //    null, 0, null, null, null, false, true, gvCallbackNumber, gvCallbackPattern, callbackType);
+
+                    sipProvider = new SIPProvider()
+                    {
+                        ID = Guid.NewGuid().ToString(),
+                        ProviderType = ProviderTypes.GoogleVoice.ToString(),
+                        Owner = m_owner,
+                        ProviderName = providerName,
+                        ProviderUsername = providerUsername,
+                        ProviderPassword = providerPassword,
+                        GVCallbackNumber = m_gvCallbackNumber.Text,
+                        GVCallbackPattern = m_gvCallbackNumber.Text,
+                        GVCallbackType = ((TextBlock)m_gvCallbackType.SelectedValue).Text,
+                        Inserted = DateTime.Now.ToString("o"),
+                        LastUpdate = DateTime.Now.ToString("o")
+                    };
                 }
 
-                sipProvider.Inserted = DateTime.UtcNow;
-                sipProvider.LastUpdate = DateTime.UtcNow;
-
-                string validationError = SIPProvider.ValidateAndClean(sipProvider);
-                if (validationError != null)
+                if (sipProvider.HasValidationErrors)
                 {
-                    WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
+                    WriteStatusMessage(MessageLevelsEnum.Warn, sipProvider.ValidationErrors.First().ErrorMessage);
                 }
                 else
                 {
@@ -254,7 +278,7 @@ namespace SIPSorcery
                 m_sipProvider.ProviderFrom = m_providerFromHeader.Text;
                 m_sipProvider.RegisterRealm = m_providerRegisterRealm.Text;
                 m_sipProvider.RegisterServer = (!m_providerRegisterServer.Text.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(m_providerRegisterServer.Text.Trim()).ToString() : null;
-
+                
                 int registerExpiry = m_defaultRegisterExpiry;
                 if (Int32.TryParse(m_providerRegisterExpiry.Text, out registerExpiry))
                 {
@@ -278,12 +302,11 @@ namespace SIPSorcery
 
                 m_sipProvider.GVCallbackNumber = m_gvCallbackNumber.Text;
                 m_sipProvider.GVCallbackPattern = m_gvCallbackPattern.Text;
-                m_sipProvider.GVCallbackType = (GoogleVoiceCallbackTypes)Enum.Parse(typeof(GoogleVoiceCallbackTypes), ((TextBlock)m_gvCallbackType.SelectedValue).Text, true);
+                m_sipProvider.GVCallbackType = ((TextBlock)m_gvCallbackType.SelectedValue).Text;
 
-                string validationError = SIPProvider.ValidateAndClean(m_sipProvider);
-                if (validationError != null)
+                if (m_sipProvider.HasValidationErrors)
                 {
-                    WriteStatusMessage(MessageLevelsEnum.Warn, validationError);
+                    WriteStatusMessage(MessageLevelsEnum.Warn, m_sipProvider.ValidationErrors.First().ErrorMessage);
                 }
                 else
                 {
@@ -333,8 +356,8 @@ namespace SIPSorcery
 
         private void ProviderRegister_Checked(object sender, System.Windows.RoutedEventArgs e)
         {
-            if (!m_disableProviderRegistrations)
-            {
+            //if (!m_disableProviderRegistrations)
+            //{
                 m_providerRegisterContact.IsEnabled = true;
                 m_providerRegisterExpiry.IsEnabled = true;
                 m_providerRegisterServer.IsEnabled = true;
@@ -346,10 +369,9 @@ namespace SIPSorcery
 
                 if (m_providerRegisterContact.Text.Trim().Length == 0)
                 {
-                    m_providerRegisterContact.Text = m_owner + "@" + DEFAULT_CONTACT_HOST;
+                    m_providerRegisterContact.Text = m_owner + "@" + m_defaultContactHost;
                 }
-            }
-
+            //}
         }
 
         private void ProviderRegister_Unchecked(object sender, System.Windows.RoutedEventArgs e)

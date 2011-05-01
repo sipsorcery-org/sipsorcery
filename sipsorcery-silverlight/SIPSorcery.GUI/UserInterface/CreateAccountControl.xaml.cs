@@ -1,159 +1,101 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ServiceModel.DomainServices;
+using System.ServiceModel.DomainServices.Client;
+using System.ServiceModel.DomainServices.Client.ApplicationServices;
+using System.Text.RegularExpressions;
 using System.Windows;
-using System.Windows.Browser;
 using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Ink;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Shapes;
-using SIPSorcery.CRM;
+using SIPSorcery.Entities;
 using SIPSorcery.Sys;
+using SIPSorcery.Entities.Services;
 
 namespace SIPSorcery
 {
     public partial class CreateAccountControl : UserControl
     {
-        public CreateCustomerDelegate CreateCustomer_External;
-        public ClickedDelegate CancelCreateCustomer_External;
+        public event Action CloseClicked;
+        public event Action<string> CustomerCreated;
 
-        private string m_emailAddress;
-        public string InviteCode;
+        private SIPEntitiesDomainContext m_riaContext;
+        public string InviteCode
+        {
+            set
+            {
+                Customer customer = (Customer)m_newCustomerDataForm.CurrentItem;
+                customer.InviteCode = value;
+            }
+        }
 
         public CreateAccountControl()
         {
             InitializeComponent();
+
+            m_newCustomerDataForm.CurrentItem = CreateNewCustomer();
         }
 
-        public void SetDataEntryEnabled(bool enabled)
+        public void SetRIAContext(SIPEntitiesDomainContext riaContext)
         {
-            Visibility dataEntryVisibility = (enabled) ? Visibility.Visible : Visibility.Collapsed;
-            UIHelper.SetVisibility(m_firstNameTextBox, dataEntryVisibility);
-            UIHelper.SetVisibility(m_lastNameTextBox, dataEntryVisibility);
-            UIHelper.SetVisibility(m_emailAddressTextBox, dataEntryVisibility);
-            UIHelper.SetVisibility(m_usernameTextBox, dataEntryVisibility);
-            UIHelper.SetVisibility(m_passwordTextBox, dataEntryVisibility);
-            UIHelper.SetVisibility(m_retypePasswordTextBox, dataEntryVisibility);
-            UIHelper.SetVisibility(m_securityAnswerTextBox, dataEntryVisibility);
-            UIHelper.SetVisibility(m_cityTextBox, dataEntryVisibility);
-            UIHelper.SetVisibility(m_securityQuestionListBox, dataEntryVisibility);
-            UIHelper.SetVisibility(m_countryListBox, dataEntryVisibility);
-            UIHelper.SetVisibility(m_webSiteTextBox, dataEntryVisibility);
-            UIHelper.SetVisibility(m_createAccountButton, dataEntryVisibility);
-            UIHelper.SetVisibility(m_firstNameLabel, dataEntryVisibility);
-            UIHelper.SetVisibility(m_lastNameLabel, dataEntryVisibility);
-            UIHelper.SetVisibility(m_emailAddressLabel, dataEntryVisibility);
-            UIHelper.SetVisibility(m_usernameLabel, dataEntryVisibility);
-            UIHelper.SetVisibility(m_passwordLabel, dataEntryVisibility);
-            UIHelper.SetVisibility(m_retypedPasswordLabel, dataEntryVisibility);
-            UIHelper.SetVisibility(m_securityQuestionLabel, dataEntryVisibility);
-            UIHelper.SetVisibility(m_securityAnswerLabel, dataEntryVisibility);
-            UIHelper.SetVisibility(m_cityLabel, dataEntryVisibility);
-            UIHelper.SetVisibility(m_countryLabel, dataEntryVisibility);
-            UIHelper.SetVisibility(m_webSiteLabel, dataEntryVisibility);
-            UIHelper.SetVisibility(m_timezoneLabel, dataEntryVisibility);
-            UIHelper.SetVisibility(m_timezoneListBox, dataEntryVisibility);
+            m_riaContext = riaContext;
         }
 
-        private void CreateCustomerButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        private void CreateCustomerComplete(SubmitOperation so)
         {
-            try
+            Customer customer = (Customer)so.UserState;
+
+            if (so.HasError)
             {
-                m_statusTextBlock.Text = String.Empty;
+                m_riaContext.Customers.Remove(customer);
 
-                Customer customer = new Customer()
-                {
-                    Id = Guid.NewGuid(),
-                    FirstName = m_firstNameTextBox.Text.Trim(),
-                    LastName = m_lastNameTextBox.Text.Trim(),
-                    EmailAddress = m_emailAddressTextBox.Text.Trim(),
-                    CustomerUsername = m_usernameTextBox.Text.Trim(),
-                    CustomerPassword = m_passwordTextBox.Password.Trim(),
-                    SecurityQuestion = ((TextBlock)m_securityQuestionListBox.SelectedItem).Text,
-                    SecurityAnswer = m_securityAnswerTextBox.Text.Trim(),
-                    City = m_cityTextBox.Text.Trim(),
-                    Country = ((TextBlock)m_countryListBox.SelectedItem).Text,
-                    WebSite = m_webSiteTextBox.Text.Trim(),
-                    TimeZone = ((TextBlock)m_timezoneListBox.SelectedItem).Text,
-                    InviteCode = InviteCode,
-                    Inserted = DateTime.Now.ToUniversalTime()
-                };
-
-                string validationError = Customer.ValidateAndClean(customer);
-                if (validationError != null)
-                {
-                    m_statusTextBlock.Text = validationError;
-                }
-                else
-                {
-
-                    if (m_retypePasswordTextBox.Password.IsNullOrBlank())
-                    {
-                        m_statusTextBlock.Text = "The retyped password must be specified.";
-                    }
-                    else if (m_retypePasswordTextBox.Password.Trim() != customer.CustomerPassword.Trim())
-                    {
-                        m_statusTextBlock.Text = "The password and retyped password did not match.";
-                    }
-                    else
-                    {
-                        SetDataEntryEnabled(false);
-                        UIHelper.SetText(m_statusTextBlock, "Attempting to create new customer, please wait...");
-
-                        CreateCustomer_External(customer);
-
-                        m_emailAddress = customer.EmailAddress;
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                SetDataEntryEnabled(true);
-                m_statusTextBlock.Text = "Exception creating customer. " + excp.Message;
-            }
-        }
-
-        public void CustomerCreated(System.ComponentModel.AsyncCompletedEventArgs e)
-        {
-            if (e.Error == null)
-            {
-                Clear();
-                UIHelper.SetText(m_statusTextBlock, "A comfirmation email has been sent to " + m_emailAddress + ". " +
-                    "Please click on the link contained in the email to activate your account. Accounts not activated within 24 hours are removed.");
+                // Remove the error information the RIA domain services framework adds in and that will just confuse things.
+                string errorMessage = Regex.Replace(so.Error.Message, @"Submit operation failed.", "");
+                UIHelper.SetText(m_statusTextBlock, errorMessage);
+                
+                so.MarkErrorAsHandled();
             }
             else
             {
-                SetDataEntryEnabled(true);
-                m_statusTextBlock.Text = e.Error.Message;
+                CustomerCreated("A comfirmation email has been sent to " + customer.EmailAddress + ". " +
+                    "Please click on the link contained in the email to activate your account. Accounts not activated within 24 hours are removed.");
+
+                Reset();
             }
         }
 
-        public void Clear()
+        public void Reset()
         {
-            UIHelper.SetText(m_statusTextBlock, String.Empty);
-            UIHelper.SetText(m_firstNameTextBox, String.Empty);
-            UIHelper.SetText(m_lastNameTextBox, String.Empty);
-            UIHelper.SetText(m_emailAddressTextBox, String.Empty);
-            UIHelper.SetText(m_usernameTextBox, String.Empty);
-            UIHelper.SetText(m_passwordTextBox, String.Empty);
-            UIHelper.SetText(m_retypePasswordTextBox, String.Empty);
-            UIHelper.SetText(m_securityAnswerTextBox, String.Empty);
-            UIHelper.SetText(m_cityTextBox, String.Empty);
-            UIHelper.SetText(m_webSiteTextBox, String.Empty);
-            UIHelper.SetComboBoxSelectedId(m_securityQuestionListBox, 0);
-            UIHelper.SetComboBoxSelectedId(m_countryListBox, 14);
-            UIHelper.SetComboBoxSelectedId(m_timezoneListBox, 31);
-        }
-
-        public void ClearError()
-        {
+            m_newCustomerDataForm.CurrentItem = CreateNewCustomer();
             UIHelper.SetText(m_statusTextBlock, String.Empty);
         }
 
-        private void CancelButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        private void CloseButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            CancelCreateCustomer_External();
+            UIHelper.SetText(m_statusTextBlock, String.Empty);
+            CloseClicked();
+        }
+
+        private void EditEnded(object sender, System.Windows.Controls.DataFormEditEndedEventArgs e)
+        {
+            if (e.EditAction == DataFormEditAction.Commit)
+            {
+                UIHelper.SetText(m_statusTextBlock, "Attempting to create your account, please wait...");
+
+                Customer customer = (sender as DataForm).CurrentItem as Customer;
+                m_riaContext.Customers.Add(customer);
+                m_riaContext.SubmitChanges(CreateCustomerComplete, customer);
+            }
+        }
+
+        private Customer CreateNewCustomer()
+        {
+            return new Customer()
+            {
+                ID = Guid.Empty.ToString(),
+                Inserted = DateTime.Now.ToUniversalTime().ToString("o"),
+                ServiceLevel = CustomerServiceLevels.Free.ToString()
+            };
         }
     }
 }

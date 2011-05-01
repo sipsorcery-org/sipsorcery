@@ -64,6 +64,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="System.ComponentModel.DataAnnotations, Version=2.0.5.0, Culture=neutral, PublicKeyToken=ddd0da4d3e678217, processorArchitecture=MSIL" />
     <Reference Include="System.Windows" />
     <Reference Include="mscorlib" />
     <Reference Include="system" />
@@ -73,6 +74,9 @@
     <Reference Include="System.Windows.Browser" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.Persistence\Entities\SIPProviderTypes.cs">
+      <Link>Entities\SIPProviderTypes.cs</Link>
+    </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.Persistence\ISIPAsset.cs">
       <Link>ISIPAsset.cs</Link>
     </Compile>

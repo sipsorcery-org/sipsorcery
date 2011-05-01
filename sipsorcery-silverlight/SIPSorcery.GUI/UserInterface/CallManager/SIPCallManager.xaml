@@ -13,6 +13,8 @@
 	<UserControl.Resources>
 		<sipsorcery:SIPURIConverter x:Key="SIPURIStringConverter" />
 		<sipsorcery:DateTimeOffsetConverter x:Key="DateTimeOffsetConverter" />
+		<sipsorcery:DateTimeConverter x:Key="DateTimeConverter" />
+		<sipsorcery:FromHeaderConverter x:Key="FromHeaderConverter" />
 	</UserControl.Resources>
 
 	<StackPanel Height="Auto" x:Name="m_sipAccountManagerGrid" Width="Auto" Background="#FF000000" ScrollViewer.VerticalScrollBarVisibility="Disabled">
@@ -53,21 +55,21 @@
 					<data:DataGridTextColumn 
 						Header="Call Date" 
 						Width="SizeToCells"
-						Binding="{Binding Path=CreatedLocal, Converter={StaticResource DateTimeOffsetConverter}}" 
+						Binding="{Binding Path=CreatedLocal, Converter={StaticResource DateTimeConverter}}" 
 						IsReadOnly="True"
 						MinWidth="150"/>
 					<data:DataGridTextColumn 
-		                    Header="Owner" 
-		                    Width="SizeToCells"
-		                    Binding="{Binding Path=Owner}" 
-							IsReadOnly="True"
-							MinWidth="80" />
+	                    Header="Owner" 
+	                    Width="SizeToCells"
+	                    Binding="{Binding Path=Owner}" 
+						IsReadOnly="True"
+						MinWidth="80" />
 					<data:DataGridTextColumn 
-		                    Header="Dirn" 
-		                    Width="SizeToCells"
-		                    Binding="{Binding Path=CallDirection}" 
-							IsReadOnly="True"
-							MinWidth="40" />
+	                    Header="Dirn" 
+	                    Width="SizeToCells"
+	                    Binding="{Binding Path=Direction}" 
+						IsReadOnly="True"
+						MinWidth="50" />
 					<data:DataGridTextColumn 
 						Header="Destination" 
 						Width="SizeToCells"
@@ -79,13 +81,19 @@
 						Width="SizeToCells"
 						Binding="{Binding Path=Duration}" 
 						IsReadOnly="True"
-						MinWidth="60" />
+						MinWidth="70" />
 					<data:DataGridTextColumn 
 						Header="From" 
 						Width="SizeToCells"
-						Binding="{Binding Path=FromHeader}" 
+						Binding="{Binding Path=FromHeader, Converter={StaticResource FromHeaderConverter}}" 
 						IsReadOnly="True"
 						MinWidth="150" />
+					<data:DataGridTextColumn 
+						Header="Remote Socket" 
+						Width="SizeToCells"
+						Binding="{Binding Path=RemoteSocket}" 
+						IsReadOnly="True"
+						MinWidth="120" />	
 					<data:DataGridTextColumn 
 						Header="Status" 
 						Width="SizeToCells"
@@ -101,7 +109,7 @@
 					<data:DataGridTextColumn 
 						Header="AnsweredTime" 
 						Width="SizeToCells"
-						Binding="{Binding Path=AnsweredTimeLocal, Converter={StaticResource DateTimeOffsetConverter}}" 
+						Binding="{Binding Path=AnsweredTimeLocal, Converter={StaticResource DateTimeConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100" />
 					<data:DataGridTextColumn 
@@ -113,7 +121,7 @@
 					<data:DataGridTextColumn 
 						Header="Hungup" 
 						Width="SizeToCells"
-						Binding="{Binding Path=HungupTimeLocal, Converter={StaticResource DateTimeOffsetConverter}}" 
+						Binding="{Binding Path=HungupTimeLocal, Converter={StaticResource DateTimeConverter}}" 
 						IsReadOnly="True"
 						MinWidth="100" />
 				</data:DataGrid.Columns>

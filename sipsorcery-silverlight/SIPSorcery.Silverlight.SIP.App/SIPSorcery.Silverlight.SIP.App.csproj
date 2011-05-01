@@ -41,7 +41,8 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <TargetFrameworkProfile />
-    <LinkedServerProject>..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj</LinkedServerProject>
+    <LinkedServerProject>
+    </LinkedServerProject>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -101,36 +102,46 @@
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPAccount.cs">
       <Link>SIPAssets\SIPAccount.cs</Link>
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPCDRAsset.cs">
       <Link>SIPAssets\SIPCDRAsset.cs</Link>
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPDialogueAsset.cs">
       <Link>SIPAssets\SIPDialogueAsset.cs</Link>
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPDialPlan.cs">
       <Link>SIPAssets\SIPDialPlan.cs</Link>
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPDialPlanScriptTypes.cs">
       <Link>SIPAssets\SIPDialPlanScriptTypes.cs</Link>
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPDomain.cs">
       <Link>SIPAssets\SIPDomain.cs</Link>
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPProvider.cs">
       <Link>SIPAssets\SIPProvider.cs</Link>
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPProviderBinding.cs">
       <Link>SIPAssets\SIPProviderBinding.cs</Link>
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPRegistrarBinding.cs">
       <Link>SIPAssets\SIPRegistrarBinding.cs</Link>
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPPacketMangler.cs">
       <Link>SIPPacketMangler.cs</Link>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPProviderTweaks\SIPProviderMagicJack.cs">
       <Link>SIPProviderTweaks\SIPProviderMagicJack.cs</Link>
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPRequestAuthoriser\SIPRequestAuthenticationResult.cs">
       <Link>SIPRequestAuthoriser\SIPRequestAuthenticationResult.cs</Link>

@@ -32,8 +32,6 @@ namespace SIPSorcery
 
         public bool Initialised { get; private set; }
 
-        //private SocketClient m_sipConsoleClient;
-        //private DnsEndPoint m_sipConsoleEndPoint;
         private SIPSorceryNotificationClient m_sipNotifierClient;
         private string m_controlfilter;
         private string m_owner;
@@ -54,81 +52,26 @@ namespace SIPSorcery
             InitializeComponent();
         }
 
-        public MonitoringConsole(
-            ActivityMessageDelegate logActivityMessage,
-            SIPSorceryNotificationClient notificationsClient)
+        public MonitoringConsole(ActivityMessageDelegate logActivityMessage)
         {
             InitializeComponent();
 
             LogActivityMessage_External = logActivityMessage;
-            m_sipNotifierClient = notificationsClient;
-            m_sipNotifierClient.ControlEventReceived += (eventStr) => { AppendMonitorText(eventStr); };
-            //m_owner = owner;
-            //m_authID = authId;
-            //m_notificationsURL = notificationsURL;
-            //m_monitorHost = host;
-            //m_monitorPort = port;
-
-            //m_sipConsoleEndPoint = new DnsEndPoint(m_monitorHost, m_monitorPort);
-            //m_sipConsoleClient = new SocketClient(m_sipConsoleEndPoint);
-            //m_sipConsoleClient.SocketDataReceived += new SocketDataReceivedDelegate(SIPConsoleClient_MonitorEventReceived);
-            //m_sipConsoleClient.SocketConnectionChange += new SocketConnectionChangeDelegate(SIPConsoleClient_MonitorConnectionChange);
 
             UIHelper.SetVisibility(m_closeSocketButton, Visibility.Collapsed);
             UIHelper.SetVisibility(m_connectSocketButton, Visibility.Visible);
+        }
+
+        public void SetNotifierClient(SIPSorceryNotificationClient notificationsClient)
+        {
+            m_sipNotifierClient = notificationsClient;
+            m_sipNotifierClient.ControlEventReceived += (eventStr) => { AppendMonitorText(eventStr); };
         }
 
         public void Close()
         {
             m_sipNotifierClient.CloseControlSession();
             ConsoleNotificationsClosed();
-
-            /*try
-            {
-                if (m_sipNotifierClient != null)
-                {
-                    m_sipNotifierClient.Closed -= ConsoleNotificationsClosed;
-                    m_sipNotifierClient.Subscribe(null);
-                    m_sipNotifierClient.Close();
-                    m_sipNotifierClient = null;
-                }
-            }
-            catch (Exception excp)
-            {
-                LogActivityMessage_External(MessageLevelsEnum.Error, "Exception closing console notification channel. " + excp.Message);
-            }
-            finally
-            {
-                UIHelper.SetVisibility(m_closeSocketButton, Visibility.Collapsed);
-                UIHelper.SetVisibility(m_connectSocketButton, Visibility.Visible);
-                UIHelper.SetIsEnabled(m_commandEntryTextBox, true);
-                m_isConnected = false;
-            }*/
-        }
-
-        private void ConnectSocket(object state)
-        {
-#if !BLEND
-
-            /* m_sipNotifierClient = new PollingDuplexClient(PollingClientDebugMessage, m_authID, m_notificationsURL);
-            m_sipNotifierClient.NotificationReceived += (notification) => { AppendMonitorText(notification); };
-            m_sipNotifierClient.Closed += () =>
-            {
-                if (m_sipNotifierClient != null)
-                {
-                    LogActivityMessage_External(MessageLevelsEnum.Warn, "Console monitor notification channel closed at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + ".");
-                }
-                ConsoleNotificationsClosed();
-            };
-            m_sipNotifierClient.Subscribe(m_controlfilter);
-
-            UIHelper.SetVisibility(m_closeSocketButton, Visibility.Visible);
-            UIHelper.SetVisibility(m_connectSocketButton, Visibility.Collapsed);
-            m_isConnected = true;*/
-#else
-            LogActivityMessage_External(MessageLevelsEnum.Warn, "The monitor console is disabled in this test version.");
-#endif
-
         }
 
         private void PollingClientDebugMessage(string message)
@@ -144,28 +87,6 @@ namespace SIPSorcery
             UIHelper.SetIsEnabled(m_commandEntryTextBox, true);
         }
 
-        /*private void SIPConsoleClient_MonitorConnectionChange(SocketConnectionStatus connectionState)
-        {
-            m_monitorStatusMessage = connectionState.Message;
-            m_monitorStatus = connectionState.ConnectionStatus;
-            m_monitorInitialisationInProgress = false;
-
-            if (m_monitorStatus == ServiceConnectionStatesEnum.Ok)
-            {
-                //LogActivityMessage_External(MessageLevelsEnum.Info, "Connection to " + m_sipConsoleEndPoint + " established.");
-                UIHelper.SetVisibility(m_closeSocketButton, Visibility.Visible);
-                UIHelper.SetVisibility(m_connectSocketButton, Visibility.Collapsed);
-                m_isConnected = true;
-            }
-            else
-            {
-                //LogActivityMessage_External(MessageLevelsEnum.Info, "Connection to " + m_sipConsoleEndPoint + " closed.");
-                UIHelper.SetVisibility(m_closeSocketButton, Visibility.Collapsed);
-                UIHelper.SetVisibility(m_connectSocketButton, Visibility.Visible);
-                m_isConnected = false;
-            }
-        }*/
-
         private void SIPConsoleClient_MonitorEventReceived(byte[] data, int bytesRead)
         {
             AppendMonitorText(Encoding.UTF8.GetString(data, 0, bytesRead));
@@ -173,17 +94,10 @@ namespace SIPSorcery
 
         private void CommandEntry_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            try
+            if (e.Key == Key.Enter)
             {
-                if (e.Key == Key.Enter)
-                {
-                    string command = m_commandEntryTextBox.Text;
-                    ConnectConsole(command);
-                }
-            }
-            catch (Exception excp)
-            {
-                LogActivityMessage_External(MessageLevelsEnum.Error, "Exception Socket Send. " + excp.Message);
+                string command = m_commandEntryTextBox.Text;
+                ConnectConsole(command);
             }
         }
 
@@ -194,8 +108,15 @@ namespace SIPSorcery
 
         private void ConnectButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            string filterText = m_commandEntryTextBox.Text;
-            ConnectConsole(filterText);
+            if (m_sipNotifierClient != null)
+            {
+                string filterText = m_commandEntryTextBox.Text;
+                ConnectConsole(filterText);
+            }
+            else
+            {
+                LogActivityMessage_External(MessageLevelsEnum.Warn, "A connection to the notification service has not been established. Console monitoring cannot be initiated.");
+            }
         }
 
         private void ConnectConsole(string filterText)

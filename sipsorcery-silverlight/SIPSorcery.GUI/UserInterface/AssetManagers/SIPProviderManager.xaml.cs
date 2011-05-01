@@ -1,25 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Net;
-using System.Net.Sockets;
+using System.Linq;
 using System.ServiceModel;
-using System.Text;
-using System.Threading;
+using System.ServiceModel.DomainServices.Client;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Ink;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Shapes;
-using SIPSorcery.SIP.App;
-using SIPSorcery.Persistence;
-using SIPSorcery.Silverlight.Messaging;
+using SIPSorcery.Entities;
 using SIPSorcery.UIControls;
-using SIPSorcery.SIPSorceryProvisioningClient;
+using SIPSorcery.Entities.Services;
 
 namespace SIPSorcery
 {
@@ -29,26 +19,13 @@ namespace SIPSorcery
         private const int SIPPROVIDERBINDINGS_DISPLAY_COUNT = 25;
 
         private ActivityMessageDelegate LogActivityMessage_External;
-        private ActivityProgressDelegate ShowActivityProgress_External;
-        private SIPSorceryPersistor m_persistor;
 
-        private int m_sipProvidersPanelOffset;
-        private int m_sipProvidersPanelCount;
-        private int m_sipRegistrationAgentBindingsPanelOffset;
-        private int m_sipRegistrationAgentBindingsPanelCount;
+        private SIPEntitiesDomainContext m_riaContext;
 
-        private bool m_initialLoadComplete;
-        private bool m_sipProvidersCountComplete;
-        private bool m_sipProvidersLoadComplete;
-        private bool m_sipProvidersLoadInProgress;
         private bool m_sipProvidersPanelRefreshInProgress;
-        private bool m_sipRegistrationAgentBindingsLoaded;
         private bool m_sipRegistrationAgentBindingsPanelRefreshInProgress;
 
         private string m_owner;
-        private string m_sipProvidersWhere;                     // Used when filtering is enabled.
-        private string m_sipProviderBindingsWhere;              // Used when filtering is enabled.
-        private ObservableCollection<SIPProvider> m_sipProviders;
         private SIPProvider m_selectedSIPProvider;
         private SIPProviderDetailsControl m_addControl;
         private SIPProviderDetailsControl m_editControl;
@@ -62,21 +39,19 @@ namespace SIPSorcery
 
         public SIPProviderManager(
             ActivityMessageDelegate logActivityMessage,
-            ActivityProgressDelegate showActivityProgress,
-            SIPSorceryPersistor persistor,
-            string owner)
+            string owner,
+            SIPEntitiesDomainContext riaContext)
 		{
 			InitializeComponent();
 
             LogActivityMessage_External = logActivityMessage;
-            ShowActivityProgress_External = showActivityProgress;
-            m_persistor = persistor;
             m_owner = owner;
+            m_riaContext = riaContext;
 
             m_sipProvidersPanel.SetTitle("SIP Providers");
             m_sipProvidersPanel.DisplayCount = SIPPROVIDERS_DISPLAY_COUNT;
             m_sipProvidersPanel.MenuEnableFilter(false);
-            m_sipProvidersPanel.MenuEnableDelete(false);
+            m_sipProvidersPanel.MenuEnableHelp(false);
             m_sipProvidersPanel.Add += SIPProvidersPanel_Add;
             m_sipProvidersPanel.GetAssetList = GetSIPProviders;
 
@@ -84,52 +59,21 @@ namespace SIPSorcery
             m_sipProviderRegistrationsPanel.DisplayCount = SIPPROVIDERBINDINGS_DISPLAY_COUNT;
             m_sipProviderRegistrationsPanel.MenuEnableAdd(false);
             m_sipProviderRegistrationsPanel.MenuEnableFilter(false);
-            m_sipProviderRegistrationsPanel.MenuEnableDelete(false);
+            m_sipProviderRegistrationsPanel.MenuEnableHelp(false);
             m_sipProviderRegistrationsPanel.GetAssetList = GetSIPProviderBindings;
 		}
 
         public void Initialise()
         {
             Initialised = true;
-
-            m_persistor.GetSIPProvidersCountComplete += GetSIPProvidersCountComplete;
-            m_persistor.GetSIPProvidersComplete += GetSIPProvidersComplete;
-            m_persistor.UpdateSIPProviderComplete += UpdateSIPProviderComplete;
-            m_persistor.AddSIPProviderComplete += AddSIPProviderComplete;
-            m_persistor.DeleteSIPProviderComplete += DeleteSIPProviderComplete;
-            m_persistor.GetSIPProviderBindingsCountComplete += GetSIPProviderBindingsCountComplete;
-            m_persistor.GetSIPProviderBindingsComplete += GetSIPProviderBindingsComplete;
-
-            Load();
+            GetSIPProviders(0, SIPPROVIDERS_DISPLAY_COUNT);
+            GetSIPProviderBindings(0, SIPPROVIDERBINDINGS_DISPLAY_COUNT);
         }
 
-        private void Load()
-        {
-            //if (!m_sipProvidersCountComplete)
-            //{
-            //    m_persistor.GetSIPProvidersCountAsync(m_sipProvidersWhere);
-            //}
-            //else 
-            if (!m_sipProvidersLoadComplete)
-            {
-                LogActivityMessage_External(MessageLevelsEnum.Info, "Loading SIP Providers...");
-                m_sipProvidersPanel.RefreshAsync();
-            }
-            else if (!m_sipRegistrationAgentBindingsLoaded)
-            {
-                LogActivityMessage_External(MessageLevelsEnum.Info, "Loading SIP Provider Bindings...");
-                m_sipProviderRegistrationsPanel.RefreshAsync();
-            }
-            else
-            {
-                m_initialLoadComplete = true;
-            }
-        }
-
-        public void SIPMonitorMachineEventHandler(SIPMonitorMachineEvent machineEvent)
+        public void SIPMonitorMachineEventHandler(SIPSorcery.SIP.App.SIPMonitorMachineEvent machineEvent)
         {
             // Update the bindings display.
-            if (m_initialLoadComplete && !m_sipRegistrationAgentBindingsPanelRefreshInProgress)
+            if (!m_sipRegistrationAgentBindingsPanelRefreshInProgress)
             {
                 m_sipProviderRegistrationsPanel.RefreshAsync();
             }
@@ -149,11 +93,11 @@ namespace SIPSorcery
             if (!m_sipProvidersPanelRefreshInProgress)
             {
                 m_sipProvidersPanelRefreshInProgress = true;
-                m_sipProvidersLoadInProgress = true;
 
-                m_sipProvidersPanelOffset = offset;
-                m_sipProvidersPanelCount = count;
-                m_persistor.GetSIPProvidersCountAsync(m_sipProvidersWhere);
+                m_riaContext.SIPProviders.Clear();
+                var query = m_riaContext.GetSIPProvidersQuery().OrderBy(x => x.ProviderName).Skip(offset).Take(count);
+                query.IncludeTotalCount = true;
+                m_riaContext.Load(query, LoadBehavior.RefreshCurrent, GetSIPProvidersCompleted, null);
             }
             else
             {
@@ -161,79 +105,41 @@ namespace SIPSorcery
             }
         }
 
-        private void GetSIPProvidersCountComplete(GetSIPProvidersCountCompletedEventArgs e)
+        private void GetSIPProvidersCompleted(LoadOperation<SIPProvider> lo)
         {
-            m_sipProvidersCountComplete = true;
-
-            try
+            if (lo.HasError)
             {
-                m_sipProvidersPanel.AssetListTotal = e.Result;
-                LogActivityMessage_External(MessageLevelsEnum.Info, "SIP Providers count " + e.Result + " " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + ".");
-                m_persistor.GetSIPProvidersAsync(m_sipProvidersWhere, m_sipProvidersPanelOffset, m_sipProvidersPanelCount);
+                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error loading the SIP Providers. " + lo.Error.Message);
+                lo.MarkErrorAsHandled();
             }
-            catch (Exception excp)
+            else
             {
-                string excpMessage = (excp.InnerException != null) ? excp.InnerException.Message : excp.Message;
-                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error retrieving the SIP Provider count. " + excpMessage);
-
-                m_sipProvidersPanelRefreshInProgress = false;
-                m_sipProvidersLoadInProgress = false;
+                m_sipProvidersPanel.AssetListTotal = lo.TotalEntityCount;
+                m_sipProvidersPanel.SetAssetListSource(m_riaContext.SIPProviders);
+                //LogActivityMessage_External(MessageLevelsEnum.Info, "SIP Provders successfully loaded, total " + lo.TotalEntityCount + " " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + ".");
             }
-        }
 
-        private void GetSIPProvidersComplete(GetSIPProvidersCompletedEventArgs e)
-        {
-            m_sipProvidersLoadComplete = true;
-
-            try
-            {
-                m_sipProviders = e.Result;
-                m_sipProvidersPanel.SetAssetListSource(m_sipProviders);
-
-                LogActivityMessage_External(MessageLevelsEnum.Info, "SIP Providers successfully loaded " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + ".");
-
-                if (!m_initialLoadComplete)
-                {
-                    Load();
-                }
-            }
-            catch (Exception excp)
-            {
-                string excpMessage = (excp.InnerException != null) ? excp.InnerException.Message : excp.Message;
-                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error retrieving SIP Providers. " + excpMessage);
-            }
-            finally
-            {
-                m_sipProvidersPanelRefreshInProgress = false;
-                m_sipProvidersLoadInProgress = false;
-            }
+            m_sipProvidersPanelRefreshInProgress = false;
         }
 
         private void UpdateSIPProvider(SIPProvider sipProvider)
         {
-            //LogActivityMessage_External(MessageLevelsEnum.Info, "Attempting to update SIP Provider " + sipProvider.ProviderName + ".");
-            m_persistor.UpdateSIPProviderAsync(sipProvider);
+            m_riaContext.SubmitChanges(UpdateSIPProviderComplete, sipProvider);
         }
 
-        private void UpdateSIPProviderComplete(UpdateSIPProviderCompletedEventArgs e)
+        private void UpdateSIPProviderComplete(SubmitOperation so)
         {
-            try
+            if (so.HasError)
             {
-                // The SIP Provider returned by the web service call is the account after the update operation was carried out.
-                SIPProvider sipProvider = e.Result;
-                //LogActivityMessage_External(MessageLevelsEnum.Info, "Update completed successfully for " + sipProvider.ProviderName + ".");
-                if (m_editControl != null)
-                {
-                    m_editControl.WriteStatusMessage(MessageLevelsEnum.Info, "Update completed successfully for " + sipProvider.ProviderName + ".");
-                }
+                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error updating the SIP provider. " + so.Error.Message);
+                so.MarkErrorAsHandled();
             }
-            catch (Exception excp)
+            else
             {
-                string excpMessage = (excp.InnerException != null) ? excp.InnerException.Message : excp.Message;
-                //LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error performing a SIP Provider update." + excpMessage);
                 if (m_editControl != null)
                 {
-                    m_editControl.WriteStatusMessage(MessageLevelsEnum.Error, "There was an error performing a SIP Provider update." + excpMessage);
+                    SIPProvider sipProvider = (SIPProvider)so.UserState;
+                    m_editControl.WriteStatusMessage(MessageLevelsEnum.Info, "Update completed successfully for SIP provider " + sipProvider.ProviderName + ".");
                 }
             }
         }
@@ -242,7 +148,7 @@ namespace SIPSorcery
         {
             try
             {
-                if (m_initialLoadComplete && !m_sipProvidersLoadInProgress && m_sipProviders.Count > 0)
+                if (m_riaContext.SIPProviders.Count() > 0)
                 {
                      DataGrid dataGrid = (DataGrid)sender;
                      if (dataGrid.CurrentColumn.Header as string != "Delete")
@@ -268,41 +174,35 @@ namespace SIPSorcery
 
         private void SIPProviderAdd(SIPProvider sipProvider)
         {
-            m_persistor.AddSIPProviderAsync(sipProvider);
+            m_riaContext.SIPProviders.Add(sipProvider);
+            m_riaContext.SubmitChanges(SIPProviderAddComplete, sipProvider);
         }
 
-        private void AddSIPProviderComplete(AddSIPProviderCompletedEventArgs e)
+        private void SIPProviderAddComplete(SubmitOperation so)
         {
-            try
+            if (so.HasError)
             {
-                SIPProvider sipProvider = e.Result;
-
-                if(m_addControl != null)
+                if (m_addControl != null)
                 {
+                    m_addControl.WriteStatusMessage(MessageLevelsEnum.Error, so.Error.Message);
+                }
+                else
+                {
+                    LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error adding a SIP Provider. " + so.Error.Message);
+                }
+
+                m_riaContext.SIPProviders.Remove((SIPProvider)so.UserState);
+                so.MarkErrorAsHandled();
+            }
+            else
+            {
+                if (m_addControl != null)
+                {
+                    SIPProvider sipProvider = (SIPProvider)so.UserState;
                     m_addControl.WriteStatusMessage(MessageLevelsEnum.Info, "SIP Provider was successfully created for " + sipProvider.ProviderName + ".");
                 }
 
-                if (m_sipProviders == null)
-                {
-                    m_sipProvidersPanel.RefreshAsync();
-                }
-                else
-                {
-                    m_sipProviders.Add(sipProvider);
-                    m_sipProvidersPanel.AssetAdded();
-                }
-            }
-            catch (Exception excp)
-            {
-                string excpMessage = (excp.InnerException != null) ? excp.InnerException.Message : excp.Message;
-                if (m_addControl != null)
-                {
-                    m_addControl.WriteStatusMessage(MessageLevelsEnum.Error, "Error adding SIP Provider. " + excpMessage);
-                }
-                else
-                {
-                    LogActivityMessage_External(MessageLevelsEnum.Error, "Error adding SIP Provider. " + excpMessage);
-                }
+                m_sipProvidersPanel.AssetAdded();
             }
         }
 
@@ -326,34 +226,24 @@ namespace SIPSorcery
             MessageBoxResult confirmDelete = MessageBox.Show("Press Ok to delete " + sipProvider.ProviderName + ".", "Confirm Delete", MessageBoxButton.OKCancel);
             if (confirmDelete == MessageBoxResult.OK)
             {
-                LogActivityMessage_External(MessageLevelsEnum.Info, "Sending delete request for SIP Provider " + sipProvider.ProviderName + ".");
-                m_persistor.DeleteSIPProviderAsync(sipProvider);
+                //LogActivityMessage_External(MessageLevelsEnum.Info, "Sending delete request for SIP Provider " + sipProvider.ProviderName + ".");
+                m_riaContext.SIPProviders.Remove(sipProvider);
+                m_riaContext.SubmitChanges(DeleteSIPProviderComplete, sipProvider);
             }
         }
 
-        private void DeleteSIPProviderComplete(DeleteSIPProviderCompletedEventArgs e)
+        private void DeleteSIPProviderComplete(SubmitOperation so)
         {
-            try
+            if (so.HasError)
             {
-                SIPProvider sipProvider = e.Result;
-
-                LogActivityMessage_External(MessageLevelsEnum.Info, "Delete completed successfully for " + sipProvider.ProviderName + ".");
-
-                for (int index = 0; index < m_sipProviders.Count; index++)
-                {
-                    if (m_sipProviders[index].Id == sipProvider.Id)
-                    {
-                        m_sipProviders.RemoveAt(index);
-                        break;
-                    }
-                }
-
-                m_sipProvidersPanel.AssetDeleted();
+                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error deleting the SIP provider. " + so.Error.Message);
+                so.MarkErrorAsHandled();
             }
-            catch (Exception excp)
+            else
             {
-                string excpMessage = (excp.InnerException != null) ? excp.InnerException.Message : excp.Message;
-                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error deleting the SIP Provider. " + excpMessage);
+                SIPProvider sipProvider = (SIPProvider)so.UserState;
+                //LogActivityMessage_External(MessageLevelsEnum.Info, "Delete completed successfully for " + sipProvider.ProviderName + ".");
+                m_sipProvidersPanel.AssetDeleted();
             }
         }
 
@@ -367,9 +257,10 @@ namespace SIPSorcery
             {
                 m_sipRegistrationAgentBindingsPanelRefreshInProgress = true;
 
-                m_sipRegistrationAgentBindingsPanelOffset = offset;
-                m_sipRegistrationAgentBindingsPanelCount = count;
-                m_persistor.GetSIPProviderBindingsCountAsync(m_sipProviderBindingsWhere);
+                m_riaContext.SIPProviderBindings.Clear();
+                var query = m_riaContext.GetSIPProviderBindingsQuery().OrderBy(x => x.ProviderName).Skip(offset).Take(count);
+                query.IncludeTotalCount = true;
+                m_riaContext.Load(query, LoadBehavior.RefreshCurrent, GetSIPProviderBindingsCompleted, null);
             }
             else
             {
@@ -377,47 +268,21 @@ namespace SIPSorcery
             }
         }
 
-        private void GetSIPProviderBindingsCountComplete(GetSIPProviderBindingsCountCompletedEventArgs e)
+        private void GetSIPProviderBindingsCompleted(LoadOperation<SIPProviderBinding> lo)
         {
-            try
+            if (lo.HasError)
             {
-                m_sipProviderRegistrationsPanel.AssetListTotal = e.Result;
-                LogActivityMessage_External(MessageLevelsEnum.Info, e.Result + " SIP Provider Bindings are registered.");
-                m_persistor.GetSIPProviderBindingsAsync(m_sipProviderBindingsWhere, m_sipRegistrationAgentBindingsPanelOffset, m_sipRegistrationAgentBindingsPanelCount);
+                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error retrieving SIP provider bindings. " + lo.Error.Message);
+                lo.MarkErrorAsHandled();
             }
-            catch (Exception excp)
+            else
             {
-                string excpMessage = (excp.InnerException != null) ? excp.InnerException.Message : excp.Message;
-                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error retrieving the number of SIP Provider bindings. " + excpMessage);
-
-                m_sipRegistrationAgentBindingsPanelRefreshInProgress = false;
+                m_sipProviderRegistrationsPanel.AssetListTotal = lo.TotalEntityCount;
+                m_sipProviderRegistrationsPanel.SetAssetListSource(m_riaContext.SIPProviderBindings);
+                LogActivityMessage_External(MessageLevelsEnum.Info, lo.TotalEntityCount + " SIP provider bindings are registered.");
             }
-        }
 
-        private void GetSIPProviderBindingsComplete(GetSIPProviderBindingsCompletedEventArgs e)
-        {
-            m_sipRegistrationAgentBindingsLoaded = true;
-
-            try
-            {
-                m_sipProviderRegistrationsPanel.SetAssetListSource(e.Result);
-
-                if (!m_initialLoadComplete)
-                {
-                    Load();
-                }
-
-                LogActivityMessage_External(MessageLevelsEnum.Info, "SIP Provider Bindings successfully loaded.");
-            }
-            catch (Exception excp)
-            {
-                string excpMessage = (excp.InnerException != null) ? excp.InnerException.Message : excp.Message;
-                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error retrieving the SIP Provider bindings. " + excpMessage);
-            }
-            finally
-            {
-                m_sipRegistrationAgentBindingsPanelRefreshInProgress = false;
-            }
+            m_sipRegistrationAgentBindingsPanelRefreshInProgress = false;
         }
 
         #endregion

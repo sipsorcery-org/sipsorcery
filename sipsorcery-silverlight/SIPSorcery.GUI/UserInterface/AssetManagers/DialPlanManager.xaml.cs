@@ -2,42 +2,32 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Net;
-using System.Net.Sockets;
+using System.Linq;
 using System.ServiceModel;
+using System.ServiceModel.DomainServices.Client;
 using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Ink;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Shapes;
 using SIPSorcery.Persistence;
-using SIPSorcery.SIP.App;
-using SIPSorcery.Silverlight.Messaging;
+using SIPSorcery.Entities;
 using SIPSorcery.UIControls;
-using SIPSorcery.SIPSorceryProvisioningClient;
+using SIPSorcery.Entities.Services;
 
 namespace SIPSorcery
 {
     public partial class DialPlanManager : UserControl
-	{
+    {
         private ActivityMessageDelegate LogActivityMessage_External;
-        private ActivityProgressDelegate ShowActivityProgress_External;
-        private SIPSorceryPersistor m_persistor;
-        private DialPlanDetailsControl m_addControl;
-        private DialPlanDetailsControl m_editControl;
+        private SIPEntitiesDomainContext m_riaContext;
+        private DialPlanAddControl m_addControl;
+        private DialPlanUpdateControl m_editControl;
+        private DialPlanWizard m_wizardEditControl;
         private SIPDialPlan m_selectedDialPlan;
-        private int m_dialPlansPanelOffset;
-        private int m_dialPlansPanelCount;
         private bool m_dialPlansPanelRefreshInProgress;
 
         private string m_owner;
-        private string m_dialPlansWhere;    // Utilised when filtering is enabled.
-        private ObservableCollection<SIPDialPlan> m_dialPlans;
 
         public bool Initialised { get; private set; }
 
@@ -48,62 +38,27 @@ namespace SIPSorcery
 
         public DialPlanManager(
             ActivityMessageDelegate logActivityMessage,
-            ActivityProgressDelegate showActivityProgress,
-            SIPSorceryPersistor persistor,
-            string owner)
-		{
-			InitializeComponent();
+            string owner,
+            SIPEntitiesDomainContext riaContext)
+        {
+            InitializeComponent();
 
             LogActivityMessage_External = logActivityMessage;
-            ShowActivityProgress_External = showActivityProgress;
-            m_persistor = persistor;
+            m_riaContext = riaContext;
             m_owner = owner;
 
             m_dialPlansPanel.SetTitle("Dial Plans");
             m_dialPlansPanel.MenuEnableFilter(false);
-            m_dialPlansPanel.MenuEnableDelete(false);
-            m_dialPlansPanel.Add += new MenuButtonClickedDelegate(DialPlansPanel_Add);
+            m_dialPlansPanel.MenuEnableHelp(false);
+            m_dialPlansPanel.Add += DialPlansPanel_Add;
             m_dialPlansPanel.GetAssetList = GetDialPlans;
-		}
+        }
 
         public void Initialise()
         {
             Initialised = true;
-
-            m_persistor.GetDialPlansComplete += new GetDialPlansCompleteDelegate(GetDialPlansComplete);
-            m_persistor.GetDialPlansCountComplete += new GetDialPlansCountCompleteDelegate(GetDialPlansCountComplete);
-            m_persistor.UpdateDialPlanComplete += new UpdateDialPlanCompleteDelegate(UpdateDialPlanComplete);
-            m_persistor.AddDialPlanComplete += new AddDialPlanCompleteDelegate(AddDialPlanComplete);
-            m_persistor.DeleteDialPlanComplete += new DeleteDialPlanCompleteDelegate(DeleteDialPlanComplete);
-
-            LogActivityMessage_External(MessageLevelsEnum.Info, "Loading Dial Plans...");
+            //LogActivityMessage_External(MessageLevelsEnum.Info, "Loading Dial Plans...");
             m_dialPlansPanel.RefreshAsync();
-        }
-
-        public void Close()
-        {
-            m_persistor.GetDialPlansComplete -= new GetDialPlansCompleteDelegate(GetDialPlansComplete);
-            m_persistor.GetDialPlansCountComplete -= new GetDialPlansCountCompleteDelegate(GetDialPlansCountComplete);
-        }
-
-        /// <summary>
-        /// Provides access to the dial plan names for use by other controls such as the SIP Account manager.
-        /// </summary>
-        /// <param name="owner">The owning account to get the list of dial plan names for.</param>
-        /// <returns>A list of dial plan names.</returns>
-        public List<string> GetDialPlanNames(string owner)
-        {
-            List<string> dialPlanNames = new List<string>();
-
-            foreach (SIPDialPlan dialPlan in m_dialPlans)
-            {
-                if (dialPlan.Owner == owner)
-                {
-                    dialPlanNames.Add(dialPlan.DialPlanName);
-                }
-            }
-
-            return dialPlanNames;
         }
 
         private void GetDialPlans(int offset, int count)
@@ -112,9 +67,10 @@ namespace SIPSorcery
             {
                 m_dialPlansPanelRefreshInProgress = true;
 
-                m_dialPlansPanelOffset = offset;
-                m_dialPlansPanelCount = count;
-                m_persistor.GetDialPlansCountAsync(m_dialPlansWhere);
+                m_riaContext.SIPDialPlans.Clear();
+                var query = m_riaContext.GetSIPDialplansQuery().OrderBy(x => x.DialPlanName).Skip(offset).Take(count);
+                query.IncludeTotalCount = true;
+                m_riaContext.Load(query, LoadBehavior.RefreshCurrent, SIPDialPlansLoaded, null);
             }
             else
             {
@@ -122,118 +78,61 @@ namespace SIPSorcery
             }
         }
 
-        private void GetDialPlansCountComplete(GetDialPlansCountCompletedEventArgs e)
+        private void SIPDialPlansLoaded(LoadOperation<SIPDialPlan> lo)
         {
-            try
+            if (lo.HasError)
             {
-                m_dialPlansPanel.AssetListTotal = e.Result;
-                LogActivityMessage_External(MessageLevelsEnum.Info, "Dial Plans count " + e.Result +  " " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + ".");
-                m_persistor.GetDialPlansAsync(m_dialPlansWhere, m_dialPlansPanelOffset, m_dialPlansPanelCount);
+                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error loading the Dial Plans. " + lo.Error.Message);
             }
-            catch (Exception excp)
+            else
             {
-                string excpMessage = (excp.InnerException != null) ? excp.InnerException.Message : excp.Message;
-                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error retrieving the Dial Plans count. " + excpMessage);
+                m_dialPlansPanel.AssetListTotal = lo.TotalEntityCount;
+                m_dialPlansPanel.SetAssetListSource(m_riaContext.SIPDialPlans);
+                //LogActivityMessage_External(MessageLevelsEnum.Info, "Dial Plans loaded, total " + lo.TotalEntityCount + " " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + ".");
 
-                m_dialPlansPanelRefreshInProgress = false;
+                if (lo.TotalEntityCount == 0)
+                {
+                    LogActivityMessage_External(MessageLevelsEnum.Warn, "There were no existing dial plans.");
+                }
             }
-        }
 
-        private void GetDialPlansComplete(GetDialPlansCompletedEventArgs e)
-        {
-            try
-            {
-                m_dialPlans = e.Result;
-
-                m_dialPlansPanel.SetAssetListSource(m_dialPlans);
-                LogActivityMessage_External(MessageLevelsEnum.Info, "Dial Plans successfully loaded " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + ".");
-            }
-            catch (Exception excp)
-            {
-                string excpMessage = (excp.InnerException != null) ? excp.InnerException.Message : excp.Message;
-                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error retrieving Dial Plans. " + excpMessage);
-            }
-            finally
-            {
-                m_dialPlansPanelRefreshInProgress = false;
-            }
+            m_dialPlansPanelRefreshInProgress = false;
         }
 
         private void DialPlansPanel_Add()
         {
             m_selectedDialPlan = null;
-            m_addControl = new DialPlanDetailsControl(DetailsControlModesEnum.Add, m_selectedDialPlan, m_owner, AddDialPlan, null, DetailsControlClosed);
+            m_addControl = new DialPlanAddControl(m_owner, DetailsControlClosed, m_riaContext);
             m_dialPlansPanel.SetDetailsElement(m_addControl);
-        }
-
-        private void AddDialPlan(SIPDialPlan dialPlan)
-        {
-            m_persistor.AddDialPlanAsync(dialPlan);
-        }
-
-        private void AddDialPlanComplete(AddDialPlanCompletedEventArgs e)
-        {
-            try
-            {
-                SIPDialPlan dialPlan = e.Result;
-
-                if (m_addControl != null)
-                {
-                    m_addControl.WriteStatusMessage(MessageLevelsEnum.Info, "Dial Plan was successfully created for " + dialPlan.DialPlanName + ".");
-                }
-
-                if (m_dialPlans == null)
-                {
-                    m_dialPlansPanel.RefreshAsync();
-                }
-                else
-                {
-                    m_dialPlans.Add(dialPlan);
-                    m_dialPlansPanel.AssetAdded();
-                }
-            }
-            catch (Exception excp)
-            {
-                string excpMessage = (excp.InnerException != null) ? excp.InnerException.Message : excp.Message;
-                if (m_addControl != null)
-                {
-                    m_addControl.WriteStatusMessage(MessageLevelsEnum.Error, "Error adding Dial Plan. " + excpMessage);
-                }
-                else
-                {
-                    LogActivityMessage_External(MessageLevelsEnum.Error, "Error adding Dial Plan. " + excpMessage);
-                }
-            }
         }
 
         private void UpdateDialPlan(SIPDialPlan dialPlan)
         {
-            m_persistor.UpdateDialPlanAsync(dialPlan);
+            m_riaContext.SubmitChanges(UpdateDialPlanComplete, dialPlan);
         }
-       
-        private void UpdateDialPlanComplete(UpdateDialPlanCompletedEventArgs e)
+
+        private void UpdateDialPlanComplete(SubmitOperation so)
         {
-            try
-            {
-                // The Dial Plan returned by the web service call is the account after the update operation was carried out.
-                SIPDialPlan dialPlan = e.Result;
+            SIPDialPlan dialPlan = (SIPDialPlan)so.UserState;
 
+            if (so.HasError)
+            {
                 if (m_editControl != null)
                 {
-                    m_editControl.WriteStatusMessage(MessageLevelsEnum.Info, "Update completed successfully for " + dialPlan.DialPlanName + ".");
-                }
-            }
-            catch (Exception excp)
-            {
-                string excpMessage = (excp.InnerException != null) ? excp.InnerException.Message : excp.Message;
-
-                if (m_editControl != null)
-                {
-                    m_editControl.WriteStatusMessage(MessageLevelsEnum.Error, "There was an error performing a Dial Plan update." + excpMessage);
+                    m_editControl.WriteStatusMessage(MessageLevelsEnum.Error, "There was an error performing a Dial Plan update." + so.Error.Message);
                 }
                 else
                 {
-                    LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error performing a Dial Plan update." + excpMessage);
+                    LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error performing a Dial Plan update." + so.Error.Message);
+                }
+
+                so.MarkErrorAsHandled();
+            }
+            else
+            {
+                if (m_editControl != null)
+                {
+                    m_editControl.WriteStatusMessage(MessageLevelsEnum.Info, "Update completed successfully for " + dialPlan.DialPlanName + ".");
                 }
             }
         }
@@ -242,7 +141,7 @@ namespace SIPSorcery
         {
             try
             {
-                if (!m_dialPlansPanelRefreshInProgress && m_dialPlans != null && m_dialPlans.Count > 0)
+                if (!m_dialPlansPanelRefreshInProgress && m_riaContext.SIPDialPlans.Count() > 0)
                 {
                     DataGrid dataGrid = (DataGrid)sender;
                     if (dataGrid.CurrentColumn.Header as string != "Delete")
@@ -252,8 +151,22 @@ namespace SIPSorcery
                         if (m_selectedDialPlan == null || m_selectedDialPlan != dialPlan)
                         {
                             m_selectedDialPlan = dialPlan;
-                            m_editControl = new DialPlanDetailsControl(DetailsControlModesEnum.Edit, m_selectedDialPlan, m_owner, null, UpdateDialPlan, DetailsControlClosed);
-                            m_dialPlansPanel.SetDetailsElement(m_editControl);
+
+                            if (m_selectedDialPlan.ScriptType == SIPDialPlanScriptTypesEnum.TelisWizard)
+                            {
+                                if (m_wizardEditControl != null)
+                                {
+                                    m_wizardEditControl.DisableSelectionChanges();
+                                }
+
+                                m_wizardEditControl = new DialPlanWizard(LogActivityMessage_External, m_selectedDialPlan, m_owner, null, UpdateDialPlan, DetailsControlClosed, m_riaContext);
+                                m_dialPlansPanel.SetDetailsElement(m_wizardEditControl);
+                            }
+                            else
+                            {
+                                m_editControl = new DialPlanUpdateControl(m_selectedDialPlan, m_owner, UpdateDialPlan, DetailsControlClosed);
+                                m_dialPlansPanel.SetDetailsElement(m_editControl);
+                            }
                         }
                     }
                 }
@@ -272,33 +185,21 @@ namespace SIPSorcery
             if (confirmDelete == MessageBoxResult.OK)
             {
                 LogActivityMessage_External(MessageLevelsEnum.Info, "Sending delete request for Dial Plan " + dialPlan.DialPlanName + ".");
-                m_persistor.DeleteDialPlanAsync(dialPlan);
+                m_riaContext.SIPDialPlans.Remove(dialPlan);
+                m_riaContext.SubmitChanges(DeleteDialPlanComplete, dialPlan);
             }
         }
 
-        private void DeleteDialPlanComplete(DeleteDialPlanCompletedEventArgs e)
+        private void DeleteDialPlanComplete(SubmitOperation so)
         {
-            try
+            if (so.HasError)
             {
-                SIPDialPlan dialPlan = e.Result;
-
-                LogActivityMessage_External(MessageLevelsEnum.Info, "Delete completed successfully for " + dialPlan.DialPlanName + ".");
-
-                for (int index = 0; index < m_dialPlans.Count; index++)
-                {
-                    if (m_dialPlans[index].Id == dialPlan.Id)
-                    {
-                        m_dialPlans.RemoveAt(index);
-                        break;
-                    }
-                }
-
-                m_dialPlansPanel.AssetDeleted();
+                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error deleting the dial plan. " + so.Error.Message);
+                so.MarkErrorAsHandled();
             }
-            catch (Exception excp)
+            else
             {
-                string excpMessage = (excp.InnerException != null) ? excp.InnerException.Message : excp.Message;
-                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error deleting the Dial Plan. " + excpMessage);
+                m_dialPlansPanel.AssetDeleted();
             }
         }
 
@@ -307,5 +208,5 @@ namespace SIPSorcery
             m_dialPlansPanel.CloseDetailsPane();
             m_selectedDialPlan = null;
         }
-	}
+    }
 }

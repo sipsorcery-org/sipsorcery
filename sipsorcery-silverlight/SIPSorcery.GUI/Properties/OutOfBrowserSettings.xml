@@ -1,0 +1,7 @@
+<OutOfBrowserSettings ShortName="SIP Sorcery Client" EnableGPUAcceleration="False" ShowInstallMenuItem="True">
+  <OutOfBrowserSettings.Blurb>SIP Sorcery Silverlight portal. Manage your SIP Sorcery resources from a handy desktop application.</OutOfBrowserSettings.Blurb>
+  <OutOfBrowserSettings.WindowSettings>
+    <WindowSettings Title="SIP Sorcery Silverlight Portal" Height="500" Width="1024" />
+  </OutOfBrowserSettings.WindowSettings>
+  <OutOfBrowserSettings.Icons />
+</OutOfBrowserSettings>

@@ -155,7 +155,9 @@ namespace SIPSorcery
                 textBlock.Inlines.Add(activityRun);
                 textBlock.Inlines.Add(new LineBreak());
 
-                scrollViewer.ScrollToVerticalOffset(scrollViewer.ScrollableHeight + 20);
+                //scrollViewer.ScrollToVerticalOffset(scrollViewer.ScrollableHeight + 20);
+                scrollViewer.UpdateLayout();
+                scrollViewer.ScrollToVerticalOffset(Double.MaxValue);
             }
             else
             {
@@ -196,7 +198,6 @@ namespace SIPSorcery
                 textBlock.Dispatcher.BeginInvoke(delegate { SetTextBlockDisplayLevel(textBlock, level); });
             }
         }
-
 
         public static void SetText(PasswordBox passwordBox, string text)
         {
@@ -359,6 +360,18 @@ namespace SIPSorcery
             }
 
             return brush;
+        }
+
+        public static void HandleMonitorEvent(Action<SIPMonitorMachineEvent> action, SIPMonitorMachineEvent monitorEvent)
+        {
+            if (Deployment.Current.Dispatcher.CheckAccess())
+            {
+                action(monitorEvent);
+            }
+            else
+            {
+                Deployment.Current.Dispatcher.BeginInvoke(action, monitorEvent);
+            }
         }
     }
 }

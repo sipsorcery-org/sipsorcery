@@ -10,15 +10,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Silverlight.SIP", "SIPSorcery.Silverlight.SIP\SIPSorcery.Silverlight.SIP.csproj", "{F996B6D4-3731-44A5-A35A-A6CE4010BC64}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Silverlight.SIP.App", "SIPSorcery.Silverlight.SIP.App\SIPSorcery.Silverlight.SIP.App.csproj", "{F1D7E6F6-4887-407C-BFCC-10ED5FA2C704}"
-	ProjectSection(ProjectDependencies) = postProject
-		{339648E6-3B61-4A27-B4A2-38A8216B1D7E} = {339648E6-3B61-4A27-B4A2-38A8216B1D7E}
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Sys", "SIPSorcery.Sys\SIPSorcery.Sys.csproj", "{27E8B3BB-0C0F-473E-AFED-DCE76F73A65D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.XMPP", "SIPSorcery.XMPP\SIPSorcery.XMPP.csproj", "{F1E3343D-14E1-40FC-9195-345D9AB234A6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIP.App", "..\sipsorcery-core\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj", "{339648E6-3B61-4A27-B4A2-38A8216B1D7E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -54,10 +49,6 @@ Global
 		{F1E3343D-14E1-40FC-9195-345D9AB234A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1E3343D-14E1-40FC-9195-345D9AB234A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1E3343D-14E1-40FC-9195-345D9AB234A6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{339648E6-3B61-4A27-B4A2-38A8216B1D7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{339648E6-3B61-4A27-B4A2-38A8216B1D7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{339648E6-3B61-4A27-B4A2-38A8216B1D7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{339648E6-3B61-4A27-B4A2-38A8216B1D7E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

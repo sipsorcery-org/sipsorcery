@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Linq;
+using System.ServiceModel.DomainServices.Client;
+using System.ServiceModel.DomainServices.Client.ApplicationServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,8 +13,9 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using SIPSorcery.Persistence;
-using SIPSorcery.SIPSorceryProvisioningClient;
 using SIPSorcery.Sys;
+using SIPSorcery.Entities.Services;
+//using SIPSorcery.Web.RIA;
 
 namespace SIPSorcery
 {
@@ -18,10 +23,11 @@ namespace SIPSorcery
     {
         private const int MAX_STATUS_MESSAGE_LENGTH = 512;
 
-        private SIPSorceryPersistor m_persistorService;
-        private SIPSorceryInvite.SIPSorceryInviteServiceClient m_inviteProxy;
+        //private SIPSorceryInvite.SIPSorceryInviteServiceClient m_inviteProxy;
         private string m_loginUsername;
-        private string m_inviteCode;
+        //private string m_inviteCode;
+        //private AuthenticationService m_authenticationService;
+        private SIPEntitiesDomainContext m_riaContext;
 
         public event Action<string> CreateNewAccountClicked;    // The parameter is the verified invite code.
         public event Action<string, string> Authenticated;      // Parameters are the authenticated username and authID from the server.
@@ -31,12 +37,14 @@ namespace SIPSorcery
             InitializeComponent();
         }
 
-        public void SetProxy(SIPSorceryPersistor persistorService, SIPSorceryInvite.SIPSorceryInviteServiceClient inviteProxy)
+        public void SetProxy(
+            //SIPSorceryInvite.SIPSorceryInviteServiceClient inviteProxy, 
+            SIPEntitiesDomainContext riaContext)
         {
-            m_persistorService = persistorService;
-            m_inviteProxy = inviteProxy;
-            m_persistorService.LoginComplete += LoginComplete;
-            m_inviteProxy.IsInviteCodeValidCompleted += CheckInviteCodeComplete;
+            //m_inviteProxy = inviteProxy;
+            //m_inviteProxy.IsInviteCodeValidCompleted += CheckInviteCodeComplete;
+            //m_authenticationService = authenticationService;
+            m_riaContext = riaContext;
         }
 
         private void LoginButton_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -62,7 +70,11 @@ namespace SIPSorcery
             {
                 WriteLoginMessage("Attempting login...");
                 m_loginUsername = username.Trim();
-                m_persistorService.LoginAsync(m_loginUsername, password);
+                LoginParameters loginParams = new LoginParameters(m_loginUsername, password);
+                //m_webContext.Authentication.Login(loginParams, LoginComplete, null);
+                //m_authenticationService.Login(loginParams, LoginComplete, null);
+                var query = m_riaContext.LoginQuery(m_loginUsername, password, true, null);
+                m_riaContext.Load(query, LoadBehavior.RefreshCurrent, LoginComplete, null);
             }
         }
 
@@ -77,7 +89,7 @@ namespace SIPSorcery
 
         public void WriteLoginMessage(string message)
         {
-            if (message == null || message == String.Empty || message.Trim().Length == 0)
+            if (message.IsNullOrBlank())
             {
                 UIHelper.SetVisibility(m_loginError, Visibility.Collapsed);
             }
@@ -88,15 +100,36 @@ namespace SIPSorcery
             }
         }
 
+        public void WriteInviteCodeErrorMessage(string message)
+        {
+            if (message.IsNullOrBlank())
+            {
+                UIHelper.SetText(m_inviteCodeError, null);
+                UIHelper.SetVisibility(m_inviteCodeError, Visibility.Collapsed);
+            }
+            else
+            {
+
+                UIHelper.SetVisibility(m_inviteCodeError, Visibility.Visible);
+                UIHelper.SetText(m_inviteCodeError, (message.Length > MAX_STATUS_MESSAGE_LENGTH) ? message.Substring(0, MAX_STATUS_MESSAGE_LENGTH) : message);
+            }
+        }
+
         public void EnableCreateAccount()
         {
             UIHelper.SetVisibility(m_orLabel, Visibility.Visible);
             UIHelper.SetVisibility(m_createAccountLink, Visibility.Visible);
         }
 
+        /// <summary>
+        /// If an invite code is required to create a new account this method will be called. If hides
+        /// the create customer link and instead displays the enter invite code text box.
+        /// </summary>
         public void EnableInviteCode()
         {
             UIHelper.SetVisibility(m_orLabel, Visibility.Visible);
+            UIHelper.SetVisibility(m_accountLoginPanel, Visibility.Visible);
+            UIHelper.SetVisibility(m_createAccountLink, Visibility.Collapsed);
             UIHelper.SetVisibility(m_inviteCodeGrid, Visibility.Visible);
         }
 
@@ -125,23 +158,23 @@ namespace SIPSorcery
 
         private void CheckInviteCode_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            WriteInviteCodeErrorMessage(null);
-            m_inviteCode = m_inviteCodeTextBox.Text.Trim();
-            Guid inviteCodeGUID = Guid.Empty;
+            //WriteInviteCodeErrorMessage(null);
+            //m_inviteCode = m_inviteCodeTextBox.Text.Trim();
+            //Guid inviteCodeGUID = Guid.Empty;
 
-            if (m_inviteCode.IsNullOrBlank())
-            {
-                WriteInviteCodeErrorMessage("The invite code was empty. Please enter a valid invite code.");
-            }
-            else if (!Guid.TryParse(m_inviteCode, out inviteCodeGUID))
-            {
-                WriteInviteCodeErrorMessage("The invite code specified was not in a valid format. Please enter a valid invite code.");
-            }
-            else
-            {
-                WriteInviteCodeErrorMessage("Checking invite code...");
-                m_inviteProxy.IsInviteCodeValidAsync(m_inviteCode);
-            }
+            //if (m_inviteCode.IsNullOrBlank())
+            //{
+            //    WriteInviteCodeErrorMessage("The invite code was empty. Please enter a valid invite code.");
+            //}
+            //else if (!Guid.TryParse(m_inviteCode, out inviteCodeGUID))
+            //{
+            //    WriteInviteCodeErrorMessage("The invite code specified was not in a valid format. Please enter a valid invite code.");
+            //}
+            //else
+            //{
+            //    WriteInviteCodeErrorMessage("Checking invite code...");
+            //    m_inviteProxy.IsInviteCodeValidAsync(m_inviteCode);
+            //}
         }
 
         private void CheckInviteCodeComplete(object sender, SIPSorceryInvite.IsInviteCodeValidCompletedEventArgs e)
@@ -160,7 +193,8 @@ namespace SIPSorcery
                 {
                     if (CreateNewAccountClicked != null)
                     {
-                        CreateNewAccountClicked(m_inviteCode);
+                        //CreateNewAccountClicked(m_inviteCode);
+                        CreateNewAccountClicked(null);
                     }
                 }
             }
@@ -170,40 +204,25 @@ namespace SIPSorcery
             }
         }
 
-        private void LoginComplete(LoginCompletedEventArgs e)
+        //private void LoginComplete(LoginOperation op)
+        private void LoginComplete(LoadOperation op)
         {
-            if (e.Error != null)
+            if (op.HasError)
             {
-                WriteLoginMessage("Error logging in. " + e.Error.Message);
+                // Remove the error information the RIA domain services framework adds in and that will just confuse things.
+                string errorMessage = Regex.Replace(op.Error.Message, @"Load operation failed .*?\.", "");
+                WriteLoginMessage("Error logging in." + errorMessage);
+                op.MarkErrorAsHandled();
+                UIHelper.SetText(m_passwordTextBox, String.Empty);
+            }
+            else if (op.Entities.Count() == 0)
+            {
+                WriteLoginMessage("Login failed.");
+                UIHelper.SetText(m_passwordTextBox, String.Empty);
             }
             else
             {
-                if (e.Result == null)
-                {
-                    WriteLoginMessage("Login failed.");
-                }
-                else
-                {
-                    if (Authenticated != null)
-                    {
-                        Authenticated(m_loginUsername, e.Result);
-                    }
-                }
-            }
-        }
-
-        public void WriteInviteCodeErrorMessage(string message)
-        {
-            if (message.IsNullOrBlank())
-            {
-                UIHelper.SetText(m_inviteCodeError, null);
-                UIHelper.SetVisibility(m_inviteCodeError, Visibility.Collapsed);
-            }
-            else
-            {
-
-                UIHelper.SetVisibility(m_inviteCodeError, Visibility.Visible);
-                UIHelper.SetText(m_inviteCodeError, (message.Length > MAX_STATUS_MESSAGE_LENGTH) ? message.Substring(0, MAX_STATUS_MESSAGE_LENGTH) : message);
+                Authenticated(m_loginUsername, null);
             }
         }
 
