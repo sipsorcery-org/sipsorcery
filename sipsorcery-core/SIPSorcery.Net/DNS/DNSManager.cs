@@ -154,7 +154,7 @@ namespace SIPSorcery.Net
             }
             else if (useCache)
             {
-                DNSResponse cacheResult = m_resolver.QueryCache(hostname, queryType);
+                DNSResponse cacheResult = m_resolver.QueryCache(hostname.Trim().ToLower(), queryType);
                 if (cacheResult != null)
                 {
                     return cacheResult;

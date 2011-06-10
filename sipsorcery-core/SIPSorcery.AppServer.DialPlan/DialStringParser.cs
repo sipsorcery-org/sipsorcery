@@ -603,7 +603,8 @@ namespace SIPSorcery.AppServer.DialPlan
                                         provider.GVCallbackPattern,
                                         (provider.GVCallbackType != null) ? (int)provider.GVCallbackType.Value : DEFAULT_GVCALLBACK_TYPE,
                                         content,
-                                        contentType);
+                                        contentType,
+                                        publicSDPAddress);
 
                                 sipCallDescriptor.CRMHeaders = contact;
                                 providerFound = true;

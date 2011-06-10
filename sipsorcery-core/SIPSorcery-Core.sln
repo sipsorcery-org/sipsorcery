@@ -47,7 +47,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Entities.Client"
 		{8EB4E07E-76C8-445A-8252-5B392A9C12FB} = {8EB4E07E-76C8-445A-8252-5B392A9C12FB}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Entities.UnitTests", "SIPSorcery.Entities.UnitTests\SIPSorcery.Entities.UnitTests.csproj", "{8A2CFE65-422F-4F16-8841-B44067BAB59F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Entities.UnitTests", "Tests\SIPSorcery.Entities.UnitTests\SIPSorcery.Entities.UnitTests.csproj", "{8A2CFE65-422F-4F16-8841-B44067BAB59F}"
 EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution

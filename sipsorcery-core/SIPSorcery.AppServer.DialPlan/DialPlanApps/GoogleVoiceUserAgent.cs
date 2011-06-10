@@ -34,9 +34,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -47,6 +49,8 @@ namespace SIPSorcery.AppServer.DialPlan
         private const int MAX_CALLBACK_WAIT_TIME = 60;  // The maximum time that the callback will be waited for. Generally the call would be cancelled before this anyway.
 
         private static ILog logger = AppState.logger;
+
+        private SIPMonitorLogDelegate Log_External;
 
         public string Owner { get; set ;}
         public string AdminMemberId { get; set; }
@@ -72,6 +76,7 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             Owner = username;
             AdminMemberId = adminMemberId;
+            Log_External = logDelegate;
             m_googleVoiceCall = new GoogleVoiceCall(sipTransport, callManager, logDelegate, username, adminMemberId, outboundProxy);
             m_googleVoiceCall.CallProgress += new CallProgressDelegate(CallProgress);
         }
@@ -88,6 +93,27 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 CallDescriptor = descriptor;
                 SIPURI destinationURI = SIPURI.ParseSIPURIRelaxed(descriptor.Uri);
+
+                bool wasSDPMangled = false;
+                IPEndPoint sdpEndPoint = null;
+                if (descriptor.MangleIPAddress != null)
+                {
+                    sdpEndPoint = SDP.GetSDPRTPEndPoint(descriptor.Content);
+                    if (sdpEndPoint != null)
+                    {
+                        descriptor.Content = SIPPacketMangler.MangleSDP(descriptor.Content, descriptor.MangleIPAddress.ToString(), out wasSDPMangled);
+                    }
+                }
+
+                if (wasSDPMangled)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on Google Voice call had RTP socket mangled from " + sdpEndPoint.ToString() + " to " + descriptor.MangleIPAddress.ToString() + ":" + sdpEndPoint.Port + ".", Owner));
+                }
+                else if (sdpEndPoint != null)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on Google Voice call could not be mangled, using original RTP socket of " + sdpEndPoint.ToString() + ".", Owner));
+                }
+                
                 SIPDialogue = m_googleVoiceCall.InitiateCall(descriptor.Username, descriptor.Password, descriptor.CallbackNumber, destinationURI.User, descriptor.CallbackPattern, descriptor.CallbackPhoneType, MAX_CALLBACK_WAIT_TIME, descriptor.ContentType, descriptor.Content);
 
                 if (SIPDialogue != null)
