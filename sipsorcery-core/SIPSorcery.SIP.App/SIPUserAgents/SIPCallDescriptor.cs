@@ -212,7 +212,8 @@ namespace SIPSorcery.SIP.App
             string callbackPattern,
             int callbackPhoneType,
             string content,
-            string contentType)
+            string contentType,
+            IPAddress mangleIPAddress)
         {
             IsGoogleVoiceCall = true;
             Username = username;
@@ -223,6 +224,7 @@ namespace SIPSorcery.SIP.App
             CallbackPhoneType = callbackPhoneType;
             ContentType = contentType;
             Content = content;
+            MangleIPAddress = mangleIPAddress;
         }
 
         public SIPFromHeader GetFromHeader()

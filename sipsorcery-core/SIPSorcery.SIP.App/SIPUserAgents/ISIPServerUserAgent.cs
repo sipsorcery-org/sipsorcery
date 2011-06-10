@@ -41,12 +41,12 @@ namespace SIPSorcery.SIP.App
 
     public interface ISIPServerUserAgent 
     {
-
         SIPCallDirection CallDirection { get; }
         SIPDialogue SIPDialogue { get; }
         SIPAccount SIPAccount { get; set; }
         bool IsAuthenticated { get; set; }
         bool IsB2B { get; }
+        bool IsInvite { get; }                      // Set to true for server user agents that are handlign an INVITE reqquest.
         SIPRequest CallRequest { get; }
         string CallDestination { get; }
         bool IsUASAnswered { get; }
@@ -67,5 +67,6 @@ namespace SIPSorcery.SIP.App
         void NoCDR();
         void SetTraceDelegate(SIPTransactionTraceMessageDelegate traceDelegate);
         void SetOwner(string owner, string adminMemberId);
+        void AnswerNonInvite(SIPResponseStatusCodesEnum answerStatus, string reasonPhrase, string[] customHeaders, string contentType, string body);
     }
 }

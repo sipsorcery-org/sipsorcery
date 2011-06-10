@@ -40,7 +40,6 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
 {
-
     /// <summary>
     /// This class represents a back-to-back (B2B) user agent (UA) that is used to attach an outgoing
     /// call (UAC) to an incoming (UAS) call. Normally the UAC call would be the client side of a call that
@@ -50,7 +49,6 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public class SIPB2BUserAgent : ISIPServerUserAgent, ISIPClientUserAgent
     {
-
         private static ILog logger = AppState.logger;
         private static readonly SIPEndPoint m_blackhole = new SIPEndPoint(new IPEndPoint(SIPTransport.BlackholeAddress, 0));
 
@@ -77,6 +75,10 @@ namespace SIPSorcery.SIP.App
         private UASInviteTransaction m_uasTransaction;
         public bool IsB2B { get { return true; } }
         public bool IsAuthenticated { get { return false; } set { } }
+        public bool IsInvite
+        {
+            get { return true; }
+        } 
 
         public SIPCallDirection CallDirection { get { return SIPCallDirection.In; } }
         public UASInviteTransaction SIPTransaction
@@ -323,6 +325,11 @@ namespace SIPSorcery.SIP.App
                 logger.Error("Exception SIPB2BUSerAgent Answer. " + excp.Message);
                 throw;
             }
+        }
+
+        public void AnswerNonInvite(SIPResponseStatusCodesEnum answerStatus, string reasonPhrase, string[] customHeaders, string contentType, string body)
+        {
+            throw new NotImplementedException();
         }
 
         public void Reject(SIPResponseStatusCodesEnum rejectCode, string rejectReason, string[] customHeaders)

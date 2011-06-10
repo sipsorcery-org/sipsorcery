@@ -8,10 +8,8 @@ using log4net;
 
 namespace SIPSorcery.SIP.App
 {
-
     public class SIPProviderBindingSynchroniser
     {
-
         private static ILog logger = AppState.logger;
 
         private SIPAssetPersistor<SIPProviderBinding> m_bindingPersistor;

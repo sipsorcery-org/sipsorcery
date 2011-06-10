@@ -82,6 +82,10 @@ namespace SIPSorcery.SIP.App
         {
             get { return false; }
         }
+        public bool IsInvite 
+        {
+            get { return true; }
+        } 
         public SIPRequest CallRequest
         {
             get { return m_dummyRequest; }
@@ -196,6 +200,11 @@ namespace SIPSorcery.SIP.App
                 logger.Error("Exception SIPTransferServerUserAgent Answer. " + excp.Message);
                 throw;
             }
+        }
+
+        public void AnswerNonInvite(SIPResponseStatusCodesEnum answerStatus, string reasonPhrase, string[] customHeaders, string contentType, string body)
+        {
+            throw new NotImplementedException();
         }
 
         public void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders)

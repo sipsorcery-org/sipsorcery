@@ -1,14 +1,14 @@
 ﻿// ============================================================================
-// FileName: SIPDialPlanLookupTypes.cs
+// FileName: CustomerServiceLevels.cs
 //
 // Description:
-// The list of dial plan lookup types for use in dial plan wizard.
+// The list of the different sipsorcery service levels.
 //
 // Author(s):
 // Aaron Clauson
 //
 // History:
-// 04 Feb 2011	Aaron Clauson	Created.
+// 26 Apr 2011	Aaron Clauson	Created.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -41,10 +41,12 @@ using System.Text;
 
 namespace SIPSorcery.SIP.App
 {
-    public enum SIPDialPlanLookupTypes
+    public enum CustomerServiceLevels
     {
-        SpeedDial = 1,
-        CNAM = 2,
-        ENUM = 3,
+        None = 0,
+        Beta = 1,
+        Free = 2,
+        Standard = 3,
+        Premium = 4,
     }
 }

@@ -1,8 +1,7 @@
-
 //-----------------------------------------------------------------------------
 // Filename: SIPServerUserAgent.cs
 //
-// Description: Implementation of a SIP Client User Agent that can be used to initiate SIP calls.
+// Description: Implementation of a SIP Server User Agent that can be used to receive SIP calls.
 // 
 // History:
 // 22 Feb 2008	Aaron Clauson	    Created.
@@ -32,7 +31,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-//using System.Data;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
@@ -74,6 +72,10 @@ namespace SIPSorcery.SIP.App
         private string m_sipDomain;
         private SIPCallDirection m_sipCallDirection;
         public bool IsB2B { get { return false; } }
+        public bool IsInvite
+        {
+            get { return true; }
+        } 
         public string Owner { get { return m_owner; } }
 
         public SIPCallDirection CallDirection
@@ -401,6 +403,11 @@ namespace SIPSorcery.SIP.App
                 logger.Error("Exception SIPServerUserAgent Answer. " + excp.Message);
                 throw;
             }
+        }
+
+        public void AnswerNonInvite(SIPResponseStatusCodesEnum answerStatus, string reasonPhrase, string[] customHeaders, string contentType, string body)
+        {
+            throw new NotImplementedException();
         }
 
         public void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders)

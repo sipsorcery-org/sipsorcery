@@ -49,6 +49,7 @@ namespace SIPSorcery.SIP.App
         Python = 3,
         JScript = 4,
         Wizard = 5,
+        TelisWizard = 6
     }
 
     public class SIPDialPlanScriptTypes

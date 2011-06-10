@@ -72,7 +72,6 @@
       <HintPath>..\..\stable\Microsoft.Scripting.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -91,9 +90,6 @@
     <Reference Include="System.ServiceModel">
       <RequiredTargetFramework>3.0</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.ServiceModel.DomainServices.EntityFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" />
-    <Reference Include="System.ServiceModel.DomainServices.Hosting, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
-    <Reference Include="System.ServiceModel.DomainServices.Server, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.ServiceModel.Web">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -111,13 +107,6 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="AssemblyState.cs" />
     <Compile Include="DLR\ScriptLoader.cs" />
-    <Compile Include="Entities\SIPEntities.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>SIPEntities.edmx</DependentUpon>
-    </Compile>
-    <Compile Include="Entities\SIPEntitiesDomainService.cs" />
-    <Compile Include="Entities\SIPEntitiesDomainService.metadata.cs" />
     <Compile Include="Monitoring\ISIPMonitorPublisher.cs" />
     <Compile Include="Monitoring\SIPMonitorClientSession.cs" />
     <Compile Include="Monitoring\SIPMonitorConsoleEvent.cs" />
@@ -125,11 +114,11 @@
     <Compile Include="Monitoring\SIPMonitorFilter.cs" />
     <Compile Include="Monitoring\SIPMonitorMachineEvent.cs" />
     <Compile Include="SilverlightPolicyServer.cs" />
+    <Compile Include="SIPAssets\CustomerServiceLevels.cs" />
     <Compile Include="SIPAssets\ISIPDialogueManager.cs" />
     <Compile Include="SIPAssets\ISIPCallManager.cs" />
     <Compile Include="SIPAssets\SIPCDRAsset.cs" />
     <Compile Include="SIPAssets\SIPDialogueAsset.cs" />
-    <Compile Include="SIPAssets\SIPDialPlanLookupTypes.cs" />
     <Compile Include="SIPAssets\SIPProviderBinding.cs" />
     <Compile Include="SIPAssets\SIPAccount.cs" />
     <Compile Include="SIPAssets\SIPDialPlan.cs" />
@@ -149,6 +138,8 @@
     <Compile Include="SIPNotifications\SIPPresenceEventSubscription.cs" />
     <Compile Include="SIPNotifications\SIPDialogEventSubscription.cs" />
     <Compile Include="SIPNotifications\SIPEventSubscription.cs" />
+    <Compile Include="SIPUserAgents\SIPNonInviteClientUserAgent.cs" />
+    <Compile Include="SIPUserAgents\SIPNonInviteServerUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPNotifierClient.cs" />
     <Compile Include="SIPPacketMangler.cs" />
     <Compile Include="SIPProviderTweaks\SIPProviderMagicJack.cs" />
@@ -212,12 +203,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <EntityDeploy Include="Entities\SIPEntities.edmx">
-      <Generator>EntityModelCodeGenerator</Generator>
-      <LastGenOutput>SIPEntities.Designer.cs</LastGenOutput>
-    </EntityDeploy>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="App.Config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -229,6 +214,6 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>copy "$(TargetPath)" "c:\temp\sipsorcery\"</PostBuildEvent>
+    <PostBuildEvent>copy "$(TargetPath)" "d:\temp\sipsorcery\"</PostBuildEvent>
   </PropertyGroup>
 </Project>
