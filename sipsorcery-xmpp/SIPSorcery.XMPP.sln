@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.XMPP", "SIPSorce
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.XMPP.TestConsole", "SIPSorcery.XMPP.TestConsole\SIPSorcery.XMPP.TestConsole.csproj", "{809DE327-A652-43A6-9CFC-6FD15FAB436C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.XMPP.TestClient", "SIPSorcery.XMPP.TestClient\SIPSorcery.XMPP.TestClient.csproj", "{723EA308-09C3-411C-B37F-8DA4B13736EA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,16 @@ Global
 		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Release|Mixed Platforms.Build.0 = Release|x86
 		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Release|x86.ActiveCfg = Release|x86
 		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Release|x86.Build.0 = Release|x86
+		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Debug|x86.ActiveCfg = Debug|x86
+		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Debug|x86.Build.0 = Debug|x86
+		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Release|Any CPU.ActiveCfg = Release|x86
+		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Release|Mixed Platforms.Build.0 = Release|x86
+		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Release|x86.ActiveCfg = Release|x86
+		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

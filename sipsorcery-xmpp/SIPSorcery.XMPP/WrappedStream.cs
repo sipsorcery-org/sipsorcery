@@ -106,6 +106,8 @@ namespace SIPSorcery.XMPP
                     m_traceStream.Flush();
                 }
 
+                Console.WriteLine("Receive=> " + Encoding.UTF8.GetString(buffer, offset, bytesRead));
+
                 return bytesRead;
             }
             else
