@@ -98,7 +98,6 @@
 							<TextBlock FontSize="11" Text="Home" />
 							<TextBlock FontSize="11" Text="Mobile" />
 							<TextBlock FontSize="11" Text="Work" />
-							<TextBlock FontSize="11" Text="Gizmo" />
 						</ComboBox>
 					</Canvas>
 				</StackPanel>

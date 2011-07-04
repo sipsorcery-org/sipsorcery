@@ -33,7 +33,6 @@ namespace SIPSorcery
     public delegate void SetFocusDelegate(Control control);
     public delegate void SetIsEnabledDelegate(Control control, bool isEnabled);
     public delegate void SetDataGridSourceDelegate(DataGrid dataGrid, IEnumerable list);
-    public delegate void SetSIPRegistrarBindingDataGridSourceDelegate(DataGrid dataGrid, ObservableCollection<SIPRegistrarBinding> source);
     public delegate void SetProgressBarValueDelegate(ProgressBar progressBar, double progress);
     public delegate void SetFillDelegate(Shape shape, Color colour);
     public delegate void RemoveBorderChildDelegate(Border border);
@@ -244,18 +243,6 @@ namespace SIPSorcery
             else
             {
                 dataGrid.Dispatcher.BeginInvoke(new SetDataGridSourceDelegate(SetDataGridSource), dataGrid, list);
-            }
-        }
-
-        public static void SetDataGridSource(DataGrid dataGrid, ObservableCollection<SIPRegistrarBinding> source)
-        {
-            if (dataGrid.Dispatcher.CheckAccess())
-            {
-                dataGrid.ItemsSource = source;
-            }
-            else
-            {
-                dataGrid.Dispatcher.BeginInvoke(new SetSIPRegistrarBindingDataGridSourceDelegate(SetDataGridSource), dataGrid, source);
             }
         }
 

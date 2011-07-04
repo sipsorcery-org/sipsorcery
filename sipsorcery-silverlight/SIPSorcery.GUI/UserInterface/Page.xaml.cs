@@ -34,9 +34,10 @@ namespace SIPSorcery
         private const string DEFAULT_NOTIFICATIONS_FILE = "notificationspull.svc";
         //private const string DEFAULT_INVITE_SERIVCE = "sipsorceryinvite.svc";
         private const string ENTITIES_SERVICE_URL = "clientbin/SIPSorcery-Entities-Services-SIPEntitiesDomainService.svc";
-        private const string DEFAULT_SERVICE_HOST = "https://www.sipsorcery.com/";
+        private const string DEFAULT_SERVICE_HOST = "https://www.sipsorcery.com/ria/";
+        private const string DEFAULT_NOTIFICATIONS_HOST = "https://www.sipsorcery.com/";
 
-        private string m_notificationsServiceURL = DEFAULT_SERVICE_HOST + DEFAULT_NOTIFICATIONS_FILE;
+        private string m_notificationsServiceURL = DEFAULT_NOTIFICATIONS_HOST + DEFAULT_NOTIFICATIONS_FILE;
         //private string m_inviteServiceURL = DEFAULT_SERVICE_HOST + DEFAULT_INVITE_SERIVCE;
         private string m_entitiesServiceURL = null;
 

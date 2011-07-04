@@ -24,6 +24,7 @@ namespace SIPSorcery
         private DialPlanAddControl m_addControl;
         private DialPlanUpdateControl m_editControl;
         private DialPlanWizard m_wizardEditControl;
+        private SimpleDialPlanWizard m_simpleWizardEditControl;
         private SIPDialPlan m_selectedDialPlan;
         private bool m_dialPlansPanelRefreshInProgress;
 
@@ -161,6 +162,16 @@ namespace SIPSorcery
 
                                 m_wizardEditControl = new DialPlanWizard(LogActivityMessage_External, m_selectedDialPlan, m_owner, null, UpdateDialPlan, DetailsControlClosed, m_riaContext);
                                 m_dialPlansPanel.SetDetailsElement(m_wizardEditControl);
+                            }
+                            else if (m_selectedDialPlan.ScriptType == SIPDialPlanScriptTypesEnum.SimpleWizard)
+                            {
+                                if (m_simpleWizardEditControl != null)
+                                {
+                                    m_simpleWizardEditControl.DisableSelectionChanges();
+                                }
+
+                                m_simpleWizardEditControl = new SimpleDialPlanWizard(LogActivityMessage_External, m_selectedDialPlan, m_owner, null, UpdateDialPlan, DetailsControlClosed, m_riaContext);
+                                m_dialPlansPanel.SetDetailsElement(m_simpleWizardEditControl);
                             }
                             else
                             {

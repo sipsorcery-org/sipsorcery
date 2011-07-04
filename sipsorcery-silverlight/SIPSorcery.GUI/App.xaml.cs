@@ -22,7 +22,7 @@ namespace SIPSorcery
         //public static bool ShowInvitePanel = false;
         public static string ServiceURL;
         public static string NotificationsURL;
-        public static string DefaultSIPDomain = DEFAULT_SIP_DOMAIN;
+        public static string DefaultSIPDomain;
 
         public App()
         {
@@ -57,7 +57,7 @@ namespace SIPSorcery
                 //Boolean.TryParse(App.Current.Resources[SHOW_INVITE_PANEL_KEY] as string, out ShowInvitePanel);
                 ServiceURL = App.Current.Resources[SERVICE_URL_KEY] as string;
                 NotificationsURL = App.Current.Resources[NOTIFICATIONS_URL_KEY] as string;
-                DefaultSIPDomain = App.Current.Resources[DEFAULT_SIP_DOMAIN_KEY] as string;
+                DefaultSIPDomain = App.Current.Resources[DEFAULT_SIP_DOMAIN_KEY] as string ?? DEFAULT_SIP_DOMAIN;
             }
         }
 

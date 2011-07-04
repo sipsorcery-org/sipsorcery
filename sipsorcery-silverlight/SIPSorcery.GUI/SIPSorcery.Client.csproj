@@ -146,6 +146,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="UserInterface\AssetManagers\SimpleDialPlanWizard.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UserInterface\AssetManagers\DialPlanAddControl.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
@@ -251,6 +255,9 @@
     <Compile Include="Services\SIPSorceryNotificationClient.cs" />
     <Compile Include="UserInterface\About.xaml.cs">
       <DependentUpon>About.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\AssetManagers\SimpleDialPlanWizard.xaml.cs">
+      <DependentUpon>SimpleDialPlanWizard.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\AssetManagers\DialPlanAddControl.xaml.cs">
       <DependentUpon>DialPlanAddControl.xaml</DependentUpon>

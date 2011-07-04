@@ -60,9 +60,13 @@ namespace SIPSorcery
             else
             {
                 SIPDialPlanScriptTypesEnum scriptType = SIPDialPlanScriptTypesEnum.Ruby;
-                if (m_dialPlanTypeWizard.IsChecked.Value)
+                if (m_dialPlanTypeTelisWizard.IsChecked.Value)
                 {
                     scriptType = SIPDialPlanScriptTypesEnum.TelisWizard;
+                }
+                else if (m_dialPlanTypeSimpleWizard.IsChecked.Value)
+                {
+                    scriptType = SIPDialPlanScriptTypesEnum.SimpleWizard;
                 }
 
                 SIPDialPlan dialPlan = new SIPDialPlan()

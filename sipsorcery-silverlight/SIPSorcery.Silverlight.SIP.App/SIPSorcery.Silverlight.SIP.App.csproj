@@ -102,39 +102,9 @@
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPAccount.cs">
       <Link>SIPAssets\SIPAccount.cs</Link>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPCDRAsset.cs">
-      <Link>SIPAssets\SIPCDRAsset.cs</Link>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPDialogueAsset.cs">
-      <Link>SIPAssets\SIPDialogueAsset.cs</Link>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPDialPlan.cs">
-      <Link>SIPAssets\SIPDialPlan.cs</Link>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPDialPlanScriptTypes.cs">
-      <Link>SIPAssets\SIPDialPlanScriptTypes.cs</Link>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPDomain.cs">
-      <Link>SIPAssets\SIPDomain.cs</Link>
-      <SubType>Code</SubType>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPProvider.cs">
       <Link>SIPAssets\SIPProvider.cs</Link>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPProviderBinding.cs">
-      <Link>SIPAssets\SIPProviderBinding.cs</Link>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPRegistrarBinding.cs">
-      <Link>SIPAssets\SIPRegistrarBinding.cs</Link>
-      <SubType>Code</SubType>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPPacketMangler.cs">
       <Link>SIPPacketMangler.cs</Link>
