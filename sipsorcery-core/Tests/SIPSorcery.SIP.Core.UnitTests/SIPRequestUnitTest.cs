@@ -1021,5 +1021,32 @@ namespace SIPSorcery.SIP.Core.UnitTests
 
             Console.WriteLine("-----------------------------------------");
         }
+
+        [TestMethod]
+        public void SinologicInvalidInviteUnitTest()
+        {
+            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sipMsg = 
+                "INVITE sip:0447507533@69.59.142.213 SIP/2.0" + m_CRLF +
+                "Via: SIP/2.0/UDP checksecuritytester.sinologic.net:5060;branch=z9hG4bK34323636;rport" + m_CRLF +
+                "From: \"0447507533\" <sip:0447507533@checksecuritytester.sinologic.net>;tag=as55c3de87" + m_CRLF +
+                "To: <sip:0447507533@69.59.142.213>" + m_CRLF +
+                "Contact: <sip:0447507533@checksecuritytester.sinologic.net>" + m_CRLF +
+                "Call-ID: 5c4df8b003fe7b900fa3cfaf7f0e4d21@69.59.142.213" + m_CRLF +
+                "CSeq: 102 INVITE" + m_CRLF +
+                "User-Agent: SIP Security Tester" + m_CRLF +
+                "Max-Forwards: 70" + m_CRLF +
+                "Date: Fri, 1 Jul 2011 12:54:11 GMT" + m_CRLF +
+                "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO" + m_CRLF +
+                "Supported: replaces" + m_CRLF +
+                "Content-Type: application/sdp" + m_CRLF +
+                "Content-Length: 232" + m_CRLF + m_CRLF;
+
+            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+
+            Console.WriteLine(inviteReq.ToString());
+        }
     }
 }

@@ -105,7 +105,7 @@ namespace SIPSorcery.Servers
             {
                 try
                 {
-                    logger.Debug("Restarting worker process on pid=" + WorkerProcess.Id + ".");
+                    logger.Debug("Killing worker process on pid=" + WorkerProcess.Id + ".");
                     WorkerProcess.Kill();
                     HasBeenKilled = true;
                 }
@@ -144,6 +144,7 @@ namespace SIPSorcery.Servers
         private const int PROCESS_RESTART_DELAY = 33;
         private const int CHECK_WORKER_MEMORY_PERIOD = 1000;
         private const int PROBE_WORKER_CALL_PERIOD = 15000;
+        private const int PROCESS_INITIALISATION_PERIOD = 30000;    // The time to allow for a restarted application server process to start before sending calls to it.
 
         private static int m_unhealthyPriority = SIPCallDispatcherFile.DISABLED_APPSERVER_PRIORITY;
         private static int m_healthyPriority = SIPCallDispatcherFile.USEALWAYS_APPSERVER_PRIORITY;
@@ -202,7 +203,21 @@ namespace SIPSorcery.Servers
                 SIPAppServerWorker appServerWorker = new SIPAppServerWorker(appServerWorkerNode);
                 if (m_sipCallDispatcherFile != null)
                 {
-                    appServerWorker.Healthy += (s, e) => { m_sipCallDispatcherFile.UpdateAppServerPriority(((SIPAppServerWorker)s).AppServerEndpoint, m_healthyPriority); };
+                    appServerWorker.Healthy += (s, e) => 
+                    {
+                        ThreadPool.QueueUserWorkItem(delegate
+                        {
+                            Thread.Sleep(PROCESS_INITIALISATION_PERIOD);
+                            if (appServerWorker.IsHealthy())
+                            {
+                                m_sipCallDispatcherFile.UpdateAppServerPriority(((SIPAppServerWorker)s).AppServerEndpoint, m_healthyPriority);
+                            }
+                            else
+                            {
+                                logger.Warn("An app server worker was unhealthy after the process initialisation period.");
+                            }
+                        });
+                    };
                     appServerWorker.Unhealthy += (s, e) => { m_sipCallDispatcherFile.UpdateAppServerPriority(((SIPAppServerWorker)s).AppServerEndpoint, m_unhealthyPriority); };
                 }
                 m_appServerWorkers.Add(appServerWorker);
@@ -255,8 +270,16 @@ namespace SIPSorcery.Servers
                                     worker.WorkerProcess.Refresh();
                                     if (worker.WorkerProcess.PrivateMemorySize64 >= MAX_PHYSICAL_MEMORY)
                                     {
-                                        logger.Debug("Worker process on pid=" + worker.WorkerProcess.Id + " has reached the memory limit, scheduling a restart.");
-                                        worker.ScheduleRestart(DateTime.Now.AddSeconds(PROCESS_RESTART_DELAY));
+                                        // If there is another worker already scheduled for a restart then don't schedule another one until it's restarted.
+                                        if ((from wk in m_appServerWorkers where wk.RestartTime != null select wk).Count() == 0)
+                                        {
+                                            logger.Debug("Worker process on pid=" + worker.WorkerProcess.Id + " has reached the memory limit, scheduling a restart.");
+                                            worker.ScheduleRestart(DateTime.Now.AddSeconds(PROCESS_RESTART_DELAY));
+                                        }
+                                        else
+                                        {
+                                            logger.Debug("Worker process on pid=" + worker.WorkerProcess.Id + " has reached the memory limit but a restart was NOT scheduled due to another worker already being scheduled.");
+                                        }
                                     }
                                 }
                             }
@@ -293,7 +316,7 @@ namespace SIPSorcery.Servers
                                     "sip:" + m_dispatcherUsername + "@sipcalldispatcher", "sip:" + activeWorkerEndPoint.GetIPEndPoint().ToString(), null, null, null, SIPCallDirection.Out, null, null, null);
                             SIPClientUserAgent uac = new SIPClientUserAgent(m_sipTransport, null, null, null, null);
                             uac.CallFailed += new SIPCallFailedDelegate(AppServerCallFailed);
-                            uac.CallAnswered += (call, sipResponse) => 
+                            uac.CallAnswered += (call, sipResponse) =>
                             {
                                 if (sipResponse.Status != SIPResponseStatusCodesEnum.BadExtension)
                                 {
@@ -343,7 +366,7 @@ namespace SIPSorcery.Servers
 
                 if (failedWorker != null)
                 {
-                   logger.Debug("Scheduling immediate restart on app server worker process pid=" + failedWorker.WorkerProcess.Id + " due to failed probe.");
+                    logger.Debug("Scheduling immediate restart on app server worker process pid=" + failedWorker.WorkerProcess.Id + " due to failed probe.");
                     failedWorker.ScheduleRestart(DateTime.Now);
                 }
             }

@@ -77,10 +77,12 @@ namespace SIPSorcery.Sys
                     }
                     else
                     {
-                        SmtpClient smtpClient = new SmtpClient();
-                        smtpClient.DeliveryMethod = SmtpDeliveryMethod.PickupDirectoryFromIis;
-                        smtpClient.Send(email);
-                        logger.Debug("Email sent to " + toAddress);
+                        using (SmtpClient smtpClient = new SmtpClient())
+                        {
+                            smtpClient.DeliveryMethod = SmtpDeliveryMethod.PickupDirectoryFromIis;
+                            smtpClient.Send(email);
+                            logger.Debug("Email sent to " + toAddress);
+                        }
                     }
 				}
 				catch(Exception excp)
@@ -98,22 +100,24 @@ namespace SIPSorcery.Sys
 
                 logger.Debug("RelayMail attempting to send " + email.Subject + " via " + m_smtpServer + ":" + smtpPort + " to " + email.To);
 
-                SmtpClient smtpClient = new SmtpClient(m_smtpServer, smtpPort);
-                smtpClient.UseDefaultCredentials = false;
-                smtpClient.DeliveryMethod = SmtpDeliveryMethod.Network;
-
-                if (!m_smtpServerUseSSL.IsNullOrBlank())
+                using (SmtpClient smtpClient = new SmtpClient(m_smtpServer, smtpPort))
                 {
-                    smtpClient.EnableSsl = Convert.ToBoolean(m_smtpServerUseSSL);
-                }
+                    smtpClient.UseDefaultCredentials = false;
+                    smtpClient.DeliveryMethod = SmtpDeliveryMethod.Network;
 
-                if (!m_smtpSendUsername.IsNullOrBlank())
-                {                   
-                    smtpClient.Credentials = new NetworkCredential(m_smtpSendUsername, m_smtpSendPassword, "");
-                }
+                    if (!m_smtpServerUseSSL.IsNullOrBlank())
+                    {
+                        smtpClient.EnableSsl = Convert.ToBoolean(m_smtpServerUseSSL);
+                    }
 
-                smtpClient.Send(email);
-                logger.Debug("RelayMail " + email.Subject + " relayed via " + m_smtpServer + " to " + email.To);
+                    if (!m_smtpSendUsername.IsNullOrBlank())
+                    {
+                        smtpClient.Credentials = new NetworkCredential(m_smtpSendUsername, m_smtpSendPassword, "");
+                    }
+
+                    smtpClient.Send(email);
+                    logger.Debug("RelayMail " + email.Subject + " relayed via " + m_smtpServer + " to " + email.To);
+                }
             }
             catch (Exception ex)
             {

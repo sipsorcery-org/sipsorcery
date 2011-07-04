@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReferenceGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ID="b93807ec-463f-4c62-94c3-2f7317699309" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+  <ClientOptions>
+    <GenerateAsynchronousMethods>false</GenerateAsynchronousMethods>
+    <EnableDataBinding>true</EnableDataBinding>
+    <ExcludedTypes />
+    <ImportXmlTypes>false</ImportXmlTypes>
+    <GenerateInternalTypes>false</GenerateInternalTypes>
+    <GenerateMessageContracts>false</GenerateMessageContracts>
+    <NamespaceMappings />
+    <CollectionMappings />
+    <GenerateSerializableTypes>true</GenerateSerializableTypes>
+    <Serializer>Auto</Serializer>
+    <UseSerializerForFaults>true</UseSerializerForFaults>
+    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferencedAssemblies />
+    <ReferencedDataContractTypes />
+    <ServiceContractMappings />
+  </ClientOptions>
+  <MetadataSources>
+    <MetadataSource Address="http://crm.sipsorcery.com/soap.php?wsdl=sugarsoap" Protocol="http" SourceId="1" />
+  </MetadataSources>
+  <Metadata>
+    <MetadataFile FileName="soap.wsdl" MetadataType="Wsdl" ID="fa33d04c-ce18-4b84-90dd-5f27778c1cbc" SourceId="1" SourceUrl="http://crm.sipsorcery.com/soap.php?wsdl=sugarsoap" />
+    <MetadataFile FileName="item.xsd" MetadataType="Schema" ID="b69b995c-8b4a-4fad-899e-a2e00b631d77" SourceId="1" SourceUrl="http://schemas.xmlsoap.org/soap/encoding/" />
+    <MetadataFile FileName="item1.xsd" MetadataType="Schema" ID="cac5e014-5dbd-4159-bf1d-dadbb08e265f" SourceId="1" SourceUrl="http://schemas.xmlsoap.org/wsdl/" />
+  </Metadata>
+  <Extensions>
+    <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
+    <ExtensionFile FileName="configuration.svcinfo" Name="configuration.svcinfo" />
+  </Extensions>
+</ReferenceGroup>

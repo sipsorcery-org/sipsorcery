@@ -251,6 +251,8 @@ namespace SIPSorcery.Entities.Services
             }
             else
             {
+                logger.Debug("User requested delete of " + customer.Name + ".");
+
                 if ((customer.EntityState == EntityState.Detached))
                 {
                     this.ObjectContext.Customers.Attach(customer);

@@ -19,7 +19,7 @@ namespace SIPSorcery.Entities
         {
             get
             {
-                return TimeZoneHelper.ApplyOffset(Inserted, TimeZoneOffsetMinutes);
+                return (Inserted != null) ? TimeZoneHelper.ApplyOffset(Inserted, TimeZoneOffsetMinutes) : DateTime.MinValue;
             }
         }
 

@@ -21,7 +21,7 @@ namespace SIPSorcery.Entities
         {
             get
             {
-                return SIPDialPlanScriptTypes.GetSIPDialPlanScriptType(ScriptTypeDescription);
+                return (ScriptTypeDescription != null) ? SIPDialPlanScriptTypes.GetSIPDialPlanScriptType(ScriptTypeDescription) : SIPDialPlanScriptTypesEnum.Unknown;
             }
         }
 
@@ -29,7 +29,7 @@ namespace SIPSorcery.Entities
         {
             get
             {
-                return TimeZoneHelper.ApplyOffset(LastUpdate, TimeZoneOffsetMinutes);
+                return (LastUpdate != null) ? TimeZoneHelper.ApplyOffset(LastUpdate, TimeZoneOffsetMinutes) : DateTime.MinValue;
             }
         }
 
@@ -37,7 +37,7 @@ namespace SIPSorcery.Entities
         {
             get
             {
-                return TimeZoneHelper.ApplyOffset(Inserted, TimeZoneOffsetMinutes);
+                return (Inserted != null) ? TimeZoneHelper.ApplyOffset(Inserted, TimeZoneOffsetMinutes) : DateTime.MinValue;
             }
         }
 

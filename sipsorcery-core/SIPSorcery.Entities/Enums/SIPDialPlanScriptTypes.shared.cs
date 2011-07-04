@@ -49,6 +49,7 @@ namespace SIPSorcery.Entities
         Python = 3,
         JScript = 4,
         TelisWizard = 5,
+        SimpleWizard = 6,
     }
 
     public class SIPDialPlanScriptTypes

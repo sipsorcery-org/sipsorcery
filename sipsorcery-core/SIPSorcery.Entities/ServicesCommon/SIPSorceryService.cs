@@ -184,6 +184,14 @@ namespace SIPSorcery.Entities
             }
         }
 
+        public Customer GetCustomer(string username)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                return (from cust in sipSorceryEntities.Customers where cust.Name == username select cust).SingleOrDefault();
+            }
+        }
+
         #endregion
 
         #region SIP Accounts.
@@ -351,9 +359,11 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for InsertSIPProvider.");
             }
 
+            SIPProvider existingAccount = null;
+
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                SIPProvider existingAccount = (from sp in sipSorceryEntities.SIPProviders where sp.ID == sipProvider.ID select sp).FirstOrDefault();
+                existingAccount = (from sp in sipSorceryEntities.SIPProviders where sp.ID == sipProvider.ID select sp).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
@@ -381,6 +391,7 @@ namespace SIPSorcery.Entities
                 existingAccount.RegisterExpiry = sipProvider.RegisterExpiry;
                 existingAccount.RegisterRealm = sipProvider.RegisterRealm;
                 existingAccount.RegisterServer = sipProvider.RegisterServer;
+                existingAccount.RegisterDisabledReason = sipProvider.RegisterDisabledReason;
 
                 string validationError = SIPProvider.Validate(existingAccount);
                 if (validationError != null)
@@ -391,7 +402,7 @@ namespace SIPSorcery.Entities
                 sipSorceryEntities.SaveChanges();
             }
 
-            SIPProviderBindingSynchroniser.SIPProviderUpdated(sipProvider);
+            SIPProviderBindingSynchroniser.SIPProviderUpdated(existingAccount);
         }
 
         public void DeleteSIPProvider(string authUser, SIPProvider sipProvider)

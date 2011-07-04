@@ -13,7 +13,7 @@ namespace SIPSorcery.Entities
         {
             get
             {
-                return TimeZoneHelper.ApplyOffset(Created, TimeZoneOffsetMinutes);
+                return (Created != null) ? TimeZoneHelper.ApplyOffset(Created, TimeZoneOffsetMinutes) : DateTime.MinValue;
             }
         }
 
@@ -21,7 +21,7 @@ namespace SIPSorcery.Entities
         {
             get
             {
-                return TimeZoneHelper.ApplyOffset(AnsweredTime, TimeZoneOffsetMinutes);
+                return (AnsweredTime != null) ? TimeZoneHelper.ApplyOffset(AnsweredTime, TimeZoneOffsetMinutes) : DateTime.MinValue;
             }
         }
 
@@ -29,7 +29,7 @@ namespace SIPSorcery.Entities
         {
             get
             {
-                return TimeZoneHelper.ApplyOffset(HungupTime, TimeZoneOffsetMinutes);
+                return (HungupTime != null) ? TimeZoneHelper.ApplyOffset(HungupTime, TimeZoneOffsetMinutes) : DateTime.MinValue;
             }
         }
 

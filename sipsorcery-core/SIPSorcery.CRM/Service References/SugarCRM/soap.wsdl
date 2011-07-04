@@ -1,0 +1,1489 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.sugarcrm.com/sugarcrm" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://schemas.xmlsoap.org/wsdl/" targetNamespace="http://www.sugarcrm.com/sugarcrm" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.sugarcrm.com/sugarcrm">
+      <xsd:import schemaLocation="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://schemas.xmlsoap.org/soap/encoding/" />
+      <xsd:import schemaLocation="http://schemas.xmlsoap.org/wsdl/" namespace="http://schemas.xmlsoap.org/wsdl/" />
+      <xsd:complexType name="note_attachment">
+        <xsd:all>
+          <xsd:element name="id" type="xsd:string" />
+          <xsd:element name="filename" type="xsd:string" />
+          <xsd:element name="file" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="new_note_attachment">
+        <xsd:all>
+          <xsd:element name="id" type="xsd:string" />
+          <xsd:element name="filename" type="xsd:string" />
+          <xsd:element name="file" type="xsd:string" />
+          <xsd:element name="related_module_id" type="xsd:string" />
+          <xsd:element name="related_module_name" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="new_return_note_attachment">
+        <xsd:all>
+          <xsd:element name="note_attachment" type="tns:new_note_attachment" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="return_note_attachment">
+        <xsd:all>
+          <xsd:element name="note_attachment" type="tns:note_attachment" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="user_auth">
+        <xsd:all>
+          <xsd:element name="user_name" type="xsd:string" />
+          <xsd:element name="password" type="xsd:string" />
+          <xsd:element name="version" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="field">
+        <xsd:all>
+          <xsd:element name="name" type="xsd:string" />
+          <xsd:element name="type" type="xsd:string" />
+          <xsd:element name="label" type="xsd:string" />
+          <xsd:element name="required" type="xsd:int" />
+          <xsd:element name="options" type="tns:name_value_list" />
+          <xsd:element name="default_value" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="link_field">
+        <xsd:all>
+          <xsd:element name="name" type="xsd:string" />
+          <xsd:element name="type" type="xsd:string" />
+          <xsd:element name="relationship" type="xsd:string" />
+          <xsd:element name="module" type="xsd:string" />
+          <xsd:element name="bean_name" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="field_list">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:field[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="link_field_list">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:link_field[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="name_value">
+        <xsd:all>
+          <xsd:element name="name" type="xsd:string" />
+          <xsd:element name="value" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="name_value_list">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:name_value[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="name_value_lists">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:name_value_list[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="select_fields">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="xsd:string[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="module_fields">
+        <xsd:all>
+          <xsd:element name="module_name" type="xsd:string" />
+          <xsd:element name="module_fields" type="tns:field_list" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="new_module_fields">
+        <xsd:all>
+          <xsd:element name="module_name" type="xsd:string" />
+          <xsd:element name="module_fields" type="tns:field_list" />
+          <xsd:element name="link_fields" type="tns:link_field_list" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="module_list">
+        <xsd:all>
+          <xsd:element name="modules" type="tns:select_fields" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="error_value">
+        <xsd:all>
+          <xsd:element name="number" type="xsd:string" />
+          <xsd:element name="name" type="xsd:string" />
+          <xsd:element name="description" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="entry_value">
+        <xsd:all>
+          <xsd:element name="id" type="xsd:string" />
+          <xsd:element name="module_name" type="xsd:string" />
+          <xsd:element name="name_value_list" type="tns:name_value_list" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="entry_list">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:entry_value[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="get_mailmerge_document_result">
+        <xsd:all>
+          <xsd:element name="html" type="xsd:string" />
+          <xsd:element name="name_value_list" type="tns:name_value_list" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="link_name_to_fields_array">
+        <xsd:all>
+          <xsd:element name="name" type="xsd:string" />
+          <xsd:element name="value" type="tns:select_fields" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="link_value">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:name_value_list[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="link_array_list">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:link_value[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="link_name_value">
+        <xsd:all>
+          <xsd:element name="name" type="xsd:string" />
+          <xsd:element name="records" type="tns:link_array_list" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="link_list">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:link_name_value[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="link_lists">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:link_list[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="get_entry_result_version2">
+        <xsd:all>
+          <xsd:element name="entry_list" type="tns:entry_list" />
+          <xsd:element name="relationship_list" type="tns:link_lists" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="return_search_result">
+        <xsd:all>
+          <xsd:element name="entry_list" type="tns:link_list" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="get_entry_list_result">
+        <xsd:all>
+          <xsd:element name="result_count" type="xsd:int" />
+          <xsd:element name="next_offset" type="xsd:int" />
+          <xsd:element name="field_list" type="tns:field_list" />
+          <xsd:element name="entry_list" type="tns:entry_list" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="get_entry_list_result_version2">
+        <xsd:all>
+          <xsd:element name="result_count" type="xsd:int" />
+          <xsd:element name="next_offset" type="xsd:int" />
+          <xsd:element name="entry_list" type="tns:entry_list" />
+          <xsd:element name="relationship_list" type="tns:link_lists" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="get_entry_result">
+        <xsd:all>
+          <xsd:element name="field_list" type="tns:field_list" />
+          <xsd:element name="entry_list" type="tns:entry_list" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="get_server_info_result">
+        <xsd:all>
+          <xsd:element name="flavor" type="xsd:string" />
+          <xsd:element name="version" type="xsd:string" />
+          <xsd:element name="gmt_time" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="set_entry_result">
+        <xsd:all>
+          <xsd:element name="id" type="xsd:string" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="new_set_entry_result">
+        <xsd:all>
+          <xsd:element name="id" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="new_set_entries_result">
+        <xsd:all>
+          <xsd:element name="ids" type="tns:select_fields" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="set_entries_result">
+        <xsd:all>
+          <xsd:element name="ids" type="tns:select_fields" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="id_mod">
+        <xsd:all>
+          <xsd:element name="id" type="xsd:string" />
+          <xsd:element name="date_modified" type="xsd:string" />
+          <xsd:element name="deleted" type="xsd:int" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="ids_mods">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:id_mod[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="get_relationships_result">
+        <xsd:all>
+          <xsd:element name="ids" type="tns:ids_mods" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="set_relationship_value">
+        <xsd:all>
+          <xsd:element name="module1" type="xsd:string" />
+          <xsd:element name="module1_id" type="xsd:string" />
+          <xsd:element name="module2" type="xsd:string" />
+          <xsd:element name="module2_id" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="set_relationship_list">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:set_relationship_value[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="new_set_relationhip_ids">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:select_fields[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="new_set_relationship_list_result">
+        <xsd:all>
+          <xsd:element name="created" type="xsd:int" />
+          <xsd:element name="failed" type="xsd:int" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="set_relationship_list_result">
+        <xsd:all>
+          <xsd:element name="created" type="xsd:int" />
+          <xsd:element name="failed" type="xsd:int" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="document_revision">
+        <xsd:all>
+          <xsd:element name="id" type="xsd:string" />
+          <xsd:element name="document_name" type="xsd:string" />
+          <xsd:element name="revision" type="xsd:string" />
+          <xsd:element name="filename" type="xsd:string" />
+          <xsd:element name="file" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="get_entry_list_result_encoded">
+        <xsd:all>
+          <xsd:element name="result_count" type="xsd:int" />
+          <xsd:element name="next_offset" type="xsd:int" />
+          <xsd:element name="total_count" type="xsd:int" />
+          <xsd:element name="field_list" type="tns:select_fields" />
+          <xsd:element name="entry_list" type="xsd:string" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="get_sync_result_encoded">
+        <xsd:all>
+          <xsd:element name="result" type="xsd:string" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="get_quick_sync_result_encoded">
+        <xsd:all>
+          <xsd:element name="result" type="xsd:string" />
+          <xsd:element name="result_count" type="xsd:int" />
+          <xsd:element name="next_offset" type="xsd:int" />
+          <xsd:element name="total_count" type="xsd:int" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="return_document_revision">
+        <xsd:all>
+          <xsd:element name="document_revision" type="tns:document_revision" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="new_return_document_revision">
+        <xsd:all>
+          <xsd:element name="document_revision" type="tns:document_revision" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="name_value_operator">
+        <xsd:all>
+          <xsd:element name="name" type="xsd:string" />
+          <xsd:element name="value" type="xsd:string" />
+          <xsd:element name="operator" type="xsd:string" />
+          <xsd:element name="value_array" type="tns:select_fields" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="name_value_operator_list">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:name_value_operator[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="newsletter">
+        <xsd:all>
+          <xsd:element name="name" type="xsd:string" />
+          <xsd:element name="prospect_list_id" type="xsd:string" />
+          <xsd:element name="campaign_id" type="xsd:string" />
+          <xsd:element name="description" type="xsd:string" />
+          <xsd:element name="frequency" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="newsletter_list">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:newsletter[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="get_subscription_lists_result">
+        <xsd:all>
+          <xsd:element name="unsubscribed" type="tns:newsletter_list" />
+          <xsd:element name="subscribed" type="tns:newsletter_list" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="str_array">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="xsd:string[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="name_value_lists_error">
+        <xsd:all>
+          <xsd:element name="name_value_lists" type="tns:name_value_lists" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="get_entries_count_result">
+        <xsd:all>
+          <xsd:element name="result_count" type="xsd:int" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="set_entries_detail_result">
+        <xsd:all>
+          <xsd:element name="name_value_lists" type="tns:name_value_lists" />
+          <xsd:element name="error" type="tns:error_value" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="contact_detail">
+        <xsd:all>
+          <xsd:element name="email_address" type="xsd:string" />
+          <xsd:element name="name1" type="xsd:string" />
+          <xsd:element name="name2" type="xsd:string" />
+          <xsd:element name="association" type="xsd:string" />
+          <xsd:element name="id" type="xsd:string" />
+          <xsd:element name="msi_id" type="xsd:string" />
+          <xsd:element name="type" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="contact_detail_array">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:contact_detail[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+      <xsd:complexType name="user_detail">
+        <xsd:all>
+          <xsd:element name="email_address" type="xsd:string" />
+          <xsd:element name="user_name" type="xsd:string" />
+          <xsd:element name="first_name" type="xsd:string" />
+          <xsd:element name="last_name" type="xsd:string" />
+          <xsd:element name="department" type="xsd:string" />
+          <xsd:element name="id" type="xsd:string" />
+          <xsd:element name="title" type="xsd:string" />
+        </xsd:all>
+      </xsd:complexType>
+      <xsd:complexType name="user_detail_array">
+        <xsd:complexContent mixed="false">
+          <xsd:restriction base="SOAP-ENC:Array">
+            <xsd:attribute wsdl:arrayType="tns:user_detail[]" ref="SOAP-ENC:arrayType" />
+          </xsd:restriction>
+        </xsd:complexContent>
+      </xsd:complexType>
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="is_user_adminRequest">
+    <wsdl:part name="session" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="is_user_adminResponse">
+    <wsdl:part name="return" type="xsd:int" />
+  </wsdl:message>
+  <wsdl:message name="loginRequest">
+    <wsdl:part name="user_auth" type="tns:user_auth" />
+    <wsdl:part name="application_name" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="loginResponse">
+    <wsdl:part name="return" type="tns:set_entry_result" />
+  </wsdl:message>
+  <wsdl:message name="is_loopbackRequest" />
+  <wsdl:message name="is_loopbackResponse">
+    <wsdl:part name="return" type="xsd:int" />
+  </wsdl:message>
+  <wsdl:message name="seamless_loginRequest">
+    <wsdl:part name="session" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="seamless_loginResponse">
+    <wsdl:part name="return" type="xsd:int" />
+  </wsdl:message>
+  <wsdl:message name="get_entry_listRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+    <wsdl:part name="query" type="xsd:string" />
+    <wsdl:part name="order_by" type="xsd:string" />
+    <wsdl:part name="offset" type="xsd:int" />
+    <wsdl:part name="select_fields" type="tns:select_fields" />
+    <wsdl:part name="max_results" type="xsd:int" />
+    <wsdl:part name="deleted" type="xsd:int" />
+  </wsdl:message>
+  <wsdl:message name="get_entry_listResponse">
+    <wsdl:part name="return" type="tns:get_entry_list_result" />
+  </wsdl:message>
+  <wsdl:message name="get_entryRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+    <wsdl:part name="id" type="xsd:string" />
+    <wsdl:part name="select_fields" type="tns:select_fields" />
+  </wsdl:message>
+  <wsdl:message name="get_entryResponse">
+    <wsdl:part name="return" type="tns:get_entry_result" />
+  </wsdl:message>
+  <wsdl:message name="get_entriesRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+    <wsdl:part name="ids" type="tns:select_fields" />
+    <wsdl:part name="select_fields" type="tns:select_fields" />
+  </wsdl:message>
+  <wsdl:message name="get_entriesResponse">
+    <wsdl:part name="return" type="tns:get_entry_result" />
+  </wsdl:message>
+  <wsdl:message name="set_entryRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+    <wsdl:part name="name_value_list" type="tns:name_value_list" />
+  </wsdl:message>
+  <wsdl:message name="set_entryResponse">
+    <wsdl:part name="return" type="tns:set_entry_result" />
+  </wsdl:message>
+  <wsdl:message name="set_entriesRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+    <wsdl:part name="name_value_lists" type="tns:name_value_lists" />
+  </wsdl:message>
+  <wsdl:message name="set_entriesResponse">
+    <wsdl:part name="return" type="tns:set_entries_result" />
+  </wsdl:message>
+  <wsdl:message name="set_note_attachmentRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="note" type="tns:note_attachment" />
+  </wsdl:message>
+  <wsdl:message name="set_note_attachmentResponse">
+    <wsdl:part name="return" type="tns:set_entry_result" />
+  </wsdl:message>
+  <wsdl:message name="get_note_attachmentRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="id" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_note_attachmentResponse">
+    <wsdl:part name="return" type="tns:return_note_attachment" />
+  </wsdl:message>
+  <wsdl:message name="relate_note_to_moduleRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="note_id" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+    <wsdl:part name="module_id" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="relate_note_to_moduleResponse">
+    <wsdl:part name="return" type="tns:error_value" />
+  </wsdl:message>
+  <wsdl:message name="get_related_notesRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+    <wsdl:part name="module_id" type="xsd:string" />
+    <wsdl:part name="select_fields" type="tns:select_fields" />
+  </wsdl:message>
+  <wsdl:message name="get_related_notesResponse">
+    <wsdl:part name="return" type="tns:get_entry_result" />
+  </wsdl:message>
+  <wsdl:message name="logoutRequest">
+    <wsdl:part name="session" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="logoutResponse">
+    <wsdl:part name="return" type="tns:error_value" />
+  </wsdl:message>
+  <wsdl:message name="get_module_fieldsRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_module_fieldsResponse">
+    <wsdl:part name="return" type="tns:module_fields" />
+  </wsdl:message>
+  <wsdl:message name="get_available_modulesRequest">
+    <wsdl:part name="session" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_available_modulesResponse">
+    <wsdl:part name="return" type="tns:module_list" />
+  </wsdl:message>
+  <wsdl:message name="update_portal_userRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="portal_name" type="xsd:string" />
+    <wsdl:part name="name_value_list" type="tns:name_value_list" />
+  </wsdl:message>
+  <wsdl:message name="update_portal_userResponse">
+    <wsdl:part name="return" type="tns:error_value" />
+  </wsdl:message>
+  <wsdl:message name="get_user_idRequest">
+    <wsdl:part name="session" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_user_idResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_user_team_idRequest">
+    <wsdl:part name="session" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_user_team_idResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_server_timeRequest" />
+  <wsdl:message name="get_server_timeResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_gmt_timeRequest" />
+  <wsdl:message name="get_gmt_timeResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_sugar_flavorRequest" />
+  <wsdl:message name="get_sugar_flavorResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_server_versionRequest" />
+  <wsdl:message name="get_server_versionResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_relationshipsRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+    <wsdl:part name="module_id" type="xsd:string" />
+    <wsdl:part name="related_module" type="xsd:string" />
+    <wsdl:part name="related_module_query" type="xsd:string" />
+    <wsdl:part name="deleted" type="xsd:int" />
+  </wsdl:message>
+  <wsdl:message name="get_relationshipsResponse">
+    <wsdl:part name="return" type="tns:get_relationships_result" />
+  </wsdl:message>
+  <wsdl:message name="set_relationshipRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="set_relationship_value" type="tns:set_relationship_value" />
+  </wsdl:message>
+  <wsdl:message name="set_relationshipResponse">
+    <wsdl:part name="return" type="tns:error_value" />
+  </wsdl:message>
+  <wsdl:message name="set_relationshipsRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="set_relationship_list" type="tns:set_relationship_list" />
+  </wsdl:message>
+  <wsdl:message name="set_relationshipsResponse">
+    <wsdl:part name="return" type="tns:set_relationship_list_result" />
+  </wsdl:message>
+  <wsdl:message name="set_document_revisionRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="note" type="tns:document_revision" />
+  </wsdl:message>
+  <wsdl:message name="set_document_revisionResponse">
+    <wsdl:part name="return" type="tns:set_entry_result" />
+  </wsdl:message>
+  <wsdl:message name="search_by_moduleRequest">
+    <wsdl:part name="user_name" type="xsd:string" />
+    <wsdl:part name="password" type="xsd:string" />
+    <wsdl:part name="search_string" type="xsd:string" />
+    <wsdl:part name="modules" type="tns:select_fields" />
+    <wsdl:part name="offset" type="xsd:int" />
+    <wsdl:part name="max_results" type="xsd:int" />
+  </wsdl:message>
+  <wsdl:message name="search_by_moduleResponse">
+    <wsdl:part name="return" type="tns:get_entry_list_result" />
+  </wsdl:message>
+  <wsdl:message name="get_mailmerge_documentRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="file_name" type="xsd:string" />
+    <wsdl:part name="fields" type="tns:select_fields" />
+  </wsdl:message>
+  <wsdl:message name="get_mailmerge_documentResponse">
+    <wsdl:part name="return" type="tns:get_sync_result_encoded" />
+  </wsdl:message>
+  <wsdl:message name="get_mailmerge_document2Request">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="file_name" type="xsd:string" />
+    <wsdl:part name="fields" type="tns:select_fields" />
+  </wsdl:message>
+  <wsdl:message name="get_mailmerge_document2Response">
+    <wsdl:part name="return" type="tns:get_mailmerge_document_result" />
+  </wsdl:message>
+  <wsdl:message name="get_document_revisionRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="i" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_document_revisionResponse">
+    <wsdl:part name="return" type="tns:return_document_revision" />
+  </wsdl:message>
+  <wsdl:message name="set_campaign_mergeRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="targets" type="tns:select_fields" />
+    <wsdl:part name="campaign_id" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="set_campaign_mergeResponse">
+    <wsdl:part name="return" type="tns:error_value" />
+  </wsdl:message>
+  <wsdl:message name="get_entries_countRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+    <wsdl:part name="query" type="xsd:string" />
+    <wsdl:part name="deleted" type="xsd:int" />
+  </wsdl:message>
+  <wsdl:message name="get_entries_countResponse">
+    <wsdl:part name="return" type="tns:get_entries_count_result" />
+  </wsdl:message>
+  <wsdl:message name="set_entries_detailsRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+    <wsdl:part name="name_value_lists" type="tns:name_value_lists" />
+    <wsdl:part name="select_fields" type="tns:select_fields" />
+  </wsdl:message>
+  <wsdl:message name="set_entries_detailsResponse">
+    <wsdl:part name="return" type="tns:set_entries_detail_result" />
+  </wsdl:message>
+  <wsdl:message name="sync_get_modified_relationshipsRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+    <wsdl:part name="related_module" type="xsd:string" />
+    <wsdl:part name="from_date" type="xsd:string" />
+    <wsdl:part name="to_date" type="xsd:string" />
+    <wsdl:part name="offset" type="xsd:int" />
+    <wsdl:part name="max_results" type="xsd:int" />
+    <wsdl:part name="deleted" type="xsd:int" />
+    <wsdl:part name="module_id" type="xsd:string" />
+    <wsdl:part name="select_fields" type="tns:select_fields" />
+    <wsdl:part name="ids" type="tns:select_fields" />
+    <wsdl:part name="relationship_name" type="xsd:string" />
+    <wsdl:part name="deletion_date" type="xsd:string" />
+    <wsdl:part name="php_serialize" type="xsd:int" />
+  </wsdl:message>
+  <wsdl:message name="sync_get_modified_relationshipsResponse">
+    <wsdl:part name="return" type="tns:get_entry_list_result_encoded" />
+  </wsdl:message>
+  <wsdl:message name="get_modified_entriesRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+    <wsdl:part name="ids" type="tns:select_fields" />
+    <wsdl:part name="select_fields" type="tns:select_fields" />
+  </wsdl:message>
+  <wsdl:message name="get_modified_entriesResponse">
+    <wsdl:part name="return" type="tns:get_sync_result_encoded" />
+  </wsdl:message>
+  <wsdl:message name="get_attendee_listRequest">
+    <wsdl:part name="session" type="xsd:string" />
+    <wsdl:part name="module_name" type="xsd:string" />
+    <wsdl:part name="id" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_attendee_listResponse">
+    <wsdl:part name="return" type="tns:get_sync_result_encoded" />
+  </wsdl:message>
+  <wsdl:message name="create_sessionRequest">
+    <wsdl:part name="user_name" type="xsd:string" />
+    <wsdl:part name="password" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="create_sessionResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="end_sessionRequest">
+    <wsdl:part name="user_name" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="end_sessionResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="contact_by_emailRequest">
+    <wsdl:part name="user_name" type="xsd:string" />
+    <wsdl:part name="password" type="xsd:string" />
+    <wsdl:part name="email_address" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="contact_by_emailResponse">
+    <wsdl:part name="return" type="tns:contact_detail_array" />
+  </wsdl:message>
+  <wsdl:message name="get_contact_relationshipsRequest">
+    <wsdl:part name="user_name" type="xsd:string" />
+    <wsdl:part name="password" type="xsd:string" />
+    <wsdl:part name="id" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="get_contact_relationshipsResponse">
+    <wsdl:part name="return" type="tns:contact_detail_array" />
+  </wsdl:message>
+  <wsdl:message name="user_listRequest">
+    <wsdl:part name="user_name" type="xsd:string" />
+    <wsdl:part name="password" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="user_listResponse">
+    <wsdl:part name="return" type="tns:user_detail_array" />
+  </wsdl:message>
+  <wsdl:message name="searchRequest">
+    <wsdl:part name="user_name" type="xsd:string" />
+    <wsdl:part name="password" type="xsd:string" />
+    <wsdl:part name="name" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="searchResponse">
+    <wsdl:part name="return" type="tns:contact_detail_array" />
+  </wsdl:message>
+  <wsdl:message name="track_emailRequest">
+    <wsdl:part name="user_name" type="xsd:string" />
+    <wsdl:part name="password" type="xsd:string" />
+    <wsdl:part name="parent_id" type="xsd:string" />
+    <wsdl:part name="contact_ids" type="xsd:string" />
+    <wsdl:part name="date_sent" type="xsd:date" />
+    <wsdl:part name="email_subject" type="xsd:string" />
+    <wsdl:part name="email_body" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="track_emailResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="create_contactRequest">
+    <wsdl:part name="user_name" type="xsd:string" />
+    <wsdl:part name="password" type="xsd:string" />
+    <wsdl:part name="first_name" type="xsd:string" />
+    <wsdl:part name="last_name" type="xsd:string" />
+    <wsdl:part name="email_address" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="create_contactResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="create_leadRequest">
+    <wsdl:part name="user_name" type="xsd:string" />
+    <wsdl:part name="password" type="xsd:string" />
+    <wsdl:part name="first_name" type="xsd:string" />
+    <wsdl:part name="last_name" type="xsd:string" />
+    <wsdl:part name="email_address" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="create_leadResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="create_accountRequest">
+    <wsdl:part name="user_name" type="xsd:string" />
+    <wsdl:part name="password" type="xsd:string" />
+    <wsdl:part name="name" type="xsd:string" />
+    <wsdl:part name="phone" type="xsd:string" />
+    <wsdl:part name="website" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="create_accountResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="create_opportunityRequest">
+    <wsdl:part name="user_name" type="xsd:string" />
+    <wsdl:part name="password" type="xsd:string" />
+    <wsdl:part name="name" type="xsd:string" />
+    <wsdl:part name="amount" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="create_opportunityResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="create_caseRequest">
+    <wsdl:part name="user_name" type="xsd:string" />
+    <wsdl:part name="password" type="xsd:string" />
+    <wsdl:part name="name" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:message name="create_caseResponse">
+    <wsdl:part name="return" type="xsd:string" />
+  </wsdl:message>
+  <wsdl:portType name="sugarsoapPortType">
+    <wsdl:operation name="is_user_admin">
+      <wsdl:input message="tns:is_user_adminRequest" />
+      <wsdl:output message="tns:is_user_adminResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="login">
+      <wsdl:input message="tns:loginRequest" />
+      <wsdl:output message="tns:loginResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="is_loopback">
+      <wsdl:input message="tns:is_loopbackRequest" />
+      <wsdl:output message="tns:is_loopbackResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="seamless_login">
+      <wsdl:input message="tns:seamless_loginRequest" />
+      <wsdl:output message="tns:seamless_loginResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_entry_list">
+      <wsdl:input message="tns:get_entry_listRequest" />
+      <wsdl:output message="tns:get_entry_listResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_entry">
+      <wsdl:input message="tns:get_entryRequest" />
+      <wsdl:output message="tns:get_entryResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_entries">
+      <wsdl:input message="tns:get_entriesRequest" />
+      <wsdl:output message="tns:get_entriesResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="set_entry">
+      <wsdl:input message="tns:set_entryRequest" />
+      <wsdl:output message="tns:set_entryResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="set_entries">
+      <wsdl:input message="tns:set_entriesRequest" />
+      <wsdl:output message="tns:set_entriesResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="set_note_attachment">
+      <wsdl:input message="tns:set_note_attachmentRequest" />
+      <wsdl:output message="tns:set_note_attachmentResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_note_attachment">
+      <wsdl:input message="tns:get_note_attachmentRequest" />
+      <wsdl:output message="tns:get_note_attachmentResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="relate_note_to_module">
+      <wsdl:input message="tns:relate_note_to_moduleRequest" />
+      <wsdl:output message="tns:relate_note_to_moduleResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_related_notes">
+      <wsdl:input message="tns:get_related_notesRequest" />
+      <wsdl:output message="tns:get_related_notesResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="logout">
+      <wsdl:input message="tns:logoutRequest" />
+      <wsdl:output message="tns:logoutResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_module_fields">
+      <wsdl:input message="tns:get_module_fieldsRequest" />
+      <wsdl:output message="tns:get_module_fieldsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_available_modules">
+      <wsdl:input message="tns:get_available_modulesRequest" />
+      <wsdl:output message="tns:get_available_modulesResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="update_portal_user">
+      <wsdl:input message="tns:update_portal_userRequest" />
+      <wsdl:output message="tns:update_portal_userResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_user_id">
+      <wsdl:input message="tns:get_user_idRequest" />
+      <wsdl:output message="tns:get_user_idResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_user_team_id">
+      <wsdl:input message="tns:get_user_team_idRequest" />
+      <wsdl:output message="tns:get_user_team_idResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_server_time">
+      <wsdl:input message="tns:get_server_timeRequest" />
+      <wsdl:output message="tns:get_server_timeResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_gmt_time">
+      <wsdl:input message="tns:get_gmt_timeRequest" />
+      <wsdl:output message="tns:get_gmt_timeResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_sugar_flavor">
+      <wsdl:input message="tns:get_sugar_flavorRequest" />
+      <wsdl:output message="tns:get_sugar_flavorResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_server_version">
+      <wsdl:input message="tns:get_server_versionRequest" />
+      <wsdl:output message="tns:get_server_versionResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_relationships">
+      <wsdl:input message="tns:get_relationshipsRequest" />
+      <wsdl:output message="tns:get_relationshipsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="set_relationship">
+      <wsdl:input message="tns:set_relationshipRequest" />
+      <wsdl:output message="tns:set_relationshipResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="set_relationships">
+      <wsdl:input message="tns:set_relationshipsRequest" />
+      <wsdl:output message="tns:set_relationshipsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="set_document_revision">
+      <wsdl:input message="tns:set_document_revisionRequest" />
+      <wsdl:output message="tns:set_document_revisionResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="search_by_module">
+      <wsdl:input message="tns:search_by_moduleRequest" />
+      <wsdl:output message="tns:search_by_moduleResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_mailmerge_document">
+      <wsdl:input message="tns:get_mailmerge_documentRequest" />
+      <wsdl:output message="tns:get_mailmerge_documentResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_mailmerge_document2">
+      <wsdl:input message="tns:get_mailmerge_document2Request" />
+      <wsdl:output message="tns:get_mailmerge_document2Response" />
+    </wsdl:operation>
+    <wsdl:operation name="get_document_revision">
+      <wsdl:input message="tns:get_document_revisionRequest" />
+      <wsdl:output message="tns:get_document_revisionResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="set_campaign_merge">
+      <wsdl:input message="tns:set_campaign_mergeRequest" />
+      <wsdl:output message="tns:set_campaign_mergeResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_entries_count">
+      <wsdl:input message="tns:get_entries_countRequest" />
+      <wsdl:output message="tns:get_entries_countResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="set_entries_details">
+      <wsdl:input message="tns:set_entries_detailsRequest" />
+      <wsdl:output message="tns:set_entries_detailsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="sync_get_modified_relationships">
+      <wsdl:input message="tns:sync_get_modified_relationshipsRequest" />
+      <wsdl:output message="tns:sync_get_modified_relationshipsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_modified_entries">
+      <wsdl:input message="tns:get_modified_entriesRequest" />
+      <wsdl:output message="tns:get_modified_entriesResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_attendee_list">
+      <wsdl:input message="tns:get_attendee_listRequest" />
+      <wsdl:output message="tns:get_attendee_listResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="create_session">
+      <wsdl:input message="tns:create_sessionRequest" />
+      <wsdl:output message="tns:create_sessionResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="end_session">
+      <wsdl:input message="tns:end_sessionRequest" />
+      <wsdl:output message="tns:end_sessionResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="contact_by_email">
+      <wsdl:input message="tns:contact_by_emailRequest" />
+      <wsdl:output message="tns:contact_by_emailResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="get_contact_relationships">
+      <wsdl:input message="tns:get_contact_relationshipsRequest" />
+      <wsdl:output message="tns:get_contact_relationshipsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="user_list">
+      <wsdl:input message="tns:user_listRequest" />
+      <wsdl:output message="tns:user_listResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="search">
+      <wsdl:input message="tns:searchRequest" />
+      <wsdl:output message="tns:searchResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="track_email">
+      <wsdl:input message="tns:track_emailRequest" />
+      <wsdl:output message="tns:track_emailResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="create_contact">
+      <wsdl:input message="tns:create_contactRequest" />
+      <wsdl:output message="tns:create_contactResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="create_lead">
+      <wsdl:input message="tns:create_leadRequest" />
+      <wsdl:output message="tns:create_leadResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="create_account">
+      <wsdl:input message="tns:create_accountRequest" />
+      <wsdl:output message="tns:create_accountResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="create_opportunity">
+      <wsdl:input message="tns:create_opportunityRequest" />
+      <wsdl:output message="tns:create_opportunityResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="create_case">
+      <wsdl:input message="tns:create_caseRequest" />
+      <wsdl:output message="tns:create_caseResponse" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="sugarsoapBinding" type="tns:sugarsoapPortType">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="rpc" />
+    <wsdl:operation name="is_user_admin">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/is_user_admin" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="login">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/login" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="is_loopback">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/is_loopback" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="seamless_login">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/seamless_login" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_entry_list">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_entry_list" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_entry">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_entry" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_entries">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_entries" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="set_entry">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/set_entry" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="set_entries">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/set_entries" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="set_note_attachment">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/set_note_attachment" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_note_attachment">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_note_attachment" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="relate_note_to_module">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/relate_note_to_module" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_related_notes">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_related_notes" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="logout">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/logout" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_module_fields">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_module_fields" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_available_modules">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_available_modules" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="update_portal_user">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/update_portal_user" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_user_id">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_user_id" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_user_team_id">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_user_team_id" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_server_time">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_server_time" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_gmt_time">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_gmt_time" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_sugar_flavor">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_sugar_flavor" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_server_version">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_server_version" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_relationships">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_relationships" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="set_relationship">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/set_relationship" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="set_relationships">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/set_relationships" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="set_document_revision">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/set_document_revision" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="search_by_module">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/search_by_module" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_mailmerge_document">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_mailmerge_document" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_mailmerge_document2">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_mailmerge_document2" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_document_revision">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_document_revision" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="set_campaign_merge">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/set_campaign_merge" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_entries_count">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_entries_count" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="set_entries_details">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/set_entries_details" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="sync_get_modified_relationships">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/sync_get_modified_relationships" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_modified_entries">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_modified_entries" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_attendee_list">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_attendee_list" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="create_session">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/create_session" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="end_session">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/end_session" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="contact_by_email">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/contact_by_email" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get_contact_relationships">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/get_contact_relationships" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="user_list">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/user_list" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="search">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/search" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="track_email">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/track_email" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="create_contact">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/create_contact" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="create_lead">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/create_lead" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="create_account">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/create_account" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="create_opportunity">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/create_opportunity" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="create_case">
+      <soap:operation soapAction="http://crm.sipsorcery.com/soap.php/create_case" style="rpc" />
+      <wsdl:input>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="encoded" namespace="http://www.sugarcrm.com/sugarcrm" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="sugarsoap">
+    <wsdl:port name="sugarsoapPort" binding="tns:sugarsoapBinding">
+      <soap:address location="http://crm.sipsorcery.com/soap.php" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

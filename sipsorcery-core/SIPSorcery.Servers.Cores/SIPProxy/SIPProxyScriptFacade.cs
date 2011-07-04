@@ -428,7 +428,7 @@ namespace SIPSorcery.Servers
 
         public SIPDNSLookupResult Resolve(SIPRequest sipRequest)
         {
-            if (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0)
+            if (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0 && !sipRequest.Header.Routes.TopRoute.IsStrictRouter)
             {
                 return SIPDNSManager.ResolveSIPService(sipRequest.Header.Routes.TopRoute.URI, true);
             }

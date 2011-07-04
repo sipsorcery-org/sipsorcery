@@ -36,37 +36,45 @@
             <End Role="sipdialplans" EntitySet="sipdialplans" />
             <End Role="sipdialplanroutes" EntitySet="sipdialplanroutes" />
           </AssociationSet>
+          <AssociationSet Name="sipproviderbindings_ibfk_2" Association="Entities.Store.sipproviderbindings_ibfk_2">
+            <End Role="sipproviders" EntitySet="sipproviders" />
+            <End Role="sipproviderbindings" EntitySet="sipproviderbindings" />
+          </AssociationSet>
+          <AssociationSet Name="sipregistrarbindings_ibfk_1" Association="Entities.Store.sipregistrarbindings_ibfk_1">
+            <End Role="sipaccounts" EntitySet="sipaccounts" />
+            <End Role="sipregistrarbindings" EntitySet="sipregistrarbindings" />
+          </AssociationSet>
         </EntityContainer>
         <EntityType Name="cdr">
           <Key>
             <PropertyRef Name="id" />
           </Key>
+          <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
+          <Property Name="owner" Type="varchar" MaxLength="32" />
           <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
-          <Property Name="answeredreason" Type="varchar" MaxLength="512" />
-          <Property Name="answeredstatus" Type="int" />
-          <Property Name="answeredtime" Type="varchar" MaxLength="33" />
-          <Property Name="bridgeid" Type="varchar" MaxLength="36" />
-          <Property Name="callid" Type="varchar" Nullable="false" MaxLength="256" />
-          <Property Name="created" Type="varchar" Nullable="false" MaxLength="33" />
+          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
           <Property Name="direction" Type="varchar" Nullable="false" MaxLength="3" />
+          <Property Name="created" Type="varchar" Nullable="false" MaxLength="33" />
           <Property Name="dst" Type="varchar" MaxLength="128" />
           <Property Name="dsthost" Type="varchar" Nullable="false" MaxLength="128" />
           <Property Name="dsturi" Type="varchar" Nullable="false" MaxLength="1024" />
-          <Property Name="duration" Type="int" />
-          <Property Name="fromheader" Type="varchar" MaxLength="1024" />
-          <Property Name="fromname" Type="varchar" MaxLength="128" />
           <Property Name="fromuser" Type="varchar" MaxLength="128" />
-          <Property Name="hungupreason" Type="varchar" MaxLength="512" />
-          <Property Name="hunguptime" Type="varchar" MaxLength="33" />
-          <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="inprogressreason" Type="varchar" MaxLength="512" />
-          <Property Name="inprogressstatus" Type="int" />
-          <Property Name="inprogresstime" Type="varchar" MaxLength="33" />
-          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
+          <Property Name="fromname" Type="varchar" MaxLength="128" />
+          <Property Name="fromheader" Type="varchar" MaxLength="1024" />
+          <Property Name="callid" Type="varchar" Nullable="false" MaxLength="256" />
           <Property Name="localsocket" Type="varchar" Nullable="false" MaxLength="64" />
-          <Property Name="owner" Type="varchar" MaxLength="32" />
           <Property Name="remotesocket" Type="varchar" Nullable="false" MaxLength="64" />
+          <Property Name="bridgeid" Type="varchar" MaxLength="36" />
+          <Property Name="inprogresstime" Type="varchar" MaxLength="33" />
+          <Property Name="inprogressstatus" Type="int" />
+          <Property Name="inprogressreason" Type="varchar" MaxLength="512" />
           <Property Name="ringduration" Type="int" />
+          <Property Name="answeredtime" Type="varchar" MaxLength="33" />
+          <Property Name="answeredstatus" Type="int" />
+          <Property Name="answeredreason" Type="varchar" MaxLength="512" />
+          <Property Name="duration" Type="int" />
+          <Property Name="hunguptime" Type="varchar" MaxLength="33" />
+          <Property Name="hungupreason" Type="varchar" MaxLength="512" />
         </EntityType>
         <!--Errors Found During Generation:
       warning 6035: The relationship 'sipaccounts_ibfk_1' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
@@ -81,165 +89,166 @@
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="active" Type="bit" Nullable="false" />
-          <Property Name="adminid" Type="varchar" MaxLength="32" />
-          <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
-          <Property Name="apikey" Type="varchar" MaxLength="96" />
-          <Property Name="authorisedapps" Type="varchar" MaxLength="2048" />
+          <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
+          <Property Name="customerusername" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="customerpassword" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="emailaddress" Type="varchar" Nullable="false" MaxLength="255" />
+          <Property Name="firstname" Type="varchar" MaxLength="64" />
+          <Property Name="lastname" Type="varchar" MaxLength="64" />
           <Property Name="city" Type="varchar" MaxLength="64" />
           <Property Name="country" Type="varchar" MaxLength="64" />
-          <Property Name="createdfromipaddress" Type="varchar" MaxLength="15" />
-          <Property Name="customerpassword" Type="varchar" Nullable="false" MaxLength="32" />
-          <Property Name="customerusername" Type="varchar" Nullable="false" MaxLength="32" />
-          <Property Name="emailaddress" Type="varchar" Nullable="false" MaxLength="255" />
-          <Property Name="emailaddressconfirmed" Type="bit" Nullable="false" />
-          <Property Name="executioncount" Type="int" Nullable="false" />
-          <Property Name="firstname" Type="varchar" MaxLength="64" />
-          <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
-          <Property Name="invitecode" Type="varchar" MaxLength="36" />
-          <Property Name="lastname" Type="varchar" MaxLength="64" />
-          <Property Name="maxexecutioncount" Type="int" Nullable="false" />
-          <Property Name="passwordresetid" Type="varchar" MaxLength="36" />
-          <Property Name="passwordresetidsetat" Type="varchar" MaxLength="33" />
-          <Property Name="securityanswer" Type="varchar" MaxLength="256" />
-          <Property Name="securityquestion" Type="varchar" MaxLength="1024" />
-          <Property Name="servicelevel" Type="varchar" Nullable="false" MaxLength="64" />
+          <Property Name="website" Type="varchar" MaxLength="256" />
+          <Property Name="active" Type="bit" Nullable="false" />
           <Property Name="suspended" Type="bit" Nullable="false" />
           <Property Name="suspendedreason" Type="varchar" MaxLength="1024" />
+          <Property Name="securityquestion" Type="varchar" MaxLength="1024" />
+          <Property Name="securityanswer" Type="varchar" MaxLength="256" />
+          <Property Name="createdfromipaddress" Type="varchar" MaxLength="15" />
+          <Property Name="adminid" Type="varchar" MaxLength="32" />
+          <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
+          <Property Name="maxexecutioncount" Type="int" Nullable="false" />
+          <Property Name="executioncount" Type="int" Nullable="false" />
+          <Property Name="authorisedapps" Type="varchar" MaxLength="2048" />
           <Property Name="timezone" Type="varchar" MaxLength="128" />
-          <Property Name="website" Type="varchar" MaxLength="256" />
+          <Property Name="emailaddressconfirmed" Type="bit" Nullable="false" />
+          <Property Name="invitecode" Type="varchar" MaxLength="36" />
+          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
+          <Property Name="passwordresetid" Type="varchar" MaxLength="36" />
+          <Property Name="passwordresetidsetat" Type="varchar" MaxLength="33" />
+          <Property Name="apikey" Type="varchar" MaxLength="96" />
+          <Property Name="servicelevel" Type="varchar" Nullable="false" MaxLength="64" />
+          <Property Name="servicerenewaldate" Type="datetime" />
         </EntityType>
         <EntityType Name="dialplandata">
           <Key>
-            <PropertyRef Name="datakey" />
             <PropertyRef Name="dataowner" />
+            <PropertyRef Name="datakey" />
           </Key>
-          <Property Name="datakey" Type="varchar" Nullable="false" MaxLength="64" />
           <Property Name="dataowner" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="datakey" Type="varchar" Nullable="false" MaxLength="64" />
           <Property Name="datavalue" Type="varchar" Nullable="false" MaxLength="1024" />
         </EntityType>
         <EntityType Name="sipaccounts">
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="admindisabledreason" Type="varchar" MaxLength="256" />
-          <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
-          <Property Name="dontmangleenabled" Type="bit" Nullable="false" />
           <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="indialplanname" Type="varchar" MaxLength="64" />
-          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
-          <Property Name="ipaddressacl" Type="varchar" MaxLength="256" />
-          <Property Name="isadmindisabled" Type="bit" Nullable="false" />
-          <Property Name="isincomingonly" Type="bit" Nullable="false" />
-          <Property Name="isswitchboardenabled" Type="bit" Nullable="false" />
-          <Property Name="isuserdisabled" Type="bit" Nullable="false" />
-          <Property Name="networkid" Type="varchar" MaxLength="16" />
-          <Property Name="outdialplanname" Type="varchar" MaxLength="64" />
-          <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
-          <Property Name="sendnatkeepalives" Type="bit" Nullable="false" />
-          <Property Name="sipdomain" Type="varchar" Nullable="false" MaxLength="128" />
-          <Property Name="sippassword" Type="varchar" Nullable="false" MaxLength="32" />
           <Property Name="sipusername" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="sippassword" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
+          <Property Name="sipdomain" Type="varchar" Nullable="false" MaxLength="128" />
+          <Property Name="sendnatkeepalives" Type="bit" Nullable="false" />
+          <Property Name="isincomingonly" Type="bit" Nullable="false" />
+          <Property Name="outdialplanname" Type="varchar" MaxLength="64" />
+          <Property Name="indialplanname" Type="varchar" MaxLength="64" />
+          <Property Name="isuserdisabled" Type="bit" Nullable="false" />
+          <Property Name="isadmindisabled" Type="bit" Nullable="false" />
+          <Property Name="admindisabledreason" Type="varchar" MaxLength="256" />
+          <Property Name="networkid" Type="varchar" MaxLength="16" />
+          <Property Name="ipaddressacl" Type="varchar" MaxLength="256" />
+          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
+          <Property Name="isswitchboardenabled" Type="bit" Nullable="false" />
+          <Property Name="dontmangleenabled" Type="bit" Nullable="false" />
         </EntityType>
         <EntityType Name="sipdialogues">
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
-          <Property Name="bridgeid" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="calldurationlimit" Type="int" />
-          <Property Name="callid" Type="varchar" Nullable="false" MaxLength="128" />
-          <Property Name="cdrid" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="cseq" Type="int" Nullable="false" />
-          <Property Name="direction" Type="varchar" Nullable="false" MaxLength="3" />
-          <Property Name="hangupat" Type="varchar" MaxLength="33" />
           <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
-          <Property Name="localtag" Type="varchar" Nullable="false" MaxLength="64" />
-          <Property Name="localuserfield" Type="varchar" Nullable="false" MaxLength="512" />
           <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
-          <Property Name="proxysipsocket" Type="varchar" MaxLength="64" />
-          <Property Name="remotesdp" Type="varchar" MaxLength="2048" />
+          <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
+          <Property Name="localtag" Type="varchar" Nullable="false" MaxLength="64" />
           <Property Name="remotetag" Type="varchar" Nullable="false" MaxLength="64" />
+          <Property Name="callid" Type="varchar" Nullable="false" MaxLength="128" />
+          <Property Name="cseq" Type="int" Nullable="false" />
+          <Property Name="bridgeid" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="remotetarget" Type="varchar" Nullable="false" MaxLength="256" />
+          <Property Name="localuserfield" Type="varchar" Nullable="false" MaxLength="512" />
           <Property Name="remoteuserfield" Type="varchar" Nullable="false" MaxLength="512" />
+          <Property Name="proxysipsocket" Type="varchar" MaxLength="64" />
           <Property Name="routeset" Type="varchar" MaxLength="512" />
-          <Property Name="sdp" Type="varchar" MaxLength="2048" />
-          <Property Name="switchboardcallerdescription" Type="varchar" MaxLength="1024" />
-          <Property Name="switchboarddescription" Type="varchar" MaxLength="1024" />
-          <Property Name="switchboardowner" Type="varchar" MaxLength="32" />
+          <Property Name="cdrid" Type="varchar" Nullable="false" MaxLength="36" />
+          <Property Name="calldurationlimit" Type="int" />
+          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
+          <Property Name="hangupat" Type="varchar" MaxLength="33" />
           <Property Name="transfermode" Type="varchar" MaxLength="16" />
+          <Property Name="direction" Type="varchar" Nullable="false" MaxLength="3" />
+          <Property Name="sdp" Type="varchar" MaxLength="2048" />
+          <Property Name="remotesdp" Type="varchar" MaxLength="2048" />
+          <Property Name="switchboarddescription" Type="varchar" MaxLength="1024" />
+          <Property Name="switchboardcallerdescription" Type="varchar" MaxLength="1024" />
+          <Property Name="switchboardowner" Type="varchar" MaxLength="32" />
         </EntityType>
         <EntityType Name="sipdialplanlookups">
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="description" Type="varchar" MaxLength="256" />
-          <Property Name="dialplanid" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="lookupkey" Type="varchar" Nullable="false" MaxLength="128" />
-          <Property Name="lookuptype" Type="int" Nullable="false" />
-          <Property Name="lookupvalue" Type="varchar" MaxLength="128" />
           <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="dialplanid" Type="varchar" Nullable="false" MaxLength="36" />
+          <Property Name="lookupkey" Type="varchar" Nullable="false" MaxLength="128" />
+          <Property Name="lookupvalue" Type="varchar" MaxLength="128" />
+          <Property Name="description" Type="varchar" MaxLength="256" />
+          <Property Name="lookuptype" Type="int" Nullable="false" />
         </EntityType>
         <EntityType Name="sipdialplanoptions">
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="allowedcountrycodes" Type="varchar" MaxLength="1024" />
-          <Property Name="areacode" Type="int" />
-          <Property Name="countrycode" Type="int" />
-          <Property Name="dialplanid" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="enablesafeguards" Type="bit" Nullable="false" />
-          <Property Name="enumservers" Type="varchar" MaxLength="2048" />
-          <Property Name="excludedprefixes" Type="varchar" MaxLength="2048" />
           <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="dialplanid" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="timezone" Type="varchar" MaxLength="128" />
+          <Property Name="countrycode" Type="int" />
+          <Property Name="areacode" Type="int" />
+          <Property Name="allowedcountrycodes" Type="varchar" MaxLength="1024" />
+          <Property Name="excludedprefixes" Type="varchar" MaxLength="2048" />
+          <Property Name="enumservers" Type="varchar" MaxLength="2048" />
           <Property Name="whitepageskey" Type="varchar" MaxLength="256" />
+          <Property Name="enablesafeguards" Type="bit" Nullable="false" />
         </EntityType>
         <EntityType Name="sipdialplanproviders">
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="dialplanid" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
-          <Property Name="providerdescription" Type="varchar" MaxLength="256" />
-          <Property Name="providerdialstring" Type="varchar" Nullable="false" MaxLength="1024" />
+          <Property Name="dialplanid" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="providername" Type="varchar" Nullable="false" MaxLength="32" />
           <Property Name="providerprefix" Type="varchar" MaxLength="8" />
+          <Property Name="providerdialstring" Type="varchar" Nullable="false" MaxLength="1024" />
+          <Property Name="providerdescription" Type="varchar" MaxLength="256" />
         </EntityType>
         <EntityType Name="sipdialplanroutes">
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="dialplanid" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
-          <Property Name="routedescription" Type="varchar" MaxLength="256" />
-          <Property Name="routedestination" Type="varchar" Nullable="false" MaxLength="1024" />
+          <Property Name="dialplanid" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="routename" Type="varchar" Nullable="false" MaxLength="32" />
           <Property Name="routepattern" Type="varchar" Nullable="false" MaxLength="256" />
+          <Property Name="routedestination" Type="varchar" Nullable="false" MaxLength="1024" />
+          <Property Name="routedescription" Type="varchar" MaxLength="256" />
         </EntityType>
         <EntityType Name="sipdialplans">
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="acceptnoninvite" Type="bit" Nullable="false" />
-          <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
-          <Property Name="authorisedapps" Type="varchar" MaxLength="2048" />
-          <Property Name="dialplanname" Type="varchar" Nullable="false" MaxLength="64" />
-          <Property Name="dialplanscript" Type="text" />
-          <Property Name="executioncount" Type="int" Nullable="false" />
           <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
+          <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
+          <Property Name="dialplanname" Type="varchar" Nullable="false" MaxLength="64" />
+          <Property Name="traceemailaddress" Type="varchar" MaxLength="256" />
+          <Property Name="dialplanscript" Type="text" />
+          <Property Name="scripttypedescription" Type="varchar" Nullable="false" MaxLength="12" />
           <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
           <Property Name="lastupdate" Type="varchar" Nullable="false" MaxLength="33" />
           <Property Name="maxexecutioncount" Type="int" Nullable="false" />
-          <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
-          <Property Name="scripttypedescription" Type="varchar" Nullable="false" MaxLength="12" />
-          <Property Name="traceemailaddress" Type="varchar" MaxLength="256" />
+          <Property Name="executioncount" Type="int" Nullable="false" />
+          <Property Name="authorisedapps" Type="varchar" MaxLength="2048" />
+          <Property Name="acceptnoninvite" Type="bit" Nullable="false" />
         </EntityType>
         <!--Errors Found During Generation:
       warning 6035: The relationship 'sipaccounts_ibfk_2' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
@@ -248,78 +257,78 @@
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="aliaslist" Type="varchar" MaxLength="1024" />
-          <Property Name="domain" Type="varchar" Nullable="false" MaxLength="128" />
           <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
+          <Property Name="domain" Type="varchar" Nullable="false" MaxLength="128" />
+          <Property Name="aliaslist" Type="varchar" MaxLength="1024" />
           <Property Name="owner" Type="varchar" MaxLength="32" />
+          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
         </EntityType>
         <EntityType Name="sipproviderbindings">
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
-          <Property Name="bindingexpiry" Type="int" Nullable="false" />
-          <Property Name="bindinguri" Type="varchar" Nullable="false" MaxLength="256" />
-          <Property Name="cseq" Type="int" Nullable="false" />
           <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="isregistered" Type="bit" Nullable="false" />
-          <Property Name="lastregisterattempt" Type="varchar" MaxLength="33" />
-          <Property Name="lastregistertime" Type="varchar" MaxLength="33" />
-          <Property Name="nextregistrationtime" Type="varchar" Nullable="false" MaxLength="33" />
-          <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
           <Property Name="providerid" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="providername" Type="varchar" Nullable="false" MaxLength="50" />
-          <Property Name="registrarsipsocket" Type="varchar" MaxLength="256" />
+          <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
           <Property Name="registrationfailuremessage" Type="varchar" MaxLength="1024" />
+          <Property Name="nextregistrationtime" Type="varchar" Nullable="false" MaxLength="33" />
+          <Property Name="lastregistertime" Type="varchar" MaxLength="33" />
+          <Property Name="lastregisterattempt" Type="varchar" MaxLength="33" />
+          <Property Name="isregistered" Type="bit" Nullable="false" />
+          <Property Name="bindingexpiry" Type="int" Nullable="false" />
+          <Property Name="bindinguri" Type="varchar" Nullable="false" MaxLength="256" />
+          <Property Name="registrarsipsocket" Type="varchar" MaxLength="256" />
+          <Property Name="cseq" Type="int" Nullable="false" />
         </EntityType>
         <EntityType Name="sipproviders">
           <Key>
             <PropertyRef Name="id" />
           </Key>
+          <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
+          <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
           <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
+          <Property Name="providername" Type="varchar" Nullable="false" MaxLength="50" />
+          <Property Name="providerusername" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="providerpassword" Type="varchar" MaxLength="32" />
+          <Property Name="providerserver" Type="varchar" MaxLength="256" />
+          <Property Name="providerauthusername" Type="varchar" MaxLength="32" />
+          <Property Name="provideroutboundproxy" Type="varchar" MaxLength="256" />
+          <Property Name="providerfrom" Type="varchar" MaxLength="256" />
           <Property Name="customheaders" Type="varchar" MaxLength="1024" />
+          <Property Name="registercontact" Type="varchar" MaxLength="256" />
+          <Property Name="registerexpiry" Type="int" />
+          <Property Name="registerserver" Type="varchar" MaxLength="256" />
+          <Property Name="registerrealm" Type="varchar" MaxLength="256" />
+          <Property Name="registerenabled" Type="bit" Nullable="false" />
+          <Property Name="registeradminenabled" Type="bit" Nullable="false" />
+          <Property Name="registerdisabledreason" Type="varchar" MaxLength="256" />
+          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
+          <Property Name="lastupdate" Type="varchar" Nullable="false" MaxLength="33" />
+          <Property Name="providertype" Type="varchar" Nullable="false" MaxLength="16" />
           <Property Name="gvcallbacknumber" Type="varchar" MaxLength="16" />
           <Property Name="gvcallbackpattern" Type="varchar" MaxLength="32" />
           <Property Name="gvcallbacktype" Type="varchar" MaxLength="16" />
-          <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
-          <Property Name="lastupdate" Type="varchar" Nullable="false" MaxLength="33" />
-          <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
-          <Property Name="providerauthusername" Type="varchar" MaxLength="32" />
-          <Property Name="providerfrom" Type="varchar" MaxLength="256" />
-          <Property Name="providername" Type="varchar" Nullable="false" MaxLength="50" />
-          <Property Name="provideroutboundproxy" Type="varchar" MaxLength="256" />
-          <Property Name="providerpassword" Type="varchar" MaxLength="32" />
-          <Property Name="providerserver" Type="varchar" MaxLength="256" />
-          <Property Name="providertype" Type="varchar" Nullable="false" MaxLength="16" />
-          <Property Name="providerusername" Type="varchar" Nullable="false" MaxLength="32" />
-          <Property Name="registeradminenabled" Type="bit" Nullable="false" />
-          <Property Name="registercontact" Type="varchar" MaxLength="256" />
-          <Property Name="registerdisabledreason" Type="varchar" MaxLength="256" />
-          <Property Name="registerenabled" Type="bit" Nullable="false" />
-          <Property Name="registerexpiry" Type="int" />
-          <Property Name="registerrealm" Type="varchar" MaxLength="256" />
-          <Property Name="registerserver" Type="varchar" MaxLength="256" />
         </EntityType>
         <EntityType Name="sipregistrarbindings">
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
-          <Property Name="contacturi" Type="varchar" Nullable="false" MaxLength="767" />
-          <Property Name="expiry" Type="int" Nullable="false" />
-          <Property Name="expirytime" Type="varchar" Nullable="false" MaxLength="33" />
           <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="lastupdate" Type="varchar" Nullable="false" MaxLength="33" />
-          <Property Name="mangledcontacturi" Type="varchar" MaxLength="767" />
-          <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
-          <Property Name="proxysipsocket" Type="varchar" MaxLength="64" />
-          <Property Name="registrarsipsocket" Type="varchar" Nullable="false" MaxLength="64" />
-          <Property Name="remotesipsocket" Type="varchar" Nullable="false" MaxLength="64" />
           <Property Name="sipaccountid" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="sipaccountname" Type="varchar" Nullable="false" MaxLength="160" />
+          <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
           <Property Name="useragent" Type="varchar" MaxLength="1024" />
+          <Property Name="contacturi" Type="varchar" Nullable="false" MaxLength="767" />
+          <Property Name="mangledcontacturi" Type="varchar" MaxLength="767" />
+          <Property Name="expiry" Type="int" Nullable="false" />
+          <Property Name="remotesipsocket" Type="varchar" Nullable="false" MaxLength="64" />
+          <Property Name="proxysipsocket" Type="varchar" MaxLength="64" />
+          <Property Name="registrarsipsocket" Type="varchar" Nullable="false" MaxLength="64" />
+          <Property Name="lastupdate" Type="varchar" Nullable="false" MaxLength="33" />
+          <Property Name="expirytime" Type="varchar" Nullable="false" MaxLength="33" />
         </EntityType>
         <Association Name="sipdialplanlookups_ibfk_1">
           <End Role="sipdialplans" Type="Entities.Store.sipdialplans" Multiplicity="1">
@@ -377,11 +386,39 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <Association Name="sipproviderbindings_ibfk_2">
+          <End Role="sipproviders" Type="Entities.Store.sipproviders" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="sipproviderbindings" Type="Entities.Store.sipproviderbindings" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="sipproviders">
+              <PropertyRef Name="id" />
+            </Principal>
+            <Dependent Role="sipproviderbindings">
+              <PropertyRef Name="providerid" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="sipregistrarbindings_ibfk_1">
+          <End Role="sipaccounts" Type="Entities.Store.sipaccounts" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="sipregistrarbindings" Type="Entities.Store.sipregistrarbindings" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="sipaccounts">
+              <PropertyRef Name="id" />
+            </Principal>
+            <Dependent Role="sipregistrarbindings">
+              <PropertyRef Name="sipaccountid" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
       </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema Namespace="SIPSorcery.Entities" Alias="Self" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
-        <EntityContainer Name="SIPSorceryEntities" annotation:LazyLoadingEnabled="true">
+        <EntityContainer Name="SIPSorceryEntities" annotation:LazyLoadingEnabled="false">
           <EntitySet Name="SIPDialplanLookups" EntityType="SIPSorcery.Entities.SIPDialplanLookup" />
           <EntitySet Name="SIPDialplanRoutes" EntityType="SIPSorcery.Entities.SIPDialplanRoute" />
           <EntitySet Name="SIPDialplanProviders" EntityType="SIPSorcery.Entities.SIPDialplanProvider" />
@@ -411,6 +448,14 @@
           <AssociationSet Name="sipdialplanroutes_ibfk_1" Association="SIPSorcery.Entities.sipdialplanroutes_ibfk_1">
             <End Role="SIPDialPlan" EntitySet="SIPDialPlans" />
             <End Role="SIPDialplanRoute" EntitySet="SIPDialplanRoutes" />
+          </AssociationSet>
+          <AssociationSet Name="sipregistrarbindings_ibfk_1" Association="SIPSorcery.Entities.sipregistrarbindings_ibfk_1">
+            <End Role="SIPAccount" EntitySet="SIPAccounts" />
+            <End Role="SIPRegistrarBinding" EntitySet="SIPRegistrarBindings" />
+          </AssociationSet>
+          <AssociationSet Name="sipproviderbindings_ibfk_2" Association="SIPSorcery.Entities.sipproviderbindings_ibfk_2">
+            <End Role="SIPProvider" EntitySet="SIPProviders" />
+            <End Role="SIPProviderBinding" EntitySet="SIPProviderBindings" />
           </AssociationSet>
         </EntityContainer>
         <EntityType Name="SIPDialplanLookup">
@@ -532,6 +577,7 @@
           <Property Type="String" Name="WebSite" />
           <Property Type="String" Name="APIKey" />
           <Property Type="String" Name="ServiceLevel" Nullable="false" />
+          <Property Type="DateTime" Name="ServiceRenewalDate" />
         </EntityType>
         <EntityType Name="SIPAccount">
           <Key>
@@ -555,6 +601,7 @@
           <Property Type="String" Name="SIPDomain" Nullable="false" />
           <Property Type="String" Name="SIPPassword" Nullable="false" />
           <Property Type="String" Name="SIPUsername" Nullable="false" />
+          <NavigationProperty Name="sipregistrarbindings" Relationship="SIPSorcery.Entities.sipregistrarbindings_ibfk_1" FromRole="SIPAccount" ToRole="SIPRegistrarBinding" />
         </EntityType>
         <EntityType Name="SIPDialogue">
           <Key>
@@ -635,6 +682,7 @@
           <Property Type="String" Name="ProviderName" Nullable="false" />
           <Property Type="String" Name="RegistrarSIPSocket" />
           <Property Type="String" Name="RegistrationFailureMessage" />
+          <NavigationProperty Name="sipprovider" Relationship="SIPSorcery.Entities.sipproviderbindings_ibfk_2" FromRole="SIPProviderBinding" ToRole="SIPProvider" />
         </EntityType>
         <EntityType Name="SIPProvider">
           <Key>
@@ -664,6 +712,7 @@
           <Property Type="Int32" Name="RegisterExpiry" />
           <Property Type="String" Name="RegisterRealm" />
           <Property Type="String" Name="RegisterServer" />
+          <NavigationProperty Name="sipproviderbindings" Relationship="SIPSorcery.Entities.sipproviderbindings_ibfk_2" FromRole="SIPProvider" ToRole="SIPProviderBinding" />
         </EntityType>
         <EntityType Name="SIPRegistrarBinding">
           <Key>
@@ -683,6 +732,7 @@
           <Property Type="String" Name="SIPAccountID" Nullable="false" />
           <Property Type="String" Name="SIPAccountName" Nullable="false" />
           <Property Type="String" Name="UserAgent" />
+          <NavigationProperty Name="sipaccount" Relationship="SIPSorcery.Entities.sipregistrarbindings_ibfk_1" FromRole="SIPRegistrarBinding" ToRole="SIPAccount" />
         </EntityType>
         <EntityType Name="DialPlanData">
           <Key>
@@ -738,6 +788,30 @@
             </Principal>
             <Dependent Role="SIPDialplanRoute">
               <PropertyRef Name="DialPlanID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="sipregistrarbindings_ibfk_1">
+          <End Type="SIPSorcery.Entities.SIPAccount" Role="SIPAccount" Multiplicity="1" />
+          <End Type="SIPSorcery.Entities.SIPRegistrarBinding" Role="SIPRegistrarBinding" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SIPAccount">
+              <PropertyRef Name="ID" />
+            </Principal>
+            <Dependent Role="SIPRegistrarBinding">
+              <PropertyRef Name="SIPAccountID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="sipproviderbindings_ibfk_2">
+          <End Type="SIPSorcery.Entities.SIPProvider" Role="SIPProvider" Multiplicity="1" />
+          <End Type="SIPSorcery.Entities.SIPProviderBinding" Role="SIPProviderBinding" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SIPProvider">
+              <PropertyRef Name="ID" />
+            </Principal>
+            <Dependent Role="SIPProviderBinding">
+              <PropertyRef Name="ProviderID" />
             </Dependent>
           </ReferentialConstraint>
         </Association>
@@ -838,6 +912,7 @@
           <EntitySetMapping Name="Customers">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.Customer">
               <MappingFragment StoreEntitySet="customers">
+                <ScalarProperty Name="ServiceRenewalDate" ColumnName="servicerenewaldate" />
                 <ScalarProperty Name="ServiceLevel" ColumnName="servicelevel" />
                 <ScalarProperty Name="APIKey" ColumnName="apikey" />
                 <ScalarProperty Name="WebSite" ColumnName="website" />
@@ -1059,7 +1134,7 @@
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanOption" Width="2.625" PointX="18.25" PointY="3.875" Height="3.3263964843749996" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.CDR" Width="1.5" PointX="3.75" PointY="0.625" Height="6.0186165364583317" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.Customer" Width="2.625" PointX="0.625" PointY="0.625" Height="6.4032194010416656" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPAccount" Width="2.125" PointX="3.375" PointY="7.875" Height="4.6725065104166656" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPAccount" Width="2.125" PointX="3.375" PointY="7.875" Height="4.480205078125" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialogue" Width="2.75" PointX="5.75" PointY="0.75" Height="5.634013671875" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialPlan" Width="2" PointX="15.25" PointY="1.25" Height="4.0956022135416656" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDomain" Width="1.5" PointX="9.25" PointY="5.375" Height="1.9802864583333317" />
@@ -1082,6 +1157,14 @@
         <AssociationConnector Association="SIPSorcery.Entities.sipdialplanroutes_ibfk_1" >
           <ConnectorPoint PointX="17.25" PointY="2.2785953776041667" />
           <ConnectorPoint PointX="18.375" PointY="2.2785953776041667" />
+        </AssociationConnector>
+        <AssociationConnector Association="SIPSorcery.Entities.sipregistrarbindings_ibfk_1" >
+          <ConnectorPoint PointX="3.375" PointY="9.8266503906250016" />
+          <ConnectorPoint PointX="2.625" PointY="9.8266503906250016" />
+        </AssociationConnector>
+        <AssociationConnector Association="SIPSorcery.Entities.sipproviderbindings_ibfk_2" >
+          <ConnectorPoint PointX="8.125" PointY="9.7016503906250016" />
+          <ConnectorPoint PointX="8.875" PointY="9.7016503906250016" />
         </AssociationConnector>
       </Diagram>
     </Diagrams>

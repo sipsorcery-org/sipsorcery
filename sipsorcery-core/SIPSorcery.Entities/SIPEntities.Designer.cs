@@ -22,6 +22,8 @@ using System.Runtime.Serialization;
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipdialplanoptions_ibfk_1", "SIPDialPlan", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPDialPlan), "SIPDialplanOption", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPDialplanOption), true)]
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipdialplanproviders_ibfk_1", "SIPDialPlan", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPDialPlan), "SIPDialplanProvider", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPDialplanProvider), true)]
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipdialplanroutes_ibfk_1", "SIPDialPlan", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPDialPlan), "SIPDialplanRoute", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPDialplanRoute), true)]
+[assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipregistrarbindings_ibfk_1", "SIPAccount", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPAccount), "SIPRegistrarBinding", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPRegistrarBinding), true)]
+[assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipproviderbindings_ibfk_2", "SIPProvider", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPProvider), "SIPProviderBinding", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPProviderBinding), true)]
 
 #endregion
 
@@ -41,7 +43,7 @@ namespace SIPSorcery.Entities
         /// </summary>
         public SIPSorceryEntities() : base("name=SIPSorceryEntities", "SIPSorceryEntities")
         {
-            this.ContextOptions.LazyLoadingEnabled = true;
+            this.ContextOptions.LazyLoadingEnabled = false;
             OnContextCreated();
         }
     
@@ -50,7 +52,7 @@ namespace SIPSorcery.Entities
         /// </summary>
         public SIPSorceryEntities(string connectionString) : base(connectionString, "SIPSorceryEntities")
         {
-            this.ContextOptions.LazyLoadingEnabled = true;
+            this.ContextOptions.LazyLoadingEnabled = false;
             OnContextCreated();
         }
     
@@ -59,7 +61,7 @@ namespace SIPSorcery.Entities
         /// </summary>
         public SIPSorceryEntities(EntityConnection connection) : base(connection, "SIPSorceryEntities")
         {
-            this.ContextOptions.LazyLoadingEnabled = true;
+            this.ContextOptions.LazyLoadingEnabled = false;
             OnContextCreated();
         }
     
@@ -1809,6 +1811,30 @@ namespace SIPSorcery.Entities
         private global::System.String _ServiceLevel;
         partial void OnServiceLevelChanging(global::System.String value);
         partial void OnServiceLevelChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public Nullable<global::System.DateTime> ServiceRenewalDate
+        {
+            get
+            {
+                return _ServiceRenewalDate;
+            }
+            set
+            {
+                OnServiceRenewalDateChanging(value);
+                ReportPropertyChanging("ServiceRenewalDate");
+                _ServiceRenewalDate = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("ServiceRenewalDate");
+                OnServiceRenewalDateChanged();
+            }
+        }
+        private Nullable<global::System.DateTime> _ServiceRenewalDate;
+        partial void OnServiceRenewalDateChanging(Nullable<global::System.DateTime> value);
+        partial void OnServiceRenewalDateChanged();
 
         #endregion
     
@@ -2407,6 +2433,31 @@ namespace SIPSorcery.Entities
 
         #endregion
     
+        #region Navigation Properties
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [XmlIgnoreAttribute()]
+        [SoapIgnoreAttribute()]
+        [DataMemberAttribute()]
+        [EdmRelationshipNavigationPropertyAttribute("SIPSorcery.Entities", "sipregistrarbindings_ibfk_1", "SIPRegistrarBinding")]
+        public EntityCollection<SIPRegistrarBinding> sipregistrarbindings
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedCollection<SIPRegistrarBinding>("SIPSorcery.Entities.sipregistrarbindings_ibfk_1", "SIPRegistrarBinding");
+            }
+            set
+            {
+                if ((value != null))
+                {
+                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<SIPRegistrarBinding>("SIPSorcery.Entities.sipregistrarbindings_ibfk_1", "SIPRegistrarBinding", value);
+                }
+            }
+        }
+
+        #endregion
     }
     
     /// <summary>
@@ -5354,6 +5405,31 @@ namespace SIPSorcery.Entities
 
         #endregion
     
+        #region Navigation Properties
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [XmlIgnoreAttribute()]
+        [SoapIgnoreAttribute()]
+        [DataMemberAttribute()]
+        [EdmRelationshipNavigationPropertyAttribute("SIPSorcery.Entities", "sipproviderbindings_ibfk_2", "SIPProviderBinding")]
+        public EntityCollection<SIPProviderBinding> sipproviderbindings
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedCollection<SIPProviderBinding>("SIPSorcery.Entities.sipproviderbindings_ibfk_2", "SIPProviderBinding");
+            }
+            set
+            {
+                if ((value != null))
+                {
+                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<SIPProviderBinding>("SIPSorcery.Entities.sipproviderbindings_ibfk_2", "SIPProviderBinding", value);
+                }
+            }
+        }
+
+        #endregion
     }
     
     /// <summary>
@@ -5737,6 +5813,47 @@ namespace SIPSorcery.Entities
 
         #endregion
     
+        #region Navigation Properties
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [XmlIgnoreAttribute()]
+        [SoapIgnoreAttribute()]
+        [DataMemberAttribute()]
+        [EdmRelationshipNavigationPropertyAttribute("SIPSorcery.Entities", "sipproviderbindings_ibfk_2", "SIPProvider")]
+        public SIPProvider sipprovider
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<SIPProvider>("SIPSorcery.Entities.sipproviderbindings_ibfk_2", "SIPProvider").Value;
+            }
+            set
+            {
+                ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<SIPProvider>("SIPSorcery.Entities.sipproviderbindings_ibfk_2", "SIPProvider").Value = value;
+            }
+        }
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [BrowsableAttribute(false)]
+        [DataMemberAttribute()]
+        public EntityReference<SIPProvider> sipproviderReference
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<SIPProvider>("SIPSorcery.Entities.sipproviderbindings_ibfk_2", "SIPProvider");
+            }
+            set
+            {
+                if ((value != null))
+                {
+                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedReference<SIPProvider>("SIPSorcery.Entities.sipproviderbindings_ibfk_2", "SIPProvider", value);
+                }
+            }
+        }
+
+        #endregion
     }
     
     /// <summary>
@@ -6122,6 +6239,47 @@ namespace SIPSorcery.Entities
 
         #endregion
     
+        #region Navigation Properties
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [XmlIgnoreAttribute()]
+        [SoapIgnoreAttribute()]
+        [DataMemberAttribute()]
+        [EdmRelationshipNavigationPropertyAttribute("SIPSorcery.Entities", "sipregistrarbindings_ibfk_1", "SIPAccount")]
+        public SIPAccount sipaccount
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<SIPAccount>("SIPSorcery.Entities.sipregistrarbindings_ibfk_1", "SIPAccount").Value;
+            }
+            set
+            {
+                ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<SIPAccount>("SIPSorcery.Entities.sipregistrarbindings_ibfk_1", "SIPAccount").Value = value;
+            }
+        }
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [BrowsableAttribute(false)]
+        [DataMemberAttribute()]
+        public EntityReference<SIPAccount> sipaccountReference
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<SIPAccount>("SIPSorcery.Entities.sipregistrarbindings_ibfk_1", "SIPAccount");
+            }
+            set
+            {
+                if ((value != null))
+                {
+                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedReference<SIPAccount>("SIPSorcery.Entities.sipregistrarbindings_ibfk_1", "SIPAccount", value);
+                }
+            }
+        }
+
+        #endregion
     }
 
     #endregion

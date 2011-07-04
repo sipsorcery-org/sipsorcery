@@ -16,10 +16,7 @@ namespace SIPSorcery.Entities
         {
             get
             {
-                DateTimeOffset updatedLocal = DateTimeOffset.MinValue;
-                DateTimeOffset.TryParse(LastUpdate, out updatedLocal);
-                updatedLocal = updatedLocal.AddMinutes(TimeZoneOffsetMinutes);
-                return updatedLocal.DateTime;
+                return (LastUpdate != null) ? TimeZoneHelper.ApplyOffset(LastUpdate, TimeZoneOffsetMinutes) : DateTime.MinValue;
             }
         }
     }
