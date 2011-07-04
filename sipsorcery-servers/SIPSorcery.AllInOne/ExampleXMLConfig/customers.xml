@@ -1,0 +1,23 @@
+<customers>
+ <customer>
+  <id>d334ff6f-081a-4af5-a714-e8a9303cc577</id>
+  <customerusername>username</customerusername>
+  <customerpassword>password</customerpassword>
+  <emailaddress></emailaddress>
+  <firstname></firstname>
+  <lastname></lastname>
+  <city></city>
+  <country></country>
+  <adminid></adminid>
+  <adminmemberid></adminmemberid>
+  <website></website>
+  <securityquestion></securityquestion>
+  <securityanswer></securityanswer>
+  <createdfromipaddress></createdfromipaddress>
+  <active>False</active>
+  <suspended>False</suspended>
+  <executioncount>0</executioncount>
+  <maxexecutioncount>5</maxexecutioncount>
+  <authorisedapps></authorisedapps>
+ </customer>
+</customers>

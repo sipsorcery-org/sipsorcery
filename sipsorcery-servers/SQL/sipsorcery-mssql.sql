@@ -332,3 +332,20 @@ create table dialplandata
 -- alter table sipproviders add column gvcallbackpattern varchar(32) null;
 -- alter table sipproviders add column gvcallbacktype varchar(16) null;
 -- alter table sipproviders modify column providerserver varchar(256) null;
+
+CREATE TABLE [dbo].[PayPalIPN] (
+    [Id] int IDENTITY(1,1) NOT NULL,
+    [RawRequest] nvarchar(max)  NOT NULL,
+    [ValidationResponse] nvarchar(1024)  NULL,
+    [TransactionID] nvarchar(128)  NULL,
+    [PayerFirstName] nvarchar(128)  NULL,
+    [PayerLastName] nvarchar(128)  NULL,
+    [PayerEmailAddress] nvarchar(1024)  NULL,
+    [Currency] nvarchar(6)  NULL,
+    [Total] decimal(6,3)  NULL,
+    [PayPalFee] decimal(6,3)  NULL,
+    [Inserted] datetime  NOT NULL,
+    [ItemId] int NULL,
+	[CustomerID] nvarchar(128) NULL,
+	[ActionTaken] nvarchar(2048) NULL
+);

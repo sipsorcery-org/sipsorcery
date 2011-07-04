@@ -1,0 +1,16 @@
+<sipaccounts>
+ <sipaccount>
+    <id>f26c585f-bc76-4f18-8d0a-555d98cc11d4</id>
+    <owner>username</owner>
+    <sipusername>username</sipusername>
+    <sippassword>password</sippassword>
+    <sipdomain>localhost</sipdomain>
+    <sendnatkeepalives>True</sendnatkeepalives>
+    <isincomingonly>False</isincomingonly>
+    <outdialplanname>default</outdialplanname>
+    <indialplanname></indialplanname>
+    <isuserdisabled>False</isuserdisabled>
+    <isadmindisabled>False</isadmindisabled>
+    <disabledreason></disabledreason>
+ </sipaccount>
+</sipaccounts>

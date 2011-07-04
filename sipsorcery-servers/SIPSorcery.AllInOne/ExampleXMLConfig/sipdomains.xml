@@ -1,0 +1,12 @@
+<sipdomains>
+  <sipdomain>
+   <domain>localhost</domain>
+   <owner></owner>
+   <sipdomainaliases>
+     <domainalias>10.1.1.5</domainalias>
+     <domainalias>10.1.1.5:5060</domainalias>
+     <domainalias>local</domainalias>
+     <domainalias>*</domainalias>
+   </sipdomainaliases>
+  </sipdomain>
+</sipdomains>

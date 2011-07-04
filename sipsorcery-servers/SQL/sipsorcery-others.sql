@@ -14,7 +14,6 @@ create table customers
  website varchar(256),		
  active bit not null default 1,			-- Whether this account has been used in the last month (or specified period). 
  suspended bit not null default 0,		-- Whether this account has been suspended. If so it will not be authorised for logins. 
- suspendedreason varchar(1024) null,
  securityquestion varchar(1024),
  securityanswer varchar(256),
  createdfromipaddress varchar(15),
@@ -25,12 +24,18 @@ create table customers
  authorisedapps varchar(2048),				-- A semi-colon delimited list of privileged apps that this customer's dialplan are authorised to use.
  timezone varchar(128),
  emailaddressconfirmed bit not null default 0,
- invitecode varchar(36) null,
  inserted varchar(33) not null,
+ suspendedreason varchar(1024) null,
+ invitecode varchar(36) null,
  passwordresetid varchar(36) null,
  passwordresetidsetat varchar(33) null,			-- Time the password reset id was generated at.
+ usernamerecoveryidsetat varchar(33) null,		-- Time the username recovery id was generated at.
+ usernamerecoveryfailurecount int null,			-- Number of failed attempts at answering the security question when attempting a username recovery.
+ usernamerecoverylastattemptat varchar(33) null,-- Time the last username recovery was attempted at.
  apikey varchar(96) null,
+ usernamerecoveryid varchar(36) null,
  servicelevel varchar(64) not null default 'Free',
+ servicerenewaldate varchar(33) not null,
  Primary Key(id),
  Unique(customerusername)
 );
@@ -307,7 +312,7 @@ create table sipdialplanoptions
   Foreign Key(dialplanid) references SIPDialPlans(id) on delete cascade on update cascade
 );
 
---insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;174.129.236.7;174.129.236.7:5060', null, '2010-02-09T13:01:21.3540000+00:00');
+-- insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;174.129.236.7;174.129.236.7:5060', null, '2010-02-09T13:01:21.3540000+00:00');
 -- insert into sipdomains values ('9822C7A7-5358-42DD-8905-DC7ABAE3EC3A', 'demo.sipsorcery.com', 'local;demo.sipsorcery.com:5060;199.230.56.92;199.230.56.92:5060', null, '2010-10-15T00:00:00.0000000+00:00');
 
 -- SIP Sorcery User Data DDL
@@ -326,3 +331,43 @@ create index providerbindings_nextregtime_index on sipproviderbindings(nextregis
 create index regbindings_contact_index on sipregistrarbindings(contacturi);
 create index customers_custid_index on customers(customerusername);
 create index regbindings_sipaccid_index on sipregistrarbindings(sipaccountid);
+
+create table paypallog
+(
+	id varchar(36) not null,
+	rawrequest varchar(4096) not null,
+	validationresponse varchar(1024) not null,
+	transactiontype varchar(64) not null,
+	transactionid varchar(128) not null,
+	payerfirstName varchar(1024) null,
+	payerlastName varchar(1024) null,
+	payeremail varchar(1024) not null,
+	customerid varchar(36) null,
+	currency varchar(6) null,
+	total decimal(5,2) null,
+	fee decimal(5,2) null,
+	inserted varchar(33) not null,
+	Primary Key(id)
+);
+
+CREATE TABLE PayPalIPN
+(
+    ID varchar(36) not null,
+    RawRequest nvarchar(10000) NOT NULL,
+    ValidationResponse nvarchar(1024) NULL,
+	IsSandbox bit not null,
+    TransactionID nvarchar(256) NULL,
+	TransactionType nvarchar(64) null,
+    PayerFirstName nvarchar(256) NULL,
+    PayerLastName nvarchar(256) NULL,
+    PayerEmailAddress nvarchar(1024) NULL,
+    Currency nvarchar(6)  NULL,
+    Total decimal(6,3)  NULL,
+    PayPalFee decimal(6,3)  NULL,
+    Inserted datetime NOT NULL,
+    ItemId nvarchar(256),
+	CustomerID nvarchar(128) NULL,
+	ActionTaken nvarchar(2048) NULL,
+	Primary Key(ID)
+);
+

@@ -1,0 +1,22 @@
+<sipproviders>
+ <sipprovider>
+   <id>f39e90ac-24c4-414f-97e6-9adf0c795b41</id>
+   <owner>username</owner>
+   <adminmemberid></adminmemberid>
+   <providername>blueface</providername>
+   <providerusername>test</providerusername>
+   <providerpassword>password</providerpassword>
+   <providerserver>sip:sip.blueface.ie</providerserver>
+   <providerauthusername></providerauthusername>
+   <provideroutboundproxy></provideroutboundproxy>
+   <providerfrom></providerfrom>
+   <providercustomheader></providercustomheader>
+   <registercontact>sip:username@10.0.0.100</registercontact>
+   <registerexpiry>3600</registerexpiry>
+   <registerserver></registerserver>
+   <registerrealm></registerrealm>
+   <registerenabled>True</registerenabled>
+   <registerenabledadmin>True</registerenabledadmin>
+   <registerdisabledreason></registerdisabledreason>
+ </sipprovider>
+</sipproviders>
