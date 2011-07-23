@@ -192,6 +192,8 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
+    <None Include="dialplan-common.rby" />
+    <None Include="proxyscript.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ExampleXMLConfig\customers.xml" />
@@ -199,6 +201,8 @@
     <Content Include="ExampleXMLConfig\sipdomains.xml" />
     <Content Include="ExampleXMLConfig\sipaccounts.xml" />
     <Content Include="ExampleXMLConfig\sipproviders.xml" />
+    <Content Include="NSshConfiguration.xml" />
+    <Content Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

@@ -35,24 +35,24 @@ create table customers
  apikey varchar(96) null,
  usernamerecoveryid varchar(36) null,
  servicelevel varchar(64) not null default 'Free',
- servicerenewaldate varchar(33) not null,
+ servicerenewaldate varchar(33) null,
  Primary Key(id),
  Unique(customerusername)
 );
 
 -- Maps to class SIPSorcery.CRM.CustomerSession.
-create table customersessions
-(
- id varchar(36) not null,
- sessionid varchar(96) not null,
- customerusername varchar(32) not null,
- inserted varchar(33) not null,
- expired bit not null default 0,
- ipaddress varchar(15),
- timelimitminutes int not null default 60,
- Primary Key(id),
- Foreign Key(customerusername) references customers(customerusername) on delete cascade
-);
+-- create table customersessions
+-- (
+-- id varchar(36) not null,
+-- sessionid varchar(96) not null,
+-- customerusername varchar(32) not null,
+-- inserted varchar(33) not null,
+-- expired bit not null default 0,
+-- ipaddress varchar(15),
+-- timelimitminutes int not null default 60,
+-- Primary Key(id),
+-- Foreign Key(customerusername) references customers(customerusername) on delete cascade
+-- );
 
 -- Maps to class SIPSorcery.SIP.App.SIPDomain.
 create table sipdomains
@@ -254,7 +254,7 @@ create table cdr
  Primary Key(id)
 );
 
--- Dial Plan Wizard Tables.
+-- Telis Dial Plan Wizard Tables.
 
 create table sipdialplanlookups
 (
@@ -312,8 +312,28 @@ create table sipdialplanoptions
   Foreign Key(dialplanid) references SIPDialPlans(id) on delete cascade on update cascade
 );
 
+-- Simple Dial Plan Wizard Tables.
+
+create table SimpleWizardDialPlanRule
+(
+  ID varchar(36) not null,
+  Owner varchar(32) not null,
+  DialPlanID varchar(36) not null,				-- The simple wizard dialplan the lookup entries will be used in.
+  Direction varchar(3) not null,				-- In or Out with respect to the proxy.
+  RuleTypeID int not null,						-- 0 == auto, 1 = exact match, 2 = prefix match, 3 = contains match, 4 = regex match.
+  Pattern varchar(1024) not null,
+  DialString varchar(4096) not null,
+  Description varchar(1024) null,
+  Priority int not null,
+  TimeIntervalID int null,						-- If set refers to a time interval that dictates when this rule should apply
+  Primary Key(ID),
+  Foreign Key(DialPlanID) references SIPDialPlans(id) on delete cascade on update cascade
+);
+
 -- insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;174.129.236.7;174.129.236.7:5060', null, '2010-02-09T13:01:21.3540000+00:00');
 -- insert into sipdomains values ('9822C7A7-5358-42DD-8905-DC7ABAE3EC3A', 'demo.sipsorcery.com', 'local;demo.sipsorcery.com:5060;199.230.56.92;199.230.56.92:5060', null, '2010-10-15T00:00:00.0000000+00:00');
+-- insert into sipdomains values ('9822C7A7-5358-42DD-8905-DC7ABAE3EC3A', 'sipsorcery.com', 'local;10.1.1.2;10.1.1.2:5060', null, '2010-10-15T00:00:00.0000000+00:00');
+-- insert into customers (id, customerusername, customerpassword, emailaddress, adminid, maxexecutioncount, executioncount, emailaddressconfirmed, inserted, servicelevel) values ('AE246619-29ED-408C-A1C3-EA9E77C430A1', 'aaron', 'password', 'aaron@sipsorcery.com', '*', 5, 0, 1, '2010-10-15T00:00:00.0000000+00:00', 'Gold');
 
 -- SIP Sorcery User Data DDL
 
@@ -331,24 +351,6 @@ create index providerbindings_nextregtime_index on sipproviderbindings(nextregis
 create index regbindings_contact_index on sipregistrarbindings(contacturi);
 create index customers_custid_index on customers(customerusername);
 create index regbindings_sipaccid_index on sipregistrarbindings(sipaccountid);
-
-create table paypallog
-(
-	id varchar(36) not null,
-	rawrequest varchar(4096) not null,
-	validationresponse varchar(1024) not null,
-	transactiontype varchar(64) not null,
-	transactionid varchar(128) not null,
-	payerfirstName varchar(1024) null,
-	payerlastName varchar(1024) null,
-	payeremail varchar(1024) not null,
-	customerid varchar(36) null,
-	currency varchar(6) null,
-	total decimal(5,2) null,
-	fee decimal(5,2) null,
-	inserted varchar(33) not null,
-	Primary Key(id)
-);
 
 CREATE TABLE PayPalIPN
 (
