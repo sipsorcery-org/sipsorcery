@@ -32,22 +32,18 @@ namespace SIPSorcery
         private const int REINITIALISE_WAIT_PERIOD = 10000;
         private const int DEFAULT_WEB_PORT = 80;
         private const string DEFAULT_NOTIFICATIONS_FILE = "notificationspull.svc";
-        //private const string DEFAULT_INVITE_SERIVCE = "sipsorceryinvite.svc";
         private const string ENTITIES_SERVICE_URL = "clientbin/SIPSorcery-Entities-Services-SIPEntitiesDomainService.svc";
         private const string DEFAULT_SERVICE_HOST = "https://www.sipsorcery.com/ria/";
         private const string DEFAULT_NOTIFICATIONS_HOST = "https://www.sipsorcery.com/";
 
         private string m_notificationsServiceURL = DEFAULT_NOTIFICATIONS_HOST + DEFAULT_NOTIFICATIONS_FILE;
-        //private string m_inviteServiceURL = DEFAULT_SERVICE_HOST + DEFAULT_INVITE_SERIVCE;
         private string m_entitiesServiceURL = null;
 
         private SIPEntitiesDomainContext m_riaContext;
-        //private SIPSorceryInvite.SIPSorceryInviteServiceClient m_inviteProxy;
         private ServiceConnectionStatesEnum m_persistorStatus = ServiceConnectionStatesEnum.Initialising;
         private string m_persistorStatusMessage = "Initialising...";
         private bool m_provisioningInitialisationInProgress;
         private string m_owner;
-        //private bool m_showInvitePanel;
         private string m_serviceURL;
         private string m_notificationsURL;
 
@@ -67,14 +63,8 @@ namespace SIPSorcery
             m_createAccountControl.CloseClicked += CancelCreateCustomer;
             m_createAccountControl.CustomerCreated += CustomerCreated;
 
-            //m_showInvitePanel = App.ShowInvitePanel;
             m_serviceURL = App.ServiceURL;
             m_notificationsURL = App.NotificationsURL;
-
-            //if (m_showInvitePanel)
-            //{
-            //    m_loginControl.EnableInviteCode();
-            //}
 
             if (!m_serviceURL.IsNullOrBlank())
             {
@@ -84,32 +74,15 @@ namespace SIPSorcery
             if (!m_notificationsURL.IsNullOrBlank())
             {
                 m_notificationsServiceURL = m_notificationsURL + DEFAULT_NOTIFICATIONS_FILE;
-                //m_inviteServiceURL = m_notificationsURL + DEFAULT_INVITE_SERIVCE;
             }
 
             // Use the Silverlight network stack so that SOAP faults can get through.
-            //HttpWebRequest.RegisterPrefix(m_provisioningServiceURL, WebRequestCreator.ClientHttp);
             HttpWebRequest.RegisterPrefix(m_notificationsServiceURL, WebRequestCreator.ClientHttp);
-            //HttpWebRequest.RegisterPrefix(m_inviteServiceURL, WebRequestCreator.ClientHttp);
 
             if (m_riaContext == null)
             {
                 CreateDomainContext();
             }
-
-            //if (m_authenticationContext == null)
-            //{
-            //    if (!m_authenticationServiceURL.IsNullOrBlank())
-            //    {
-            //        m_authenticationContext = new AuthenticationDomainContext(new Uri(m_authenticationServiceURL));
-            //    }
-            //    else
-            //    {
-            //        m_authenticationContext = new AuthenticationDomainContext();
-            //    }
-
-            //    m_authenticationService = new FormsAuthentication();
-            //}
 
             m_createAccountControl.SetRIAContext(m_riaContext);
 
@@ -132,14 +105,7 @@ namespace SIPSorcery
 
         private void Initialise()
         {
-            //EndpointAddress address = new EndpointAddress(m_inviteServiceURL);
-            //BasicHttpSecurityMode securitymode = (m_inviteServiceURL.StartsWith("https")) ? BasicHttpSecurityMode.Transport : BasicHttpSecurityMode.None;
-            //BasicHttpBinding binding = new BasicHttpBinding(securitymode);
-            //m_inviteProxy = new SIPSorceryInvite.SIPSorceryInviteServiceClient(binding, address);
-
-            //m_loginControl.SetProxy(m_inviteProxy, m_riaContext);
             m_loginControl.SetProxy(m_riaContext);
-
             InitialiseServices(0);
         }
 

@@ -19,12 +19,6 @@
 			</Canvas>
 		</StackPanel>
 		<TextBlock TextWrapping="Wrap" Foreground="{StaticResource InfoTextBrush}" x:Name="m_orLabel" TextAlignment="Center" FontSize="21.333" Height="Auto" Text="Or" HorizontalAlignment="Center" VerticalAlignment="Top" Visibility="Collapsed"/>
-		<StackPanel x:Name="m_inviteCodeGrid" Height="217" Margin="8,0" VerticalAlignment="Bottom" Visibility="Collapsed">
-			<TextBlock TextWrapping="Wrap" Foreground="{StaticResource InfoTextBrush}" x:Name="m_inviteCodeLabel" TextAlignment="Center" FontSize="21.333" Height="Auto" HorizontalAlignment="Center" Margin="0,0,0,10"><Run Text="To Create a New Accou"/><Run Text="n"/><Run Text="t Enter Invite Code "/></TextBlock>
-			<TextBlock TextWrapping="Wrap" Foreground="{StaticResource WarningTextBrush}" x:Name="m_inviteCodeError" TextAlignment="Center" FontSize="16" Margin="30,0" ScrollViewer.VerticalScrollBarVisibility="Visible"/>
-			<TextBox x:Name="m_inviteCodeTextBox" Text="" TextWrapping="Wrap" TabIndex="4" IsTabStop="True" TabNavigation="Local" FontSize="21.333" Padding="1,0,0,0" VerticalContentAlignment="Top" KeyUp="InviteCodeTextBox_KeyUp" Margin="8,10,8,0" Height="36" d:LayoutOverrides="Height"/>
-			<Button Height="55" Content="New Account" x:Name="m_checkInviteButton" Click="CheckInviteCode_Click" TabIndex="5" TabNavigation="Local" Padding="0,0,0,0" FontSize="21.333" HorizontalAlignment="Center" Margin="0,30,0,0" Width="160"/>
-		</StackPanel>
 		<HyperlinkButton x:Name="m_createAccountLink" Content="Create New Account" Height="29" Margin="156,0,155,20" FontSize="26.667" Foreground="{StaticResource InfoTextBrush}" Click="CreateNewAccount_Click" d:LayoutOverrides="Width" BorderThickness="1" TabIndex="4" Visibility="Collapsed"/>
 	</StackPanel>
 </UserControl>

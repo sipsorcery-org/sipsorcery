@@ -83,8 +83,6 @@ namespace SIPSorcery
             UIHelper.SetText(m_usernameTextBox, String.Empty);
             UIHelper.SetText(m_passwordTextBox, String.Empty);
             UIHelper.SetText(m_loginError, String.Empty);
-            UIHelper.SetText(m_inviteCodeError, String.Empty);
-            UIHelper.SetText(m_inviteCodeTextBox, String.Empty);
         }
 
         public void WriteLoginMessage(string message)
@@ -100,42 +98,14 @@ namespace SIPSorcery
             }
         }
 
-        public void WriteInviteCodeErrorMessage(string message)
-        {
-            if (message.IsNullOrBlank())
-            {
-                UIHelper.SetText(m_inviteCodeError, null);
-                UIHelper.SetVisibility(m_inviteCodeError, Visibility.Collapsed);
-            }
-            else
-            {
-
-                UIHelper.SetVisibility(m_inviteCodeError, Visibility.Visible);
-                UIHelper.SetText(m_inviteCodeError, (message.Length > MAX_STATUS_MESSAGE_LENGTH) ? message.Substring(0, MAX_STATUS_MESSAGE_LENGTH) : message);
-            }
-        }
-
         public void EnableCreateAccount()
         {
             UIHelper.SetVisibility(m_orLabel, Visibility.Visible);
             UIHelper.SetVisibility(m_createAccountLink, Visibility.Visible);
         }
 
-        /// <summary>
-        /// If an invite code is required to create a new account this method will be called. If hides
-        /// the create customer link and instead displays the enter invite code text box.
-        /// </summary>
-        public void EnableInviteCode()
-        {
-            UIHelper.SetVisibility(m_orLabel, Visibility.Visible);
-            UIHelper.SetVisibility(m_accountLoginPanel, Visibility.Visible);
-            UIHelper.SetVisibility(m_createAccountLink, Visibility.Collapsed);
-            UIHelper.SetVisibility(m_inviteCodeGrid, Visibility.Visible);
-        }
-
         public void DisableNewAccounts(string disabledMessage)
         {
-            UIHelper.SetVisibility(m_inviteCodeGrid, Visibility.Collapsed);
             UIHelper.SetVisibility(m_orLabel, Visibility.Collapsed);
             UIHelper.SetVisibility(m_createAccountLink, Visibility.Collapsed);
         }
@@ -153,54 +123,6 @@ namespace SIPSorcery
             if (CreateNewAccountClicked != null)
             {
                 CreateNewAccountClicked(null);
-            }
-        }
-
-        private void CheckInviteCode_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            //WriteInviteCodeErrorMessage(null);
-            //m_inviteCode = m_inviteCodeTextBox.Text.Trim();
-            //Guid inviteCodeGUID = Guid.Empty;
-
-            //if (m_inviteCode.IsNullOrBlank())
-            //{
-            //    WriteInviteCodeErrorMessage("The invite code was empty. Please enter a valid invite code.");
-            //}
-            //else if (!Guid.TryParse(m_inviteCode, out inviteCodeGUID))
-            //{
-            //    WriteInviteCodeErrorMessage("The invite code specified was not in a valid format. Please enter a valid invite code.");
-            //}
-            //else
-            //{
-            //    WriteInviteCodeErrorMessage("Checking invite code...");
-            //    m_inviteProxy.IsInviteCodeValidAsync(m_inviteCode);
-            //}
-        }
-
-        private void CheckInviteCodeComplete(object sender, SIPSorceryInvite.IsInviteCodeValidCompletedEventArgs e)
-        {
-            try
-            {
-                if (e.Error != null)
-                {
-                    WriteInviteCodeErrorMessage("Server error. " + e.Error.Message);
-                }
-                else if (e.Result != null)
-                {
-                    WriteInviteCodeErrorMessage(e.Result);
-                }
-                else
-                {
-                    if (CreateNewAccountClicked != null)
-                    {
-                        //CreateNewAccountClicked(m_inviteCode);
-                        CreateNewAccountClicked(null);
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                WriteInviteCodeErrorMessage("There was an unexpected error checking the invite code. " + excp.Message);
             }
         }
 
@@ -223,14 +145,6 @@ namespace SIPSorcery
             else
             {
                 Authenticated(m_loginUsername, null);
-            }
-        }
-
-        private void InviteCodeTextBox_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                CheckInviteCode_Click(null, null);
             }
         }
     }

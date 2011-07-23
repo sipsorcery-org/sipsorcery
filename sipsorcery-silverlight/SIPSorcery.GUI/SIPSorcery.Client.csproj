@@ -78,18 +78,6 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite2.wsdl" />
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite21.wsdl" />
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite3.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite31.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite32.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInviteService1.wsdl" />
     <Reference Include="mscorlib" />
     <Reference Include="SIPSorcery.Entities.Client">
       <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Entities.Client.dll</HintPath>
@@ -146,7 +134,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="UserInterface\AssetManagers\SimpleDialPlanWizard.xaml">
+    <Page Include="UserInterface\AssetManagers\SimpleWizardManager.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -161,6 +149,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\DialPlanWizard.xaml">
+      <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserInterface\AssetManagers\SimpleWizardUpdateControl.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -256,14 +248,17 @@
     <Compile Include="UserInterface\About.xaml.cs">
       <DependentUpon>About.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UserInterface\AssetManagers\SimpleDialPlanWizard.xaml.cs">
-      <DependentUpon>SimpleDialPlanWizard.xaml</DependentUpon>
+    <Compile Include="UserInterface\AssetManagers\SimpleWizardManager.xaml.cs">
+      <DependentUpon>SimpleWizardManager.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\AssetManagers\DialPlanAddControl.xaml.cs">
       <DependentUpon>DialPlanAddControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\AssetManagers\DialPlanWizard.xaml.cs">
       <DependentUpon>DialPlanWizard.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\AssetManagers\SimpleWizardUpdateControl.xaml.cs">
+      <DependentUpon>SimpleWizardUpdateControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\CallManager\SIPCallManager.xaml.cs">
       <DependentUpon>SIPCallManager.xaml</DependentUpon>
@@ -274,11 +269,6 @@
     </Compile>
     <Compile Include="UserInterface\NewAccountInviteControl.xaml.cs">
       <DependentUpon>NewAccountInviteControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="WCFReferences\SIPSorceryInvite\Reference.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
     <Compile Include="WCFReferences\SIPSorceryNotificationService\Reference.cs">
       <AutoGen>True</AutoGen>
@@ -335,13 +325,6 @@
     <WCFMetadata Include="WCFReferences\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="WCFReferences\SIPSorceryInvite\SIPSorceryInvite1.disco" />
-    <None Include="WCFReferences\SIPSorceryInvite\Reference.svcmap">
-      <Generator>WCF Proxy Generator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
-    </None>
-    <None Include="WCFReferences\SIPSorceryInvite\configuration.svcinfo" />
-    <None Include="WCFReferences\SIPSorceryInvite\configuration91.svcinfo" />
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull.disco" />
     <Resource Include="Images\wizard-logo.png" />
     <Resource Include="Images\small_logo.png" />
@@ -410,7 +393,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadataStorage Include="WCFReferences\SIPSorceryInvite\" />
     <WCFMetadataStorage Include="WCFReferences\SIPSorceryNotificationService\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Silverlight\$(SilverlightVersion)\Microsoft.Silverlight.CSharp.targets" />

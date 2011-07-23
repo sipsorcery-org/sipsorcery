@@ -117,28 +117,7 @@ namespace SIPSorcery
                 query.IncludeTotalCount = true;
                 riaContext.Load(query, LoadBehavior.RefreshCurrent, (lo) => { LogActivityMessage(MessageLevelsEnum.Info, lo.TotalEntityCount + " dialplans successfully loaded."); }, null);
             }
-
-            //riaContext.GetTimeZoneOffsetMinutes(GetTimeZoneOffsetComplete, null);
         }
-
-        //private void GetTimeZoneOffsetComplete(InvokeOperation<int> io)
-        //{
-        //    if (io.HasError)
-        //    {
-        //        LogActivityMessage(MessageLevelsEnum.Error, "Error getting timezone offset minutes. " + io.Error.Message);
-        //        io.MarkErrorAsHandled();
-        //    }
-        //    else
-        //    {
-        //        int offsetMinutes = io.Value;
-
-        //        //LogActivityMessage(MessageLevelsEnum.Info, "Timezone offset minutes " + offsetMinutes + ".");
-
-        //        CDR.TimeZoneOffsetMinutes = offsetMinutes;
-        //        SIPProviderBinding.TimeZoneOffsetMinutes = offsetMinutes;
-        //        SIPRegistrarBinding.TimeZoneOffsetMinutes = offsetMinutes;
-        //    }
-        //}
 
         private void GetCustomerCompleted(LoadOperation<Customer> lo)
         {
@@ -164,11 +143,14 @@ namespace SIPSorcery
                     SIPAccount.TimeZoneOffsetMinutes = customer.TimeZoneOffsetMinutes;
                     m_serviceLevelTextBlock.Text = customer.ServiceLevel;
 
-                    m_sipNotifierClient = new SIPSorceryNotificationClient(LogActivityMessage, m_notificationsURL, customer.APIKey);
-                    m_sipNotifierClient.StatusChanged += NotificationsServiceStatusChanged;
-                    m_sipNotifierClient.MachineEventReceived += SIPEventMonitorClient_MonitorEventReceived;
-                    m_monitorConsole.SetNotifierClient(m_sipNotifierClient);
-                    m_sipNotifierClient.Connect();
+                    if (!m_notificationsURL.StartsWith("disable"))
+                    {
+                        m_sipNotifierClient = new SIPSorceryNotificationClient(LogActivityMessage, m_notificationsURL, customer.APIKey);
+                        m_sipNotifierClient.StatusChanged += NotificationsServiceStatusChanged;
+                        m_sipNotifierClient.MachineEventReceived += SIPEventMonitorClient_MonitorEventReceived;
+                        m_monitorConsole.SetNotifierClient(m_sipNotifierClient);
+                        m_sipNotifierClient.Connect();
+                    }
                 }
             }
         }

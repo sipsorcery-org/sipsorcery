@@ -1,0 +1,132 @@
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:data="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Data" 
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:sdk="http://schemas.microsoft.com/winfx/2006/xaml/presentation/sdk" xmlns:toolkit="http://schemas.microsoft.com/winfx/2006/xaml/presentation/toolkit"
+	xmlns:riaControls="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.DomainServices"
+	xmlns:ssentities="clr-namespace:SIPSorcery.Entities;assembly=SIPSorcery.Entities.Client"
+	xmlns:sipsorceryui="clr-namespace:SIPSorcery.UIControls"
+	xmlns:local="clr-namespace:SIPSorcery"
+	mc:Ignorable="d"
+	x:Class="SIPSorcery.SimpleWizardManager" Width="1024" Height="628" Background="Black">
+
+	<UserControl.Resources>
+		<ssentities:TimezonesList x:Key="TimezonesList" />
+		<ssentities:CountriesList x:Key="CountriesList" />
+	</UserControl.Resources>
+
+	<Border x:Name="LayoutRoot" Background="Black" Width="1020" BorderThickness="1" BorderBrush="#FFA0F927" CornerRadius="5" Margin="0">
+		<StackPanel Margin="0,0,0,7">
+			<Canvas Height="26" Margin="8,0">
+				<Button Content="X" x:Name="m_closeButton" Click="CloseButton_Click" Width="23" Height="20" Canvas.Left="977" Canvas.Top="5" />
+				<TextBlock Cursor="Hand" x:Name="m_helpLink" Width="122" Foreground="{StaticResource NormalTextBrush}" Text="Simple Wizard Help" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="HelpLink_MouseLeftButtonUp" Height="15" Canvas.Left="808" Canvas.Top="8"/>
+			</Canvas>
+			<sdk:TabControl Margin="8,0" Height="589" SelectionChanged="TabControl_SelectionChanged">
+				<sdk:TabControl.Background>
+					<LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+						<GradientStop Color="#FF3A3838"/>
+						<GradientStop Color="Black" Offset="1"/>
+					</LinearGradientBrush>
+				</sdk:TabControl.Background>
+				<sdk:TabItem Header="Outgoing Call Rules">
+					<Grid Background="Black" Margin="0,0,0,-2">
+						<sipsorceryui:AssetViewPanel x:Name="m_outgoingRulesPanel" Width="977" Margin="5,75,0,0" HorizontalAlignment="Left">
+							<sdk:DataGrid ColumnHeaderHeight="24" SelectionMode="Single" x:Name="m_outgoingRulesDataGrid" AutoGenerateColumns="False" FontSize="11" 
+								RowBackground="Azure" 
+								AlternatingRowBackground="LightSteelBlue" Margin="0" HorizontalAlignment="Left" Width="977" MouseLeftButtonUp="OutgoingRulesDataGridClicked" MinHeight="231" Height="452">
+								<sdk:DataGrid.Columns>
+									<sdk:DataGridTextColumn 
+										Header="Rule Type" 
+										Binding="{Binding RuleType}" 
+										IsReadOnly="True"
+										Width="80" />
+									<sdk:DataGridTextColumn 
+										Header="Pattern" 
+										Width="SizeToCells"
+										Binding="{Binding Pattern}" 
+										IsReadOnly="True"
+										MinWidth="140" />
+									<sdk:DataGridTextColumn 
+										Header="Dial String" 
+										Width="SizeToCells"
+										Binding="{Binding DialString}" 
+										IsReadOnly="True"
+										MinWidth="280" />
+									<sdk:DataGridTextColumn 
+										Header="Description" 
+										Width="SizeToCells"
+										Binding="{Binding Description}" 
+										IsReadOnly="True"
+										MinWidth="180" />
+									<sdk:DataGridTextColumn 
+										Header="Priority" 
+										Binding="{Binding Priority}" 
+										IsReadOnly="True"
+										Width="70" />
+									<sdk:DataGridTemplateColumn Header="Delete" MinWidth="100">
+										<sdk:DataGridTemplateColumn.CellTemplate>
+											<DataTemplate>
+												<TextBlock Cursor="Hand" Foreground="Purple" Text="delete" TextDecorations="Underline" MouseLeftButtonUp="DeleteSimpleWizardRule" HorizontalAlignment="Center" />
+											</DataTemplate>
+										</sdk:DataGridTemplateColumn.CellTemplate>
+									</sdk:DataGridTemplateColumn>
+								</sdk:DataGrid.Columns>
+							</sdk:DataGrid>
+						</sipsorceryui:AssetViewPanel>
+						<local:SimpleWizardUpdateControl x:Name="m_outgoingRulesUpdateControl" Margin="5,0,8,0" VerticalAlignment="Top"/>	
+					</Grid>	
+				</sdk:TabItem>
+				<sdk:TabItem Header="Incoming Call Rules">
+					<Grid Background="Black" Margin="0,0,0,-2">
+						<sipsorceryui:AssetViewPanel x:Name="m_incomingRulesPanel" Width="977" Margin="5,75,0,0" HorizontalAlignment="Left">
+							<sdk:DataGrid ColumnHeaderHeight="24" SelectionMode="Single" x:Name="m_outgoingRulesDataGrid1" AutoGenerateColumns="False" FontSize="11" 
+								RowBackground="Azure" 
+								AlternatingRowBackground="LightSteelBlue" Margin="0" HorizontalAlignment="Left" Width="977" MouseLeftButtonUp="OutgoingRulesDataGridClicked" MinHeight="231" Height="452">
+								<sdk:DataGrid.Columns>
+									<sdk:DataGridTextColumn 
+										Header="Rule Type" 
+										Binding="{Binding RuleType}" 
+										IsReadOnly="True"
+										Width="80" />
+									<sdk:DataGridTextColumn 
+										Header="Pattern" 
+										Width="SizeToCells"
+										Binding="{Binding Pattern}" 
+										IsReadOnly="True"
+										MinWidth="140" />
+									<sdk:DataGridTextColumn 
+										Header="Dial String" 
+										Width="SizeToCells"
+										Binding="{Binding DialString}" 
+										IsReadOnly="True"
+										MinWidth="280" />
+									<sdk:DataGridTextColumn 
+										Header="Description" 
+										Width="SizeToCells"
+										Binding="{Binding Description}" 
+										IsReadOnly="True"
+										MinWidth="180" />
+									<sdk:DataGridTextColumn 
+										Header="Priority" 
+										Binding="{Binding Priority}" 
+										IsReadOnly="True"
+										Width="70" />
+									<sdk:DataGridTemplateColumn Header="Delete" MinWidth="100">
+										<sdk:DataGridTemplateColumn.CellTemplate>
+											<DataTemplate>
+												<TextBlock Cursor="Hand" Foreground="Purple" Text="delete" TextDecorations="Underline" MouseLeftButtonUp="DeleteSimpleWizardRule" HorizontalAlignment="Center" />
+											</DataTemplate>
+										</sdk:DataGridTemplateColumn.CellTemplate>
+									</sdk:DataGridTemplateColumn>
+								</sdk:DataGrid.Columns>
+							</sdk:DataGrid>
+						</sipsorceryui:AssetViewPanel>
+						<local:SimpleWizardUpdateControl x:Name="m_incomingRulesUpdateControl" Margin="5,0,8,0" VerticalAlignment="Top"/>	
+					</Grid>	
+				</sdk:TabItem>
+			</sdk:TabControl>
+		</StackPanel>
+	</Border>
+</UserControl>
