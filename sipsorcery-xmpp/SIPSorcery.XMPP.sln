@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.XMPP", "SIPSorcery.XMPP\SIPSorcery.XMPP.csproj", "{0B26F6AE-3A6D-4B1A-A5DE-B379AC9F6F70}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.XMPP.TestConsole", "SIPSorcery.XMPP.TestConsole\SIPSorcery.XMPP.TestConsole.csproj", "{809DE327-A652-43A6-9CFC-6FD15FAB436C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.XMPP.TestClient", "SIPSorcery.XMPP.TestClient\SIPSorcery.XMPP.TestClient.csproj", "{723EA308-09C3-411C-B37F-8DA4B13736EA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPToXMPP", "SIPSorcery.SIPToXMPP\SIPSorcery.SIPToXMPP.csproj", "{809DE327-A652-43A6-9CFC-6FD15FAB436C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,16 +27,6 @@ Global
 		{0B26F6AE-3A6D-4B1A-A5DE-B379AC9F6F70}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{0B26F6AE-3A6D-4B1A-A5DE-B379AC9F6F70}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{0B26F6AE-3A6D-4B1A-A5DE-B379AC9F6F70}.Release|x86.ActiveCfg = Release|Any CPU
-		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Debug|Mixed Platforms.Build.0 = Debug|x86
-		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Debug|x86.ActiveCfg = Debug|x86
-		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Debug|x86.Build.0 = Debug|x86
-		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Release|Any CPU.ActiveCfg = Release|x86
-		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Release|Mixed Platforms.ActiveCfg = Release|x86
-		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Release|Mixed Platforms.Build.0 = Release|x86
-		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Release|x86.ActiveCfg = Release|x86
-		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Release|x86.Build.0 = Release|x86
 		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
 		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Debug|Mixed Platforms.Build.0 = Debug|x86
@@ -47,6 +37,16 @@ Global
 		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Release|Mixed Platforms.Build.0 = Release|x86
 		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Release|x86.ActiveCfg = Release|x86
 		{723EA308-09C3-411C-B37F-8DA4B13736EA}.Release|x86.Build.0 = Release|x86
+		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Debug|x86.ActiveCfg = Debug|x86
+		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Debug|x86.Build.0 = Debug|x86
+		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Release|Any CPU.ActiveCfg = Release|x86
+		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Release|Mixed Platforms.Build.0 = Release|x86
+		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Release|x86.ActiveCfg = Release|x86
+		{809DE327-A652-43A6-9CFC-6FD15FAB436C}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
