@@ -853,13 +853,21 @@ namespace SIPSorcery.Entities
         
         private string _serviceLevel;
         
-        private Nullable<DateTime> _serviceRenewalDate;
+        private string _serviceRenewalDate;
         
         private bool _suspended;
         
         private string _suspendedReason;
         
         private string _timezone;
+        
+        private Nullable<int> _usernamerecoveryfailurecount;
+        
+        private string _usernamerecoveryid;
+        
+        private string _usernamerecoveryidsetat;
+        
+        private string _usernamerecoverylastattemptat;
         
         private string _webSite;
         
@@ -918,7 +926,7 @@ namespace SIPSorcery.Entities
         partial void OnSecurityQuestionChanged();
         partial void OnServiceLevelChanging(string value);
         partial void OnServiceLevelChanged();
-        partial void OnServiceRenewalDateChanging(Nullable<DateTime> value);
+        partial void OnServiceRenewalDateChanging(string value);
         partial void OnServiceRenewalDateChanged();
         partial void OnSuspendedChanging(bool value);
         partial void OnSuspendedChanged();
@@ -926,6 +934,14 @@ namespace SIPSorcery.Entities
         partial void OnSuspendedReasonChanged();
         partial void OnTimezoneChanging(string value);
         partial void OnTimezoneChanged();
+        partial void OnusernamerecoveryfailurecountChanging(Nullable<int> value);
+        partial void OnusernamerecoveryfailurecountChanged();
+        partial void OnusernamerecoveryidChanging(string value);
+        partial void OnusernamerecoveryidChanged();
+        partial void OnusernamerecoveryidsetatChanging(string value);
+        partial void OnusernamerecoveryidsetatChanged();
+        partial void OnusernamerecoverylastattemptatChanging(string value);
+        partial void OnusernamerecoverylastattemptatChanged();
         partial void OnWebSiteChanging(string value);
         partial void OnWebSiteChanged();
 
@@ -1550,7 +1566,7 @@ namespace SIPSorcery.Entities
         /// Gets or sets the 'ServiceRenewalDate' value.
         /// </summary>
         [DataMember()]
-        public Nullable<DateTime> ServiceRenewalDate
+        public string ServiceRenewalDate
         {
             get
             {
@@ -1644,6 +1660,102 @@ namespace SIPSorcery.Entities
         }
         
         /// <summary>
+        /// Gets or sets the 'usernamerecoveryfailurecount' value.
+        /// </summary>
+        [DataMember()]
+        public Nullable<int> usernamerecoveryfailurecount
+        {
+            get
+            {
+                return this._usernamerecoveryfailurecount;
+            }
+            set
+            {
+                if ((this._usernamerecoveryfailurecount != value))
+                {
+                    this.OnusernamerecoveryfailurecountChanging(value);
+                    this.RaiseDataMemberChanging("usernamerecoveryfailurecount");
+                    this.ValidateProperty("usernamerecoveryfailurecount", value);
+                    this._usernamerecoveryfailurecount = value;
+                    this.RaiseDataMemberChanged("usernamerecoveryfailurecount");
+                    this.OnusernamerecoveryfailurecountChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'usernamerecoveryid' value.
+        /// </summary>
+        [DataMember()]
+        public string usernamerecoveryid
+        {
+            get
+            {
+                return this._usernamerecoveryid;
+            }
+            set
+            {
+                if ((this._usernamerecoveryid != value))
+                {
+                    this.OnusernamerecoveryidChanging(value);
+                    this.RaiseDataMemberChanging("usernamerecoveryid");
+                    this.ValidateProperty("usernamerecoveryid", value);
+                    this._usernamerecoveryid = value;
+                    this.RaiseDataMemberChanged("usernamerecoveryid");
+                    this.OnusernamerecoveryidChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'usernamerecoveryidsetat' value.
+        /// </summary>
+        [DataMember()]
+        public string usernamerecoveryidsetat
+        {
+            get
+            {
+                return this._usernamerecoveryidsetat;
+            }
+            set
+            {
+                if ((this._usernamerecoveryidsetat != value))
+                {
+                    this.OnusernamerecoveryidsetatChanging(value);
+                    this.RaiseDataMemberChanging("usernamerecoveryidsetat");
+                    this.ValidateProperty("usernamerecoveryidsetat", value);
+                    this._usernamerecoveryidsetat = value;
+                    this.RaiseDataMemberChanged("usernamerecoveryidsetat");
+                    this.OnusernamerecoveryidsetatChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'usernamerecoverylastattemptat' value.
+        /// </summary>
+        [DataMember()]
+        public string usernamerecoverylastattemptat
+        {
+            get
+            {
+                return this._usernamerecoverylastattemptat;
+            }
+            set
+            {
+                if ((this._usernamerecoverylastattemptat != value))
+                {
+                    this.OnusernamerecoverylastattemptatChanging(value);
+                    this.RaiseDataMemberChanging("usernamerecoverylastattemptat");
+                    this.ValidateProperty("usernamerecoverylastattemptat", value);
+                    this._usernamerecoverylastattemptat = value;
+                    this.RaiseDataMemberChanged("usernamerecoverylastattemptat");
+                    this.OnusernamerecoverylastattemptatChanged();
+                }
+            }
+        }
+        
+        /// <summary>
         /// Gets or sets the 'WebSite' value.
         /// </summary>
         [DataMember()]
@@ -1666,6 +1778,382 @@ namespace SIPSorcery.Entities
                     this.OnWebSiteChanged();
                 }
             }
+        }
+        
+        /// <summary>
+        /// Computes a value from the key fields that uniquely identifies this entity instance.
+        /// </summary>
+        /// <returns>An object instance that uniquely identifies this entity instance.</returns>
+        public override object GetIdentity()
+        {
+            return this._id;
+        }
+    }
+    
+    /// <summary>
+    /// The 'SimpleWizardDialPlanRule' entity class.
+    /// </summary>
+    [DataContract(Namespace="http://schemas.datacontract.org/2004/07/SIPSorcery.Entities")]
+    public sealed partial class SimpleWizardDialPlanRule : Entity
+    {
+        
+        private string _description;
+        
+        private string _dialPlanID;
+        
+        private string _dialString;
+        
+        private string _direction;
+        
+        private string _id;
+        
+        private string _owner;
+        
+        private string _pattern;
+        
+        private int _priority;
+        
+        private int _ruleTypeID;
+        
+        private EntityRef<SIPDialPlan> _sipdialplan;
+        
+        private Nullable<int> _timeIntervalID;
+        
+        #region Extensibility Method Definitions
+
+        /// <summary>
+        /// This method is invoked from the constructor once initialization is complete and
+        /// can be used for further object setup.
+        /// </summary>
+        partial void OnCreated();
+        partial void OnDescriptionChanging(string value);
+        partial void OnDescriptionChanged();
+        partial void OnDialPlanIDChanging(string value);
+        partial void OnDialPlanIDChanged();
+        partial void OnDialStringChanging(string value);
+        partial void OnDialStringChanged();
+        partial void OnDirectionChanging(string value);
+        partial void OnDirectionChanged();
+        partial void OnIDChanging(string value);
+        partial void OnIDChanged();
+        partial void OnOwnerChanging(string value);
+        partial void OnOwnerChanged();
+        partial void OnPatternChanging(string value);
+        partial void OnPatternChanged();
+        partial void OnPriorityChanging(int value);
+        partial void OnPriorityChanged();
+        partial void OnRuleTypeIDChanging(int value);
+        partial void OnRuleTypeIDChanged();
+        partial void OnTimeIntervalIDChanging(Nullable<int> value);
+        partial void OnTimeIntervalIDChanged();
+
+        #endregion
+        
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SimpleWizardDialPlanRule"/> class.
+        /// </summary>
+        public SimpleWizardDialPlanRule()
+        {
+            this.OnCreated();
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'Description' value.
+        /// </summary>
+        [DataMember()]
+        public string Description
+        {
+            get
+            {
+                return this._description;
+            }
+            set
+            {
+                if ((this._description != value))
+                {
+                    this.OnDescriptionChanging(value);
+                    this.RaiseDataMemberChanging("Description");
+                    this.ValidateProperty("Description", value);
+                    this._description = value;
+                    this.RaiseDataMemberChanged("Description");
+                    this.OnDescriptionChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'DialPlanID' value.
+        /// </summary>
+        [DataMember()]
+        [Required()]
+        [RoundtripOriginal()]
+        public string DialPlanID
+        {
+            get
+            {
+                return this._dialPlanID;
+            }
+            set
+            {
+                if ((this._dialPlanID != value))
+                {
+                    this.OnDialPlanIDChanging(value);
+                    this.RaiseDataMemberChanging("DialPlanID");
+                    this.ValidateProperty("DialPlanID", value);
+                    this._dialPlanID = value;
+                    this.RaiseDataMemberChanged("DialPlanID");
+                    this.OnDialPlanIDChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'DialString' value.
+        /// </summary>
+        [DataMember()]
+        [Required()]
+        public string DialString
+        {
+            get
+            {
+                return this._dialString;
+            }
+            set
+            {
+                if ((this._dialString != value))
+                {
+                    this.OnDialStringChanging(value);
+                    this.RaiseDataMemberChanging("DialString");
+                    this.ValidateProperty("DialString", value);
+                    this._dialString = value;
+                    this.RaiseDataMemberChanged("DialString");
+                    this.OnDialStringChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'Direction' value.
+        /// </summary>
+        [DataMember()]
+        [Required()]
+        public string Direction
+        {
+            get
+            {
+                return this._direction;
+            }
+            set
+            {
+                if ((this._direction != value))
+                {
+                    this.OnDirectionChanging(value);
+                    this.RaiseDataMemberChanging("Direction");
+                    this.ValidateProperty("Direction", value);
+                    this._direction = value;
+                    this.RaiseDataMemberChanged("Direction");
+                    this.OnDirectionChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'ID' value.
+        /// </summary>
+        [DataMember()]
+        [Editable(false, AllowInitialValue=true)]
+        [Key()]
+        [Required()]
+        [RoundtripOriginal()]
+        public string ID
+        {
+            get
+            {
+                return this._id;
+            }
+            set
+            {
+                if ((this._id != value))
+                {
+                    this.OnIDChanging(value);
+                    this.ValidateProperty("ID", value);
+                    this._id = value;
+                    this.RaisePropertyChanged("ID");
+                    this.OnIDChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'Owner' value.
+        /// </summary>
+        [DataMember()]
+        [Required(ErrorMessage="An owner must be specified for a dial plan rule.")]
+        public string Owner
+        {
+            get
+            {
+                return this._owner;
+            }
+            set
+            {
+                if ((this._owner != value))
+                {
+                    this.OnOwnerChanging(value);
+                    this.RaiseDataMemberChanging("Owner");
+                    this.ValidateProperty("Owner", value);
+                    this._owner = value;
+                    this.RaiseDataMemberChanged("Owner");
+                    this.OnOwnerChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'Pattern' value.
+        /// </summary>
+        [DataMember()]
+        [Required(ErrorMessage="A pattern must be specified for a dial plan rule.")]
+        public string Pattern
+        {
+            get
+            {
+                return this._pattern;
+            }
+            set
+            {
+                if ((this._pattern != value))
+                {
+                    this.OnPatternChanging(value);
+                    this.RaiseDataMemberChanging("Pattern");
+                    this.ValidateProperty("Pattern", value);
+                    this._pattern = value;
+                    this.RaiseDataMemberChanged("Pattern");
+                    this.OnPatternChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'Priority' value.
+        /// </summary>
+        [DataMember()]
+        public int Priority
+        {
+            get
+            {
+                return this._priority;
+            }
+            set
+            {
+                if ((this._priority != value))
+                {
+                    this.OnPriorityChanging(value);
+                    this.RaiseDataMemberChanging("Priority");
+                    this.ValidateProperty("Priority", value);
+                    this._priority = value;
+                    this.RaiseDataMemberChanged("Priority");
+                    this.OnPriorityChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'RuleTypeID' value.
+        /// </summary>
+        [DataMember()]
+        public int RuleTypeID
+        {
+            get
+            {
+                return this._ruleTypeID;
+            }
+            set
+            {
+                if ((this._ruleTypeID != value))
+                {
+                    this.OnRuleTypeIDChanging(value);
+                    this.RaiseDataMemberChanging("RuleTypeID");
+                    this.ValidateProperty("RuleTypeID", value);
+                    this._ruleTypeID = value;
+                    this.RaiseDataMemberChanged("RuleTypeID");
+                    this.OnRuleTypeIDChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the associated <see cref="SIPDialPlan"/> entity.
+        /// </summary>
+        [Association("SIPDialPlan_SimpleWizardDialPlanRule", "DialPlanID", "ID", IsForeignKey=true)]
+        [XmlIgnore()]
+        public SIPDialPlan sipdialplan
+        {
+            get
+            {
+                if ((this._sipdialplan == null))
+                {
+                    this._sipdialplan = new EntityRef<SIPDialPlan>(this, "sipdialplan", this.Filtersipdialplan);
+                }
+                return this._sipdialplan.Entity;
+            }
+            set
+            {
+                SIPDialPlan previous = this.sipdialplan;
+                if ((previous != value))
+                {
+                    this.ValidateProperty("sipdialplan", value);
+                    if ((previous != null))
+                    {
+                        this._sipdialplan.Entity = null;
+                        previous.simplewizarddialplanrules.Remove(this);
+                    }
+                    if ((value != null))
+                    {
+                        this.DialPlanID = value.ID;
+                    }
+                    else
+                    {
+                        this.DialPlanID = default(string);
+                    }
+                    this._sipdialplan.Entity = value;
+                    if ((value != null))
+                    {
+                        value.simplewizarddialplanrules.Add(this);
+                    }
+                    this.RaisePropertyChanged("sipdialplan");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'TimeIntervalID' value.
+        /// </summary>
+        [DataMember()]
+        public Nullable<int> TimeIntervalID
+        {
+            get
+            {
+                return this._timeIntervalID;
+            }
+            set
+            {
+                if ((this._timeIntervalID != value))
+                {
+                    this.OnTimeIntervalIDChanging(value);
+                    this.RaiseDataMemberChanging("TimeIntervalID");
+                    this.ValidateProperty("TimeIntervalID", value);
+                    this._timeIntervalID = value;
+                    this.RaiseDataMemberChanged("TimeIntervalID");
+                    this.OnTimeIntervalIDChanged();
+                }
+            }
+        }
+        
+        private bool Filtersipdialplan(SIPDialPlan entity)
+        {
+            return (entity.ID == this.DialPlanID);
         }
         
         /// <summary>
@@ -3017,6 +3505,8 @@ namespace SIPSorcery.Entities
         
         private string _scriptTypeDescription;
         
+        private EntityCollection<SimpleWizardDialPlanRule> _simplewizarddialplanrules;
+        
         private EntityCollection<SIPDialplanLookup> _sipdialplanlookups;
         
         private EntityCollection<SIPDialplanOption> _sipdialplanoptions;
@@ -3369,6 +3859,23 @@ namespace SIPSorcery.Entities
         }
         
         /// <summary>
+        /// Gets the collection of associated <see cref="SimpleWizardDialPlanRule"/> entity instances.
+        /// </summary>
+        [Association("SIPDialPlan_SimpleWizardDialPlanRule", "ID", "DialPlanID")]
+        [XmlIgnore()]
+        public EntityCollection<SimpleWizardDialPlanRule> simplewizarddialplanrules
+        {
+            get
+            {
+                if ((this._simplewizarddialplanrules == null))
+                {
+                    this._simplewizarddialplanrules = new EntityCollection<SimpleWizardDialPlanRule>(this, "simplewizarddialplanrules", this.Filtersimplewizarddialplanrules, this.Attachsimplewizarddialplanrules, this.Detachsimplewizarddialplanrules);
+                }
+                return this._simplewizarddialplanrules;
+            }
+        }
+        
+        /// <summary>
         /// Gets the collection of associated <see cref="SIPDialplanLookup"/> entity instances.
         /// </summary>
         [Association("SIPDialPlan_SIPDialplanLookup", "ID", "DialPlanID")]
@@ -3458,6 +3965,21 @@ namespace SIPSorcery.Entities
                     this.OnTraceEmailAddressChanged();
                 }
             }
+        }
+        
+        private void Attachsimplewizarddialplanrules(SimpleWizardDialPlanRule entity)
+        {
+            entity.sipdialplan = this;
+        }
+        
+        private void Detachsimplewizarddialplanrules(SimpleWizardDialPlanRule entity)
+        {
+            entity.sipdialplan = null;
+        }
+        
+        private bool Filtersimplewizarddialplanrules(SimpleWizardDialPlanRule entity)
+        {
+            return (entity.DialPlanID == this.ID);
         }
         
         private void Attachsipdialplanlookups(SIPDialplanLookup entity)
@@ -6805,6 +7327,17 @@ namespace SIPSorcery.Entities.Services
         }
         
         /// <summary>
+        /// Gets the set of <see cref="SimpleWizardDialPlanRule"/> entity instances that have been loaded into this <see cref="SIPEntitiesDomainContext"/> instance.
+        /// </summary>
+        public EntitySet<SimpleWizardDialPlanRule> SimpleWizardDialPlanRules
+        {
+            get
+            {
+                return base.EntityContainer.GetEntitySet<SimpleWizardDialPlanRule>();
+            }
+        }
+        
+        /// <summary>
         /// Gets the set of <see cref="SIPAccount"/> entity instances that have been loaded into this <see cref="SIPEntitiesDomainContext"/> instance.
         /// </summary>
         public EntitySet<SIPAccount> SIPAccounts
@@ -6954,6 +7487,16 @@ namespace SIPSorcery.Entities.Services
         {
             this.ValidateMethod("GetCustomerQuery", null);
             return base.CreateQuery<Customer>("GetCustomer", null, false, false);
+        }
+        
+        /// <summary>
+        /// Gets an EntityQuery instance that can be used to load <see cref="SimpleWizardDialPlanRule"/> entity instances using the 'GetSimpleWizardDialPlanRules' query.
+        /// </summary>
+        /// <returns>An EntityQuery that can be loaded to retrieve <see cref="SimpleWizardDialPlanRule"/> entity instances.</returns>
+        public EntityQuery<SimpleWizardDialPlanRule> GetSimpleWizardDialPlanRulesQuery()
+        {
+            this.ValidateMethod("GetSimpleWizardDialPlanRulesQuery", null);
+            return base.CreateQuery<SimpleWizardDialPlanRule>("GetSimpleWizardDialPlanRules", null, false, true);
         }
         
         /// <summary>
@@ -7250,6 +7793,25 @@ namespace SIPSorcery.Entities.Services
             /// <param name="result">The IAsyncResult returned from 'BeginGetCustomer'.</param>
             /// <returns>The 'QueryResult' returned from the 'GetCustomer' operation.</returns>
             QueryResult<Customer> EndGetCustomer(IAsyncResult result);
+            
+            /// <summary>
+            /// Asynchronously invokes the 'GetSimpleWizardDialPlanRules' operation.
+            /// </summary>
+            /// <param name="callback">Callback to invoke on completion.</param>
+            /// <param name="asyncState">Optional state object.</param>
+            /// <returns>An IAsyncResult that can be used to monitor the request.</returns>
+            [FaultContract(typeof(DomainServiceFault), Action="http://tempuri.org/SIPEntitiesDomainService/GetSimpleWizardDialPlanRulesDomainSer" +
+                "viceFault", Name="DomainServiceFault", Namespace="DomainServices")]
+            [OperationContract(AsyncPattern=true, Action="http://tempuri.org/SIPEntitiesDomainService/GetSimpleWizardDialPlanRules", ReplyAction="http://tempuri.org/SIPEntitiesDomainService/GetSimpleWizardDialPlanRulesResponse")]
+            [WebGet()]
+            IAsyncResult BeginGetSimpleWizardDialPlanRules(AsyncCallback callback, object asyncState);
+            
+            /// <summary>
+            /// Completes the asynchronous operation begun by 'BeginGetSimpleWizardDialPlanRules'.
+            /// </summary>
+            /// <param name="result">The IAsyncResult returned from 'BeginGetSimpleWizardDialPlanRules'.</param>
+            /// <returns>The 'QueryResult' returned from the 'GetSimpleWizardDialPlanRules' operation.</returns>
+            QueryResult<SimpleWizardDialPlanRule> EndGetSimpleWizardDialPlanRules(IAsyncResult result);
             
             /// <summary>
             /// Asynchronously invokes the 'GetSIPAccounts' operation.
@@ -7573,6 +8135,7 @@ namespace SIPSorcery.Entities.Services
                 this.CreateEntitySet<CDR>(EntitySetOperations.None);
                 this.CreateEntitySet<Customer>(EntitySetOperations.All);
                 this.CreateEntitySet<User>(EntitySetOperations.Edit);
+                this.CreateEntitySet<SimpleWizardDialPlanRule>(EntitySetOperations.All);
                 this.CreateEntitySet<SIPAccount>(EntitySetOperations.All);
                 this.CreateEntitySet<SIPDialogue>(EntitySetOperations.None);
                 this.CreateEntitySet<SIPDialPlan>(EntitySetOperations.All);

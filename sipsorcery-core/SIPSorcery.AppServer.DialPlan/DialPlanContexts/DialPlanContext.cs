@@ -125,7 +125,7 @@ namespace SIPSorcery.AppServer.DialPlan
         internal event CallCancelledDelegate CallCancelledByClient;
 
         private bool m_dialPlanComplete;
-        public event Action DialPlanComplete;
+        //public event Action DialPlanComplete;
 
         public DialPlanContext(
             SIPMonitorLogDelegate monitorLogDelegate,
@@ -287,10 +287,10 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 m_dialPlanComplete = true;
 
-                if (DialPlanComplete != null)
-                {
-                    DialPlanComplete();
-                }
+                //if (DialPlanComplete != null)
+                //{
+                //    DialPlanComplete();
+                //}
             }
         }
 

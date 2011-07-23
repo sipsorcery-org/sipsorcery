@@ -181,5 +181,43 @@ namespace SIPSorcery.AppServer.DialPlan
                 return null;
             }
         }
+
+        public List<SimpleWizardDialPlanRule> GetSimpleWizardRules(string dialplanName, string callDirection)
+        {
+            try
+            {
+                SIPCallDirection callDirn = SIPCallDirection.None;
+                Enum.TryParse<SIPCallDirection>(callDirection, out callDirn);
+
+                if (callDirn == SIPCallDirection.None)
+                {
+                    throw new ApplicationException("The call direction string of " + callDirection + " passed to GetSimpleWizardRules was not recognised.");
+                }
+
+                using (var ssEntities = new SIPSorceryEntities())
+                {
+                    if (!dialplanName.IsNullOrBlank())
+                    {
+                        string callDirnStr = callDirn.ToString();
+
+                        return (from rule in ssEntities.SimpleWizardDialPlanRules
+                                join dialplan in ssEntities.SIPDialPlans on rule.DialPlanID equals dialplan.ID
+                                where rule.Owner == m_owner && dialplan.DialPlanName == dialplanName &&
+                                    rule.Direction == callDirnStr
+                                orderby rule.Priority
+                                select rule).ToList();
+                    }
+                    else
+                    {
+                        throw new ApplicationException("The dialplan name must be specified for GetSimpleWizardRules.");
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception GetSimpleWizardRules. " + excp.Message);
+                return null;
+            }
+        }
     }
 }

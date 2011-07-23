@@ -50,6 +50,7 @@ namespace SIPSorcery.Servers
             public DateTime? RestartTime { get; private set; }
             public bool HasBeenKilled;
             public bool IsUnHealthy;
+            public bool InitialProbeResponse;           // Gets set to true when the first response is received from the App Server worker process.
 
             public event EventHandler Unhealthy;
             public event EventHandler Healthy;
@@ -62,7 +63,7 @@ namespace SIPSorcery.Servers
                 CallManagerAddress = new EndpointAddress(xmlConfigNode.SelectSingleNode("callmanageraddress").InnerText);
             }
 
-            public void StartProcess()
+            public string StartProcess()
             {
                 if (LastStartAttempt == null || DateTime.Now.Subtract(LastStartAttempt.Value).TotalSeconds > START_ATTEMPT_INTERVAL)
                 {
@@ -81,15 +82,23 @@ namespace SIPSorcery.Servers
                     WorkerProcess = Process.Start(startInfo);
                     logger.Debug("New call dispatcher worker process on " + AppServerEndpoint.ToString() + " started on pid=" + WorkerProcess.Id + ".");
 
-                    if (Healthy != null)
-                    {
-                        Healthy(this, null);
-                    }
+                    //if (Healthy != null)
+                    //{
+                    //    Healthy(this, null);
+                    //}
+
+                    return null;
                 }
                 else
                 {
-                    logger.Debug("Interval of starts for call dispatcher worker process was too short, last restart " + DateTime.Now.Subtract(LastStartAttempt.Value).TotalSeconds.ToString("0.00") + "s ago.");
+                    return "Delaying worker process " + AppServerEndpoint.ToString() + " restart for " + (START_ATTEMPT_INTERVAL - DateTime.Now.Subtract(LastStartAttempt.Value).TotalSeconds).ToString("0.00") + "s.";
                 }
+            }
+
+            public void InitialCallSuccessful()
+            {
+                InitialProbeResponse = true;
+                Healthy(this, null);
             }
 
             public void ScheduleRestart(DateTime restartTime)
@@ -237,7 +246,7 @@ namespace SIPSorcery.Servers
 
                 foreach (SIPAppServerWorker worker in m_appServerWorkers)
                 {
-                    worker.StartProcess();
+                    StartWorkerProcess(worker);
                 }
 
                 while (!m_exit)
@@ -248,37 +257,39 @@ namespace SIPSorcery.Servers
                         {
                             foreach (SIPAppServerWorker worker in m_appServerWorkers)
                             {
-                                if (worker.RestartTime != null)
+                                if (worker.InitialProbeResponse)
                                 {
-                                    if (worker.RestartTime < DateTime.Now)
+                                    if (worker.RestartTime != null)
                                     {
-                                        logger.Debug("Restarting worker process on pid=" + worker.WorkerProcess.Id + ".");
-                                        worker.StartProcess();
-                                    }
-                                }
-                                else if (!worker.IsHealthy())
-                                {
-                                    if (!worker.IsUnHealthy)
-                                    {
-                                        worker.IsUnHealthy = true;
-                                        m_sipCallDispatcherFile.UpdateAppServerPriority(worker.AppServerEndpoint, m_unhealthyPriority);
-                                    }
-                                    worker.StartProcess();
-                                }
-                                else
-                                {
-                                    worker.WorkerProcess.Refresh();
-                                    if (worker.WorkerProcess.PrivateMemorySize64 >= MAX_PHYSICAL_MEMORY)
-                                    {
-                                        // If there is another worker already scheduled for a restart then don't schedule another one until it's restarted.
-                                        if ((from wk in m_appServerWorkers where wk.RestartTime != null select wk).Count() == 0)
+                                        if (worker.RestartTime < DateTime.Now)
                                         {
-                                            logger.Debug("Worker process on pid=" + worker.WorkerProcess.Id + " has reached the memory limit, scheduling a restart.");
-                                            worker.ScheduleRestart(DateTime.Now.AddSeconds(PROCESS_RESTART_DELAY));
+                                            StartWorkerProcess(worker);
                                         }
-                                        else
+                                    }
+                                    else if (!worker.IsHealthy())
+                                    {
+                                        if (!worker.IsUnHealthy)
                                         {
-                                            logger.Debug("Worker process on pid=" + worker.WorkerProcess.Id + " has reached the memory limit but a restart was NOT scheduled due to another worker already being scheduled.");
+                                            worker.IsUnHealthy = true;
+                                            m_sipCallDispatcherFile.UpdateAppServerPriority(worker.AppServerEndpoint, m_unhealthyPriority);
+                                        }
+                                        StartWorkerProcess(worker);
+                                    }
+                                    else
+                                    {
+                                        worker.WorkerProcess.Refresh();
+                                        if (worker.WorkerProcess.PrivateMemorySize64 >= MAX_PHYSICAL_MEMORY)
+                                        {
+                                            // If there is another worker already scheduled for a restart then don't schedule another one until it's restarted.
+                                            if ((from wk in m_appServerWorkers where wk.RestartTime != null select wk).Count() == 0)
+                                            {
+                                                logger.Debug("Worker process on pid=" + worker.WorkerProcess.Id + " has reached the memory limit, scheduling a restart.");
+                                                worker.ScheduleRestart(DateTime.Now.AddSeconds(PROCESS_RESTART_DELAY));
+                                            }
+                                            else
+                                            {
+                                                logger.Debug("Worker process on pid=" + worker.WorkerProcess.Id + " has reached the memory limit but a restart was NOT scheduled due to another worker already being scheduled.");
+                                            }
                                         }
                                     }
                                 }
@@ -299,6 +310,19 @@ namespace SIPSorcery.Servers
             }
         }
 
+        private void StartWorkerProcess(SIPAppServerWorker worker)
+        {
+            string errorMessage = worker.StartProcess();
+            if (errorMessage == null)
+            {
+                ProbeWorker(worker.AppServerEndpoint);
+            }
+            else
+            {
+                logger.Warn("Error starting worker process for " + worker.AppServerEndpoint.ToString() + ". " + errorMessage);
+            }
+        }
+
         private void ProbeWorkers()
         {
             try
@@ -312,23 +336,23 @@ namespace SIPSorcery.Servers
                         SIPEndPoint activeWorkerEndPoint = GetFirstHealthyEndPoint();
                         if (activeWorkerEndPoint != null)
                         {
-                            SIPCallDescriptor callDescriptor = new SIPCallDescriptor(m_dispatcherUsername, null, "sip:" + m_dispatcherUsername + "@" + activeWorkerEndPoint.GetIPEndPoint().ToString(),
-                                    "sip:" + m_dispatcherUsername + "@sipcalldispatcher", "sip:" + activeWorkerEndPoint.GetIPEndPoint().ToString(), null, null, null, SIPCallDirection.Out, null, null, null);
-                            SIPClientUserAgent uac = new SIPClientUserAgent(m_sipTransport, null, null, null, null);
-                            uac.CallFailed += new SIPCallFailedDelegate(AppServerCallFailed);
-                            uac.CallAnswered += (call, sipResponse) =>
-                            {
-                                if (sipResponse.Status != SIPResponseStatusCodesEnum.BadExtension)
-                                {
-                                    logger.Warn("Probe call answered with unexpected response code of " + sipResponse.StatusCode + ".");
-                                    AppServerCallFailed(call, "Unexpected response of " + ((int)sipResponse.StatusCode) + " on probe call.");
-                                }
-                            };
-                            uac.Call(callDescriptor);
+                            ProbeWorker(activeWorkerEndPoint);
                         }
                         else
                         {
                             logger.Warn("SIPAppServerManager was not able to find a healthy app server endpoint.");
+                        }
+
+                        lock (m_appServerWorkers)
+                        {
+                            foreach (SIPAppServerWorker worker in m_appServerWorkers)
+                            {
+                                if (!worker.InitialProbeResponse)
+                                {
+                                    logger.Debug("Resending initial probe to " + worker.AppServerEndpoint.ToString() + ".");
+                                    ProbeWorker(worker.AppServerEndpoint);
+                                }
+                            }
                         }
                     }
                     catch (Exception probeExcp)
@@ -343,30 +367,65 @@ namespace SIPSorcery.Servers
             }
         }
 
+        private void ProbeWorker(SIPEndPoint workerEndPoint)
+        {
+            try
+            {
+                SIPCallDescriptor callDescriptor = new SIPCallDescriptor(m_dispatcherUsername, null, "sip:" + m_dispatcherUsername + "@" + workerEndPoint.GetIPEndPoint().ToString(),
+                                   "sip:" + m_dispatcherUsername + "@sipcalldispatcher", "sip:" + workerEndPoint.GetIPEndPoint().ToString(), null, null, null, SIPCallDirection.Out, null, null, null);
+                SIPClientUserAgent uac = new SIPClientUserAgent(m_sipTransport, null, null, null, null);
+                uac.CallFailed += new SIPCallFailedDelegate(AppServerCallFailed);
+                uac.CallAnswered += (call, sipResponse) =>
+                {
+                    if (sipResponse.Status != SIPResponseStatusCodesEnum.BadExtension)
+                    {
+                        //logger.Warn("Probe call answered with unexpected response code of " + sipResponse.StatusCode + ".");
+                        AppServerCallFailed(call, "Unexpected response of " + ((int)sipResponse.StatusCode) + " on probe call.");
+                    }
+                    else
+                    {
+                        AppServerCallSucceeded(call);
+                    }
+                };
+                uac.Call(callDescriptor);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPAppServerManager ProberWorker. " + excp.Message);
+            }
+        }
+
+        private void AppServerCallSucceeded(ISIPClientUserAgent uac)
+        {
+            try
+            {
+                string workerSocket = SIPURI.ParseSIPURI(uac.CallDescriptor.Uri).Host;
+                SIPAppServerWorker worker = GetWorkerForEndPoint(workerSocket);
+                if (!worker.InitialProbeResponse)
+                {
+                    worker.InitialCallSuccessful();
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception AppServerCallSucceeded. " + excp.Message); 
+            }
+        }
+
         private void AppServerCallFailed(ISIPClientUserAgent uac, string errorMessage)
         {
             try
             {
                 string workerSocket = SIPURI.ParseSIPURI(uac.CallDescriptor.Uri).Host;
-                logger.Warn(" SIPAppServerManager call to " + workerSocket + " failed " + errorMessage + ".");
+                logger.Warn("SIPAppServerManager call to " + workerSocket + " failed " + errorMessage);
 
                 // Find the worker for the failed end point.
-                SIPAppServerWorker failedWorker = null;
-                lock (m_appServerWorkers)
-                {
-                    foreach (SIPAppServerWorker worker in m_appServerWorkers)
-                    {
-                        if (worker.AppServerEndpoint.GetIPEndPoint().ToString() == workerSocket)
-                        {
-                            failedWorker = worker;
-                            break;
-                        }
-                    }
-                }
-
+                SIPAppServerWorker failedWorker = GetWorkerForEndPoint(workerSocket);
+               
                 if (failedWorker != null)
                 {
-                    logger.Debug("Scheduling immediate restart on app server worker process pid=" + failedWorker.WorkerProcess.Id + " due to failed probe.");
+                    failedWorker.InitialProbeResponse = true;
+                    logger.Debug("Scheduling immediate restart on app server worker process pid=" + failedWorker.WorkerProcess.Id + ", " + workerSocket + " due to failed probe.");
                     failedWorker.ScheduleRestart(DateTime.Now);
                 }
             }
@@ -374,6 +433,22 @@ namespace SIPSorcery.Servers
             {
                 logger.Error("Exception AppServerCallFailed. " + excp.Message);
             }
+        }
+
+        private SIPAppServerWorker GetWorkerForEndPoint(string host)
+        {
+            lock (m_appServerWorkers)
+            {
+                foreach (SIPAppServerWorker worker in m_appServerWorkers)
+                {
+                    if (worker.AppServerEndpoint.GetIPEndPoint().ToString() == host)
+                    {
+                        return worker;
+                    }
+                }
+            }
+
+            return null;
         }
 
         public void Stop()

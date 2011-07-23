@@ -333,23 +333,27 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                m_clientCallCancelled = true;
-
-                Log("Dialplan call was terminated by client side due to " + cancelCause + ".");
-
-                if (m_currentCall != null)
+                // Take this off the sip-transport thread!
+                ThreadPool.QueueUserWorkItem(delegate
                 {
-                    m_currentCall.CancelNotRequiredCallLegs(cancelCause);
-                }
+                    m_clientCallCancelled = true;
 
-                if (m_waitForCallCompleted != null)
-                {
-                    m_waitForCallCompleted.Set();
-                }
-                else
-                {
-                    m_executingScript.StopExecution();
-                }
+                    Log("Dialplan call was terminated by client side due to " + cancelCause + ".");
+
+                    if (m_currentCall != null)
+                    {
+                        m_currentCall.CancelNotRequiredCallLegs(cancelCause);
+                    }
+
+                    if (m_waitForCallCompleted != null)
+                    {
+                        m_waitForCallCompleted.Set();
+                    }
+                    else
+                    {
+                        m_executingScript.StopExecution();
+                    }
+                });
             }
             catch (Exception excp)
             {

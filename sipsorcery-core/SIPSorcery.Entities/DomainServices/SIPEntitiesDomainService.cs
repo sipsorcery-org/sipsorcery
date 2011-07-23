@@ -28,20 +28,7 @@ namespace SIPSorcery.Entities.Services
     [EnableClientAccess(RequiresSecureEndpoint = true)]
     public class SIPEntitiesDomainService : LinqToEntitiesDomainService<SIPSorceryEntities>, IAuthentication<User>
     {
-        private const string NEW_ACCOUNT_EMAIL_FROM_ADDRESS = "admin@sipsorcery.com";
-        private const string NEW_ACCOUNT_EMAIL_SUBJECT = "SIP Sorcery Account Confirmation";
-        private const int PROVIDER_COUNT_FREE_SERVICE = 1;  // The number of SIP Providers allowed on free accounts.
         private const int DIALPLAN_COUNT_FREE_SERVICE = 1;  // The number of dial plans allowed on free accounts.
-
-        private static string m_customerConfirmLink = AppState.GetConfigSetting("CustomerConfirmLink");
-
-        private const string NEW_ACCOUNT_EMAIL_BODY =
-            "Hi {0},\r\n\r\n" +
-            "This is your automated SIP Sorcery new account confirmation email.\r\n\r\n" +
-            "To confirm your account please visit the link below. If you did not request this email please ignore it.\r\n\r\n" +
-            "{1}?id={2}\r\n\r\n" +
-            "Regards,\r\n\r\n" +
-            "SIP Sorcery";
 
         private static ILog logger = AppState.logger;
 
@@ -64,94 +51,6 @@ namespace SIPSorcery.Entities.Services
 
         public void InsertCustomer(Customer customer)
         {
-        //    //if (m_inviteCodeRequired && customer.InviteCode.IsNullOrBlank())
-        //    //{
-        //    //    throw new ApplicationException("An invite code is required when creating a new account.");
-        //    //}
-        //    if (this.ObjectContext.Customers.Any(x => x.Name == customer.Name.ToLower()))
-        //    {
-        //        throw new ApplicationException("The username is already taken. Please choose a different one.");
-        //    }
-        //    else if (this.ObjectContext.Customers.Any(x => x.EmailAddress.ToLower() == customer.EmailAddress.ToLower()))
-        //    {
-        //        throw new ApplicationException("The email address is already associated with an account.");
-        //    }
-        //    else
-        //    {
-        //        customer.ID = Guid.NewGuid().ToString();
-        //        customer.Inserted = DateTime.UtcNow.ToString("o");
-        //        customer.Name = customer.Name.Trim().ToLower();
-        //        customer.MaxExecutionCount = Customer.FREE_MAXIMUM_EXECUTION_COUNT;
-        //        customer.APIKey = Crypto.GetRandomByteString(Customer.API_KEY_LENGTH / 2);
-        //        customer.ServiceLevel = CustomerServiceLevels.Free.ToString();
-
-        //        if ((customer.EntityState != EntityState.Detached))
-        //        {
-        //            this.ObjectContext.ObjectStateManager.ChangeObjectState(customer, EntityState.Added);
-        //        }
-        //        else
-        //        {
-        //            this.ObjectContext.Customers.AddObject(customer);
-        //        }
-
-        //        logger.Debug("New customer record added for " + customer.Name + ".");
-
-        //        // Create a default dialplan.
-        //        SIPDialPlan defaultDialPlan = new SIPDialPlan()
-        //        {
-        //            ID = Guid.NewGuid().ToString(),
-        //            Owner = customer.Name, 
-        //            DialPlanName = "default",
-        //            DialPlanScript = "sys.Log(\"Log message from default dialplan.\")\nsys.Dial(\"music@iptel.org\")\n",
-        //            ScriptTypeDescription = SIPDialPlanScriptTypesEnum.Ruby.ToString(),
-        //            Inserted = DateTimeOffset.UtcNow.ToString("o"),
-        //            LastUpdate = DateTimeOffset.UtcNow.ToString("o"),
-        //            MaxExecutionCount = SIPDialPlan.DEFAULT_MAXIMUM_EXECUTION_COUNT
-        //        };
-        //        this.ObjectContext.SIPDialPlans.AddObject(defaultDialPlan);
-        //        logger.Debug("Default dialplan added for " + customer.Name + ".");
-
-        //        // Get default domain name.
-        //        string defaultDomain = this.ObjectContext.SIPDomains.Where(x => x.AliasList.Contains("local")).Select(y => y.Domain).First();
-
-        //        // Create SIP account.
-        //        if (!this.ObjectContext.SIPAccounts.Any(s => s.SIPUsername == customer.Name && s.SIPDomain == defaultDomain))
-        //        {
-        //            SIPAccount sipAccount = SIPAccount.Create(customer.Name, defaultDomain, customer.Name, customer.CustomerPassword, "default");
-        //            this.ObjectContext.SIPAccounts.AddObject(sipAccount);
-        //            logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");
-        //        }
-        //        else
-        //        {
-        //            int attempts = 0;
-        //            while (attempts < 10)
-        //            {
-        //                string testUsername = customer.Name + Crypto.GetRandomString(4);
-        //                if (!this.ObjectContext.SIPAccounts.Any(s => s.SIPUsername == testUsername && s.SIPDomain == defaultDomain))
-        //                {
-        //                    SIPAccount sipAccount = SIPAccount.Create(customer.Name, defaultDomain, testUsername, customer.CustomerPassword, "default");
-        //                    this.ObjectContext.SIPAccounts.AddObject(sipAccount);
-        //                    logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");
-        //                    break;
-        //                }
-        //                else
-        //                {
-        //                    attempts++;
-        //                }
-        //            }
-        //        }
-
-        //        if (!m_customerConfirmLink.IsNullOrBlank())
-        //        {
-        //            logger.Debug("Sending new account confirmation email to " + customer.EmailAddress + ".");
-        //            SIPSorcerySMTP.SendEmail(customer.EmailAddress, NEW_ACCOUNT_EMAIL_FROM_ADDRESS, NEW_ACCOUNT_EMAIL_SUBJECT, String.Format(NEW_ACCOUNT_EMAIL_BODY, customer.Firstname, m_customerConfirmLink, customer.ID));
-        //        }
-        //        else
-        //        {
-        //            logger.Debug("Customer confirmation email was not sent as no confirmation link has been set.");
-        //        }
-        //    }
-
             m_service.InsertCustomer(customer);
         }
 
@@ -366,6 +265,11 @@ namespace SIPSorcery.Entities.Services
             {
                 // Set the default script.
                 sipDialplan.DialPlanScript = "require 'teliswizard'";
+            }
+            if (sipDialplan.ScriptType == SIPDialPlanScriptTypesEnum.SimpleWizard)
+            {
+                // Set the default script.
+                sipDialplan.DialPlanScript = "require 'simplewizard'";
             }
 
             if ((sipDialplan.EntityState != EntityState.Detached))
@@ -741,6 +645,60 @@ namespace SIPSorcery.Entities.Services
         {
             //return this.ObjectContext.SIPRegistrarBindings.Where(x => x.Owner == this.ServiceContext.User.Identity.Name);
             return m_service.GetSIPRegistrarBindings(this.ServiceContext.User.Identity.Name);
+        }
+
+        [RequiresAuthentication]
+        public IQueryable<SimpleWizardDialPlanRule> GetSimpleWizardDialPlanRules()
+        {
+            return m_service.GetSimpleDialPlanWizardRules(this.ServiceContext.User.Identity.Name);
+            //return this.ObjectContext.SimpleWizardDialPlanRules.Where(x => x.Owner == this.ServiceContext.User.Identity.Name);
+        }
+
+        [RequiresAuthentication]
+        public void InsertSimplWizardeDialPlanRule(SimpleWizardDialPlanRule rule)
+        {
+            //rule.Owner = this.ServiceContext.User.Identity.Name;
+
+            //if (rule.EntityState != EntityState.Detached)
+            //{
+            //    this.ObjectContext.ObjectStateManager.ChangeObjectState(rule, EntityState.Added);
+            //}
+            //else
+            //{
+            //    this.ObjectContext.SimpleWizardDialPlanRules.AddObject(rule);
+            //}
+
+            m_service.InsertSimplWizardeDialPlanRule(this.ServiceContext.User.Identity.Name, rule);
+        }
+
+        [RequiresAuthentication]
+        public void UpdateSimpleWizardDialPlanRule(SimpleWizardDialPlanRule rule)
+        {
+            //if (rule.Owner != this.ServiceContext.User.Identity.Name)
+            //{
+            //    throw new ApplicationException("You are not authorised to update this record.");
+            //}
+            //else
+            //{
+            //    this.ObjectContext.SimpleWizardDialPlanRules.AttachAsModified(rule, this.ChangeSet.GetOriginal(rule));
+            //}
+
+            m_service.UpdateSimpleWizardDialPlanRule(this.ServiceContext.User.Identity.Name, rule);
+        }
+
+        [RequiresAuthentication]
+        public void DeleteSimpleWizardDialPlanRule(SimpleWizardDialPlanRule rule)
+        {
+            //if (rule.Owner != this.ServiceContext.User.Identity.Name)
+            //{
+            //    throw new ApplicationException("You are not authorised to update this record.");
+            //}
+            //else
+            //{
+            //    this.ObjectContext.SimpleWizardDialPlanRules.AttachAsModified(rule, this.ChangeSet.GetOriginal(rule));
+            //}
+
+            m_service.DeleteSimpleWizardDialPlanRule(this.ServiceContext.User.Identity.Name, rule);
         }
     }
 }

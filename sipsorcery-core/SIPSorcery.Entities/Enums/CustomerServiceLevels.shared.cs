@@ -48,5 +48,8 @@ namespace SIPSorcery.Entities
         Free = 2,
         Premium = 3,
         Professional = 4,
+        Gold = 5,
+        Silver = 6,
+        Bronze = 7,
     }
 }

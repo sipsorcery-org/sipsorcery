@@ -436,5 +436,93 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
+        public IQueryable<SimpleWizardDialPlanRule> GetSimpleDialPlanWizardRules(string authUser)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetSimpleDialPlanWizardRules.");
+            }
+
+            return new SIPSorceryEntities().SimpleWizardDialPlanRules.Where(x => x.Owner == authUser);
+        }
+
+        public void InsertSimplWizardeDialPlanRule(string authUser, SimpleWizardDialPlanRule rule)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for InsertSimplWizardeDialPlanRule.");
+            }
+
+            rule.Owner = authUser;
+
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                if (rule.EntityState != EntityState.Detached)
+                {
+                    sipSorceryEntities.ObjectStateManager.ChangeObjectState(rule, EntityState.Added);
+                }
+                else
+                {
+                    sipSorceryEntities.SimpleWizardDialPlanRules.AddObject(rule);
+                }
+
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void UpdateSimpleWizardDialPlanRule(string authUser, SimpleWizardDialPlanRule rule)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for InsertSimplWizardeDialPlanRule.");
+            }
+
+            SimpleWizardDialPlanRule existingRule = null;
+
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                existingRule = (from ru in sipSorceryEntities.SimpleWizardDialPlanRules where ru.ID == rule.ID select ru).FirstOrDefault();
+
+                if (existingRule == null)
+                {
+                    throw new ApplicationException("The Simple Wizard rule to update could not be found.");
+                }
+                else if (existingRule.Owner != authUser)
+                {
+                    throw new ApplicationException("Not authorised to update the Simple Wizard rule.");
+                }
+
+                existingRule.Description = rule.Description;
+                existingRule.DialString = rule.DialString;
+                existingRule.Direction = rule.Direction;
+                existingRule.Pattern = rule.Pattern;
+                existingRule.Priority = rule.Priority;
+                existingRule.RuleTypeID = rule.RuleTypeID;
+                existingRule.TimeIntervalID = rule.TimeIntervalID;
+
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void DeleteSimpleWizardDialPlanRule(string authUser, SimpleWizardDialPlanRule rule)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                SimpleWizardDialPlanRule existingRule = (from ru in sipSorceryEntities.SimpleWizardDialPlanRules where ru.ID == rule.ID select ru).FirstOrDefault();
+
+                if (existingRule == null)
+                {
+                    throw new ApplicationException("The Simple Wizard Rule to delete could not be found.");
+                }
+                else if (existingRule.Owner != authUser)
+                {
+                    throw new ApplicationException("Not authorised to delete the Simple Wizard Rule.");
+                }
+
+                sipSorceryEntities.SimpleWizardDialPlanRules.DeleteObject(existingRule);
+                sipSorceryEntities.SaveChanges();
+            }
+        }
     }
 }
