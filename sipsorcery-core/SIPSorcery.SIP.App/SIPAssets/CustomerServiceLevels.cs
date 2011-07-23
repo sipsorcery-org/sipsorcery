@@ -46,7 +46,10 @@ namespace SIPSorcery.SIP.App
         None = 0,
         Beta = 1,
         Free = 2,
-        Standard = 3,
-        Premium = 4,
+        Premium = 3,
+        Professional = 4,
+        Gold = 5,
+        Silver = 6,
+        Bronze = 7,
     }
 }
