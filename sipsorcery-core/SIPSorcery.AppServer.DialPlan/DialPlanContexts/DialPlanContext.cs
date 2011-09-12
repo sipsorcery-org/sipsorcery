@@ -29,6 +29,7 @@ namespace SIPSorcery.AppServer.DialPlan
         TimedOut = 6,           // No response from any forward within the time limit.
         Error = 7,
         AlreadyAnswered = 8,    // Was answered prior to the Dial command.
+        Redirect = 9            // Same as Failed but at least one of the falure responses was a redirect (3xx) response with a valid Contact URI.
     }
 
     public enum DialPlanContextsEnum
@@ -62,6 +63,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private ISIPServerUserAgent m_sipServerUserAgent;
         private SIPEndPoint m_outboundProxy;        // If this app forwards calls via an outbound proxy this value will be set.
         private string m_traceDirectory;
+        public DialPlanEngine m_dialPlanEngine;       // Gets used to allow an authorised redirect response to initiate a new dial plan execution.
 
         protected List<SIPProvider> m_sipProviders;
         protected StringBuilder m_traceLog = new StringBuilder();
@@ -97,6 +99,7 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             get { return m_traceLog; }
         }
+        private bool m_hasBeenRedirected;                   // Gets set to true if a second dial plan execution has been executed within this call (only one redirect dialplan instance is allowed).
 
         public string CallersNetworkId;             // If the caller was a locally administered SIP account this will hold it's network id. Used so calls between two accounts on the same local network can be identified.
         public Customer Customer;                   // The customer that owns this dialplan.
@@ -115,6 +118,18 @@ namespace SIPSorcery.AppServer.DialPlan
         public SIPAccount SIPAccount
         {
             get { return m_sipServerUserAgent.SIPAccount; }
+        }
+
+        private SIPResponse m_redirectResponse;
+        public SIPResponse RedirectResponse
+        {
+            get { return m_redirectResponse; }
+        }
+
+        private SIPURI m_redirectURI;
+        public SIPURI RedirectURI
+        {
+            get { return m_redirectURI; }
         }
 
         public CRMHeaders CallerCRMDetails = null;  // Can be populated asynchronously by looking up the caller's details in a CRM system.
@@ -137,7 +152,8 @@ namespace SIPSorcery.AppServer.DialPlan
             List<SIPProvider> sipProviders,
             string traceDirectory,
             string callersNetworkId,
-            Customer customer)
+            Customer customer,
+            DialPlanEngine dialPlanEngine)
         {
             Log_External = monitorLogDelegate;
             CreateBridge_External = createBridge;
@@ -149,6 +165,7 @@ namespace SIPSorcery.AppServer.DialPlan
             m_traceDirectory = traceDirectory;
             CallersNetworkId = callersNetworkId;
             Customer = customer;
+            m_dialPlanEngine = dialPlanEngine;
 
             m_sipServerUserAgent.CallCancelled += ClientCallCancelled;
             m_sipServerUserAgent.NoRingTimeout += ClientCallNoRingTimeout;
@@ -447,6 +464,29 @@ namespace SIPSorcery.AppServer.DialPlan
             catch (Exception excp)
             {
                 logger.Error("Exception FireProxyLogEvent DialPlanContext. " + excp.Message);
+            }
+        }
+
+        /// <summary>
+        /// Executes a new instance of the current dialplan as a result of receiving a redirect response.
+        /// </summary>
+        public void ExecuteDialPlanForRedirect(SIPResponse redirectResponse)
+        {
+            SIPURI redirectURI = redirectResponse.Header.Contact[0].ContactURI;
+
+            if (m_hasBeenRedirected)
+            {
+                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response to " + redirectURI.ToString() + " rejcted, only a single redirect dialplan execution allowed.", Owner));
+            }
+            else
+            {
+                m_hasBeenRedirected = true;
+                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response to " + redirectURI.ToString() + " accepted, new dialplan execution commencing.", Owner));
+
+                m_redirectResponse = redirectResponse;
+                m_redirectURI = redirectURI;
+
+                m_dialPlanEngine.Execute(this, m_sipServerUserAgent, SIPCallDirection.Redirect, CreateBridge_External, null);
             }
         }
     }

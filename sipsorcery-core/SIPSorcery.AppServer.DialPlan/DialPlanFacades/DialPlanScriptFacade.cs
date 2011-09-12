@@ -109,6 +109,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private DialPlanExecutingScript m_executingScript;
         private List<SIPProvider> m_sipProviders;
         private DialogueBridgeCreatedDelegate CreateBridge_External;
+        private DialPlanEngine m_dialPlanEngine;                                        // Used for allowed redirect responses that need to execute a new dial plan execution.
 
         private GetCanonicalDomainDelegate m_getCanonicalDomainDelegate;
         private SIPRequest m_sipRequest;                                                // This is a copy of the SIP request from m_clientTransaction.
@@ -156,6 +157,8 @@ namespace SIPSorcery.AppServer.DialPlan
         private ISIPCallManager m_callManager;
         private bool m_autoCleanup = true;  // Set to false if the Ruby dialplan wants to take care of handling the cleanup from a rescue or ensure block.
         private bool m_hasBeenCleanedUp;
+        private SIPResponse m_redirectResponse;
+        private SIPURI m_redirectURI;
 
         private DialPlanContext m_dialPlanContext;
         public DialPlanContext DialPlanContext
@@ -177,6 +180,10 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             get { return m_callDirection == SIPCallDirection.In; }
         }
+        public bool Redirect
+        {
+            get { return m_callDirection == SIPCallDirection.Redirect; }
+        }
         public List<SIPTransaction> LastDialled;
         public bool Trace
         {
@@ -197,6 +204,34 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
 
                 return CustomerServiceLevels.None;
+            }
+        }
+        public SIPURI RedirectURI
+        {
+            get
+            {
+                if (m_redirectURI != null)
+                {
+                    return m_redirectURI;
+                }
+                else
+                {
+                    return m_dialPlanContext.RedirectURI;
+                }
+            }
+        }
+        public SIPResponse RedirectResponse
+        {
+            get
+            {
+                if (m_redirectResponse != null)
+                {
+                    return m_redirectResponse;
+                }
+                else
+                {
+                    return m_dialPlanContext.RedirectResponse;
+                }
             }
         }
 
@@ -230,7 +265,8 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPAssetPersistor<SIPDialPlan> sipDialPlanPersistor,
             SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPAccountBindings,
-            SIPEndPoint outboundProxySocket
+            SIPEndPoint outboundProxySocket,
+            DialPlanEngine dialPlanEngine
             )
         {
             m_sipTransport = sipTransport;
@@ -452,7 +488,8 @@ namespace SIPSorcery.AppServer.DialPlan
                 SIPDialogueTransferModesEnum uasTransferMode = SIPDialogueTransferModesEnum.Default;
                 int numberLegs = 0;
 
-                m_currentCall = new ForkCall(m_sipTransport, FireProxyLogEvent, m_callManager.QueueNewCall, m_dialStringParser, Username, m_adminMemberId, m_outboundProxySocket, m_callManager, out LastDialled);
+                QueueNewCallDelegate queueNewCall = (m_callManager != null) ? m_callManager.QueueNewCall : (QueueNewCallDelegate)null;
+                m_currentCall = new ForkCall(m_sipTransport, FireProxyLogEvent, queueNewCall, m_dialStringParser, Username, m_adminMemberId, m_outboundProxySocket, m_callManager, m_dialPlanContext, out LastDialled);
                 m_currentCall.CallProgress += m_dialPlanContext.CallProgress;
                 m_currentCall.CallFailed += (status, reason, headers) =>
                 {
@@ -545,6 +582,25 @@ namespace SIPSorcery.AppServer.DialPlan
                                 }
 
                                 m_executingScript.StopExecution();
+                            }
+                            else if (result == DialPlanAppResult.Failed)
+                            {
+                                // Check whether any of the responses were redirects.
+                                if (LastDialled != null && LastDialled.Count > 0)
+                                {
+                                    var redirect = (from trans in LastDialled
+                                                    where trans.TransactionFinalResponse.StatusCode >= 300 &&
+                                                        trans.TransactionFinalResponse.StatusCode <= 399 && trans.TransactionFinalResponse.Header.Contact != null
+                                                        && trans.TransactionFinalResponse.Header.Contact.Count > 0
+                                                    select trans.TransactionFinalResponse).FirstOrDefault();
+
+                                    if (redirect != null)
+                                    {
+                                        m_redirectResponse = redirect;
+                                        m_redirectURI = RedirectResponse.Header.Contact[0].ContactURI;
+                                        result = DialPlanAppResult.Redirect;
+                                    }
+                                }
                             }
                         }
                     }
@@ -2013,6 +2069,15 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 Log("Exception in SendRequest. " + excp.Message);
             }
+        }
+
+        /// <summary>
+        /// Sets CRM headers for the dialplan context. Typically the CRM headers will contain extra information about the caller
+        /// that has been obtained from an external CRM system.
+        /// </summary>
+        public void SetCallerCRMDetails(CRMHeaders crmHeader)
+        {
+            m_dialPlanContext.SetCallerDetails(crmHeader);
         }
 
         /// <summary>

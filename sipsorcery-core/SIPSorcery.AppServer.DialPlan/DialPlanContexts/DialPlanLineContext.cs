@@ -30,7 +30,7 @@ namespace SIPSorcery.AppServer.DialPlan
             string traceDirectory,
             string callersNetworkId,
             Customer customer)
-            : base(monitorLogDelegate, sipTransport, createBridge, outboundProxy, sipServerUserAgent, dialPlan, sipProviders, traceDirectory, callersNetworkId, customer)
+            : base(monitorLogDelegate, sipTransport, createBridge, outboundProxy, sipServerUserAgent, dialPlan, sipProviders, traceDirectory, callersNetworkId, customer, null)
          {
              ContextType = DialPlanContextsEnum.Line;
              string[] dialPlanEntries = dialPlan.DialPlanScript.Split(new char[] { '\n' });

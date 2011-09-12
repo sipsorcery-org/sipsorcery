@@ -50,6 +50,7 @@ namespace SIPSorcery.AppServer.DialPlan
 {
     public class GoogleVoiceCall
     {
+        private const string GOOGLE_COM_URL = "https://www.google.com";
         private const string PRE_LOGIN_URL = "https://www.google.com/accounts/ServiceLogin";
         private const string LOGIN_URL = "https://www.google.com/accounts/ServiceLoginAuth?service=grandcentral";
         private const string VOICE_HOME_URL = "https://www.google.com/voice";
@@ -165,6 +166,8 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
+                    // The pre login URL can redirect to a different URL, such as accounts.google.com, need to use the cookies from that redirect when accessing www.google.com.
+                    m_cookies.Add(new Uri(GOOGLE_COM_URL), galxResponse.Cookies);
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice pre-login page loaded successfully.", m_username));
                 }
 
@@ -201,7 +204,15 @@ namespace SIPSorcery.AppServer.DialPlan
                     response.Close();
                     throw new ApplicationException("Login to google.com failed for " + emailAddress + " with response " + response.StatusCode + ".");
                 }
+
+                StreamReader loginResponseReader = new StreamReader(response.GetResponseStream());
+                string loginResponseFromServer = loginResponseReader.ReadToEnd();
                 response.Close();
+
+                if (Regex.Match(loginResponseFromServer, @"\<title/\>Google Accounts\</title/\>").Success)
+                {
+                    throw new ApplicationException("Login to google.com appears to have failed for " + emailAddress + ".");
+                }
 
                 // We're now logged in. Need to load up the Google Voice page to get the rnr hidden input value which is needed for
                 // the HTTP call requests.

@@ -236,7 +236,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     if (matchedCommand.Data != null && matchedCommand.Data.Trim().Length > 0)
                     {
                         DialStringParser dialStringParser = new DialStringParser(m_sipTransport, dialPlanContext.Owner, dialPlanContext.SIPAccount, dialPlanContext.SIPProviders, m_sipAccountPersistor.Get, GetSIPAccountBindings_External, GetCanonicalDomainDelegate_External, LogDelegate_External, dialPlanContext.SIPDialPlan.DialPlanName);
-                        ForkCall ForkCall = new ForkCall(m_sipTransport, FireProxyLogEvent, callManager.QueueNewCall, dialStringParser, dialPlanContext.Owner, dialPlanContext.AdminMemberId, m_outboundProxySocket, null);
+                        ForkCall ForkCall = new ForkCall(m_sipTransport, FireProxyLogEvent, callManager.QueueNewCall, dialStringParser, dialPlanContext.Owner, dialPlanContext.AdminMemberId, m_outboundProxySocket, null, null);
                         ForkCall.CallProgress += dialPlanContext.CallProgress;
                         ForkCall.CallFailed += dialPlanContext.CallFailed;
                         ForkCall.CallAnswered += dialPlanContext.CallAnswered;
@@ -349,7 +349,8 @@ namespace SIPSorcery.AppServer.DialPlan
                             m_dialPlanPersistor,
                             m_sipDialoguePersistor,
                             GetSIPAccountBindings_External,
-                            m_outboundProxySocket);
+                            m_outboundProxySocket,
+                            this);
 
                         DialPlanCRMFacade crmFacade = new DialPlanCRMFacade(FireProxyLogEvent, dialPlanContext);
                         DialPlanLookupFacade lookupFacade = new DialPlanLookupFacade(FireProxyLogEvent, dialPlanContext.Owner);

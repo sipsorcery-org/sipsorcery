@@ -67,7 +67,8 @@ namespace SIPSorcery.AppServer.DialPlan
         private SIPTransport m_sipTransport;
         private ISIPCallManager m_callManager;
         private event SIPMonitorLogDelegate m_statefulProxyLogEvent;    // Used to send log messages back to the application server core.
-        private QueueNewCallDelegate QueueNewCall_External;             // Function delegate to allow new calls to be placed on teh call manager and run through the dialplan logic.              
+        private QueueNewCallDelegate QueueNewCall_External;             // Function delegate to allow new calls to be placed on the call manager and run through the dialplan logic.              
+        private DialPlanContext m_dialPlanContext;                        // Used for allowed redirect responses that need to execute a new dial plan execution.
 
         private DialStringParser m_dialStringParser;            // Used to create a new list of calls if a redirect response is received to a fork call leg.
         private string m_username;                              // The call owner.
@@ -126,7 +127,8 @@ namespace SIPSorcery.AppServer.DialPlan
             string username,
             string adminMemberId,
             SIPEndPoint outboundProxy,
-            ISIPCallManager callManager)
+            ISIPCallManager callManager,
+            DialPlanContext dialPlanContext)
         {
             m_sipTransport = sipTransport;
             m_statefulProxyLogEvent = statefulProxyLogEvent;
@@ -136,6 +138,7 @@ namespace SIPSorcery.AppServer.DialPlan
             m_adminMemberId = adminMemberId;
             m_outboundProxySocket = outboundProxy;
             m_callManager = callManager;
+            m_dialPlanContext = dialPlanContext;
         }
 
         /// <summary>
@@ -153,8 +156,9 @@ namespace SIPSorcery.AppServer.DialPlan
             string adminMemberId,
             SIPEndPoint outboundProxy,
             ISIPCallManager callManager,
+            DialPlanContext dialPlanContext,
             out List<SIPTransaction> switchCallTransactions) :
-            this(sipTransport, statefulProxyLogEvent, queueNewCall, dialStringParser, username, adminMemberId, outboundProxy, callManager)
+            this(sipTransport, statefulProxyLogEvent, queueNewCall, dialStringParser, username, adminMemberId, outboundProxy, callManager, dialPlanContext)
         {
             switchCallTransactions = m_switchCallTransactions;
         }
@@ -268,23 +272,33 @@ namespace SIPSorcery.AppServer.DialPlan
                     }
                     else
                     {
-                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Creating B2B call for " + callDescriptor.Uri + ".", m_username));
-                        uacCall = new SIPB2BUserAgent(m_statefulProxyLogEvent, QueueNewCall_External, m_sipTransport, m_username, m_adminMemberId);
+                        if (QueueNewCall_External == null)
+                        {
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "B2B calls are not supported in this dialplan manifestation.", m_username));
+                        }
+                        else
+                        {
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Creating B2B call for " + callDescriptor.Uri + ".", m_username));
+                            uacCall = new SIPB2BUserAgent(m_statefulProxyLogEvent, QueueNewCall_External, m_sipTransport, m_username, m_adminMemberId);
+                        }
                     }
 
                     //ISIPClientUserAgent uacCall = new JingleUserAgent(m_username, m_adminMemberId, m_statefulProxyLogEvent);
 
-                    lock (m_switchCalls)
+                    if (uacCall != null)
                     {
-                        m_switchCalls.Add(uacCall);
+                        lock (m_switchCalls)
+                        {
+                            m_switchCalls.Add(uacCall);
+                        }
+
+                        uacCall.CallAnswered += UACCallAnswered;
+                        uacCall.CallFailed += UACCallFailed;
+                        uacCall.CallRinging += UACCallProgress;
+                        //uacCall.CallTrying += UACCallTrying;
+
+                        uacCall.Call(callDescriptor);
                     }
-
-                    uacCall.CallAnswered += UACCallAnswered;
-                    uacCall.CallFailed += UACCallFailed;
-                    uacCall.CallRinging += UACCallProgress;
-                    //uacCall.CallTrying += UACCallTrying;
-
-                    uacCall.Call(callDescriptor);
                 }
             }
             catch (Exception excp)
@@ -465,16 +479,16 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else if (answeredResponse != null && answeredResponse.StatusCode >= 300 && answeredResponse.StatusCode <= 399)
                 {
-                    if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.Add)
+                    if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.NewDialPlan)
                     {
                         ProcessRedirect(answeredUAC, answeredResponse);
                     }
-                    else if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.Replace)
-                    {
-                        // In the Replace redirect mode the existing dialplan execution needs to be cancelled and the single redirect call be used to replace it.
-                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response rejected as Replace mode not yet implemented.", m_username));
-                        CallLegCompleted();
-                    }
+                    //else if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.Replace)
+                    //{
+                    //    // In the Replace redirect mode the existing dialplan execution needs to be cancelled and the single redirect call be used to replace it.
+                    //    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response rejected as Replace mode not yet implemented.", m_username));
+                    //    CallLegCompleted();
+                    //}
                     else
                     {
                         FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response rejected as not enabled in dial string.", m_username));
@@ -514,38 +528,40 @@ namespace SIPSorcery.AppServer.DialPlan
                 else
                 {
                     // A redirect response was received. Create a new call leg(s) using the SIP URIs in the contact header of the response.
-                    if (m_dialStringParser != null)
-                    {
-                        // If there is a dial string parser available it will be used to generate a list of call destination from the redirect URI.
-                        SIPCallDescriptor redirectCallDescriptor = answeredUAC.CallDescriptor.CopyOf();
-                        Queue<List<SIPCallDescriptor>> redirectQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, null, redirectURI.ToString(), redirectCallDescriptor.CustomHeaders,
-                            redirectCallDescriptor.ContentType, redirectCallDescriptor.Content, null, redirectCallDescriptor.FromDisplayName, redirectCallDescriptor.FromURIUsername, redirectCallDescriptor.FromURIHost, null, CustomerServiceLevels.None);
+                    //if (m_dialStringParser != null)
+                    //{
+                    //    // If there is a dial string parser available it will be used to generate a list of call destination from the redirect URI.
+                    //    SIPCallDescriptor redirectCallDescriptor = answeredUAC.CallDescriptor.CopyOf();
+                    //    Queue<List<SIPCallDescriptor>> redirectQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, null, redirectURI.ToString(), redirectCallDescriptor.CustomHeaders,
+                    //        redirectCallDescriptor.ContentType, redirectCallDescriptor.Content, null, redirectCallDescriptor.FromDisplayName, redirectCallDescriptor.FromURIUsername, redirectCallDescriptor.FromURIHost, null, CustomerServiceLevels.None);
 
-                        if (redirectQueue != null && redirectQueue.Count > 0)
-                        {
-                            // Only the first list in the queue is used (and there should only be a single list since it's generated from a redirect SIP URI and not 
-                            // a full dial string).
-                            List<SIPCallDescriptor> callDescriptors = redirectQueue.Dequeue();
-                            for (int index = 0; index < callDescriptors.Count; index++)
-                            {
-                                callDescriptors[index].MangleIPAddress = redirectCallDescriptor.MangleIPAddress;
-                                callDescriptors[index].MangleResponseSDP = redirectCallDescriptor.MangleResponseSDP;
-                                callDescriptors[index].TransferMode = redirectCallDescriptor.TransferMode;
-                            }
-                            Start(callDescriptors);
-                        }
-                        else
-                        {
-                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A redirect response to " + redirectURI.ToString() + " did not generate any new call leg destinations.", m_username));
-                        }
-                    }
-                    else
-                    {
-                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response to " + redirectURI.ToString() + " accepted.", m_username));
-                        SIPCallDescriptor redirectCallDescriptor = answeredUAC.CallDescriptor.CopyOf();
-                        redirectCallDescriptor.Uri = redirectURI.ToString();
-                        StartNewCallAsync(redirectCallDescriptor);
-                    }
+                    //    if (redirectQueue != null && redirectQueue.Count > 0)
+                    //    {
+                    //        // Only the first list in the queue is used (and there should only be a single list since it's generated from a redirect SIP URI and not 
+                    //        // a full dial string).
+                    //        List<SIPCallDescriptor> callDescriptors = redirectQueue.Dequeue();
+                    //        for (int index = 0; index < callDescriptors.Count; index++)
+                    //        {
+                    //            callDescriptors[index].MangleIPAddress = redirectCallDescriptor.MangleIPAddress;
+                    //            callDescriptors[index].MangleResponseSDP = redirectCallDescriptor.MangleResponseSDP;
+                    //            callDescriptors[index].TransferMode = redirectCallDescriptor.TransferMode;
+                    //        }
+                    //        Start(callDescriptors);
+                    //    }
+                    //    else
+                    //    {
+                    //        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A redirect response to " + redirectURI.ToString() + " did not generate any new call leg destinations.", m_username));
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response to " + redirectURI.ToString() + " accepted.", m_username));
+                    //    SIPCallDescriptor redirectCallDescriptor = answeredUAC.CallDescriptor.CopyOf();
+                    //    redirectCallDescriptor.Uri = redirectURI.ToString();
+                    //    StartNewCallAsync(redirectCallDescriptor);
+                    //}
+
+                    m_dialPlanContext.ExecuteDialPlanForRedirect(answeredResponse);
                 }
             }
             catch (Exception excp)

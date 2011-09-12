@@ -50,6 +50,7 @@ namespace SIPSorcery.AppServer.DialPlan
 {
     public class GoogleVoiceSMS
     {
+        private const string GOOGLE_COM_URL = "https://www.google.com";
         private const string PRE_LOGIN_URL = "https://www.google.com/accounts/ServiceLogin";
         private const string LOGIN_URL = "https://www.google.com/accounts/ServiceLoginAuth?service=grandcentral";
         private const string VOICE_HOME_URL = "https://www.google.com/voice";
@@ -120,6 +121,8 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
+                    // The pre login URL can redirect to a different URL, such as accounts.google.com, need to use the cookies from that redirect when accessing www.google.com.
+                    m_cookies.Add(new Uri(GOOGLE_COM_URL), galxResponse.Cookies);
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice pre-login page loaded successfully.", m_username));
                 }
 

@@ -40,8 +40,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
+using System.Web;
 using SIPSorcery.CRM.ThirtySevenSignals;
+using SIPSorcery.Entities;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -63,15 +66,49 @@ namespace SIPSorcery.AppServer.DialPlan
         }
 
         /// <summary>
+        /// Attempts to retrieve the CRM Account details for a dial plan.
+        /// </summary>
+        //public CRMAccount GetCRMAccount(string dialPlanName)
+        //{
+        //    try
+        //    {
+        //        using (SIPSorceryEntities entities = new SIPSorceryEntities())
+        //        {
+        //            return (from crmAcc in entities.CRMAccounts1
+        //                    join dialplan in entities.SIPDialPlans on crmAcc.Owner equals dialplan.Owner
+        //                    where dialplan.DialPlanName == dialPlanName && crmAcc.Owner == m_context.Owner
+        //                    select crmAcc).FirstOrDefault();
+        //        }
+        //    }
+        //    catch (Exception excp)
+        //    {
+        //        logger.Error("Exception GetCRMAccount. " + excp.Message);
+        //        LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Error retrieving CRM Account details for dialplan.", m_context.Owner));
+        //        return null;
+        //    }
+        //}
+
+        /// <summary>
         /// Looks up a person contact in the 37 Signals Highrise application.
         /// </summary>
         /// <param name="url">The URL of the Highrise account to attempt the lookup on.</param>
         /// <param name="authToken">The auth token for the Highrise account to attempt the lookup with.</param>
         /// <param name="from">The SIP from header of the incoming call to attempt to match on.</param>
         /// <param name="addCallNote">If true it indicates a Highrise note should be created if a matching contact is found.</param>
-        public void LookupHighriseContact(string url, string authToken, SIPFromHeader from, bool addCallNote)
+        public CRMHeaders LookupHighriseContact(string url, string authToken, SIPFromHeader from, bool addCallNote, bool async)
         {
-            LookupHighriseContact(url, authToken, from.FromName, addCallNote);
+            LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Looking up Highrise contact on " + url + ".", m_context.Owner));
+
+            if (async)
+            {
+                m_context.SetCallerDetails(new CRMHeaders() { Pending = true });
+                ThreadPool.QueueUserWorkItem(delegate { DoLookup(url, authToken, from, addCallNote, (result) => { m_context.SetCallerDetails(result); }); });
+                return null;
+            }
+            else
+            {
+                return DoLookup(url, authToken, from, addCallNote, null);
+            }
         }
 
         /// <summary>
@@ -81,21 +118,74 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="authToken">The auth token for the Highrise account to attempt the lookup with.</param>
         /// <param name="name">The name of the person to attempt a match on.</param>
         /// <param name="addCallNote">If true it indicates a Highrise note should be created if a matching contact is found.</param>
-        public void LookupHighriseContact(string url, string authToken, string name, bool addCallNote)
-        {
-            LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Looking up Highrise contact on " + url + " for " + name + ".", m_context.Owner));
+        //public CRMHeaders LookupHighriseContact(string url, string authToken, string name, bool addCallNote, bool async)
+        //{
+        //    LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Looking up Highrise contact on " + url + " for " + name + ".", m_context.Owner));
 
-            m_context.SetCallerDetails(new CRMHeaders() { Pending = true });
+        //    if (async)
+        //    {
+        //        m_context.SetCallerDetails(new CRMHeaders() { Pending = true });
+        //        ThreadPool.QueueUserWorkItem(delegate { DoLookup(url, authToken, name, addCallNote, (result) => { m_context.SetCallerDetails(result); }); });
+        //        return null;
+        //    }
+        //    else
+        //    {
+        //        return DoLookup(url, authToken, name, addCallNote, null);
+        //    }
+        //}
 
-            ThreadPool.QueueUserWorkItem(delegate { DoLookup(url, authToken, name, addCallNote); });
-        }
-
-        private void DoLookup(string url, string authToken, string name, bool addCallNote)
+        private CRMHeaders DoLookup(string url, string authToken, SIPFromHeader from, bool addCallNote, Action<CRMHeaders> callback)
         {
             try
             {
+                string searchString = null;
+                string lookupType = null;
+
+                if (from.FromName != null && Regex.Match(from.FromName, @"\D").Success)
+                {
+                    // The From display name has a non-digit character do a name lookup.
+                    lookupType = "name";
+                    searchString = from.FromName.Trim();
+                }
+                else if (from.FromName != null)
+                {
+                    // The From display name is all digits do a phone number lookup.
+                    lookupType = "phonenumber";
+                    searchString = from.FromName.Trim();
+                }
+                else if (!Regex.Match(from.FromURI.User, @"\D").Success)
+                {
+                    // The From URI user is all digits do a phone number lookup.
+                    lookupType = "phonenumber";
+                    searchString = from.FromURI.User.Trim();
+                }
+                else
+                {
+                    // Last resort is to do a SIP URI lookup.
+                    lookupType = "sipaddress";
+                    searchString = from.FromURI.ToAOR();
+                }
+
+                LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Highrise contact lookup type " + lookupType + " commencing for " + searchString + ".", m_context.Owner));
+
+                CRMHeaders result = null;
+                DateTime startLookup = DateTime.Now;
+
                 PersonRequest personRequest = new PersonRequest(url, authToken);
-                People people = personRequest.GetByName(name);
+                People people = null;
+
+                if (lookupType == "name")
+                {
+                    people = personRequest.GetByName(searchString);
+                }
+                else if (lookupType == "phonenumber")
+                {
+                    people = personRequest.GetByPhoneNumber(searchString);
+                }
+                else if (lookupType == "sipaddress")
+                {
+                    people = personRequest.GetByCustomField("sip_address", searchString);
+                }
 
                 if (people != null && people.PersonList != null && people.PersonList.Count > 0)
                 {
@@ -113,34 +203,61 @@ namespace SIPSorcery.AppServer.DialPlan
                         }
                     }
 
-                    LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Highrise contact match " + person.FirstName + " " + person.LastName + " of " + companyName + ".", m_context.Owner));
-                    m_context.SetCallerDetails(new CRMHeaders(person.FirstName + " " + person.LastName, companyName, person.AvatarURL));
+                    double secondsDuration = DateTime.Now.Subtract(startLookup).TotalSeconds;
+
+                    if (companyName != null)
+                    {
+                        LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Highrise contact match " + person.FirstName + " " + person.LastName + " of " + companyName + ", time taken " + secondsDuration.ToString("0.##") + "s.", m_context.Owner));
+                    }
+                    else
+                    {
+                        LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Highrise contact match " + person.FirstName + " " + person.LastName + ", time taken " + secondsDuration.ToString("0.##") + "s.", m_context.Owner));
+                    }
+                    //m_context.SetCallerDetails(new CRMHeaders(person.FirstName + " " + person.LastName, companyName, person.AvatarURL));
+                    result = new CRMHeaders(person.FirstName + " " + person.LastName, companyName, person.AvatarURL);
 
                     if (addCallNote)
                     {
-                        ThreadPool.QueueUserWorkItem(delegate { AddHighriseCallNote(url, authToken, person); });
+                        ThreadPool.QueueUserWorkItem(delegate { AddHighriseCallNote(url, authToken, from, person); });
                     }
                 }
                 else
                 {
-                    LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No Highrise contact match.", m_context.Owner));
-                    m_context.SetCallerDetails(new CRMHeaders() { Pending = false, LookupError = "No Highrise contact match." });
+                    double secondsDuration = DateTime.Now.Subtract(startLookup).TotalSeconds;
+
+                    LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No Highrise contact match, time taken " + secondsDuration.ToString("0.##") + "s.", m_context.Owner));
+                    result = new CRMHeaders() { Pending = false, LookupError = "No Highrise contact match." };
                 }
+
+                if (callback != null)
+                {
+                    callback(result);
+                }
+
+                return result;
             }
             catch (Exception excp)
             {
                 logger.Error("Exception LookupHighriseContact. " + excp.Message);
                 LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Error looking up Highrise contact.", m_context.Owner));
-                m_context.SetCallerDetails(new CRMHeaders() { Pending = false, LookupError = "Error looking up Highrise contact." });
+                
+                var errorResult = new CRMHeaders() { Pending = false, LookupError = "Error looking up Highrise contact." };
+
+                if (callback != null)
+                {
+                    callback(errorResult);
+                }
+
+                return errorResult;
             }
         }
 
-        private void AddHighriseCallNote(string url, string authToken, Person person)
+        private void AddHighriseCallNote(string url, string authToken, SIPFromHeader caller, Person person)
         {
             try
             {
                 NoteRequest request = new NoteRequest(url, authToken);
-                string result = request.CreateNoteForPerson(person.ID, "Called at " + DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss") + " UTC.");
+                string result = request.CreateNoteForPerson(person.ID, HttpUtility.HtmlEncode("Incoming SIP call as " + caller.FromUserField.ToParameterlessString() + " at " + DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss") + " UTC."));
                 string personName = person.FirstName + " " + person.LastName;
 
                 if(result != null)
