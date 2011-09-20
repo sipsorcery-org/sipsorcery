@@ -46,7 +46,7 @@ namespace SIPSorcery.CRM.ThirtySevenSignals
     public class Person
     {
         public const string DATETIME_STRING_FORMAT = "yyyy-MM-ddTHH:mm:ssZ";
-        public const string AVATAR_URL_FORMAT = "{0}/avatars/person/{1}/{2}-large.png";
+        //public const string AVATAR_URL_FORMAT = "{0}/avatars/person/{1}/{2}-large.png";
 
         [XmlElement("id")]
         public int ID { get; set; }
