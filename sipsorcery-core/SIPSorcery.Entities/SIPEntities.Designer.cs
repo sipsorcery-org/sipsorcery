@@ -25,6 +25,7 @@ using System.Runtime.Serialization;
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "simplewizarddialplanrule_ibfk_1", "SIPDialPlan", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPDialPlan), "simplewizarddialplanrule", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SimpleWizardDialPlanRule), true)]
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipregistrarbindings_ibfk_1", "SIPAccount", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPAccount), "SIPRegistrarBinding", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPRegistrarBinding), true)]
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipproviderbindings_ibfk_2", "SIPProvider", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPProvider), "SIPProviderBinding", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPProviderBinding), true)]
+[assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "simplewizarddialplanrule_ibfk_2", "SIPAccount", System.Data.Metadata.Edm.RelationshipMultiplicity.ZeroOrOne, typeof(SIPSorcery.Entities.SIPAccount), "SimpleWizardDialPlanRule", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SimpleWizardDialPlanRule), true)]
 
 #endregion
 
@@ -287,22 +288,6 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        public ObjectSet<DialPlanData> DialPlanDatas1
-        {
-            get
-            {
-                if ((_DialPlanDatas1 == null))
-                {
-                    _DialPlanDatas1 = base.CreateObjectSet<DialPlanData>("DialPlanDatas1");
-                }
-                return _DialPlanDatas1;
-            }
-        }
-        private ObjectSet<DialPlanData> _DialPlanDatas1;
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
         public ObjectSet<SimpleWizardDialPlanRule> SimpleWizardDialPlanRules
         {
             get
@@ -421,14 +406,6 @@ namespace SIPSorcery.Entities
         public void AddToSIPRegistrarBindings(SIPRegistrarBinding sIPRegistrarBinding)
         {
             base.AddObject("SIPRegistrarBindings", sIPRegistrarBinding);
-        }
-    
-        /// <summary>
-        /// Deprecated Method for adding a new object to the DialPlanDatas1 EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
-        /// </summary>
-        public void AddToDialPlanDatas1(DialPlanData dialPlanData)
-        {
-            base.AddObject("DialPlanDatas1", dialPlanData);
         }
     
         /// <summary>
@@ -1964,116 +1941,6 @@ namespace SIPSorcery.Entities
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="SIPSorcery.Entities", Name="DialPlanData")]
-    [Serializable()]
-    [DataContractAttribute(IsReference=true)]
-    public partial class DialPlanData : EntityObject
-    {
-        #region Factory Method
-    
-        /// <summary>
-        /// Create a new DialPlanData object.
-        /// </summary>
-        /// <param name="dataKey">Initial value of the DataKey property.</param>
-        /// <param name="dataOwner">Initial value of the DataOwner property.</param>
-        /// <param name="dataValue">Initial value of the DataValue property.</param>
-        public static DialPlanData CreateDialPlanData(global::System.String dataKey, global::System.String dataOwner, global::System.String dataValue)
-        {
-            DialPlanData dialPlanData = new DialPlanData();
-            dialPlanData.DataKey = dataKey;
-            dialPlanData.DataOwner = dataOwner;
-            dialPlanData.DataValue = dataValue;
-            return dialPlanData;
-        }
-
-        #endregion
-        #region Primitive Properties
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String DataKey
-        {
-            get
-            {
-                return _DataKey;
-            }
-            set
-            {
-                if (_DataKey != value)
-                {
-                    OnDataKeyChanging(value);
-                    ReportPropertyChanging("DataKey");
-                    _DataKey = StructuralObject.SetValidValue(value, false);
-                    ReportPropertyChanged("DataKey");
-                    OnDataKeyChanged();
-                }
-            }
-        }
-        private global::System.String _DataKey;
-        partial void OnDataKeyChanging(global::System.String value);
-        partial void OnDataKeyChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String DataOwner
-        {
-            get
-            {
-                return _DataOwner;
-            }
-            set
-            {
-                if (_DataOwner != value)
-                {
-                    OnDataOwnerChanging(value);
-                    ReportPropertyChanging("DataOwner");
-                    _DataOwner = StructuralObject.SetValidValue(value, false);
-                    ReportPropertyChanged("DataOwner");
-                    OnDataOwnerChanged();
-                }
-            }
-        }
-        private global::System.String _DataOwner;
-        partial void OnDataOwnerChanging(global::System.String value);
-        partial void OnDataOwnerChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String DataValue
-        {
-            get
-            {
-                return _DataValue;
-            }
-            set
-            {
-                OnDataValueChanging(value);
-                ReportPropertyChanging("DataValue");
-                _DataValue = StructuralObject.SetValidValue(value, false);
-                ReportPropertyChanged("DataValue");
-                OnDataValueChanged();
-            }
-        }
-        private global::System.String _DataValue;
-        partial void OnDataValueChanging(global::System.String value);
-        partial void OnDataValueChanged();
-
-        #endregion
-    
-    }
-    
-    /// <summary>
-    /// No Metadata Documentation available.
-    /// </summary>
     [EdmEntityTypeAttribute(NamespaceName="SIPSorcery.Entities", Name="SimpleWizardDialPlanRule")]
     [Serializable()]
     [DataContractAttribute(IsReference=true)]
@@ -2088,21 +1955,23 @@ namespace SIPSorcery.Entities
         /// <param name="dialPlanID">Initial value of the DialPlanID property.</param>
         /// <param name="ruleTypeID">Initial value of the RuleTypeID property.</param>
         /// <param name="pattern">Initial value of the Pattern property.</param>
-        /// <param name="dialString">Initial value of the DialString property.</param>
         /// <param name="priority">Initial value of the Priority property.</param>
         /// <param name="owner">Initial value of the Owner property.</param>
         /// <param name="direction">Initial value of the Direction property.</param>
-        public static SimpleWizardDialPlanRule CreateSimpleWizardDialPlanRule(global::System.String id, global::System.String dialPlanID, global::System.Int32 ruleTypeID, global::System.String pattern, global::System.String dialString, global::System.Int32 priority, global::System.String owner, global::System.String direction)
+        /// <param name="command">Initial value of the Command property.</param>
+        /// <param name="commandString">Initial value of the CommandString property.</param>
+        public static SimpleWizardDialPlanRule CreateSimpleWizardDialPlanRule(global::System.String id, global::System.String dialPlanID, global::System.Int32 ruleTypeID, global::System.String pattern, global::System.Int32 priority, global::System.String owner, global::System.String direction, global::System.String command, global::System.String commandString)
         {
             SimpleWizardDialPlanRule simpleWizardDialPlanRule = new SimpleWizardDialPlanRule();
             simpleWizardDialPlanRule.ID = id;
             simpleWizardDialPlanRule.DialPlanID = dialPlanID;
             simpleWizardDialPlanRule.RuleTypeID = ruleTypeID;
             simpleWizardDialPlanRule.Pattern = pattern;
-            simpleWizardDialPlanRule.DialString = dialString;
             simpleWizardDialPlanRule.Priority = priority;
             simpleWizardDialPlanRule.Owner = owner;
             simpleWizardDialPlanRule.Direction = direction;
+            simpleWizardDialPlanRule.Command = command;
+            simpleWizardDialPlanRule.CommandString = commandString;
             return simpleWizardDialPlanRule;
         }
 
@@ -2207,30 +2076,6 @@ namespace SIPSorcery.Entities
         private global::System.String _Pattern;
         partial void OnPatternChanging(global::System.String value);
         partial void OnPatternChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String DialString
-        {
-            get
-            {
-                return _DialString;
-            }
-            set
-            {
-                OnDialStringChanging(value);
-                ReportPropertyChanging("DialString");
-                _DialString = StructuralObject.SetValidValue(value, false);
-                ReportPropertyChanged("DialString");
-                OnDialStringChanged();
-            }
-        }
-        private global::System.String _DialString;
-        partial void OnDialStringChanging(global::System.String value);
-        partial void OnDialStringChanged();
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -2351,6 +2196,78 @@ namespace SIPSorcery.Entities
         private global::System.String _Direction;
         partial void OnDirectionChanging(global::System.String value);
         partial void OnDirectionChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String ToSIPAccount
+        {
+            get
+            {
+                return _ToSIPAccount;
+            }
+            set
+            {
+                OnToSIPAccountChanging(value);
+                ReportPropertyChanging("ToSIPAccount");
+                _ToSIPAccount = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("ToSIPAccount");
+                OnToSIPAccountChanged();
+            }
+        }
+        private global::System.String _ToSIPAccount;
+        partial void OnToSIPAccountChanging(global::System.String value);
+        partial void OnToSIPAccountChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String Command
+        {
+            get
+            {
+                return _Command;
+            }
+            set
+            {
+                OnCommandChanging(value);
+                ReportPropertyChanging("Command");
+                _Command = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("Command");
+                OnCommandChanged();
+            }
+        }
+        private global::System.String _Command;
+        partial void OnCommandChanging(global::System.String value);
+        partial void OnCommandChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String CommandString
+        {
+            get
+            {
+                return _CommandString;
+            }
+            set
+            {
+                OnCommandStringChanging(value);
+                ReportPropertyChanging("CommandString");
+                _CommandString = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("CommandString");
+                OnCommandStringChanged();
+            }
+        }
+        private global::System.String _CommandString;
+        partial void OnCommandStringChanging(global::System.String value);
+        partial void OnCommandStringChanged();
 
         #endregion
     
@@ -2877,6 +2794,30 @@ namespace SIPSorcery.Entities
         private global::System.String _SIPUsername;
         partial void OnSIPUsernameChanging(global::System.String value);
         partial void OnSIPUsernameChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String AvatarURL
+        {
+            get
+            {
+                return _AvatarURL;
+            }
+            set
+            {
+                OnAvatarURLChanging(value);
+                ReportPropertyChanging("AvatarURL");
+                _AvatarURL = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("AvatarURL");
+                OnAvatarURLChanged();
+            }
+        }
+        private global::System.String _AvatarURL;
+        partial void OnAvatarURLChanging(global::System.String value);
+        partial void OnAvatarURLChanged();
 
         #endregion
     
@@ -2900,6 +2841,28 @@ namespace SIPSorcery.Entities
                 if ((value != null))
                 {
                     ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<SIPRegistrarBinding>("SIPSorcery.Entities.sipregistrarbindings_ibfk_1", "SIPRegistrarBinding", value);
+                }
+            }
+        }
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [XmlIgnoreAttribute()]
+        [SoapIgnoreAttribute()]
+        [DataMemberAttribute()]
+        [EdmRelationshipNavigationPropertyAttribute("SIPSorcery.Entities", "simplewizarddialplanrule_ibfk_2", "SimpleWizardDialPlanRule")]
+        public EntityCollection<SimpleWizardDialPlanRule> simplewizarddialplanrules
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedCollection<SimpleWizardDialPlanRule>("SIPSorcery.Entities.simplewizarddialplanrule_ibfk_2", "SimpleWizardDialPlanRule");
+            }
+            set
+            {
+                if ((value != null))
+                {
+                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<SimpleWizardDialPlanRule>("SIPSorcery.Entities.simplewizarddialplanrule_ibfk_2", "SimpleWizardDialPlanRule", value);
                 }
             }
         }
@@ -3560,7 +3523,8 @@ namespace SIPSorcery.Entities
         /// <param name="owner">Initial value of the Owner property.</param>
         /// <param name="scriptTypeDescription">Initial value of the ScriptTypeDescription property.</param>
         /// <param name="acceptNonInvite">Initial value of the AcceptNonInvite property.</param>
-        public static SIPDialPlan CreateSIPDialPlan(global::System.String dialPlanName, global::System.Int32 executionCount, global::System.String id, global::System.String inserted, global::System.String lastUpdate, global::System.Int32 maxExecutionCount, global::System.String owner, global::System.String scriptTypeDescription, global::System.Boolean acceptNonInvite)
+        /// <param name="isReadOnly">Initial value of the IsReadOnly property.</param>
+        public static SIPDialPlan CreateSIPDialPlan(global::System.String dialPlanName, global::System.Int32 executionCount, global::System.String id, global::System.String inserted, global::System.String lastUpdate, global::System.Int32 maxExecutionCount, global::System.String owner, global::System.String scriptTypeDescription, global::System.Boolean acceptNonInvite, global::System.Boolean isReadOnly)
         {
             SIPDialPlan sIPDialPlan = new SIPDialPlan();
             sIPDialPlan.DialPlanName = dialPlanName;
@@ -3572,6 +3536,7 @@ namespace SIPSorcery.Entities
             sIPDialPlan.Owner = owner;
             sIPDialPlan.ScriptTypeDescription = scriptTypeDescription;
             sIPDialPlan.AcceptNonInvite = acceptNonInvite;
+            sIPDialPlan.IsReadOnly = isReadOnly;
             return sIPDialPlan;
         }
 
@@ -3892,6 +3857,30 @@ namespace SIPSorcery.Entities
         private global::System.Boolean _AcceptNonInvite;
         partial void OnAcceptNonInviteChanging(global::System.Boolean value);
         partial void OnAcceptNonInviteChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Boolean IsReadOnly
+        {
+            get
+            {
+                return _IsReadOnly;
+            }
+            set
+            {
+                OnIsReadOnlyChanging(value);
+                ReportPropertyChanging("IsReadOnly");
+                _IsReadOnly = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("IsReadOnly");
+                OnIsReadOnlyChanged();
+            }
+        }
+        private global::System.Boolean _IsReadOnly;
+        partial void OnIsReadOnlyChanging(global::System.Boolean value);
+        partial void OnIsReadOnlyChanged();
 
         #endregion
     
@@ -5275,7 +5264,8 @@ namespace SIPSorcery.Entities
         /// <param name="providerUsername">Initial value of the ProviderUsername property.</param>
         /// <param name="registerAdminEnabled">Initial value of the RegisterAdminEnabled property.</param>
         /// <param name="registerEnabled">Initial value of the RegisterEnabled property.</param>
-        public static SIPProvider CreateSIPProvider(global::System.String id, global::System.String inserted, global::System.String lastUpdate, global::System.String owner, global::System.String providerName, global::System.String providerType, global::System.String providerUsername, global::System.Boolean registerAdminEnabled, global::System.Boolean registerEnabled)
+        /// <param name="isReadOnly">Initial value of the IsReadOnly property.</param>
+        public static SIPProvider CreateSIPProvider(global::System.String id, global::System.String inserted, global::System.String lastUpdate, global::System.String owner, global::System.String providerName, global::System.String providerType, global::System.String providerUsername, global::System.Boolean registerAdminEnabled, global::System.Boolean registerEnabled, global::System.Boolean isReadOnly)
         {
             SIPProvider sIPProvider = new SIPProvider();
             sIPProvider.ID = id;
@@ -5287,6 +5277,7 @@ namespace SIPSorcery.Entities
             sIPProvider.ProviderUsername = providerUsername;
             sIPProvider.RegisterAdminEnabled = registerAdminEnabled;
             sIPProvider.RegisterEnabled = registerEnabled;
+            sIPProvider.IsReadOnly = isReadOnly;
             return sIPProvider;
         }
 
@@ -5871,6 +5862,30 @@ namespace SIPSorcery.Entities
         private global::System.String _RegisterServer;
         partial void OnRegisterServerChanging(global::System.String value);
         partial void OnRegisterServerChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Boolean IsReadOnly
+        {
+            get
+            {
+                return _IsReadOnly;
+            }
+            set
+            {
+                OnIsReadOnlyChanging(value);
+                ReportPropertyChanging("IsReadOnly");
+                _IsReadOnly = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("IsReadOnly");
+                OnIsReadOnlyChanged();
+            }
+        }
+        private global::System.Boolean _IsReadOnly;
+        partial void OnIsReadOnlyChanging(global::System.Boolean value);
+        partial void OnIsReadOnlyChanged();
 
         #endregion
     

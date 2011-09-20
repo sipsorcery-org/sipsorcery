@@ -5,6 +5,7 @@ using System.Data;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
+using SIPSorcery.SIP;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -19,6 +20,7 @@ namespace SIPSorcery.Entities
 
         private static string m_disabledProviderServerPattern = AppState.GetConfigSetting("DisabledProviderServersPattern");
         private static string m_customerConfirmLink = AppState.GetConfigSetting("CustomerConfirmLink");
+        private static string m_domainForProviderContact = AppState.GetConfigSetting("DomainForProviderContact") ?? "sipsorcery.com";
 
         private const string NEW_ACCOUNT_EMAIL_BODY =
             "Hi {0},\r\n\r\n" +
@@ -168,7 +170,7 @@ namespace SIPSorcery.Entities
                         }
                         else
                         {
-                           return "No matching customer record could be found. Please check that you entered the confirmation URL correctly.";
+                            return "No matching customer record could be found. Please check that you entered the confirmation URL correctly.";
                         }
                     }
                 }
@@ -203,31 +205,40 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for GetSIPAccounts.");
             }
 
-            return new SIPSorceryEntities().SIPAccounts.Where(x => x.Owner == authUser);
+            return new SIPSorceryEntities().SIPAccounts.Where(x => x.Owner == authUser.ToLower());
         }
 
-        public void InsertSIPAccount(string authUser, SIPAccount sipAccount)
+        public string InsertSIPAccount(string authUser, SIPAccount sipAccount)
         {
             if (authUser.IsNullOrBlank())
             {
                 throw new ArgumentException("An authenticated user is required for InsertSIPAccount.");
             }
 
-            string validationError = SIPAccount.Validate(sipAccount);
-            if (validationError != null)
-            {
-                throw new ApplicationException(validationError);
-            }
-
-            sipAccount.Owner = authUser;
+            sipAccount.Owner = authUser.ToLower();
             sipAccount.Inserted = DateTimeOffset.UtcNow.ToString("o");
             sipAccount.IsAdminDisabled = false;
             sipAccount.AdminDisabledReason = null;
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
+                if (sipAccount.SIPDomain.IsNullOrBlank())
+                {
+                    // Get default domain name.
+                    string defaultDomain = sipSorceryEntities.SIPDomains.Where(x => x.AliasList.Contains("local")).Select(y => y.Domain).First();
+                    sipAccount.SIPDomain = defaultDomain;
+                }
+
+                string validationError = SIPAccount.Validate(sipAccount);
+                if (validationError != null)
+                {
+                    throw new ApplicationException(validationError);
+                }
+
                 sipSorceryEntities.SIPAccounts.AddObject(sipAccount);
                 sipSorceryEntities.SaveChanges();
+
+                return sipAccount.ID;
             }
         }
 
@@ -246,7 +257,7 @@ namespace SIPSorcery.Entities
                 {
                     throw new ApplicationException("The SIP account to update could not be found.");
                 }
-                else if (existingAccount.Owner != authUser)
+                else if (existingAccount.Owner != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to update the SIP Account.");
                 }
@@ -282,7 +293,7 @@ namespace SIPSorcery.Entities
                 {
                     throw new ApplicationException("The SIP account to delete could not be found.");
                 }
-                else if (existingAccount.Owner != authUser)
+                else if (existingAccount.Owner != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to delete the SIP Account.");
                 }
@@ -299,7 +310,7 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for GetSIPRegistrarBindings.");
             }
 
-            return new SIPSorceryEntities().SIPRegistrarBindings.Where(x => x.Owner == authUser);
+            return new SIPSorceryEntities().SIPRegistrarBindings.Where(x => x.Owner == authUser.ToLower());
         }
 
         #endregion
@@ -313,7 +324,7 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for GetSIPProviders.");
             }
 
-            return new SIPSorceryEntities().SIPProviders.Where(x => x.Owner == authUser);
+            return new SIPSorceryEntities().SIPProviders.Where(x => x.Owner == authUser.ToLower());
         }
 
         public void InsertSIPProvider(string authUser, SIPProvider sipProvider)
@@ -325,25 +336,54 @@ namespace SIPSorcery.Entities
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                string serviceLevel = (from cust in sipSorceryEntities.Customers where cust.Name == authUser select cust.ServiceLevel).FirstOrDefault();
+                string serviceLevel = (from cust in sipSorceryEntities.Customers where cust.Name == authUser.ToLower() select cust.ServiceLevel).FirstOrDefault();
 
                 if (!serviceLevel.IsNullOrBlank() && serviceLevel.ToLower() == CustomerServiceLevels.Free.ToString().ToLower())
                 {
                     // Check the number of SIP providers is within limits.
-                    if ((from provider in sipSorceryEntities.SIPProviders where provider.Owner == authUser select provider).Count() >= PROVIDER_COUNT_FREE_SERVICE)
+                    if ((from provider in sipSorceryEntities.SIPProviders
+                         where provider.Owner.ToLower() == authUser.ToLower() && !provider.IsReadOnly
+                         select provider).Count() >= PROVIDER_COUNT_FREE_SERVICE)
                     {
-                        throw new ApplicationException("The SIP provider cannot be added as your existing SIP provider count has reached the allowed limit for your service level.");
+                        throw new ApplicationException("The SIP Provider cannot be added. You are limited to " + PROVIDER_COUNT_FREE_SERVICE + " SIP Provider on a Free account. Please upgrade to a Premium service if you wish to create additional SIP Providers.");
                     }
                 }
+
+                if (sipProvider.RegisterEnabled)
+                {
+                    if (sipProvider.RegisterContact.IsNullOrBlank())
+                    {
+                        sipProvider.RegisterContact = "sip:" + authUser.ToLower() + "@" + m_domainForProviderContact;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            sipProvider.RegisterContact = SIPURI.ParseSIPURIRelaxed(sipProvider.RegisterContact.Trim()).ToString();
+                        }
+                        catch (Exception sipURIExcp)
+                        {
+                            throw new ApplicationException(sipURIExcp.Message);
+                        }
+                    }
+
+                    if (sipProvider.RegisterExpiry == null || sipProvider.RegisterExpiry < SIPProvider.REGISTER_MINIMUM_EXPIRY || sipProvider.RegisterExpiry > SIPProvider.REGISTER_MAXIMUM_EXPIRY)
+                    {
+                        sipProvider.RegisterExpiry = SIPProvider.REGISTER_DEFAULT_EXPIRY;
+                    }
+                }
+
+                sipProvider.ID = Guid.NewGuid().ToString();
+                sipProvider.Owner = authUser.ToLower();
+                sipProvider.Inserted = DateTimeOffset.UtcNow.ToString("o");
+                sipProvider.LastUpdate = DateTimeOffset.UtcNow.ToString("o");
+                sipProvider.RegisterAdminEnabled = true;
 
                 string validationError = SIPProvider.Validate(sipProvider);
                 if (validationError != null)
                 {
                     throw new ApplicationException(validationError);
                 }
-
-                sipProvider.Owner = authUser;
-                sipProvider.Inserted = DateTimeOffset.UtcNow.ToString("o");
 
                 sipSorceryEntities.SIPProviders.AddObject(sipProvider);
                 sipSorceryEntities.SaveChanges();
@@ -369,9 +409,13 @@ namespace SIPSorcery.Entities
                 {
                     throw new ApplicationException("The SIP provider to update could not be found.");
                 }
-                else if (existingAccount.Owner != authUser)
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to update the SIP Provider.");
+                }
+                else if (existingAccount.IsReadOnly)
+                {
+                    throw new ApplicationException("This SIP Provider is read-only. Please upgrade to a Premium service to enable it.");
                 }
 
                 existingAccount.CustomHeaders = sipProvider.CustomHeaders;
@@ -415,7 +459,7 @@ namespace SIPSorcery.Entities
                 {
                     throw new ApplicationException("The SIP Provider to delete could not be found.");
                 }
-                else if (existingAccount.Owner != authUser)
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to delete the SIP Provider.");
                 }
@@ -432,10 +476,163 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for GetSIPProviderBindings.");
             }
 
-            return new SIPSorceryEntities().SIPProviderBindings.Where(x => x.Owner == authUser);
+            return new SIPSorceryEntities().SIPProviderBindings.Where(x => x.Owner.ToLower() == authUser.ToLower());
         }
 
         #endregion
+
+        #region SIP Dial Plan
+
+        public IQueryable<SIPDialPlan> GetSIPSIPDialPlans(string authUser)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetSIPSIPDialPlans.");
+            }
+
+            return new SIPSorceryEntities().SIPDialPlans.Where(x => x.Owner == authUser.ToLower());
+        }
+
+        public void InsertSIPDialPlan(string authUser, SIPDialPlan sipDialPlan)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for InsertSIPDialPlan.");
+            }
+
+            //string validationError = SIPDialPlan.Validate(sipDialPlan);
+            //if (validationError != null)
+            //{
+            //    throw new ApplicationException(validationError);
+            //}
+
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                string serviceLevel = (from cust in sipSorceryEntities.Customers where cust.Name == authUser.ToLower() select cust.ServiceLevel).FirstOrDefault();
+
+                if (!serviceLevel.IsNullOrBlank() && serviceLevel.ToLower() == CustomerServiceLevels.Free.ToString().ToLower())
+                {
+                    // Check the number of Dial Plans is within limits.
+                    if ((from dialPlan in sipSorceryEntities.SIPDialPlans
+                         where dialPlan.Owner == authUser.ToLower() && !dialPlan.IsReadOnly
+                         select dialPlan).Count() >= DIALPLAN_COUNT_FREE_SERVICE)
+                    {
+                        throw new ApplicationException("The Dial Plan cannot be added. You are limited to " + DIALPLAN_COUNT_FREE_SERVICE + " dial plan on a Free account. Please upgrade to a Premium service if you wish to create additional dial plans.");
+                    }
+                }
+
+                sipDialPlan.ID = Guid.NewGuid().ToString();
+                sipDialPlan.Owner = authUser.ToLower();
+                sipDialPlan.Inserted = DateTimeOffset.UtcNow.ToString("o");
+                sipDialPlan.LastUpdate = DateTimeOffset.UtcNow.ToString("o");
+                sipDialPlan.MaxExecutionCount = SIPDialPlan.DEFAULT_MAXIMUM_EXECUTION_COUNT;
+
+                if (sipDialPlan.ScriptType == SIPDialPlanScriptTypesEnum.TelisWizard)
+                {
+                    // Set the default script.
+                    sipDialPlan.DialPlanScript = "require 'teliswizard'";
+
+                    // Create a new SIP dialplan options record.
+                    SIPDialplanOption options = sipSorceryEntities.SIPDialplanOptions.CreateObject();
+                    options.ID = Guid.NewGuid().ToString();
+                    options.Owner = sipDialPlan.Owner;
+                    options.DialPlanID = sipDialPlan.ID;
+                    sipSorceryEntities.SIPDialplanOptions.AddObject(options);
+                }
+                if (sipDialPlan.ScriptType == SIPDialPlanScriptTypesEnum.SimpleWizard)
+                {
+                    // Set the default script.
+                    sipDialPlan.DialPlanScript = "require 'simplewizard'";
+                }
+
+                sipSorceryEntities.SIPDialPlans.AddObject(sipDialPlan);
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void UpdateSIPDialPlan(string authUser, SIPDialPlan sipDialPlan)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for UpdateSIPDialPlan.");
+            }
+
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlan.ID select dp).FirstOrDefault();
+
+                if (existingAccount == null)
+                {
+                    throw new ApplicationException("The SIP Dial Plan to update could not be found.");
+                }
+                else if (existingAccount.Owner != authUser.ToLower())
+                {
+                    throw new ApplicationException("Not authorised to update the SIP Dial Plan.");
+                }
+                else if (existingAccount.IsReadOnly)
+                {
+                    throw new ApplicationException("This Dial Plan is read-only. Please upgrade to a Premium service to enable it.");
+                }
+
+                existingAccount.DialPlanScript = sipDialPlan.DialPlanScript;
+                existingAccount.LastUpdate = DateTimeOffset.UtcNow.ToString("o");
+                existingAccount.TraceEmailAddress = sipDialPlan.TraceEmailAddress;
+                existingAccount.ScriptTypeDescription = sipDialPlan.ScriptTypeDescription;
+                existingAccount.AcceptNonInvite = sipDialPlan.AcceptNonInvite;
+
+                if (existingAccount.DialPlanName != sipDialPlan.DialPlanName)
+                {
+                    // Need to update the SIP accounts using the dial plan.
+                    string dialPlanName = existingAccount.DialPlanName;
+                    var sipAccounts = (from sa in sipSorceryEntities.SIPAccounts where sa.OutDialPlanName == dialPlanName || sa.InDialPlanName == dialPlanName select sa).ToList();
+                    foreach (SIPAccount sipAccount in sipAccounts)
+                    {
+                        if (sipAccount.InDialPlanName == dialPlanName)
+                        {
+                            sipAccount.InDialPlanName = sipDialPlan.DialPlanName;
+                        }
+
+                        if (sipAccount.OutDialPlanName == dialPlanName)
+                        {
+                            sipAccount.OutDialPlanName = sipDialPlan.DialPlanName;
+                        }
+                    }
+
+                    existingAccount.DialPlanName = sipDialPlan.DialPlanName;
+                }
+                //string validationError = SIPDialPlan.Validate(existingAccount);
+                //if (validationError != null)
+                //{
+                //    throw new ApplicationException(validationError);
+                //}
+
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void DeleteSIPDialPlan(string authUser, SIPDialPlan sipDialPlan)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlan.ID select dp).FirstOrDefault();
+
+                if (existingAccount == null)
+                {
+                    throw new ApplicationException("The SIP Dial Plan to delete could not be found.");
+                }
+                else if (existingAccount.Owner != authUser.ToLower())
+                {
+                    throw new ApplicationException("Not authorised to delete the SIP Dial Plan.");
+                }
+
+                sipSorceryEntities.SIPDialPlans.DeleteObject(existingAccount);
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        #endregion
+
+        #region Simple Wizard Dial Plan Rules.
 
         public IQueryable<SimpleWizardDialPlanRule> GetSimpleDialPlanWizardRules(string authUser)
         {
@@ -444,7 +641,7 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for GetSimpleDialPlanWizardRules.");
             }
 
-            return new SIPSorceryEntities().SimpleWizardDialPlanRules.Where(x => x.Owner == authUser);
+            return new SIPSorceryEntities().SimpleWizardDialPlanRules.Where(x => x.Owner == authUser.ToLower());
         }
 
         public void InsertSimplWizardeDialPlanRule(string authUser, SimpleWizardDialPlanRule rule)
@@ -454,7 +651,7 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for InsertSimplWizardeDialPlanRule.");
             }
 
-            rule.Owner = authUser;
+            rule.Owner = authUser.ToLower();
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
@@ -488,13 +685,13 @@ namespace SIPSorcery.Entities
                 {
                     throw new ApplicationException("The Simple Wizard rule to update could not be found.");
                 }
-                else if (existingRule.Owner != authUser)
+                else if (existingRule.Owner != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to update the Simple Wizard rule.");
                 }
 
                 existingRule.Description = rule.Description;
-                existingRule.DialString = rule.DialString;
+                existingRule.CommandString = rule.CommandString;
                 existingRule.Direction = rule.Direction;
                 existingRule.Pattern = rule.Pattern;
                 existingRule.Priority = rule.Priority;
@@ -515,7 +712,7 @@ namespace SIPSorcery.Entities
                 {
                     throw new ApplicationException("The Simple Wizard Rule to delete could not be found.");
                 }
-                else if (existingRule.Owner != authUser)
+                else if (existingRule.Owner != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to delete the Simple Wizard Rule.");
                 }
@@ -524,5 +721,7 @@ namespace SIPSorcery.Entities
                 sipSorceryEntities.SaveChanges();
             }
         }
+
+        #endregion
     }
 }

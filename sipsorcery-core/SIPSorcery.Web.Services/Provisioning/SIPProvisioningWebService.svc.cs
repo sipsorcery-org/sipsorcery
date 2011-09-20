@@ -59,7 +59,7 @@ using log4net;
 namespace SIPSorcery.Web.Services
 {
     [AspNetCompatibilityRequirements(RequirementsMode = AspNetCompatibilityRequirementsMode.Allowed)]
-    public class SIPProvisioningWebService : SIPSorceryAuthorisationService, IProvisioningService, IProvisioningServiceREST
+    public class SIPProvisioningWebService : SIPSorceryAuthorisationService, IProvisioningServiceREST
     {
         private const string NEW_ACCOUNT_EMAIL_FROM_ADDRESS = "admin@sipsorcery.com";
         private const string NEW_ACCOUNT_EMAIL_SUBJECT = "SIP Sorcery Account Confirmation";
@@ -76,6 +76,8 @@ namespace SIPSorcery.Web.Services
             "SIP Sorcery";
 
         private ILog logger = AppState.GetLogger("provisioning");
+
+        private SIPSorcery.Entities.SIPSorceryService m_service = new SIPSorcery.Entities.SIPSorceryService();
 
         private SIPAssetPersistor<SIPAccount> SIPAccountPersistor;
         private SIPAssetPersistor<SIPDialPlan> DialPlanPersistor;
@@ -458,12 +460,33 @@ namespace SIPSorcery.Web.Services
             }
         }
 
-        public SIPAccount AddSIPAccount(SIPAccount sipAccount)
+        public string AddSIPAccount(string username, string password, string domain, string avatarURL)
+        {
+             Customer customer = AuthoriseRequest();
+
+            SIPSorcery.Entities.SIPAccount sipAccount = new Entities.SIPAccount()
+            {
+                ID = Guid.NewGuid().ToString(),
+                SIPUsername = username,
+                SIPPassword = password,
+                AvatarURL = avatarURL,
+            };
+
+            if (!domain.IsNullOrBlank())
+            {
+                sipAccount.SIPDomain = domain.Trim();
+            }
+
+            return m_service.InsertSIPAccount(customer.CustomerUsername, sipAccount);
+        }
+
+        public string AddSIPAccount(SIPSorcery.Entities.SIPAccount sipAccount)
         {
             Customer customer = AuthoriseRequest();
             sipAccount.Owner = customer.CustomerUsername;
 
-            string validationError = SIPAccount.ValidateAndClean(sipAccount);
+            //string validationError = SIPAccount.ValidateAndClean(sipAccount);
+            string validationError = SIPSorcery.Entities.SIPAccount.Validate(sipAccount);
             if (validationError != null)
             {
                 logger.Warn("Validation error in AddSIPAccount for customer " + customer.CustomerUsername + ". " + validationError);
@@ -471,7 +494,8 @@ namespace SIPSorcery.Web.Services
             }
             else
             {
-                return SIPAccountPersistor.Add(sipAccount);
+                //return SIPAccountPersistor.Add(sipAccount);
+                return m_service.InsertSIPAccount(customer.CustomerUsername, sipAccount);
             }
         }
 

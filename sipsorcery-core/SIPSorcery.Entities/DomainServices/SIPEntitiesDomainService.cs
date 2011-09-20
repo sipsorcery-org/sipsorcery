@@ -28,8 +28,6 @@ namespace SIPSorcery.Entities.Services
     [EnableClientAccess(RequiresSecureEndpoint = true)]
     public class SIPEntitiesDomainService : LinqToEntitiesDomainService<SIPSorceryEntities>, IAuthentication<User>
     {
-        private const int DIALPLAN_COUNT_FREE_SERVICE = 1;  // The number of dial plans allowed on free accounts.
-
         private static ILog logger = AppState.logger;
 
         SIPSorceryService m_service = new SIPSorceryService();
@@ -161,6 +159,7 @@ namespace SIPSorcery.Entities.Services
         }
 
         [RequiresAuthentication]
+        [Query(IsDefault=true)]
         public IQueryable<SIPAccount> GetSIPAccounts()
         {
             //return this.ObjectContext.SIPAccounts.Where(x => x.Owner == this.ServiceContext.User.Identity.Name);
@@ -240,87 +239,95 @@ namespace SIPSorcery.Entities.Services
         [RequiresAuthentication]
         public IQueryable<SIPDialPlan> GetSIPDialplans()
         {
-            return this.ObjectContext.SIPDialPlans.Where(x => x.Owner == this.ServiceContext.User.Identity.Name);
+            //return this.ObjectContext.SIPDialPlans.Where(x => x.Owner == this.ServiceContext.User.Identity.Name);
+
+            return m_service.GetSIPSIPDialPlans(this.ServiceContext.User.Identity.Name);
         }
 
         [RequiresAuthentication]
         public void InsertSIPDialplan(SIPDialPlan sipDialplan)
         {
-            string serviceLevel = (from cust in this.ObjectContext.Customers where cust.Name == this.ServiceContext.User.Identity.Name select cust.ServiceLevel).FirstOrDefault();
+            //string serviceLevel = (from cust in this.ObjectContext.Customers where cust.Name == this.ServiceContext.User.Identity.Name select cust.ServiceLevel).FirstOrDefault();
 
-            if (!serviceLevel.IsNullOrBlank() && serviceLevel.ToLower() == CustomerServiceLevels.Free.ToString().ToLower())
-            {
-                // Check the number of dialplans is within limits.
-                if ((from dialplan in this.ObjectContext.SIPDialPlans where dialplan.Owner == this.ServiceContext.User.Identity.Name select dialplan).Count() >= DIALPLAN_COUNT_FREE_SERVICE)
-                {
-                    throw new ApplicationException("The dial plan cannot be added as your existing dial plan count has reached the allowed limit for your service level."); 
-                }
-            }
+            //if (!serviceLevel.IsNullOrBlank() && serviceLevel.ToLower() == CustomerServiceLevels.Free.ToString().ToLower())
+            //{
+            //    // Check the number of dialplans is within limits.
+            //    if ((from dialplan in this.ObjectContext.SIPDialPlans where dialplan.Owner == this.ServiceContext.User.Identity.Name select dialplan).Count() >= DIALPLAN_COUNT_FREE_SERVICE)
+            //    {
+            //        throw new ApplicationException("The dial plan cannot be added as your existing dial plan count has reached the allowed limit for your service level."); 
+            //    }
+            //}
 
-            sipDialplan.Owner = this.ServiceContext.User.Identity.Name;
-            sipDialplan.Inserted = DateTime.UtcNow.ToString("o");
-            sipDialplan.MaxExecutionCount = SIPDialPlan.DEFAULT_MAXIMUM_EXECUTION_COUNT;
+            //sipDialplan.Owner = this.ServiceContext.User.Identity.Name;
+            //sipDialplan.Inserted = DateTime.UtcNow.ToString("o");
+            //sipDialplan.MaxExecutionCount = SIPDialPlan.DEFAULT_MAXIMUM_EXECUTION_COUNT;
 
-            if (sipDialplan.ScriptType == SIPDialPlanScriptTypesEnum.TelisWizard)
-            {
-                // Set the default script.
-                sipDialplan.DialPlanScript = "require 'teliswizard'";
-            }
-            if (sipDialplan.ScriptType == SIPDialPlanScriptTypesEnum.SimpleWizard)
-            {
-                // Set the default script.
-                sipDialplan.DialPlanScript = "require 'simplewizard'";
-            }
+            //if (sipDialplan.ScriptType == SIPDialPlanScriptTypesEnum.TelisWizard)
+            //{
+            //    // Set the default script.
+            //    sipDialplan.DialPlanScript = "require 'teliswizard'";
+            //}
+            //if (sipDialplan.ScriptType == SIPDialPlanScriptTypesEnum.SimpleWizard)
+            //{
+            //    // Set the default script.
+            //    sipDialplan.DialPlanScript = "require 'simplewizard'";
+            //}
 
-            if ((sipDialplan.EntityState != EntityState.Detached))
-            {
-                this.ObjectContext.ObjectStateManager.ChangeObjectState(sipDialplan, EntityState.Added);
-            }
-            else
-            {
-                this.ObjectContext.SIPDialPlans.AddObject(sipDialplan);
-            }
+            //if ((sipDialplan.EntityState != EntityState.Detached))
+            //{
+            //    this.ObjectContext.ObjectStateManager.ChangeObjectState(sipDialplan, EntityState.Added);
+            //}
+            //else
+            //{
+            //    this.ObjectContext.SIPDialPlans.AddObject(sipDialplan);
+            //}
 
-            if (sipDialplan.ScriptType == SIPDialPlanScriptTypesEnum.TelisWizard)
-            {
-                // Create a new SIP dialplan options record.
-                SIPDialplanOption options = this.ObjectContext.SIPDialplanOptions.CreateObject();
-                options.ID = Guid.NewGuid().ToString();
-                options.Owner = sipDialplan.Owner;
-                options.DialPlanID = sipDialplan.ID;
-                this.ObjectContext.SIPDialplanOptions.AddObject(options);
-            }
+            //if (sipDialplan.ScriptType == SIPDialPlanScriptTypesEnum.TelisWizard)
+            //{
+            //    // Create a new SIP dialplan options record.
+            //    SIPDialplanOption options = this.ObjectContext.SIPDialplanOptions.CreateObject();
+            //    options.ID = Guid.NewGuid().ToString();
+            //    options.Owner = sipDialplan.Owner;
+            //    options.DialPlanID = sipDialplan.ID;
+            //    this.ObjectContext.SIPDialplanOptions.AddObject(options);
+            //}
+
+            m_service.InsertSIPDialPlan(this.ServiceContext.User.Identity.Name, sipDialplan);
         }
 
         [RequiresAuthentication]
         public void UpdateSIPDialplan(SIPDialPlan currentSIPDialplan)
         {
-            if (currentSIPDialplan.Owner != this.ServiceContext.User.Identity.Name)
-            {
-                throw new ApplicationException("You are not authorised to update this record.");
-            }
-            else
-            {
-                currentSIPDialplan.LastUpdate = DateTimeOffset.UtcNow.ToString("o");
-                this.ObjectContext.SIPDialPlans.AttachAsModified(currentSIPDialplan, this.ChangeSet.GetOriginal(currentSIPDialplan));
-            }
+            //if (currentSIPDialplan.Owner != this.ServiceContext.User.Identity.Name)
+            //{
+            //    throw new ApplicationException("You are not authorised to update this record.");
+            //}
+            //else
+            //{
+            //    currentSIPDialplan.LastUpdate = DateTimeOffset.UtcNow.ToString("o");
+            //    this.ObjectContext.SIPDialPlans.AttachAsModified(currentSIPDialplan, this.ChangeSet.GetOriginal(currentSIPDialplan));
+            //}
+
+            m_service.UpdateSIPDialPlan(this.ServiceContext.User.Identity.Name, currentSIPDialplan);
         }
 
         [RequiresAuthentication]
         public void DeleteSIPDialplan(SIPDialPlan sipDialplan)
         {
-            if (sipDialplan.Owner != this.ServiceContext.User.Identity.Name)
-            {
-                throw new ApplicationException("You are not authorised to delete this record.");
-            }
-            else
-            {
-                if ((sipDialplan.EntityState == EntityState.Detached))
-                {
-                    this.ObjectContext.SIPDialPlans.Attach(sipDialplan);
-                }
-                this.ObjectContext.SIPDialPlans.DeleteObject(sipDialplan);
-            }
+            //if (sipDialplan.Owner != this.ServiceContext.User.Identity.Name)
+            //{
+            //    throw new ApplicationException("You are not authorised to delete this record.");
+            //}
+            //else
+            //{
+            //    if ((sipDialplan.EntityState == EntityState.Detached))
+            //    {
+            //        this.ObjectContext.SIPDialPlans.Attach(sipDialplan);
+            //    }
+            //    this.ObjectContext.SIPDialPlans.DeleteObject(sipDialplan);
+            //}
+
+            m_service.DeleteSIPDialPlan(this.ServiceContext.User.Identity.Name, sipDialplan);
         }
 
         [RequiresAuthentication]

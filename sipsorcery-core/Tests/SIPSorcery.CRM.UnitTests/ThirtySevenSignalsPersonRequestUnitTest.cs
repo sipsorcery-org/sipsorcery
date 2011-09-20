@@ -78,5 +78,48 @@ namespace SIPSorcery.CRM.UnitTests
             Assert.AreEqual(1, people.PersonList.Count, "An unexpected number of results were returned.");
             Assert.AreEqual(people.PersonList[0].ID, 59708303, "The ID of the person returned for a name search was not expected.");
         }
+
+        [TestMethod]
+        public void GetPeopleByNameDoesntExistTest()
+        {
+            PersonRequest request = new PersonRequest(m_highriseURL, m_highriseAuthToken);
+            People people = request.GetByName("I Dont Exist");
+
+            Assert.IsNull(people);
+        }
+
+        [TestMethod]
+        public void GetPeopleByCustomFieldExistTest()
+        {
+            PersonRequest request = new PersonRequest(m_highriseURL, m_highriseAuthToken);
+            People people = request.GetByCustomField("sip_address", "aaronip500@sipsorcery.com");
+
+            Assert.IsNotNull(people, "The people should not have been null.");
+            Assert.AreEqual(1, people.PersonList.Count, "An unexpected number of results were returned.");
+            Assert.AreEqual(people.PersonList[0].ID, 59708319, "The ID of the person returned for a name search was not expected.");
+        }
+
+        [TestMethod]
+        public void GetPeopleByCustomFieldPrefixSearchExistTest()
+        {
+            PersonRequest request = new PersonRequest(m_highriseURL, m_highriseAuthToken);
+            People people = request.GetByCustomField("sip_address", "aaronip500");
+
+            Assert.IsNotNull(people, "The people should not have been null.");
+            Assert.AreEqual(1, people.PersonList.Count, "An unexpected number of results were returned.");
+            Assert.AreEqual(people.PersonList[0].ID, 59708319, "The ID of the person returned for a name search was not expected.");
+        }
+
+        [TestMethod]
+        [Ignore]   // Did not manage to get a multi-criteria search to return any results.
+        public void GetPeopleByCustomSearchCriteriaTest()
+        {
+            PersonRequest request = new PersonRequest(m_highriseURL, m_highriseAuthToken);
+            People people = request.GetByCustomSearch("criteria[sip_address]=aaronip500@sipsorcery.com&criteria[phone]=5556");
+
+            Assert.IsNotNull(people, "The people should not have been null.");
+            Assert.AreEqual(1, people.PersonList.Count, "An unexpected number of results were returned.");
+            Assert.AreEqual(people.PersonList[0].ID, 59708319, "The ID of the person returned for a name search was not expected.");
+        }
     }
 }

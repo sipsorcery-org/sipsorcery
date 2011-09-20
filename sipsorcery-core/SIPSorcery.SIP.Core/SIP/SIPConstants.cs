@@ -444,7 +444,9 @@ namespace SIPSorcery.SIP
             if (!result.IsNullOrBlank())
             {
                 result = result.Replace("%3B", ";");
+                result = result.Replace("%3b", ";");
                 result = result.Replace("%3D", "=");
+                result = result.Replace("%3d", "=");
             }
             return result;
         }

@@ -58,6 +58,8 @@
     <Compile Include="Entities\Customer.shared.cs" />
     <Compile Include="DomainServices\SIPEntitiesDomainService.cs" />
     <Compile Include="Entities\SIPDialPlanLookup.shared.cs" />
+    <Compile Include="Enums\SimpleWizardCommandTypes.shared.cs" />
+    <Compile Include="Enums\CRMAccountTypes.shared.cs" />
     <Compile Include="Enums\SimpleWizardRuleTypes.shared.cs" />
     <Compile Include="Enums\CustomerServiceLevels.shared.cs" />
     <Compile Include="Enums\SIPDialPlanLookupTypes.shared.cs" />

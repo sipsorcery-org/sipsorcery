@@ -87,21 +87,22 @@ namespace SIPSorcery.CRM.UnitTests
                 "  <title>Mr</title> " +
                 "  <updated-at type=\"datetime\">2011-01-29T01:10:39Z</updated-at> " +
                 "  <visible-to>Everyone</visible-to> " +
+                " <avatar-url>https://x.highrisehq.com/avatars/person/1234/5678-large.png</avatar-url>" +
                 " <contact-data>" +
-                " <phone-numbers type=\"array\">" +
-                " <phone-number>" +
-                "  <id type=\"integer\">51564454</id> " +
-                "  <location>Work</location> " +
-                "  <number>12345678</number> " +
-                "  </phone-number>" +
+                "  <phone-numbers type=\"array\">" +
+                "   <phone-number>" +
+                "    <id type=\"integer\">51564454</id> " +
+                "    <location>Work</location> " +
+                "    <number>12345678</number> " +
+                "    </phone-number>" +
                 "  </phone-numbers>" +
                 "  <addresses type=\"array\" /> " +
                 "  <web-addresses type=\"array\" />" +
                 "  <email-addresses type=\"array\" /> " +
                 "  <instant-messengers type=\"array\" /> " +
                 "  <twitter-accounts type=\"array\" />" +
-                "  </contact-data>" +
-                "  </person>";
+                " </contact-data>" +
+                "</person>";
 
             personXML = Regex.Replace(personXML, "nil=\"true\"", "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:nil=\"true\"");
 
@@ -126,6 +127,7 @@ namespace SIPSorcery.CRM.UnitTests
             Assert.AreEqual(person.UpdatedAtStr, "2011-01-29T01:10:39Z", "The person's updated at date string was not deserialised correctly.");
             Assert.AreEqual(person.UpdatedAt.ToUniversalTime().ToString(Person.DATETIME_STRING_FORMAT), "2011-01-29T01:10:39Z", "The person's updated at datetime offset was not deserialised correctly.");
             Assert.AreEqual(person.VisibleTo, "Everyone", "The person's visible to value was not deserialised correctly.");
+            Assert.AreEqual(person.AvatarURL, "https://x.highrisehq.com/avatars/person/1234/5678-large.png", "The person's avatar URL value was not deserialised correctly.");
             Assert.IsNull(person.OwnerID, "The person's owner id was not deserialised correctly.");
             Assert.IsNull(person.GroupID, "The person's group id was not deserialised correctly.");
             Assert.IsNotNull(person.ContactData, "The person's contact data was not deserialised correctly.");
@@ -233,14 +235,14 @@ namespace SIPSorcery.CRM.UnitTests
             Assert.AreEqual(57644825, people.PersonList[0].ID, "The person's deserialised id was incorrect.");
         }
 
-        [TestMethod]
-        public void SetAvatarURLTest()
-        {
-            string url = "https://somebiz.highrisehq.com";
-            Person person = new Person() { ID = 12345678 };
-            person.SetAvatarURL(url);
+        //[TestMethod]
+        //public void SetAvatarURLTest()
+        //{
+        //    string url = "https://somebiz.highrisehq.com";
+        //    Person person = new Person() { ID = 12345678 };
+        //    person.SetAvatarURL(url);
 
-            Assert.AreEqual(String.Format(Person.AVATAR_URL_FORMAT, url, 1234, 5678), person.AvatarURL, "The person's avatar URL was not set correctly.");
-        }
+        //    Assert.AreEqual(String.Format(Person.AVATAR_URL_FORMAT, url, 1234, 5678), person.AvatarURL, "The person's avatar URL was not set correctly.");
+        //}
     }
 }

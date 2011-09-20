@@ -59,10 +59,10 @@ namespace SIPSorcery.CRM.ThirtySevenSignals
         {
             Person person = base.GetItem(url);
 
-            if (person != null)
-            {
-                person.SetAvatarURL(BaseUrl);
-            }
+            //if (person != null)
+            //{
+            //    person.SetAvatarURL(BaseUrl);
+            //}
 
             return person;
         }
@@ -73,10 +73,10 @@ namespace SIPSorcery.CRM.ThirtySevenSignals
 
             if (people != null && people.PersonList.Count > 0)
             {
-                foreach (Person person in people.PersonList)
-                {
-                    person.SetAvatarURL(BaseUrl);
-                }
+                //foreach (Person person in people.PersonList)
+                //{
+                //    person.SetAvatarURL(BaseUrl);
+                //}
             }
 
             return people;

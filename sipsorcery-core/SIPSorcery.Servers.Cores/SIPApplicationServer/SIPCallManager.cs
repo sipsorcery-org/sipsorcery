@@ -434,7 +434,7 @@ namespace SIPSorcery.Servers
                             null,
                             null,
                             null,
-                            null);
+                            null, null);
                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, null, this);
 
                     #endregion
@@ -500,7 +500,8 @@ namespace SIPSorcery.Servers
                                         GetSIPProviders_External(p => p.Owner == owner, null, 0, Int32.MaxValue),
                                         m_traceDirectory,
                                         (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.NetworkId : null,
-                                        customer);
+                                        customer,
+                                        m_dialPlanEngine);
                                     //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer);};
                                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
                                 }
@@ -537,7 +538,8 @@ namespace SIPSorcery.Servers
                                             null,
                                             m_traceDirectory,
                                             null,
-                                            customer);
+                                            customer,
+                                            null);
                                     //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
                                 }
@@ -568,8 +570,8 @@ namespace SIPSorcery.Servers
 
                 //if (wasExecutionCountIncremented)
                 //{
-                    //DecrementDialPlanExecutionCount(dialPlan, customer.Id);
-                   // DecrementCustomerExecutionCount(customer);
+                //DecrementDialPlanExecutionCount(dialPlan, customer.Id);
+                // DecrementCustomerExecutionCount(customer);
                 //}
             }
         }
@@ -644,7 +646,7 @@ namespace SIPSorcery.Servers
                                     GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
                                     m_traceDirectory,
                                     null,
-                                    customer);
+                                    customer, null);
                             //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                             m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
 
@@ -666,8 +668,8 @@ namespace SIPSorcery.Servers
 
                 //if (wasExecutionCountIncremented)
                 //{
-                    //DecrementDialPlanExecutionCount(dialPlan, customer.Id, originalExecutionCount);
-                    //DecrementCustomerExecutionCount(customer);
+                //DecrementDialPlanExecutionCount(dialPlan, customer.Id, originalExecutionCount);
+                //DecrementCustomerExecutionCount(customer);
                 //}
 
                 return "Sorry there was an unexpected error, the callback was not initiated.";
@@ -715,7 +717,7 @@ namespace SIPSorcery.Servers
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Blind transfer using dialplan " + dialplanName + " rejected for " + username + " and " + referTo.ToString() + ", user account is suspended.", username));
                     throw new ApplicationException("The user's account is suspended, the blind transfer was not initiated.");
                 }
-                
+
                 else
                 {
                     dialPlan = GetDialPlan_External(d => d.Owner == username && d.DialPlanName == dialplanName);
@@ -750,7 +752,8 @@ namespace SIPSorcery.Servers
                                     GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
                                     m_traceDirectory,
                                     null,
-                                    customer);
+                                    customer, 
+                                    null);
                             //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                             m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
 
@@ -769,8 +772,8 @@ namespace SIPSorcery.Servers
 
                 //if (wasExecutionCountIncremented)
                 //{
-                    //DecrementDialPlanExecutionCount(dialPlan, customer.Id, originalExecutionCount);
-                    //DecrementCustomerExecutionCount(customer);
+                //DecrementDialPlanExecutionCount(dialPlan, customer.Id, originalExecutionCount);
+                //DecrementCustomerExecutionCount(customer);
                 //}
 
                 throw;
@@ -802,7 +805,12 @@ namespace SIPSorcery.Servers
                 else
                 {
                     dialPlan = GetDialPlan_External(d => d.Owner == owner && d.DialPlanName == dialPlanName);
-                    if (!IsDialPlanExecutionAllowed(dialPlan, customer))
+                    if (dialPlan != null && dialPlan.IsReadOnly)
+                    {
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for read only dialplan " + dialPlanName + ". Upgrade to a Premium service to enable.", owner));
+                        uas.Reject(SIPResponseStatusCodesEnum.PaymentRequired, "Dial plan is readonly, upgrade to Premium service", null);
+                    }
+                    else if (!IsDialPlanExecutionAllowed(dialPlan, customer))
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of dial plan " + dialPlanName + " was not processed as maximum execution count has been reached.", owner));
                         uas.Reject(SIPResponseStatusCodesEnum.TemporarilyUnavailable, "Dial plan execution exceeded maximum allowed", null);

@@ -239,7 +239,7 @@ namespace SIPSorcery.Servers
         {
             //logger.Debug("UpdateBinding " + bindingURI.ToString() + ".");
 
-            int maxAllowedExpiry = m_userAgentConfigs.GetMaxAllowedExpiry(userAgent);
+            int maxAllowedExpiry = (m_userAgentConfigs != null) ? m_userAgentConfigs.GetMaxAllowedExpiry(userAgent) : SIPUserAgentConfiguration.DEFAULT_MAX_EXPIRY_SECONDS;
             responseMessage = null;
             string sipAccountAOR = sipAccount.SIPUsername + "@" + sipAccount.SIPDomain;
             responseStatus = SIPResponseStatusCodesEnum.Ok;

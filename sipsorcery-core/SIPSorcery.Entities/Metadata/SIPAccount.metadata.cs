@@ -20,6 +20,7 @@ namespace SIPSorcery.Entities
 
         internal class SIPAccountMetadata
         {
+            [Key]
             [Editable(false, AllowInitialValue = true)]
             public string ID;
 

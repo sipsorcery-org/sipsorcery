@@ -185,7 +185,7 @@
     <Compile Include="SIPApplicationServer\SIPDialogueManager.cs" />
     <Compile Include="SIPNotifier\NotifierSubscriptionsManager.cs" />
     <Compile Include="SIPNotifier\SIPNotifierCore.cs" />
-    <Compile Include="SIPWatchTower\SIPAppServerManager.cs" />
+    <Compile Include="SIPWatchTower\SIPAppServerManagerv2.cs" />
     <Compile Include="SIPNotifier\SIPNotifyManager.cs" />
     <Compile Include="SIPMonitor\SIPMonitorClientManager.cs" />
     <Compile Include="SIPMonitor\SIPMonitorMediator.cs" />
@@ -206,6 +206,7 @@
     <Compile Include="SIPProxy\SIPProxyCore.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="SIPWatchTower\SIPAppServerWorker.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

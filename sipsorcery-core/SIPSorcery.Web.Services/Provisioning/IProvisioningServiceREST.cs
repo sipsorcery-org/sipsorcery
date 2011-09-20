@@ -37,6 +37,10 @@ namespace SIPSorcery.Web.Services {
         List<SIPAccount> GetSIPAccounts(string whereExpression, int offset, int count);
 
         [OperationContract]
+        [WebGet(UriTemplate = "sipaccount/add?username={username}&password={password}&domain={domain}&avatarurl={avatarurl}", ResponseFormat = WebMessageFormat.Json)]
+        string AddSIPAccount(string username, string password, string domain, string avatarURL);
+
+        [OperationContract]
         [WebGet(UriTemplate = "getsipregistrarbindingscount?whereexpression={whereexpression}")]
         int GetSIPRegistrarBindingsCount(string whereExpression);
 

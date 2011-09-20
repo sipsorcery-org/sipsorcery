@@ -43,7 +43,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
+using System.Web;
 using SIPSorcery.Sys;
+using log4net;
 
 namespace SIPSorcery.CRM.ThirtySevenSignals
 {
@@ -55,6 +57,9 @@ namespace SIPSorcery.CRM.ThirtySevenSignals
     public class HighriseRequest<S, T>
     {
         private const int MAX_HTTP_REQUEST_TIMEOUT = 10;
+        private const string NO_RESULTS_RESPONSE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<nil-classes type=\"array\"/>\n";   // There's got to be a better way. The XML deserialiser throws an exception when it gets this.
+
+        private static ILog logger = AppState.logger;
 
         private string m_urlNoun;
         private string m_authToken;
@@ -77,6 +82,18 @@ namespace SIPSorcery.CRM.ThirtySevenSignals
         public T GetByPhoneNumber(string phoneNumber)
         {
             string requestURL = BaseUrl + "/" + m_urlNoun + "/search.xml?" + Uri.EscapeDataString("criteria[phone]=" + phoneNumber);
+            return GetList(requestURL);
+        }
+
+        public T GetByCustomField(string customField, string searchString)
+        {
+            string requestURL = BaseUrl + "/" + m_urlNoun + "/search.xml?" + Uri.EscapeDataString("criteria[" + customField + "]=" + searchString);
+            return GetList(requestURL);
+        }
+
+        public T GetByCustomSearch(string customSearch)
+        {
+            string requestURL = BaseUrl + "/" + m_urlNoun + "/search.xml?" + Uri.EscapeDataString(customSearch);
             return GetList(requestURL);
         }
 
@@ -110,9 +127,15 @@ namespace SIPSorcery.CRM.ThirtySevenSignals
 
         protected virtual T GetList(string url)
         {
+            logger.Debug("HighRiseRequest url " + url + ".");
+
             string response = GetResponse(url);
 
-            if (!response.IsNullOrBlank())
+            if (response == NO_RESULTS_RESPONSE)
+            {
+                return default(T);
+            }
+            else if (!response.IsNullOrBlank())
             {
                 T list = default(T);
 

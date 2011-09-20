@@ -128,6 +128,13 @@ namespace SIPSorcery.Servers
         private AutoResetEvent m_registerARE = new AutoResetEvent(false);
         private RSACryptoServiceProvider m_switchbboardRSAProvider; // If available this certificate can be used to sign switchboard tokens.
 
+        public event Action<double, bool> RegisterComplete;     // Event to allow hook into get notifications about the processing time for registrations. The boolean parameter is true of the request contained an authentication header.
+
+        public int BacklogLength
+        {
+            get { return m_registerQueue.Count; }
+        }
+
         public bool Stop;
 
         public RegistrarCore(
@@ -270,6 +277,11 @@ namespace SIPSorcery.Servers
                                 RegisterResultEnum result = Register(registrarTransaction);
                                 TimeSpan duration = DateTime.Now.Subtract(startTime);
                                 FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "register result=" + result.ToString() + ", time=" + duration.TotalMilliseconds + "ms, user=" + registrarTransaction.TransactionRequest.Header.To.ToURI.User + ".", null));
+
+                                if (RegisterComplete != null)
+                                {
+                                    RegisterComplete(duration.TotalMilliseconds, registrarTransaction.TransactionRequest.Header.AuthenticationHeader != null);
+                                }
                             }
                         }
                         catch (InvalidOperationException invalidOpExcp)
@@ -333,12 +345,12 @@ namespace SIPSorcery.Servers
 
                     if (authenticationResult.ErrorResponse == SIPResponseStatusCodesEnum.Forbidden)
                     {
-                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Warn, "Forbidden " + toUser + "@" + canonicalDomain + " does not exist, " + sipRequest.Header.ProxyReceivedFrom.ToString() + ", " + sipRequest.Header.UserAgent + ".", null));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Warn, "Forbidden " + toUser + "@" + canonicalDomain + " does not exist, " + sipRequest.Header.ProxyReceivedFrom + ", " + sipRequest.Header.UserAgent + ".", null));
                         return RegisterResultEnum.Forbidden;
                     }
                     else
                     {
-                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Registrar, "Authentication required for " + toUser + "@" + canonicalDomain + " from " + sipRequest.Header.ProxyReceivedFrom.ToString() + ".", toUser));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Registrar, "Authentication required for " + toUser + "@" + canonicalDomain + " from " + sipRequest.Header.ProxyReceivedFrom + ".", toUser));
                         return RegisterResultEnum.AuthenticationRequired;
                     }
                 }
@@ -357,7 +369,7 @@ namespace SIPSorcery.Servers
 
                         SIPResponse okResponse = GetOkResponse(sipRequest);
                         registerTransaction.SendFinalResponse(okResponse);
-                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Empty registration request successful for " + toUser + "@" + canonicalDomain + " from " + sipRequest.Header.ProxyReceivedFrom.ToString() + ".", toUser));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegisterSuccess, "Empty registration request successful for " + toUser + "@" + canonicalDomain + " from " + sipRequest.Header.ProxyReceivedFrom + ".", toUser));
                     }
                     else
                     {

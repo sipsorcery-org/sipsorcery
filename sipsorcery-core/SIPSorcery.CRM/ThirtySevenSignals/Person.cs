@@ -101,12 +101,15 @@ namespace SIPSorcery.CRM.ThirtySevenSignals
         [XmlElement("contact-data")]
         public ContactData ContactData { get; set; }
 
-        [XmlIgnore]
-        public string AvatarURL { get; private set; }
+        [XmlElement("avatar-url")]
+        public string AvatarURL { get; set; }
 
-        public void SetAvatarURL(string url)
-        {
-            AvatarURL = String.Format(AVATAR_URL_FORMAT, url, (ID / 10000).ToString(), (ID % 10000).ToString());
-        }
+        //[XmlIgnore]
+        //public string AvatarURL { get; private set; }
+
+        //public void SetAvatarURL(string url)
+        //{
+        //    AvatarURL = String.Format(AVATAR_URL_FORMAT, url, (ID / 10000).ToString(), (ID % 10000).ToString());
+        //}
     }
 }
