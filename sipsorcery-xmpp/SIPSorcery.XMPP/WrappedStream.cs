@@ -130,7 +130,7 @@ namespace SIPSorcery.XMPP
         {
             if (!m_blockIO)
             {
-                //Console.WriteLine("Send => " + Encoding.UTF8.GetString(buffer, offset, count));
+                Console.WriteLine("Send => " + Encoding.UTF8.GetString(buffer, offset, count));
 
                 if (m_traceStream != null)
                 {

@@ -144,15 +144,15 @@ namespace SIPSorcery.XMPP.TestConsole
                 Timing = "0 0",
                 Connection = new SDPConnectionInformation(m_localSIPEndPoint.Address.ToString()),
                 Media = new List<SDPMediaAnnouncement>()
-                            {
-                                new SDPMediaAnnouncement(m_localSIPEndPoint.Port)
-                                {
-                                    MediaFormats = new List<SDPMediaFormat>()
-                                    {
-                                        new SDPMediaFormat(0, "PCMU", 8000)
-                                    }
-                                }
-                            },
+                {
+                    new SDPMediaAnnouncement(m_localSIPEndPoint.Port)
+                    {
+                        MediaFormats = new List<SDPMediaFormat>()
+                        {
+                            new SDPMediaFormat(0, "PCMU", 8000)
+                        }
+                    }
+                },
             };
 
             return sdp;

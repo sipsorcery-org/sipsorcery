@@ -49,7 +49,7 @@ namespace SIPSorcery.XMPP
         private static XNamespace m_sessionNS = XMPPStream.GOOGLE_SESSION_NAMESPACE;
         private static XNamespace m_phoneNS = XMPPStream.GOOGLE_PHONE_SESSION_NAMESPACE;
         private static XNamespace m_transportNS = XMPPStream.TRANSPORT_NAMESPACE;
-        protected static XNamespace JabberClientNS = XMPPStream.JABBER_NAMESPACE;
+        protected static XNamespace JabberClientNS = XMPPConstants.JABBER_NAMESPACE;
 
         private string m_destination;
         private SDP m_sdp;

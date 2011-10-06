@@ -79,6 +79,11 @@ namespace SIPSorcery.XMPP
             base.WriteElement(element);
         }
 
+        public void WriteNonIQElement(XElement element)
+        {
+            base.WriteElement(element);
+        }
+
         private void Receive(XElement element)
         {
             //logger.Debug("XMPPAuthenticatedStream ElementReceived " + element.Name + ".");
@@ -138,13 +143,6 @@ namespace SIPSorcery.XMPP
             JID = element.Element(m_bindNS + "bind").Element(m_bindNS + "jid").Value;
             logger.Debug("XMPPAuthenticatedStream JID=" + JID);
             IsBound();
-        }
-
-        public void SendMessage(string to, string message)
-        {
-            XElement messageElement = new XElement(JabberClientNS + MESSAGE_ELEMENT_NAME,
-                                            new XAttribute("to", to), new XElement(JabberClientNS + "body", message));
-            WriteElement(messageElement);
         }
     }
 }

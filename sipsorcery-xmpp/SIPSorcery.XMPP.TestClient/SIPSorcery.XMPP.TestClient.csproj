@@ -35,6 +35,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="SIPSorcery.Net, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Net.dll</HintPath>
+    </Reference>
     <Reference Include="SIPSorcery.Sys">
       <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Sys.dll</HintPath>
     </Reference>

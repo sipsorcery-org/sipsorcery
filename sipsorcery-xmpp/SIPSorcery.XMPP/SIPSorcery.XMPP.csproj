@@ -49,13 +49,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Requests\XMPPRosterRequest.cs" />
+    <Compile Include="Requests\XMPPPresenceRequest.cs" />
+    <Compile Include="Requests\XMPPJingleRequest.cs" />
+    <Compile Include="Requests\XMPPServiceDiscoveryRequest.cs" />
+    <Compile Include="Requests\XMPPMessageRequest.cs" />
     <Compile Include="SDPToJingle.cs" />
     <Compile Include="XMPPAuthenticatedStream.cs" />
+    <Compile Include="XMPPConstants.cs" />
     <Compile Include="XMPPEncryptedStream.cs" />
     <Compile Include="XMPPClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="XMPPInitialStream.cs" />
-    <Compile Include="XMPPPhoneSession.cs" />
+    <Compile Include="Requests\XMPPPhoneSession.cs" />
     <Compile Include="XMPPStream.cs" />
     <Compile Include="XMPPStreamFeature.cs" />
     <Compile Include="WrappedStream.cs" />
@@ -92,7 +98,8 @@
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>copy "$(TargetPath)" "d:\temp\sipsorcery\"</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -10,7 +10,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2010 Aaron Clauson (aaron@sipsorcery.com), Hobart, Tasmanian, Australia (www.sipsorcery.com)
+// Copyright (c) 2010 Aaron Clauson (aaron@sipsorcery.com), Hobart, Tasmania, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -111,9 +111,28 @@ namespace SIPSorcery.XMPP
             }
         }
 
-        public void SendMessage(string to, string message)
+        public XMPPJingleRequest GetJingleRequest(string to)
         {
-            m_authenticatedStream.SendMessage(to, message);
+            return new XMPPJingleRequest(m_authenticatedStream, to);
+        }
+
+        public XMPPMessageRequest GetMessageRequest(string to)
+        {
+            return new XMPPMessageRequest(m_authenticatedStream, to);
+        }
+        public XMPPPresenceRequest GetPresenceRequest()
+        {
+            return new XMPPPresenceRequest(m_authenticatedStream);
+        }
+
+        public XMPPRosterRequest GetRosterRequest()
+        {
+            return new XMPPRosterRequest(m_authenticatedStream);
+        }
+
+        public XMPPServiceDiscoveryRequest GetServiceDiscoveryRequest(string to)
+        {
+            return new XMPPServiceDiscoveryRequest(m_authenticatedStream, to);
         }
 
         public XMPPPhoneSession GetPhoneSession()

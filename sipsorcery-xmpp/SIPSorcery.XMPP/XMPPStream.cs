@@ -50,13 +50,11 @@ namespace SIPSorcery.XMPP
         public const string SASL_AUTH_ELEMENT_NAME = "auth";
         public const string BIND_ELEMENT_NAME = "bind";
         public const string IQ_ELEMENT_NAME = "iq";
-        public const string MESSAGE_ELEMENT_NAME = "message";
         public const string RESOURCE_ELEMENT_NAME = "resource";
         public const string MECHANISMS_ELEMENT_NAME = "mechanisms";
         public const string STREAM_PREFIX = "stream";
         public const string STREAM_NAMESPACE = "http://etherx.jabber.org/streams";
         public const string STREAM_PARAMS_NAMESPACE = "urn:ietf:params:xml:ns:xmpp-streams";
-        public const string JABBER_NAMESPACE = "jabber:client";
         public const string SASL_NAMESPACE = "urn:ietf:params:xml:ns:xmpp-sasl";
         public const string BIND_NAMESPACE = "urn:ietf:params:xml:ns:xmpp-bind";
         public const string GOOGLE_SESSION_NAMESPACE = "http://www.google.com/session";
@@ -73,7 +71,7 @@ namespace SIPSorcery.XMPP
 
         protected static XNamespace m_streamNS = STREAM_NAMESPACE;
         protected static XNamespace StreamParamsNS = STREAM_PARAMS_NAMESPACE;
-        protected static XNamespace JabberClientNS = JABBER_NAMESPACE;
+        protected static XNamespace JabberClientNS = XMPPConstants.JABBER_NAMESPACE;
 
         protected Stream NetworkStream;
         protected XmlWriter XmlWriter;
@@ -133,7 +131,7 @@ namespace SIPSorcery.XMPP
             SendStreamHeader(XmlWriter);
 
             Listen();
-       }
+        }
 
         protected void SendStreamHeader(XmlWriter xmlWriter)
         {
@@ -147,7 +145,7 @@ namespace SIPSorcery.XMPP
             xmlWriter.WriteAttributeString("to", m_toDomain);
             xmlWriter.WriteAttributeString("version", MAJOR_VERSION + "." + MINOR_VERSION);
             xmlWriter.WriteAttributeString("xml", "lang", null, "en");
-            xmlWriter.WriteAttributeString("xmlns", JABBER_NAMESPACE);
+            xmlWriter.WriteAttributeString("xmlns", XMPPConstants.JABBER_NAMESPACE);
             xmlWriter.WriteWhitespace("\n");
             xmlWriter.Flush();
 
@@ -233,7 +231,7 @@ namespace SIPSorcery.XMPP
 
         public void Close()
         {
-           logger.Debug("Closing XMPPStream.");
+            logger.Debug("Closing XMPPStream.");
             XmlWriter.WriteEndDocument();
             XmlWriter.Flush();
         }

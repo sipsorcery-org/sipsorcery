@@ -35,6 +35,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.XMPP.TestClient
@@ -58,38 +59,82 @@ Pass: The GTalk password that will be used to connect to the GTalk XMPP service.
         private const string XMPP_REALM = "google.com";
 
         private static XMPPClient m_xmppClient;
-        private static string m_xmppUsername;
-        private static string m_xmppPassword;
+        private static string m_xmppUsername = "x@gmail.com";
+        private static string m_xmppPassword = "x";
 
         static void Main(string[] args)
         {
             try
             {
-                if (args == null || args.Count() == 0)
-                {
-                    Console.WriteLine(USAGE_STRING);
-                }
-                else
-                {
-                    bool validArgs = ParseArgs(args);
+                //if (args == null || args.Count() == 0)
+                //{
+                //    Console.WriteLine(USAGE_STRING);
+                //}
+                //else
+                //{
+                //    bool validArgs = ParseArgs(args);
 
-                    if (validArgs)
-                    {
+                //    if (validArgs)
+                //    {
                         Console.WriteLine("XMPP Test Client:");
 
                         m_xmppClient = new XMPPClient(XMPP_SERVER, XMPP_SERVER_PORT, XMPP_REALM, m_xmppUsername, m_xmppPassword);
                         m_xmppClient.Disconnected += XMPPDisconnected;
-                        m_xmppClient.IsBound += () => { Console.WriteLine("XMPP client is bound."); };
+                        m_xmppClient.IsBound += () =>
+                        {
+                            Console.WriteLine("XMPP client is bound.");
+                            //var rosterRequest = m_xmppClient.GetRosterRequest();
+                            //rosterRequest.GetRoster();
+
+                            var presenceRequest = m_xmppClient.GetPresenceRequest();
+                            //presenceRequest.Subscribe();
+                            presenceRequest.Notify();
+                            presenceRequest.NotifySupportedFeatures();
+
+                            //var discoveryRequest = m_xmppClient.GetServiceDiscoveryRequest("x@gmail.com");
+                            //discoveryRequest.Send();
+                            //discoveryRequest.SendServerDiscoveryQuery();
+                            //discoveryRequest.SendJingleInfoQuery();
+
+                            var jingleRequest = m_xmppClient.GetJingleRequest("x@gmail.com/TalkGadgetE90A6B3B");
+                            //var jingleRequest = m_xmppClient.GetJingleRequest("echo@bot.talk.google.com");
+                            jingleRequest.Initiate();
+
+                            //m_xmppClient.SendMessage("x@gmail.com", "hi");
+                            //XMPPPhoneSession call = m_xmppClient.GetPhoneSession();
+                            ////call.PlaceCall("echo@bot.talk.google.com", new SDP()
+                            //call.PlaceCall("x@gmail.com", new SDP()
+                            //{
+                            //    Address = "127.0.0.1",
+                            //    Username = "-",
+                            //    SessionId = Crypto.GetRandomString(5),
+                            //    AnnouncementVersion = Crypto.GetRandomInt(5),
+                            //    Connection = new SDPConnectionInformation("127.0.0.1"),
+                            //    Timing = "0 0",
+                            //    Media = new List<SDPMediaAnnouncement>()
+                            //    {
+                            //        new SDPMediaAnnouncement(0)
+                            //        {
+                            //            MediaFormats = new List<SDPMediaFormat>(){ new SDPMediaFormat((int)SDPMediaFormatsEnum.PCMU) }
+                            //        }
+                            //    }
+                            //});
+                        };
                         ThreadPool.QueueUserWorkItem(delegate { m_xmppClient.Connect(); });
 
                         ManualResetEvent mre = new ManualResetEvent(false);
                         mre.WaitOne();
-                    }
-                }
+                    //}
+                //}
             }
             catch (Exception excp)
             {
                 Console.WriteLine("Exception Main. " + excp.Message);
+            }
+            finally
+            {
+                Console.WriteLine("press any key to exit...");
+                Console.Read();
             }
         }
 
