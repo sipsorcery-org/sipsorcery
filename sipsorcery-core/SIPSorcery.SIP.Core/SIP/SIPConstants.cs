@@ -434,6 +434,7 @@ namespace SIPSorcery.SIP
             {
                 result = result.Replace(";", "%3B");
                 result = result.Replace("=", "%3D");
+                result = result.Replace("@", "%40");
             }
             return result;
         }
@@ -447,6 +448,7 @@ namespace SIPSorcery.SIP
                 result = result.Replace("%3b", ";");
                 result = result.Replace("%3D", "=");
                 result = result.Replace("%3d", "=");
+                result = result.Replace("%40", "@");
             }
             return result;
         }

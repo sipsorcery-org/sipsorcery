@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Filename: SIPParams.cs
+// Filename: SIPParameters.cs
 //
 // Description: SIP parameters as used in Contact, To, From and Via SIP headers.
 //

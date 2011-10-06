@@ -498,18 +498,11 @@ namespace SIPSorcery.Servers
                     return null;
                 }
 
-                string unescapedReplaces = SIPEscape.SIPUnescapeString(replaces);
+                SIPReplacesParameter replacesParam = SIPReplacesParameter.Parse(replaces);
 
-                Match replacesMatch = Regex.Match(unescapedReplaces, "^(?<callid>.*?);to-tag=(?<totag>.*?);from-tag=(?<fromtag>.*)");
-                if (replacesMatch.Success)
+                if (replacesParam != null)
                 {
-                    string callId = replacesMatch.Result("${callid}");
-                    string localTag = replacesMatch.Result("${totag}");
-                    string remoteTag = replacesMatch.Result("${fromtag}");
-
-                    logger.Debug("Call-ID=" + callId + ", localtag=" + localTag + ", remotetag=" + remoteTag + ".");
-
-                    SIPDialogue replacesDialogue = GetDialogue(callId, localTag, remoteTag);
+                    SIPDialogue replacesDialogue = GetDialogue(replacesParam.CallID, replacesParam.ToTag, replacesParam.FromTag);
 
                     if (replacesDialogue == null)
                     {

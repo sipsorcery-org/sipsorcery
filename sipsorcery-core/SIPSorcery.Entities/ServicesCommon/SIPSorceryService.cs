@@ -251,7 +251,7 @@ namespace SIPSorcery.Entities
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                SIPAccount existingAccount = (from sa in sipSorceryEntities.SIPAccounts where sa.ID == sipAccount.ID select sa).FirstOrDefault();
+                SIPAccount existingAccount = (from sa in sipSorceryEntities.SIPAccounts where sa.ID == sipAccount.ID && sa.Owner == authUser.ToLower() select sa).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
@@ -287,7 +287,7 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                SIPAccount existingAccount = (from sa in sipSorceryEntities.SIPAccounts where sa.ID == sipAccount.ID select sa).FirstOrDefault();
+                SIPAccount existingAccount = (from sa in sipSorceryEntities.SIPAccounts where sa.ID == sipAccount.ID && sa.Owner == authUser.ToLower() select sa).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
@@ -403,7 +403,7 @@ namespace SIPSorcery.Entities
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                existingAccount = (from sp in sipSorceryEntities.SIPProviders where sp.ID == sipProvider.ID select sp).FirstOrDefault();
+                existingAccount = (from sp in sipSorceryEntities.SIPProviders where sp.ID == sipProvider.ID && sp.Owner == authUser.ToLower() select sp).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
@@ -453,7 +453,7 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                SIPProvider existingAccount = (from sp in sipSorceryEntities.SIPProviders where sp.ID == sipProvider.ID select sp).FirstOrDefault();
+                SIPProvider existingAccount = (from sp in sipSorceryEntities.SIPProviders where sp.ID == sipProvider.ID && sp.Owner == authUser.ToLower() select sp).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
@@ -559,7 +559,7 @@ namespace SIPSorcery.Entities
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlan.ID select dp).FirstOrDefault();
+                SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlan.ID && dp.Owner == authUser.ToLower() select dp).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
@@ -574,6 +574,8 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("This Dial Plan is read-only. Please upgrade to a Premium service to enable it.");
                 }
 
+                logger.Debug("Updating SIP dialplan " + existingAccount.DialPlanName + " for " + existingAccount.Owner + ".");
+
                 existingAccount.DialPlanScript = sipDialPlan.DialPlanScript;
                 existingAccount.LastUpdate = DateTimeOffset.UtcNow.ToString("o");
                 existingAccount.TraceEmailAddress = sipDialPlan.TraceEmailAddress;
@@ -584,16 +586,21 @@ namespace SIPSorcery.Entities
                 {
                     // Need to update the SIP accounts using the dial plan.
                     string dialPlanName = existingAccount.DialPlanName;
-                    var sipAccounts = (from sa in sipSorceryEntities.SIPAccounts where sa.OutDialPlanName == dialPlanName || sa.InDialPlanName == dialPlanName select sa).ToList();
+                    var sipAccounts = (from sa in sipSorceryEntities.SIPAccounts where 
+                                           (sa.OutDialPlanName == dialPlanName || sa.InDialPlanName == dialPlanName)
+                                            && sa.Owner == authUser.ToLower() select sa).ToList();
+
                     foreach (SIPAccount sipAccount in sipAccounts)
                     {
                         if (sipAccount.InDialPlanName == dialPlanName)
                         {
+                            logger.Debug("SIP dialplan name updated; updating in dialplan on SIP account" + sipAccount.SIPUsername + " for " + existingAccount.Owner + " to " + sipDialPlan.DialPlanName + ".");
                             sipAccount.InDialPlanName = sipDialPlan.DialPlanName;
                         }
 
                         if (sipAccount.OutDialPlanName == dialPlanName)
                         {
+                            logger.Debug("SIP dialplan name updated; updating out dialplan on SIP account" + sipAccount.SIPUsername + " for " + existingAccount.Owner + " to " + sipDialPlan.DialPlanName + ".");
                             sipAccount.OutDialPlanName = sipDialPlan.DialPlanName;
                         }
                     }
@@ -614,7 +621,7 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlan.ID select dp).FirstOrDefault();
+                SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlan.ID && dp.Owner == authUser.ToLower() select dp).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
@@ -679,7 +686,7 @@ namespace SIPSorcery.Entities
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                existingRule = (from ru in sipSorceryEntities.SimpleWizardDialPlanRules where ru.ID == rule.ID select ru).FirstOrDefault();
+                existingRule = (from ru in sipSorceryEntities.SimpleWizardDialPlanRules where ru.ID == rule.ID && ru.Owner == authUser.ToLower() select ru).FirstOrDefault();
 
                 if (existingRule == null)
                 {
@@ -706,7 +713,7 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                SimpleWizardDialPlanRule existingRule = (from ru in sipSorceryEntities.SimpleWizardDialPlanRules where ru.ID == rule.ID select ru).FirstOrDefault();
+                SimpleWizardDialPlanRule existingRule = (from ru in sipSorceryEntities.SimpleWizardDialPlanRules where ru.ID == rule.ID && ru.Owner == authUser.ToLower() select ru).FirstOrDefault();
 
                 if (existingRule == null)
                 {

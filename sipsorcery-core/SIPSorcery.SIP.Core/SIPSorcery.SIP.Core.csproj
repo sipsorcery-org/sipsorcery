@@ -161,6 +161,7 @@
     <Compile Include="SIP\Channels\SIPTCPChannel.cs" />
     <Compile Include="SIP\SIPEndPoint.cs" />
     <Compile Include="SIP\SIPParameterlessURI.cs" />
+    <Compile Include="SIP\SIPReplacesParameter.cs" />
     <Compile Include="SIP\SIPTransport.cs">
       <SubType>Code</SubType>
     </Compile>
