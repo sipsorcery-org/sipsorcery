@@ -178,6 +178,11 @@ namespace SIPSorcery
                     m_userPage.SetProvisioningStatusIconColour(Colors.Green);
                     m_userPage.SetProvisioningStatusMessage("Provisioning service ok. " + m_serviceURL);
                 }
+
+                if (m_loginControl.Visibility == System.Windows.Visibility.Visible)
+                {
+                    m_loginControl.FocusOnUsername();
+                }
             }
         }
 

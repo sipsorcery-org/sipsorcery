@@ -47,6 +47,12 @@
 							IsReadOnly="True"
 							MinWidth="150"/>
 						<data:DataGridTextColumn 
+		                    Header="Read Only" 
+		                    Width="SizeToCells"
+		                    Binding="{Binding IsReadOnly}" 
+							IsReadOnly="True"
+							MinWidth="90"/>
+						<data:DataGridTextColumn 
 							Header="Last Update" 
 							Width="SizeToCells"
 							Binding="{Binding Path=LastUpdateLocal, Converter={StaticResource DateTimeConverter}}" 

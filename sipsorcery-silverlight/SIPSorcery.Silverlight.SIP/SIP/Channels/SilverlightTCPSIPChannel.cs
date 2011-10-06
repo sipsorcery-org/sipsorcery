@@ -169,7 +169,11 @@ namespace SIPSorcery.SIP
                     SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
                     receiveArgs.SetBuffer(m_sipConnection.SocketBuffer, m_sipConnection.SocketBufferEndPosition, MaxSIPTCPMessageSize - m_sipConnection.SocketBufferEndPosition);
                     receiveArgs.Completed += SocketRead_Completed;
-                    m_socket.ReceiveAsync(receiveArgs);
+
+                    if (receiveArgs != null)
+                    {
+                        m_socket.ReceiveAsync(receiveArgs);
+                    }
                 }
             }
             catch (Exception excp)

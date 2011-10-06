@@ -23,10 +23,7 @@ namespace SIPSorcery
     {
         private const int MAX_STATUS_MESSAGE_LENGTH = 512;
 
-        //private SIPSorceryInvite.SIPSorceryInviteServiceClient m_inviteProxy;
         private string m_loginUsername;
-        //private string m_inviteCode;
-        //private AuthenticationService m_authenticationService;
         private SIPEntitiesDomainContext m_riaContext;
 
         public event Action<string> CreateNewAccountClicked;    // The parameter is the verified invite code.
@@ -37,13 +34,8 @@ namespace SIPSorcery
             InitializeComponent();
         }
 
-        public void SetProxy(
-            //SIPSorceryInvite.SIPSorceryInviteServiceClient inviteProxy, 
-            SIPEntitiesDomainContext riaContext)
+        public void SetProxy(SIPEntitiesDomainContext riaContext)
         {
-            //m_inviteProxy = inviteProxy;
-            //m_inviteProxy.IsInviteCodeValidCompleted += CheckInviteCodeComplete;
-            //m_authenticationService = authenticationService;
             m_riaContext = riaContext;
         }
 
@@ -126,7 +118,6 @@ namespace SIPSorcery
             }
         }
 
-        //private void LoginComplete(LoginOperation op)
         private void LoginComplete(LoadOperation op)
         {
             if (op.HasError)
@@ -146,6 +137,11 @@ namespace SIPSorcery
             {
                 Authenticated(m_loginUsername, null);
             }
+        }
+
+        public void FocusOnUsername()
+        {
+            m_usernameTextBox.Focus();
         }
     }
 }

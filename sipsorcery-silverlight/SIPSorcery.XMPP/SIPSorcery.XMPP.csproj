@@ -65,14 +65,14 @@
     <Compile Include="..\..\sipsorcery-xmpp\SIPSorcery.XMPP\XMPPAuthenticatedStream.cs">
       <Link>XMPPAuthenticatedStream.cs</Link>
     </Compile>
+    <Compile Include="..\..\sipsorcery-xmpp\SIPSorcery.XMPP\XMPPConstants.cs">
+      <Link>XMPPConstants.cs</Link>
+    </Compile>
     <Compile Include="..\..\sipsorcery-xmpp\SIPSorcery.XMPP\XMPPEncryptedStream.cs">
       <Link>XMPPEncryptedStream.cs</Link>
     </Compile>
     <Compile Include="..\..\sipsorcery-xmpp\SIPSorcery.XMPP\XMPPInitialStream.cs">
       <Link>XMPPInitialStream.cs</Link>
-    </Compile>
-    <Compile Include="..\..\sipsorcery-xmpp\SIPSorcery.XMPP\XMPPPhoneSession.cs">
-      <Link>XMPPPhoneSession.cs</Link>
     </Compile>
     <Compile Include="..\..\sipsorcery-xmpp\SIPSorcery.XMPP\XMPPStream.cs">
       <Link>XMPPStream.cs</Link>

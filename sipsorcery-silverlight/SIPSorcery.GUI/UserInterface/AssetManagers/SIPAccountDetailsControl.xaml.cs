@@ -170,7 +170,7 @@ namespace SIPSorcery
             m_inDialPlan.Items.Add(" ");    // Allows the incoming dialplan setting to be set empty to indicate bindings should be used instead of the dialplan.
             if (m_riaContext.SIPDialPlans != null && m_riaContext.SIPDialPlans.Count() > 0)
             {
-                foreach (string dialPlanName in m_riaContext.SIPDialPlans.Select(x => x.DialPlanName).ToList())
+                foreach (string dialPlanName in m_riaContext.SIPDialPlans.Where(x => !x.IsReadOnly).Select(x => x.DialPlanName).ToList())
                 {
                     m_outDialPlan.Items.Add(dialPlanName);
                     m_inDialPlan.Items.Add(dialPlanName);

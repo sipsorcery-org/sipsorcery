@@ -1,0 +1,46 @@
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	x:Class="SIPSorcery.SimpleWizardOutRuleControl"
+	d:DesignWidth="977" d:DesignHeight="69">
+
+	<Grid x:Name="LayoutRoot">
+		<Border x:Name="m_routesAddCanvas" Background="#FFFAF0B9" Margin="0" CornerRadius="3" Height="69">
+			<Canvas>
+				<ComboBox x:Name="m_ruleType" Height="25" Width="75" SelectedIndex="0" Canvas.Left="10" Canvas.Top="36">
+					<!--<TextBlock FontSize="11" Text="Auto" />-->
+					<TextBlock FontSize="11" Text="Exact" />
+					<TextBlock FontSize="11" Text="Prefix" />
+					<TextBlock FontSize="11" Text="Contains" />	
+					<TextBlock FontSize="11" Text="Regex" />	
+				</ComboBox>
+				<TextBox x:Name="m_rulePattern" Height="25" Width="155" MaxLength="1024" Canvas.Left="89" Canvas.Top="35"/>
+				<TextBox x:Name="m_ruleCommandString" Height="25" MaxLength="4096" Canvas.Left="317" Canvas.Top="35" Width="290"/>
+				<TextBox x:Name="m_ruleDescription" Height="25" Width="171" MaxLength="1024" Canvas.Left="611" Canvas.Top="35"/>
+				<Button x:Name="m_ruleSaveButton" Content="Save" Width="69" Click="Submit" Height="35" Canvas.Left="837" Canvas.Top="30" d:LayoutOverrides="Height"/>
+				<TextBlock TextWrapping="Wrap" Text="Rule Type" Width="65" Height="22" Canvas.Left="10" Canvas.Top="14"/>
+				<TextBlock TextWrapping="Wrap" Text="Pattern" Width="65" Height="22" Canvas.Left="89" Canvas.Top="14"/>
+				<TextBlock TextWrapping="Wrap" Width="105" Height="22" Canvas.Left="317" Canvas.Top="14"><Run Text="Command "/><Run Text="String"/></TextBlock>
+				<TextBlock TextWrapping="Wrap" Text="Description" Width="65" Height="22" Canvas.Left="611" Canvas.Top="14"/>
+				<TextBlock x:Name="m_descriptionText" Height="24" TextWrapping="Wrap" Width="135" FontSize="18.667" Canvas.Left="834" Canvas.Top="5"><Run Text="Add "/><Run Text="Out"/><Run Text=" Rule"/></TextBlock>
+				<Button x:Name="m_ruleCancelButton" Content="Cancel" Height="26" Width="59" Click="Cancel" IsTabStop="False" Canvas.Left="914" Canvas.Top="35"/>
+				<TextBox x:Name="m_rulePriority" Height="25" Width="43" MaxLength="5" Canvas.Left="787" Canvas.Top="35"/>
+				<TextBlock TextWrapping="Wrap" Text="Priority" Width="43" Height="22" Canvas.Left="787" Canvas.Top="14"/>
+				<ComboBox x:Name="m_ruleCommandType" Height="25" Width="65" SelectedIndex="0" Canvas.Left="248" Canvas.Top="35">
+					<TextBlock FontSize="11" Text="Dial" />
+					<TextBlock FontSize="11" Text="Reject" />
+				</ComboBox>
+				<TextBlock TextWrapping="Wrap" Width="65" Height="16" Canvas.Left="248" Canvas.Top="14" Text="Command"/>
+				<Border x:Name="m_errorCanvas" Background="White" HorizontalAlignment="Center" Height="60" Margin="0" VerticalAlignment="Center" Width="900" BorderBrush="Black" BorderThickness="1" Visibility="Collapsed" Canvas.Left="39" Canvas.Top="5" >
+					<Grid>
+						<Button x:Name="m_closeErrorButton" Content="X" Width="39" Click="CloseErrroMessage" HorizontalAlignment="Right" Margin="0,8,8,26"/>
+						<TextBlock x:Name="m_errorMessageTextBlock" TextWrapping="Wrap" Text="An error occurred saving the rule." Foreground="#FFEC0A0A" FontSize="13.333" Margin="8,8,51,8"/>
+					</Grid>
+				</Border>
+			</Canvas>
+		</Border>	
+	</Grid>
+</UserControl>

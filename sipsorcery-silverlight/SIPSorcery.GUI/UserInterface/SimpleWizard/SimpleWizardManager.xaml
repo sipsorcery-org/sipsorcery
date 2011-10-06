@@ -32,10 +32,10 @@
 				</sdk:TabControl.Background>
 				<sdk:TabItem Header="Outgoing Call Rules">
 					<Grid Background="Black" Margin="0,0,0,-2">
-						<sipsorceryui:AssetViewPanel x:Name="m_outgoingRulesPanel" Width="977" Margin="5,75,0,0" HorizontalAlignment="Left">
+						<sipsorceryui:AssetViewPanel x:Name="m_outgoingRulesPanel" Width="977" Margin="5,74,0,1" HorizontalAlignment="Left">
 							<sdk:DataGrid ColumnHeaderHeight="24" SelectionMode="Single" x:Name="m_outgoingRulesDataGrid" AutoGenerateColumns="False" FontSize="11" 
 								RowBackground="Azure" 
-								AlternatingRowBackground="LightSteelBlue" Margin="0" HorizontalAlignment="Left" Width="977" MouseLeftButtonUp="OutgoingRulesDataGridClicked" MinHeight="231" Height="452">
+								AlternatingRowBackground="LightSteelBlue" Margin="0" HorizontalAlignment="Left" Width="977" MouseLeftButtonUp="RulesDataGridClicked" MinHeight="231" Height="452">
 								<sdk:DataGrid.Columns>
 									<sdk:DataGridTextColumn 
 										Header="Rule Type" 
@@ -49,9 +49,15 @@
 										IsReadOnly="True"
 										MinWidth="140" />
 									<sdk:DataGridTextColumn 
-										Header="Dial String" 
+										Header="Command" 
 										Width="SizeToCells"
-										Binding="{Binding DialString}" 
+										Binding="{Binding Command}" 
+										IsReadOnly="True"
+										MinWidth="100" />
+									<sdk:DataGridTextColumn 
+										Header="Command String" 
+										Width="SizeToCells"
+										Binding="{Binding CommandString}" 
 										IsReadOnly="True"
 										MinWidth="280" />
 									<sdk:DataGridTextColumn 
@@ -75,16 +81,23 @@
 								</sdk:DataGrid.Columns>
 							</sdk:DataGrid>
 						</sipsorceryui:AssetViewPanel>
-						<local:SimpleWizardUpdateControl x:Name="m_outgoingRulesUpdateControl" Margin="5,0,8,0" VerticalAlignment="Top"/>	
+						<local:SimpleWizardOutRuleControl x:Name="m_outgoingRulesUpdateControl" Margin="5,0,8,0" VerticalAlignment="Top"/>	
 					</Grid>	
 				</sdk:TabItem>
 				<sdk:TabItem Header="Incoming Call Rules">
-					<Grid Background="Black" Margin="0,0,0,-2">
-						<sipsorceryui:AssetViewPanel x:Name="m_incomingRulesPanel" Width="977" Margin="5,75,0,0" HorizontalAlignment="Left">
-							<sdk:DataGrid ColumnHeaderHeight="24" SelectionMode="Single" x:Name="m_outgoingRulesDataGrid1" AutoGenerateColumns="False" FontSize="11" 
+					<StackPanel Background="Black" Margin="0">
+						<local:SimpleWizardInRuleControl x:Name="m_incomingRulesUpdateControl" Margin="5,0,8,5"/>
+						<local:SimpleWizardCRMControl x:Name="m_crmSetUpControl" HorizontalAlignment="Center" Width="408" Padding="0" Margin="0,0,0,3" Visibility="Collapsed"/>
+						<sipsorceryui:AssetViewPanel x:Name="m_incomingRulesPanel" Width="977" Margin="5,0,0,0" HorizontalAlignment="Left" Height="479">
+							<sdk:DataGrid ColumnHeaderHeight="24" SelectionMode="Single" x:Name="m_incomingRulesDataGrid" AutoGenerateColumns="False" FontSize="11" 
 								RowBackground="Azure" 
-								AlternatingRowBackground="LightSteelBlue" Margin="0" HorizontalAlignment="Left" Width="977" MouseLeftButtonUp="OutgoingRulesDataGridClicked" MinHeight="231" Height="452">
+								AlternatingRowBackground="LightSteelBlue" Margin="0" HorizontalAlignment="Left" Width="977" MouseLeftButtonUp="RulesDataGridClicked" MinHeight="231" Height="452" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto">
 								<sdk:DataGrid.Columns>
+									<sdk:DataGridTextColumn 
+										Header="To Account" 
+										Binding="{Binding ToSIPAccount}" 
+										IsReadOnly="True"
+										Width="120" />
 									<sdk:DataGridTextColumn 
 										Header="Rule Type" 
 										Binding="{Binding RuleType}" 
@@ -97,9 +110,15 @@
 										IsReadOnly="True"
 										MinWidth="140" />
 									<sdk:DataGridTextColumn 
-										Header="Dial String" 
+										Header="Command" 
 										Width="SizeToCells"
-										Binding="{Binding DialString}" 
+										Binding="{Binding Command}" 
+										IsReadOnly="True"
+										MinWidth="100" />
+									<sdk:DataGridTextColumn 
+										Header="Command String" 
+										Width="SizeToCells"
+										Binding="{Binding CommandString}" 
 										IsReadOnly="True"
 										MinWidth="280" />
 									<sdk:DataGridTextColumn 
@@ -122,9 +141,8 @@
 									</sdk:DataGridTemplateColumn>
 								</sdk:DataGrid.Columns>
 							</sdk:DataGrid>
-						</sipsorceryui:AssetViewPanel>
-						<local:SimpleWizardUpdateControl x:Name="m_incomingRulesUpdateControl" Margin="5,0,8,0" VerticalAlignment="Top"/>	
-					</Grid>	
+						</sipsorceryui:AssetViewPanel>	
+					</StackPanel>	
 				</sdk:TabItem>
 			</sdk:TabControl>
 		</StackPanel>

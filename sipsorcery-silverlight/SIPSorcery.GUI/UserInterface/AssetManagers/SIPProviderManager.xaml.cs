@@ -133,6 +133,7 @@ namespace SIPSorcery
             {
                 LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error updating the SIP provider. " + so.Error.Message);
                 so.MarkErrorAsHandled();
+                m_riaContext.RejectChanges();
             }
             else
             {

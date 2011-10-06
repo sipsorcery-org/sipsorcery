@@ -134,10 +134,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="UserInterface\AssetManagers\SimpleWizardManager.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="UserInterface\AssetManagers\DialPlanAddControl.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
@@ -149,10 +145,6 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\DialPlanWizard.xaml">
-      <Generator>MSBuild:MarkupCompilePass1</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="UserInterface\AssetManagers\SimpleWizardUpdateControl.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -232,6 +224,22 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="UserInterface\SimpleWizard\SimpleWizardCRMControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserInterface\SimpleWizard\SimpleWizardInRuleControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserInterface\SimpleWizard\SimpleWizardManager.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserInterface\SimpleWizard\SimpleWizardOutRuleControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UserInterface\UserPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -248,17 +256,11 @@
     <Compile Include="UserInterface\About.xaml.cs">
       <DependentUpon>About.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UserInterface\AssetManagers\SimpleWizardManager.xaml.cs">
-      <DependentUpon>SimpleWizardManager.xaml</DependentUpon>
-    </Compile>
     <Compile Include="UserInterface\AssetManagers\DialPlanAddControl.xaml.cs">
       <DependentUpon>DialPlanAddControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\AssetManagers\DialPlanWizard.xaml.cs">
       <DependentUpon>DialPlanWizard.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserInterface\AssetManagers\SimpleWizardUpdateControl.xaml.cs">
-      <DependentUpon>SimpleWizardUpdateControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\CallManager\SIPCallManager.xaml.cs">
       <DependentUpon>SIPCallManager.xaml</DependentUpon>
@@ -269,6 +271,18 @@
     </Compile>
     <Compile Include="UserInterface\NewAccountInviteControl.xaml.cs">
       <DependentUpon>NewAccountInviteControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\SimpleWizard\SimpleWizardCRMControl.xaml.cs">
+      <DependentUpon>SimpleWizardCRMControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\SimpleWizard\SimpleWizardInRuleControl.xaml.cs">
+      <DependentUpon>SimpleWizardInRuleControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\SimpleWizard\SimpleWizardManager.xaml.cs">
+      <DependentUpon>SimpleWizardManager.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\SimpleWizard\SimpleWizardOutRuleControl.xaml.cs">
+      <DependentUpon>SimpleWizardOutRuleControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="WCFReferences\SIPSorceryNotificationService\Reference.cs">
       <AutoGen>True</AutoGen>

@@ -241,7 +241,7 @@ namespace SIPSorcery
                         ProviderUsername = providerUsername,
                         ProviderPassword = providerPassword,
                         GVCallbackNumber = m_gvCallbackNumber.Text,
-                        GVCallbackPattern = m_gvCallbackNumber.Text,
+                        GVCallbackPattern = m_gvCallbackPattern.Text,
                         GVCallbackType = ((TextBlock)m_gvCallbackType.SelectedValue).Text,
                         Inserted = DateTime.Now.ToString("o"),
                         LastUpdate = DateTime.Now.ToString("o")

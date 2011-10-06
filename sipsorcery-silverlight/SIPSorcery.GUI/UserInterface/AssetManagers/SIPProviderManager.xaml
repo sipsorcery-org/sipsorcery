@@ -75,6 +75,12 @@
 							IsReadOnly="True"
 							MinWidth="70"/>
 						<data:DataGridTextColumn 
+		                    Header="Read Only" 
+		                    Width="SizeToCells"
+		                    Binding="{Binding IsReadOnly}" 
+							IsReadOnly="True"
+							MinWidth="90"/>
+						<data:DataGridTextColumn 
 		                    Header="Disabled Reason" 
 		                    Width="SizeToCells"
 		                    Binding="{Binding RegisterDisabledReason}" 

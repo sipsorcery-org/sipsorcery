@@ -1,0 +1,39 @@
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	x:Class="SIPSorcery.SimpleWizardCRMControl" Width="400">
+
+	<Grid x:Name="LayoutRoot">
+		<StackPanel x:Name="m_crmLookupCanvas" Background="#FFFAF0B9">
+			<Border x:Name="m_errorCanvas" Background="White" HorizontalAlignment="Center" Height="60" Margin="0" VerticalAlignment="Center" BorderBrush="Black" BorderThickness="1" Width="400" Visibility="Collapsed" >
+				<Grid>
+					<Button x:Name="m_closeErrorButton" Content="X" Width="39" Click="CloseErrroMessage" HorizontalAlignment="Right" Margin="0,8,8,26"/>
+					<TextBlock x:Name="m_errorMessageTextBlock" TextWrapping="Wrap" Text="An error occurred saving the rule." Foreground="#FFEC0A0A" FontSize="13.333" Margin="8,8,51,8"/>
+				</Grid>
+			</Border>
+			<Canvas x:Name="m_headingcanvas" Height="31" Margin="0" Width="400">
+				<TextBlock x:Name="m_headingText" Height="24" TextWrapping="Wrap" Text="CRM Lookup" Width="135" FontSize="18.667" Canvas.Top="3" Canvas.Left="2"/>
+				<Button x:Name="m_expandButton" Content="X" Height="25" Width="37" Canvas.Left="359" Click="CloseButton_Click" Canvas.Top="3"/>
+				<TextBlock x:Name="m_descriptionText" Height="24" TextWrapping="Wrap" Width="175" FontSize="18.667" Canvas.Left="153" Canvas.Top="4"><Run Text="Add "/><Run Text="A"/><Run Text="ccount"/></TextBlock>
+			</Canvas>
+			<Canvas x:Name="m_detailsCanvas" Height="182">
+				<ComboBox x:Name="m_crmType" Height="25" Width="98" SelectedIndex="0" Canvas.Left="90" Canvas.Top="8">
+					<TextBlock FontSize="11" Text="Highrise" />
+					<TextBlock FontSize="11" Text="SugarCRM" />
+				</ComboBox>
+				<TextBox x:Name="m_crmURL" HorizontalAlignment="Left" Height="26" TextWrapping="Wrap" Width="303" MaxLength="1024" Canvas.Left="90" Canvas.Top="37"/>
+				<TextBox x:Name="m_crmUsername" TextWrapping="Wrap" MaxLength="4096" HorizontalAlignment="Left" Width="277" Height="25" Canvas.Left="90" Canvas.Top="67"/>
+				<TextBox x:Name="m_crmPassword" HorizontalAlignment="Left" Height="26" TextWrapping="Wrap" Width="277" MaxLength="1024" Canvas.Left="90" Canvas.Top="97"/>
+				<Button x:Name="m_ruleSaveButton" Content="Save" HorizontalAlignment="Left" Width="80" Click="Submit" Height="46" FontSize="18.667" Canvas.Left="191" Canvas.Top="131"/>
+				<TextBlock TextWrapping="Wrap" Width="65" Height="19" Canvas.Left="9" Canvas.Top="8"><Run Text="CRM"/><Run Text=" Type"/></TextBlock>
+				<TextBlock TextWrapping="Wrap" Text="URL" Width="65" Height="20" Canvas.Left="11" Canvas.Top="37"/>
+				<TextBlock TextWrapping="Wrap" Text="Username" Width="65" Height="18" Canvas.Left="11" Canvas.Top="67"/>
+				<TextBlock TextWrapping="Wrap" Text="Password" Width="65" Height="24" Canvas.Left="9" Canvas.Top="101"/>
+				<Button x:Name="m_deleteButton" Content="Delete" HorizontalAlignment="Left" Height="26" Width="59" Click="Delete_Click" IsTabStop="False" Canvas.Left="308" Canvas.Top="143" IsEnabled="False"/>
+			</Canvas>
+		</StackPanel>
+	</Grid>
+</UserControl>

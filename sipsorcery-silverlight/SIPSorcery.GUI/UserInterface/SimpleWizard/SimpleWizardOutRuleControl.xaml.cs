@@ -12,12 +12,13 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using SIPSorcery.Entities;
+using SIPSorcery.SIP;
 
 namespace SIPSorcery
 {
-	public partial class SimpleWizardUpdateControl : UserControl
+	public partial class SimpleWizardOutRuleControl : UserControl
 	{
-        public const string ADD_TEXT = "Add New Rule";
+        public const string ADD_TEXT = "Add Out Rule";
         public const string UPDATE_TEXT = "Update Rule";
         private const int DEFAULT_RULE_PRIORITY = 99;
 
@@ -26,7 +27,7 @@ namespace SIPSorcery
 
         private SimpleWizardDialPlanRule m_ruleToUpdate;        // If this is set means the control is updating an existing rule as opposed to adding a new one.
 
-		public SimpleWizardUpdateControl()
+        public SimpleWizardOutRuleControl()
 		{
 			// Required to initialize variables
 			InitializeComponent();
@@ -42,7 +43,8 @@ namespace SIPSorcery
 
                 m_ruleType.SelectedIndex = m_ruleType.Items.IndexOf(m_ruleType.Items.Single(x => ((TextBlock)x).Text == rule.RuleType.ToString()));
                 m_rulePattern.Text = rule.Pattern;
-                m_ruleDialString.Text = rule.DialString;
+                m_ruleCommandType.SelectedIndex = m_ruleCommandType.Items.IndexOf(m_ruleCommandType.Items.Single(x => ((TextBlock)x).Text == rule.Command));
+                m_ruleCommandString.Text = rule.CommandString;
                 m_ruleDescription.Text = rule.Description;
                 m_rulePriority.Text = rule.Priority.ToString();
             }
@@ -53,7 +55,7 @@ namespace SIPSorcery
 
                 m_ruleType.SelectedIndex = 0;
                 m_rulePattern.Text = String.Empty;
-                m_ruleDialString.Text = String.Empty;
+                m_ruleCommandString.Text = String.Empty;
                 m_ruleDescription.Text = String.Empty;
                 m_rulePriority.Text = DEFAULT_RULE_PRIORITY.ToString();
             }
@@ -71,10 +73,11 @@ namespace SIPSorcery
                     ID = Guid.Empty.ToString(),             // Will be set in the manager.
                     Owner = "None",                         // Will be set in the manager.
                     DialPlanID = Guid.Empty.ToString(),     // Will be set in the manager.
-                    Direction = "None",                     // Will be set in the manager.
+                    Direction = SIPCallDirection.Out.ToString(), 
                     RuleTypeID = Enum.Parse(typeof(SimpleWizardRuleTypes), ((TextBlock)m_ruleType.SelectedValue).Text, true).GetHashCode(),
                     Pattern = m_rulePattern.Text,
-                    DialString = m_ruleDialString.Text,
+                    Command = ((TextBlock)m_ruleCommandType.SelectedValue).Text,
+                    CommandString = m_ruleCommandString.Text,
                     Description = m_ruleDescription.Text,
                     Priority = priority
                 };
@@ -93,7 +96,8 @@ namespace SIPSorcery
             {
                 m_ruleToUpdate.RuleTypeID = Enum.Parse(typeof(SimpleWizardRuleTypes), ((TextBlock)m_ruleType.SelectedValue).Text, true).GetHashCode();
                 m_ruleToUpdate.Pattern = m_rulePattern.Text;
-                m_ruleToUpdate.DialString = m_ruleDialString.Text;
+                m_ruleToUpdate.Command = ((TextBlock)m_ruleCommandType.SelectedValue).Text;
+                m_ruleToUpdate.CommandString = m_ruleCommandString.Text;
                 m_ruleToUpdate.Description = m_ruleDescription.Text;
                 m_ruleToUpdate.Priority = priority;
 
@@ -118,7 +122,8 @@ namespace SIPSorcery
         {
             m_ruleType.IsEnabled = !disableInput;
             m_rulePattern.IsEnabled = !disableInput;
-            m_ruleDialString.IsEnabled = !disableInput;
+            m_ruleCommandType.IsEnabled = !disableInput;
+            m_ruleCommandString.IsEnabled = !disableInput;
             m_ruleDescription.IsEnabled = !disableInput;
             m_rulePriority.IsEnabled = !disableInput;
             m_ruleSaveButton.IsEnabled = !disableInput;
@@ -131,7 +136,8 @@ namespace SIPSorcery
         {
             m_ruleType.IsEnabled = false;
             m_rulePattern.IsEnabled = false;
-            m_ruleDialString.IsEnabled = false;
+            m_ruleCommandType.IsEnabled = false;
+            m_ruleCommandString.IsEnabled = false;
             m_ruleDescription.IsEnabled = false;
             m_rulePriority.IsEnabled = false;
             m_ruleSaveButton.IsEnabled = false;
@@ -145,7 +151,8 @@ namespace SIPSorcery
         {
             m_ruleType.IsEnabled = true;
             m_rulePattern.IsEnabled = true;
-            m_ruleDialString.IsEnabled = true;
+            m_ruleCommandType.IsEnabled = true;
+            m_ruleCommandString.IsEnabled = true;
             m_ruleDescription.IsEnabled = true;
             m_rulePriority.IsEnabled = true;
             m_ruleSaveButton.IsEnabled = true;
