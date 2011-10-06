@@ -36,6 +36,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -78,6 +79,11 @@ namespace SIPSorcery.WatchTower
                 }
 
                 List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_transportNode);
+                if (sipChannels == null || sipChannels.Count == 0)
+                {
+                    throw new ApplicationException("No SIP channel was created for the WatchTower daemon.");
+                }
+
                 m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
                 m_sipTransport.AddSIPChannel(sipChannels);
 
@@ -96,6 +102,7 @@ namespace SIPSorcery.WatchTower
             catch (Exception excp)
             {
                 logger.Error("Exception WatchTowerDaemon Start. " + excp.Message);
+                throw;
             }
         }
 

@@ -41,18 +41,18 @@ create table customers
 );
 
 -- Maps to class SIPSorcery.CRM.CustomerSession.
--- create table customersessions
--- (
--- id varchar(36) not null,
--- sessionid varchar(96) not null,
--- customerusername varchar(32) not null,
--- inserted varchar(33) not null,
--- expired bit not null default 0,
--- ipaddress varchar(15),
--- timelimitminutes int not null default 60,
--- Primary Key(id),
--- Foreign Key(customerusername) references customers(customerusername) on delete cascade
--- );
+create table customersessions
+(
+ id varchar(36) not null,
+ sessionid varchar(96) not null,
+ customerusername varchar(32) not null,
+ inserted varchar(33) not null,
+ expired bit not null default 0,
+ ipaddress varchar(45),
+ timelimitminutes int not null default 60,
+ Primary Key(id),
+ Foreign Key(customerusername) references customers(customerusername) on delete cascade
+);
 
 -- Maps to class SIPSorcery.SIP.App.SIPDomain.
 create table sipdomains
@@ -88,6 +88,7 @@ create table sipaccounts
  inserted varchar(33) not null,
  isswitchboardenabled bit not null default 1,
  dontmangleenabled bit not null default 0,
+ avatarurl varchar(1024) null,					-- URL that points to an image that can be displayed in user interfaces.
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Foreign Key(sipdomain) references sipdomains(domain) on delete cascade on update cascade,
@@ -143,6 +144,7 @@ create table sipproviders
  gvcallbacknumber varchar(16) null,
  gvcallbackpattern varchar(32) null,
  gvcallbacktype varchar(16) null,
+ isreadonly bit not null default 0,
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Unique(owner, providername)
@@ -182,10 +184,11 @@ create table sipdialplans
  scripttypedescription varchar(12) not null default 'Ruby',		-- The type of script the dialplan has, supported values are: Asterisk, Ruby, Python and JScript.
  inserted varchar(33) not null,
  lastupdate varchar(33) not null,
- maxexecutioncount int not null,								-- The mamimum number of simultaneous executions of the dialplan that are permitted.
+ maxexecutioncount int not null,								-- The maximum number of simultaneous executions of the dialplan that are permitted.
  executioncount int not null,									-- The current number of dialplan executions in progress.
  authorisedapps varchar(2048),									-- A semi-colon delimited list of privileged apps that this dialplan is authorised to use.
  acceptnoninvite bit not null default 0,						-- If true the dialplan will accept non-INVITE requests.
+ isreadonly bit not null default 0,
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Unique(owner, dialplanname)
@@ -314,15 +317,29 @@ create table sipdialplanoptions
 
 -- Simple Dial Plan Wizard Tables.
 
+create table CRMAccount
+(
+  ID varchar(36) not null,
+  Owner varchar(32) not null,
+  CRMTypeID int not null,						-- 1 = Highrise, 2 = SugarCRM.
+  URL varchar(2048) not null,
+  Username varchar(256) null,
+  Password varchar(2048) not null,
+  Primary Key(ID),
+  Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade
+);
+
 create table SimpleWizardDialPlanRule
 (
   ID varchar(36) not null,
   Owner varchar(32) not null,
   DialPlanID varchar(36) not null,				-- The simple wizard dialplan the lookup entries will be used in.
-  Direction varchar(3) not null,				-- In or Out with respect to the proxy.
+  Direction varchar(3) not null,				-- In or Out dialplan rule.
+  ToSIPAccount varchar(161) null,				-- For incoming rules this can optionally hold the To SIP account the rule is for.
   RuleTypeID int not null,						-- 0 == auto, 1 = exact match, 2 = prefix match, 3 = contains match, 4 = regex match.
   Pattern varchar(1024) not null,
-  DialString varchar(4096) not null,
+  Command varchar(16) not null,					-- The dialplan command, e.g. Dial, Respond
+  CommandString varchar(4096) not null,			-- The string to pass to the dialplan command.
   Description varchar(1024) null,
   Priority int not null,
   TimeIntervalID int null,						-- If set refers to a time interval that dictates when this rule should apply
@@ -330,7 +347,7 @@ create table SimpleWizardDialPlanRule
   Foreign Key(DialPlanID) references SIPDialPlans(id) on delete cascade on update cascade
 );
 
--- insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;174.129.236.7;174.129.236.7:5060', null, '2010-02-09T13:01:21.3540000+00:00');
+-- insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;10.1.1.2;10.1.1.2:5060', null, '2010-02-09T13:01:21.3540000+00:00');
 -- insert into sipdomains values ('9822C7A7-5358-42DD-8905-DC7ABAE3EC3A', 'demo.sipsorcery.com', 'local;demo.sipsorcery.com:5060;199.230.56.92;199.230.56.92:5060', null, '2010-10-15T00:00:00.0000000+00:00');
 -- insert into sipdomains values ('9822C7A7-5358-42DD-8905-DC7ABAE3EC3A', 'sipsorcery.com', 'local;10.1.1.2;10.1.1.2:5060', null, '2010-10-15T00:00:00.0000000+00:00');
 -- insert into customers (id, customerusername, customerpassword, emailaddress, adminid, maxexecutioncount, executioncount, emailaddressconfirmed, inserted, servicelevel) values ('AE246619-29ED-408C-A1C3-EA9E77C430A1', 'aaron', 'password', 'aaron@sipsorcery.com', '*', 5, 0, 1, '2010-10-15T00:00:00.0000000+00:00', 'Gold');

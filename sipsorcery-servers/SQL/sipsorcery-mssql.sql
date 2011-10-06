@@ -139,6 +139,7 @@ create table sipproviders
  gvcallbacknumber varchar(16) null,
  gvcallbackpattern varchar(32) null,
  gvcallbacktype varchar(16) null,
+ isreadonly bit not null default 0,
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Unique(owner, providername)
@@ -182,6 +183,7 @@ create table sipdialplans
  executioncount int not null,									-- The current number of dialplan executions in progress.
  authorisedapps varchar(2048),									-- A semi-colon delimited list of privileged apps that this dialplan is authorised to use.
  acceptnoninvite bit not null default 0,						-- If true the dialplan will accept non-INVITE requests.
+ isreadonly bit not null default 0,
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Unique(owner, dialplanname)
