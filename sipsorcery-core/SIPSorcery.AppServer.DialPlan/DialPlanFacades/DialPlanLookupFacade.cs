@@ -182,7 +182,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        public List<SimpleWizardDialPlanRule> GetSimpleWizardRules(string dialplanName, string callDirection)
+        public List<SimpleWizardRule> GetSimpleWizardRules(string dialplanName, string callDirection)
         {
             try
             {
@@ -200,7 +200,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         string callDirnStr = callDirn.ToString();
 
-                        return (from rule in ssEntities.SimpleWizardDialPlanRules
+                        return (from rule in ssEntities.SimpleWizardRules
                                 join dialplan in ssEntities.SIPDialPlans on rule.DialPlanID equals dialplan.ID
                                 where rule.Owner == m_owner && dialplan.DialPlanName == dialplanName &&
                                     rule.Direction == callDirnStr
