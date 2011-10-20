@@ -41,7 +41,7 @@
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <GenerateSerializationAssemblies>On</GenerateSerializationAssemblies>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -219,10 +219,10 @@
   <Target Name="BeforeBuild">
   </Target>  -->
   <Target Name="AfterBuild" DependsOnTargets="AssignTargetPaths;Compile;ResolveKeySource" Inputs="$(MSBuildAllProjects);@(IntermediateAssembly)" Outputs="$(OutputPath)$(_SGenDllName)">
-    <Delete Files="$(TargetDir)$(TargetName).XmlSerializers.dll" ContinueOnError="true" />
+    <!--<Delete Files="$(TargetDir)$(TargetName).XmlSerializers.dll" ContinueOnError="true" />
     <SGen BuildAssemblyName="$(TargetFileName)" BuildAssemblyPath="$(OutputPath)" References="@(ReferencePath)" ShouldGenerateSerializer="true" UseProxyTypes="false" KeyContainer="$(KeyContainerName)" KeyFile="$(KeyOriginatorFile)" DelaySign="$(DelaySign)" ToolPath="$(SGenToolPath)" Platform="$(Platform)">
       <Output TaskParameter="SerializationAssembly" ItemName="SerializationAssembly" />
-    </SGen>
+    </SGen>-->
   </Target>
   <PropertyGroup>
     <PostBuildEvent>copy "$(TargetPath)" "d:\temp\sipsorcery\"</PostBuildEvent>
