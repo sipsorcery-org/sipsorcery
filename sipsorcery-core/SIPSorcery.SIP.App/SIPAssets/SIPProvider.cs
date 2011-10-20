@@ -390,6 +390,19 @@ namespace SIPSorcery.SIP.App
             set { m_inserted = value.ToUniversalTime(); }
         }
 
+        private bool m_isReadOnly;                     
+        [Column(Name = "isreadonly", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public bool IsReadOnly
+        {
+            get { return m_isReadOnly; }
+            set
+            {
+                m_isReadOnly = value;
+                NotifyPropertyChanged("IsReadOnly");
+            }
+        }
+
         /// <summary>
         /// Normally the registrar server will just be the main Provider server however in some cases they will be different.
         /// </summary>
@@ -564,6 +577,7 @@ namespace SIPSorcery.SIP.App
             table.Columns.Add(new DataColumn("gvcallbacktype", typeof(String)));
             table.Columns.Add(new DataColumn("inserted", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("lastupdate", typeof(DateTimeOffset)));
+            table.Columns.Add(new DataColumn("isreadonly", typeof(Boolean)));
             return table;
         }
 
@@ -595,6 +609,7 @@ namespace SIPSorcery.SIP.App
                 m_gvCallbackType = (providerRow.Table.Columns.Contains("gvcallbacktype") && providerRow["gvcallbacktype"] != DBNull.Value && providerRow["gvcallbacktype"] != null) ? (GoogleVoiceCallbackTypes)Enum.Parse(typeof(GoogleVoiceCallbackTypes), providerRow["gvcallbacktype"] as string, true) : (GoogleVoiceCallbackTypes?)null;
                 LastUpdate = (providerRow.Table.Columns.Contains("lastupdate") && providerRow["lastupdate"] != DBNull.Value && providerRow["lastupdate"] != null) ? DateTimeOffset.Parse(providerRow["lastupdate"] as string) : DateTimeOffset.UtcNow;
                 Inserted = (providerRow.Table.Columns.Contains("inserted") && providerRow["inserted"] != DBNull.Value && providerRow["inserted"] != null) ? DateTimeOffset.Parse(providerRow["inserted"] as string) : DateTimeOffset.UtcNow;
+                m_isReadOnly = (providerRow.Table.Columns.Contains("isreadonly") && providerRow["isreadonly"] != DBNull.Value && providerRow["isreadonly"] != null) ? StorageLayer.ConvertToBoolean(providerRow["isreadonly"]) : false;
 
                 if (m_registerContact == null && m_registerEnabled)
                 {
@@ -653,7 +668,8 @@ namespace SIPSorcery.SIP.App
                 "   <registerenabledadmin>" + m_registerAdminEnabled + "</registerenabledadmin>" + m_newLine +
                 "   <registerdisabledreason>" + SafeXML.MakeSafeXML(m_registerDisabledReason) + "</registerdisabledreason>" + m_newLine +
                 "   <inserted>" + m_inserted.ToString("o") + "</inserted>" + m_newLine +
-                "   <lastupdate>" + m_lastUpdate.ToString("o") + "</lastupdate>" + m_newLine;
+                "   <lastupdate>" + m_lastUpdate.ToString("o") + "</lastupdate>" + m_newLine +
+                "   <isreadonly>" + m_isReadOnly + "</isreadonly>" + m_newLine;
 
             return providerXML;
         }

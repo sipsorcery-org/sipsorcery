@@ -51,8 +51,9 @@ namespace SIPSorcery.SIP.App
     public enum SIPCallRedirectModesEnum
     {
         None = 0,
-        Add = 1,        // (option=a)
-        Replace = 2,    // (option=r)
+        //Add = 1,        // (option=a)
+        //Replace = 2,    // (option=r)
+        NewDialPlan = 3,// (option=n)
     }
 
     public class CRMHeaders
@@ -299,13 +300,17 @@ namespace SIPSorcery.SIP.App
                 if (redirectModeMatch.Success)
                 {
                     string redirectMode = redirectModeMatch.Result("${redirectmode}");
-                    if (redirectMode == "a" || redirectMode == "A")
+                    //if (redirectMode == "a" || redirectMode == "A")
+                    //{
+                    //    RedirectMode = SIPCallRedirectModesEnum.Add;
+                    //}
+                    //else if (redirectMode == "r" || redirectMode == "R")
+                    //{
+                    //    RedirectMode = SIPCallRedirectModesEnum.Replace;
+                    //}
+                    if (redirectMode == "n" || redirectMode == "N")
                     {
-                        RedirectMode = SIPCallRedirectModesEnum.Add;
-                    }
-                    else if (redirectMode == "r" || redirectMode == "R")
-                    {
-                        RedirectMode = SIPCallRedirectModesEnum.Replace;
+                        RedirectMode = SIPCallRedirectModesEnum.NewDialPlan;
                     }
                 }
 

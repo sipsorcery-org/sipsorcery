@@ -145,7 +145,7 @@ namespace SIPSorcery.SIP.App
                     {
                         m_isRegistered = false;
 
-                        if (!m_exit)
+                        if (!m_exit && RegistrationTemporaryFailure != null)
                         {
                             RegistrationTemporaryFailure(m_sipAccountAOR, "Registration to " + m_registrarHost + " for " + m_sipAccountAOR.ToString() + " timed out.");
                         }
@@ -204,7 +204,10 @@ namespace SIPSorcery.SIP.App
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration to " + m_sipAccountAOR.ToString() + " reached the maximum number of allowed attempts without a failure condition.", m_owner));
                     m_isRegistered = false;
-                    RegistrationTemporaryFailure(m_sipAccountAOR, "Registration reached the maximum number of allowed attempts.");
+                    if (RegistrationTemporaryFailure != null)
+                    {
+                        RegistrationTemporaryFailure(m_sipAccountAOR, "Registration reached the maximum number of allowed attempts.");
+                    }
                     m_waitForRegistrationMRE.Set();
                 }
                 else
@@ -225,7 +228,7 @@ namespace SIPSorcery.SIP.App
                         }
                     }
 
-                    if (registrarSIPEndPoint == null)
+                    if (registrarSIPEndPoint == null && RegistrationFailed != null)
                     {
                         RegistrationFailed(m_sipAccountAOR, "Could not resolve " + m_registrarHost + ".");
                     }
@@ -246,14 +249,20 @@ namespace SIPSorcery.SIP.App
             catch (Exception excp)
             {
                 logger.Error("Exception SendInitialRegister to " + m_registrarHost + ". " + excp.Message);
-                RegistrationFailed(m_sipAccountAOR, "Exception SendInitialRegister to " + m_registrarHost + ". " + excp.Message);
+                if (RegistrationFailed != null)
+                {
+                    RegistrationFailed(m_sipAccountAOR, "Exception SendInitialRegister to " + m_registrarHost + ". " + excp.Message);
+                }
             }
         }
 
         private void RegistrationTimedOut(SIPTransaction sipTransaction)
         {
             m_isRegistered = false;
-            RegistrationTemporaryFailure(m_sipAccountAOR, "Registration transaction to " + m_registrarHost + " for " + m_sipAccountAOR.ToString() + " timed out.");
+            if (RegistrationTemporaryFailure != null)
+            {
+                RegistrationTemporaryFailure(m_sipAccountAOR, "Registration transaction to " + m_registrarHost + " for " + m_sipAccountAOR.ToString() + " timed out.");
+            }
             m_waitForRegistrationMRE.Set();
         }
 
@@ -274,7 +283,10 @@ namespace SIPSorcery.SIP.App
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration to " + m_sipAccountAOR.ToString() + " reached the maximum number of allowed attempts without a failure condition.", m_owner));
                             m_isRegistered = false;
-                            RegistrationTemporaryFailure(m_sipAccountAOR, "Registration reached the maximum number of allowed attempts.");
+                            if (RegistrationTemporaryFailure != null)
+                            {
+                                RegistrationTemporaryFailure(m_sipAccountAOR, "Registration reached the maximum number of allowed attempts.");
+                            }
                             m_waitForRegistrationMRE.Set();
                         }
                         else
@@ -291,7 +303,10 @@ namespace SIPSorcery.SIP.App
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration failed with " + sipResponse.Status + " but no authentication header was supplied for " + m_sipAccountAOR.ToString() + ".", m_owner));
                         m_isRegistered = false;
-                        RegistrationTemporaryFailure(m_sipAccountAOR, "Registration failed with " + sipResponse.Status + " but no authentication header was supplied.");
+                        if (RegistrationTemporaryFailure != null)
+                        {
+                            RegistrationTemporaryFailure(m_sipAccountAOR, "Registration failed with " + sipResponse.Status + " but no authentication header was supplied.");
+                        }
                         m_waitForRegistrationMRE.Set();
                     }
                 }
@@ -322,7 +337,10 @@ namespace SIPSorcery.SIP.App
                         // SIP account does not appear to exist.
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration failed with " + sipResponse.Status + " for " + m_sipAccountAOR.ToString() + ", no further registration attempts will be made.", m_owner));
                         string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
-                        RegistrationFailed(m_sipAccountAOR, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
+                        if (RegistrationFailed != null)
+                        {
+                            RegistrationFailed(m_sipAccountAOR, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
+                        }
                         m_exit = true;
                         m_waitForRegistrationMRE.Set();
                     }
@@ -336,7 +354,10 @@ namespace SIPSorcery.SIP.App
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration failed with " + sipResponse.Status + " for " + m_sipAccountAOR.ToString() + ".", m_owner));
                         m_isRegistered = false;
-                        RegistrationTemporaryFailure(m_sipAccountAOR, "Registration failed with " + sipResponse.Status + ".");
+                        if (RegistrationTemporaryFailure != null)
+                        {
+                            RegistrationTemporaryFailure(m_sipAccountAOR, "Registration failed with " + sipResponse.Status + ".");
+                        }
                         m_waitForRegistrationMRE.Set();
                     }
                 }
@@ -366,12 +387,20 @@ namespace SIPSorcery.SIP.App
                         {
                             SwitchboardToken = Crypto.SymmetricDecrypt(m_password, m_lastServerNonce, sipResponse.Header.SwitchboardToken);
                         }
-                        RegistrationSuccessful(m_sipAccountAOR);
+
+                        if (RegistrationSuccessful != null)
+                        {
+                            RegistrationSuccessful(m_sipAccountAOR);
+                        }
                     }
                     else
                     {
                         m_isRegistered = false;
-                        RegistrationRemoved(m_sipAccountAOR);
+
+                        if (RegistrationRemoved != null)
+                        {
+                            RegistrationRemoved(m_sipAccountAOR);
+                        }
                     }
 
                     m_waitForRegistrationMRE.Set();
@@ -387,7 +416,10 @@ namespace SIPSorcery.SIP.App
                     // SIP account does not appear to exist.
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration failed with " + sipResponse.Status + " for " + m_sipAccountAOR.ToString() + ", no further registration attempts will be made.", m_owner));
                     string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
-                    RegistrationFailed(m_sipAccountAOR, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
+                    if (RegistrationFailed != null)
+                    {
+                        RegistrationFailed(m_sipAccountAOR, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
+                    }
                     m_exit = true;
                     m_waitForRegistrationMRE.Set();
                 }
@@ -396,7 +428,10 @@ namespace SIPSorcery.SIP.App
                     // SIP account credentials failed.
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration failed with " + sipResponse.Status + " for " + m_sipAccountAOR.ToString() + ", no further registration attempts will be made.", m_owner));
                     string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
-                    RegistrationFailed(m_sipAccountAOR, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
+                    if (RegistrationFailed != null)
+                    {
+                        RegistrationFailed(m_sipAccountAOR, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
+                    }
                     m_exit = true;
                     m_waitForRegistrationMRE.Set();
                 }
@@ -404,7 +439,10 @@ namespace SIPSorcery.SIP.App
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration failed with " + sipResponse.Status + " for " + m_sipAccountAOR.ToString() + ".", m_owner));
                     m_isRegistered = false;
-                    RegistrationTemporaryFailure(m_sipAccountAOR, "Registration failed with " + sipResponse.Status + ".");
+                    if (RegistrationTemporaryFailure != null)
+                    {
+                        RegistrationTemporaryFailure(m_sipAccountAOR, "Registration failed with " + sipResponse.Status + ".");
+                    }
                     m_waitForRegistrationMRE.Set();
                 }
             }

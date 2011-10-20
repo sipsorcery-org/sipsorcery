@@ -93,13 +93,13 @@ namespace SIPSorcery.SIP.App
                     if (bindingsCount > 0)
                     {
                         string safeSIPAccountID = sipAccount.Id.ToString();
-                        Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.open, aor, Decimal.Zero));
+                        Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.open, aor, Decimal.Zero, sipAccount.AvatarURL));
                         //logger.Debug(" full presence " + aor.ToString() + " open.");
                     }
                     else
                     {
                         string safeSIPAccountID = sipAccount.Id.ToString();
-                        Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.closed, null, Decimal.Zero));
+                        Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.closed, null, Decimal.Zero, sipAccount.AvatarURL));
                         //logger.Debug(" full presence " + aor.ToString() + " closed.");
                     }
                 }
@@ -131,12 +131,17 @@ namespace SIPSorcery.SIP.App
                 string safeSIPAccountID = machineEvent.ResourceID;
                 SIPURI sipAccountURI = machineEvent.ResourceURI;
                 bool sendNotificationForEvent = true;
+                string avatarURL = null;
 
                 if (m_switchboardSIPAccountsOnly)
                 {
                     // Need to check whether the SIP account is switchboard enabled before forwarding the notification.
                     Guid sipAccountID = new Guid(machineEvent.ResourceID);
                     sendNotificationForEvent = Convert.ToBoolean(m_sipAccountPersistor.GetProperty(sipAccountID, "IsSwitchboardEnabled"));
+                    if (sendNotificationForEvent)
+                    {
+                        avatarURL = m_sipAccountPersistor.GetProperty(sipAccountID, "AvatarURL") as string;
+                    }
                 }
 
                 if (sendNotificationForEvent)
@@ -144,7 +149,7 @@ namespace SIPSorcery.SIP.App
                     if (machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate)
                     {
                         // A binding has been updated so there is at least one device online for the SIP account.
-                        Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.open, sipAccountURI, Decimal.Zero));
+                        Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.open, sipAccountURI, Decimal.Zero, avatarURL));
                         //logger.Debug(" single presence open.");
                     }
                     else
@@ -154,11 +159,11 @@ namespace SIPSorcery.SIP.App
                         int bindingsCount = GetSIPRegistrarBindingsCount_External(b => b.SIPAccountId == sipAccountID);
                         if (bindingsCount > 0)
                         {
-                            Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.open, sipAccountURI, Decimal.Zero));
+                            Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.open, sipAccountURI, Decimal.Zero, avatarURL));
                         }
                         else
                         {
-                            Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.closed, sipAccountURI, Decimal.Zero));
+                            Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.closed, sipAccountURI, Decimal.Zero, avatarURL));
                         }
                     }
 

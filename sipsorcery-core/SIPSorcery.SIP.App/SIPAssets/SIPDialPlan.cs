@@ -230,6 +230,18 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+        private bool m_isReadOnly;
+        [Column(Name = "isreadonly", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public bool IsReadOnly
+        {
+            get { return m_isReadOnly; }
+            set
+            {
+                m_isReadOnly = value;
+                NotifyPropertyChanged("IsReadOnly");
+            }
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -268,6 +280,7 @@ namespace SIPSorcery.SIP.App
             table.Columns.Add(new DataColumn("inserted", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("lastupdate", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("acceptnoninvite", typeof(Boolean)));
+            table.Columns.Add(new DataColumn("isreadonly", typeof(Boolean)));
             return table;
         }
 
@@ -286,6 +299,7 @@ namespace SIPSorcery.SIP.App
                 Inserted = (dialPlanRow.Table.Columns.Contains("inserted")&& dialPlanRow["inserted"] != null && dialPlanRow["inserted"] != DBNull.Value) ? DateTimeOffset.Parse(dialPlanRow["inserted"] as string) : DateTimeOffset.UtcNow;
                 LastUpdate = (dialPlanRow.Table.Columns.Contains("lastupdate") && dialPlanRow["lastupdate"] != null && dialPlanRow["lastupdate"] != DBNull.Value) ? DateTimeOffset.Parse(dialPlanRow["lastupdate"] as string) : DateTimeOffset.UtcNow;
                 m_acceptNonInvite = (dialPlanRow.Table.Columns.Contains("acceptnoninvite") && dialPlanRow["acceptnoninvite"] != null && dialPlanRow["acceptnoninvite"] != DBNull.Value) ? Convert.ToBoolean(dialPlanRow["acceptnoninvite"]) : false;
+                m_isReadOnly = (dialPlanRow.Table.Columns.Contains("isreadonly") && dialPlanRow["isreadonly"] != DBNull.Value && dialPlanRow["isreadonly"] != null) ? StorageLayer.ConvertToBoolean(dialPlanRow["isreadonly"]) : false;
             }
             catch (Exception excp) {
                 logger.Error("Exception DialPlan Load. " + excp);
@@ -324,7 +338,8 @@ namespace SIPSorcery.SIP.App
                 "    <authorisedapps>" + m_authorisedApps + "</authorisedapps>" + m_newLine +
                 "    <inserted>" + m_inserted.ToString("o") + "</inserted>" + m_newLine +
                 "    <lastupdate>" + m_lastUpdate.ToString("o") + "</lastupdate>" + m_newLine +
-                "    <acceptnoninvite>" + m_acceptNonInvite + "</acceptnoninvite>" + m_newLine;
+                "    <acceptnoninvite>" + m_acceptNonInvite + "</acceptnoninvite>" + m_newLine +
+                "    <isreadonly>" + m_isReadOnly + "</isreadonly>" + m_newLine;
 
             return dialPlanXML;
         }

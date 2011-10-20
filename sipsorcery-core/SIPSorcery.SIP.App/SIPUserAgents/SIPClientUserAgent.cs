@@ -608,7 +608,10 @@ namespace SIPSorcery.SIP.App
 
         private void ServerTimedOut(SIPTransaction sipTransaction)
         {
-            FireCallFailed(this, "Timeout, no response from server");
+            if (!m_callCancelled)
+            {
+                FireCallFailed(this, "Timeout, no response from server");
+            }
         }
 
         private void ByeFinalResponseReceived(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)

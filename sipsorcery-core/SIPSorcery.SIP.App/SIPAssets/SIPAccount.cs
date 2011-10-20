@@ -305,6 +305,19 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+        private string m_avatarURL;
+        [Column(Name = "avatarurl", DbType = "varchar(1024)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public string AvatarURL
+        {
+            get { return m_avatarURL; }
+            set
+            {
+                m_avatarURL = value;
+                NotifyPropertyChanged("AvatarURL");
+            }
+        }
+
         public DateTimeOffset InsertedLocal {
             get { return Inserted.AddMinutes(TimeZoneOffsetMinutes); }
         }
@@ -344,6 +357,7 @@ namespace SIPSorcery.SIP.App
             table.Columns.Add(new DataColumn("ipaddressacl", typeof(String)));
             table.Columns.Add(new DataColumn("isswitchboardenabled", typeof(Boolean)));
             table.Columns.Add(new DataColumn("dontmangleenabled", typeof(Boolean)));
+            table.Columns.Add(new DataColumn("avatarurl", typeof(String)));
             return table;
         }
 
@@ -367,6 +381,7 @@ namespace SIPSorcery.SIP.App
                 m_ipAddressACL = (sipAccountRow.Table.Columns.Contains("ipaddressacl") && sipAccountRow["ipaddressacl"] != null) ? sipAccountRow["ipaddressacl"] as string : null;
                 m_isSwitchboardEnabled = (sipAccountRow.Table.Columns.Contains("isswitchboardenabled") && sipAccountRow["isswitchboardenabled"] != null && sipAccountRow["isswitchboardenabled"] != DBNull.Value) ? Convert.ToBoolean(sipAccountRow["isswitchboardenabled"]) : false;
                 m_dontMangleEnabled = (sipAccountRow.Table.Columns.Contains("dontmangleenabled") && sipAccountRow["dontmangleenabled"] != null && sipAccountRow["dontmangleenabled"] != DBNull.Value) ? Convert.ToBoolean(sipAccountRow["dontmangleenabled"]) : false;
+                m_avatarURL = (sipAccountRow.Table.Columns.Contains("avatarurl") && sipAccountRow["avatarurl"] != null) ? sipAccountRow["avatarurl"] as string : null;
             }
             catch (Exception excp) {
                 logger.Error("Exception SIPAccount Load. " + excp);
@@ -509,7 +524,8 @@ namespace SIPSorcery.SIP.App
                 "  <ipaddressacl>" + SafeXML.MakeSafeXML(m_ipAddressACL) + "</ipaddressacl>" + m_newLine +
                 "  <inserted>" + m_inserted.ToString("o") + "</inserted>" + m_newLine +
                 "  <isswitchboardenabled>" + m_isSwitchboardEnabled + "</isswitchboardenabled>" + m_newLine +
-                "  <dontmangleenabled>" + m_dontMangleEnabled + "</dontmangleenabled>";
+                "  <dontmangleenabled>" + m_dontMangleEnabled + "</dontmangleenabled>" + m_newLine +
+                "  <avatarurl>" + m_avatarURL + "</avatarurl>";
 
             return sipAccountXML;
         }
