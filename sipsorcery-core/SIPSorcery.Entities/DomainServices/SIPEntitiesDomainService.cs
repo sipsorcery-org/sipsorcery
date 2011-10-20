@@ -655,14 +655,14 @@ namespace SIPSorcery.Entities.Services
         }
 
         [RequiresAuthentication]
-        public IQueryable<SimpleWizardDialPlanRule> GetSimpleWizardDialPlanRules()
+        public IQueryable<SimpleWizardRule> GetSimpleWizardRules()
         {
-            return m_service.GetSimpleDialPlanWizardRules(this.ServiceContext.User.Identity.Name);
+            return m_service.GetSimpleWizardRules(this.ServiceContext.User.Identity.Name);
             //return this.ObjectContext.SimpleWizardDialPlanRules.Where(x => x.Owner == this.ServiceContext.User.Identity.Name);
         }
 
         [RequiresAuthentication]
-        public void InsertSimplWizardeDialPlanRule(SimpleWizardDialPlanRule rule)
+        public void InsertSimpleWizardRule(SimpleWizardRule rule)
         {
             //rule.Owner = this.ServiceContext.User.Identity.Name;
 
@@ -675,11 +675,11 @@ namespace SIPSorcery.Entities.Services
             //    this.ObjectContext.SimpleWizardDialPlanRules.AddObject(rule);
             //}
 
-            m_service.InsertSimplWizardeDialPlanRule(this.ServiceContext.User.Identity.Name, rule);
+            m_service.InsertSimpleWizardRule(this.ServiceContext.User.Identity.Name, rule);
         }
 
         [RequiresAuthentication]
-        public void UpdateSimpleWizardDialPlanRule(SimpleWizardDialPlanRule rule)
+        public void UpdateSimpleWizardRule(SimpleWizardRule rule)
         {
             //if (rule.Owner != this.ServiceContext.User.Identity.Name)
             //{
@@ -690,11 +690,11 @@ namespace SIPSorcery.Entities.Services
             //    this.ObjectContext.SimpleWizardDialPlanRules.AttachAsModified(rule, this.ChangeSet.GetOriginal(rule));
             //}
 
-            m_service.UpdateSimpleWizardDialPlanRule(this.ServiceContext.User.Identity.Name, rule);
+            m_service.UpdateSimpleWizardRule(this.ServiceContext.User.Identity.Name, rule);
         }
 
         [RequiresAuthentication]
-        public void DeleteSimpleWizardDialPlanRule(SimpleWizardDialPlanRule rule)
+        public void DeleteSimpleWizardRule(SimpleWizardRule rule)
         {
             //if (rule.Owner != this.ServiceContext.User.Identity.Name)
             //{
@@ -705,7 +705,7 @@ namespace SIPSorcery.Entities.Services
             //    this.ObjectContext.SimpleWizardDialPlanRules.AttachAsModified(rule, this.ChangeSet.GetOriginal(rule));
             //}
 
-            m_service.DeleteSimpleWizardDialPlanRule(this.ServiceContext.User.Identity.Name, rule);
+            m_service.DeleteSimpleWizardRule(this.ServiceContext.User.Identity.Name, rule);
         }
     }
 }

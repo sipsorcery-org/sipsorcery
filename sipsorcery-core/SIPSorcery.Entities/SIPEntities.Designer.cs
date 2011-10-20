@@ -22,10 +22,9 @@ using System.Runtime.Serialization;
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipdialplanoptions_ibfk_1", "SIPDialPlan", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPDialPlan), "SIPDialplanOption", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPDialplanOption), true)]
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipdialplanproviders_ibfk_1", "SIPDialPlan", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPDialPlan), "SIPDialplanProvider", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPDialplanProvider), true)]
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipdialplanroutes_ibfk_1", "SIPDialPlan", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPDialPlan), "SIPDialplanRoute", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPDialplanRoute), true)]
-[assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "simplewizarddialplanrule_ibfk_1", "SIPDialPlan", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPDialPlan), "simplewizarddialplanrule", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SimpleWizardDialPlanRule), true)]
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipregistrarbindings_ibfk_1", "SIPAccount", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPAccount), "SIPRegistrarBinding", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPRegistrarBinding), true)]
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipproviderbindings_ibfk_2", "SIPProvider", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPProvider), "SIPProviderBinding", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPProviderBinding), true)]
-[assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "simplewizarddialplanrule_ibfk_2", "SIPAccount", System.Data.Metadata.Edm.RelationshipMultiplicity.ZeroOrOne, typeof(SIPSorcery.Entities.SIPAccount), "SimpleWizardDialPlanRule", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SimpleWizardDialPlanRule), true)]
+[assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "simplewizardrule_ibfk_1", "SIPDialPlan", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPDialPlan), "simplewizardrule", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SimpleWizardRule), true)]
 
 #endregion
 
@@ -288,18 +287,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        public ObjectSet<SimpleWizardDialPlanRule> SimpleWizardDialPlanRules
+        public ObjectSet<SimpleWizardRule> SimpleWizardRules
         {
             get
             {
-                if ((_SimpleWizardDialPlanRules == null))
+                if ((_SimpleWizardRules == null))
                 {
-                    _SimpleWizardDialPlanRules = base.CreateObjectSet<SimpleWizardDialPlanRule>("SimpleWizardDialPlanRules");
+                    _SimpleWizardRules = base.CreateObjectSet<SimpleWizardRule>("SimpleWizardRules");
                 }
-                return _SimpleWizardDialPlanRules;
+                return _SimpleWizardRules;
             }
         }
-        private ObjectSet<SimpleWizardDialPlanRule> _SimpleWizardDialPlanRules;
+        private ObjectSet<SimpleWizardRule> _SimpleWizardRules;
 
         #endregion
         #region AddTo Methods
@@ -409,11 +408,11 @@ namespace SIPSorcery.Entities
         }
     
         /// <summary>
-        /// Deprecated Method for adding a new object to the SimpleWizardDialPlanRules EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
+        /// Deprecated Method for adding a new object to the SimpleWizardRules EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
         /// </summary>
-        public void AddToSimpleWizardDialPlanRules(SimpleWizardDialPlanRule simpleWizardDialPlanRule)
+        public void AddToSimpleWizardRules(SimpleWizardRule simpleWizardRule)
         {
-            base.AddObject("SimpleWizardDialPlanRules", simpleWizardDialPlanRule);
+            base.AddObject("SimpleWizardRules", simpleWizardRule);
         }
 
         #endregion
@@ -1941,38 +1940,36 @@ namespace SIPSorcery.Entities
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="SIPSorcery.Entities", Name="SimpleWizardDialPlanRule")]
+    [EdmEntityTypeAttribute(NamespaceName="SIPSorcery.Entities", Name="SimpleWizardRule")]
     [Serializable()]
     [DataContractAttribute(IsReference=true)]
-    public partial class SimpleWizardDialPlanRule : EntityObject
+    public partial class SimpleWizardRule : EntityObject
     {
         #region Factory Method
     
         /// <summary>
-        /// Create a new SimpleWizardDialPlanRule object.
+        /// Create a new SimpleWizardRule object.
         /// </summary>
         /// <param name="id">Initial value of the ID property.</param>
-        /// <param name="dialPlanID">Initial value of the DialPlanID property.</param>
-        /// <param name="ruleTypeID">Initial value of the RuleTypeID property.</param>
-        /// <param name="pattern">Initial value of the Pattern property.</param>
-        /// <param name="priority">Initial value of the Priority property.</param>
         /// <param name="owner">Initial value of the Owner property.</param>
+        /// <param name="dialPlanID">Initial value of the DialPlanID property.</param>
         /// <param name="direction">Initial value of the Direction property.</param>
+        /// <param name="pattern">Initial value of the Pattern property.</param>
         /// <param name="command">Initial value of the Command property.</param>
-        /// <param name="commandString">Initial value of the CommandString property.</param>
-        public static SimpleWizardDialPlanRule CreateSimpleWizardDialPlanRule(global::System.String id, global::System.String dialPlanID, global::System.Int32 ruleTypeID, global::System.String pattern, global::System.Int32 priority, global::System.String owner, global::System.String direction, global::System.String command, global::System.String commandString)
+        /// <param name="commandParameter1">Initial value of the CommandParameter1 property.</param>
+        /// <param name="priority">Initial value of the Priority property.</param>
+        public static SimpleWizardRule CreateSimpleWizardRule(global::System.String id, global::System.String owner, global::System.String dialPlanID, global::System.String direction, global::System.String pattern, global::System.String command, global::System.String commandParameter1, global::System.Int32 priority)
         {
-            SimpleWizardDialPlanRule simpleWizardDialPlanRule = new SimpleWizardDialPlanRule();
-            simpleWizardDialPlanRule.ID = id;
-            simpleWizardDialPlanRule.DialPlanID = dialPlanID;
-            simpleWizardDialPlanRule.RuleTypeID = ruleTypeID;
-            simpleWizardDialPlanRule.Pattern = pattern;
-            simpleWizardDialPlanRule.Priority = priority;
-            simpleWizardDialPlanRule.Owner = owner;
-            simpleWizardDialPlanRule.Direction = direction;
-            simpleWizardDialPlanRule.Command = command;
-            simpleWizardDialPlanRule.CommandString = commandString;
-            return simpleWizardDialPlanRule;
+            SimpleWizardRule simpleWizardRule = new SimpleWizardRule();
+            simpleWizardRule.ID = id;
+            simpleWizardRule.Owner = owner;
+            simpleWizardRule.DialPlanID = dialPlanID;
+            simpleWizardRule.Direction = direction;
+            simpleWizardRule.Pattern = pattern;
+            simpleWizardRule.Command = command;
+            simpleWizardRule.CommandParameter1 = commandParameter1;
+            simpleWizardRule.Priority = priority;
+            return simpleWizardRule;
         }
 
         #endregion
@@ -2010,6 +2007,30 @@ namespace SIPSorcery.Entities
         /// </summary>
         [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
         [DataMemberAttribute()]
+        public global::System.String Owner
+        {
+            get
+            {
+                return _Owner;
+            }
+            set
+            {
+                OnOwnerChanging(value);
+                ReportPropertyChanging("Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("Owner");
+                OnOwnerChanged();
+            }
+        }
+        private global::System.String _Owner;
+        partial void OnOwnerChanging(global::System.String value);
+        partial void OnOwnerChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
         public global::System.String DialPlanID
         {
             get
@@ -2034,24 +2055,48 @@ namespace SIPSorcery.Entities
         /// </summary>
         [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
         [DataMemberAttribute()]
-        public global::System.Int32 RuleTypeID
+        public global::System.String Direction
         {
             get
             {
-                return _RuleTypeID;
+                return _Direction;
             }
             set
             {
-                OnRuleTypeIDChanging(value);
-                ReportPropertyChanging("RuleTypeID");
-                _RuleTypeID = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("RuleTypeID");
-                OnRuleTypeIDChanged();
+                OnDirectionChanging(value);
+                ReportPropertyChanging("Direction");
+                _Direction = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("Direction");
+                OnDirectionChanged();
             }
         }
-        private global::System.Int32 _RuleTypeID;
-        partial void OnRuleTypeIDChanging(global::System.Int32 value);
-        partial void OnRuleTypeIDChanged();
+        private global::System.String _Direction;
+        partial void OnDirectionChanging(global::System.String value);
+        partial void OnDirectionChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String ToSIPAccount
+        {
+            get
+            {
+                return _ToSIPAccount;
+            }
+            set
+            {
+                OnToSIPAccountChanging(value);
+                ReportPropertyChanging("ToSIPAccount");
+                _ToSIPAccount = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("ToSIPAccount");
+                OnToSIPAccountChanged();
+            }
+        }
+        private global::System.String _ToSIPAccount;
+        partial void OnToSIPAccountChanging(global::System.String value);
+        partial void OnToSIPAccountChanged();
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -2076,6 +2121,102 @@ namespace SIPSorcery.Entities
         private global::System.String _Pattern;
         partial void OnPatternChanging(global::System.String value);
         partial void OnPatternChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String Command
+        {
+            get
+            {
+                return _Command;
+            }
+            set
+            {
+                OnCommandChanging(value);
+                ReportPropertyChanging("Command");
+                _Command = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("Command");
+                OnCommandChanged();
+            }
+        }
+        private global::System.String _Command;
+        partial void OnCommandChanging(global::System.String value);
+        partial void OnCommandChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String CommandParameter1
+        {
+            get
+            {
+                return _CommandParameter1;
+            }
+            set
+            {
+                OnCommandParameter1Changing(value);
+                ReportPropertyChanging("CommandParameter1");
+                _CommandParameter1 = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("CommandParameter1");
+                OnCommandParameter1Changed();
+            }
+        }
+        private global::System.String _CommandParameter1;
+        partial void OnCommandParameter1Changing(global::System.String value);
+        partial void OnCommandParameter1Changed();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String CommandParameter2
+        {
+            get
+            {
+                return _CommandParameter2;
+            }
+            set
+            {
+                OnCommandParameter2Changing(value);
+                ReportPropertyChanging("CommandParameter2");
+                _CommandParameter2 = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("CommandParameter2");
+                OnCommandParameter2Changed();
+            }
+        }
+        private global::System.String _CommandParameter2;
+        partial void OnCommandParameter2Changing(global::System.String value);
+        partial void OnCommandParameter2Changed();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String CommandParameter3
+        {
+            get
+            {
+                return _CommandParameter3;
+            }
+            set
+            {
+                OnCommandParameter3Changing(value);
+                ReportPropertyChanging("CommandParameter3");
+                _CommandParameter3 = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("CommandParameter3");
+                OnCommandParameter3Changed();
+            }
+        }
+        private global::System.String _CommandParameter3;
+        partial void OnCommandParameter3Changing(global::System.String value);
+        partial void OnCommandParameter3Changed();
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -2148,126 +2289,6 @@ namespace SIPSorcery.Entities
         private Nullable<global::System.Int32> _TimeIntervalID;
         partial void OnTimeIntervalIDChanging(Nullable<global::System.Int32> value);
         partial void OnTimeIntervalIDChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String Owner
-        {
-            get
-            {
-                return _Owner;
-            }
-            set
-            {
-                OnOwnerChanging(value);
-                ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false);
-                ReportPropertyChanged("Owner");
-                OnOwnerChanged();
-            }
-        }
-        private global::System.String _Owner;
-        partial void OnOwnerChanging(global::System.String value);
-        partial void OnOwnerChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String Direction
-        {
-            get
-            {
-                return _Direction;
-            }
-            set
-            {
-                OnDirectionChanging(value);
-                ReportPropertyChanging("Direction");
-                _Direction = StructuralObject.SetValidValue(value, false);
-                ReportPropertyChanged("Direction");
-                OnDirectionChanged();
-            }
-        }
-        private global::System.String _Direction;
-        partial void OnDirectionChanging(global::System.String value);
-        partial void OnDirectionChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
-        public global::System.String ToSIPAccount
-        {
-            get
-            {
-                return _ToSIPAccount;
-            }
-            set
-            {
-                OnToSIPAccountChanging(value);
-                ReportPropertyChanging("ToSIPAccount");
-                _ToSIPAccount = StructuralObject.SetValidValue(value, true);
-                ReportPropertyChanged("ToSIPAccount");
-                OnToSIPAccountChanged();
-            }
-        }
-        private global::System.String _ToSIPAccount;
-        partial void OnToSIPAccountChanging(global::System.String value);
-        partial void OnToSIPAccountChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String Command
-        {
-            get
-            {
-                return _Command;
-            }
-            set
-            {
-                OnCommandChanging(value);
-                ReportPropertyChanging("Command");
-                _Command = StructuralObject.SetValidValue(value, false);
-                ReportPropertyChanged("Command");
-                OnCommandChanged();
-            }
-        }
-        private global::System.String _Command;
-        partial void OnCommandChanging(global::System.String value);
-        partial void OnCommandChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String CommandString
-        {
-            get
-            {
-                return _CommandString;
-            }
-            set
-            {
-                OnCommandStringChanging(value);
-                ReportPropertyChanging("CommandString");
-                _CommandString = StructuralObject.SetValidValue(value, false);
-                ReportPropertyChanged("CommandString");
-                OnCommandStringChanged();
-            }
-        }
-        private global::System.String _CommandString;
-        partial void OnCommandStringChanging(global::System.String value);
-        partial void OnCommandStringChanged();
 
         #endregion
     
@@ -2279,16 +2300,16 @@ namespace SIPSorcery.Entities
         [XmlIgnoreAttribute()]
         [SoapIgnoreAttribute()]
         [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("SIPSorcery.Entities", "simplewizarddialplanrule_ibfk_1", "SIPDialPlan")]
+        [EdmRelationshipNavigationPropertyAttribute("SIPSorcery.Entities", "simplewizardrule_ibfk_1", "SIPDialPlan")]
         public SIPDialPlan sipdialplan
         {
             get
             {
-                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<SIPDialPlan>("SIPSorcery.Entities.simplewizarddialplanrule_ibfk_1", "SIPDialPlan").Value;
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<SIPDialPlan>("SIPSorcery.Entities.simplewizardrule_ibfk_1", "SIPDialPlan").Value;
             }
             set
             {
-                ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<SIPDialPlan>("SIPSorcery.Entities.simplewizarddialplanrule_ibfk_1", "SIPDialPlan").Value = value;
+                ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<SIPDialPlan>("SIPSorcery.Entities.simplewizardrule_ibfk_1", "SIPDialPlan").Value = value;
             }
         }
         /// <summary>
@@ -2300,13 +2321,13 @@ namespace SIPSorcery.Entities
         {
             get
             {
-                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<SIPDialPlan>("SIPSorcery.Entities.simplewizarddialplanrule_ibfk_1", "SIPDialPlan");
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<SIPDialPlan>("SIPSorcery.Entities.simplewizardrule_ibfk_1", "SIPDialPlan");
             }
             set
             {
                 if ((value != null))
                 {
-                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedReference<SIPDialPlan>("SIPSorcery.Entities.simplewizarddialplanrule_ibfk_1", "SIPDialPlan", value);
+                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedReference<SIPDialPlan>("SIPSorcery.Entities.simplewizardrule_ibfk_1", "SIPDialPlan", value);
                 }
             }
         }
@@ -2841,28 +2862,6 @@ namespace SIPSorcery.Entities
                 if ((value != null))
                 {
                     ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<SIPRegistrarBinding>("SIPSorcery.Entities.sipregistrarbindings_ibfk_1", "SIPRegistrarBinding", value);
-                }
-            }
-        }
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("SIPSorcery.Entities", "simplewizarddialplanrule_ibfk_2", "SimpleWizardDialPlanRule")]
-        public EntityCollection<SimpleWizardDialPlanRule> simplewizarddialplanrules
-        {
-            get
-            {
-                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedCollection<SimpleWizardDialPlanRule>("SIPSorcery.Entities.simplewizarddialplanrule_ibfk_2", "SimpleWizardDialPlanRule");
-            }
-            set
-            {
-                if ((value != null))
-                {
-                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<SimpleWizardDialPlanRule>("SIPSorcery.Entities.simplewizarddialplanrule_ibfk_2", "SimpleWizardDialPlanRule", value);
                 }
             }
         }
@@ -3980,18 +3979,18 @@ namespace SIPSorcery.Entities
         [XmlIgnoreAttribute()]
         [SoapIgnoreAttribute()]
         [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("SIPSorcery.Entities", "simplewizarddialplanrule_ibfk_1", "simplewizarddialplanrule")]
-        public EntityCollection<SimpleWizardDialPlanRule> simplewizarddialplanrules
+        [EdmRelationshipNavigationPropertyAttribute("SIPSorcery.Entities", "simplewizardrule_ibfk_1", "simplewizardrule")]
+        public EntityCollection<SimpleWizardRule> simplewizardrules
         {
             get
             {
-                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedCollection<SimpleWizardDialPlanRule>("SIPSorcery.Entities.simplewizarddialplanrule_ibfk_1", "simplewizarddialplanrule");
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedCollection<SimpleWizardRule>("SIPSorcery.Entities.simplewizardrule_ibfk_1", "simplewizardrule");
             }
             set
             {
                 if ((value != null))
                 {
-                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<SimpleWizardDialPlanRule>("SIPSorcery.Entities.simplewizarddialplanrule_ibfk_1", "simplewizarddialplanrule", value);
+                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<SimpleWizardRule>("SIPSorcery.Entities.simplewizardrule_ibfk_1", "simplewizardrule", value);
                 }
             }
         }

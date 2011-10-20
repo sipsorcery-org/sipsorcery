@@ -8,10 +8,10 @@ using System.Text.RegularExpressions;
 
 namespace SIPSorcery.Entities
 {
-    [MetadataType(typeof(SimpleWizardDialPlanRuleMetadata))]
-    public partial class SimpleWizardDialPlanRule
+    [MetadataType(typeof(SimpleWizardRuleMetadata))]
+    public partial class SimpleWizardRule
     {
-        internal class SimpleWizardDialPlanRuleMetadata
+        internal class SimpleWizardRuleMetadata
         {
             [Editable(false, AllowInitialValue = true)]
             public string ID;

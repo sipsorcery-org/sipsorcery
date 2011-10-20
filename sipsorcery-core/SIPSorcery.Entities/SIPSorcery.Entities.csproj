@@ -39,6 +39,7 @@
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.Entity" />
+    <Reference Include="System.Data.Linq" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Security" />
     <Reference Include="System.ServiceModel" />
@@ -54,7 +55,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Entities\SimpleWizardDialPlanRule.shared.cs" />
     <Compile Include="Entities\Customer.shared.cs" />
     <Compile Include="DomainServices\SIPEntitiesDomainService.cs" />
     <Compile Include="Entities\SIPDialPlanLookup.shared.cs" />
@@ -73,6 +73,7 @@
     <Compile Include="Entities\CDR.shared.cs" />
     <Compile Include="Entities\SIPDialPlan.shared.cs" />
     <Compile Include="Enums\SIPDialPlanScriptTypes.shared.cs" />
+    <Compile Include="ServicesCommon\DynamicLinq.cs" />
     <Compile Include="ServicesCommon\SIPProviderBindingSynchroniser.cs" />
     <Compile Include="ServicesCommon\SIPSorceryService.cs" />
     <Compile Include="SIPEntities.Designer.cs">

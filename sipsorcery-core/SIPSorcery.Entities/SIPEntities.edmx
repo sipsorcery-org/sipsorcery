@@ -8,7 +8,7 @@
         <EntityContainer Name="EntitiesStoreContainer">
           <EntitySet Name="cdr" EntityType="Entities.Store.cdr" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="customers" EntityType="Entities.Store.customers" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="simplewizarddialplanrule" EntityType="Entities.Store.simplewizarddialplanrule" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="simplewizardrule" EntityType="Entities.Store.simplewizardrule" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipaccounts" EntityType="Entities.Store.sipaccounts" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipdialogues" EntityType="Entities.Store.sipdialogues" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipdialplanlookups" EntityType="Entities.Store.sipdialplanlookups" store:Type="Tables" Schema="sipsorcery" />
@@ -20,9 +20,9 @@
           <EntitySet Name="sipproviderbindings" EntityType="Entities.Store.sipproviderbindings" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipproviders" EntityType="Entities.Store.sipproviders" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipregistrarbindings" EntityType="Entities.Store.sipregistrarbindings" store:Type="Tables" Schema="sipsorcery" />
-          <AssociationSet Name="simplewizarddialplanrule_ibfk_1" Association="Entities.Store.simplewizarddialplanrule_ibfk_1">
+          <AssociationSet Name="simplewizardrule_ibfk_1" Association="Entities.Store.simplewizardrule_ibfk_1">
             <End Role="sipdialplans" EntitySet="sipdialplans" />
-            <End Role="simplewizarddialplanrule" EntitySet="simplewizarddialplanrule" />
+            <End Role="simplewizardrule" EntitySet="simplewizardrule" />
           </AssociationSet>
           <AssociationSet Name="sipdialplanlookups_ibfk_1" Association="Entities.Store.sipdialplanlookups_ibfk_1">
             <End Role="sipdialplans" EntitySet="sipdialplans" />
@@ -127,7 +127,7 @@
           <Property Name="servicelevel" Type="varchar" Nullable="false" MaxLength="64" />
           <Property Name="servicerenewaldate" Type="varchar" MaxLength="33" />
         </EntityType>
-        <EntityType Name="simplewizarddialplanrule">
+        <EntityType Name="simplewizardrule">
           <Key>
             <PropertyRef Name="ID" />
           </Key>
@@ -136,10 +136,11 @@
           <Property Name="DialPlanID" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="Direction" Type="varchar" Nullable="false" MaxLength="3" />
           <Property Name="ToSIPAccount" Type="varchar" MaxLength="161" />
-          <Property Name="RuleTypeID" Type="int" Nullable="false" />
           <Property Name="Pattern" Type="varchar" Nullable="false" MaxLength="1024" />
           <Property Name="Command" Type="varchar" Nullable="false" MaxLength="16" />
-          <Property Name="CommandString" Type="varchar" Nullable="false" MaxLength="4096" />
+          <Property Name="CommandParameter1" Type="varchar" Nullable="false" MaxLength="2048" />
+          <Property Name="CommandParameter2" Type="varchar" MaxLength="2048" />
+          <Property Name="CommandParameter3" Type="varchar" MaxLength="2048" />
           <Property Name="Description" Type="varchar" MaxLength="1024" />
           <Property Name="Priority" Type="int" Nullable="false" />
           <Property Name="TimeIntervalID" Type="int" />
@@ -349,16 +350,16 @@
           <Property Name="lastupdate" Type="varchar" Nullable="false" MaxLength="33" />
           <Property Name="expirytime" Type="varchar" Nullable="false" MaxLength="33" />
         </EntityType>
-        <Association Name="simplewizarddialplanrule_ibfk_1">
+        <Association Name="simplewizardrule_ibfk_1">
           <End Role="sipdialplans" Type="Entities.Store.sipdialplans" Multiplicity="1">
             <OnDelete Action="Cascade" />
           </End>
-          <End Role="simplewizarddialplanrule" Type="Entities.Store.simplewizarddialplanrule" Multiplicity="*" />
+          <End Role="simplewizardrule" Type="Entities.Store.simplewizardrule" Multiplicity="*" />
           <ReferentialConstraint>
             <Principal Role="sipdialplans">
               <PropertyRef Name="id" />
             </Principal>
-            <Dependent Role="simplewizarddialplanrule">
+            <Dependent Role="simplewizardrule">
               <PropertyRef Name="DialPlanID" />
             </Dependent>
           </ReferentialConstraint>
@@ -481,11 +482,6 @@
             <End Role="SIPDialPlan" EntitySet="SIPDialPlans" />
             <End Role="SIPDialplanRoute" EntitySet="SIPDialplanRoutes" />
           </AssociationSet>
-          <EntitySet Name="SimpleWizardDialPlanRules" EntityType="SIPSorcery.Entities.SimpleWizardDialPlanRule" />
-          <AssociationSet Name="simplewizarddialplanrule_ibfk_1" Association="SIPSorcery.Entities.simplewizarddialplanrule_ibfk_1">
-            <End Role="SIPDialPlan" EntitySet="SIPDialPlans" />
-            <End Role="simplewizarddialplanrule" EntitySet="SimpleWizardDialPlanRules" />
-          </AssociationSet>
           <AssociationSet Name="sipregistrarbindings_ibfk_1" Association="SIPSorcery.Entities.sipregistrarbindings_ibfk_1">
             <End Role="SIPAccount" EntitySet="SIPAccounts" />
             <End Role="SIPRegistrarBinding" EntitySet="SIPRegistrarBindings" />
@@ -494,9 +490,10 @@
             <End Role="SIPProvider" EntitySet="SIPProviders" />
             <End Role="SIPProviderBinding" EntitySet="SIPProviderBindings" />
           </AssociationSet>
-          <AssociationSet Name="simplewizarddialplanrule_ibfk_2" Association="SIPSorcery.Entities.simplewizarddialplanrule_ibfk_2">
-            <End Role="SIPAccount" EntitySet="SIPAccounts" />
-            <End Role="SimpleWizardDialPlanRule" EntitySet="SimpleWizardDialPlanRules" />
+          <EntitySet Name="SimpleWizardRules" EntityType="SIPSorcery.Entities.SimpleWizardRule" />
+          <AssociationSet Name="simplewizardrule_ibfk_1" Association="SIPSorcery.Entities.simplewizardrule_ibfk_1">
+            <End Role="SIPDialPlan" EntitySet="SIPDialPlans" />
+            <End Role="simplewizardrule" EntitySet="SimpleWizardRules" />
           </AssociationSet>
         </EntityContainer>
         <EntityType Name="SIPDialplanLookup">
@@ -647,7 +644,6 @@
           <Property Type="String" Name="SIPPassword" Nullable="false" />
           <Property Type="String" Name="SIPUsername" Nullable="false" />
           <NavigationProperty Name="sipregistrarbindings" Relationship="SIPSorcery.Entities.sipregistrarbindings_ibfk_1" FromRole="SIPAccount" ToRole="SIPRegistrarBinding" />
-          <NavigationProperty Name="simplewizarddialplanrules" Relationship="SIPSorcery.Entities.simplewizarddialplanrule_ibfk_2" FromRole="SIPAccount" ToRole="SimpleWizardDialPlanRule" />
           <Property Type="String" Name="AvatarURL" />
         </EntityType>
         <EntityType Name="SIPDialogue">
@@ -700,8 +696,8 @@
           <NavigationProperty Name="sipdialplanproviders" Relationship="SIPSorcery.Entities.sipdialplanproviders_ibfk_1" FromRole="SIPDialPlan" ToRole="SIPDialplanProvider" />
           <NavigationProperty Name="sipdialplanroutes" Relationship="SIPSorcery.Entities.sipdialplanroutes_ibfk_1" FromRole="SIPDialPlan" ToRole="SIPDialplanRoute" />
           <Property Type="Boolean" Name="AcceptNonInvite" Nullable="false" />
-          <NavigationProperty Name="simplewizarddialplanrules" Relationship="SIPSorcery.Entities.simplewizarddialplanrule_ibfk_1" FromRole="SIPDialPlan" ToRole="simplewizarddialplanrule" />
           <Property Type="Boolean" Name="IsReadOnly" Nullable="false" />
+          <NavigationProperty Name="simplewizardrules" Relationship="SIPSorcery.Entities.simplewizardrule_ibfk_1" FromRole="SIPDialPlan" ToRole="simplewizardrule" />
         </EntityType>
         <EntityType Name="SIPDomain">
           <Key>
@@ -832,36 +828,6 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <EntityType Name="SimpleWizardDialPlanRule">
-          <Key>
-            <PropertyRef Name="ID" />
-          </Key>
-          <Property Type="String" Name="ID" Nullable="false" />
-          <Property Type="String" Name="DialPlanID" Nullable="false" />
-          <Property Type="Int32" Name="RuleTypeID" Nullable="false" />
-          <Property Type="String" Name="Pattern" Nullable="false" />
-          <Property Type="String" Name="Description" />
-          <Property Type="Int32" Name="Priority" Nullable="false" />
-          <Property Type="Int32" Name="TimeIntervalID" />
-          <NavigationProperty Name="sipdialplan" Relationship="SIPSorcery.Entities.simplewizarddialplanrule_ibfk_1" FromRole="simplewizarddialplanrule" ToRole="SIPDialPlan" />
-          <Property Type="String" Name="Owner" Nullable="false" />
-          <Property Type="String" Name="Direction" Nullable="false" />
-          <Property Type="String" Name="ToSIPAccount" />
-          <Property Type="String" Name="Command" Nullable="false" />
-          <Property Type="String" Name="CommandString" Nullable="false" />
-        </EntityType>
-        <Association Name="simplewizarddialplanrule_ibfk_1">
-          <End Type="SIPSorcery.Entities.SIPDialPlan" Role="SIPDialPlan" Multiplicity="1" />
-          <End Type="SIPSorcery.Entities.SimpleWizardDialPlanRule" Role="simplewizarddialplanrule" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="SIPDialPlan">
-              <PropertyRef Name="ID" />
-            </Principal>
-            <Dependent Role="simplewizarddialplanrule">
-              <PropertyRef Name="DialPlanID" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
         <Association Name="sipregistrarbindings_ibfk_1">
           <End Type="SIPSorcery.Entities.SIPAccount" Role="SIPAccount" Multiplicity="1" />
           <End Type="SIPSorcery.Entities.SIPRegistrarBinding" Role="SIPRegistrarBinding" Multiplicity="*" />
@@ -886,15 +852,34 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <Association Name="simplewizarddialplanrule_ibfk_2">
-          <End Type="SIPSorcery.Entities.SIPAccount" Role="SIPAccount" Multiplicity="0..1" />
-          <End Type="SIPSorcery.Entities.SimpleWizardDialPlanRule" Role="SimpleWizardDialPlanRule" Multiplicity="*" />
+        <EntityType Name="SimpleWizardRule">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Type="String" Name="ID" Nullable="false" />
+          <Property Type="String" Name="Owner" Nullable="false" />
+          <Property Type="String" Name="DialPlanID" Nullable="false" />
+          <Property Type="String" Name="Direction" Nullable="false" />
+          <Property Type="String" Name="ToSIPAccount" />
+          <Property Type="String" Name="Pattern" Nullable="false" />
+          <Property Type="String" Name="Command" Nullable="false" />
+          <Property Type="String" Name="CommandParameter1" Nullable="false" />
+          <Property Type="String" Name="CommandParameter2" Nullable="true" />
+          <Property Type="String" Name="CommandParameter3" Nullable="true" />
+          <Property Type="String" Name="Description" />
+          <Property Type="Int32" Name="Priority" Nullable="false" />
+          <Property Type="Int32" Name="TimeIntervalID" />
+          <NavigationProperty Name="sipdialplan" Relationship="SIPSorcery.Entities.simplewizardrule_ibfk_1" FromRole="simplewizardrule" ToRole="SIPDialPlan" />
+        </EntityType>
+        <Association Name="simplewizardrule_ibfk_1">
+          <End Type="SIPSorcery.Entities.SIPDialPlan" Role="SIPDialPlan" Multiplicity="1" />
+          <End Type="SIPSorcery.Entities.SimpleWizardRule" Role="simplewizardrule" Multiplicity="*" />
           <ReferentialConstraint>
-            <Principal Role="SIPAccount">
+            <Principal Role="SIPDialPlan">
               <PropertyRef Name="ID" />
             </Principal>
-            <Dependent Role="SimpleWizardDialPlanRule">
-              <PropertyRef Name="ToSIPAccount" />
+            <Dependent Role="simplewizardrule">
+              <PropertyRef Name="DialPlanID" />
             </Dependent>
           </ReferentialConstraint>
         </Association>
@@ -1188,20 +1173,21 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
-          <EntitySetMapping Name="SimpleWizardDialPlanRules">
-            <EntityTypeMapping TypeName="SIPSorcery.Entities.SimpleWizardDialPlanRule">
-              <MappingFragment StoreEntitySet="simplewizarddialplanrule">
-                <ScalarProperty Name="CommandString" ColumnName="CommandString" />
-                <ScalarProperty Name="Command" ColumnName="Command" />
-                <ScalarProperty Name="ToSIPAccount" ColumnName="ToSIPAccount" />
-                <ScalarProperty Name="Direction" ColumnName="Direction" />
-                <ScalarProperty Name="Owner" ColumnName="Owner" />
+          <EntitySetMapping Name="SimpleWizardRules">
+            <EntityTypeMapping TypeName="SIPSorcery.Entities.SimpleWizardRule">
+              <MappingFragment StoreEntitySet="simplewizardrule">
                 <ScalarProperty Name="TimeIntervalID" ColumnName="TimeIntervalID" />
                 <ScalarProperty Name="Priority" ColumnName="Priority" />
                 <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="CommandParameter3" ColumnName="CommandParameter3" />
+                <ScalarProperty Name="CommandParameter2" ColumnName="CommandParameter2" />
+                <ScalarProperty Name="CommandParameter1" ColumnName="CommandParameter1" />
+                <ScalarProperty Name="Command" ColumnName="Command" />
                 <ScalarProperty Name="Pattern" ColumnName="Pattern" />
-                <ScalarProperty Name="RuleTypeID" ColumnName="RuleTypeID" />
+                <ScalarProperty Name="ToSIPAccount" ColumnName="ToSIPAccount" />
+                <ScalarProperty Name="Direction" ColumnName="Direction" />
                 <ScalarProperty Name="DialPlanID" ColumnName="DialPlanID" />
+                <ScalarProperty Name="Owner" ColumnName="Owner" />
                 <ScalarProperty Name="ID" ColumnName="ID" />
               </MappingFragment>
             </EntityTypeMapping>
@@ -1226,7 +1212,7 @@
     </Options>
     <!-- Diagram content (shape and connector positions) -->
     <Diagrams>
-      <Diagram Name="SIPEntities" ZoomLevel="61">
+      <Diagram Name="SIPEntities" ZoomLevel="80">
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanLookup" Width="1.875" PointX="11.5" PointY="1" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanRoute" Width="1.875" PointX="18.375" PointY="0.75" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanProvider" Width="2.25" PointX="11.625" PointY="4.25" Height="2.5571907552083317" />
@@ -1245,22 +1231,16 @@
           <ConnectorPoint PointX="13.375" PointY="2.4035953776041667" />
         </AssociationConnector>
         <AssociationConnector Association="SIPSorcery.Entities.sipdialplanoptions_ibfk_1" >
-          <ConnectorPoint PointX="17.25" PointY="4.9949039713541659" />
-          <ConnectorPoint PointX="18.25" PointY="4.9949039713541659" />
+          <ConnectorPoint PointX="17.25" PointY="4.8987532552083328" />
+          <ConnectorPoint PointX="18.25" PointY="4.8987532552083328" />
         </AssociationConnector>
         <AssociationConnector Association="SIPSorcery.Entities.sipdialplanproviders_ibfk_1" >
-          <ConnectorPoint PointX="15.25" PointY="5.1824039713541659" />
-          <ConnectorPoint PointX="13.875" PointY="5.1824039713541659" />
+          <ConnectorPoint PointX="15.25" PointY="5.0862532552083328" />
+          <ConnectorPoint PointX="13.875" PointY="5.0862532552083328" />
         </AssociationConnector>
         <AssociationConnector Association="SIPSorcery.Entities.sipdialplanroutes_ibfk_1" >
           <ConnectorPoint PointX="17.25" PointY="2.2785953776041667" />
           <ConnectorPoint PointX="18.375" PointY="2.2785953776041667" />
-        </AssociationConnector>
-        <EntityTypeShape EntityType="SIPSorcery.Entities.SimpleWizardDialPlanRule" Width="2.25" PointX="13" PointY="7.75" Height="3.5186979166666656" />
-        <AssociationConnector Association="SIPSorcery.Entities.simplewizarddialplanrule_ibfk_1" >
-          <ConnectorPoint PointX="16.28125" PointY="5.9225065104166656" />
-          <ConnectorPoint PointX="16.28125" PointY="10.208523705859586" />
-          <ConnectorPoint PointX="15.25" PointY="10.208523705859586" />
         </AssociationConnector>
         <AssociationConnector Association="SIPSorcery.Entities.sipregistrarbindings_ibfk_1" >
           <ConnectorPoint PointX="3.375" PointY="10.201650390625" />
@@ -1270,12 +1250,10 @@
           <ConnectorPoint PointX="8.125" PointY="9.701650390625" />
           <ConnectorPoint PointX="8.875" PointY="9.701650390625" />
         </AssociationConnector>
-        <AssociationConnector Association="SIPSorcery.Entities.simplewizarddialplanrule_ibfk_2" >
-          <ConnectorPoint PointX="4.4375" PointY="7.875" />
-          <ConnectorPoint PointX="4.4375" PointY="7.4999999999999991" />
-          <ConnectorPoint PointX="12.625" PointY="7.4999999999999991" />
-          <ConnectorPoint PointX="12.625" PointY="9.5093489583333337" />
-          <ConnectorPoint PointX="13" PointY="9.5093489583333337" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.SimpleWizardRule" Width="1.875" PointX="14.625" PointY="7.875" Height="3.7109993489583388" />
+        <AssociationConnector Association="SIPSorcery.Entities.simplewizardrule_ibfk_1" >
+          <ConnectorPoint PointX="15.875" PointY="5.9225065104166656" />
+          <ConnectorPoint PointX="15.875" PointY="7.875" />
         </AssociationConnector>
       </Diagram>
     </Diagrams>
