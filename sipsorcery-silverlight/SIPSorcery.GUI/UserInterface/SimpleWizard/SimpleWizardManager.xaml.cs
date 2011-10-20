@@ -82,10 +82,6 @@ namespace SIPSorcery
             m_incomingRulesUpdateControl.Add += SaveRule;
             m_incomingRulesUpdateControl.Update += SaveRule;
             m_incomingRulesUpdateControl.SetToSIPAccounts(m_riaContext.SIPAccounts);
-            m_crmSetUpControl.Closed += CloseCRMControl;
-            m_crmSetUpControl.Add += SaveCRMAccount;
-            m_crmSetUpControl.Update += SaveCRMAccount;
-            m_crmSetUpControl.Delete += DeleteCRMAccount;
             m_incomingRulesPanel.SetTitle("Incoming Call Rules");
             m_incomingRulesPanel.MenuEnableFilter(false);
             m_incomingRulesPanel.MenuEnableHelp(false);
@@ -146,9 +142,9 @@ namespace SIPSorcery
             {
                 m_routesPanelRefreshInProgress = true;
 
-                m_riaContext.SimpleWizardDialPlanRules.Clear();
+                m_riaContext.SimpleWizardRules.Clear();
 
-                var routesQuery = m_riaContext.GetSimpleWizardDialPlanRulesQuery().Where(x => x.DialPlanID == m_dialPlan.ID && x.Direction == ruleDirection.ToString()).OrderBy(x => x.Priority).Skip(offset).Take(count);
+                var routesQuery = m_riaContext.GetSimpleWizardRulesQuery().Where(x => x.DialPlanID == m_dialPlan.ID && x.Direction == ruleDirection.ToString()).OrderBy(x => x.Priority).Skip(offset).Take(count);
                 routesQuery.IncludeTotalCount = true;
                 m_riaContext.Load(routesQuery, LoadBehavior.RefreshCurrent, RulesLoaded, panel);
             }
@@ -166,7 +162,7 @@ namespace SIPSorcery
             else
             {
                 panel.AssetListTotal = lo.TotalEntityCount;
-                panel.SetAssetListSource(m_riaContext.SimpleWizardDialPlanRules);
+                panel.SetAssetListSource(m_riaContext.SimpleWizardRules);
             }
 
             m_gridReady = true;
@@ -178,7 +174,7 @@ namespace SIPSorcery
             DataGrid dataGrid = (DataGrid)sender;
             if (dataGrid.CurrentColumn != null && dataGrid.CurrentColumn.Header as string != "Delete")
             {
-                SimpleWizardDialPlanRule rule = dataGrid.SelectedItem as SimpleWizardDialPlanRule;
+                SimpleWizardRule rule = dataGrid.SelectedItem as SimpleWizardRule;
                 if (rule != null)
                 {
                     if (dataGrid == m_outgoingRulesDataGrid)
@@ -193,7 +189,7 @@ namespace SIPSorcery
             }
         }
 
-        private void SaveRule(SimpleWizardDialPlanRule rule)
+        private void SaveRule(SimpleWizardRule rule)
         {
             if (rule.ID == Guid.Empty.ToString())
             {
@@ -201,7 +197,7 @@ namespace SIPSorcery
                 rule.Owner = m_owner;
                 rule.DialPlanID = m_dialPlan.ID;
 
-                m_riaContext.SimpleWizardDialPlanRules.Add(rule);
+                m_riaContext.SimpleWizardRules.Add(rule);
             }
 
             if (rule.Direction == SIPCallDirection.Out.ToString())
@@ -218,7 +214,7 @@ namespace SIPSorcery
 
         public void SaveRuleComplete(SubmitOperation so)
         {
-            var rule = (SimpleWizardDialPlanRule)so.UserState;
+            var rule = (SimpleWizardRule)so.UserState;
 
             if (so.HasError)
             {
@@ -234,7 +230,7 @@ namespace SIPSorcery
             }
             else
             {
-                var updatedRule = m_riaContext.SimpleWizardDialPlanRules.SingleOrDefault(x => x.ID == rule.ID);
+                var updatedRule = m_riaContext.SimpleWizardRules.SingleOrDefault(x => x.ID == rule.ID);
 
                 if (updatedRule != null)
                 {
@@ -268,9 +264,9 @@ namespace SIPSorcery
 
         private void DeleteSimpleWizardRule(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            SimpleWizardDialPlanRule rule = m_currentGrid.SelectedItem as SimpleWizardDialPlanRule;
+            SimpleWizardRule rule = m_currentGrid.SelectedItem as SimpleWizardRule;
             LogActivityMessage_External(MessageLevelsEnum.Info, "Deleting simple wizard rule for " + rule.Description + ".");
-            m_riaContext.SimpleWizardDialPlanRules.Remove(rule);
+            m_riaContext.SimpleWizardRules.Remove(rule);
             m_riaContext.SubmitChanges(DeleteComplete, null);
         }
 
@@ -280,99 +276,6 @@ namespace SIPSorcery
             {
                 LogActivityMessage_External(MessageLevelsEnum.Error, so.Error.Message);
                 so.MarkErrorAsHandled();
-            }
-        }
-
-        #endregion
-
-        #region CRM Account Set Up.
-
-        private void SetUpCRMClicked()
-        {
-            if (m_crmSetUpControl.Visibility == System.Windows.Visibility.Collapsed)
-            {
-                if (m_originalGridHeight == 0)
-                {
-                    m_originalGridHeight = m_incomingRulesDataGrid.Height;
-                }
-
-                m_crmSetUpControl.Visibility = Visibility.Visible;
-                m_incomingRulesDataGrid.Height = m_incomingRulesDataGrid.Height - m_crmSetUpControl.Height;
-
-                m_riaContext.CRMAccounts.Clear();
-
-                var crmAccountQuery = m_riaContext.GetCRMAccountsQuery().OrderBy(x => x.ID).Take(1);
-                m_riaContext.Load(crmAccountQuery, LoadBehavior.RefreshCurrent, CRMAccountLoaded, null);
-            }
-        }
-
-        private void CloseCRMControl()
-        {
-            if (m_crmSetUpControl.Visibility == System.Windows.Visibility.Visible)
-            {
-                m_incomingRulesDataGrid.Height = m_originalGridHeight;
-                m_crmSetUpControl.Visibility = System.Windows.Visibility.Collapsed;
-            }
-        }
-
-        private void CRMAccountLoaded(LoadOperation lo)
-        {
-            if (lo.HasError)
-            {
-                LogActivityMessage_External(MessageLevelsEnum.Error, "Error loading CRM Account for " + m_dialPlan.DialPlanName + " dial plan. " + lo.Error.Message);
-                lo.MarkErrorAsHandled();
-            }
-            else
-            {
-                m_crmSetUpControl.SetCRMAccount(m_riaContext.CRMAccounts.FirstOrDefault());
-            }
-        }
-
-        private void SaveCRMAccount(CRMAccount crmAccount)
-        {
-            if (crmAccount.ID == Guid.Empty.ToString())
-            {
-                crmAccount.ID = Guid.NewGuid().ToString();
-                crmAccount.Owner = m_owner;
-
-                m_riaContext.CRMAccounts.Add(crmAccount);
-            }
-
-            m_riaContext.SubmitChanges(SaveCRMAccountComplete, crmAccount);
-        }
-
-        public void SaveCRMAccountComplete(SubmitOperation so)
-        {
-            if (so.HasError)
-            {
-                m_crmSetUpControl.SetErrorMessage(so.Error.Message);
-                so.MarkErrorAsHandled();
-            }
-            else
-            {
-                m_crmSetUpControl.SetStatusMessage(SimpleWizardInRuleControl.UPDATE_TEXT, false);
-                m_crmSetUpControl.SetCRMAccount(m_riaContext.CRMAccounts.FirstOrDefault());
-            }
-        }
-
-        private void DeleteCRMAccount(CRMAccount crmAccount)
-        {
-            LogActivityMessage_External(MessageLevelsEnum.Info, "Deleting CRM Account for " + m_dialPlan.DialPlanName + ".");
-            m_riaContext.CRMAccounts.Remove(crmAccount);
-            m_riaContext.SubmitChanges(DeleteCRMAccountComplete, null);
-        }
-
-        public void DeleteCRMAccountComplete(SubmitOperation so)
-        {
-            if (so.HasError)
-            {
-                m_crmSetUpControl.SetErrorMessage(so.Error.Message);
-                so.MarkErrorAsHandled();
-            }
-            else
-            {
-                m_crmSetUpControl.SetStatusMessage(SimpleWizardInRuleControl.ADD_TEXT, false);
-                m_crmSetUpControl.SetCRMAccount(null);
             }
         }
 

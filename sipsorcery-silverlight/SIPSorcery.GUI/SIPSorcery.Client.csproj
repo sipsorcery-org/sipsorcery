@@ -224,10 +224,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="UserInterface\SimpleWizard\SimpleWizardCRMControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="UserInterface\SimpleWizard\SimpleWizardInRuleControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -271,9 +267,6 @@
     </Compile>
     <Compile Include="UserInterface\NewAccountInviteControl.xaml.cs">
       <DependentUpon>NewAccountInviteControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserInterface\SimpleWizard\SimpleWizardCRMControl.xaml.cs">
-      <DependentUpon>SimpleWizardCRMControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\SimpleWizard\SimpleWizardInRuleControl.xaml.cs">
       <DependentUpon>SimpleWizardInRuleControl.xaml</DependentUpon>

@@ -22,10 +22,10 @@ namespace SIPSorcery
         public const string UPDATE_TEXT = "Update Rule";
         private const int DEFAULT_RULE_PRIORITY = 99;
 
-        public event Action<SimpleWizardDialPlanRule> Update;
-        public event Action<SimpleWizardDialPlanRule> Add;
+        public event Action<SimpleWizardRule> Update;
+        public event Action<SimpleWizardRule> Add;
 
-        private SimpleWizardDialPlanRule m_ruleToUpdate;        // If this is set means the control is updating an existing rule as opposed to adding a new one.
+        private SimpleWizardRule m_ruleToUpdate;        // If this is set means the control is updating an existing rule as opposed to adding a new one.
 
         public SimpleWizardOutRuleControl()
 		{
@@ -34,17 +34,18 @@ namespace SIPSorcery
             m_rulePriority.Text = DEFAULT_RULE_PRIORITY.ToString();
 		}
 
-		public void SetRuleToUpdate(SimpleWizardDialPlanRule rule)
+		public void SetRuleToUpdate(SimpleWizardRule rule)
         {
             if (rule != null)
             {
                 m_ruleToUpdate = rule;
                 SetStatusMessage(UPDATE_TEXT, false);
 
-                m_ruleType.SelectedIndex = m_ruleType.Items.IndexOf(m_ruleType.Items.Single(x => ((TextBlock)x).Text == rule.RuleType.ToString()));
+                //m_ruleType.SelectedIndex = m_ruleType.Items.IndexOf(m_ruleType.Items.Single(x => ((TextBlock)x).Text == rule.RuleType.ToString()));
                 m_rulePattern.Text = rule.Pattern;
                 m_ruleCommandType.SelectedIndex = m_ruleCommandType.Items.IndexOf(m_ruleCommandType.Items.Single(x => ((TextBlock)x).Text == rule.Command));
-                m_ruleCommandString.Text = rule.CommandString;
+                m_ruleCommandString.Text = rule.Command;
+                m_ruleCommandString.Text = rule.CommandParameter1;
                 m_ruleDescription.Text = rule.Description;
                 m_rulePriority.Text = rule.Priority.ToString();
             }
@@ -68,16 +69,15 @@ namespace SIPSorcery
 
             if (m_ruleToUpdate == null)
             {
-                SimpleWizardDialPlanRule rule = new SimpleWizardDialPlanRule()
+                SimpleWizardRule rule = new SimpleWizardRule()
                 {
                     ID = Guid.Empty.ToString(),             // Will be set in the manager.
                     Owner = "None",                         // Will be set in the manager.
                     DialPlanID = Guid.Empty.ToString(),     // Will be set in the manager.
                     Direction = SIPCallDirection.Out.ToString(), 
-                    RuleTypeID = Enum.Parse(typeof(SimpleWizardRuleTypes), ((TextBlock)m_ruleType.SelectedValue).Text, true).GetHashCode(),
                     Pattern = m_rulePattern.Text,
                     Command = ((TextBlock)m_ruleCommandType.SelectedValue).Text,
-                    CommandString = m_ruleCommandString.Text,
+                    CommandParameter1 = m_ruleCommandString.Text,
                     Description = m_ruleDescription.Text,
                     Priority = priority
                 };
@@ -94,10 +94,9 @@ namespace SIPSorcery
             }
             else
             {
-                m_ruleToUpdate.RuleTypeID = Enum.Parse(typeof(SimpleWizardRuleTypes), ((TextBlock)m_ruleType.SelectedValue).Text, true).GetHashCode();
                 m_ruleToUpdate.Pattern = m_rulePattern.Text;
                 m_ruleToUpdate.Command = ((TextBlock)m_ruleCommandType.SelectedValue).Text;
-                m_ruleToUpdate.CommandString = m_ruleCommandString.Text;
+                m_ruleToUpdate.CommandParameter1 = m_ruleCommandString.Text;
                 m_ruleToUpdate.Description = m_ruleDescription.Text;
                 m_ruleToUpdate.Priority = priority;
 
@@ -163,7 +162,7 @@ namespace SIPSorcery
             m_descriptionText.Text = (m_ruleToUpdate != null) ? UPDATE_TEXT : ADD_TEXT;
         }
 
-        private string Validate(SimpleWizardDialPlanRule rule)
+        private string Validate(SimpleWizardRule rule)
         {
             var validationResults = new List<ValidationResult>();
             var validationContext = new ValidationContext(rule, null, null);
@@ -174,22 +173,22 @@ namespace SIPSorcery
             {
                 return validationResults[0].ErrorMessage;
             }
-            else
-            {
-                if (rule.RuleType == SimpleWizardRuleTypes.Regex)
-                {
-                    try
-                    {
-                        new Regex(rule.Pattern);
-                    }
-                    catch(Exception excp)
-                    {
-                        return "The rule pattern was not recognised as a valid regular expression. " + excp.Message;
-                    }
-                }
+            //else
+            //{
+            //    if (rule.RuleType == SimpleWizardRuleTypes.Regex)
+            //    {
+            //        try
+            //        {
+            //            new Regex(rule.Pattern);
+            //        }
+            //        catch(Exception excp)
+            //        {
+            //            return "The rule pattern was not recognised as a valid regular expression. " + excp.Message;
+            //        }
+            //    }
+            //}
 
-                return null;
-            }
+            return null;
         }
 	}
 }
