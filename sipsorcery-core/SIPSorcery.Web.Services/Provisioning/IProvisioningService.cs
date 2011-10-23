@@ -25,7 +25,7 @@ namespace SIPSorcery.Web.Services {
         [OperationContract] List<SIPDomain> GetSIPDomains(string filterExpression, int offset, int count);
         [OperationContract] int GetSIPAccountsCount(string whereExpression);
         [OperationContract] List<SIPAccount> GetSIPAccounts(string whereExpression, int offset, int count);
-        [OperationContract] SIPAccount AddSIPAccount(SIPAccount sipAccount);
+        [OperationContract] string AddSIPAccount(SIPSorcery.Entities.SIPAccount sipAccount);
         [OperationContract] SIPAccount UpdateSIPAccount(SIPAccount sipAccount);
         [OperationContract] SIPAccount DeleteSIPAccount(SIPAccount sipAccount);
         [OperationContract] int GetSIPRegistrarBindingsCount(string whereExpression);
@@ -45,7 +45,7 @@ namespace SIPSorcery.Web.Services {
         [OperationContract] int GetCallsCount(string whereExpression);
         [OperationContract] List<SIPDialogueAsset> GetCalls(string whereExpression, int offset, int count);
         [OperationContract] int GetCDRsCount(string whereExpression);
-        [OperationContract] List<SIPCDRAsset> GetCDRs(string whereExpression, int offset, int count);
+        [OperationContract] List<SIPSorcery.Entities.CDR> GetCDRs(string whereExpression, int offset, int count);
         [OperationContract] void ExtendSession(int minutes);
         [OperationContract] int GetTimeZoneOffsetMinutes();
     }

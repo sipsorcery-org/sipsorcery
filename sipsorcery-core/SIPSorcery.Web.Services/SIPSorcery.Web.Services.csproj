@@ -17,6 +17,7 @@
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation />
     <TargetFrameworkProfile />
+    <UseIISExpress>false</UseIISExpress>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -119,6 +120,9 @@
       <DependentUpon>SIPProvisioningWebService.svc</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="REST\IProvisioning.cs" />
+    <Compile Include="REST\JSONResult.cs" />
+    <Compile Include="REST\Provisioning.cs" />
     <Compile Include="SIPSorceryAuthorisationService.cs" />
     <Compile Include="SIPSorceryMembershipProvider.cs" />
   </ItemGroup>
@@ -164,7 +168,7 @@
         <WebProjectProperties>
           <UseIIS>False</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
-          <DevelopmentServerPort>60791</DevelopmentServerPort>
+          <DevelopmentServerPort>51753</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
           <IISUrl>
           </IISUrl>

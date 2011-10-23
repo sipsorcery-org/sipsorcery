@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Data.Objects.DataClasses;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
@@ -28,12 +29,12 @@ namespace SIPSorcery.Entities
             public string Owner;
 
             [Required(ErrorMessage = "A username must be specified for the SIP account.")]
-            [StringLength(USERNAME_MAX_LENGTH, MinimumLength = USERNAME_MIN_LENGTH, ErrorMessage = USERNAME_LENGTH_ERROR_MESSAGE)]
+            [StringLength(SIPAccount.USERNAME_MAX_LENGTH, MinimumLength = SIPAccount.USERNAME_MIN_LENGTH, ErrorMessage = SIPAccount.USERNAME_LENGTH_ERROR_MESSAGE)]
             [RegularExpression(@"[a-zA-Z0-9_\-\.]+", ErrorMessage = "The username contained an illegal character. Only alpha-numeric characters and .-_ are allowed.")]
             public string SIPUsername;
 
             [Required(ErrorMessage = "A password must be specified for the SIP account.")]
-            [StringLength(PASSWORD_MAX_LENGTH, MinimumLength = PASSWORD_MIN_LENGTH, ErrorMessage = PASSWORD_LENGTH_ERROR_MESSAGE)]
+            [StringLength(SIPAccount.PASSWORD_MAX_LENGTH, MinimumLength = SIPAccount.PASSWORD_MIN_LENGTH, ErrorMessage = SIPAccount.PASSWORD_LENGTH_ERROR_MESSAGE)]
             public string SIPPassword;
 
             [Required(ErrorMessage = "A domain must be specified for the SIP account.")]

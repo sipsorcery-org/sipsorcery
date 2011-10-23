@@ -196,6 +196,14 @@ namespace SIPSorcery.Entities
             }
         }
 
+        public Customer GetCustomerForAPIKey(string apiKey)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                return (from cust in sipSorceryEntities.Customers where cust.APIKey == apiKey select cust).SingleOrDefault();
+            }
+        }
+
         #endregion
 
         #region SIP Accounts.
@@ -217,6 +225,7 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for InsertSIPAccount.");
             }
 
+            sipAccount.ID = Guid.NewGuid().ToString();
             sipAccount.Owner = authUser.ToLower();
             sipAccount.Inserted = DateTimeOffset.UtcNow.ToString("o");
             sipAccount.IsAdminDisabled = false;
@@ -235,6 +244,13 @@ namespace SIPSorcery.Entities
                 if (validationError != null)
                 {
                     throw new ApplicationException(validationError);
+                }
+
+                // Check for a duplicate.
+                if (sipSorceryEntities.SIPAccounts.Where(x => x.SIPUsername.ToLower() == sipAccount.SIPUsername.ToLower() && 
+                                                                x.SIPDomain.ToLower() == sipAccount.SIPDomain.ToLower()).Count() > 0)
+                {
+                    throw new ApplicationException("Sorry the requested username and domain combination is already in use.");
                 }
 
                 sipSorceryEntities.SIPAccounts.AddObject(sipAccount);

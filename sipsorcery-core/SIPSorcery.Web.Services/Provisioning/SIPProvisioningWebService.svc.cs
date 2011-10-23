@@ -59,7 +59,7 @@ using log4net;
 namespace SIPSorcery.Web.Services
 {
     [AspNetCompatibilityRequirements(RequirementsMode = AspNetCompatibilityRequirementsMode.Allowed)]
-    public class SIPProvisioningWebService : SIPSorceryAuthorisationService, IProvisioningServiceREST
+    public class SIPProvisioningWebService : SIPSorceryAuthorisationService, IProvisioningServiceREST, IProvisioningService
     {
         private const string NEW_ACCOUNT_EMAIL_FROM_ADDRESS = "admin@sipsorcery.com";
         private const string NEW_ACCOUNT_EMAIL_SUBJECT = "SIP Sorcery Account Confirmation";
@@ -92,7 +92,10 @@ namespace SIPSorcery.Web.Services
         private int m_newCustomersAllowedLimit;
         private bool m_inviteCodeRequired;
         private bool m_providerRegDisabled;
-        
+
+        public SIPProvisioningWebService()
+        { }
+
         public SIPProvisioningWebService(
             SIPAssetPersistor<SIPAccount> sipAccountPersistor,
             SIPAssetPersistor<SIPDialPlan> sipDialPlanPersistor,
@@ -841,31 +844,35 @@ namespace SIPSorcery.Web.Services
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             //logger.Debug("SIPProvisioningWebService GetCDRsCount for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
-            if (authoriseExpression.IsNullOrBlank())
-            {
-                return SIPCDRPersistor.Count(null);
-            }
-            else
-            {
-                return SIPCDRPersistor.Count(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression));
-            }
+            //if (authoriseExpression.IsNullOrBlank())
+            //{
+            //    return SIPCDRPersistor.Count(null);
+            //}
+            //else
+            //{
+            //    return SIPCDRPersistor.Count(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression));
+            //}
+
+            return m_service.GetCDRCount(customer.CustomerUsername, whereExpression);
         }
 
-        public List<SIPCDRAsset> GetCDRs(string whereExpression, int offset, int count)
+        public List<SIPSorcery.Entities.CDR> GetCDRs(string whereExpression, int offset, int count)
         {
             Customer customer = AuthoriseRequest();
 
             string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
             //logger.Debug("SIPProvisioningWebService GetCDRs for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
-            if (authoriseExpression.IsNullOrBlank())
-            {
-                return SIPCDRPersistor.Get(null, "created desc", offset, count);
-            }
-            else
-            {
-                return SIPCDRPersistor.Get(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression), "created desc", offset, count);
-            }
+            //if (authoriseExpression.IsNullOrBlank())
+            //{
+            //    return SIPCDRPersistor.Get(null, "created desc", offset, count);
+            //}
+            //else
+            //{
+            //    return SIPCDRPersistor.Get(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression), "created desc", offset, count);
+            //}
+
+            return m_service.GetCDRs(customer.CustomerUsername, authoriseExpression, offset, count);
         }
     }
 }
