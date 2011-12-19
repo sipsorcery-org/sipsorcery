@@ -58,18 +58,31 @@ using SIPSorcery.Persistence;
 using SIPSorcery.Servers;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.SIPNotifier;
+using SIPSorcery.SIPMonitor;
+using SIPSorcery.SIPProxy;
+using SIPSorcery.SIPRegistrar;
+using SIPSorcery.SIPRegistrationAgent;
+using SIPSorcery.SSHServer;
 using SIPSorcery.Sys;
 using SIPSorcery.Web.Services;
 using log4net;
 
 namespace SIPSorcery.SIPAppServer
 {
-    public class SIPAppServerDaemon
+    public class SIPAllInOneDaemon
     {
         private static ILog logger = SIPAppServerState.logger;
         private static ILog dialPlanLogger = AppState.GetLogger("dialplan");
 
         private XmlNode m_sipAppServerSocketsNode = SIPAppServerState.SIPAppServerSocketsNode;
+
+        private static bool m_sipProxyEnabled = (AppState.GetSection(SIPProxyState.SIPPROXY_CONFIGNODE_NAME) != null);
+        private static bool m_sipMonitorEnabled = (AppState.GetSection(SIPMonitorState.SIPMONITOR_CONFIGNODE_NAME) != null);
+        private static bool m_sipRegistrarEnabled = (AppState.GetSection(SIPRegistrarState.SIPREGISTRAR_CONFIGNODE_NAME) != null);
+        private static bool m_sipRegAgentEnabled = (AppState.GetSection(SIPRegAgentState.SIPREGAGENT_CONFIGNODE_NAME) != null);
+        private static bool m_sshServerEnabled = (AppState.GetSection(SSHServerState.SSHSERVER_CONFIGNODE_NAME) != null);
+        private static bool m_sipNotifierEnabled = (AppState.GetSection(SIPNotifierState.SIPNOTIFIER_CONFIGNODE_NAME) != null);
 
         private static int m_monitorEventLoopbackPort = SIPAppServerState.MonitorLoopbackPort;
         private string m_traceDirectory = SIPAppServerState.TraceDirectory;
@@ -86,6 +99,11 @@ namespace SIPSorcery.SIPAppServer
         private SIPCallManager m_callManager;
         private SIPDialogueManager m_sipDialogueManager;
         private SIPNotifyManager m_notifyManager;
+        private SIPProxyDaemon m_sipProxyDaemon;
+        private SIPMonitorDaemon m_sipMonitorDaemon;
+        private SIPRegAgentDaemon m_sipRegAgentDaemon;
+        private SIPRegistrarDaemon m_sipRegistrarDaemon;
+        private SIPNotifierDaemon m_sipNotifierDaemon;
 
         private SIPTransport m_sipTransport;
         private DialPlanEngine m_dialPlanEngine;
@@ -103,14 +121,14 @@ namespace SIPSorcery.SIPAppServer
         private string m_callManagerServiceAddress;
         private bool m_monitorCalls;                // If true this app server instance will monitor the sip dialogues table for expired calls to hangup.
 
-        public SIPAppServerDaemon(StorageTypes storageType, string connectionString)
+        public SIPAllInOneDaemon(StorageTypes storageType, string connectionString)
         {
             m_storageType = storageType;
             m_connectionString = connectionString;
             m_monitorCalls = true;
         }
 
-        public SIPAppServerDaemon(
+        public SIPAllInOneDaemon(
             StorageTypes storageType,
             string connectionString,
             SIPEndPoint appServerEndPoint,
@@ -136,6 +154,83 @@ namespace SIPSorcery.SIPAppServer
                 SIPDNSManager.SIPMonitorLogEvent = FireSIPMonitorEvent;
                 m_sipSorceryPersistor = new SIPSorceryPersistor(m_storageType, m_connectionString);
                 m_customerSessionManager = new CustomerSessionManager(m_storageType, m_connectionString);
+
+                if (m_sipProxyEnabled)
+                {
+                    m_sipProxyDaemon = new SIPProxyDaemon();
+                    m_sipProxyDaemon.Start();
+
+                    if (m_sipProxyDaemon.PublicIPAddress != null)
+                    {
+                        m_publicIPAddress = m_sipProxyDaemon.PublicIPAddress;
+                        DialStringParser.PublicIPAddress = m_sipProxyDaemon.PublicIPAddress;
+                        DialPlanScriptFacade.PublicIPAddress = m_sipProxyDaemon.PublicIPAddress;
+                        SIPDialogueManager.PublicIPAddress = m_sipProxyDaemon.PublicIPAddress;
+                    }
+                    else
+                    {
+                        m_sipProxyDaemon.PublicIPAddressUpdated += (ipAddress) =>
+                        {
+                            if (ipAddress != null && (m_publicIPAddress == null || ipAddress.ToString() != m_publicIPAddress.ToString()))
+                            {
+                                m_publicIPAddress = ipAddress;
+                                DialStringParser.PublicIPAddress = ipAddress;
+                                DialPlanScriptFacade.PublicIPAddress = ipAddress;
+                                SIPDialogueManager.PublicIPAddress = ipAddress;
+                            }
+                        };
+                    }
+                }
+
+                if (m_sipMonitorEnabled)
+                {
+                    m_sipMonitorPublisher = new SIPMonitorClientManager(null);
+                    m_sipMonitorDaemon = new SIPMonitorDaemon(m_sipMonitorPublisher);
+                    m_sipMonitorDaemon.Start();
+                }
+
+                if (m_sipRegistrarEnabled)
+                {
+                    m_sipRegistrarDaemon = new SIPRegistrarDaemon(
+                        m_sipSorceryPersistor.SIPDomainManager.GetDomain,
+                        m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                        m_sipSorceryPersistor.SIPRegistrarBindingPersistor,
+                        SIPRequestAuthenticator.AuthenticateSIPRequest);
+                    m_sipRegistrarDaemon.Start();
+                }
+
+                if (m_sipRegAgentEnabled)
+                {
+                    m_sipRegAgentDaemon = new SIPRegAgentDaemon(
+                        m_sipSorceryPersistor.SIPProvidersPersistor,
+                        m_sipSorceryPersistor.SIPProviderBindingsPersistor);
+
+                    m_sipRegAgentDaemon.Start();
+                }
+
+                if (m_sipNotifierEnabled)
+                {
+                    m_sipNotifierDaemon = new SIPNotifierDaemon(
+                        m_customerSessionManager.CustomerPersistor.Get,
+                        m_sipSorceryPersistor.SIPDialoguePersistor.Get,
+                        m_sipSorceryPersistor.SIPDialoguePersistor.Get,
+                        m_sipSorceryPersistor.SIPDomainManager.GetDomain,
+                        m_sipSorceryPersistor.SIPAccountsPersistor,
+                        m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
+                        m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                        m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Count,
+                        SIPRequestAuthenticator.AuthenticateSIPRequest,
+                        m_sipMonitorPublisher);
+                        //new SIPMonitorUDPSink("127.0.0.1:10003"));
+                    m_sipNotifierDaemon.Start();
+                }
+
+                if (m_sshServerEnabled)
+                {
+                    SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, m_sipMonitorPublisher); // Uses memory to transfer events. 
+                    //SSHServerDaemon daemon = new SSHServerDaemon(m_customerSessionManager, new SIPMonitorUDPSink("127.0.0.1:10002"));
+                    daemon.Start();
+                }
 
                 #region Initialise the SIP Application Server and its logging mechanisms including CDRs.
 
@@ -197,6 +292,10 @@ namespace SIPSorcery.SIPAppServer
                     m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                     FireSIPMonitorEvent,
                     m_sipSorceryPersistor,
+                    //m_sipSorceryPersistor.SIPAccountsPersistor,
+                    //m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get,
+                    //m_sipSorceryPersistor.SIPDialPlanPersistor,
+                    //m_sipSorceryPersistor.SIPDialoguePersistor,
                     m_outboundProxy,
                     m_rubyScriptCommonPath,
                     m_dialplanImpersonationUsername,
@@ -278,6 +377,13 @@ namespace SIPSorcery.SIPAppServer
                             m_sipProvisioningHost = new ServiceHost(typeof(SIPProvisioningWebService));
                             m_sipProvisioningHost.Description.Behaviors.Add(instanceProvider);
                             m_sipProvisioningHost.Open();
+
+                            if (m_sipRegAgentDaemon == null)
+                            {
+                                m_sipRegAgentDaemon = new SIPRegAgentDaemon(
+                                    m_sipSorceryPersistor.SIPProvidersPersistor,
+                                    m_sipSorceryPersistor.SIPProviderBindingsPersistor);
+                            }
 
                             logger.Debug("Provisioning hosted service successfully started on " + m_sipProvisioningHost.BaseAddresses[0].AbsoluteUri + ".");
                         }
@@ -408,6 +514,36 @@ namespace SIPSorcery.SIPAppServer
                 if (m_monitorEventWriter != null)
                 {
                     m_monitorEventWriter.Close();
+                }
+
+                if (m_sipProxyDaemon != null)
+                {
+                    m_sipProxyDaemon.Stop();
+                }
+
+                if (m_sipMonitorDaemon != null)
+                {
+                    m_sipMonitorDaemon.Stop();
+                }
+
+                if (m_sipRegistrarDaemon != null)
+                {
+                    m_sipRegistrarDaemon.Stop();
+                }
+
+                if (m_sipNotifierDaemon != null)
+                {
+                    m_sipNotifierDaemon.Stop();
+                }
+
+                if (m_sipRegAgentDaemon != null)
+                {
+                    m_sipRegAgentDaemon.Stop();
+                }
+
+                if (m_sipNotifierDaemon != null)
+                {
+                    m_sipNotifierDaemon.Stop();
                 }
 
                 // Shutdown the SIPTransport layer.

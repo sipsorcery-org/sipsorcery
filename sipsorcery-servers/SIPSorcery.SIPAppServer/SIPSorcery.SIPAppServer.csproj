@@ -126,42 +126,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\SIPSorcery.SIPMonitor\SIPMonitorDaemon.cs">
-      <Link>Daemons\SIPMonitorDaemon.cs</Link>
-    </Compile>
-    <Compile Include="..\SIPSorcery.SIPMonitor\SIPMonitorState.cs">
-      <Link>Daemons\SIPMonitorState.cs</Link>
-    </Compile>
-    <Compile Include="..\SIPSorcery.SIPNotifier\SIPNotifierDaemon.cs">
-      <Link>Daemons\SIPNotifierDaemon.cs</Link>
-    </Compile>
-    <Compile Include="..\SIPSorcery.SIPNotifier\SIPNotifierState.cs">
-      <Link>Daemons\SIPNotifierState.cs</Link>
-    </Compile>
-    <Compile Include="..\SIPSorcery.SIPProxy\SIPProxyDaemon.cs">
-      <Link>Daemons\SIPProxyDaemon.cs</Link>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\SIPSorcery.SIPProxy\SIPProxyState.cs">
-      <Link>Daemons\SIPProxyState.cs</Link>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="..\SIPSorcery.SIPRegistrar\SIPRegistrarDaemon.cs">
-      <Link>Daemons\SIPRegistrarDaemon.cs</Link>
-    </Compile>
-    <Compile Include="..\SIPSorcery.SIPRegistrar\SIPRegistrarState.cs">
-      <Link>Daemons\SIPRegistrarState.cs</Link>
-    </Compile>
-    <Compile Include="..\SIPSorcery.SIPRegistrationAgent\SIPRegAgentDaemon.cs">
-      <Link>Daemons\SIPRegAgentDaemon.cs</Link>
-    </Compile>
-    <Compile Include="..\SIPSorcery.SIPRegistrationAgent\SIPRegAgentState.cs">
-      <Link>Daemons\SIPRegAgentState.cs</Link>
-    </Compile>
-    <Compile Include="..\SIPSorcery.SSH\SIPSorceryIdentity.cs">
-      <Link>Daemons\SIPSorceryIdentity.cs</Link>
-    </Compile>
-    <Compile Include="SIPSorceryPersistor.cs" />
     <Compile Include="SIPAppServerProgram.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SIPAppServerState.cs" />

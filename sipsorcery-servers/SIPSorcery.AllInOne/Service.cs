@@ -50,9 +50,9 @@ namespace SIPSorcery.SIPAppServer
 		public const string DEFAULT_STARTUPERRORLOG_PATH = @"c:\temp\sipsorcery-appsvr.starterror.log";
         public const string DEFAULT_SHUTDOWNERRORLOG_PATH = @"c:\temp\sipsorcery-appsvr.stoperror.log";
 
-        private SIPAppServerDaemon m_daemon;
+        private SIPAllInOneDaemon m_daemon;
 				
-		public Service(SIPAppServerDaemon daemon)
+		public Service(SIPAllInOneDaemon daemon)
 		{
 			this.CanShutdown = true;
 			this.CanStop = true;

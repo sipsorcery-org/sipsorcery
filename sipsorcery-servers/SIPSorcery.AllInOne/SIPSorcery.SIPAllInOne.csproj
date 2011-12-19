@@ -39,7 +39,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\debug\</OutputPath>
+    <OutputPath>..\build\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -176,11 +176,10 @@
     <Compile Include="..\SIPSorcery.SSH\SSHServerState.cs">
       <Link>Daemons\SSHServerState.cs</Link>
     </Compile>
-    <Compile Include="SIPSorceryPersistor.cs" />
-    <Compile Include="SIPAppServerProgram.cs" />
+    <Compile Include="SIPAllInOneProgram.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SIPAppServerState.cs" />
-    <Compile Include="SIPAppServerDaemon.cs" />
+    <Compile Include="SIPAllInOneDaemon.cs" />
     <Compile Include="Service.cs">
       <SubType>Component</SubType>
     </Compile>

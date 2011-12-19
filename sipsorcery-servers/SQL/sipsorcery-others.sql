@@ -317,32 +317,23 @@ create table sipdialplanoptions
 
 -- Simple Dial Plan Wizard Tables.
 
-create table CRMAccount
+create table SimpleWizardRule
 (
-  ID varchar(36) not null,
-  Owner varchar(32) not null,
-  CRMTypeID int not null,						-- 1 = Highrise, 2 = SugarCRM.
-  URL varchar(2048) not null,
-  Username varchar(256) null,
-  Password varchar(2048) not null,
-  Primary Key(ID),
-  Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade
-);
-
-create table SimpleWizardDialPlanRule
-(
-  ID varchar(36) not null,
-  Owner varchar(32) not null,
-  DialPlanID varchar(36) not null,				-- The simple wizard dialplan the lookup entries will be used in.
-  Direction varchar(3) not null,				-- In or Out dialplan rule.
-  ToSIPAccount varchar(161) null,				-- For incoming rules this can optionally hold the To SIP account the rule is for.
-  RuleTypeID int not null,						-- 0 == auto, 1 = exact match, 2 = prefix match, 3 = contains match, 4 = regex match.
-  Pattern varchar(1024) not null,
-  Command varchar(16) not null,					-- The dialplan command, e.g. Dial, Respond
-  CommandString varchar(4096) not null,			-- The string to pass to the dialplan command.
-  Description varchar(1024) null,
-  Priority int not null,
-  TimeIntervalID int null,						-- If set refers to a time interval that dictates when this rule should apply
+  ID nvarchar(36) not null,
+  Owner nvarchar(32) not null,
+  DialPlanID nvarchar(36) not null,				-- The simple wizard dialplan the lookup entries will be used in.
+  Direction nvarchar(3) not null,				-- In or Out dialplan rule.
+  Priority decimal(5,3) not null,
+  Description nvarchar(50) null,
+  ToSIPAccount nvarchar(161) null,				-- For incoming rules this can optionally hold the To SIP account the rule is for.
+  ToProvider nvarchar(50) null,					-- For incoming rules this can optionally hold the To Provider the rule is for.
+  PatternType nvarchar(16) null,
+  Pattern nvarchar(1024) null,
+  Command nvarchar(32) not null,				-- The dialplan command, e.g. Dial, Respond
+  CommandParameter1 nvarchar(2048) not null,	
+  CommandParameter2 nvarchar(2048),
+  CommandParameter3 nvarchar(2048),
+  TimePattern nvarchar(32) null,							-- If set refers to a time interval that dictates when this rule should apply
   Primary Key(ID),
   Foreign Key(DialPlanID) references SIPDialPlans(id) on delete cascade on update cascade
 );
@@ -388,5 +379,17 @@ CREATE TABLE PayPalIPN
 	CustomerID nvarchar(128) NULL,
 	ActionTaken nvarchar(2048) NULL,
 	Primary Key(ID)
+);
+
+create table VoxalotMigration
+(
+  ID varchar(36) not null,
+  FullName nvarchar(128) not null,
+  EmailAddress nvarchar(128) not null, 
+  VoxalotAccountNumber nvarchar(10) not null,
+  VoxalotAccountType nvarchar(32) not null,
+  VoxalotExport nvarchar(8000) not null,
+  Inserted nvarchar(33) not null,
+  Primary Key(ID)
 );
 
