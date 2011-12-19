@@ -4,43 +4,148 @@
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	mc:Ignorable="d"
-	x:Class="SIPSorcery.SimpleWizardOutRuleControl"
-	d:DesignWidth="977" d:DesignHeight="69">
+	x:Class="SIPSorcery.SimpleWizardOutRuleControl" Width="977">
+	<UserControl.Resources>
+		<Storyboard x:Name="AdvancedDialCommandSB">
+			<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="m_dialParametersCanvas">
+				<DiscreteObjectKeyFrame KeyTime="0">
+					<DiscreteObjectKeyFrame.Value>
+						<Visibility>Collapsed</Visibility>
+					</DiscreteObjectKeyFrame.Value>
+				</DiscreteObjectKeyFrame>
+			</ObjectAnimationUsingKeyFrames>
+			<DoubleAnimation Duration="0" To="140" Storyboard.TargetProperty="(FrameworkElement.Height)" Storyboard.TargetName="m_commandCanvas" d:IsOptimized="True"/>
+			<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="m_rejectParametersCanvas">
+				<DiscreteObjectKeyFrame KeyTime="0">
+					<DiscreteObjectKeyFrame.Value>
+						<Visibility>Collapsed</Visibility>
+					</DiscreteObjectKeyFrame.Value>
+				</DiscreteObjectKeyFrame>
+			</ObjectAnimationUsingKeyFrames>
+		</Storyboard>
+		<Storyboard x:Name="DialCommandSB">
+			<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="m_dialAdvancedParametersCanvas">
+				<DiscreteObjectKeyFrame KeyTime="0">
+					<DiscreteObjectKeyFrame.Value>
+						<Visibility>Collapsed</Visibility>
+					</DiscreteObjectKeyFrame.Value>
+				</DiscreteObjectKeyFrame>
+			</ObjectAnimationUsingKeyFrames>
+			<DoubleAnimation Duration="0" To="80" Storyboard.TargetProperty="(FrameworkElement.Height)" Storyboard.TargetName="m_commandCanvas" d:IsOptimized="True"/>
+			<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="m_rejectParametersCanvas">
+				<DiscreteObjectKeyFrame KeyTime="0">
+					<DiscreteObjectKeyFrame.Value>
+						<Visibility>Collapsed</Visibility>
+					</DiscreteObjectKeyFrame.Value>
+				</DiscreteObjectKeyFrame>
+			</ObjectAnimationUsingKeyFrames>
+		</Storyboard>
+		<Storyboard x:Name="RejectCommandSB">
+			<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="m_dialParametersCanvas">
+				<DiscreteObjectKeyFrame KeyTime="0">
+					<DiscreteObjectKeyFrame.Value>
+						<Visibility>Collapsed</Visibility>
+					</DiscreteObjectKeyFrame.Value>
+				</DiscreteObjectKeyFrame>
+			</ObjectAnimationUsingKeyFrames>
+			<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="m_dialAdvancedParametersCanvas">
+				<DiscreteObjectKeyFrame KeyTime="0">
+					<DiscreteObjectKeyFrame.Value>
+						<Visibility>Collapsed</Visibility>
+					</DiscreteObjectKeyFrame.Value>
+				</DiscreteObjectKeyFrame>
+			</ObjectAnimationUsingKeyFrames>
+			<DoubleAnimation Duration="0" To="110" Storyboard.TargetProperty="(FrameworkElement.Height)" Storyboard.TargetName="m_commandCanvas" d:IsOptimized="True"/>
+		</Storyboard>
+		<Storyboard x:Name="HideError">
+			<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="m_errorCanvas">
+				<DiscreteObjectKeyFrame KeyTime="0">
+					<DiscreteObjectKeyFrame.Value>
+						<Visibility>Collapsed</Visibility>
+					</DiscreteObjectKeyFrame.Value>
+				</DiscreteObjectKeyFrame>
+			</ObjectAnimationUsingKeyFrames>
+			<DoubleAnimation Duration="0" To="110" Storyboard.TargetProperty="(FrameworkElement.Height)" Storyboard.TargetName="m_headerCanvas" d:IsOptimized="True"/>
+		</Storyboard>
+	</UserControl.Resources>
 
 	<Grid x:Name="LayoutRoot">
-		<Border x:Name="m_routesAddCanvas" Background="#FFFAF0B9" Margin="0" CornerRadius="3" Height="69">
-			<Canvas>
-				<ComboBox x:Name="m_ruleType" Height="25" Width="75" SelectedIndex="0" Canvas.Left="10" Canvas.Top="36">
-					<!--<TextBlock FontSize="11" Text="Auto" />-->
-					<TextBlock FontSize="11" Text="Exact" />
-					<TextBlock FontSize="11" Text="Prefix" />
-					<TextBlock FontSize="11" Text="Contains" />	
-					<TextBlock FontSize="11" Text="Regex" />	
-				</ComboBox>
-				<TextBox x:Name="m_rulePattern" Height="25" Width="155" MaxLength="1024" Canvas.Left="89" Canvas.Top="35"/>
-				<TextBox x:Name="m_ruleCommandString" Height="25" MaxLength="4096" Canvas.Left="317" Canvas.Top="35" Width="290"/>
-				<TextBox x:Name="m_ruleDescription" Height="25" Width="171" MaxLength="1024" Canvas.Left="611" Canvas.Top="35"/>
-				<Button x:Name="m_ruleSaveButton" Content="Save" Width="69" Click="Submit" Height="35" Canvas.Left="837" Canvas.Top="30" d:LayoutOverrides="Height"/>
-				<TextBlock TextWrapping="Wrap" Text="Rule Type" Width="65" Height="22" Canvas.Left="10" Canvas.Top="14"/>
-				<TextBlock TextWrapping="Wrap" Text="Pattern" Width="65" Height="22" Canvas.Left="89" Canvas.Top="14"/>
-				<TextBlock TextWrapping="Wrap" Width="105" Height="22" Canvas.Left="317" Canvas.Top="14"><Run Text="Command "/><Run Text="String"/></TextBlock>
-				<TextBlock TextWrapping="Wrap" Text="Description" Width="65" Height="22" Canvas.Left="611" Canvas.Top="14"/>
-				<TextBlock x:Name="m_descriptionText" Height="24" TextWrapping="Wrap" Width="135" FontSize="18.667" Canvas.Left="834" Canvas.Top="5"><Run Text="Add "/><Run Text="Out"/><Run Text=" Rule"/></TextBlock>
-				<Button x:Name="m_ruleCancelButton" Content="Cancel" Height="26" Width="59" Click="Cancel" IsTabStop="False" Canvas.Left="914" Canvas.Top="35"/>
-				<TextBox x:Name="m_rulePriority" Height="25" Width="43" MaxLength="5" Canvas.Left="787" Canvas.Top="35"/>
-				<TextBlock TextWrapping="Wrap" Text="Priority" Width="43" Height="22" Canvas.Left="787" Canvas.Top="14"/>
-				<ComboBox x:Name="m_ruleCommandType" Height="25" Width="65" SelectedIndex="0" Canvas.Left="248" Canvas.Top="35">
-					<TextBlock FontSize="11" Text="Dial" />
-					<TextBlock FontSize="11" Text="Reject" />
-				</ComboBox>
-				<TextBlock TextWrapping="Wrap" Width="65" Height="16" Canvas.Left="248" Canvas.Top="14" Text="Command"/>
-				<Border x:Name="m_errorCanvas" Background="White" HorizontalAlignment="Center" Height="60" Margin="0" VerticalAlignment="Center" Width="900" BorderBrush="Black" BorderThickness="1" Visibility="Collapsed" Canvas.Left="39" Canvas.Top="5" >
-					<Grid>
-						<Button x:Name="m_closeErrorButton" Content="X" Width="39" Click="CloseErrroMessage" HorizontalAlignment="Right" Margin="0,8,8,26"/>
-						<TextBlock x:Name="m_errorMessageTextBlock" TextWrapping="Wrap" Text="An error occurred saving the rule." Foreground="#FFEC0A0A" FontSize="13.333" Margin="8,8,51,8"/>
-					</Grid>
-				</Border>
-			</Canvas>
+		<Border x:Name="m_routesAddCanvas" Background="#FFF6FFF5" CornerRadius="3">
+			<StackPanel>
+				<StackPanel x:Name="m_headerCanvas" Height="206">
+					<TextBlock x:Name="m_descriptionText" Height="24" TextWrapping="Wrap" FontSize="18.667" Text="New Rule" Margin="5,5,0,5"/>
+					<Border x:Name="m_errorCanvas" Background="#FFE1B5A3" Height="62" BorderBrush="Black" BorderThickness="1" Margin="5,0" >
+						<Grid>
+							<Button x:Name="m_closeErrorButton" Content="X" Width="39" Click="CloseErrorMessage" HorizontalAlignment="Right" Margin="0,8,8,26" TabIndex="14"/>
+							<TextBlock x:Name="m_errorMessageTextBlock" TextWrapping="Wrap" Text="An error occurred saving the rule." Foreground="#FF080803" FontSize="13.333" Margin="8,8,51,8"/>
+						</Grid>
+					</Border>
+					<Canvas Height="68">
+						<TextBox x:Name="m_ruleDescription" Height="25" Width="171" MaxLength="50" Canvas.Left="166" Canvas.Top="40" TabIndex="2"/>
+						<TextBlock TextWrapping="Wrap" Text="Description" Width="65" Height="22" Canvas.Left="20" Canvas.Top="47"/>
+						<TextBox x:Name="m_rulePriority" Height="25" Width="43" MaxLength="5" Canvas.Left="166" Canvas.Top="8" TabIndex="1"/>
+						<TextBlock TextWrapping="Wrap" Text="Priority" Width="43" Height="20" Canvas.Left="20" Canvas.Top="13"/>
+					</Canvas>
+				</StackPanel>
+				<Canvas x:Name="m_matchCanvas" Height="62" Background="#FFD4E1A3">
+					<TextBox x:Name="m_rulePattern" Height="25" Width="329" MaxLength="1024" Canvas.Left="251" Canvas.Top="21" TabIndex="4"/>
+					<TextBlock TextWrapping="Wrap" Text="Destination Match" Width="118" Height="22" Canvas.Left="20" Canvas.Top="24" FontWeight="Bold"/>
+					<TextBlock Height="19" TextWrapping="Wrap" Width="85" FontWeight="Bold" FontSize="13.333" Canvas.Left="849" Canvas.Top="10"><Run Text="Match "/><Run Text="C"/><Run Text="all"/></TextBlock>
+					<ComboBox x:Name="m_rulePatternType" Height="25" Width="68" SelectedIndex="0" Canvas.Left="169" Canvas.Top="20" TabIndex="3">
+						<TextBlock FontSize="11" Text="Exact" />
+						<TextBlock FontSize="11" Text="Prefix" />
+						<TextBlock FontSize="11" Text="Regex" />
+					</ComboBox>
+				</Canvas>
+				<StackPanel x:Name="m_commandCanvas" Background="#FFC0D7DA" Margin="0" Height="247" >
+					<Canvas x:Name="m_commandTypeCanvas" Height="32" Margin="0,0,7,0">
+						<ComboBox x:Name="m_ruleCommandType" Height="25" Width="124" SelectedIndex="0" Canvas.Left="166" Canvas.Top="5" SelectionChanged="RuleCommandType_SelectionChanged" TabIndex="5">
+							<TextBlock FontSize="11" Text="Dial" />
+							<TextBlock FontSize="11" Text="DialAdvanced" />
+							<TextBlock FontSize="11" Text="Reject" />
+						</ComboBox>
+						<TextBlock x:Name="m_ruleCommandLabel" TextWrapping="Wrap" Width="65" Height="16" Canvas.Left="20" Canvas.Top="8" Text="Command" FontWeight="Bold"/>
+						<TextBlock Height="21" TextWrapping="Wrap" Text="Process Call" Width="101" FontWeight="Bold" FontSize="13.333" Canvas.Left="849" Canvas.Top="8"/>
+					</Canvas>
+					<Canvas x:Name="m_dialParametersCanvas" Height="39" Margin="0,0,8,0">
+						<TextBox x:Name="m_ruleCommandString" Height="25" MaxLength="4096" Canvas.Left="166" Canvas.Top="7" Width="130" Text="${EXTEN}" TabIndex="6"/>
+						<ComboBox x:Name="m_ruleProvider" Height="25" Width="171" Canvas.Left="324" Canvas.Top="6" ItemsSource="{Binding}" TabIndex="7">
+							<ComboBox.ItemTemplate>
+								<DataTemplate>
+									<TextBlock Text="{Binding ProviderName}" />    
+								</DataTemplate>
+							</ComboBox.ItemTemplate>
+						</ComboBox>
+						<TextBlock TextWrapping="Wrap" Width="75" Height="16" Canvas.Left="20" Canvas.Top="16" Text="Destination" FontWeight="Bold"/>
+						<TextBlock Height="25" TextWrapping="Wrap" Text="@" Width="20" FontSize="16" Canvas.Left="300" Canvas.Top="8"/>
+					</Canvas>
+					<Canvas x:Name="m_dialAdvancedParametersCanvas" Margin="0,0,8,0" Height="103">
+						<TextBox x:Name="m_ruleAdvancedDialString" Height="25" MaxLength="4096" Canvas.Left="166" Canvas.Top="7" Width="560" TabIndex="8"/>
+						<TextBlock TextWrapping="Wrap" Width="75" Height="16" Canvas.Left="20" Canvas.Top="16" Text="Dial String" FontWeight="Bold"/>
+						<TextBlock TextWrapping="Wrap" Width="115" Height="16" Canvas.Left="20" Canvas.Top="49" Text="Ring duration (s)" FontWeight="Bold"/>
+						<TextBlock TextWrapping="Wrap" Width="115" Height="16" Canvas.Left="20" Canvas.Top="78" Text="Call duration (s)" FontWeight="Bold"/>
+						<TextBox x:Name="m_ruleRingDuration" Height="23" TextWrapping="Wrap" Width="58" Canvas.Left="166" Canvas.Top="45" TabIndex="9"/>
+						<TextBox x:Name="m_ruleAnswerDuration" Height="23" TextWrapping="Wrap" Width="58" Canvas.Left="166" Canvas.Top="74" TabIndex="10"/>
+					</Canvas>
+					<Canvas x:Name="m_rejectParametersCanvas" Height="74" Margin="0,0,8,0">
+						<TextBlock TextWrapping="Wrap" Width="140" Height="16" Canvas.Left="20" Canvas.Top="10" Text="Reject Response Code" FontWeight="Bold"/>
+						<ComboBox x:Name="m_rejectResponseCode" Height="25" SelectedIndex="4" Canvas.Left="166" Canvas.Top="10" Width="220" TabIndex="11">
+							<TextBlock FontSize="11" Text="404 Not Found" />
+							<TextBlock FontSize="11" Text="410 Gone" />
+							<TextBlock FontSize="11" Text="420 Bad Extension" />
+							<TextBlock FontSize="11" Text="433 Anonymity Disallowed" />
+							<TextBlock FontSize="11" Text="480 Temporarily Unavailable" />
+							<TextBlock FontSize="11" Text="486 Busy Here" />
+						</ComboBox>
+						<TextBlock TextWrapping="Wrap" Width="140" Height="16" Canvas.Left="20" Canvas.Top="44" Text="Reject Reason" FontWeight="Bold"/>
+						<TextBox x:Name="m_rejectReason" Height="22" TextWrapping="Wrap" Width="174" Canvas.Left="166" Canvas.Top="44" TabIndex="12"/>
+					</Canvas>
+				</StackPanel>
+				<Canvas x:Name="m_buttonsCanvas" Height="70">
+					<Button x:Name="m_ruleSaveButton" Content="Save" Width="93" Click="Submit" Height="52" Canvas.Left="797" Canvas.Top="11" TabIndex="13"/>
+					<Button x:Name="m_ruleCancelButton" Height="26" Width="59" Click="Cancel" IsTabStop="False" Canvas.Left="910" Canvas.Top="24" Content="Cancel" TabIndex="14"/>
+				</Canvas>
+			</StackPanel>
 		</Border>	
 	</Grid>
 </UserControl>

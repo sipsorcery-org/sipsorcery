@@ -200,6 +200,7 @@ namespace SIPSorcery
                 if (m_addControl != null)
                 {
                     SIPProvider sipProvider = (SIPProvider)so.UserState;
+                    SIPProvidersPanel_Add();
                     m_addControl.WriteStatusMessage(MessageLevelsEnum.Info, "SIP Provider was successfully created for " + sipProvider.ProviderName + ".");
                 }
 

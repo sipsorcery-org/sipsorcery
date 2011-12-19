@@ -13,7 +13,6 @@
 	
 	<UserControl.Resources>
 		<ssentities:SecurityQuestions x:Key="SecurityQuestions" />
-		<ssentities:TimezonesList x:Key="TimezonesList" />
 		<ssentities:CountriesList x:Key="CountriesList" />
 	</UserControl.Resources>
 
@@ -61,9 +60,9 @@
 						<toolkit:DataField Label="Web Site" Foreground="{StaticResource NormalTextBrush}">
 							<TextBox Height="23" HorizontalAlignment="Left" Margin="0,0,0,0" Text="{Binding Web Site, Mode=TwoWay}" VerticalAlignment="Top" Width="280" />
 						</toolkit:DataField>
-						<toolkit:DataField Label="Time Zone" Foreground="{StaticResource NormalTextBrush}">
-							<ComboBox Height="23" Foreground="Black" HorizontalAlignment="Left" Margin="0,0,0,0" ItemsSource="{StaticResource TimezonesList}" SelectedValue="{Binding Timezone, Mode=TwoWay}" VerticalAlignment="Top" Width="300"/>
-						</toolkit:DataField>
+						<!--<toolkit:DataField Label="Time Zone" Foreground="{StaticResource NormalTextBrush}">
+							<ComboBox Height="23" x:Name="m_timezonesList" Foreground="Black" HorizontalAlignment="Left" Margin="0,0,0,0" SelectedValue="{Binding Timezone, Mode=TwoWay}" VerticalAlignment="Top" Width="300"/>
+						</toolkit:DataField>-->
 					</StackPanel>
 				</DataTemplate>
 			</toolkit:DataForm.EditTemplate>

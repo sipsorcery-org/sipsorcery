@@ -14,7 +14,6 @@
 	
 	<UserControl.Resources>
 		<ssentities:SecurityQuestions x:Key="SecurityQuestions" />
-		<ssentities:TimezonesList x:Key="TimezonesList" />
 		<ssentities:CountriesList x:Key="CountriesList" />
 	</UserControl.Resources>
 
@@ -49,7 +48,7 @@
 				<PasswordBox x:Name="m_newPasswordTextBox" TabIndex="11" TabNavigation="Local" FontSize="10" Padding="1,0,0,0" VerticalContentAlignment="Top" Margin="0,64,61,0" Height="20" HorizontalAlignment="Right" VerticalAlignment="Top" Width="198"/>
 				<TextBlock x:Name="m_newPasswordLabel" Height="16" Width="98" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="New Password" TextWrapping="Wrap" HorizontalAlignment="Right" Margin="0,64,305,0" VerticalAlignment="Top"/>
 				<Button x:Name="m_updatePasswordButton" Height="22" Margin="0,126,154,0" VerticalAlignment="Top" Content="Update Password" Click="UpdatePasswordButton_Click" TabIndex="13" HorizontalAlignment="Right" Width="105" d:LayoutOverrides="VerticalAlignment"/>
-				<ComboBox Margin="154,246,475,0" VerticalAlignment="Top" Height="25" x:Name="m_timezoneListBox" TabIndex="13" ItemsSource="{StaticResource TimezonesList}" SelectedValue="{Binding Timezone, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}" />
+				<ComboBox Margin="154,246,475,0" VerticalAlignment="Top" Height="25" x:Name="m_timezoneListBox" TabIndex="13" SelectedValue="{Binding Timezone, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}" />
 				<TextBlock x:Name="m_timezoneLabel" Width="55.849" FontSize="11" Foreground="{StaticResource NormalTextBrush}" Text="Timezone" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="27,246,0,0" Height="16" VerticalAlignment="Top"/>
 				<TextBlock x:Name="m_updateGeneralSettingsLabel" Width="190" FontSize="13.333" Foreground="{StaticResource InfoTextBrush}" Text="Update General Settings" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="154,8,0,0" VerticalAlignment="Top"/>
 				<TextBlock x:Name="m_updatePasswordLabel" Width="123" FontSize="13.333" Foreground="{StaticResource InfoTextBrush}" TextWrapping="Wrap" HorizontalAlignment="Right" Margin="0,8,136,0" VerticalAlignment="Top"><Run Text="Update "/><Run Text="Password"/></TextBlock>

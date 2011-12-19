@@ -15,7 +15,7 @@ namespace SIPSorcery
 	{
         private ControlClosedDelegate ControlClosed_External;
 
-        private SIPEntitiesDomainContext m_riaContext;
+        private Action<SIPDialPlan> m_addAction;
         private string m_owner;
         
 		public DialPlanAddControl()
@@ -26,13 +26,13 @@ namespace SIPSorcery
         public DialPlanAddControl(
             string owner,
             ControlClosedDelegate closed,
-            SIPEntitiesDomainContext riaContext)
+            Action<SIPDialPlan> addAction)
         {
             InitializeComponent();
 
             m_owner = owner;
             ControlClosed_External = closed;
-            m_riaContext = riaContext;
+            m_addAction = addAction;
         }
 
         public void WriteStatusMessage(MessageLevelsEnum status, string message)
@@ -87,30 +87,7 @@ namespace SIPSorcery
 
         private void AddDialPlan(SIPDialPlan dialPlan)
         {
-            if (dialPlan.ID == null || dialPlan.ID == Guid.Empty.ToString())
-            {
-                dialPlan.ID = Guid.NewGuid().ToString();
-            }
-
-            m_riaContext.SIPDialPlans.Add(dialPlan);
-            m_riaContext.SubmitChanges(AddDialPlanComplete, dialPlan);
-        }
-
-        private void AddDialPlanComplete(SubmitOperation so)
-        {
-            if (so.HasError)
-            {
-                WriteStatusMessage(MessageLevelsEnum.Error, so.Error.Message);
-                m_riaContext.SIPDialPlans.Remove((SIPDialPlan)so.UserState);
-                so.MarkErrorAsHandled();
-            }
-            else
-            {
-                SIPDialPlan sipDialPlan = (SIPDialPlan)so.UserState;
-                WriteStatusMessage(MessageLevelsEnum.Info, "SIP Dial Plan " + sipDialPlan.DialPlanName + "  was successfully created.");
-
-                //m_dialPlansPanel.AssetAdded();
-            }
+            m_addAction(dialPlan);
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)

@@ -103,13 +103,49 @@ namespace SIPSorcery
         private void DialPlansPanel_Add()
         {
             m_selectedDialPlan = null;
-            m_addControl = new DialPlanAddControl(m_owner, DetailsControlClosed, m_riaContext);
+            m_addControl = new DialPlanAddControl(m_owner, DetailsControlClosed, AddDialPlan);
             m_dialPlansPanel.SetDetailsElement(m_addControl);
+        }
+
+        private void AddDialPlan(SIPDialPlan dialPlan)
+        {
+            if (dialPlan.ID == null || dialPlan.ID == Guid.Empty.ToString())
+            {
+                dialPlan.ID = Guid.NewGuid().ToString();
+            }
+
+            m_riaContext.SIPDialPlans.Add(dialPlan);
+            m_riaContext.SubmitChanges(AddDialPlanComplete, dialPlan);
         }
 
         private void UpdateDialPlan(SIPDialPlan dialPlan)
         {
             m_riaContext.SubmitChanges(UpdateDialPlanComplete, dialPlan);
+        }
+
+        private void AddDialPlanComplete(SubmitOperation so)
+        {
+            if (so.HasError)
+            {
+                if (m_addControl != null)
+                {
+                    m_addControl.WriteStatusMessage(MessageLevelsEnum.Error, so.Error.Message);
+                }
+                m_riaContext.SIPDialPlans.Remove((SIPDialPlan)so.UserState);
+                so.MarkErrorAsHandled();
+            }
+            else
+            {
+                SIPDialPlan sipDialPlan = (SIPDialPlan)so.UserState;
+                //m_addControl.WriteStatusMessage(MessageLevelsEnum.Info, "SIP Dial Plan " + sipDialPlan.DialPlanName + "  was successfully created.");
+                //m_dialPlansPanel.AssetAdded();
+                EditDialPlan(sipDialPlan);
+
+                if (m_editControl != null)
+                {
+                    m_editControl.WriteStatusMessage(MessageLevelsEnum.Info, "SIP Dial Plan " + sipDialPlan.DialPlanName + "  was successfully created.");
+                }
+            }
         }
 
         private void UpdateDialPlanComplete(SubmitOperation so)
@@ -148,37 +184,7 @@ namespace SIPSorcery
                     if (dataGrid.CurrentColumn.Header as string != "Delete")
                     {
                         SIPDialPlan dialPlan = (SIPDialPlan)m_dialPlansDataGrid.SelectedItem;
-
-                        if (m_selectedDialPlan == null || m_selectedDialPlan != dialPlan)
-                        {
-                            m_selectedDialPlan = dialPlan;
-
-                            if (m_selectedDialPlan.ScriptType == SIPDialPlanScriptTypesEnum.TelisWizard)
-                            {
-                                if (m_wizardEditControl != null)
-                                {
-                                    m_wizardEditControl.DisableSelectionChanges();
-                                }
-
-                                m_wizardEditControl = new DialPlanWizard(LogActivityMessage_External, m_selectedDialPlan, m_owner, null, UpdateDialPlan, DetailsControlClosed, m_riaContext);
-                                m_dialPlansPanel.SetDetailsElement(m_wizardEditControl);
-                            }
-                            else if (m_selectedDialPlan.ScriptType == SIPDialPlanScriptTypesEnum.SimpleWizard)
-                            {
-                                if (m_simpleWizardManager != null)
-                                {
-                                    m_simpleWizardManager.DisableSelectionChanges();
-                                }
-
-                                m_simpleWizardManager = new SimpleWizardManager(LogActivityMessage_External, m_selectedDialPlan, m_owner, null, UpdateDialPlan, DetailsControlClosed, m_riaContext);
-                                m_dialPlansPanel.SetDetailsElement(m_simpleWizardManager);
-                            }
-                            else
-                            {
-                                m_editControl = new DialPlanUpdateControl(m_selectedDialPlan, m_owner, UpdateDialPlan, DetailsControlClosed);
-                                m_dialPlansPanel.SetDetailsElement(m_editControl);
-                            }
-                        }
+                        EditDialPlan(dialPlan);
                     }
                 }
             }
@@ -186,6 +192,35 @@ namespace SIPSorcery
             {
                 LogActivityMessage_External(MessageLevelsEnum.Error, "Exception showing DialPlan details. " + excp.Message);
                 m_selectedDialPlan = null;
+            }
+        }
+
+        private void EditDialPlan(SIPDialPlan dialPlan)
+        {
+            if (m_selectedDialPlan == null || m_selectedDialPlan != dialPlan)
+            {
+                m_selectedDialPlan = dialPlan;
+
+                if (m_selectedDialPlan.ScriptType == SIPDialPlanScriptTypesEnum.TelisWizard)
+                {
+                    if (m_wizardEditControl != null)
+                    {
+                        m_wizardEditControl.DisableSelectionChanges();
+                    }
+
+                    m_wizardEditControl = new DialPlanWizard(LogActivityMessage_External, m_selectedDialPlan, m_owner, null, UpdateDialPlan, DetailsControlClosed, m_riaContext);
+                    m_dialPlansPanel.SetDetailsElement(m_wizardEditControl);
+                }
+                else if (m_selectedDialPlan.ScriptType == SIPDialPlanScriptTypesEnum.SimpleWizard)
+                {
+                    m_simpleWizardManager = new SimpleWizardManager(LogActivityMessage_External, m_selectedDialPlan, m_owner, null, UpdateDialPlan, DetailsControlClosed, m_riaContext);
+                    m_dialPlansPanel.SetDetailsElement(m_simpleWizardManager);
+                }
+                else
+                {
+                    m_editControl = new DialPlanUpdateControl(m_selectedDialPlan, m_owner, UpdateDialPlan, DetailsControlClosed);
+                    m_dialPlansPanel.SetDetailsElement(m_editControl);
+                }
             }
         }
 

@@ -98,17 +98,20 @@ namespace SIPSorcery.UIControls
 
         public void SetAssetListSource(IEnumerable list)
         {
-            // Set the datagrid source.
-            UIHelper.SetDataGridSource(m_dataGrid, list);
-
-            // Set the list count so that the range can be displayed.
-            m_listCount = 0;
-            IEnumerator listEnumerator = list.GetEnumerator();
-            while (listEnumerator.MoveNext())
+            if (m_isLoaded)
             {
-                m_listCount++;
+                // Set the datagrid source.
+                UIHelper.SetDataGridSource(m_dataGrid, list);
+
+                // Set the list count so that the range can be displayed.
+                m_listCount = 0;
+                IEnumerator listEnumerator = list.GetEnumerator();
+                while (listEnumerator.MoveNext())
+                {
+                    m_listCount++;
+                }
+                m_menuBar.SetDisplayedRange(m_listOffset, m_listCount, m_listTotal, m_displayCount);
             }
-            m_menuBar.SetDisplayedRange(m_listOffset, m_listCount, m_listTotal, m_displayCount);
         }
 
         private void MenuBar_PageFirst()

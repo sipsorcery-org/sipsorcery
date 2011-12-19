@@ -7,12 +7,12 @@
 	xmlns:sdk="http://schemas.microsoft.com/winfx/2006/xaml/presentation/sdk" xmlns:toolkit="http://schemas.microsoft.com/winfx/2006/xaml/presentation/toolkit"
 	xmlns:riaControls="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.DomainServices"
 	xmlns:ssentities="clr-namespace:SIPSorcery.Entities;assembly=SIPSorcery.Entities.Client"
+	xmlns:app="clr-namespace:SIPSorcery.App;assembly=SIPSorcery" 
 	xmlns:sipsorceryui="clr-namespace:SIPSorcery.UIControls"
 	mc:Ignorable="d"
 	x:Class="SIPSorcery.DialPlanWizard" Width="1024" Height="449" Background="Black">
 
 	<UserControl.Resources>
-		<ssentities:TimezonesList x:Key="TimezonesList" />
 		<ssentities:CountriesList x:Key="CountriesList" />
 	</UserControl.Resources>
 
@@ -445,10 +445,10 @@
 								<toolkit:DataForm.EditTemplate>
 									<DataTemplate>
 										<StackPanel>
-											<TextBlock Text="Time Zone" Height="23" HorizontalAlignment="Left" Margin="0,5,0,0" />
+											<!--<TextBlock Text="Time Zone" Height="23" HorizontalAlignment="Left" Margin="0,5,0,0" />
 											<toolkit:DataField Label="">
-												<ComboBox Height="23" HorizontalAlignment="Left" Margin="0,0,0,0" ItemsSource="{StaticResource TimezonesList}" SelectedValue="{Binding Timezone, Mode=TwoWay}" VerticalAlignment="Top" />
-											</toolkit:DataField>
+												<ComboBox Height="23" x:Name="m_timezonesList" HorizontalAlignment="Left" Margin="0,0,0,0" SelectedValue="{Binding Timezone, Mode=TwoWay}" VerticalAlignment="Top" />
+											</toolkit:DataField>-->
 											<TextBlock Text="Country Code" Height="23" HorizontalAlignment="Left" Margin="0,5,0,0" />
 											<toolkit:DataField Label="">
 												<TextBox Height="23" HorizontalAlignment="Left" Margin="0,0,0,0" Text="{Binding CountryCode, Mode=TwoWay}"

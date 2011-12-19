@@ -6,24 +6,19 @@
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	xmlns:sdk="http://schemas.microsoft.com/winfx/2006/xaml/presentation/sdk" xmlns:toolkit="http://schemas.microsoft.com/winfx/2006/xaml/presentation/toolkit"
 	xmlns:riaControls="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.DomainServices"
-	xmlns:ssentities="clr-namespace:SIPSorcery.Entities;assembly=SIPSorcery.Entities.Client"
 	xmlns:sipsorceryui="clr-namespace:SIPSorcery.UIControls"
 	xmlns:local="clr-namespace:SIPSorcery"
 	mc:Ignorable="d"
-	x:Class="SIPSorcery.SimpleWizardManager" Width="1024" Height="628" Background="Black">
-
-	<UserControl.Resources>
-		<ssentities:TimezonesList x:Key="TimezonesList" />
-		<ssentities:CountriesList x:Key="CountriesList" />
-	</UserControl.Resources>
+	x:Class="SIPSorcery.SimpleWizardManager" Width="1024" Background="Black">
 
 	<Border x:Name="LayoutRoot" Background="Black" Width="1020" BorderThickness="1" BorderBrush="#FFA0F927" CornerRadius="5" Margin="0">
 		<StackPanel Margin="0,0,0,7">
 			<Canvas Height="26" Margin="8,0">
 				<Button Content="X" x:Name="m_closeButton" Click="CloseButton_Click" Width="23" Height="20" Canvas.Left="977" Canvas.Top="5" />
 				<TextBlock Cursor="Hand" x:Name="m_helpLink" Width="122" Foreground="{StaticResource NormalTextBrush}" Text="Simple Wizard Help" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="HelpLink_MouseLeftButtonUp" Height="15" Canvas.Left="808" Canvas.Top="8"/>
+				<TextBlock Cursor="None" x:Name="m_dialPlanName" Foreground="{StaticResource NormalTextBrush}" Text="Dial Plan Name" TextWrapping="Wrap" Height="15" Canvas.Top="11" Canvas.Left="435" FontSize="16" HorizontalAlignment="Center"/>
 			</Canvas>
-			<sdk:TabControl Margin="8,0" Height="589" SelectionChanged="TabControl_SelectionChanged">
+			<sdk:TabControl Margin="8,0" SelectionChanged="TabControl_SelectionChanged">
 				<sdk:TabControl.Background>
 					<LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
 						<GradientStop Color="#FF3A3838"/>
@@ -31,17 +26,19 @@
 					</LinearGradientBrush>
 				</sdk:TabControl.Background>
 				<sdk:TabItem Header="Outgoing Call Rules">
-					<Grid Background="Black" Margin="0,0,0,-2">
-						<sipsorceryui:AssetViewPanel x:Name="m_outgoingRulesPanel" Width="977" Margin="5,74,0,1" HorizontalAlignment="Left">
+					<StackPanel Background="Black" Margin="0">
+						<local:SimpleWizardOutRuleControl x:Name="m_outgoingRulesUpdateControl" Margin="0,0,0,5"/>
+						<sipsorceryui:AssetViewPanel x:Name="m_outgoingRulesPanel" Width="977" Margin="5,0,0,0" HorizontalAlignment="Left">
 							<sdk:DataGrid ColumnHeaderHeight="24" SelectionMode="Single" x:Name="m_outgoingRulesDataGrid" AutoGenerateColumns="False" FontSize="11" 
 								RowBackground="Azure" 
 								AlternatingRowBackground="LightSteelBlue" Margin="0" HorizontalAlignment="Left" Width="977" MouseLeftButtonUp="RulesDataGridClicked" MinHeight="231" Height="452">
 								<sdk:DataGrid.Columns>
 									<sdk:DataGridTextColumn 
-										Header="Rule Type" 
-										Binding="{Binding RuleType}" 
+										Header="Type" 
+										Width="SizeToCells"
+										Binding="{Binding PatternType}" 
 										IsReadOnly="True"
-										Width="80" />
+										MinWidth="60" />
 									<sdk:DataGridTextColumn 
 										Header="Pattern" 
 										Width="SizeToCells"
@@ -57,7 +54,7 @@
 									<sdk:DataGridTextColumn 
 										Header="Command String" 
 										Width="SizeToCells"
-										Binding="{Binding CommandString}" 
+										Binding="{Binding RuleCommandDescription}" 
 										IsReadOnly="True"
 										MinWidth="280" />
 									<sdk:DataGridTextColumn 
@@ -80,30 +77,24 @@
 									</sdk:DataGridTemplateColumn>
 								</sdk:DataGrid.Columns>
 							</sdk:DataGrid>
-						</sipsorceryui:AssetViewPanel>
-						<local:SimpleWizardOutRuleControl x:Name="m_outgoingRulesUpdateControl" Margin="5,0,8,0" VerticalAlignment="Top"/>	
-					</Grid>	
+						</sipsorceryui:AssetViewPanel>	
+					</StackPanel>	
 				</sdk:TabItem>
 				<sdk:TabItem Header="Incoming Call Rules">
 					<StackPanel Background="Black" Margin="0">
-						<local:SimpleWizardInRuleControl x:Name="m_incomingRulesUpdateControl" Margin="5,0,8,5"/>
-						<sipsorceryui:AssetViewPanel x:Name="m_incomingRulesPanel" Width="977" Margin="5,0,0,0" HorizontalAlignment="Left" Height="479">
+						<local:SimpleWizardInRuleControl x:Name="m_incomingRulesUpdateControl" Margin="0,0,0,5"/>
+						<sipsorceryui:AssetViewPanel x:Name="m_incomingRulesPanel" Width="977" Margin="5,0,0,0" HorizontalAlignment="Left">
 							<sdk:DataGrid ColumnHeaderHeight="24" SelectionMode="Single" x:Name="m_incomingRulesDataGrid" AutoGenerateColumns="False" FontSize="11" 
 								RowBackground="Azure" 
 								AlternatingRowBackground="LightSteelBlue" Margin="0" HorizontalAlignment="Left" Width="977" MouseLeftButtonUp="RulesDataGridClicked" MinHeight="231" Height="452" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto">
 								<sdk:DataGrid.Columns>
 									<sdk:DataGridTextColumn 
-										Header="To Account" 
-										Binding="{Binding ToSIPAccount}" 
+										Header="To" 
+										Binding="{Binding ToDescription}" 
 										IsReadOnly="True"
-										Width="120" />
+										Width="140" />
 									<sdk:DataGridTextColumn 
-										Header="Rule Type" 
-										Binding="{Binding RuleType}" 
-										IsReadOnly="True"
-										Width="80" />
-									<sdk:DataGridTextColumn 
-										Header="Pattern" 
+										Header="Caller ID Match" 
 										Width="SizeToCells"
 										Binding="{Binding Pattern}" 
 										IsReadOnly="True"
@@ -115,11 +106,17 @@
 										IsReadOnly="True"
 										MinWidth="100" />
 									<sdk:DataGridTextColumn 
+										Header="Time" 
+										Width="SizeToCells"
+										Binding="{Binding TimePattern}" 
+										IsReadOnly="True"
+										MinWidth="60" />
+									<sdk:DataGridTextColumn 
 										Header="Command String" 
 										Width="SizeToCells"
-										Binding="{Binding CommandString}" 
+										Binding="{Binding RuleCommandDescription}" 
 										IsReadOnly="True"
-										MinWidth="280" />
+										MinWidth="260" />
 									<sdk:DataGridTextColumn 
 										Header="Description" 
 										Width="SizeToCells"

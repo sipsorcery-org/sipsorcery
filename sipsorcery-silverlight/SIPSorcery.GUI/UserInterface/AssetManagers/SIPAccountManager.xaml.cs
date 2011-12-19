@@ -140,6 +140,7 @@ namespace SIPSorcery
                 if (m_addControl != null)
                 {
                     SIPAccount sipAccount = (SIPAccount)so.UserState;
+                    SIPAccountsAssetViewer_Add();
                     m_addControl.WriteStatusMessage(MessageLevelsEnum.Info, "SIP Account was successfully created for " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + ".");
                 }
 

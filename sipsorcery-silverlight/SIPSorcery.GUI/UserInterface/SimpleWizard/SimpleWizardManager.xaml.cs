@@ -10,21 +10,17 @@ using System.Windows.Input;
 using SIPSorcery.Entities;
 using SIPSorcery.Entities.Services;
 using SIPSorcery.SIP;
+using SIPSorcery.Sys;
 using SIPSorcery.UIControls;
 
 namespace SIPSorcery
 {
     public partial class SimpleWizardManager : UserControl
     {
-        private const string DEFAULT_HELP_URL = "http://localhost/sipsorcery-main/Help/SimpleWizardContents";
+        private const string DEFAULT_HELP_URL = "https://www.sipsorcery.com/mainsite/Help/SimpleWizardContents";
         private const string DEFAULT_HELP_OPTIONS = "width=700,height=500,scrollbars=1";
         private const int HELP_POPUP_WIDTH = 600;
         private const int HELP_POPUP_HEIGHT = 500;
-        //private const int ASSETVIEW_HEIGHT_WITH_CRM_OPTION = 254;   // The height of teh asset view panel when the CRM option is being displayed.
-        //private const int LOOKUP_TABLES_PAGE_SIZE = 5;
-        //private const double UPDATE_CONTROL_CANVAS_HEIGHT = 75;
-        //private const double DATA_GRID_HEIGHT = 471;
-        //private const double DATA_GRID_TOP_MARGIN = 69;
 
         private ActivityMessageDelegate LogActivityMessage_External;
         private DialPlanUpdateDelegate DialPlanAdd_External;
@@ -36,9 +32,7 @@ namespace SIPSorcery
         private string m_owner;
         private bool m_routesPanelRefreshInProgress;
         private bool m_intialised;
-        private bool m_gridReady;
         private DataGrid m_currentGrid;     // The data grid for the active tab panel.
-        private double m_originalGridHeight;   // The original height of the data grid before the CRM options were displayed.
 
         public SimpleWizardManager()
         {
@@ -66,38 +60,37 @@ namespace SIPSorcery
 
             m_riaContext.RejectChanges();
 
+            m_dialPlanName.Text = m_dialPlan.DialPlanName;
+
             // Set up the outgoing rules grid.
             m_outgoingRulesUpdateControl.SetStatusMessage(SimpleWizardOutRuleControl.ADD_TEXT, false);
-            m_outgoingRulesUpdateControl.Add += SaveRule;
-            m_outgoingRulesUpdateControl.Update += SaveRule;
+            m_outgoingRulesUpdateControl.SIPProviders = m_riaContext.SIPProviders.ToList();
+            m_outgoingRulesUpdateControl.Add += AddRule;
+            m_outgoingRulesUpdateControl.Update += UpdateRule;
             m_outgoingRulesPanel.SetTitle("Outgoing Call Rules");
             m_outgoingRulesPanel.MenuEnableFilter(false);
             m_outgoingRulesPanel.MenuEnableHelp(false);
-            m_outgoingRulesPanel.MenuEnableAdd(true);
+            m_outgoingRulesPanel.MenuEnableAdd(false);
             m_outgoingRulesPanel.GetAssetList = GetOutgoingRules;
-            m_outgoingRulesPanel.Add += () => { m_outgoingRulesUpdateControl.SetRuleToUpdate(null); };
+            //m_outgoingRulesPanel.Add += () => { m_outgoingRulesUpdateControl.SetRuleToUpdate(null); };
 
             // Set up the incoming rules grid.
             m_incomingRulesUpdateControl.SetStatusMessage(SimpleWizardInRuleControl.ADD_TEXT, false);
-            m_incomingRulesUpdateControl.Add += SaveRule;
-            m_incomingRulesUpdateControl.Update += SaveRule;
+            m_incomingRulesUpdateControl.SIPProviders = m_riaContext.SIPProviders.ToList();
+            m_incomingRulesUpdateControl.Add += AddRule;
+            m_incomingRulesUpdateControl.Update += UpdateRule;
             m_incomingRulesUpdateControl.SetToSIPAccounts(m_riaContext.SIPAccounts);
             m_incomingRulesPanel.SetTitle("Incoming Call Rules");
             m_incomingRulesPanel.MenuEnableFilter(false);
             m_incomingRulesPanel.MenuEnableHelp(false);
-            m_incomingRulesPanel.MenuEnableAdd(true);
+            m_incomingRulesPanel.MenuEnableAdd(false);
             m_incomingRulesPanel.GetAssetList = GetIncomingRules;
-            m_incomingRulesPanel.Add += () => { m_incomingRulesUpdateControl.SetRuleToUpdate(null); };
+            //m_incomingRulesPanel.Add += () => { m_incomingRulesUpdateControl.SetRuleToUpdate(null); };
 
             m_intialised = true;
             m_currentGrid = m_outgoingRulesDataGrid;
 
             m_outgoingRulesPanel.RefreshAsync();
-        }
-
-        public void DisableSelectionChanges()
-        {
-            m_gridReady = false;
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
@@ -165,7 +158,6 @@ namespace SIPSorcery
                 panel.SetAssetListSource(m_riaContext.SimpleWizardRules);
             }
 
-            m_gridReady = true;
             m_routesPanelRefreshInProgress = false;
         }
 
@@ -189,16 +181,13 @@ namespace SIPSorcery
             }
         }
 
-        private void SaveRule(SimpleWizardRule rule)
+        private void AddRule(SimpleWizardRule rule)
         {
-            if (rule.ID == Guid.Empty.ToString())
-            {
-                rule.ID = Guid.NewGuid().ToString();
-                rule.Owner = m_owner;
-                rule.DialPlanID = m_dialPlan.ID;
+            rule.ID = Guid.NewGuid().ToString();
+            rule.Owner = m_owner;
+            rule.DialPlanID = m_dialPlan.ID;
 
-                m_riaContext.SimpleWizardRules.Add(rule);
-            }
+            m_riaContext.SimpleWizardRules.Add(rule);
 
             if (rule.Direction == SIPCallDirection.Out.ToString())
             {
@@ -209,10 +198,69 @@ namespace SIPSorcery
                 m_incomingRulesUpdateControl.SetStatusMessage("Saving...", true);
             }
 
-            m_riaContext.SubmitChanges(SaveRuleComplete, rule);
+            m_riaContext.SubmitChanges(AddRuleComplete, rule);
         }
 
-        public void SaveRuleComplete(SubmitOperation so)
+        private void UpdateRule(SimpleWizardRule rule)
+        {
+            if (rule.Direction == SIPCallDirection.Out.ToString())
+            {
+                m_outgoingRulesUpdateControl.SetStatusMessage("Saving...", true);
+            }
+            else
+            {
+                m_incomingRulesUpdateControl.SetStatusMessage("Saving...", true);
+            }
+
+            m_riaContext.SubmitChanges(UpdateRuleComplete, rule);
+        }
+
+        public void AddRuleComplete(SubmitOperation so)
+        {
+            var rule = (SimpleWizardRule)so.UserState;
+
+            if (so.HasError)
+            {
+                if (rule.Direction == SIPCallDirection.Out.ToString())
+                {
+                    m_outgoingRulesUpdateControl.SetErrorMessage(so.Error.Message);
+                }
+                else
+                {
+                    m_incomingRulesUpdateControl.SetErrorMessage(so.Error.Message);
+                }
+                so.MarkErrorAsHandled();
+            }
+            else
+            {
+                if (rule.Direction == SIPCallDirection.Out.ToString())
+                {
+                    m_outgoingRulesUpdateControl.SetStatusMessage(SimpleWizardOutRuleControl.ADD_TEXT, false);
+                    m_outgoingRulesUpdateControl.SetRuleToUpdate(null);
+                }
+                else
+                {
+                    m_incomingRulesUpdateControl.SetStatusMessage(SimpleWizardInRuleControl.ADD_TEXT, false);
+                    m_incomingRulesUpdateControl.SetRuleToUpdate(null);
+                }
+                //else
+                //{
+                //    // If the rule was deleted during the middle of an update.
+                //    if (rule.Direction == SIPCallDirection.Out.ToString())
+                //    {
+                //        m_outgoingRulesUpdateControl.SetStatusMessage(SimpleWizardOutRuleControl.ADD_TEXT, false);
+                //        m_outgoingRulesUpdateControl.SetRuleToUpdate(null);
+                //    }
+                //    else
+                //    {
+                //        m_incomingRulesUpdateControl.SetStatusMessage(SimpleWizardInRuleControl.ADD_TEXT, false);
+                //        m_incomingRulesUpdateControl.SetRuleToUpdate(null);
+                //    }
+                //}
+            }
+        }
+
+        public void UpdateRuleComplete(SubmitOperation so)
         {
             var rule = (SimpleWizardRule)so.UserState;
 
@@ -245,29 +293,19 @@ namespace SIPSorcery
                         m_incomingRulesUpdateControl.SetRuleToUpdate(updatedRule);
                     }
                 }
-                else
-                {
-                    // If the rule was deleted during the middle of an update.
-                    if (rule.Direction == SIPCallDirection.Out.ToString())
-                    {
-                        m_outgoingRulesUpdateControl.SetStatusMessage(SimpleWizardOutRuleControl.ADD_TEXT, false);
-                        m_outgoingRulesUpdateControl.SetRuleToUpdate(null);
-                    }
-                    else
-                    {
-                        m_incomingRulesUpdateControl.SetStatusMessage(SimpleWizardInRuleControl.ADD_TEXT, false);
-                        m_incomingRulesUpdateControl.SetRuleToUpdate(null);
-                    }
-                }
             }
         }
 
         private void DeleteSimpleWizardRule(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             SimpleWizardRule rule = m_currentGrid.SelectedItem as SimpleWizardRule;
-            LogActivityMessage_External(MessageLevelsEnum.Info, "Deleting simple wizard rule for " + rule.Description + ".");
-            m_riaContext.SimpleWizardRules.Remove(rule);
-            m_riaContext.SubmitChanges(DeleteComplete, null);
+            string ruleDescription = rule.Description.IsNullOrBlank() ? "priority " + rule.Priority.ToString() : rule.Description;
+            if (MessageBox.Show("Confirm delete for rule " + ruleDescription, "Confirm delete", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+            {
+                LogActivityMessage_External(MessageLevelsEnum.Info, "Deleting simple wizard rule for " + rule.Description + ".");
+                m_riaContext.SimpleWizardRules.Remove(rule);
+                m_riaContext.SubmitChanges(DeleteComplete, null);
+            }
         }
 
         private void DeleteComplete(SubmitOperation so)

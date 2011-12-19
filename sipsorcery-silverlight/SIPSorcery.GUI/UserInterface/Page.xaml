@@ -2,7 +2,7 @@
 	xmlns="http://schemas.microsoft.com/client/2007"
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 	x:Class="SIPSorcery.Page"
-	Width="Auto" Height="1000" xmlns:SIPSorcery="clr-namespace:SIPSorcery" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" Loaded="Page_Loaded" TabNavigation="Local" d:DesignHeight="700.524" d:DesignWidth="1024" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalAlignment="Stretch" MinHeight="0" MinWidth="0">
+	Width="Auto" Height="1500" xmlns:SIPSorcery="clr-namespace:SIPSorcery" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" Loaded="Page_Loaded" TabNavigation="Local" d:DesignHeight="700.524" d:DesignWidth="1024" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalAlignment="Stretch" MinHeight="0" MinWidth="0">
 
 	<ScrollViewer Height="Auto" MinHeight="0" x:Name="m_mainPageBorder" VerticalAlignment="Stretch" Background="#FF000000" ScrollViewer.VerticalScrollBarVisibility="Auto" BorderBrush="#FF000000" HorizontalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
 		<Grid Height="Auto" x:Name="m_topCanvas" Width="Auto">

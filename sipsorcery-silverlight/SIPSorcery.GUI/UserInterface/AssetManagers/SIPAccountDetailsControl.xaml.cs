@@ -250,8 +250,8 @@ namespace SIPSorcery
                 bool isSwitchboardEnabled = m_isSwitchboardEnabledCheckBox.IsChecked.Value;
 
                 SIPAccount sipAccount = new SIPAccount();
-                sipAccount.ID = Guid.NewGuid().ToString();
-                sipAccount.Owner = m_owner;
+                sipAccount.ID = Guid.Empty.ToString();      // Will be set server side.
+                sipAccount.Owner = m_owner;                 // Will be set server side.
                 sipAccount.SIPDomain = domain;
                 sipAccount.SIPUsername = username;
                 sipAccount.SIPPassword = password;
@@ -262,7 +262,7 @@ namespace SIPSorcery
                 sipAccount.NetworkID = networkId;
                 sipAccount.IPAddressACL = ipAddressACL;
                 sipAccount.IsSwitchboardEnabled = isSwitchboardEnabled;
-                sipAccount.Inserted = DateTime.UtcNow.ToString("o");
+                sipAccount.Inserted = DateTime.UtcNow.ToString("o");    // Will be set server side.
                
                 if (sipAccount.HasValidationErrors)
                 {

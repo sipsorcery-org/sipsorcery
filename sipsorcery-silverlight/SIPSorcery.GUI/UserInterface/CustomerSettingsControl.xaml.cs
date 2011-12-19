@@ -27,7 +27,6 @@ namespace SIPSorcery
         private SIPEntitiesDomainContext m_riaContext;
         private string m_owner;
         private Customer m_customer;
-        private bool m_timezoneUpdateRequired;
 
         public CustomerSettingsControl()
         {
@@ -59,7 +58,20 @@ namespace SIPSorcery
 
             m_riaContext.Customers.Clear();
             var query = m_riaContext.GetCustomerQuery();
-            m_riaContext.Load(query, LoadBehavior.RefreshCurrent, GetCustomerCompleted, null);
+
+            // Make sure the timezons are loaded first.
+            if (Page.TimeZones == null)
+            {
+                m_riaContext.GetTimeZones(Page.GetTimeZonesCompleted, new Action(() => { 
+                    m_timezoneListBox.ItemsSource = Page.TimeZones;
+                    m_riaContext.Load(query, LoadBehavior.RefreshCurrent, GetCustomerCompleted, null);
+                }));
+            }
+            else
+            {
+                m_timezoneListBox.ItemsSource = Page.TimeZones;
+                m_riaContext.Load(query, LoadBehavior.RefreshCurrent, GetCustomerCompleted, null);
+            }
         }
 
         private void GetCustomerCompleted(LoadOperation<Customer> lo)

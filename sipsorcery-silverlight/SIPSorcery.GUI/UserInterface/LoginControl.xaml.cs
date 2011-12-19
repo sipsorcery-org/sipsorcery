@@ -61,7 +61,7 @@ namespace SIPSorcery
             else
             {
                 WriteLoginMessage("Attempting login...");
-                m_loginUsername = username.Trim();
+                m_loginUsername = username.ToLower().Trim();
                 LoginParameters loginParams = new LoginParameters(m_loginUsername, password);
                 //m_webContext.Authentication.Login(loginParams, LoginComplete, null);
                 //m_authenticationService.Login(loginParams, LoginComplete, null);

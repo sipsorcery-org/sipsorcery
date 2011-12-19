@@ -117,6 +117,13 @@ namespace SIPSorcery
                 query.IncludeTotalCount = true;
                 riaContext.Load(query, LoadBehavior.RefreshCurrent, (lo) => { LogActivityMessage(MessageLevelsEnum.Info, lo.TotalEntityCount + " dialplans successfully loaded."); }, null);
             }
+
+            if (riaContext.SIPProviders.Count() == 0)
+            {
+                var query = riaContext.GetSIPProvidersQuery().OrderBy(x => x.ProviderName).Skip(0).Take(MAX_RIA_LIST_SIZE);
+                query.IncludeTotalCount = true;
+                riaContext.Load(query, LoadBehavior.RefreshCurrent, (lo) => { LogActivityMessage(MessageLevelsEnum.Info, lo.TotalEntityCount + " providers successfully loaded."); }, null);
+            }
         }
 
         private void GetCustomerCompleted(LoadOperation<Customer> lo)

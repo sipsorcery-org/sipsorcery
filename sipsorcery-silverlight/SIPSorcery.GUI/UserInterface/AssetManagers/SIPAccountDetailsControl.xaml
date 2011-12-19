@@ -47,7 +47,7 @@
 			<Canvas Height="20" x:Name="m_sipAccountInDialPlanCanvas" Width="457" Margin="0,2,0,2">
 				 <TextBlock TextWrapping="Wrap" Text="In Dial Plan" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" Canvas.Left="8" Canvas.Top="0" />
 				 <ComboBox x:Name="m_inDialPlan" Margin="0,0,0,0" TabIndex="2" TabNavigation="Local" Canvas.Left="140" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" MinWidth="100" />
-				 <TextBlock TextWrapping="Wrap" Text="loading..." FontSize="12" Height="20" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" x:Name="m_sipAccountInDialPlanStatus" Width="54.809" Canvas.Left="140" />
+				 <TextBlock TextWrapping="Wrap" Text="loading..." FontSize="12" Height="20" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" x:Name="m_sipAccountInDialPlanStatus" Width="317" Canvas.Left="140" />
 			</Canvas>
 			<Canvas Height="20" x:Name="m_sipAccountKeepAlivesCanvas" Width="457" Margin="0,2,0,2">
 				 <TextBlock TextWrapping="Wrap" Text="Keep Alives" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" Canvas.Left="8" Canvas.Top="0" />

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Browser;
 using System.Reflection;
@@ -35,6 +37,8 @@ namespace SIPSorcery
         private const string ENTITIES_SERVICE_URL = "clientbin/SIPSorcery-Entities-Services-SIPEntitiesDomainService.svc";
         private const string DEFAULT_SERVICE_HOST = "https://www.sipsorcery.com/ria/";
         private const string DEFAULT_NOTIFICATIONS_HOST = "https://www.sipsorcery.com/";
+
+        public static List<string> TimeZones;
 
         private string m_notificationsServiceURL = DEFAULT_NOTIFICATIONS_HOST + DEFAULT_NOTIFICATIONS_FILE;
         private string m_entitiesServiceURL = null;
@@ -149,10 +153,31 @@ namespace SIPSorcery
             {
                 m_persistorStatusMessage = null;
                 m_persistorStatus = ServiceConnectionStatesEnum.Ok;
+                
             }
 
             m_provisioningInitialisationInProgress = false;
             UpdateAppStatus();
+        }
+
+        /// <summary>
+        /// If a class needs the timezones and the list is not already populated they will call the RIA method to populate the list.
+        /// </summary>
+        public static void GetTimeZonesCompleted(InvokeOperation<IEnumerable<string>> op)
+        {
+            if (op.HasError)
+            {
+                op.MarkErrorAsHandled();
+            }
+            else
+            {
+                TimeZones = op.Value.ToList();
+
+                if (op.UserState != null && op.UserState is Action)
+                {
+                    ((Action)op.UserState)();
+                }
+            }
         }
 
         private void UpdateAppStatus()
