@@ -282,100 +282,100 @@ namespace SIPSorcery.Entities
         }
     }
 
-    public class TimezonesList : List<string>
-    {
-        public TimezonesList()
-        {
-            base.Add("(GMT-12:00) International Date Line West");
-            base.Add("(GMT-11:00) Midway Island, Samoa");
-            base.Add("(GMT-10:00) Hawaii");
-            base.Add("(GMT-09:00) Alaska");
-            base.Add("(GMT-08:00) Pacific Time (US & Canada)");
-            base.Add("(GMT-08:00) Tijuana, Baja California");
-            base.Add("(GMT-07:00) Arizona");
-            base.Add("(GMT-07:00) Chihuahua, La Paz, Mazatlan");
-            base.Add("(GMT-07:00) Mountain Time (US & Canada)");
-            base.Add("(GMT-06:00) Central America");
-            base.Add("(GMT-06:00) Central Time (US & Canada)");
-            base.Add("(GMT-06:00) Guadalajara, Mexico City, Monterrey");
-            base.Add("(GMT-06:00) Saskatchewan");
-            base.Add("(GMT-05:00) Bogota, Lima, Quito, Rio Branco");
-            base.Add("(GMT-05:00) Eastern Time (US & Canada)");
-            base.Add("(GMT-05:00) Indiana (East)");
-            base.Add("(GMT-04:30) Caracas");
-            base.Add("(GMT-04:00) Atlantic Time (Canada)");
-            base.Add("(GMT-04:00) La Paz");
-            base.Add("(GMT-04:00) Manaus");
-            base.Add("(GMT-04:00) Santiago");
-            base.Add("(GMT-03:30) Newfoundland");
-            base.Add("(GMT-03:00) Brasilia");
-            base.Add("(GMT-03:00) Buenos Aires");
-            base.Add("(GMT-03:00) Georgetown");
-            base.Add("(GMT-03:00) Greenland");
-            base.Add("(GMT-03:00) Montevideo");
-            base.Add("(GMT-02:00) Mid-Atlantic");
-            base.Add("(GMT-01:00) Azores");
-            base.Add("(GMT-01:00) Cape Verde Is.");
-            base.Add("(GMT) Casablanca");
-            base.Add("(GMT) Greenwich Mean Time : Dublin, Edinburgh, Lisbon, London");
-            base.Add("(GMT) Monrovia, Reykjavik");
-            base.Add("(GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna");
-            base.Add("(GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague");
-            base.Add("(GMT+01:00) Brussels, Copenhagen, Madrid, Paris");
-            base.Add("(GMT+01:00) Sarajevo, Skopje, Warsaw, Zagreb");
-            base.Add("(GMT+01:00) West Central Africa");
-            base.Add("(GMT+02:00) Amman");
-            base.Add("(GMT+02:00) Athens, Bucharest, Istanbul");
-            base.Add("(GMT+02:00) Beirut");
-            base.Add("(GMT+02:00) Cairo");
-            base.Add("(GMT+02:00) Harare, Pretoria");
-            base.Add("(GMT+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius");
-            base.Add("(GMT+02:00) Jerusalem");
-            base.Add("(GMT+02:00) Minsk");
-            base.Add("(GMT+02:00) Windhoek");
-            base.Add("(GMT+03:00) Baghdad");
-            base.Add("(GMT+03:00) Kuwait, Riyadh");
-            base.Add("(GMT+03:00) Moscow, St. Petersburg, Volgograd");
-            base.Add("(GMT+03:00) Nairobi");
-            base.Add("(GMT+03:00) Tbilisi");
-            base.Add("(GMT+03:30) Tehran");
-            base.Add("(GMT+04:00) Abu Dhabi, Muscat");
-            base.Add("(GMT+04:00) Baku");
-            base.Add("(GMT+04:00) Port Louis");
-            base.Add("(GMT+04:00) Yerevan");
-            base.Add("(GMT+04:30) Kabul");
-            base.Add("(GMT+05:00) Ekaterinburg");
-            base.Add("(GMT+05:00) Islamabad, Karachi");
-            base.Add("(GMT+05:00) Tashkent");
-            base.Add("(GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi");
-            base.Add("(GMT+05:30) Sri Jayawardenepura");
-            base.Add("(GMT+05:45) Kathmandu");
-            base.Add("(GMT+06:00) Almaty, Novosibirsk");
-            base.Add("(GMT+06:00) Astana, Dhaka");
-            base.Add("(GMT+06:30) Yangon (Rangoon)");
-            base.Add("(GMT+07:00) Bangkok, Hanoi, Jakarta");
-            base.Add("(GMT+07:00) Krasnoyarsk");
-            base.Add("(GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi");
-            base.Add("(GMT+08:00) Irkutsk, Ulaan Bataar");
-            base.Add("(GMT+08:00) Kuala Lumpur, Singapore");
-            base.Add("(GMT+08:00) Perth");
-            base.Add("(GMT+08:00) Taipei");
-            base.Add("(GMT+09:00) Osaka, Sapporo, Tokyo");
-            base.Add("(GMT+09:00) Seoul");
-            base.Add("(GMT+09:00) Yakutsk");
-            base.Add("(GMT+09:30) Adelaide");
-            base.Add("(GMT+09:30) Darwin");
-            base.Add("(GMT+10:00) Brisbane");
-            base.Add("(GMT+10:00) Canberra, Melbourne, Sydney");
-            base.Add("(GMT+10:00) Guam, Port Moresby");
-            base.Add("(GMT+10:00) Hobart");
-            base.Add("(GMT+10:00) Vladivostok");
-            base.Add("(GMT+11:00) Magadan, Solomon Is., New Caledonia");
-            base.Add("(GMT+12:00) Auckland, Wellington");
-            base.Add("(GMT+12:00) Fiji, Kamchatka, Marshall Is.");
-            base.Add("(GMT+13:00) Nuku'alofa");
-        }
-    }
+    //public class TimezonesList : List<string>
+    //{
+    //    public TimezonesList()
+    //   {
+    //        base.Add("(GMT-12:00) International Date Line West");
+    //        base.Add("(GMT-11:00) Midway Island, Samoa");
+    //        base.Add("(GMT-10:00) Hawaii");
+    //        base.Add("(GMT-09:00) Alaska");
+    //        base.Add("(GMT-08:00) Pacific Time (US & Canada)");
+    //        base.Add("(GMT-08:00) Tijuana, Baja California");
+    //        base.Add("(GMT-07:00) Arizona");
+    //        base.Add("(GMT-07:00) Chihuahua, La Paz, Mazatlan");
+    //        base.Add("(GMT-07:00) Mountain Time (US & Canada)");
+    //        base.Add("(GMT-06:00) Central America");
+    //        base.Add("(GMT-06:00) Central Time (US & Canada)");
+    //        base.Add("(GMT-06:00) Guadalajara, Mexico City, Monterrey");
+    //        base.Add("(GMT-06:00) Saskatchewan");
+    //        base.Add("(GMT-05:00) Bogota, Lima, Quito, Rio Branco");
+    //        base.Add("(GMT-05:00) Eastern Time (US & Canada)");
+    //        base.Add("(GMT-05:00) Indiana (East)");
+    //        base.Add("(GMT-04:30) Caracas");
+    //        base.Add("(GMT-04:00) Atlantic Time (Canada)");
+    //        base.Add("(GMT-04:00) La Paz");
+    //        base.Add("(GMT-04:00) Manaus");
+    //        base.Add("(GMT-04:00) Santiago");
+    //        base.Add("(GMT-03:30) Newfoundland");
+    //        base.Add("(GMT-03:00) Brasilia");
+    //        base.Add("(GMT-03:00) Buenos Aires");
+    //        base.Add("(GMT-03:00) Georgetown");
+    //        base.Add("(GMT-03:00) Greenland");
+    //        base.Add("(GMT-03:00) Montevideo");
+    //        base.Add("(GMT-02:00) Mid-Atlantic");
+    //        base.Add("(GMT-01:00) Azores");
+    //        base.Add("(GMT-01:00) Cape Verde Is.");
+    //        base.Add("(GMT) Casablanca");
+    //        base.Add("(GMT) Greenwich Mean Time : Dublin, Edinburgh, Lisbon, London");
+    //        base.Add("(GMT) Monrovia, Reykjavik");
+    //        base.Add("(GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna");
+    //        base.Add("(GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague");
+    //        base.Add("(GMT+01:00) Brussels, Copenhagen, Madrid, Paris");
+    //        base.Add("(GMT+01:00) Sarajevo, Skopje, Warsaw, Zagreb");
+    //        base.Add("(GMT+01:00) West Central Africa");
+    //        base.Add("(GMT+02:00) Amman");
+    //        base.Add("(GMT+02:00) Athens, Bucharest, Istanbul");
+    //        base.Add("(GMT+02:00) Beirut");
+    //        base.Add("(GMT+02:00) Cairo");
+    //        base.Add("(GMT+02:00) Harare, Pretoria");
+    //        base.Add("(GMT+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius");
+    //        base.Add("(GMT+02:00) Jerusalem");
+    //        base.Add("(GMT+02:00) Minsk");
+    //        base.Add("(GMT+02:00) Windhoek");
+    //        base.Add("(GMT+03:00) Baghdad");
+    //        base.Add("(GMT+03:00) Kuwait, Riyadh");
+    //        base.Add("(GMT+03:00) Moscow, St. Petersburg, Volgograd");
+    //        base.Add("(GMT+03:00) Nairobi");
+    //        base.Add("(GMT+03:00) Tbilisi");
+    //        base.Add("(GMT+03:30) Tehran");
+    //        base.Add("(GMT+04:00) Abu Dhabi, Muscat");
+    //        base.Add("(GMT+04:00) Baku");
+    //        base.Add("(GMT+04:00) Port Louis");
+    //        base.Add("(GMT+04:00) Yerevan");
+    //        base.Add("(GMT+04:30) Kabul");
+    //        base.Add("(GMT+05:00) Ekaterinburg");
+    //        base.Add("(GMT+05:00) Islamabad, Karachi");
+    //        base.Add("(GMT+05:00) Tashkent");
+    //        base.Add("(GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi");
+    //        base.Add("(GMT+05:30) Sri Jayawardenepura");
+    //        base.Add("(GMT+05:45) Kathmandu");
+    //        base.Add("(GMT+06:00) Almaty, Novosibirsk");
+    //        base.Add("(GMT+06:00) Astana, Dhaka");
+    //        base.Add("(GMT+06:30) Yangon (Rangoon)");
+    //        base.Add("(GMT+07:00) Bangkok, Hanoi, Jakarta");
+    //        base.Add("(GMT+07:00) Krasnoyarsk");
+    //        base.Add("(GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi");
+    //        base.Add("(GMT+08:00) Irkutsk, Ulaan Bataar");
+    //        base.Add("(GMT+08:00) Kuala Lumpur, Singapore");
+    //        base.Add("(GMT+08:00) Perth");
+    //        base.Add("(GMT+08:00) Taipei");
+    //        base.Add("(GMT+09:00) Osaka, Sapporo, Tokyo");
+    //        base.Add("(GMT+09:00) Seoul");
+    //        base.Add("(GMT+09:00) Yakutsk");
+    //        base.Add("(GMT+09:30) Adelaide");
+    //        base.Add("(GMT+09:30) Darwin");
+    //        base.Add("(GMT+10:00) Brisbane");
+    //        base.Add("(GMT+10:00) Canberra, Melbourne, Sydney");
+    //        base.Add("(GMT+10:00) Guam, Port Moresby");
+    //        base.Add("(GMT+10:00) Hobart");
+    //        base.Add("(GMT+10:00) Vladivostok");
+    //        base.Add("(GMT+11:00) Magadan, Solomon Is., New Caledonia");
+    //        base.Add("(GMT+12:00) Auckland, Wellington");
+    //        base.Add("(GMT+12:00) Fiji, Kamchatka, Marshall Is.");
+    //        base.Add("(GMT+13:00) Nuku'alofa");
+    //    }
+    //}
 
     public class CountryAreaCodes : Dictionary<string, int>
     {

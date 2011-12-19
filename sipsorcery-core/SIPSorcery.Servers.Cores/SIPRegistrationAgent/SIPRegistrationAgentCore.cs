@@ -68,7 +68,7 @@ namespace SIPSorcery.Servers
         public const int REGISTRATION_RENEWAL_PERIOD = 1000;        // Time in milliseconds between the registration agent checking registrations.
         public const int REGISTRATION_HEAD_TIME = 5;                // Time in seconds to go to next registration to initate.
         public const int REGISTER_FAILURERETRY_INTERVAL = 300;      // Number of seconds between consecutive register requests in the event of failures or timeouts.
-        public const int REGISTER_DNSTIMEOUT_RETRY_INTERVAL = 300;  // The number of seconds between consecutive register requests in the event of a DNS timeout resolving the registrar server.
+        public const int REGISTER_DNSTIMEOUT_RETRY_INTERVAL = 300;  // The number of seconds between consecutive register requests in the event of a DNS timeout or error on previously resolved hostname resolving the registrar server.
         public const int REGISTER_EMPTYDNS_RETRY_INTERVAL = 10;      // When the DNS manager has not yet had time to do the lookup wait this number of seconds and try again.
         public const int REGISTER_CHECKTIME_THRESHOLD = 3;          // Time the user registration checks should be taking less than. If exceeded a log message is produced.
         public const int REGISTER_EXPIREALL_WAITTIME = 2000;        // When stopping the registration agent the time to give after the initial request for all requests to complete.
@@ -78,7 +78,8 @@ namespace SIPSorcery.Servers
         //private const int DNS_SYNCHRONOUS_TIMEOUT = 3;              // For operations that need to so a synchronous DNS lookup such as binding removals the amount of time for the lookup.
         //private const int MAX_DNS_FAILURE_ATTEMPTS = 6;
         //private const string DNS_FAILURE_MESSAGE_PREFIX = "DNS Failure:";
-        public const int DNS_FAILURE_RETRY_WINDOW = 180;            // If a provider's DNS lookups fail for this length of time the binding will be disabled.
+        public const int DNS_FAILURE_RETRY_WINDOW = 180;                        // If a new provider's DNS lookups fail for this length of time the binding will be disabled
+        public const int DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW = 2880;     // (2 days) If an existing provider's DNS lookups fail for this length of time the binding will be disabled..
         private const string THREAD_NAME_PREFIX = "regagent-";
         private const int NUMBER_BINDINGS_PER_DB_ROUNDTRIP = 20;
         private const int MAX_NUMBER_INTRANSIT_BINDINGS = 100000;    // The maximum number of in transit REGISTER bindings that will be stored.
@@ -218,10 +219,28 @@ namespace SIPSorcery.Servers
                                         SIPDNSLookupResult lookupResult = SIPDNSManager.ResolveSIPService(binding.RegistrarServer, true);
                                         if (lookupResult.LookupError != null)
                                         {
-                                            // A DNS error indicates the registrar cannot be resolved, permanently disable it.
-                                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterFailed, "DNS resolution for " + binding.RegistrarServer.ToString() + " failed. " + lookupResult.LookupError + ". DISABLING.", binding.Owner));
-                                            DisableSIPProviderRegistration(provider.Id, "Could not resolve registrar " + binding.RegistrarServer.ToString() + ". DNS " + lookupResult.LookupError + ".");
-                                            m_bindingPersistor.Delete(binding);
+                                            if (binding.LastRegisterTime == null)
+                                            {
+                                                // If this binding has never been successful then the DNS error indicates the registrar cannot be resolved, permanently disable it.
+                                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterFailed, "DNS resolution for " + binding.RegistrarServer.ToString() + " failed. " + lookupResult.LookupError + ". DISABLING.", binding.Owner));
+                                                DisableSIPProviderRegistration(provider.Id, "DNS resolution for registrar " + binding.RegistrarServer.ToString() + " returned an error. DNS " + lookupResult.LookupError);
+                                                m_bindingPersistor.Delete(binding);
+                                            }
+                                            else if (DateTimeOffset.UtcNow.Subtract(provider.LastUpdate).TotalMinutes > DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW)
+                                            {
+                                                // A previously registering provider has now failed to be resolved for a long time so assume that the hostname is invalid.
+                                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " + DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW + " minutes. DISABLING.", binding.Owner));
+                                                DisableSIPProviderRegistration(provider.Id, "DNS resolution for registrar " + binding.RegistrarServer.ToString() + " still had an error of, " + lookupResult.LookupError + " after trying for " + DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW + " minutes.");
+                                                m_bindingPersistor.Delete(binding);
+                                            }
+                                            else
+                                            {
+                                                // This binding was able to previously register so the problem could be a transient DNS probem. Delay the registration to give the problem a chance to clear up.
+                                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "DNS resolution for " + binding.RegistrarServer.ToString() + " had an error, delaying by " + REGISTER_DNSTIMEOUT_RETRY_INTERVAL + "s.", binding.Owner));
+                                                binding.RegistrationFailureMessage = "DNS resolution for " + binding.RegistrarServer.ToString() + " had an error. " + lookupResult.LookupError + " Delaying by " + REGISTER_DNSTIMEOUT_RETRY_INTERVAL + "s.";
+                                                binding.NextRegistrationTime = DateTimeOffset.UtcNow.AddSeconds(REGISTER_DNSTIMEOUT_RETRY_INTERVAL);
+                                                m_bindingPersistor.Update(binding);
+                                            }
                                         }
                                         else if (lookupResult.ATimedoutAt != null)
                                         {
@@ -230,6 +249,13 @@ namespace SIPSorcery.Servers
                                                 // The DNS retry window has expired and the binding has never successfully registered so it's highly likely it's an invalid hostname.
                                                 FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " + DNS_FAILURE_RETRY_WINDOW + " minutes. DISABLING.", binding.Owner));
                                                 DisableSIPProviderRegistration(provider.Id, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " + DNS_FAILURE_RETRY_WINDOW + " minutes.");
+                                                m_bindingPersistor.Delete(binding);
+                                            }
+                                            else if (DateTimeOffset.UtcNow.Subtract(provider.LastUpdate).TotalMinutes > DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW)
+                                            {
+                                                // A previously registering provider has now failed to be resolved for a long time so assume that the hostname is invalid.
+                                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " + DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW + " minutes. DISABLING.", binding.Owner));
+                                                DisableSIPProviderRegistration(provider.Id, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " + DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW + " minutes.");
                                                 m_bindingPersistor.Delete(binding);
                                             }
                                             else

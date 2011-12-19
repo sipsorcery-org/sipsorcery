@@ -20,6 +20,7 @@
           <EntitySet Name="sipproviderbindings" EntityType="Entities.Store.sipproviderbindings" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipproviders" EntityType="Entities.Store.sipproviders" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipregistrarbindings" EntityType="Entities.Store.sipregistrarbindings" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="voxalotmigration" EntityType="Entities.Store.voxalotmigration" store:Type="Tables" Schema="sipsorcery" />
           <AssociationSet Name="simplewizardrule_ibfk_1" Association="Entities.Store.simplewizardrule_ibfk_1">
             <End Role="sipdialplans" EntitySet="sipdialplans" />
             <End Role="simplewizardrule" EntitySet="simplewizardrule" />
@@ -135,15 +136,17 @@
           <Property Name="Owner" Type="varchar" Nullable="false" MaxLength="32" />
           <Property Name="DialPlanID" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="Direction" Type="varchar" Nullable="false" MaxLength="3" />
+          <Property Name="Priority" Type="decimal" Nullable="false" Precision="5" Scale="3" />
+          <Property Name="Description" Type="varchar" MaxLength="50" />
           <Property Name="ToSIPAccount" Type="varchar" MaxLength="161" />
-          <Property Name="Pattern" Type="varchar" Nullable="false" MaxLength="1024" />
-          <Property Name="Command" Type="varchar" Nullable="false" MaxLength="16" />
+          <Property Name="ToProvider" Type="varchar" MaxLength="50" />
+          <Property Name="Pattern" Type="varchar" MaxLength="1024" />
+          <Property Name="Command" Type="varchar" Nullable="false" MaxLength="32" />
           <Property Name="CommandParameter1" Type="varchar" Nullable="false" MaxLength="2048" />
           <Property Name="CommandParameter2" Type="varchar" MaxLength="2048" />
           <Property Name="CommandParameter3" Type="varchar" MaxLength="2048" />
-          <Property Name="Description" Type="varchar" MaxLength="1024" />
-          <Property Name="Priority" Type="int" Nullable="false" />
-          <Property Name="TimeIntervalID" Type="int" />
+          <Property Name="TimePattern" Type="varchar" MaxLength="32" />
+          <Property Name="PatternType" Type="varchar" MaxLength="16" />
         </EntityType>
         <EntityType Name="sipaccounts">
           <Key>
@@ -350,6 +353,18 @@
           <Property Name="lastupdate" Type="varchar" Nullable="false" MaxLength="33" />
           <Property Name="expirytime" Type="varchar" Nullable="false" MaxLength="33" />
         </EntityType>
+        <EntityType Name="voxalotmigration">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="varchar" Nullable="false" MaxLength="36" />
+          <Property Name="FullName" Type="varchar" Nullable="false" MaxLength="128" />
+          <Property Name="EmailAddress" Type="varchar" Nullable="false" MaxLength="128" />
+          <Property Name="VoxalotAccountNumber" Type="varchar" Nullable="false" MaxLength="10" />
+          <Property Name="VoxalotAccountType" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="voxalotexport" Type="varchar" Nullable="false" MaxLength="20000" />
+          <Property Name="Inserted" Type="varchar" Nullable="false" MaxLength="33" />
+        </EntityType>
         <Association Name="simplewizardrule_ibfk_1">
           <End Role="sipdialplans" Type="Entities.Store.sipdialplans" Multiplicity="1">
             <OnDelete Action="Cascade" />
@@ -495,6 +510,7 @@
             <End Role="SIPDialPlan" EntitySet="SIPDialPlans" />
             <End Role="simplewizardrule" EntitySet="SimpleWizardRules" />
           </AssociationSet>
+          <EntitySet Name="VoxalotMigrations1" EntityType="SIPSorcery.Entities.VoxalotMigration" />
         </EntityContainer>
         <EntityType Name="SIPDialplanLookup">
           <Key>
@@ -861,15 +877,17 @@
           <Property Type="String" Name="DialPlanID" Nullable="false" />
           <Property Type="String" Name="Direction" Nullable="false" />
           <Property Type="String" Name="ToSIPAccount" />
-          <Property Type="String" Name="Pattern" Nullable="false" />
+          <Property Type="String" Name="Pattern" Nullable="true" />
           <Property Type="String" Name="Command" Nullable="false" />
           <Property Type="String" Name="CommandParameter1" Nullable="false" />
           <Property Type="String" Name="CommandParameter2" Nullable="true" />
           <Property Type="String" Name="CommandParameter3" Nullable="true" />
           <Property Type="String" Name="Description" />
-          <Property Type="Int32" Name="Priority" Nullable="false" />
-          <Property Type="Int32" Name="TimeIntervalID" />
+          <Property Type="Decimal" Name="Priority" Nullable="false" />
           <NavigationProperty Name="sipdialplan" Relationship="SIPSorcery.Entities.simplewizardrule_ibfk_1" FromRole="simplewizardrule" ToRole="SIPDialPlan" />
+          <Property Type="String" Name="ToProvider" />
+          <Property Type="String" Name="TimePattern" />
+          <Property Type="String" Name="PatternType" />
         </EntityType>
         <Association Name="simplewizardrule_ibfk_1">
           <End Type="SIPSorcery.Entities.SIPDialPlan" Role="SIPDialPlan" Multiplicity="1" />
@@ -883,6 +901,18 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <EntityType Name="VoxalotMigration">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Type="String" Name="ID" Nullable="false" />
+          <Property Type="String" Name="FullName" Nullable="false" />
+          <Property Type="String" Name="EmailAddress" Nullable="false" />
+          <Property Type="String" Name="VoxalotAccountNumber" Nullable="false" />
+          <Property Type="String" Name="VoxalotAccountType" Nullable="false" />
+          <Property Type="String" Name="VoxalotExport" Nullable="false" />
+          <Property Type="String" Name="Inserted" Nullable="false" />
+        </EntityType>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -1176,7 +1206,9 @@
           <EntitySetMapping Name="SimpleWizardRules">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.SimpleWizardRule">
               <MappingFragment StoreEntitySet="simplewizardrule">
-                <ScalarProperty Name="TimeIntervalID" ColumnName="TimeIntervalID" />
+                <ScalarProperty Name="PatternType" ColumnName="PatternType" />
+                <ScalarProperty Name="TimePattern" ColumnName="TimePattern" />
+                <ScalarProperty Name="ToProvider" ColumnName="ToProvider" />
                 <ScalarProperty Name="Priority" ColumnName="Priority" />
                 <ScalarProperty Name="Description" ColumnName="Description" />
                 <ScalarProperty Name="CommandParameter3" ColumnName="CommandParameter3" />
@@ -1188,6 +1220,19 @@
                 <ScalarProperty Name="Direction" ColumnName="Direction" />
                 <ScalarProperty Name="DialPlanID" ColumnName="DialPlanID" />
                 <ScalarProperty Name="Owner" ColumnName="Owner" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="VoxalotMigrations1">
+            <EntityTypeMapping TypeName="SIPSorcery.Entities.VoxalotMigration">
+              <MappingFragment StoreEntitySet="voxalotmigration">
+                <ScalarProperty Name="Inserted" ColumnName="Inserted" />
+                <ScalarProperty Name="VoxalotExport" ColumnName="voxalotexport" />
+                <ScalarProperty Name="VoxalotAccountType" ColumnName="VoxalotAccountType" />
+                <ScalarProperty Name="VoxalotAccountNumber" ColumnName="VoxalotAccountNumber" />
+                <ScalarProperty Name="EmailAddress" ColumnName="EmailAddress" />
+                <ScalarProperty Name="FullName" ColumnName="FullName" />
                 <ScalarProperty Name="ID" ColumnName="ID" />
               </MappingFragment>
             </EntityTypeMapping>
@@ -1212,7 +1257,7 @@
     </Options>
     <!-- Diagram content (shape and connector positions) -->
     <Diagrams>
-      <Diagram Name="SIPEntities" ZoomLevel="80">
+      <Diagram Name="SIPEntities" ZoomLevel="82">
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanLookup" Width="1.875" PointX="11.5" PointY="1" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanRoute" Width="1.875" PointX="18.375" PointY="0.75" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanProvider" Width="2.25" PointX="11.625" PointY="4.25" Height="2.5571907552083317" />
@@ -1250,11 +1295,12 @@
           <ConnectorPoint PointX="8.125" PointY="9.701650390625" />
           <ConnectorPoint PointX="8.875" PointY="9.701650390625" />
         </AssociationConnector>
-        <EntityTypeShape EntityType="SIPSorcery.Entities.SimpleWizardRule" Width="1.875" PointX="14.625" PointY="7.875" Height="3.7109993489583388" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.SimpleWizardRule" Width="1.875" PointX="14.625" PointY="7.875" Height="3.9033007812499996" />
         <AssociationConnector Association="SIPSorcery.Entities.simplewizardrule_ibfk_1" >
           <ConnectorPoint PointX="15.875" PointY="5.9225065104166656" />
           <ConnectorPoint PointX="15.875" PointY="7.875" />
         </AssociationConnector>
+        <EntityTypeShape EntityType="SIPSorcery.Entities.VoxalotMigration" Width="2.75" PointX="9.375" PointY="12.75" Height="2.3648893229166674" />
       </Diagram>
     </Diagrams>
   </Designer>

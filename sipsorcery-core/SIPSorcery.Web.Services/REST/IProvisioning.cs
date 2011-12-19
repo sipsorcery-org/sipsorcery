@@ -1,4 +1,37 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: IProvisioning.cs
+//
+// Description: The interface for the REST/JSON service to manipulate the resource
+// entities exposed by sipsorcery.
+// 
+// History:
+// 25 Oct 2011	Aaron Clauson	    Created.
+//
+// License: 
+// This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
+//
+// Copyright (c) 2011 Aaron Clauson (aaron@sipsorcery.com), SIPSorcery Pty Ltd, Hobart, Australia (www.sipsorcery.com)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
+// the following conditions are met:
+//
+// Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
+// Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following 
+// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of SIPSorcery Pty. Ltd. 
+// nor the names of its contributors may be used to endorse or promote products derived from this software without specific 
+// prior written permission. 
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, 
+// BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+// IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
+// OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
+// OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// POSSIBILITY OF SUCH DAMAGE.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
@@ -14,7 +47,7 @@ namespace SIPSorcery.Web.Services
         public string Username;
     }
 
-    [ServiceContract(Namespace = "http://www.sipsorcery.com/provisioning/rest/v1.0")]
+    [ServiceContract(Namespace = "http://www.sipsorcery.com/rest/v0.1")]
     public interface IProvisioning 
     {
         [OperationContract]
@@ -22,12 +55,8 @@ namespace SIPSorcery.Web.Services
         bool IsAlive();
 
         [OperationContract]
-        [WebGet(UriTemplate = "customer/login?username={username}&password={password}", ResponseFormat=WebMessageFormat.Json)]
-        string Login(string username, string password);
-
-        [OperationContract]
-        [WebGet(UriTemplate = "customer/logout", ResponseFormat = WebMessageFormat.Json)]
-        void Logout();
+        [WebInvoke(Method = "POST", UriTemplate = "customer/add", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<string> AddCustomer(CustomerJSON customer);
 
         [OperationContract]
         [WebGet(UriTemplate = "sipdomain/get?where={where}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
@@ -35,7 +64,7 @@ namespace SIPSorcery.Web.Services
 
         [OperationContract]
         [WebGet(UriTemplate = "sipaccount/count?where={where}", ResponseFormat = WebMessageFormat.Json)]
-        int GetSIPAccountsCount(string where);
+        JSONResult<int> GetSIPAccountsCount(string where);
 
         [OperationContract]
         [WebGet(UriTemplate = "sipaccount/get?where={where}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
@@ -44,6 +73,14 @@ namespace SIPSorcery.Web.Services
         [OperationContract]
         [WebInvoke(Method = "POST", UriTemplate = "sipaccount/add", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
         JSONResult<string> AddSIPAccount(SIPAccountJSON sipAccount);
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", UriTemplate = "sipaccount/update", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<string> UpdateSIPAccount(SIPAccountJSON sipAccount);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "sipaccount/delete?id={id}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<bool> DeleteSIPAccount(string id);
 
         [OperationContract]
         [WebGet(UriTemplate = "sipaccountbinding/count?where={where}", ResponseFormat = WebMessageFormat.Json)]
@@ -55,11 +92,23 @@ namespace SIPSorcery.Web.Services
 
         [OperationContract]
         [WebGet(UriTemplate = "sipprovider/count?where={where}", ResponseFormat = WebMessageFormat.Json)]
-        int GetSIPProvidersCount(string where);
+        JSONResult<int> GetSIPProvidersCount(string where);
 
         [OperationContract]
         [WebGet(UriTemplate = "sipprovider/get?where={where}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
-        List<SIPProvider> GetSIPProviders(string where, int offset, int count);
+        JSONResult<List<SIPProviderJSON>> GetSIPProviders(string where, int offset, int count);
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", UriTemplate = "sipprovider/add", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<string> AddSIPProvider(SIPProviderJSON sipProvider);
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", UriTemplate = "sipprovider/update", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<string> UpdateSIPProvider(SIPProviderJSON sipAccount);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "sipprovider/delete?id={id}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<bool> DeleteSIPProvider(string id);
 
         [OperationContract]
         [WebGet(UriTemplate = "sipproviderbinding/count?where={where}", ResponseFormat = WebMessageFormat.Json)]

@@ -60,6 +60,12 @@ namespace SIPSorcery.Web.Services
                             {
                                 throw new ApplicationException("Your account is suspended.");
                             }
+                            else if (customer.ServiceLevel == CustomerServiceLevels.PremiumPayReqd.ToString() ||
+                                customer.ServiceLevel == CustomerServiceLevels.ProfessionalPayReqd.ToString())
+                            {
+                                var serviceLevel = (CustomerServiceLevels)Enum.Parse(typeof(CustomerServiceLevels), customer.ServiceLevel);
+                                throw new PaymentRequiredException(serviceLevel, "Your account requires payment before it can be activated. Please visit the payment page.");
+                            }
                             else
                             {
                                 logger.Debug("Login from " + ipAddress + " successful for " + username + ".");

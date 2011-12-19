@@ -51,5 +51,8 @@ namespace SIPSorcery.Entities
         Gold = 5,
         Silver = 6,
         Bronze = 7,
+        Evaluation = 8,
+        PremiumPayReqd = 9,
+        ProfessionalPayReqd = 10
     }
 }

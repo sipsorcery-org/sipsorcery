@@ -200,12 +200,16 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         string callDirnStr = callDirn.ToString();
 
-                        return (from rule in ssEntities.SimpleWizardRules
+                        var rules = (from rule in ssEntities.SimpleWizardRules
                                 join dialplan in ssEntities.SIPDialPlans on rule.DialPlanID equals dialplan.ID
                                 where rule.Owner == m_owner && dialplan.DialPlanName == dialplanName &&
                                     rule.Direction == callDirnStr
                                 orderby rule.Priority
                                 select rule).ToList();
+
+                        logger.Debug("Rules count " + rules.Count + ".");
+
+                        return rules;
                     }
                     else
                     {

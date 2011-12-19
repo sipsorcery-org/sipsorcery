@@ -46,6 +46,16 @@ namespace SIPSorcery.Entities
         public SIPSorceryService()
         { }
 
+        public List<string> GetTimeZones()
+        {
+            List<string> timezones = new List<string>();
+            foreach (var zone in TimeZoneInfo.GetSystemTimeZones())
+            {
+                timezones.Add(zone.DisplayName);
+            }
+            return timezones;
+        }
+
         #region Customers
 
         public void InsertCustomer(Customer customer)
@@ -67,7 +77,20 @@ namespace SIPSorcery.Entities
                     customer.Name = customer.Name.Trim().ToLower();
                     customer.MaxExecutionCount = Customer.FREE_MAXIMUM_EXECUTION_COUNT;
                     customer.APIKey = Crypto.GetRandomByteString(Customer.API_KEY_LENGTH / 2);
-                    customer.ServiceLevel = CustomerServiceLevels.Free.ToString();
+                    customer.ServiceLevel = (customer.ServiceLevel == null) ? CustomerServiceLevels.Free.ToString() : customer.ServiceLevel;
+
+                    if (customer.ServiceRenewalDate != null)
+                    {
+                        DateTime renewalDate = DateTime.MinValue;
+                        if (DateTime.TryParse(customer.ServiceRenewalDate, out renewalDate))
+                        {
+                            customer.ServiceRenewalDate = DateTime.SpecifyKind(renewalDate, DateTimeKind.Utc).ToUniversalTime().ToString("o");
+                        }
+                        else
+                        {
+                            throw new ApplicationException("The service renewal date could not be parsed as a valid date.");
+                        }
+                    }
 
                     if ((customer.EntityState != EntityState.Detached))
                     {
@@ -208,6 +231,26 @@ namespace SIPSorcery.Entities
 
         #region SIP Accounts.
 
+        public int GetSIPAccountsCount(string authUser, string where)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetSIPAccountsCount.");
+            }
+
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from sipAccount in entities.SIPAccounts where sipAccount.Owner.ToLower() == authUser.ToLower() select sipAccount);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<SIPAccount, bool>(where));
+                }
+
+                return query.Count();
+            }
+        }
+
         public IQueryable<SIPAccount> GetSIPAccounts(string authUser)
         {
             if (authUser.IsNullOrBlank())
@@ -215,7 +258,27 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for GetSIPAccounts.");
             }
 
-            return new SIPSorceryEntities().SIPAccounts.Where(x => x.Owner == authUser.ToLower());
+            return new SIPSorceryEntities().SIPAccounts.Where(x => x.Owner.ToLower() == authUser.ToLower());
+        }
+
+        public List<SIPAccount> GetSIPAccounts(string authUser, string where, int offset, int count)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetSIPAccounts.");
+            }
+
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from sipAccount in entities.SIPAccounts where sipAccount.Owner.ToLower() == authUser.ToLower() select sipAccount);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<SIPAccount, bool>(where));
+                }
+
+                return query.AsEnumerable().OrderBy(x => x.SIPUsername).Skip(offset).Take(count).ToList();
+            }
         }
 
         public string InsertSIPAccount(string authUser, SIPAccount sipAccount)
@@ -247,7 +310,7 @@ namespace SIPSorcery.Entities
                 }
 
                 // Check for a duplicate.
-                if (sipSorceryEntities.SIPAccounts.Where(x => x.SIPUsername.ToLower() == sipAccount.SIPUsername.ToLower() && 
+                if (sipSorceryEntities.SIPAccounts.Where(x => x.SIPUsername.ToLower() == sipAccount.SIPUsername.ToLower() &&
                                                                 x.SIPDomain.ToLower() == sipAccount.SIPDomain.ToLower()).Count() > 0)
                 {
                     throw new ApplicationException("Sorry the requested username and domain combination is already in use.");
@@ -280,6 +343,15 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to update the SIP Account.");
                 }
 
+                // Check for a duplicate in case the SIP username has been changed.
+                if (sipSorceryEntities.SIPAccounts.Where(x => x.SIPUsername.ToLower() == sipAccount.SIPUsername.ToLower() &&
+                                                              x.SIPDomain.ToLower() == sipAccount.SIPDomain.ToLower() &&
+                                                              x.ID != existingAccount.ID).Count() > 0)
+                {
+                    throw new ApplicationException("Sorry the requested username and domain combination is already in use.");
+                }
+
+                existingAccount.SIPUsername = sipAccount.SIPUsername;
                 existingAccount.DontMangleEnabled = sipAccount.DontMangleEnabled;
                 existingAccount.InDialPlanName = sipAccount.InDialPlanName;
                 existingAccount.IPAddressACL = sipAccount.IPAddressACL;
@@ -305,13 +377,33 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                SIPAccount existingAccount = (from sa in sipSorceryEntities.SIPAccounts where sa.ID == sipAccount.ID && sa.Owner == authUser.ToLower() select sa).FirstOrDefault();
+                SIPAccount existingAccount = (from sa in sipSorceryEntities.SIPAccounts where sa.ID == sipAccount.ID && sa.Owner.ToLower() == authUser.ToLower() select sa).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
                     throw new ApplicationException("The SIP account to delete could not be found.");
                 }
-                else if (existingAccount.Owner != authUser.ToLower())
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
+                {
+                    throw new ApplicationException("Not authorised to delete the SIP Account.");
+                }
+
+                sipSorceryEntities.SIPAccounts.DeleteObject(existingAccount);
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void DeleteSIPAccount(string authUser, string sipAccountID)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                SIPAccount existingAccount = (from sa in sipSorceryEntities.SIPAccounts where sa.ID == sipAccountID && sa.Owner.ToLower() == authUser.ToLower() select sa).FirstOrDefault();
+
+                if (existingAccount == null)
+                {
+                    throw new ApplicationException("The SIP account to delete could not be found.");
+                }
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to delete the SIP Account.");
                 }
@@ -335,6 +427,26 @@ namespace SIPSorcery.Entities
 
         #region SIP Providers.
 
+        public int GetSIPProvidersCount(string authUser, string where)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetSIPProvidersCount.");
+            }
+
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from sipProvider in entities.SIPProviders where sipProvider.Owner.ToLower() == authUser.ToLower() select sipProvider);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<SIPProvider, bool>(where));
+                }
+
+                return query.Count();
+            }
+        }
+
         public IQueryable<SIPProvider> GetSIPProviders(string authUser)
         {
             if (authUser.IsNullOrBlank())
@@ -343,6 +455,26 @@ namespace SIPSorcery.Entities
             }
 
             return new SIPSorceryEntities().SIPProviders.Where(x => x.Owner == authUser.ToLower());
+        }
+
+        public List<SIPProvider> GetSIPProviders(string authUser, string where, int offset, int count)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetSIPProviders.");
+            }
+
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from sipProvider in entities.SIPProviders where sipProvider.Owner.ToLower() == authUser.ToLower() select sipProvider);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<SIPProvider, bool>(where));
+                }
+
+                return query.AsEnumerable().OrderBy(x => x.ProviderName).Skip(offset).Take(count).ToList();
+            }
         }
 
         public void InsertSIPProvider(string authUser, SIPProvider sipProvider)
@@ -369,26 +501,7 @@ namespace SIPSorcery.Entities
 
                 if (sipProvider.RegisterEnabled)
                 {
-                    if (sipProvider.RegisterContact.IsNullOrBlank())
-                    {
-                        sipProvider.RegisterContact = "sip:" + authUser.ToLower() + "@" + m_domainForProviderContact;
-                    }
-                    else
-                    {
-                        try
-                        {
-                            sipProvider.RegisterContact = SIPURI.ParseSIPURIRelaxed(sipProvider.RegisterContact.Trim()).ToString();
-                        }
-                        catch (Exception sipURIExcp)
-                        {
-                            throw new ApplicationException(sipURIExcp.Message);
-                        }
-                    }
-
-                    if (sipProvider.RegisterExpiry == null || sipProvider.RegisterExpiry < SIPProvider.REGISTER_MINIMUM_EXPIRY || sipProvider.RegisterExpiry > SIPProvider.REGISTER_MAXIMUM_EXPIRY)
-                    {
-                        sipProvider.RegisterExpiry = SIPProvider.REGISTER_DEFAULT_EXPIRY;
-                    }
+                    FixProviderRegisterDetails(sipProvider, authUser);
                 }
 
                 sipProvider.ID = Guid.NewGuid().ToString();
@@ -455,6 +568,11 @@ namespace SIPSorcery.Entities
                 existingAccount.RegisterServer = sipProvider.RegisterServer;
                 existingAccount.RegisterDisabledReason = sipProvider.RegisterDisabledReason;
 
+                if (existingAccount.RegisterEnabled)
+                {
+                    FixProviderRegisterDetails(existingAccount, authUser);
+                }
+
                 string validationError = SIPProvider.Validate(existingAccount);
                 if (validationError != null)
                 {
@@ -471,7 +589,27 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                SIPProvider existingAccount = (from sp in sipSorceryEntities.SIPProviders where sp.ID == sipProvider.ID && sp.Owner == authUser.ToLower() select sp).FirstOrDefault();
+                SIPProvider existingAccount = (from sp in sipSorceryEntities.SIPProviders where sp.ID == sipProvider.ID && sp.Owner.ToLower() == authUser.ToLower() select sp).FirstOrDefault();
+
+                if (existingAccount == null)
+                {
+                    throw new ApplicationException("The SIP Provider to delete could not be found.");
+                }
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
+                {
+                    throw new ApplicationException("Not authorised to delete the SIP Provider.");
+                }
+
+                sipSorceryEntities.SIPProviders.DeleteObject(existingAccount);
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void DeleteSIPProvider(string authUser, string sipProviderID)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                SIPProvider existingAccount = (from sp in sipSorceryEntities.SIPProviders where sp.ID == sipProviderID && sp.Owner.ToLower() == authUser.ToLower() select sp).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
@@ -495,6 +633,33 @@ namespace SIPSorcery.Entities
             }
 
             return new SIPSorceryEntities().SIPProviderBindings.Where(x => x.Owner.ToLower() == authUser.ToLower());
+        }
+
+        /// <summary>
+        /// Fixes up the register contact and expiry fields on provider records that have the register box checked.
+        /// </summary>
+        private void FixProviderRegisterDetails(SIPProvider sipProvider, string owner)
+        {
+            if (sipProvider.RegisterContact.IsNullOrBlank())
+            {
+                sipProvider.RegisterContact = "sip:" + owner.ToLower() + "@" + m_domainForProviderContact;
+            }
+            else
+            {
+                try
+                {
+                    sipProvider.RegisterContact = SIPURI.ParseSIPURIRelaxed(sipProvider.RegisterContact.Trim()).ToString();
+                }
+                catch (Exception sipURIExcp)
+                {
+                    throw new ApplicationException(sipURIExcp.Message);
+                }
+            }
+
+            if (sipProvider.RegisterExpiry == null || sipProvider.RegisterExpiry < SIPProvider.REGISTER_MINIMUM_EXPIRY || sipProvider.RegisterExpiry > SIPProvider.REGISTER_MAXIMUM_EXPIRY)
+            {
+                sipProvider.RegisterExpiry = SIPProvider.REGISTER_DEFAULT_EXPIRY;
+            }
         }
 
         #endregion
@@ -604,9 +769,11 @@ namespace SIPSorcery.Entities
                 {
                     // Need to update the SIP accounts using the dial plan.
                     string dialPlanName = existingAccount.DialPlanName;
-                    var sipAccounts = (from sa in sipSorceryEntities.SIPAccounts where 
+                    var sipAccounts = (from sa in sipSorceryEntities.SIPAccounts
+                                       where
                                            (sa.OutDialPlanName == dialPlanName || sa.InDialPlanName == dialPlanName)
-                                            && sa.Owner == authUser.ToLower() select sa).ToList();
+                                           && sa.Owner == authUser.ToLower()
+                                       select sa).ToList();
 
                     foreach (SIPAccount sipAccount in sipAccounts)
                     {
@@ -715,15 +882,18 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to update the Simple Wizard rule.");
                 }
 
+                existingRule.ToProvider = rule.ToProvider;
+                existingRule.ToSIPAccount = rule.ToSIPAccount;
                 existingRule.Description = rule.Description;
                 existingRule.Command = rule.Command;
                 existingRule.CommandParameter1 = rule.CommandParameter1;
                 existingRule.CommandParameter2 = rule.CommandParameter2;
                 existingRule.CommandParameter3 = rule.CommandParameter3;
                 existingRule.Direction = rule.Direction;
+                existingRule.PatternType = rule.PatternType;
                 existingRule.Pattern = rule.Pattern;
                 existingRule.Priority = rule.Priority;
-                existingRule.TimeIntervalID = rule.TimeIntervalID;
+                existingRule.TimePattern = rule.TimePattern;
 
                 sipSorceryEntities.SaveChanges();
             }
@@ -782,7 +952,7 @@ namespace SIPSorcery.Entities
 
             using (var entities = new SIPSorceryEntities())
             {
-                var query = (from cdr in entities.CDRs where cdr.Owner == authUser.ToLower() select cdr);
+                var query = (from cdr in entities.CDRs where cdr.Owner.ToLower() == authUser.ToLower() select cdr);
 
                 if (where != null)
                 {

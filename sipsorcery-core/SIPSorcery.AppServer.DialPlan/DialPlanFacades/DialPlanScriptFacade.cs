@@ -109,7 +109,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private DialPlanExecutingScript m_executingScript;
         private List<SIPProvider> m_sipProviders;
         private DialogueBridgeCreatedDelegate CreateBridge_External;
-        private DialPlanEngine m_dialPlanEngine;                                        // Used for allowed redirect responses that need to execute a new dial plan execution.
+        //private DialPlanEngine m_dialPlanEngine;                                        // Used for allowed redirect responses that need to execute a new dial plan execution.
 
         private GetCanonicalDomainDelegate m_getCanonicalDomainDelegate;
         private SIPRequest m_sipRequest;                                                // This is a copy of the SIP request from m_clientTransaction.
@@ -150,10 +150,11 @@ namespace SIPSorcery.AppServer.DialPlan
         private IDbTransaction m_userDataDBTransaction;
         private Dictionary<string, XmppClientConnection> m_gtalkConnections = new Dictionary<string, XmppClientConnection>();
 
-        private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
-        private SIPAssetPersistor<SIPDialPlan> m_sipDialPlanPersistor;
-        private SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
-        private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;   // This event must be wired up to an external function in order to be able to lookup bindings that have been registered for a SIP account.  
+        //private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
+        //private SIPAssetPersistor<SIPDialPlan> m_sipDialPlanPersistor;
+        //private SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
+        //private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;   // This event must be wired up to an external function in order to be able to lookup bindings that have been registered for a SIP account.  
+        private SIPSorceryPersistor m_sipSorceryPersistor;
         private ISIPCallManager m_callManager;
         private bool m_autoCleanup = true;  // Set to false if the Ruby dialplan wants to take care of handling the cleanup from a rescue or ensure block.
         private bool m_hasBeenCleanedUp;
@@ -261,10 +262,11 @@ namespace SIPSorcery.AppServer.DialPlan
             DialPlanContext dialPlanContext,
             GetCanonicalDomainDelegate getCanonicalDomain,
             ISIPCallManager callManager,
-            SIPAssetPersistor<SIPAccount> sipAccountPersistor,
-            SIPAssetPersistor<SIPDialPlan> sipDialPlanPersistor,
-            SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor,
-            SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPAccountBindings,
+            //SIPAssetPersistor<SIPAccount> sipAccountPersistor,
+            //SIPAssetPersistor<SIPDialPlan> sipDialPlanPersistor,
+            //SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor,
+            //SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPAccountBindings,
+            SIPSorceryPersistor sipSorceryPersistor,
             SIPEndPoint outboundProxySocket,
             DialPlanEngine dialPlanEngine
             )
@@ -278,10 +280,11 @@ namespace SIPSorcery.AppServer.DialPlan
             m_dialPlanContext = dialPlanContext;
             m_getCanonicalDomainDelegate = getCanonicalDomain;
             m_callManager = callManager;
-            m_sipAccountPersistor = sipAccountPersistor;
-            m_sipDialPlanPersistor = sipDialPlanPersistor;
-            m_sipDialoguePersistor = sipDialoguePersistor;
-            GetSIPAccountBindings_External = getSIPAccountBindings;
+            //m_sipAccountPersistor = sipAccountPersistor;
+            //m_sipDialPlanPersistor = sipDialPlanPersistor;
+            //m_sipDialoguePersistor = sipDialoguePersistor;
+            //GetSIPAccountBindings_External = getSIPAccountBindings;
+            m_sipSorceryPersistor = sipSorceryPersistor;
             m_outboundProxySocket = outboundProxySocket;
 
             m_executingScript.Cleanup = CleanupDialPlanScript;
@@ -296,11 +299,11 @@ namespace SIPSorcery.AppServer.DialPlan
                 m_dialPlanContext.CallCancelledByClient += ClientCallTerminated;
 
                 SIPAssetGetDelegate<SIPAccount> getSIPAccount = null;
-                if (m_sipAccountPersistor != null)
+                if (m_sipSorceryPersistor != null && m_sipSorceryPersistor.SIPAccountsPersistor != null)
                 {
-                    getSIPAccount = m_sipAccountPersistor.Get;
+                    getSIPAccount = m_sipSorceryPersistor.SIPAccountsPersistor.Get;
                 }
-                m_dialStringParser = new DialStringParser(m_sipTransport, m_dialPlanContext.Owner, m_dialPlanContext.SIPAccount, m_sipProviders, getSIPAccount, GetSIPAccountBindings_External, m_getCanonicalDomainDelegate, logDelegate, m_dialPlanContext.SIPDialPlan.DialPlanName);
+                m_dialStringParser = new DialStringParser(m_sipTransport, m_dialPlanContext.Owner, m_dialPlanContext.SIPAccount, m_sipProviders, getSIPAccount, m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get, m_getCanonicalDomainDelegate, logDelegate, m_dialPlanContext.SIPDialPlan.DialPlanName);
             }
         }
 
@@ -805,7 +808,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    SIPAccount sipAccount = m_sipAccountPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain);
+                    SIPAccount sipAccount = m_sipSorceryPersistor.SIPAccountsPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain);
                     if (sipAccount == null)
                     {
                         FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in IsAvailable for " + username + "@" + canonicalDomain + ".", Username));
@@ -848,7 +851,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    SIPAccount sipAccount = m_sipAccountPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain);
+                    SIPAccount sipAccount = m_sipSorceryPersistor.SIPAccountsPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain);
                     if (sipAccount == null)
                     {
                         FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in IsMine for " + username + "@" + canonicalDomain + ".", Username));
@@ -888,7 +891,7 @@ namespace SIPSorcery.AppServer.DialPlan
             string canonicalDomain = m_getCanonicalDomainDelegate(domain, false);
             if (!canonicalDomain.IsNullOrBlank())
             {
-                return (m_sipAccountPersistor.Count(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain) > 0);
+                return (m_sipSorceryPersistor.SIPAccountsPersistor.Count(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain) > 0);
             }
             else
             {
@@ -921,7 +924,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    SIPAccount sipAccount = m_sipAccountPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == domain);
+                    SIPAccount sipAccount = m_sipSorceryPersistor.SIPAccountsPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == domain);
                     if (sipAccount == null)
                     {
                         FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in GetBindings for " + username + "@" + domain + ".", Username));
@@ -934,7 +937,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     }
                     else
                     {
-                        List<SIPRegistrarBinding> bindings = GetSIPAccountBindings_External(s => s.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
+                        List<SIPRegistrarBinding> bindings = m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get(s => s.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
 
                         if (bindings != null)
                         {
@@ -953,6 +956,19 @@ namespace SIPSorcery.AppServer.DialPlan
                 return null;
             }
         }
+
+        //public string OriginProvider()
+        //{
+        //    if (m_callDirection != SIPCallDirection.In)
+        //    {
+        //        Log("Can only lookup origin provider on incoming calls.");
+        //        return null;
+        //    }
+        //    else
+        //    {
+
+        //    }
+        //}
 
         /// <summary>
         /// Allows a hostname to be tested to determine if it is a sipsorcery serviced domain and if it is the canonical domain
@@ -1401,7 +1417,7 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <returns>A list of currently active calls.</returns>
         public List<SIPDialogueAsset> GetCurrentCalls()
         {
-            return m_sipDialoguePersistor.Get(d => d.Owner == m_username, null, 0, Int32.MaxValue);
+            return m_sipSorceryPersistor.SIPDialoguePersistor.Get(d => d.Owner == m_username, null, 0, Int32.MaxValue);
         }
 
         private IDbConnection GetDatabaseConnection(StorageTypes storageType, string dbConnStr)
@@ -2078,6 +2094,31 @@ namespace SIPSorcery.AppServer.DialPlan
         public void SetCallerCRMDetails(CRMHeaders crmHeader)
         {
             m_dialPlanContext.SetCallerDetails(crmHeader);
+        }
+
+        /// <summary>
+        /// Retrieves the timezone setting for the owner of the executing dialplan.
+        /// </summary>
+        /// <returns>A string representing the owner's timezone as set in their profile.</returns>
+        public string GetTimezone()
+        {
+            return m_dialPlanContext.Customer.TimeZone;
+        }
+
+        /// <summary>
+        /// Retrieves the timezone offset minutes from UTC for the owner of the executing dialplan.
+        /// </summary>
+        /// <returns>A number of minutes the user's timezone preference is offset from UTC.</returns>
+        public int GetTimezoneOffsetMinutes()
+        {
+            if (m_dialPlanContext.Customer.TimeZone.IsNullOrBlank())
+            {
+                return 0;
+            }
+            else
+            {
+                return SIPSorcery.Entities.TimeZoneHelper.GetTimeZonesUTCOffsetMinutes(m_dialPlanContext.Customer.TimeZone);
+            }
         }
 
         /// <summary>

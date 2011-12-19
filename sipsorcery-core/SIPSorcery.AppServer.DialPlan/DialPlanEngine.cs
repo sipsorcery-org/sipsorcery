@@ -102,11 +102,12 @@ namespace SIPSorcery.AppServer.DialPlan
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxySocket;                           // If this app forwards calls via an outbound proxy this value will be set.
         private SIPMonitorLogDelegate LogDelegate_External;                  // Delegate from proxy core to fire when log messages should be bubbled up to the core.
-        private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
-        private SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
-        private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;
+        private SIPSorceryPersistor m_sipSorceryPersistor;
+        //private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
+        //private SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
+        //private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;
         private GetCanonicalDomainDelegate GetCanonicalDomainDelegate_External;
-        private SIPAssetPersistor<SIPDialPlan> m_dialPlanPersistor;
+        //private SIPAssetPersistor<SIPDialPlan> m_dialPlanPersistor;
         private string m_impersonationUsername;
         private string m_impersonationPassword;
 
@@ -123,10 +124,7 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPTransport sipTransport,
             GetCanonicalDomainDelegate getCanonicalDomain,
             SIPMonitorLogDelegate logDelegate,
-            SIPAssetPersistor<SIPAccount> sipAssetPersistor,
-            SIPAssetGetListDelegate<SIPRegistrarBinding> getBindings,
-            SIPAssetPersistor<SIPDialPlan> dialPlanPersistor,
-            SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor,
+            SIPSorceryPersistor sipSorceryPersistor,
             SIPEndPoint outboundProxySocket,
             string rubyScriptCommonPath,
             string impersonationUsername,
@@ -135,10 +133,11 @@ namespace SIPSorcery.AppServer.DialPlan
             m_sipTransport = sipTransport;
             GetCanonicalDomainDelegate_External = getCanonicalDomain;
             LogDelegate_External = logDelegate;
-            m_sipAccountPersistor = sipAssetPersistor;
-            GetSIPAccountBindings_External = getBindings;
-            m_dialPlanPersistor = dialPlanPersistor;
-            m_sipDialoguePersistor = sipDialoguePersistor;
+            m_sipSorceryPersistor = sipSorceryPersistor;
+            //m_sipAccountPersistor = sipAssetPersistor;
+            //GetSIPAccountBindings_External = getBindings;
+            //m_dialPlanPersistor = dialPlanPersistor;
+            //m_sipDialoguePersistor = sipDialoguePersistor;
             m_outboundProxySocket = outboundProxySocket;
             m_rubyScriptCommonPath = rubyScriptCommonPath;
             m_impersonationUsername = impersonationUsername;
@@ -235,7 +234,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 {
                     if (matchedCommand.Data != null && matchedCommand.Data.Trim().Length > 0)
                     {
-                        DialStringParser dialStringParser = new DialStringParser(m_sipTransport, dialPlanContext.Owner, dialPlanContext.SIPAccount, dialPlanContext.SIPProviders, m_sipAccountPersistor.Get, GetSIPAccountBindings_External, GetCanonicalDomainDelegate_External, LogDelegate_External, dialPlanContext.SIPDialPlan.DialPlanName);
+                        DialStringParser dialStringParser = new DialStringParser(m_sipTransport, dialPlanContext.Owner, dialPlanContext.SIPAccount, dialPlanContext.SIPProviders, m_sipSorceryPersistor.SIPAccountsPersistor.Get, m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Get, GetCanonicalDomainDelegate_External, LogDelegate_External, dialPlanContext.SIPDialPlan.DialPlanName);
                         ForkCall ForkCall = new ForkCall(m_sipTransport, FireProxyLogEvent, callManager.QueueNewCall, dialStringParser, dialPlanContext.Owner, dialPlanContext.AdminMemberId, m_outboundProxySocket, null, null);
                         ForkCall.CallProgress += dialPlanContext.CallProgress;
                         ForkCall.CallFailed += dialPlanContext.CallFailed;
@@ -345,10 +344,7 @@ namespace SIPSorcery.AppServer.DialPlan
                             dialPlanContext,
                             GetCanonicalDomainDelegate_External,
                             callManager,
-                            m_sipAccountPersistor,
-                            m_dialPlanPersistor,
-                            m_sipDialoguePersistor,
-                            GetSIPAccountBindings_External,
+                            m_sipSorceryPersistor,
                             m_outboundProxySocket,
                             this);
 

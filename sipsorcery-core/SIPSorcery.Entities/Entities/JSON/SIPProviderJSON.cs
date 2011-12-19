@@ -1,13 +1,13 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: SIPAccountJSON.cs
+// Filename: SIPProviderJSON.cs
 //
-// Description: A translation class to allow a SIP account to be serialised to and from JSON. The 
-// Entity Framework derived SIPAccount class cannot be used to a shortcoming in the serialisation
+// Description: A translation class to allow a SIP provider to be serialised to and from JSON. The 
+// Entity Framework derived SIPProvider class cannot be used to a shortcoming in the serialisation
 // mechanism to do with IsReference classes. This will probably be fixed in the future making this
 // class redundant.
 // 
 // History:
-// 23 Oct 2011	Aaron Clauson	    Created.
+// 27 Oct 2011	Aaron Clauson	    Created.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -43,52 +43,55 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.Entities
 {
     [DataContractAttribute]
-    public class SIPAccountJSON
+    public class SIPProviderJSON
     {
-        [DataMember] public string AvatarURL { get; set; }
-        [DataMember] public bool DontMangleEnabled { get; set; }
         [DataMember] public string ID { get; set; }
-        [DataMember] public string InDialPlanName { get; set; }
-        [DataMember] public string IPAddressACL { get; set; }
-        [DataMember] public bool IsIncomingOnly { get; set; }
-        [DataMember] public bool IsSwitchboardEnabled { get; set; }
-        [DataMember] public bool IsUserDisabled { get; set; }
-        [DataMember] public string NetworkID { get; set; }
-        [DataMember] public string OutDialPlanName { get; set; }
-        [DataMember] public bool SendNATKeepAlives { get; set; }
-        [DataMember] public string SIPDomain { get; set; }
-        [DataMember] public string SIPPassword { get; set; }
-        [DataMember] public string SIPUsername { get; set; }
+        [DataMember] public string ProviderName { get; set; }
+        [DataMember] public string ProviderUsername { get; set; }
+        [DataMember] public string ProviderPassword { get; set; }
+        [DataMember] public string ProviderServer { get; set; }
+        [DataMember] public string ProviderAuthUsername { get; set; }
+        [DataMember] public string ProviderOutboundProxy { get; set; }
+        [DataMember] public string ProviderType { get; set; }
+        [DataMember] public string ProviderFrom { get; set; }
+        [DataMember] public string CustomHeaders { get; set; }
+        [DataMember] public string RegisterContact { get; set; }
+        [DataMember] public int RegisterExpiry { get; set; }
+        [DataMember] public string RegisterServer { get; set; }
+        [DataMember] public string RegisterRealm { get; set; }
+        [DataMember] public bool RegisterEnabled { get; set; }
+        [DataMember] public string GVCallbackNumber { get; set; }
+        [DataMember] public string GVCallbackPattern { get; set; }
+        [DataMember] public string GVCallbackType { get; set; }
 
-        public SIPAccountJSON()
+        public SIPProviderJSON()
         { }
 
-        public SIPAccount ToSIPAccount()
+        public SIPProvider ToSIPProvider()
         {
-            var entitySIPAccount = new SIPAccount()
+            var entitySIPProvider = new SIPProvider()
             {
                 Owner = String.Empty,
-                AvatarURL = AvatarURL,
-                DontMangleEnabled = DontMangleEnabled,
-                ID = ID,
-                InDialPlanName = InDialPlanName,
-                IPAddressACL = IPAddressACL,
-                IsIncomingOnly = IsIncomingOnly,
-                IsSwitchboardEnabled = IsSwitchboardEnabled,
-                IsUserDisabled = IsUserDisabled,
-                NetworkID = NetworkID,
-                OutDialPlanName = OutDialPlanName,
-                SendNATKeepAlives = SendNATKeepAlives,
-                SIPPassword = SIPPassword,
-                SIPUsername = SIPUsername
+                ID = ID,   
+                ProviderName = ProviderName,
+                ProviderUsername = ProviderUsername,
+                ProviderPassword = ProviderPassword,
+                ProviderServer = ProviderServer,
+                ProviderAuthUsername = ProviderAuthUsername,
+                ProviderOutboundProxy = ProviderOutboundProxy,
+                ProviderType = ProviderType,
+                ProviderFrom = ProviderFrom,
+                CustomHeaders = CustomHeaders,
+                RegisterContact = RegisterContact,
+                RegisterExpiry = RegisterExpiry,
+                RegisterServer = RegisterServer,
+                RegisterRealm = RegisterRealm,
+                GVCallbackNumber = GVCallbackNumber,
+                GVCallbackPattern = GVCallbackPattern,
+                GVCallbackType = GVCallbackType
             };
 
-            if (!SIPDomain.IsNullOrBlank())
-            {
-                entitySIPAccount.SIPDomain = SIPDomain;
-            }
-
-            return entitySIPAccount;
+            return entitySIPProvider;
         }
     }
 }

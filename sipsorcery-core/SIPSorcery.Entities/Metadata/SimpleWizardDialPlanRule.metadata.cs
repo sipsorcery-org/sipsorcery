@@ -19,7 +19,7 @@ namespace SIPSorcery.Entities
             [Required(ErrorMessage = "An owner must be specified for a dial plan rule.")]
             public string Owner;
 
-            [Required(ErrorMessage = "A pattern must be specified for a dial plan rule.")]
+            //[Required(ErrorMessage = "A pattern must be specified for a dial plan rule.")]
             public string Pattern;
         }
     }

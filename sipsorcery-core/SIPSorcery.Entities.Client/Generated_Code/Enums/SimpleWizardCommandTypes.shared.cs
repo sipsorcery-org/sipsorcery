@@ -7,8 +7,10 @@ namespace SIPSorcery.Entities
 {
     public enum SimpleWizardCommandTypes
     {
-        Dial = 0,
-        Reject = 1,
-        Lookup = 2,
+        None = 0,
+        Dial = 1,
+        DialAdvanced = 2,
+        Reject = 3,
+        HighriseLookup = 4,
     }
 }

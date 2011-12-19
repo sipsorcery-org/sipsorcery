@@ -55,8 +55,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Entities\SimpleWizardRule.shared.cs" />
     <Compile Include="Entities\Customer.shared.cs" />
     <Compile Include="DomainServices\SIPEntitiesDomainService.cs" />
+    <Compile Include="Entities\JSON\CustomerJSON.cs" />
+    <Compile Include="Entities\JSON\SIPProviderJSON.cs" />
     <Compile Include="Entities\JSON\SIPAccountJSON.cs" />
     <Compile Include="Entities\SIPDialPlanLookup.shared.cs" />
     <Compile Include="Enums\SimpleWizardCommandTypes.shared.cs" />
@@ -64,6 +67,7 @@
     <Compile Include="Enums\SimpleWizardRuleTypes.shared.cs" />
     <Compile Include="Enums\CustomerServiceLevels.shared.cs" />
     <Compile Include="Enums\SIPDialPlanLookupTypes.shared.cs" />
+    <Compile Include="Metadata\VoxalotMigration.metadata.cs" />
     <Compile Include="Metadata\SimpleWizardDialPlanRule.metadata.cs" />
     <Compile Include="Metadata\SIPProvider.metadata.cs" />
     <Compile Include="Metadata\Customer.metadata.cs" />

@@ -2068,9 +2068,10 @@ namespace SIPSorcery.SIP
         public string Warning;
 
         // Non-core custom SIP headers used to allow a SIP Proxy to communicate network info to internal server agents.
-        public string ProxyReceivedOn;
-        public string ProxyReceivedFrom;
-        public string ProxySendFrom;
+        public string ProxyReceivedOn;          // The Proxy socket that the SIP message was received on.
+        public string ProxyReceivedFrom;        // The remote socket that the Proxy received the SIP message on.
+        public string ProxySendFrom;            // The Proxy socket that the SIP message should be transmitted from.
+        //public string ProxyOutboundProxy;       // The remote socket that the Proxy should send the SIP request to.
 
         // Non-core custom SIP headers for use with the SIP Sorcery switchboard.
         public string SwitchboardCallID;

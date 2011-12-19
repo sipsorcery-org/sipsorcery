@@ -1817,11 +1817,15 @@ namespace SIPSorcery.Entities
         
         private string _pattern;
         
-        private int _priority;
+        private string _patternType;
+        
+        private decimal _priority;
         
         private EntityRef<SIPDialPlan> _sipdialplan;
         
-        private Nullable<int> _timeIntervalID;
+        private string _timePattern;
+        
+        private string _toProvider;
         
         private string _toSIPAccount;
         
@@ -1852,10 +1856,14 @@ namespace SIPSorcery.Entities
         partial void OnOwnerChanged();
         partial void OnPatternChanging(string value);
         partial void OnPatternChanged();
-        partial void OnPriorityChanging(int value);
+        partial void OnPatternTypeChanging(string value);
+        partial void OnPatternTypeChanged();
+        partial void OnPriorityChanging(decimal value);
         partial void OnPriorityChanged();
-        partial void OnTimeIntervalIDChanging(Nullable<int> value);
-        partial void OnTimeIntervalIDChanged();
+        partial void OnTimePatternChanging(string value);
+        partial void OnTimePatternChanged();
+        partial void OnToProviderChanging(string value);
+        partial void OnToProviderChanged();
         partial void OnToSIPAccountChanging(string value);
         partial void OnToSIPAccountChanged();
 
@@ -2099,7 +2107,6 @@ namespace SIPSorcery.Entities
         /// Gets or sets the 'Pattern' value.
         /// </summary>
         [DataMember()]
-        [Required(ErrorMessage="A pattern must be specified for a dial plan rule.")]
         public string Pattern
         {
             get
@@ -2121,10 +2128,34 @@ namespace SIPSorcery.Entities
         }
         
         /// <summary>
+        /// Gets or sets the 'PatternType' value.
+        /// </summary>
+        [DataMember()]
+        public string PatternType
+        {
+            get
+            {
+                return this._patternType;
+            }
+            set
+            {
+                if ((this._patternType != value))
+                {
+                    this.OnPatternTypeChanging(value);
+                    this.RaiseDataMemberChanging("PatternType");
+                    this.ValidateProperty("PatternType", value);
+                    this._patternType = value;
+                    this.RaiseDataMemberChanged("PatternType");
+                    this.OnPatternTypeChanged();
+                }
+            }
+        }
+        
+        /// <summary>
         /// Gets or sets the 'Priority' value.
         /// </summary>
         [DataMember()]
-        public int Priority
+        public decimal Priority
         {
             get
             {
@@ -2189,25 +2220,49 @@ namespace SIPSorcery.Entities
         }
         
         /// <summary>
-        /// Gets or sets the 'TimeIntervalID' value.
+        /// Gets or sets the 'TimePattern' value.
         /// </summary>
         [DataMember()]
-        public Nullable<int> TimeIntervalID
+        public string TimePattern
         {
             get
             {
-                return this._timeIntervalID;
+                return this._timePattern;
             }
             set
             {
-                if ((this._timeIntervalID != value))
+                if ((this._timePattern != value))
                 {
-                    this.OnTimeIntervalIDChanging(value);
-                    this.RaiseDataMemberChanging("TimeIntervalID");
-                    this.ValidateProperty("TimeIntervalID", value);
-                    this._timeIntervalID = value;
-                    this.RaiseDataMemberChanged("TimeIntervalID");
-                    this.OnTimeIntervalIDChanged();
+                    this.OnTimePatternChanging(value);
+                    this.RaiseDataMemberChanging("TimePattern");
+                    this.ValidateProperty("TimePattern", value);
+                    this._timePattern = value;
+                    this.RaiseDataMemberChanged("TimePattern");
+                    this.OnTimePatternChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'ToProvider' value.
+        /// </summary>
+        [DataMember()]
+        public string ToProvider
+        {
+            get
+            {
+                return this._toProvider;
+            }
+            set
+            {
+                if ((this._toProvider != value))
+                {
+                    this.OnToProviderChanging(value);
+                    this.RaiseDataMemberChanging("ToProvider");
+                    this.ValidateProperty("ToProvider", value);
+                    this._toProvider = value;
+                    this.RaiseDataMemberChanged("ToProvider");
+                    this.OnToProviderChanged();
                 }
             }
         }
@@ -7872,6 +7927,28 @@ namespace SIPSorcery.Entities.Services
         }
         
         /// <summary>
+        /// Asynchronously invokes the 'GetTimeZones' method of the DomainService.
+        /// </summary>
+        /// <param name="callback">Callback to invoke when the operation completes.</param>
+        /// <param name="userState">Value to pass to the callback.  It can be <c>null</c>.</param>
+        /// <returns>An operation instance that can be used to manage the asynchronous request.</returns>
+        public InvokeOperation<IEnumerable<string>> GetTimeZones(Action<InvokeOperation<IEnumerable<string>>> callback, object userState)
+        {
+            this.ValidateMethod("GetTimeZones", null);
+            return ((InvokeOperation<IEnumerable<string>>)(this.InvokeOperation("GetTimeZones", typeof(IEnumerable<string>), null, true, callback, userState)));
+        }
+        
+        /// <summary>
+        /// Asynchronously invokes the 'GetTimeZones' method of the DomainService.
+        /// </summary>
+        /// <returns>An operation instance that can be used to manage the asynchronous request.</returns>
+        public InvokeOperation<IEnumerable<string>> GetTimeZones()
+        {
+            this.ValidateMethod("GetTimeZones", null);
+            return ((InvokeOperation<IEnumerable<string>>)(this.InvokeOperation("GetTimeZones", typeof(IEnumerable<string>), null, true, null, null)));
+        }
+        
+        /// <summary>
         /// Asynchronously invokes the 'IsAlive' method of the DomainService.
         /// </summary>
         /// <param name="callback">Callback to invoke when the operation completes.</param>
@@ -8203,6 +8280,23 @@ namespace SIPSorcery.Entities.Services
             /// <param name="result">The IAsyncResult returned from 'BeginGetTimeZoneOffsetMinutes'.</param>
             /// <returns>The 'Int32' returned from the 'GetTimeZoneOffsetMinutes' operation.</returns>
             int EndGetTimeZoneOffsetMinutes(IAsyncResult result);
+            
+            /// <summary>
+            /// Asynchronously invokes the 'GetTimeZones' operation.
+            /// </summary>
+            /// <param name="callback">Callback to invoke on completion.</param>
+            /// <param name="asyncState">Optional state object.</param>
+            /// <returns>An IAsyncResult that can be used to monitor the request.</returns>
+            [FaultContract(typeof(DomainServiceFault), Action="http://tempuri.org/SIPEntitiesDomainService/GetTimeZonesDomainServiceFault", Name="DomainServiceFault", Namespace="DomainServices")]
+            [OperationContract(AsyncPattern=true, Action="http://tempuri.org/SIPEntitiesDomainService/GetTimeZones", ReplyAction="http://tempuri.org/SIPEntitiesDomainService/GetTimeZonesResponse")]
+            IAsyncResult BeginGetTimeZones(AsyncCallback callback, object asyncState);
+            
+            /// <summary>
+            /// Completes the asynchronous operation begun by 'BeginGetTimeZones'.
+            /// </summary>
+            /// <param name="result">The IAsyncResult returned from 'BeginGetTimeZones'.</param>
+            /// <returns>The 'IEnumerable`1' returned from the 'GetTimeZones' operation.</returns>
+            IEnumerable<string> EndGetTimeZones(IAsyncResult result);
             
             /// <summary>
             /// Asynchronously invokes the 'GetUser' operation.

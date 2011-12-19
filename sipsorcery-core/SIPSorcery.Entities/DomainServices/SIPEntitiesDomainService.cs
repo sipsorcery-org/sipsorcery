@@ -42,6 +42,12 @@ namespace SIPSorcery.Entities.Services
             return true;
         }
 
+        [Invoke]
+        public List<string> GetTimeZones()
+        {
+            return m_service.GetTimeZones();
+        }
+
         public User Login(string username, string password, bool isPersistent, string customData)
         {
             return m_authService.Login(username, password, isPersistent, customData);

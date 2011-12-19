@@ -109,6 +109,7 @@
     <Compile Include="Notifications\PollingDuplexSession.cs" />
     <Compile Include="Notifications\PollingDuplexSessionExtensions.cs" />
     <Compile Include="CrossDomainWebService.cs" />
+    <Compile Include="PaymentRequiredException.cs" />
     <Compile Include="Provisioning\IProvisioningService.cs" />
     <Compile Include="Provisioning\IProvisioningServiceREST.cs" />
     <Compile Include="Provisioning\ProvisioningServiceFactory.cs" />
@@ -168,7 +169,7 @@
         <WebProjectProperties>
           <UseIIS>False</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
-          <DevelopmentServerPort>51753</DevelopmentServerPort>
+          <DevelopmentServerPort>64690</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
           <IISUrl>
           </IISUrl>
