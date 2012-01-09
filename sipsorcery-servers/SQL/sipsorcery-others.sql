@@ -220,7 +220,11 @@ create table sipdialogues
  remotesdp varchar(2048),
  switchboarddescription varchar(1024),
  switchboardcallerdescription varchar(1024),
- switchboardowner varchar(32),
+ SwitchboardOwner varchar(1024),
+ SwitchboardLineName varchar(128),
+ CRMPersonName nvarchar(256) NULL,
+ CRMCompanyName nvarchar(256) NULL,
+ CRMPictureURL nvarchar(1024) NULL,
  Primary Key(id),
  Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade
 );
@@ -325,6 +329,8 @@ create table SimpleWizardRule
   Direction nvarchar(3) not null,				-- In or Out dialplan rule.
   Priority decimal(5,3) not null,
   Description nvarchar(50) null,
+  ToMatchType nvarchar(50) null,				-- Any, ToSIPAccount, ToSIPProvider, Regex.
+  ToMatchParameter nvarchar(2048) null,
   ToSIPAccount nvarchar(161) null,				-- For incoming rules this can optionally hold the To SIP account the rule is for.
   ToProvider nvarchar(50) null,					-- For incoming rules this can optionally hold the To Provider the rule is for.
   PatternType nvarchar(16) null,
@@ -334,8 +340,21 @@ create table SimpleWizardRule
   CommandParameter2 nvarchar(2048),
   CommandParameter3 nvarchar(2048),
   TimePattern nvarchar(32) null,							-- If set refers to a time interval that dictates when this rule should apply
+  IsDisabled bit not null default 0,						-- If set to 1 means the rule is disabled.
   Primary Key(ID),
   Foreign Key(DialPlanID) references SIPDialPlans(id) on delete cascade on update cascade
+);
+
+create table WebCallback
+(
+  ID nvarchar(36) not null,
+  Owner nvarchar(32) not null,
+  DialString1 nvarchar(256) not null,
+  DialString2 nvarchar(256) not null,
+  Description nvarchar(128) null,
+  Inserted varchar(33) not null,
+  Primary Key(ID),
+  Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade
 );
 
 -- insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;10.1.1.2;10.1.1.2:5060', null, '2010-02-09T13:01:21.3540000+00:00');
