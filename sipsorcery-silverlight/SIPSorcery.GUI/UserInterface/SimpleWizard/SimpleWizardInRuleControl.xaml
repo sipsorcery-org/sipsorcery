@@ -204,7 +204,34 @@
 					</DiscreteObjectKeyFrame.Value>
 				</DiscreteObjectKeyFrame>
 			</ObjectAnimationUsingKeyFrames>
-			<DoubleAnimation Duration="0" To="110" Storyboard.TargetProperty="(FrameworkElement.Height)" Storyboard.TargetName="m_headerCanvas" d:IsOptimized="True"/>
+			<DoubleAnimation Duration="0" To="140" Storyboard.TargetProperty="(FrameworkElement.Height)" Storyboard.TargetName="m_headerCanvas" d:IsOptimized="True"/>
+		</Storyboard>
+		<Storyboard x:Name="ToMatchSpecificSIPAccount">
+			<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="m_ruleToAccount">
+				<DiscreteObjectKeyFrame KeyTime="0">
+					<DiscreteObjectKeyFrame.Value>
+						<Visibility>Visible</Visibility>
+					</DiscreteObjectKeyFrame.Value>
+				</DiscreteObjectKeyFrame>
+			</ObjectAnimationUsingKeyFrames>
+		</Storyboard>
+		<Storyboard x:Name="ToMatchSpecificProvider">
+			<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="m_ruleToProvider">
+				<DiscreteObjectKeyFrame KeyTime="0">
+					<DiscreteObjectKeyFrame.Value>
+						<Visibility>Visible</Visibility>
+					</DiscreteObjectKeyFrame.Value>
+				</DiscreteObjectKeyFrame>
+			</ObjectAnimationUsingKeyFrames>
+		</Storyboard>
+		<Storyboard x:Name="ToMatchRegex">
+			<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="m_ruleToRegexText">
+				<DiscreteObjectKeyFrame KeyTime="0">
+					<DiscreteObjectKeyFrame.Value>
+						<Visibility>Visible</Visibility>
+					</DiscreteObjectKeyFrame.Value>
+				</DiscreteObjectKeyFrame>
+			</ObjectAnimationUsingKeyFrames>
 		</Storyboard>
 	</UserControl.Resources>
 
@@ -219,33 +246,30 @@
 							<TextBlock x:Name="m_errorMessageTextBlock" TextWrapping="Wrap" Text="An error occurred saving the rule." Foreground="#FF080803" FontSize="13.333" Margin="8,8,51,8"/>
 						</Grid>
 					</Border>
-					<Canvas Height="79">
-						<TextBox x:Name="m_ruleDescription" Height="24" Width="178" MaxLength="50" Canvas.Left="166" Canvas.Top="41" TabIndex="2"/>
-						<TextBlock TextWrapping="Wrap" Text="Description" Width="65" Height="22" Canvas.Left="20" Canvas.Top="44"/>
+					<Canvas Height="105">
+						<TextBox x:Name="m_ruleDescription" Height="24" Width="178" MaxLength="50" Canvas.Left="166" Canvas.Top="44" TabIndex="2"/>
+						<TextBlock TextWrapping="Wrap" Text="Description" Width="65" Height="22" Canvas.Left="20" Canvas.Top="47"/>
 						<TextBox x:Name="m_rulePriority" Height="25" Width="43" MaxLength="5" Canvas.Left="166" Canvas.Top="9" TabIndex="1"/>
 						<TextBlock TextWrapping="Wrap" Text="Priority" Width="43" Height="22" Canvas.Left="20" Canvas.Top="13"/>
+						<TextBlock TextWrapping="Wrap" Text="Disable" Width="65" Height="22" Canvas.Left="20" Canvas.Top="77"/>
+						<CheckBox x:Name="m_ruleIsDisabled" Content="" Height="16" Canvas.Left="166" Canvas.Top="79" Width="15"/>
 					</Canvas>
 				</StackPanel>
 				<Canvas x:Name="m_patternCanvas" Height="92" Background="#FFD4E1A3">
 					<TextBox x:Name="m_rulePattern" Height="25" Width="329" MaxLength="1024" Canvas.Left="166" Canvas.Top="57" TabIndex="6"/>
 					<TextBlock TextWrapping="Wrap" Width="115" Height="22" Canvas.Left="20" Canvas.Top="61" FontWeight="Bold"><Run Text="Caller ID "/><Run Text="contains"/></TextBlock>
-					<ComboBox x:Name="m_ruleToAccount" Height="25" Width="203" Canvas.Left="337" Canvas.Top="20" IsEnabled="False" TabIndex="5"/>
-					<TextBlock TextWrapping="Wrap" Text="For calls to" Width="81" Height="22" Canvas.Left="20" Canvas.Top="22" FontWeight="Bold"/>
-					<ComboBox x:Name="m_ruleToProvider" Height="25" Width="136" Canvas.Left="579" Canvas.Top="20" ItemsSource="{Binding}" IsEnabled="False" Visibility="Collapsed">
-						<ComboBox.ItemTemplate>
-							<DataTemplate>
-								<TextBlock Text="{Binding ProviderName}" />    
-							</DataTemplate>
-						</ComboBox.ItemTemplate>
-					</ComboBox>
-					<RadioButton x:Name="m_ruleToChoiceAny" Content="Any" Canvas.Left="166" Canvas.Top="24" IsChecked="True" Checked="AnyIncomingCallChecked" TabIndex="3"/>
-					<RadioButton x:Name="m_ruleToSIPAccount" Content="SIP Account" Height="19" Canvas.Left="243" Canvas.Top="24" Width="86" RenderTransformOrigin="0.328,0.382" Checked="ToSIPAccount_Checked" TabIndex="4"/>
-					<RadioButton x:Name="m_ruleToContains" Content="Contains" Height="21" Canvas.Left="555" Canvas.Top="22" Width="78"/>
+					<ComboBox x:Name="m_ruleToAccount" Height="25" Width="301" Canvas.Left="350" Canvas.Top="19" TabIndex="5" Visibility="Collapsed" />
+					<TextBlock TextWrapping="Wrap" Text="Match calls to" Width="92" Height="22" Canvas.Left="20" Canvas.Top="22" FontWeight="Bold"/>
+					<ComboBox x:Name="m_ruleToProvider" Height="25" Width="301" Canvas.Left="350" Canvas.Top="19" Visibility="Collapsed" />
 					<TextBlock Height="19" Canvas.Left="849" TextWrapping="Wrap" Canvas.Top="8" Width="85" FontWeight="Bold" FontSize="13.333"><Run Text="Match "/><Run Text="C"/><Run Text="all"/></TextBlock>
-					<TextBlock Height="13" Canvas.Left="221" TextWrapping="Wrap" Text="or" Canvas.Top="25" Width="18"/>
 					<TextBlock Height="13" Canvas.Left="477" TextWrapping="Wrap" Text="or" Canvas.Top="23" Width="18" Visibility="Collapsed"/>
-					<RadioButton x:Name="m_ruleToProvider1_Copy" Content="Provider" Height="21" Canvas.Left="510" Canvas.Top="22" Width="65" Visibility="Collapsed"/>
-					<TextBox x:Name="m_ruleToContainsText" Height="25" Width="201" MaxLength="1024" Canvas.Left="633" Canvas.Top="18" TabIndex="6"/>
+					<TextBox x:Name="m_ruleToRegexText" Height="27" Width="301" MaxLength="1024" Canvas.Left="350" Canvas.Top="19" TabIndex="6" Visibility="Collapsed"/>
+					<ComboBox x:Name="m_toMatchType" Height="25" Width="171" SelectedIndex="0" Canvas.Left="166" Canvas.Top="19" TabIndex="3" SelectionChanged="ToMatchTypeChanged">
+						<TextBlock FontSize="11" Text="Any" />
+						<TextBlock FontSize="11" Text="ToSIPAccount" />
+						<TextBlock FontSize="11" Text="ToSIPProvider" />
+						<TextBlock FontSize="11" Text="Regex" />
+					</ComboBox>
 				</Canvas>
 				<Canvas x:Name="m_timeCanvas" Height="116" Background="#FFA7ACA6">
 					<RadioButton x:Name="m_ruleWhenAnytime" Content="Any time" Canvas.Left="166" Canvas.Top="18" IsChecked="True" Checked="AnyTimeChecked" TabIndex="7"/>
@@ -284,13 +308,7 @@
 					</Canvas>
 					<Canvas x:Name="m_dialParametersCanvas" Height="39" Margin="0,0,8,0">
 						<TextBox x:Name="m_ruleCommandString" Height="25" MaxLength="4096" Canvas.Left="166" Canvas.Top="8" Width="130" Text="${EXTEN}" TabIndex="21"/>
-						<ComboBox x:Name="m_ruleProvider" Height="25" Width="171" Canvas.Left="328" Canvas.Top="8" ItemsSource="{Binding}" TabIndex="22">
-							<ComboBox.ItemTemplate>
-								<DataTemplate>
-									<TextBlock Text="{Binding ProviderName}" />    
-								</DataTemplate>
-							</ComboBox.ItemTemplate>
-						</ComboBox>
+						<ComboBox x:Name="m_ruleProvider" Height="25" Width="171" Canvas.Left="328" Canvas.Top="8" TabIndex="22" />
 						<TextBlock TextWrapping="Wrap" Width="75" Height="16" Canvas.Left="20" Canvas.Top="16" Text="Destination" FontWeight="Bold"/>
 						<TextBlock Height="25" TextWrapping="Wrap" Text="@" Width="14" FontSize="16" Canvas.Left="304" Canvas.Top="8"/>
 					</Canvas>

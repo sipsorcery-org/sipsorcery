@@ -67,6 +67,7 @@ namespace SIPSorcery
                 m_ruleCommandString.Text = rule.CommandParameter1;
                 m_ruleDescription.Text = rule.Description;
                 m_rulePriority.Text = rule.Priority.ToString();
+                m_ruleIsDisabled.IsChecked = rule.IsDisabled;
 
                 SetCommandParameterFieldsForRule(rule);
             }
@@ -75,6 +76,7 @@ namespace SIPSorcery
                 m_ruleToUpdate = null;
                 SetStatusMessage(ADD_TEXT, false);
 
+                m_ruleIsDisabled.IsChecked = false;
                 m_rulePatternType.SelectedIndex = 0;
                 m_rulePattern.Text = String.Empty;
                 m_ruleCommandString.Text = DEFAULT_DIAL_DESTINATION;
@@ -108,7 +110,8 @@ namespace SIPSorcery
                     Pattern = m_rulePattern.Text,
                     Command = ((TextBlock)m_ruleCommandType.SelectedValue).Text,
                     Description = m_ruleDescription.Text,
-                    Priority = priority
+                    Priority = priority,
+                    IsDisabled = m_ruleIsDisabled.IsChecked.GetValueOrDefault()
                 };
 
                 string commandParameterError = SetRuleCommandParameters(rule);
@@ -128,6 +131,7 @@ namespace SIPSorcery
             }
             else
             {
+                m_ruleToUpdate.IsDisabled = m_ruleIsDisabled.IsChecked.GetValueOrDefault();
                 m_ruleToUpdate.PatternType = ((TextBlock)m_rulePatternType.SelectedValue).Text;
                 m_ruleToUpdate.Pattern = m_rulePattern.Text;
                 m_ruleToUpdate.Command = ((TextBlock)m_ruleCommandType.SelectedValue).Text;

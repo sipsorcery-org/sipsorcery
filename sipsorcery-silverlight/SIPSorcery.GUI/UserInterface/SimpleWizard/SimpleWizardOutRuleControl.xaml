@@ -65,7 +65,7 @@
 					</DiscreteObjectKeyFrame.Value>
 				</DiscreteObjectKeyFrame>
 			</ObjectAnimationUsingKeyFrames>
-			<DoubleAnimation Duration="0" To="110" Storyboard.TargetProperty="(FrameworkElement.Height)" Storyboard.TargetName="m_headerCanvas" d:IsOptimized="True"/>
+			<DoubleAnimation Duration="0" To="140" Storyboard.TargetProperty="(FrameworkElement.Height)" Storyboard.TargetName="m_headerCanvas" d:IsOptimized="True"/>
 		</Storyboard>
 	</UserControl.Resources>
 
@@ -80,11 +80,13 @@
 							<TextBlock x:Name="m_errorMessageTextBlock" TextWrapping="Wrap" Text="An error occurred saving the rule." Foreground="#FF080803" FontSize="13.333" Margin="8,8,51,8"/>
 						</Grid>
 					</Border>
-					<Canvas Height="68">
-						<TextBox x:Name="m_ruleDescription" Height="25" Width="171" MaxLength="50" Canvas.Left="166" Canvas.Top="40" TabIndex="2"/>
-						<TextBlock TextWrapping="Wrap" Text="Description" Width="65" Height="22" Canvas.Left="20" Canvas.Top="47"/>
+					<Canvas Height="110">
+						<TextBox x:Name="m_ruleDescription" Height="25" Width="171" MaxLength="50" Canvas.Left="166" Canvas.Top="43" TabIndex="2"/>
+						<TextBlock TextWrapping="Wrap" Text="Description" Width="65" Height="22" Canvas.Left="20" Canvas.Top="49"/>
 						<TextBox x:Name="m_rulePriority" Height="25" Width="43" MaxLength="5" Canvas.Left="166" Canvas.Top="8" TabIndex="1"/>
 						<TextBlock TextWrapping="Wrap" Text="Priority" Width="43" Height="20" Canvas.Left="20" Canvas.Top="13"/>
+						<TextBlock TextWrapping="Wrap" Text="Disable" Width="65" Height="22" Canvas.Left="20" Canvas.Top="79"/>
+						<CheckBox x:Name="m_ruleIsDisabled" Content="" Height="16" Canvas.Left="166" Canvas.Top="79" Width="15"/>
 					</Canvas>
 				</StackPanel>
 				<Canvas x:Name="m_matchCanvas" Height="62" Background="#FFD4E1A3">

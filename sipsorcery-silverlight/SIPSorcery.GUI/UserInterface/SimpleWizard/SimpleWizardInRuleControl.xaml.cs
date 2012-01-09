@@ -38,10 +38,18 @@ namespace SIPSorcery
         {
             set
             {
-                value.Insert(0, new SIPProvider() { ProviderName = PLEASE_CHOOSE_OPTION });
-                value.Insert(1, new SIPProvider() { ProviderName = "local" });
-                m_ruleProvider.DataContext = value;
+                m_ruleProvider.Items.Add(PLEASE_CHOOSE_OPTION);
+                m_ruleProvider.Items.Add("local");
+                m_ruleToProvider.Items.Add(PLEASE_CHOOSE_OPTION);
+
+                foreach (SIPProvider provider in value)
+                {
+                    m_ruleProvider.Items.Add(provider.ProviderName);
+                    m_ruleToProvider.Items.Add(provider.ProviderName);
+                }
+
                 m_ruleProvider.SelectedIndex = 0;
+                m_ruleToProvider.SelectedIndex = 0;
             }
         }
 
@@ -56,9 +64,8 @@ namespace SIPSorcery
             m_initialised = true;
 		}
 
-        public void SetToSIPAccounts(EntitySet<SIPAccount> toAccounts)
+        public void PopulateToSIPAccounts(EntitySet<SIPAccount> toAccounts)
         {
-            m_ruleToAccount.Items.Clear();
             m_ruleToAccount.Items.Add(PLEASE_CHOOSE_OPTION);
 
             if (toAccounts != null && toAccounts.Count > 0)
@@ -69,7 +76,7 @@ namespace SIPSorcery
                 }
             }
 
-            //m_ruleToAccount.SelectedIndex = 0;
+            m_ruleToAccount.SelectedIndex = 0;
         }
 
 		public void SetRuleToUpdate(SimpleWizardRule rule)
@@ -79,23 +86,13 @@ namespace SIPSorcery
                 m_ruleToUpdate = rule;
                 SetStatusMessage(UPDATE_TEXT, false);
 
-                if (rule.ToSIPAccount != null && m_ruleToAccount.Items.Any(x => x.ToString() == rule.ToSIPAccount))
-                {
-                    m_ruleToSIPAccount.IsChecked = true;
-                    m_ruleToChoiceAny.IsChecked = false;
-                    m_ruleToAccount.SelectedIndex = m_ruleToAccount.Items.IndexOf(m_ruleToAccount.Items.Single(x => x.ToString() == rule.ToSIPAccount));
-                }
-                else
-                {
-                    m_ruleToSIPAccount.IsChecked = false;
-                    m_ruleToChoiceAny.IsChecked = true;
-                }
+                SetUIToMatchFields(rule);
 
-                //m_ruleType.SelectedIndex = m_ruleType.Items.IndexOf(m_ruleType.Items.Single(x => ((TextBlock)x).Text == rule.RuleType.ToString()));
                 m_rulePattern.Text = rule.Pattern;
                 m_ruleCommandType.SelectedIndex = m_ruleCommandType.Items.IndexOf(m_ruleCommandType.Items.Single(x => ((TextBlock)x).Text == rule.Command));
                 m_ruleDescription.Text = rule.Description;
                 m_rulePriority.Text = rule.Priority.ToString();
+                m_ruleIsDisabled.IsChecked = rule.IsDisabled;
 
                 if (rule.TimePattern != null)
                 {
@@ -118,16 +115,20 @@ namespace SIPSorcery
                     m_ruleWhenAnytime.IsChecked = true;
                 }
 
-                SetCommandParameterFieldsForRule(rule);
+                SetUICommandFieldsForRule(rule);
             }
             else
             {
                 m_ruleToUpdate = null;
                 SetStatusMessage(ADD_TEXT, false);
 
-                m_ruleToSIPAccount.IsChecked = false;
-                m_ruleToChoiceAny.IsChecked = true;
-                m_ruleToAccount.SelectedIndex = -1;
+                //m_ruleToSIPAccount.IsChecked = false;
+                //m_ruleToChoiceAny.IsChecked = true;
+                m_ruleIsDisabled.IsChecked = false;
+                m_toMatchType.SelectedIndex = 0;
+                m_ruleToAccount.SelectedIndex = 0;
+                m_ruleToProvider.SelectedIndex = 0;
+                m_ruleToRegexText.Text = String.Empty;
                 m_rulePattern.Text = String.Empty;
                 m_ruleCommandType.SelectedIndex = 0;
                 m_ruleCommandString.Text = DEFAULT_DIAL_DESTINATION;
@@ -174,76 +175,88 @@ namespace SIPSorcery
                     ID = Guid.Empty.ToString(),             // Will be set in the manager.
                     Owner = "None",                         // Will be set in the manager.
                     DialPlanID = Guid.Empty.ToString(),     // Will be set in the manager.
-                    Direction = SIPCallDirection.In.ToString(), 
-                    ToSIPAccount = (m_ruleToSIPAccount.IsChecked.GetValueOrDefault()) ? m_ruleToAccount.SelectedValue as string : null,
+                    Direction = SIPCallDirection.In.ToString(),
+                    //ToSIPAccount = (m_ruleToSIPAccount.IsChecked.GetValueOrDefault()) ? m_ruleToAccount.SelectedValue as string : null,
                     //RuleTypeID = Enum.Parse(typeof(SimpleWizardRuleTypes), ((TextBlock)m_ruleType.SelectedValue).Text, true).GetHashCode(),
                     Pattern = m_rulePattern.Text,
                     Command = ((TextBlock)m_ruleCommandType.SelectedValue).Text,
                     Description = m_ruleDescription.Text,
-                    Priority = priority
+                    Priority = priority,
+                    IsDisabled = m_ruleIsDisabled.IsChecked.GetValueOrDefault()
                 };
 
-                string commandParameterError = SetRuleCommandParameters(rule);
+                string toFieldsError = SetRuleToMatchFields(rule);
+                if (toFieldsError != null)
+                {
+                    SetErrorMessage(toFieldsError);
+                    return;
+                }
+
+                string commandParameterError = SetRuleCommandFields(rule);
                 if (commandParameterError != null)
                 {
                     SetErrorMessage(commandParameterError);
+                    return;
+                }
+
+                string timePatternError = GetTimePattern(rule);
+                if (timePatternError != null)
+                {
+                    SetErrorMessage(timePatternError);
+                    return;
+                }
+
+                string validationError = Validate(rule);
+                if (validationError != null)
+                {
+                    SetErrorMessage(validationError);
                 }
                 else
                 {
-                    string timePatternError = GetTimePattern(rule);
-                    if (timePatternError != null)
-                    {
-                        SetErrorMessage(timePatternError);
-                    }
-                    else
-                    {
-                        string validationError = Validate(rule);
-                        if (validationError != null)
-                        {
-                            SetErrorMessage(validationError);
-                        }
-                        else
-                        {
-                            HideErrorSB.Begin();
-                            Add(rule);
-                        }
-                    }
+                    HideErrorSB.Begin();
+                    Add(rule);
                 }
             }
             else
             {
-                m_ruleToUpdate.ToSIPAccount = (m_ruleToSIPAccount.IsChecked.GetValueOrDefault()) ? m_ruleToAccount.SelectedValue as string : null;
+                //m_ruleToUpdate.ToSIPAccount = (m_ruleToSIPAccount.IsChecked.GetValueOrDefault()) ? m_ruleToAccount.SelectedValue as string : null;
                 //m_ruleToUpdate.RuleTypeID = Enum.Parse(typeof(SimpleWizardRuleTypes), ((TextBlock)m_ruleType.SelectedValue).Text, true).GetHashCode();
                 m_ruleToUpdate.Pattern = m_rulePattern.Text;
                 m_ruleToUpdate.Command = ((TextBlock)m_ruleCommandType.SelectedValue).Text;
                 m_ruleToUpdate.Description = m_ruleDescription.Text;
                 m_ruleToUpdate.Priority = priority;
+                m_ruleToUpdate.IsDisabled = m_ruleIsDisabled.IsChecked.GetValueOrDefault();
 
-                string commandParameterError = SetRuleCommandParameters(m_ruleToUpdate);
+                string toFieldsError = SetRuleToMatchFields(m_ruleToUpdate);
+                if (toFieldsError != null)
+                {
+                    SetErrorMessage(toFieldsError);
+                    return;
+                }
+
+                string commandParameterError = SetRuleCommandFields(m_ruleToUpdate);
                 if (commandParameterError != null)
                 {
                     SetErrorMessage(commandParameterError);
+                    return;
+                }
+
+                string timePatternError = GetTimePattern(m_ruleToUpdate);
+                if (timePatternError != null)
+                {
+                    SetErrorMessage(timePatternError);
+                    return;
+                }
+
+                string validationError = Validate(m_ruleToUpdate);
+                if (validationError != null)
+                {
+                    SetErrorMessage(validationError);
                 }
                 else
                 {
-                    string timePatternError = GetTimePattern(m_ruleToUpdate);
-                    if (timePatternError != null)
-                    {
-                        SetErrorMessage(timePatternError);
-                    }
-                    else
-                    {
-                        string validationError = Validate(m_ruleToUpdate);
-                        if (validationError != null)
-                        {
-                            SetErrorMessage(validationError);
-                        }
-                        else
-                        {
-                            HideErrorSB.Begin();
-                            Update(m_ruleToUpdate);
-                        }
-                    }
+                    HideErrorSB.Begin();
+                    Update(m_ruleToUpdate);
                 }
             }
 		}
@@ -378,18 +391,18 @@ namespace SIPSorcery
         /// dictates which input fields will be used for each command parameter.
         /// </summary>
         /// <returns>If there is an error parsing the rule parameters an error message otherwise null.</returns>
-        private string SetRuleCommandParameters(SimpleWizardRule rule)
+        private string SetRuleCommandFields(SimpleWizardRule rule)
         {
             if (rule.CommandType == SimpleWizardCommandTypes.Dial)
             {
                 rule.CommandParameter1 = m_ruleCommandString.Text ?? "${EXTEN}";
-                if (m_ruleProvider.SelectedValue == null || ((SIPProvider)m_ruleProvider.SelectedValue).ProviderName == PLEASE_CHOOSE_OPTION)
+                if (m_ruleProvider.SelectedValue == null || m_ruleProvider.SelectedValue as string == PLEASE_CHOOSE_OPTION)
                 {
                     return "No provider was selected for the Dial command.";
                 }
                 else
                 {
-                    rule.CommandParameter2 = ((SIPProvider)m_ruleProvider.SelectedValue).ProviderName;
+                    rule.CommandParameter2 = m_ruleProvider.SelectedValue as string;
                 }
             }
             else if (rule.CommandType == SimpleWizardCommandTypes.DialAdvanced)
@@ -417,15 +430,15 @@ namespace SIPSorcery
         /// Sets the content of the UI controls representing command parameter fields based on the specified rule. 
         /// The command parameters mean different things and apply to different controls dependent on the rule's command type.
         /// </summary>
-        private void SetCommandParameterFieldsForRule(SimpleWizardRule rule)
+        private void SetUICommandFieldsForRule(SimpleWizardRule rule)
         {
             if (rule.CommandType == SimpleWizardCommandTypes.Dial && m_ruleProvider.Items != null && m_ruleProvider.Items.Count > 0)
             {
                 m_ruleCommandString.Text = rule.CommandParameter1;
-                if (m_ruleProvider.Items.Any(x => ((SIPProvider)x).ProviderName == rule.CommandParameter2))
+                if (m_ruleProvider.Items.Any(x => x as string == rule.CommandParameter2))
                 {
                     // The second command parameter holds the provider.
-                    m_ruleProvider.SelectedIndex = m_ruleProvider.Items.IndexOf(m_ruleProvider.Items.Single(x => ((SIPProvider)x).ProviderName == rule.CommandParameter2));
+                    m_ruleProvider.SelectedIndex = m_ruleProvider.Items.IndexOf(m_ruleProvider.Items.Single(x => x as string == rule.CommandParameter2));
                 }
             }
             else if (rule.CommandType == SimpleWizardCommandTypes.DialAdvanced)
@@ -444,6 +457,74 @@ namespace SIPSorcery
                 m_highriseURL.Text = rule.CommandParameter1;
                 m_highriseToken.Text = rule.CommandParameter2;
                 m_recordHighriseNote.IsChecked = (rule.CommandParameter3 != null) ? Convert.ToBoolean(rule.CommandParameter3) : false;
+            }
+        }
+
+        /// <summary>
+        /// Sets the To header match portions of the simple wizard rule based on the UI values.
+        /// </summary>
+        private string SetRuleToMatchFields(SimpleWizardRule rule)
+        {
+            if (m_toMatchType.SelectedValue == null)
+            {
+                return "A To matching choice must be specified.";
+            }
+            else
+            {
+                rule.ToMatchType = ((TextBlock)m_toMatchType.SelectedValue).Text;
+            }
+
+            if (rule.SimpleWizardToMatchType == SimpleWizardToMatchTypes.ToSIPAccount)
+            {
+                rule.ToMatchParameter = m_ruleToAccount.SelectedValue as string;
+                if (rule.ToMatchParameter == null || rule.ToMatchParameter == PLEASE_CHOOSE_OPTION)
+                {
+                    return "A SIP account must be selected for the ToSIPAccount matching choice.";
+                }
+            }
+            else if (rule.SimpleWizardToMatchType == SimpleWizardToMatchTypes.ToSIPProvider)
+            {
+                rule.ToMatchParameter = m_ruleToProvider.SelectedValue as string;
+                if (rule.ToMatchParameter == null || rule.ToMatchParameter == PLEASE_CHOOSE_OPTION)
+                {
+                    return "A provider must be selected for the ToSIPProvider matching choice.";
+                }
+            }
+            else if (rule.SimpleWizardToMatchType == SimpleWizardToMatchTypes.Regex)
+            {
+                rule.ToMatchParameter = m_ruleToRegexText.Text;
+                if (rule.ToMatchParameter.IsNullOrBlank())
+                {
+                    return "A regular expression must be entered for the Regex matching choice.";
+                }
+            }
+            else if (rule.SimpleWizardToMatchType == SimpleWizardToMatchTypes.Any)
+            {
+                rule.ToMatchParameter = null;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Sets the UI elements based on the To match type and paramters.
+        /// </summary>
+        /// <param name="rule"></param>
+        private void SetUIToMatchFields(SimpleWizardRule rule)
+        {
+            m_toMatchType.SelectedIndex = m_toMatchType.Items.IndexOf(m_toMatchType.Items.SingleOrDefault(x => ((TextBlock)x).Text == rule.ToMatchType));
+
+            if (rule.SimpleWizardToMatchType == SimpleWizardToMatchTypes.ToSIPAccount)
+            {
+                m_ruleToAccount.SelectedIndex = m_ruleToAccount.Items.IndexOf(m_ruleToAccount.Items.SingleOrDefault(x => x.ToString() == rule.ToMatchParameter));
+            }
+            else if (rule.SimpleWizardToMatchType == SimpleWizardToMatchTypes.ToSIPProvider)
+            {
+                m_ruleToProvider.SelectedIndex = m_ruleToProvider.Items.IndexOf(m_ruleToProvider.Items.SingleOrDefault(x => x.ToString() == rule.ToMatchParameter));
+            }
+            else if (rule.SimpleWizardToMatchType == SimpleWizardToMatchTypes.Regex)
+            {
+                m_ruleToRegexText.Text = rule.ToMatchParameter;
             }
         }
 
@@ -525,24 +606,6 @@ namespace SIPSorcery
             }
         }
 
-        private void ToSIPAccount_Checked(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (m_initialised)
-            {
-                m_ruleToAccount.IsEnabled = true;
-                m_ruleToAccount.SelectedIndex = 0;
-            }
-        }
-
-        private void AnyIncomingCallChecked(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (m_initialised)
-            {
-                m_ruleToAccount.IsEnabled = false;
-                m_ruleToAccount.SelectedIndex = -1;
-            }
-        }
-
         private void AnyTimeChecked(object sender, System.Windows.RoutedEventArgs e)
         {
             if (m_initialised)
@@ -556,6 +619,44 @@ namespace SIPSorcery
             if (m_initialised)
             {
                 SpecificTimeStoryboard.Stop();
+            }
+        }
+
+        private void ToMatchTypeChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (m_initialised)
+            {
+                var toTypeComboBox = sender as ComboBox;
+
+                if (toTypeComboBox != null && toTypeComboBox.SelectedValue != null)
+                {
+                    switch ((toTypeComboBox.SelectedValue as TextBlock).Text)
+                    {
+                        case "Any":
+                            ToMatchRegex.Stop();
+                            ToMatchSpecificProvider.Stop();
+                            ToMatchSpecificSIPAccount.Stop();
+                            break;
+
+                        case "ToSIPAccount":
+                            ToMatchRegex.Stop();
+                            ToMatchSpecificProvider.Stop();
+                            ToMatchSpecificSIPAccount.Begin();
+                            break;
+
+                        case "ToSIPProvider":
+                            ToMatchRegex.Stop();
+                            ToMatchSpecificProvider.Begin();
+                            ToMatchSpecificSIPAccount.Stop();
+                            break;
+
+                        case "Regex":
+                            ToMatchRegex.Begin();
+                            ToMatchSpecificProvider.Stop();
+                            ToMatchSpecificSIPAccount.Stop();
+                            break;
+                    }
+                }
             }
         }
 	}

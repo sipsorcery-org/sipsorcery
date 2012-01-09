@@ -79,7 +79,7 @@ namespace SIPSorcery
             m_incomingRulesUpdateControl.SIPProviders = m_riaContext.SIPProviders.ToList();
             m_incomingRulesUpdateControl.Add += AddRule;
             m_incomingRulesUpdateControl.Update += UpdateRule;
-            m_incomingRulesUpdateControl.SetToSIPAccounts(m_riaContext.SIPAccounts);
+            m_incomingRulesUpdateControl.PopulateToSIPAccounts(m_riaContext.SIPAccounts);
             m_incomingRulesPanel.SetTitle("Incoming Call Rules");
             m_incomingRulesPanel.MenuEnableFilter(false);
             m_incomingRulesPanel.MenuEnableHelp(false);

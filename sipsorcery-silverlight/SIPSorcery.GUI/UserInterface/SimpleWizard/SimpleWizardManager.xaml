@@ -41,7 +41,7 @@
 										MinWidth="60" />
 									<sdk:DataGridTextColumn 
 										Header="Pattern" 
-										Width="SizeToCells"
+										Width="SizeToHeader"
 										Binding="{Binding Pattern}" 
 										IsReadOnly="True"
 										MinWidth="140" />
@@ -63,6 +63,11 @@
 										Binding="{Binding Description}" 
 										IsReadOnly="True"
 										MinWidth="180" />
+									<sdk:DataGridTextColumn 
+										Header="Disabled" 
+										Binding="{Binding IsDisabled}" 
+										IsReadOnly="True"
+										Width="70" />
 									<sdk:DataGridTextColumn 
 										Header="Priority" 
 										Binding="{Binding Priority}" 
@@ -89,13 +94,19 @@
 								AlternatingRowBackground="LightSteelBlue" Margin="0" HorizontalAlignment="Left" Width="977" MouseLeftButtonUp="RulesDataGridClicked" MinHeight="231" Height="452" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto">
 								<sdk:DataGrid.Columns>
 									<sdk:DataGridTextColumn 
-										Header="To" 
-										Binding="{Binding ToDescription}" 
+										Header="Match Type" 
+										Binding="{Binding ToMatchType}" 
 										IsReadOnly="True"
-										Width="140" />
+										Width="100" />
+									<sdk:DataGridTextColumn 
+										Header="To Match Pattern" 
+										Width="SizeToHeader"
+										Binding="{Binding ToMatchParameter}" 
+										IsReadOnly="True"
+										MinWidth="160" />
 									<sdk:DataGridTextColumn 
 										Header="Caller ID Match" 
-										Width="SizeToCells"
+										Width="SizeToHeader"
 										Binding="{Binding Pattern}" 
 										IsReadOnly="True"
 										MinWidth="140" />
@@ -123,6 +134,11 @@
 										Binding="{Binding Description}" 
 										IsReadOnly="True"
 										MinWidth="180" />
+									<sdk:DataGridTextColumn 
+										Header="Disabled" 
+										Binding="{Binding IsDisabled}" 
+										IsReadOnly="True"
+										Width="70" />
 									<sdk:DataGridTextColumn 
 										Header="Priority" 
 										Binding="{Binding Priority}" 
