@@ -138,6 +138,7 @@
     <Compile Include="SIPNotifications\SIPPresenceEventSubscription.cs" />
     <Compile Include="SIPNotifications\SIPDialogEventSubscription.cs" />
     <Compile Include="SIPNotifications\SIPEventSubscription.cs" />
+    <Compile Include="SIPSorceryPersistor.cs" />
     <Compile Include="SIPUserAgents\SIPNonInviteClientUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPNonInviteServerUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPNotifierClient.cs" />

@@ -210,25 +210,53 @@ namespace SIPSorcery.SIP.App
             set { SIPDialogue.RemoteSDP = value; }
         }
 
-        [Column(Name = "switchboarddescription", DbType = "varchar(1024)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
-        public string SwitchboardDescription
-        {
-            get { return SIPDialogue.SwitchboardDescription; }
-            set { SIPDialogue.SwitchboardDescription = value; }
-        }
+        //[Column(Name = "switchboarddescription", DbType = "varchar(1024)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        //public string SwitchboardDescription
+        //{
+        //    get { return SIPDialogue.SwitchboardDescription; }
+        //    set { SIPDialogue.SwitchboardDescription = value; }
+        //}
 
-        [Column(Name = "switchboardcallerdescription", DbType = "varchar(1024)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
-        public string SwitchboardCallerDescription 
-        {
-            get { return SIPDialogue.SwitchboardCallerDescription; }
-            set { SIPDialogue.SwitchboardCallerDescription = value; } 
-        }
+        //[Column(Name = "switchboardcallerdescription", DbType = "varchar(1024)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        //public string SwitchboardCallerDescription 
+        //{
+        //    get { return SIPDialogue.SwitchboardCallerDescription; }
+        //    set { SIPDialogue.SwitchboardCallerDescription = value; } 
+        //}
 
-        [Column(Name = "switchboardowner", DbType = "varchar(32)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [Column(Name = "switchboardowner", DbType = "varchar(1024)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         public string SwitchboardOwner
         {
             get { return SIPDialogue.SwitchboardOwner; }
             set { SIPDialogue.SwitchboardOwner = value; }
+        }
+
+        [Column(Name = "SwitchboardLineName", DbType = "varchar(128)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        public string SwitchboardLineName
+        {
+            get { return SIPDialogue.SwitchboardLineName; }
+            set { SIPDialogue.SwitchboardLineName = value; }
+        }
+
+        [Column(Name = "CRMPersonName", DbType = "varchar(256)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        public string CRMPersonName
+        {
+            get { return SIPDialogue.CRMPersonName; }
+            set { SIPDialogue.CRMPersonName = value; }
+        }
+
+        [Column(Name = "CRMCompanyName", DbType = "varchar(256)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        public string CRMCompanyName
+        {
+            get { return SIPDialogue.CRMCompanyName; }
+            set { SIPDialogue.CRMCompanyName = value; }
+        }
+
+        [Column(Name = "CRMPictureURL", DbType = "varchar(1024)", IsPrimaryKey = false, CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        public string CRMPictureURL
+        {
+            get { return SIPDialogue.CRMPictureURL; }
+            set { SIPDialogue.CRMPictureURL = value; }
         }
 
         public SIPDialogueAsset()
@@ -272,9 +300,13 @@ namespace SIPSorcery.SIP.App
             table.Columns.Add(new DataColumn("sdp", typeof(String)));
             table.Columns.Add(new DataColumn("remotesdp", typeof(String)));
             table.Columns.Add(new DataColumn("transfermode", typeof(String)));
-            table.Columns.Add(new DataColumn("switchboarddescription", typeof(String)));
-            table.Columns.Add(new DataColumn("switchboardcallerdescription", typeof(String)));
+            //table.Columns.Add(new DataColumn("switchboarddescription", typeof(String)));
+            //table.Columns.Add(new DataColumn("switchboardcallerdescription", typeof(String)));
             table.Columns.Add(new DataColumn("switchboardowner", typeof(String)));
+            table.Columns.Add(new DataColumn("switchboardlinename", typeof(String)));
+            table.Columns.Add(new DataColumn("crmpersonname", typeof(String)));
+            table.Columns.Add(new DataColumn("crmcompanyname", typeof(String)));
+            table.Columns.Add(new DataColumn("crmpictureurl", typeof(String)));
             return table;
         }
 
@@ -301,9 +333,13 @@ namespace SIPSorcery.SIP.App
             TransferMode = row["transfermode"] as string;
             SDP = row["sdp"] as string;
             RemoteSDP = row["remotesdp"] as string;
-            SIPDialogue.SwitchboardCallerDescription = (row["switchboardcallerdescription"] != null && row["switchboardcallerdescription"] != DBNull.Value) ? row["switchboardcallerdescription"] as string : null;
-            SIPDialogue.SwitchboardDescription = (row["switchboarddescription"] != null && row["switchboarddescription"] != DBNull.Value) ? row["switchboarddescription"] as string : null;
+            //SIPDialogue.SwitchboardCallerDescription = (row["switchboardcallerdescription"] != null && row["switchboardcallerdescription"] != DBNull.Value) ? row["switchboardcallerdescription"] as string : null;
+            //SIPDialogue.SwitchboardDescription = (row["switchboarddescription"] != null && row["switchboarddescription"] != DBNull.Value) ? row["switchboarddescription"] as string : null;
             SIPDialogue.SwitchboardOwner = (row["switchboardowner"] != null && row["switchboardowner"] != DBNull.Value) ? row["switchboardowner"] as string : null;
+            SIPDialogue.SwitchboardLineName = (row["switchboardlinename"] != null && row["switchboardlinename"] != DBNull.Value) ? row["switchboardlinename"] as string : null;
+            SIPDialogue.CRMPersonName = (row["crmpersonname"] != null && row["crmpersonname"] != DBNull.Value) ? row["crmpersonname"] as string : null;
+            SIPDialogue.CRMCompanyName = (row["crmcompanyname"] != null && row["crmcompanyname"] != DBNull.Value) ? row["crmcompanyname"] as string : null;
+            SIPDialogue.CRMPictureURL = (row["crmpictureurl"] != null && row["crmpictureurl"] != DBNull.Value) ? row["crmpictureurl"] as string : null;
         }
 
         public Dictionary<Guid, object> Load(XmlDocument dom)
@@ -336,9 +372,13 @@ namespace SIPSorcery.SIP.App
             TransferMode = dialogueElement.Element("transfermode").Value;
             SDP = dialogueElement.Element("sdp").Value;
             RemoteSDP = dialogueElement.Element("remotesdp").Value;
-            SIPDialogue.SwitchboardCallerDescription = (dialogueElement.Element("switchboardcallerdescription") != null) ? dialogueElement.Element("switchboardcallerdescription").Value : null;
-            SIPDialogue.SwitchboardDescription = (dialogueElement.Element("switchboarddescription") != null) ? dialogueElement.Element("switchboarddescription").Value : null;
+            //SIPDialogue.SwitchboardCallerDescription = (dialogueElement.Element("switchboardcallerdescription") != null) ? dialogueElement.Element("switchboardcallerdescription").Value : null;
+            //SIPDialogue.SwitchboardDescription = (dialogueElement.Element("switchboarddescription") != null) ? dialogueElement.Element("switchboarddescription").Value : null;
             SIPDialogue.SwitchboardOwner = (dialogueElement.Element("switchboardowner") != null) ? dialogueElement.Element("switchboardowner").Value : null;
+            SIPDialogue.SwitchboardLineName = (dialogueElement.Element("switchboardlinename") != null) ? dialogueElement.Element("switchboardlinename").Value : null;
+            SIPDialogue.CRMPersonName = (dialogueElement.Element("crmpersonname") != null) ? dialogueElement.Element("crmpersonname").Value : null;
+            SIPDialogue.CRMCompanyName = (dialogueElement.Element("crmcompanyname") != null) ? dialogueElement.Element("crmcompanyname").Value : null;
+            SIPDialogue.CRMPictureURL = (dialogueElement.Element("crmpictureurl") != null) ? dialogueElement.Element("crmpictureurl").Value : null;
         }
 
         public string ToXML()
@@ -377,9 +417,13 @@ namespace SIPSorcery.SIP.App
                  "  <direction>" + Direction + "</direction>" + m_newLine +
                  "  <sdp>" + SafeXML.MakeSafeXML(SDP) + "</sdp>" + m_newLine +
                  "  <remotesdp>" + SafeXML.MakeSafeXML(RemoteSDP) + "</remotesdp>" + m_newLine +
-                 "  <switchboardcallerdescription>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardCallerDescription) + "</switchboardcallerdescription>" + m_newLine +
-                 "  <switchboarddescription>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardDescription) + "</switchboarddescription>" + m_newLine +
-                 "  <switchboardowner>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardOwner) + "</switchboardowner>" + m_newLine;
+                //"  <switchboardcallerdescription>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardCallerDescription) + "</switchboardcallerdescription>" + m_newLine +
+                //"  <switchboarddescription>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardDescription) + "</switchboarddescription>" + m_newLine +
+                 "  <switchboardowner>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardOwner) + "</switchboardowner>" + m_newLine +
+                 "  <switchboardlinename>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardLineName) + "</switchboardlinename>" + m_newLine +
+                 "  <crmpersonname>" + SafeXML.MakeSafeXML(SIPDialogue.CRMPersonName) + "</crmpersonname>" + m_newLine +
+                 "  <crmcompanyname>" + SafeXML.MakeSafeXML(SIPDialogue.CRMCompanyName) + "</crmcompanyname>" + m_newLine +
+                 "  <crmpictureurl>" + SafeXML.MakeSafeXML(SIPDialogue.CRMPictureURL) + "</crmpicutureurl>" + m_newLine;
 
             return dialogueXML;
         }

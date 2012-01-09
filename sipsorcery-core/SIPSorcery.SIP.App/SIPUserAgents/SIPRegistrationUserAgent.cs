@@ -83,8 +83,8 @@ namespace SIPSorcery.SIP.App
         private ManualResetEvent m_waitForRegistrationMRE = new ManualResetEvent(false);
 
         public string UserAgent;                // If not null this value will replace the default user agent value in the REGISTER request.
-        public bool RequestSwitchboardToken;    // If set to true a header will be set on the REGISTER request that asks the server to return a toekn that can be used by the switchboard for 3rd party authorisation.
-        public string SwitchboardToken;         // If a switchboard token is provided by the server it will be placed here.
+        //public bool RequestSwitchboardToken;    // If set to true a header will be set on the REGISTER request that asks the server to return a toekn that can be used by the switchboard for 3rd party authorisation.
+        //public string SwitchboardToken;         // If a switchboard token is provided by the server it will be placed here.
 
         public event Action<SIPURI, string> RegistrationFailed;
         public event Action<SIPURI, string> RegistrationTemporaryFailure;
@@ -318,10 +318,10 @@ namespace SIPSorcery.SIP.App
                         {
                             m_isRegistered = true;
                             m_expiry = GetUpdatedExpiry(sipResponse);
-                            if (sipResponse.Header.SwitchboardToken != null && m_lastServerNonce != null)
-                            {
-                                SwitchboardToken = Crypto.SymmetricDecrypt(m_password, m_lastServerNonce, sipResponse.Header.SwitchboardToken);
-                            }
+                            //if (sipResponse.Header.SwitchboardToken != null && m_lastServerNonce != null)
+                            //{
+                            //    SwitchboardToken = Crypto.SymmetricDecrypt(m_password, m_lastServerNonce, sipResponse.Header.SwitchboardToken);
+                            //}
                             RegistrationSuccessful(m_sipAccountAOR);
                         }
                         else
@@ -383,10 +383,10 @@ namespace SIPSorcery.SIP.App
                     {
                         m_isRegistered = true;
                         m_expiry = GetUpdatedExpiry(sipResponse);
-                        if (sipResponse.Header.SwitchboardToken != null && m_lastServerNonce != null)
-                        {
-                            SwitchboardToken = Crypto.SymmetricDecrypt(m_password, m_lastServerNonce, sipResponse.Header.SwitchboardToken);
-                        }
+                        //if (sipResponse.Header.SwitchboardToken != null && m_lastServerNonce != null)
+                        //{
+                        //    SwitchboardToken = Crypto.SymmetricDecrypt(m_password, m_lastServerNonce, sipResponse.Header.SwitchboardToken);
+                        //}
 
                         if (RegistrationSuccessful != null)
                         {
@@ -574,10 +574,10 @@ namespace SIPSorcery.SIP.App
                 regRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
                 regRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
 
-                if (RequestSwitchboardToken)
-                {
-                    regRequest.Header.SwitchboardTokenRequest = m_expiry;
-                }
+                //if (RequestSwitchboardToken)
+                //{
+                //    regRequest.Header.SwitchboardTokenRequest = m_expiry;
+                //}
 
                 return regRequest;
             }

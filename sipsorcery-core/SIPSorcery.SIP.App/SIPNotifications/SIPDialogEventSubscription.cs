@@ -79,51 +79,54 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.Monitor, "Monitor event " + machineEvent.MachineEventType + " dialog " + ResourceURI.ToString() + " (ID " + machineEvent.ResourceID + ").", SubscriptionDialogue.Owner));
-
-                string state = GetStateForEventType(machineEvent.MachineEventType);
-
-                if (machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved)
+                lock (DialogInfo)
                 {
-                    DialogInfo.DialogItems.Add(new SIPEventDialog(machineEvent.ResourceID, state, null));
-                    return true;
-                }
-                else
-                {
-                    SIPDialogueAsset sipDialogue = GetDialogue_External(new Guid(machineEvent.ResourceID));
+                    MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.Monitor, "Monitor event " + machineEvent.MachineEventType + " dialog " + ResourceURI.ToString() + " (ID " + machineEvent.ResourceID + ").", SubscriptionDialogue.Owner));
 
-                    if (sipDialogue == null)
+                    string state = GetStateForEventType(machineEvent.MachineEventType);
+
+                    if (machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved)
                     {
-                        // Couldn't find the dialogue in the database so it must be terminated.
-                        DialogInfo.DialogItems.Add(new SIPEventDialog(machineEvent.ResourceID, "terminated", null));
-                        return true;
-                    }
-                    else if (machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueTransfer)
-                    {
-                        // For dialog transfer events add both dialogs involved to the notification.
-
-                        DialogInfo.DialogItems.Add(new SIPEventDialog(sipDialogue.Id.ToString(), state, sipDialogue.SIPDialogue));
-
-                        if (sipDialogue.SIPDialogue.BridgeId != Guid.Empty)
-                        {
-                            SIPDialogueAsset bridgedDialogue = GetDialogues_External(d => d.BridgeId == sipDialogue.BridgeId && d.Id != sipDialogue.Id, null, 0, 1).FirstOrDefault();
-                            if (bridgedDialogue != null)
-                            {
-                                DialogInfo.DialogItems.Add(new SIPEventDialog(bridgedDialogue.Id.ToString(), state, bridgedDialogue.SIPDialogue));
-                            }
-                        }
-
+                        DialogInfo.DialogItems.Add(new SIPEventDialog(machineEvent.ResourceID, state, null));
                         return true;
                     }
                     else
                     {
-                        DialogInfo.DialogItems.Add(new SIPEventDialog(sipDialogue.Id.ToString(), state, sipDialogue.SIPDialogue));
-                        return true;
+                        SIPDialogueAsset sipDialogue = GetDialogue_External(new Guid(machineEvent.ResourceID));
+
+                        if (sipDialogue == null)
+                        {
+                            // Couldn't find the dialogue in the database so it must be terminated.
+                            DialogInfo.DialogItems.Add(new SIPEventDialog(machineEvent.ResourceID, "terminated", null));
+                            return true;
+                        }
+                        else if (machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueTransfer)
+                        {
+                            // For dialog transfer events add both dialogs involved to the notification.
+                            DialogInfo.DialogItems.Add(new SIPEventDialog(sipDialogue.Id.ToString(), state, sipDialogue.SIPDialogue));
+
+                            if (sipDialogue.SIPDialogue.BridgeId != Guid.Empty)
+                            {
+                                SIPDialogueAsset bridgedDialogue = GetDialogues_External(d => d.BridgeId == sipDialogue.BridgeId && d.Id != sipDialogue.Id, null, 0, 1).FirstOrDefault();
+                                if (bridgedDialogue != null)
+                                {
+                                    DialogInfo.DialogItems.Add(new SIPEventDialog(bridgedDialogue.Id.ToString(), state, bridgedDialogue.SIPDialogue));
+                                }
+                            }
+
+                            return true;
+                        }
+                        else
+                        {
+                            DialogInfo.DialogItems.Add(new SIPEventDialog(sipDialogue.Id.ToString(), state, sipDialogue.SIPDialogue));
+                            return true;
+                        }
                     }
                 }
             }
             catch (Exception excp)
             {
+                MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.Monitor, "Exception AddMonitorEvent. " + excp.Message, null));
                 logger.Error("Exception SIPDialogEventSubscription AddMonitorEvent. " + excp.Message);
                 throw;
             }
@@ -145,7 +148,7 @@ namespace SIPSorcery.SIP.App
             }
 
             DialogInfo.State = SIPEventDialogInfoStateEnum.partial;
-            DialogInfo.DialogItems.Clear();
+            DialogInfo.DialogItems.RemoveAll(x => x.HasBeenSent);
             DialogInfo.Version++;
         }
 

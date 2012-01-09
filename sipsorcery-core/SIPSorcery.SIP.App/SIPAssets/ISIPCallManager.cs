@@ -8,6 +8,7 @@ namespace SIPSorcery.SIP.App
     public interface ISIPCallManager
     {
         string ProcessWebCall(string username, string number, string dialplanName, string replacesCallID);
+        string ProcessCallback(string username, string dialString1, string dialString2);
         void CreateDialogueBridge(SIPDialogue firstLegDialogue, SIPDialogue secondLegDialogue, string owner);
         void ReInvite(SIPDialogue firstLegDialogue, SIPDialogue substituteDialogue);
         int GetCurrentCallCount(string owner);

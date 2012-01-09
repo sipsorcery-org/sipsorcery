@@ -561,16 +561,20 @@ namespace SIPSorcery.SIP.App
                         m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
 
                         // Set switchboard dialogue values from the answered response or from dialplan set values.
-                        m_sipDialogue.SwitchboardCallerDescription = sipResponse.Header.SwitchboardCallerDescription;
-                        m_sipDialogue.SwitchboardDescription = sipResponse.Header.SwitchboardDescription;
+                        //m_sipDialogue.SwitchboardCallerDescription = sipResponse.Header.SwitchboardCallerDescription;
+                        m_sipDialogue.SwitchboardLineName = sipResponse.Header.SwitchboardLineName;
+                        m_sipDialogue.CRMPersonName = sipResponse.Header.CRMPersonName;
+                        m_sipDialogue.CRMCompanyName = sipResponse.Header.CRMCompanyName;
+                        m_sipDialogue.CRMPictureURL = sipResponse.Header.CRMPictureURL;
 
                         if (m_sipCallDescriptor.SwitchboardHeaders != null)
                         {
-                            if (!m_sipCallDescriptor.SwitchboardHeaders.SwitchboardDialogueDescription.IsNullOrBlank())
-                            {
-                                m_sipDialogue.SwitchboardDescription = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardDialogueDescription;
-                            }
+                            //if (!m_sipCallDescriptor.SwitchboardHeaders.SwitchboardDialogueDescription.IsNullOrBlank())
+                            //{
+                            //    m_sipDialogue.SwitchboardDescription = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardDialogueDescription;
+                            //}
 
+                            m_sipDialogue.SwitchboardLineName = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardLineName;
                             m_sipDialogue.SwitchboardOwner = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardOwner;
                         }
                     }
@@ -650,11 +654,11 @@ namespace SIPSorcery.SIP.App
             // Add custom switchboard headers.
             if (CallDescriptor.SwitchboardHeaders != null)
             {
-                inviteHeader.SwitchboardCallID = CallDescriptor.SwitchboardHeaders.SwitchboardCallID;
-                inviteHeader.SwitchboardCallerDescription = CallDescriptor.SwitchboardHeaders.SwitchboardCallerDescription;
-                inviteHeader.SwitchboardDescription = CallDescriptor.SwitchboardHeaders.SwitchboardDescription;
+                inviteHeader.SwitchboardOriginalCallID = CallDescriptor.SwitchboardHeaders.SwitchboardOriginalCallID;
+                //inviteHeader.SwitchboardCallerDescription = CallDescriptor.SwitchboardHeaders.SwitchboardCallerDescription;
+                inviteHeader.SwitchboardLineName = CallDescriptor.SwitchboardHeaders.SwitchboardLineName;
                 //inviteHeader.SwitchboardOwner = CallDescriptor.SwitchboardHeaders.SwitchboardOwner;
-                inviteHeader.SwitchboardFrom = CallDescriptor.SwitchboardHeaders.SwitchboardFrom;
+                //inviteHeader.SwitchboardOriginalFrom = CallDescriptor.SwitchboardHeaders.SwitchboardOriginalFrom;
             }
 
             // Add custom CRM headers.
@@ -662,7 +666,7 @@ namespace SIPSorcery.SIP.App
             {
                 inviteHeader.CRMPersonName = CallDescriptor.CRMHeaders.PersonName;
                 inviteHeader.CRMCompanyName = CallDescriptor.CRMHeaders.CompanyName;
-                inviteHeader.CRMAvatarURL = CallDescriptor.CRMHeaders.AvatarURL;
+                inviteHeader.CRMPictureURL = CallDescriptor.CRMHeaders.AvatarURL;
             }
 
             try
@@ -753,7 +757,7 @@ namespace SIPSorcery.SIP.App
             {
                 updateHeader.CRMPersonName = crmHeaders.PersonName;
                 updateHeader.CRMCompanyName = crmHeaders.CompanyName;
-                updateHeader.CRMAvatarURL = crmHeaders.AvatarURL;
+                updateHeader.CRMPictureURL = crmHeaders.AvatarURL;
             }
 
             return updateRequest;

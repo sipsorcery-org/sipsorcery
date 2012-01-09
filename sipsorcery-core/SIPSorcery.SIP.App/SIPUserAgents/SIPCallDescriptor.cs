@@ -78,23 +78,23 @@ namespace SIPSorcery.SIP.App
 
     public class SwitchboardHeaders
     {
-        public string SwitchboardCallID;                // If set holds a call identifier and is typically the SIP Call-ID of an associated INVITE.
-        public string SwitchboardCallerDescription;     // If set holds a general description of the caller.
-        public string SwitchboardDescription;           // If set holds a general description of the call.
-        public string SwitchboardDialogueDescription;   // Same as the SwitchboardDescription field but is used to differentiate when a SIP header should be set and when the value should only be recorded in the dialogue.
+        public string SwitchboardOriginalCallID;        // If set holds a call identifier and is typically the SIP Call-ID of an associated INVITE.
+        //public string SwitchboardCallerDescription;     // If set holds a general description of the caller.
+        public string SwitchboardLineName;              // If set holds a name of the line that the original call was received on.
+        //public string SwitchboardDialogueDescription;   // Same as the SwitchboardDescription field but is used to differentiate when a SIP header should be set and when the value should only be recorded in the dialogue.
         public string SwitchboardOwner;                 // If set indicates a specific SIP account is taking ownership of any call that gets established.
-        public string SwitchboardFrom;                  // If set indicates it should be used as the From header on calls to local extensions.
+        //public string SwitchboardOriginalFrom;          // If set indicates it should be used as the From header on calls to local extensions.
 
         public SwitchboardHeaders()
         { }
 
-        public SwitchboardHeaders(string callID, string callerDescription, string description, string owner, string from)
+        public SwitchboardHeaders(string callID, string callerDescription, string lineName, string owner)
         {
-            SwitchboardCallID = callID;
-            SwitchboardCallerDescription = callerDescription;
-            SwitchboardDescription = description;
+            SwitchboardOriginalCallID = callID;
+            //SwitchboardCallerDescription = callerDescription;
+            SwitchboardLineName = lineName;
             SwitchboardOwner = owner;
-            SwitchboardFrom = from;
+            //SwitchboardOriginalFrom = from;
         }
     }
 
@@ -111,8 +111,8 @@ namespace SIPSorcery.SIP.App
         public const string REQUEST_CALLER_DETAILS = "rcd";     // Dial string option to indicate the client agent would like any caller details if/when available.
 
         // Switchboard dial string options.
-        public const string SWITCHBOARD_CALL_DESCRIPTION_KEY = "swcd";      // Dial string option to set the Switchboard-Description header on the call leg.
-        public const string SWITCHBOARD_DIALOGUE_DESCRIPTION_KEY = "swdd";  // Dial string option to set a value for the switchboard description field on the answered dialogue. It does not set a header.
+        public const string SWITCHBOARD_LINE_NAME_KEY = "swln";             // Dial string option to set the Switchboard-LineName header on the call leg.
+        //public const string SWITCHBOARD_DIALOGUE_DESCRIPTION_KEY = "swdd";// Dial string option to set a value for the switchboard description field on the answered dialogue. It does not set a header.
         public const string SWITCHBOARD_CALLID_KEY = "swcid";               // Dial string option to set the Switchboard-CallID header on the call leg.
         public const string SWITCHBOARD_OWNER_KEY = "swo";                  // Dial string option to set the Switchboard-Owner header on the call leg.
 
@@ -233,14 +233,14 @@ namespace SIPSorcery.SIP.App
             SIPFromHeader fromHeader = null;
 
             // If the call is for a sipsorcery extension and a SwitchboardFrom header has been set use it.
-            if (CallDirection == SIPCallDirection.In && SwitchboardHeaders != null && !SwitchboardHeaders.SwitchboardFrom.IsNullOrBlank())
-            {
-                fromHeader = SIPFromHeader.ParseFromHeader(SwitchboardHeaders.SwitchboardFrom);
-            }
-            else
-            {
+            //if (CallDirection == SIPCallDirection.In && SwitchboardHeaders != null && !SwitchboardHeaders.SwitchboardOriginalFrom.IsNullOrBlank())
+            //{
+            //    fromHeader = SIPFromHeader.ParseFromHeader(SwitchboardHeaders.SwitchboardOriginalFrom);
+            //}
+            //else
+            //{
                 fromHeader = SIPFromHeader.ParseFromHeader(From);
-            }
+            //}
 
             if (!FromDisplayName.IsNullOrBlank())
             {
@@ -381,24 +381,24 @@ namespace SIPSorcery.SIP.App
                 }
 
                 // Parse the switchboard description value.
-                Match switchboardDescriptionMatch = Regex.Match(options, SWITCHBOARD_CALL_DESCRIPTION_KEY + @"=(?<description>.+?)(,|$)");
+                Match switchboardDescriptionMatch = Regex.Match(options, SWITCHBOARD_LINE_NAME_KEY + @"=(?<lineName>.+?)(,|$)");
                 if (switchboardDescriptionMatch.Success)
                 {
-                    SwitchboardHeaders.SwitchboardDescription = switchboardDescriptionMatch.Result("${description}").Trim();
+                    SwitchboardHeaders.SwitchboardLineName = switchboardDescriptionMatch.Result("${lineName}").Trim();
                 }
 
                 // Parse the switchboard dialogue description value.
-                Match switchboardDialogueDescriptionMatch = Regex.Match(options, SWITCHBOARD_DIALOGUE_DESCRIPTION_KEY + @"=(?<description>.+?)(,|$)");
-                if (switchboardDialogueDescriptionMatch.Success)
-                {
-                    SwitchboardHeaders.SwitchboardDialogueDescription = switchboardDialogueDescriptionMatch.Result("${description}").Trim();
-                }
+                //Match switchboardDialogueDescriptionMatch = Regex.Match(options, SWITCHBOARD_DIALOGUE_DESCRIPTION_KEY + @"=(?<description>.+?)(,|$)");
+                //if (switchboardDialogueDescriptionMatch.Success)
+                //{
+                //    SwitchboardHeaders.SwitchboardDialogueDescription = switchboardDialogueDescriptionMatch.Result("${description}").Trim();
+                //}
 
                 // Parse the switchboard CallID value.
                 Match switchboardCallIDMatch = Regex.Match(options, SWITCHBOARD_CALLID_KEY + @"=(?<callid>.+?)(,|$)");
                 if (switchboardCallIDMatch.Success)
                 {
-                    SwitchboardHeaders.SwitchboardCallID = switchboardCallIDMatch.Result("${callid}").Trim();
+                    SwitchboardHeaders.SwitchboardOriginalCallID = switchboardCallIDMatch.Result("${callid}").Trim();
                 }
 
                 // Parse the switchboard owner value.
