@@ -512,10 +512,10 @@ namespace SIPSorcery.AppServer.DialPlan
                         switchCall.CRMHeaders = contact;
 
                         // If the binding for the call is a switchboard add the custom switchboard headers.
-                        if (!sipRequest.Header.SwitchboardFrom.IsNullOrBlank())
-                        {
-                            switchCall.SwitchboardHeaders.SwitchboardFrom = sipRequest.Header.SwitchboardFrom;
-                        }
+                        //if (!sipRequest.Header.SwitchboardOriginalFrom.IsNullOrBlank())
+                        //{
+                        //    switchCall.SwitchboardHeaders.SwitchboardOriginalFrom = sipRequest.Header.SwitchboardOriginalFrom;
+                        //}
 
                         // If the binding has a proxy socket defined set the header to ask the upstream proxy to use it.
                         if (binding.ProxySIPEndPoint != null)

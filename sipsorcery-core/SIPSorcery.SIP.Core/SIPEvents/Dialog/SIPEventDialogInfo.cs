@@ -151,6 +151,7 @@ namespace SIPSorcery.SIP
             {
                 XElement dialogItemElement = item.ToXML();
                 dialogEventDoc.Root.Add(dialogItemElement);
+                item.HasBeenSent = true;
             });
 
             StringBuilder sb = new StringBuilder();

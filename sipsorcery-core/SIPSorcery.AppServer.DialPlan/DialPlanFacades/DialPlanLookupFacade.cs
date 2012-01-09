@@ -203,7 +203,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         var rules = (from rule in ssEntities.SimpleWizardRules
                                 join dialplan in ssEntities.SIPDialPlans on rule.DialPlanID equals dialplan.ID
                                 where rule.Owner == m_owner && dialplan.DialPlanName == dialplanName &&
-                                    rule.Direction == callDirnStr
+                                    rule.Direction == callDirnStr && !rule.IsDisabled
                                 orderby rule.Priority
                                 select rule).ToList();
 

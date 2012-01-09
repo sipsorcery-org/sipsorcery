@@ -287,6 +287,22 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
+        public ObjectSet<VoxalotMigration> VoxalotMigrations1
+        {
+            get
+            {
+                if ((_VoxalotMigrations1 == null))
+                {
+                    _VoxalotMigrations1 = base.CreateObjectSet<VoxalotMigration>("VoxalotMigrations1");
+                }
+                return _VoxalotMigrations1;
+            }
+        }
+        private ObjectSet<VoxalotMigration> _VoxalotMigrations1;
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
         public ObjectSet<SimpleWizardRule> SimpleWizardRules
         {
             get
@@ -303,18 +319,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        public ObjectSet<VoxalotMigration> VoxalotMigrations1
+        public ObjectSet<WebCallback> WebCallbacks
         {
             get
             {
-                if ((_VoxalotMigrations1 == null))
+                if ((_WebCallbacks == null))
                 {
-                    _VoxalotMigrations1 = base.CreateObjectSet<VoxalotMigration>("VoxalotMigrations1");
+                    _WebCallbacks = base.CreateObjectSet<WebCallback>("WebCallbacks");
                 }
-                return _VoxalotMigrations1;
+                return _WebCallbacks;
             }
         }
-        private ObjectSet<VoxalotMigration> _VoxalotMigrations1;
+        private ObjectSet<WebCallback> _WebCallbacks;
 
         #endregion
         #region AddTo Methods
@@ -424,6 +440,14 @@ namespace SIPSorcery.Entities
         }
     
         /// <summary>
+        /// Deprecated Method for adding a new object to the VoxalotMigrations1 EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
+        /// </summary>
+        public void AddToVoxalotMigrations1(VoxalotMigration voxalotMigration)
+        {
+            base.AddObject("VoxalotMigrations1", voxalotMigration);
+        }
+    
+        /// <summary>
         /// Deprecated Method for adding a new object to the SimpleWizardRules EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
         /// </summary>
         public void AddToSimpleWizardRules(SimpleWizardRule simpleWizardRule)
@@ -432,11 +456,11 @@ namespace SIPSorcery.Entities
         }
     
         /// <summary>
-        /// Deprecated Method for adding a new object to the VoxalotMigrations1 EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
+        /// Deprecated Method for adding a new object to the WebCallbacks EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
         /// </summary>
-        public void AddToVoxalotMigrations1(VoxalotMigration voxalotMigration)
+        public void AddToWebCallbacks(WebCallback webCallback)
         {
-            base.AddObject("VoxalotMigrations1", voxalotMigration);
+            base.AddObject("WebCallbacks", webCallback);
         }
 
         #endregion
@@ -1978,19 +2002,21 @@ namespace SIPSorcery.Entities
         /// <param name="owner">Initial value of the Owner property.</param>
         /// <param name="dialPlanID">Initial value of the DialPlanID property.</param>
         /// <param name="direction">Initial value of the Direction property.</param>
+        /// <param name="priority">Initial value of the Priority property.</param>
         /// <param name="command">Initial value of the Command property.</param>
         /// <param name="commandParameter1">Initial value of the CommandParameter1 property.</param>
-        /// <param name="priority">Initial value of the Priority property.</param>
-        public static SimpleWizardRule CreateSimpleWizardRule(global::System.String id, global::System.String owner, global::System.String dialPlanID, global::System.String direction, global::System.String command, global::System.String commandParameter1, global::System.Decimal priority)
+        /// <param name="isDisabled">Initial value of the IsDisabled property.</param>
+        public static SimpleWizardRule CreateSimpleWizardRule(global::System.String id, global::System.String owner, global::System.String dialPlanID, global::System.String direction, global::System.Decimal priority, global::System.String command, global::System.String commandParameter1, global::System.Boolean isDisabled)
         {
             SimpleWizardRule simpleWizardRule = new SimpleWizardRule();
             simpleWizardRule.ID = id;
             simpleWizardRule.Owner = owner;
             simpleWizardRule.DialPlanID = dialPlanID;
             simpleWizardRule.Direction = direction;
+            simpleWizardRule.Priority = priority;
             simpleWizardRule.Command = command;
             simpleWizardRule.CommandParameter1 = commandParameter1;
-            simpleWizardRule.Priority = priority;
+            simpleWizardRule.IsDisabled = isDisabled;
             return simpleWizardRule;
         }
 
@@ -2099,6 +2125,54 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Decimal Priority
+        {
+            get
+            {
+                return _Priority;
+            }
+            set
+            {
+                OnPriorityChanging(value);
+                ReportPropertyChanging("Priority");
+                _Priority = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("Priority");
+                OnPriorityChanged();
+            }
+        }
+        private global::System.Decimal _Priority;
+        partial void OnPriorityChanging(global::System.Decimal value);
+        partial void OnPriorityChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String Description
+        {
+            get
+            {
+                return _Description;
+            }
+            set
+            {
+                OnDescriptionChanging(value);
+                ReportPropertyChanging("Description");
+                _Description = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("Description");
+                OnDescriptionChanged();
+            }
+        }
+        private global::System.String _Description;
+        partial void OnDescriptionChanging(global::System.String value);
+        partial void OnDescriptionChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
         [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
         [DataMemberAttribute()]
         public global::System.String ToSIPAccount
@@ -2119,6 +2193,30 @@ namespace SIPSorcery.Entities
         private global::System.String _ToSIPAccount;
         partial void OnToSIPAccountChanging(global::System.String value);
         partial void OnToSIPAccountChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String ToProvider
+        {
+            get
+            {
+                return _ToProvider;
+            }
+            set
+            {
+                OnToProviderChanging(value);
+                ReportPropertyChanging("ToProvider");
+                _ToProvider = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("ToProvider");
+                OnToProviderChanged();
+            }
+        }
+        private global::System.String _ToProvider;
+        partial void OnToProviderChanging(global::System.String value);
+        partial void OnToProviderChanged();
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -2245,78 +2343,6 @@ namespace SIPSorcery.Entities
         /// </summary>
         [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
         [DataMemberAttribute()]
-        public global::System.String Description
-        {
-            get
-            {
-                return _Description;
-            }
-            set
-            {
-                OnDescriptionChanging(value);
-                ReportPropertyChanging("Description");
-                _Description = StructuralObject.SetValidValue(value, true);
-                ReportPropertyChanged("Description");
-                OnDescriptionChanged();
-            }
-        }
-        private global::System.String _Description;
-        partial void OnDescriptionChanging(global::System.String value);
-        partial void OnDescriptionChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.Decimal Priority
-        {
-            get
-            {
-                return _Priority;
-            }
-            set
-            {
-                OnPriorityChanging(value);
-                ReportPropertyChanging("Priority");
-                _Priority = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("Priority");
-                OnPriorityChanged();
-            }
-        }
-        private global::System.Decimal _Priority;
-        partial void OnPriorityChanging(global::System.Decimal value);
-        partial void OnPriorityChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
-        public global::System.String ToProvider
-        {
-            get
-            {
-                return _ToProvider;
-            }
-            set
-            {
-                OnToProviderChanging(value);
-                ReportPropertyChanging("ToProvider");
-                _ToProvider = StructuralObject.SetValidValue(value, true);
-                ReportPropertyChanged("ToProvider");
-                OnToProviderChanged();
-            }
-        }
-        private global::System.String _ToProvider;
-        partial void OnToProviderChanging(global::System.String value);
-        partial void OnToProviderChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
         public global::System.String TimePattern
         {
             get
@@ -2359,6 +2385,78 @@ namespace SIPSorcery.Entities
         private global::System.String _PatternType;
         partial void OnPatternTypeChanging(global::System.String value);
         partial void OnPatternTypeChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String ToMatchParameter
+        {
+            get
+            {
+                return _ToMatchParameter;
+            }
+            set
+            {
+                OnToMatchParameterChanging(value);
+                ReportPropertyChanging("ToMatchParameter");
+                _ToMatchParameter = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("ToMatchParameter");
+                OnToMatchParameterChanged();
+            }
+        }
+        private global::System.String _ToMatchParameter;
+        partial void OnToMatchParameterChanging(global::System.String value);
+        partial void OnToMatchParameterChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String ToMatchType
+        {
+            get
+            {
+                return _ToMatchType;
+            }
+            set
+            {
+                OnToMatchTypeChanging(value);
+                ReportPropertyChanging("ToMatchType");
+                _ToMatchType = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("ToMatchType");
+                OnToMatchTypeChanged();
+            }
+        }
+        private global::System.String _ToMatchType;
+        partial void OnToMatchTypeChanging(global::System.String value);
+        partial void OnToMatchTypeChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Boolean IsDisabled
+        {
+            get
+            {
+                return _IsDisabled;
+            }
+            set
+            {
+                OnIsDisabledChanging(value);
+                ReportPropertyChanging("IsDisabled");
+                _IsDisabled = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("IsDisabled");
+                OnIsDisabledChanged();
+            }
+        }
+        private global::System.Boolean _IsDisabled;
+        partial void OnIsDisabledChanging(global::System.Boolean value);
+        partial void OnIsDisabledChanged();
 
         #endregion
     
@@ -3565,6 +3663,102 @@ namespace SIPSorcery.Entities
         private global::System.String _SwitchboardOwner;
         partial void OnSwitchboardOwnerChanging(global::System.String value);
         partial void OnSwitchboardOwnerChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String SwitchboardLineName
+        {
+            get
+            {
+                return _SwitchboardLineName;
+            }
+            set
+            {
+                OnSwitchboardLineNameChanging(value);
+                ReportPropertyChanging("SwitchboardLineName");
+                _SwitchboardLineName = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("SwitchboardLineName");
+                OnSwitchboardLineNameChanged();
+            }
+        }
+        private global::System.String _SwitchboardLineName;
+        partial void OnSwitchboardLineNameChanging(global::System.String value);
+        partial void OnSwitchboardLineNameChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String CRMPersonName
+        {
+            get
+            {
+                return _CRMPersonName;
+            }
+            set
+            {
+                OnCRMPersonNameChanging(value);
+                ReportPropertyChanging("CRMPersonName");
+                _CRMPersonName = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("CRMPersonName");
+                OnCRMPersonNameChanged();
+            }
+        }
+        private global::System.String _CRMPersonName;
+        partial void OnCRMPersonNameChanging(global::System.String value);
+        partial void OnCRMPersonNameChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String CRMCompanyName
+        {
+            get
+            {
+                return _CRMCompanyName;
+            }
+            set
+            {
+                OnCRMCompanyNameChanging(value);
+                ReportPropertyChanging("CRMCompanyName");
+                _CRMCompanyName = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("CRMCompanyName");
+                OnCRMCompanyNameChanged();
+            }
+        }
+        private global::System.String _CRMCompanyName;
+        partial void OnCRMCompanyNameChanging(global::System.String value);
+        partial void OnCRMCompanyNameChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String CRMPictureURL
+        {
+            get
+            {
+                return _CRMPictureURL;
+            }
+            set
+            {
+                OnCRMPictureURLChanging(value);
+                ReportPropertyChanging("CRMPictureURL");
+                _CRMPictureURL = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("CRMPictureURL");
+                OnCRMPictureURLChanged();
+            }
+        }
+        private global::System.String _CRMPictureURL;
+        partial void OnCRMPictureURLChanging(global::System.String value);
+        partial void OnCRMPictureURLChanged();
 
         #endregion
     
@@ -7017,6 +7211,189 @@ namespace SIPSorcery.Entities
         private global::System.String _VoxalotExport;
         partial void OnVoxalotExportChanging(global::System.String value);
         partial void OnVoxalotExportChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String Inserted
+        {
+            get
+            {
+                return _Inserted;
+            }
+            set
+            {
+                OnInsertedChanging(value);
+                ReportPropertyChanging("Inserted");
+                _Inserted = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("Inserted");
+                OnInsertedChanged();
+            }
+        }
+        private global::System.String _Inserted;
+        partial void OnInsertedChanging(global::System.String value);
+        partial void OnInsertedChanged();
+
+        #endregion
+    
+    }
+    
+    /// <summary>
+    /// No Metadata Documentation available.
+    /// </summary>
+    [EdmEntityTypeAttribute(NamespaceName="SIPSorcery.Entities", Name="WebCallback")]
+    [Serializable()]
+    [DataContractAttribute(IsReference=true)]
+    public partial class WebCallback : EntityObject
+    {
+        #region Factory Method
+    
+        /// <summary>
+        /// Create a new WebCallback object.
+        /// </summary>
+        /// <param name="id">Initial value of the ID property.</param>
+        /// <param name="owner">Initial value of the Owner property.</param>
+        /// <param name="dialString1">Initial value of the DialString1 property.</param>
+        /// <param name="dialString2">Initial value of the DialString2 property.</param>
+        /// <param name="inserted">Initial value of the Inserted property.</param>
+        public static WebCallback CreateWebCallback(global::System.String id, global::System.String owner, global::System.String dialString1, global::System.String dialString2, global::System.String inserted)
+        {
+            WebCallback webCallback = new WebCallback();
+            webCallback.ID = id;
+            webCallback.Owner = owner;
+            webCallback.DialString1 = dialString1;
+            webCallback.DialString2 = dialString2;
+            webCallback.Inserted = inserted;
+            return webCallback;
+        }
+
+        #endregion
+        #region Primitive Properties
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String ID
+        {
+            get
+            {
+                return _ID;
+            }
+            set
+            {
+                if (_ID != value)
+                {
+                    OnIDChanging(value);
+                    ReportPropertyChanging("ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
+                    ReportPropertyChanged("ID");
+                    OnIDChanged();
+                }
+            }
+        }
+        private global::System.String _ID;
+        partial void OnIDChanging(global::System.String value);
+        partial void OnIDChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String Owner
+        {
+            get
+            {
+                return _Owner;
+            }
+            set
+            {
+                OnOwnerChanging(value);
+                ReportPropertyChanging("Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("Owner");
+                OnOwnerChanged();
+            }
+        }
+        private global::System.String _Owner;
+        partial void OnOwnerChanging(global::System.String value);
+        partial void OnOwnerChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String DialString1
+        {
+            get
+            {
+                return _DialString1;
+            }
+            set
+            {
+                OnDialString1Changing(value);
+                ReportPropertyChanging("DialString1");
+                _DialString1 = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("DialString1");
+                OnDialString1Changed();
+            }
+        }
+        private global::System.String _DialString1;
+        partial void OnDialString1Changing(global::System.String value);
+        partial void OnDialString1Changed();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String DialString2
+        {
+            get
+            {
+                return _DialString2;
+            }
+            set
+            {
+                OnDialString2Changing(value);
+                ReportPropertyChanging("DialString2");
+                _DialString2 = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("DialString2");
+                OnDialString2Changed();
+            }
+        }
+        private global::System.String _DialString2;
+        partial void OnDialString2Changing(global::System.String value);
+        partial void OnDialString2Changed();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String Description
+        {
+            get
+            {
+                return _Description;
+            }
+            set
+            {
+                OnDescriptionChanging(value);
+                ReportPropertyChanging("Description");
+                _Description = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("Description");
+                OnDescriptionChanged();
+            }
+        }
+        private global::System.String _Description;
+        partial void OnDescriptionChanging(global::System.String value);
+        partial void OnDescriptionChanged();
     
         /// <summary>
         /// No Metadata Documentation available.

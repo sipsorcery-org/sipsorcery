@@ -115,6 +115,54 @@ namespace SIPSorcery.Web.Services
             }
         }
 
+        public JSONResult<string> SetCustomerServiceLevel(string username, string serviceLevel, string renewalDate)
+        {
+            try
+            {
+                var reqCustomer = AuthoriseRequest();
+
+                if (reqCustomer.AdminID != Customer.TOPLEVEL_ADMIN_ID)
+                {
+                    return new JSONResult<string>() { Success = false, Error = "Sorry you are not authorised to add set customer service levels." };
+                }
+                else
+                {
+                    CustomerServiceLevels newServiceLevel = (CustomerServiceLevels)Enum.Parse(typeof(CustomerServiceLevels), serviceLevel);
+                    DateTimeOffset? newRenewalDate = (!renewalDate.IsNullOrBlank()) ? DateTimeOffset.Parse(renewalDate) : (DateTimeOffset?)null;
+                    m_service.UpdateCustomerServiceLevel(username, newServiceLevel, newRenewalDate);
+                    return new JSONResult<string>() { Success = true };
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SetCustomerServiceLevel. " + excp);
+                return new JSONResult<string>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<string> SetReadOnly(string username)
+        {
+            try
+            {
+                var reqCustomer = AuthoriseRequest();
+
+                if (reqCustomer.AdminID != Customer.TOPLEVEL_ADMIN_ID)
+                {
+                    return new JSONResult<string>() { Success = false, Error = "Sorry you are not authorised to add set a customer's read only status." };
+                }
+                else
+                {
+                    m_service.SetAllProvidersAndDialPlansReadonly(username);
+                    return new JSONResult<string>() { Success = true };
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SetReadOnly. " + excp);
+                return new JSONResult<string>() { Success = false, Error = excp.Message };
+            }
+        }
+
         public List<SIPDomain> GetSIPDomains(string where, int offset, int count)
         {
             throw new NotImplementedException();

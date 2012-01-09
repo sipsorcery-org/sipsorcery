@@ -226,13 +226,13 @@ namespace SIPSorcery.Servers
                                                 DisableSIPProviderRegistration(provider.Id, "DNS resolution for registrar " + binding.RegistrarServer.ToString() + " returned an error. DNS " + lookupResult.LookupError);
                                                 m_bindingPersistor.Delete(binding);
                                             }
-                                            else if (DateTimeOffset.UtcNow.Subtract(provider.LastUpdate).TotalMinutes > DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW)
-                                            {
-                                                // A previously registering provider has now failed to be resolved for a long time so assume that the hostname is invalid.
-                                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " + DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW + " minutes. DISABLING.", binding.Owner));
-                                                DisableSIPProviderRegistration(provider.Id, "DNS resolution for registrar " + binding.RegistrarServer.ToString() + " still had an error of, " + lookupResult.LookupError + " after trying for " + DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW + " minutes.");
-                                                m_bindingPersistor.Delete(binding);
-                                            }
+                                            //else if (DateTimeOffset.UtcNow.Subtract(provider.LastUpdate).TotalMinutes > DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW)
+                                            //{
+                                            //    // A previously registering provider has now failed to be resolved for a long time so assume that the hostname is invalid.
+                                            //    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " + DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW + " minutes. DISABLING.", binding.Owner));
+                                            //    DisableSIPProviderRegistration(provider.Id, "DNS resolution for registrar " + binding.RegistrarServer.ToString() + " still had an error of, " + lookupResult.LookupError + " after trying for " + DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW + " minutes.");
+                                            //    m_bindingPersistor.Delete(binding);
+                                            //}
                                             else
                                             {
                                                 // This binding was able to previously register so the problem could be a transient DNS probem. Delay the registration to give the problem a chance to clear up.

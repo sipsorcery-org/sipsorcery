@@ -1813,6 +1813,8 @@ namespace SIPSorcery.Entities
         
         private string _id;
         
+        private bool _isDisabled;
+        
         private string _owner;
         
         private string _pattern;
@@ -1824,6 +1826,10 @@ namespace SIPSorcery.Entities
         private EntityRef<SIPDialPlan> _sipdialplan;
         
         private string _timePattern;
+        
+        private string _toMatchParameter;
+        
+        private string _toMatchType;
         
         private string _toProvider;
         
@@ -1852,6 +1858,8 @@ namespace SIPSorcery.Entities
         partial void OnDirectionChanged();
         partial void OnIDChanging(string value);
         partial void OnIDChanged();
+        partial void OnIsDisabledChanging(bool value);
+        partial void OnIsDisabledChanged();
         partial void OnOwnerChanging(string value);
         partial void OnOwnerChanged();
         partial void OnPatternChanging(string value);
@@ -1862,6 +1870,10 @@ namespace SIPSorcery.Entities
         partial void OnPriorityChanged();
         partial void OnTimePatternChanging(string value);
         partial void OnTimePatternChanged();
+        partial void OnToMatchParameterChanging(string value);
+        partial void OnToMatchParameterChanged();
+        partial void OnToMatchTypeChanging(string value);
+        partial void OnToMatchTypeChanged();
         partial void OnToProviderChanging(string value);
         partial void OnToProviderChanged();
         partial void OnToSIPAccountChanging(string value);
@@ -2079,6 +2091,30 @@ namespace SIPSorcery.Entities
         }
         
         /// <summary>
+        /// Gets or sets the 'IsDisabled' value.
+        /// </summary>
+        [DataMember()]
+        public bool IsDisabled
+        {
+            get
+            {
+                return this._isDisabled;
+            }
+            set
+            {
+                if ((this._isDisabled != value))
+                {
+                    this.OnIsDisabledChanging(value);
+                    this.RaiseDataMemberChanging("IsDisabled");
+                    this.ValidateProperty("IsDisabled", value);
+                    this._isDisabled = value;
+                    this.RaiseDataMemberChanged("IsDisabled");
+                    this.OnIsDisabledChanged();
+                }
+            }
+        }
+        
+        /// <summary>
         /// Gets or sets the 'Owner' value.
         /// </summary>
         [DataMember()]
@@ -2239,6 +2275,54 @@ namespace SIPSorcery.Entities
                     this._timePattern = value;
                     this.RaiseDataMemberChanged("TimePattern");
                     this.OnTimePatternChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'ToMatchParameter' value.
+        /// </summary>
+        [DataMember()]
+        public string ToMatchParameter
+        {
+            get
+            {
+                return this._toMatchParameter;
+            }
+            set
+            {
+                if ((this._toMatchParameter != value))
+                {
+                    this.OnToMatchParameterChanging(value);
+                    this.RaiseDataMemberChanging("ToMatchParameter");
+                    this.ValidateProperty("ToMatchParameter", value);
+                    this._toMatchParameter = value;
+                    this.RaiseDataMemberChanged("ToMatchParameter");
+                    this.OnToMatchParameterChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'ToMatchType' value.
+        /// </summary>
+        [DataMember()]
+        public string ToMatchType
+        {
+            get
+            {
+                return this._toMatchType;
+            }
+            set
+            {
+                if ((this._toMatchType != value))
+                {
+                    this.OnToMatchTypeChanging(value);
+                    this.RaiseDataMemberChanging("ToMatchType");
+                    this.ValidateProperty("ToMatchType", value);
+                    this._toMatchType = value;
+                    this.RaiseDataMemberChanged("ToMatchType");
+                    this.OnToMatchTypeChanged();
                 }
             }
         }
@@ -2937,6 +3021,12 @@ namespace SIPSorcery.Entities
         
         private string _cdrid;
         
+        private string _crmCompanyName;
+        
+        private string _crmPersonName;
+        
+        private string _crmPictureURL;
+        
         private int _cSeq;
         
         private string _direction;
@@ -2971,6 +3061,8 @@ namespace SIPSorcery.Entities
         
         private string _switchboardDescription;
         
+        private string _switchboardLineName;
+        
         private string _switchboardOwner;
         
         private string _transferMode;
@@ -2992,6 +3084,12 @@ namespace SIPSorcery.Entities
         partial void OnCallIDChanged();
         partial void OnCDRIDChanging(string value);
         partial void OnCDRIDChanged();
+        partial void OnCRMCompanyNameChanging(string value);
+        partial void OnCRMCompanyNameChanged();
+        partial void OnCRMPersonNameChanging(string value);
+        partial void OnCRMPersonNameChanged();
+        partial void OnCRMPictureURLChanging(string value);
+        partial void OnCRMPictureURLChanged();
         partial void OnCSeqChanging(int value);
         partial void OnCSeqChanged();
         partial void OnDirectionChanging(string value);
@@ -3026,6 +3124,8 @@ namespace SIPSorcery.Entities
         partial void OnSwitchboardCallerDescriptionChanged();
         partial void OnSwitchboardDescriptionChanging(string value);
         partial void OnSwitchboardDescriptionChanged();
+        partial void OnSwitchboardLineNameChanging(string value);
+        partial void OnSwitchboardLineNameChanged();
         partial void OnSwitchboardOwnerChanging(string value);
         partial void OnSwitchboardOwnerChanged();
         partial void OnTransferModeChanging(string value);
@@ -3161,6 +3261,78 @@ namespace SIPSorcery.Entities
                     this._cdrid = value;
                     this.RaiseDataMemberChanged("CDRID");
                     this.OnCDRIDChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'CRMCompanyName' value.
+        /// </summary>
+        [DataMember()]
+        public string CRMCompanyName
+        {
+            get
+            {
+                return this._crmCompanyName;
+            }
+            set
+            {
+                if ((this._crmCompanyName != value))
+                {
+                    this.OnCRMCompanyNameChanging(value);
+                    this.RaiseDataMemberChanging("CRMCompanyName");
+                    this.ValidateProperty("CRMCompanyName", value);
+                    this._crmCompanyName = value;
+                    this.RaiseDataMemberChanged("CRMCompanyName");
+                    this.OnCRMCompanyNameChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'CRMPersonName' value.
+        /// </summary>
+        [DataMember()]
+        public string CRMPersonName
+        {
+            get
+            {
+                return this._crmPersonName;
+            }
+            set
+            {
+                if ((this._crmPersonName != value))
+                {
+                    this.OnCRMPersonNameChanging(value);
+                    this.RaiseDataMemberChanging("CRMPersonName");
+                    this.ValidateProperty("CRMPersonName", value);
+                    this._crmPersonName = value;
+                    this.RaiseDataMemberChanged("CRMPersonName");
+                    this.OnCRMPersonNameChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'CRMPictureURL' value.
+        /// </summary>
+        [DataMember()]
+        public string CRMPictureURL
+        {
+            get
+            {
+                return this._crmPictureURL;
+            }
+            set
+            {
+                if ((this._crmPictureURL != value))
+                {
+                    this.OnCRMPictureURLChanging(value);
+                    this.RaiseDataMemberChanging("CRMPictureURL");
+                    this.ValidateProperty("CRMPictureURL", value);
+                    this._crmPictureURL = value;
+                    this.RaiseDataMemberChanged("CRMPictureURL");
+                    this.OnCRMPictureURLChanged();
                 }
             }
         }
@@ -3580,6 +3752,30 @@ namespace SIPSorcery.Entities
                     this._switchboardDescription = value;
                     this.RaiseDataMemberChanged("SwitchboardDescription");
                     this.OnSwitchboardDescriptionChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'SwitchboardLineName' value.
+        /// </summary>
+        [DataMember()]
+        public string SwitchboardLineName
+        {
+            get
+            {
+                return this._switchboardLineName;
+            }
+            set
+            {
+                if ((this._switchboardLineName != value))
+                {
+                    this.OnSwitchboardLineNameChanging(value);
+                    this.RaiseDataMemberChanging("SwitchboardLineName");
+                    this.ValidateProperty("SwitchboardLineName", value);
+                    this._switchboardLineName = value;
+                    this.RaiseDataMemberChanged("SwitchboardLineName");
+                    this.OnSwitchboardLineNameChanged();
                 }
             }
         }

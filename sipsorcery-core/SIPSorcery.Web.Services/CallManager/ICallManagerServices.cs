@@ -25,5 +25,9 @@ namespace SIPSorcery.Web.Services {
         [OperationContract]
         [WebGet(UriTemplate = "dualtransfer?user={username}&callid1={callID1}&callid2={callID2}")]
         string DualTransfer(string username, string callID1, string callID2);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "callback?username={username}&dialstring1={dialstring1}&dialstring2={dialstring2}")]
+        string Callback(string username, string dialString1, string dialString2);
     }
 }

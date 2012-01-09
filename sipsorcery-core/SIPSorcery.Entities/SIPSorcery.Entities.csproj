@@ -62,11 +62,13 @@
     <Compile Include="Entities\JSON\SIPProviderJSON.cs" />
     <Compile Include="Entities\JSON\SIPAccountJSON.cs" />
     <Compile Include="Entities\SIPDialPlanLookup.shared.cs" />
+    <Compile Include="Enums\SimpleWizardToMatchTypes.shared.cs" />
     <Compile Include="Enums\SimpleWizardCommandTypes.shared.cs" />
     <Compile Include="Enums\CRMAccountTypes.shared.cs" />
     <Compile Include="Enums\SimpleWizardRuleTypes.shared.cs" />
     <Compile Include="Enums\CustomerServiceLevels.shared.cs" />
     <Compile Include="Enums\SIPDialPlanLookupTypes.shared.cs" />
+    <Compile Include="Metadata\WebCallback.metadata.cs" />
     <Compile Include="Metadata\VoxalotMigration.metadata.cs" />
     <Compile Include="Metadata\SimpleWizardDialPlanRule.metadata.cs" />
     <Compile Include="Metadata\SIPProvider.metadata.cs" />

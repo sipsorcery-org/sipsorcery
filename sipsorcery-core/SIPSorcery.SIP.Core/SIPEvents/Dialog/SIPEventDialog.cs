@@ -63,6 +63,7 @@ namespace SIPSorcery.SIP
         public SIPEventDialogParticipant RemoteParticipant;
         public string BridgeID;                             // SIPSorcery custom field that is used to show when two dialogues are bridged together by the B2BUA.
         public string SwitchboardOwner;                     // SIP Sorcery custom filed that can be used to specify a sub-account as the owner of the call this dialog belongs to.
+        public bool HasBeenSent;                            // Can be used by a subscription manager to indicate the event has been included in a notify request.
 
         private SIPEventDialog()
         { }
@@ -88,13 +89,17 @@ namespace SIPSorcery.SIP
 
                 if (sipDialogue.Direction == SIPCallDirection.In)
                 {
-                    RemoteParticipant.SwitchboardCallerDescription = sipDialogue.SwitchboardCallerDescription;
-                    LocalParticipant.SwitchboardDescription = sipDialogue.SwitchboardDescription;
+                    RemoteParticipant.CRMPersonName = sipDialogue.CRMPersonName;
+                    RemoteParticipant.CRMCompanyName = sipDialogue.CRMCompanyName;
+                    RemoteParticipant.CRMPictureURL = sipDialogue.CRMPictureURL;
+                    LocalParticipant.SwitchboardLineName = sipDialogue.SwitchboardLineName;
                 }
                 else if (sipDialogue.Direction == SIPCallDirection.Out)
                 {
-                    LocalParticipant.SwitchboardCallerDescription = sipDialogue.SwitchboardCallerDescription;
-                    RemoteParticipant.SwitchboardDescription = sipDialogue.SwitchboardDescription;
+                    LocalParticipant.CRMPersonName = sipDialogue.CRMPersonName;
+                    LocalParticipant.CRMCompanyName = sipDialogue.CRMCompanyName;
+                    LocalParticipant.CRMPictureURL = sipDialogue.CRMPictureURL;
+                    RemoteParticipant.SwitchboardLineName = sipDialogue.SwitchboardLineName;
                 }
             }
         }

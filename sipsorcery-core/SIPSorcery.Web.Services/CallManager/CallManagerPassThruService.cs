@@ -11,7 +11,6 @@ using log4net;
 
 namespace SIPSorcery.Web.Services
 {
-
     public class CallManagerPassThruService : ICallManagerServices
     {
         private const int OPERATION_TIMEOUT = 5000;
@@ -21,6 +20,8 @@ namespace SIPSorcery.Web.Services
         private CallManagerProxy m_callManagerClient;
         private ISIPCallDispatcher m_sipCallDispatcher;
 
+        private bool _callbacksAllowed = false;     // The callback method MUST ONLY support authenticated requests.
+
         public CallManagerPassThruService()
         {
             m_callManagerClient = new CallManagerProxy();
@@ -29,6 +30,7 @@ namespace SIPSorcery.Web.Services
         public CallManagerPassThruService(ISIPCallDispatcher sipCallDispatcher)
         {
             m_sipCallDispatcher = sipCallDispatcher;
+            _callbacksAllowed = true;
         }
 
         public bool IsAlive()
@@ -128,6 +130,38 @@ namespace SIPSorcery.Web.Services
             {
                 logger.Error("Exception CallManagerPassThruService DualTransfer. " + excp.Message);
                 return "Sorry there was an unexpected error, the dual transfer was not initiated.";
+            }
+        }
+
+        public string Callback(string username, string dialString1, string dialString2)
+        {
+            try
+            {
+                if (!_callbacksAllowed)
+                {
+                    return "This server does not support the Callback method.";
+                }
+                else
+                {
+                    logger.Debug("CallManagerPassThruService Callback, username=" + username + ", dialString1=" + dialString1 + ", dialString2=" + dialString2 + ".");
+
+                    CallManagerProxy client = (m_sipCallDispatcher != null) ? m_sipCallDispatcher.GetCallManagerClient() : m_callManagerClient;
+
+                    if (client != null)
+                    {
+                        logger.Debug("Sending Callback request to client endpoint at " + client.Endpoint.Address.ToString() + ".");
+                        return client.Callback(username, dialString1, dialString2);
+                    }
+                    else
+                    {
+                        throw new ApplicationException("Call Manager Pass Thru service could not create a client.");
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception CallManagerPassThruService Callback. " + excp.Message);
+                return "Sorry there was an unexpected error, the callback was not initiated.";
             }
         }
     }

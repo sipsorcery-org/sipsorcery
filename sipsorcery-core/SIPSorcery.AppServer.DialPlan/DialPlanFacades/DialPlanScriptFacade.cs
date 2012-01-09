@@ -64,10 +64,6 @@ using GaDotNet.Common.Data;
 using GaDotNet.Common.Helpers;
 using GaDotNet.Common;
 
-#if UNITTEST
-using NUnit.Framework;
-#endif
-
 namespace SIPSorcery.AppServer.DialPlan
 {
     /// <summary>
@@ -248,7 +244,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
             catch (Exception excp)
             {
-                logger.Error("Exception DialPlanScriptHelper (static ctor). " + excp.Message);
+                logger.Error("Exception DialPlanScriptFacade (static ctor). " + excp.Message);
             }
         }
 
@@ -631,7 +627,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 catch (Exception excp)
                 {
-                    logger.Error("Exception DialPlanScriptHelper Dial. " + excp.Message);
+                    logger.Error("Exception DialPlanScriptFacade Dial. " + excp.Message);
                     return DialPlanAppResult.Error;
                 }
             }
@@ -1730,6 +1726,40 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
+        public List<string> DBGetKeys()
+        {
+            try
+            {
+                if (m_userDataDBConnection == null)
+                {
+                    m_userDataDBConnection = GetDatabaseConnection(m_userDataDBType, m_userDataDBConnStr);
+                }
+
+                IDataParameter dataOwnerParameter = StorageLayer.GetDbParameter(m_userDataDBType, "dataowner", m_username);
+
+                string sqlCommandText = "select datakey from dialplandata where dataowner = @dataowner";
+
+                IDbCommand dbCommand = StorageLayer.GetDbCommand(m_userDataDBType, m_userDataDBConnection, sqlCommandText);
+                dbCommand.Parameters.Add(dataOwnerParameter);
+                IDataReader reader = dbCommand.ExecuteReader();
+
+                List<string> keys = new List<string>();
+                while (reader.Read())
+                {
+                    keys.Add(reader.GetString(0));
+                }
+
+                reader.Close();
+
+                return keys;
+            }
+            catch (Exception excp)
+            {
+                Log("Exception DBGetKeys. " + excp.Message);
+                return null;
+            }
+        }
+
         public void StartTransaction()
         {
             if (ServiceLevel == CustomerServiceLevels.Free)
@@ -2204,52 +2234,8 @@ namespace SIPSorcery.AppServer.DialPlan
             }
             catch (Exception excp)
             {
-                logger.Error("Exception FireProxyLogEvent DialPlanScriptHelper. " + excp.Message);
+                logger.Error("Exception FireProxyLogEvent DialPlanScriptFacade. " + excp.Message);
             }
         }
-
-        #region Unit testing.
-
-#if UNITTEST
-
-        [TestFixture]
-		public class DialPlanScriptHelperUnitTest
-		{
-            [TestFixtureSetUp]
-            public void Init() {
-                log4net.Config.BasicConfigurator.Configure();
-            }		
-
-            [TestFixtureTearDown]
-            public void Dispose()
-            { }
-                
-            [Test]
-			public void SampleTest()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-				Assert.IsTrue(true, "True was false.");
-			}
-
-            /// <summary>
-            /// Tests applying an ENUM rule.
-            /// </summary>
-            [Test]
-            public void ApplyENUMRuleUnitTest() {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                //DialPlanContext dialPlanContext = new DialPlanContext(null, null, null, null, null, null, null, null, null, Guid.Empty);
-                SIPRequest request = new SIPRequest(SIPMethodsEnum.INVITE, "sip:1234@host.com");
-                DialPlanScriptHelper helper = new DialPlanScriptHelper(null, null, (e) => { Console.WriteLine(e.Message); }, null, request, SIPCallDirection.None, 
-                    null, null, null, null, null, null, null);
-                string result = helper.ENUMLookup("+18005551212.e164.org");
-                Console.WriteLine("lookup result=" + result + ".");
-                Assert.IsTrue(true, "True was false.");
-            }
-        }
-
-#endif
-
-        #endregion
     }
 }

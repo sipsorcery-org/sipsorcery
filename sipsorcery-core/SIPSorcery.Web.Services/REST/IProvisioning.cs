@@ -59,6 +59,14 @@ namespace SIPSorcery.Web.Services
         JSONResult<string> AddCustomer(CustomerJSON customer);
 
         [OperationContract]
+        [WebInvoke(Method = "POST", UriTemplate = "customer/setservicelevel", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json, BodyStyle=WebMessageBodyStyle.WrappedRequest)]
+        JSONResult<string> SetCustomerServiceLevel(string username, string serviceLevel, string renewalDate);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "customer/setreadonly?username={username}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<string> SetReadOnly(string username);
+
+        [OperationContract]
         [WebGet(UriTemplate = "sipdomain/get?where={where}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
         List<SIPDomain> GetSIPDomains(string where, int offset, int count);
 

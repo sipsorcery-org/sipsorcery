@@ -21,6 +21,7 @@
           <EntitySet Name="sipproviders" EntityType="Entities.Store.sipproviders" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipregistrarbindings" EntityType="Entities.Store.sipregistrarbindings" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="voxalotmigration" EntityType="Entities.Store.voxalotmigration" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="webcallback" EntityType="Entities.Store.webcallback" store:Type="Tables" Schema="sipsorcery" />
           <AssociationSet Name="simplewizardrule_ibfk_1" Association="Entities.Store.simplewizardrule_ibfk_1">
             <End Role="sipdialplans" EntitySet="sipdialplans" />
             <End Role="simplewizardrule" EntitySet="simplewizardrule" />
@@ -89,6 +90,7 @@
       warning 6035: The relationship 'sipproviderbindings_ibfk_1' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
       warning 6035: The relationship 'sipproviders_ibfk_1' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
       warning 6035: The relationship 'sipregistrarbindings_ibfk_2' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
+      warning 6035: The relationship 'webcallback_ibfk_1' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
       -->
         <EntityType Name="customers">
           <Key>
@@ -147,6 +149,9 @@
           <Property Name="CommandParameter3" Type="varchar" MaxLength="2048" />
           <Property Name="TimePattern" Type="varchar" MaxLength="32" />
           <Property Name="PatternType" Type="varchar" MaxLength="16" />
+          <Property Name="ToMatchParameter" Type="varchar" MaxLength="2048" />
+          <Property Name="ToMatchType" Type="varchar" MaxLength="50" />
+          <Property Name="IsDisabled" Type="bit" Nullable="false" />
         </EntityType>
         <EntityType Name="sipaccounts">
           <Key>
@@ -199,7 +204,11 @@
           <Property Name="remotesdp" Type="varchar" MaxLength="2048" />
           <Property Name="switchboarddescription" Type="varchar" MaxLength="1024" />
           <Property Name="switchboardcallerdescription" Type="varchar" MaxLength="1024" />
-          <Property Name="switchboardowner" Type="varchar" MaxLength="32" />
+          <Property Name="switchboardowner" Type="varchar" MaxLength="1024" />
+          <Property Name="SwitchboardLineName" Type="varchar" MaxLength="128" />
+          <Property Name="CRMPersonName" Type="varchar" MaxLength="256" />
+          <Property Name="CRMCompanyName" Type="varchar" MaxLength="256" />
+          <Property Name="CRMPictureURL" Type="varchar" MaxLength="1024" />
         </EntityType>
         <EntityType Name="sipdialplanlookups">
           <Key>
@@ -365,6 +374,17 @@
           <Property Name="voxalotexport" Type="varchar" Nullable="false" MaxLength="20000" />
           <Property Name="Inserted" Type="varchar" Nullable="false" MaxLength="33" />
         </EntityType>
+        <EntityType Name="webcallback">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="varchar" Nullable="false" MaxLength="36" />
+          <Property Name="Owner" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="DialString1" Type="varchar" Nullable="false" MaxLength="256" />
+          <Property Name="DialString2" Type="varchar" Nullable="false" MaxLength="256" />
+          <Property Name="Description" Type="varchar" MaxLength="128" />
+          <Property Name="Inserted" Type="varchar" Nullable="false" MaxLength="33" />
+        </EntityType>
         <Association Name="simplewizardrule_ibfk_1">
           <End Role="sipdialplans" Type="Entities.Store.sipdialplans" Multiplicity="1">
             <OnDelete Action="Cascade" />
@@ -505,12 +525,13 @@
             <End Role="SIPProvider" EntitySet="SIPProviders" />
             <End Role="SIPProviderBinding" EntitySet="SIPProviderBindings" />
           </AssociationSet>
+          <EntitySet Name="VoxalotMigrations1" EntityType="SIPSorcery.Entities.VoxalotMigration" />
           <EntitySet Name="SimpleWizardRules" EntityType="SIPSorcery.Entities.SimpleWizardRule" />
           <AssociationSet Name="simplewizardrule_ibfk_1" Association="SIPSorcery.Entities.simplewizardrule_ibfk_1">
             <End Role="SIPDialPlan" EntitySet="SIPDialPlans" />
             <End Role="simplewizardrule" EntitySet="SimpleWizardRules" />
           </AssociationSet>
-          <EntitySet Name="VoxalotMigrations1" EntityType="SIPSorcery.Entities.VoxalotMigration" />
+          <EntitySet Name="WebCallbacks" EntityType="SIPSorcery.Entities.WebCallback" />
         </EntityContainer>
         <EntityType Name="SIPDialplanLookup">
           <Key>
@@ -690,6 +711,10 @@
           <Property Type="String" Name="SwitchboardCallerDescription" />
           <Property Type="String" Name="SwitchboardDescription" />
           <Property Type="String" Name="SwitchboardOwner" />
+          <Property Type="String" Name="SwitchboardLineName" />
+          <Property Type="String" Name="CRMPersonName" />
+          <Property Type="String" Name="CRMCompanyName" />
+          <Property Type="String" Name="CRMPictureURL" />
         </EntityType>
         <EntityType Name="SIPDialPlan">
           <Key>
@@ -868,6 +893,18 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <EntityType Name="VoxalotMigration">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Type="String" Name="ID" Nullable="false" />
+          <Property Type="String" Name="FullName" Nullable="false" />
+          <Property Type="String" Name="EmailAddress" Nullable="false" />
+          <Property Type="String" Name="VoxalotAccountNumber" Nullable="false" />
+          <Property Type="String" Name="VoxalotAccountType" Nullable="false" />
+          <Property Type="String" Name="VoxalotExport" Nullable="false" />
+          <Property Type="String" Name="Inserted" Nullable="false" />
+        </EntityType>
         <EntityType Name="SimpleWizardRule">
           <Key>
             <PropertyRef Name="ID" />
@@ -876,18 +913,21 @@
           <Property Type="String" Name="Owner" Nullable="false" />
           <Property Type="String" Name="DialPlanID" Nullable="false" />
           <Property Type="String" Name="Direction" Nullable="false" />
+          <Property Type="Decimal" Name="Priority" Nullable="false" />
+          <Property Type="String" Name="Description" />
           <Property Type="String" Name="ToSIPAccount" />
-          <Property Type="String" Name="Pattern" Nullable="true" />
+          <Property Type="String" Name="ToProvider" />
+          <Property Type="String" Name="Pattern" />
           <Property Type="String" Name="Command" Nullable="false" />
           <Property Type="String" Name="CommandParameter1" Nullable="false" />
-          <Property Type="String" Name="CommandParameter2" Nullable="true" />
-          <Property Type="String" Name="CommandParameter3" Nullable="true" />
-          <Property Type="String" Name="Description" />
-          <Property Type="Decimal" Name="Priority" Nullable="false" />
-          <NavigationProperty Name="sipdialplan" Relationship="SIPSorcery.Entities.simplewizardrule_ibfk_1" FromRole="simplewizardrule" ToRole="SIPDialPlan" />
-          <Property Type="String" Name="ToProvider" />
+          <Property Type="String" Name="CommandParameter2" />
+          <Property Type="String" Name="CommandParameter3" />
           <Property Type="String" Name="TimePattern" />
           <Property Type="String" Name="PatternType" />
+          <Property Type="String" Name="ToMatchParameter" />
+          <Property Type="String" Name="ToMatchType" />
+          <Property Type="Boolean" Name="IsDisabled" Nullable="false" />
+          <NavigationProperty Name="sipdialplan" Relationship="SIPSorcery.Entities.simplewizardrule_ibfk_1" FromRole="simplewizardrule" ToRole="SIPDialPlan" />
         </EntityType>
         <Association Name="simplewizardrule_ibfk_1">
           <End Type="SIPSorcery.Entities.SIPDialPlan" Role="SIPDialPlan" Multiplicity="1" />
@@ -901,16 +941,15 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <EntityType Name="VoxalotMigration">
+        <EntityType Name="WebCallback">
           <Key>
             <PropertyRef Name="ID" />
           </Key>
           <Property Type="String" Name="ID" Nullable="false" />
-          <Property Type="String" Name="FullName" Nullable="false" />
-          <Property Type="String" Name="EmailAddress" Nullable="false" />
-          <Property Type="String" Name="VoxalotAccountNumber" Nullable="false" />
-          <Property Type="String" Name="VoxalotAccountType" Nullable="false" />
-          <Property Type="String" Name="VoxalotExport" Nullable="false" />
+          <Property Type="String" Name="Owner" Nullable="false" />
+          <Property Type="String" Name="DialString1" Nullable="false" />
+          <Property Type="String" Name="DialString2" Nullable="false" />
+          <Property Type="String" Name="Description" />
           <Property Type="String" Name="Inserted" Nullable="false" />
         </EntityType>
       </Schema>
@@ -1074,6 +1113,10 @@
           <EntitySetMapping Name="SIPDialogues">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.SIPDialogue">
               <MappingFragment StoreEntitySet="sipdialogues">
+                <ScalarProperty Name="CRMPictureURL" ColumnName="CRMPictureURL" />
+                <ScalarProperty Name="CRMCompanyName" ColumnName="CRMCompanyName" />
+                <ScalarProperty Name="CRMPersonName" ColumnName="CRMPersonName" />
+                <ScalarProperty Name="SwitchboardLineName" ColumnName="SwitchboardLineName" />
                 <ScalarProperty Name="SwitchboardOwner" ColumnName="switchboardowner" />
                 <ScalarProperty Name="SwitchboardDescription" ColumnName="switchboarddescription" />
                 <ScalarProperty Name="SwitchboardCallerDescription" ColumnName="switchboardcallerdescription" />
@@ -1203,27 +1246,6 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
-          <EntitySetMapping Name="SimpleWizardRules">
-            <EntityTypeMapping TypeName="SIPSorcery.Entities.SimpleWizardRule">
-              <MappingFragment StoreEntitySet="simplewizardrule">
-                <ScalarProperty Name="PatternType" ColumnName="PatternType" />
-                <ScalarProperty Name="TimePattern" ColumnName="TimePattern" />
-                <ScalarProperty Name="ToProvider" ColumnName="ToProvider" />
-                <ScalarProperty Name="Priority" ColumnName="Priority" />
-                <ScalarProperty Name="Description" ColumnName="Description" />
-                <ScalarProperty Name="CommandParameter3" ColumnName="CommandParameter3" />
-                <ScalarProperty Name="CommandParameter2" ColumnName="CommandParameter2" />
-                <ScalarProperty Name="CommandParameter1" ColumnName="CommandParameter1" />
-                <ScalarProperty Name="Command" ColumnName="Command" />
-                <ScalarProperty Name="Pattern" ColumnName="Pattern" />
-                <ScalarProperty Name="ToSIPAccount" ColumnName="ToSIPAccount" />
-                <ScalarProperty Name="Direction" ColumnName="Direction" />
-                <ScalarProperty Name="DialPlanID" ColumnName="DialPlanID" />
-                <ScalarProperty Name="Owner" ColumnName="Owner" />
-                <ScalarProperty Name="ID" ColumnName="ID" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
           <EntitySetMapping Name="VoxalotMigrations1">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.VoxalotMigration">
               <MappingFragment StoreEntitySet="voxalotmigration">
@@ -1233,6 +1255,42 @@
                 <ScalarProperty Name="VoxalotAccountNumber" ColumnName="VoxalotAccountNumber" />
                 <ScalarProperty Name="EmailAddress" ColumnName="EmailAddress" />
                 <ScalarProperty Name="FullName" ColumnName="FullName" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="SimpleWizardRules">
+            <EntityTypeMapping TypeName="SIPSorcery.Entities.SimpleWizardRule">
+              <MappingFragment StoreEntitySet="simplewizardrule">
+                <ScalarProperty Name="IsDisabled" ColumnName="IsDisabled" />
+                <ScalarProperty Name="ToMatchType" ColumnName="ToMatchType" />
+                <ScalarProperty Name="ToMatchParameter" ColumnName="ToMatchParameter" />
+                <ScalarProperty Name="PatternType" ColumnName="PatternType" />
+                <ScalarProperty Name="TimePattern" ColumnName="TimePattern" />
+                <ScalarProperty Name="CommandParameter3" ColumnName="CommandParameter3" />
+                <ScalarProperty Name="CommandParameter2" ColumnName="CommandParameter2" />
+                <ScalarProperty Name="CommandParameter1" ColumnName="CommandParameter1" />
+                <ScalarProperty Name="Command" ColumnName="Command" />
+                <ScalarProperty Name="Pattern" ColumnName="Pattern" />
+                <ScalarProperty Name="ToProvider" ColumnName="ToProvider" />
+                <ScalarProperty Name="ToSIPAccount" ColumnName="ToSIPAccount" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="Priority" ColumnName="Priority" />
+                <ScalarProperty Name="Direction" ColumnName="Direction" />
+                <ScalarProperty Name="DialPlanID" ColumnName="DialPlanID" />
+                <ScalarProperty Name="Owner" ColumnName="Owner" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="WebCallbacks">
+            <EntityTypeMapping TypeName="SIPSorcery.Entities.WebCallback">
+              <MappingFragment StoreEntitySet="webcallback">
+                <ScalarProperty Name="Inserted" ColumnName="Inserted" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="DialString2" ColumnName="DialString2" />
+                <ScalarProperty Name="DialString1" ColumnName="DialString1" />
+                <ScalarProperty Name="Owner" ColumnName="Owner" />
                 <ScalarProperty Name="ID" ColumnName="ID" />
               </MappingFragment>
             </EntityTypeMapping>
@@ -1257,7 +1315,7 @@
     </Options>
     <!-- Diagram content (shape and connector positions) -->
     <Diagrams>
-      <Diagram Name="SIPEntities" ZoomLevel="82">
+      <Diagram Name="SIPEntities" ZoomLevel="61">
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanLookup" Width="1.875" PointX="11.5" PointY="1" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanRoute" Width="1.875" PointX="18.375" PointY="0.75" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanProvider" Width="2.25" PointX="11.625" PointY="4.25" Height="2.5571907552083317" />
@@ -1295,12 +1353,13 @@
           <ConnectorPoint PointX="8.125" PointY="9.701650390625" />
           <ConnectorPoint PointX="8.875" PointY="9.701650390625" />
         </AssociationConnector>
-        <EntityTypeShape EntityType="SIPSorcery.Entities.SimpleWizardRule" Width="1.875" PointX="14.625" PointY="7.875" Height="3.9033007812499996" />
-        <AssociationConnector Association="SIPSorcery.Entities.simplewizardrule_ibfk_1" >
-          <ConnectorPoint PointX="15.875" PointY="5.9225065104166656" />
-          <ConnectorPoint PointX="15.875" PointY="7.875" />
-        </AssociationConnector>
         <EntityTypeShape EntityType="SIPSorcery.Entities.VoxalotMigration" Width="2.75" PointX="9.375" PointY="12.75" Height="2.3648893229166674" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.SimpleWizardRule" Width="2.125" PointX="14.75" PointY="7.625" Height="4.6725065104166674" />
+        <AssociationConnector Association="SIPSorcery.Entities.simplewizardrule_ibfk_1" >
+          <ConnectorPoint PointX="16.0625" PointY="5.9225065104166656" />
+          <ConnectorPoint PointX="16.0625" PointY="7.625" />
+        </AssociationConnector>
+        <EntityTypeShape EntityType="SIPSorcery.Entities.WebCallback" Width="1.5" PointX="0.75" PointY="13.75" Height="2.1725878906250031" />
       </Diagram>
     </Diagrams>
   </Designer>

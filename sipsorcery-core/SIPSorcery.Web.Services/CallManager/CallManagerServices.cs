@@ -114,5 +114,31 @@ namespace SIPSorcery.Web.Services
                 throw;
             }
         }
+
+        public string Callback(string username, string dialString1, string dialString2)
+        {
+            try
+            {
+                logger.Debug("CallManagerServices callback, dialString1=" + dialString1 + ", dialString2=" + dialString2 + ".");
+
+                if (dialString1.IsNullOrBlank())
+                {
+                    return "The dialString1 parameter was empty, the callback was not initiated.";
+                }
+                else if (dialString2.IsNullOrBlank())
+                {
+                    return "The dialString2 parameter was empty, the callback was not initiated.";
+                }
+                else
+                {
+                    return m_sipCallManager.ProcessCallback(username, dialString1, dialString2);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception Callback. " + excp.Message);
+                throw;
+            }
+        }
     }
 }

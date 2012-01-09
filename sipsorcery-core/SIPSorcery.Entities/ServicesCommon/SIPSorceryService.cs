@@ -227,6 +227,61 @@ namespace SIPSorcery.Entities
             }
         }
 
+        /// <summary>
+        /// Only available from the REST API service to admins.
+        /// </summary>
+        public void UpdateCustomerServiceLevel(string username, CustomerServiceLevels serviceLevel, DateTimeOffset? renewalDate)
+        {
+            logger.Debug("Updating customer " + username + " to service level " + serviceLevel + " and renewal date " + renewalDate + ".");
+
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                var customer = (from cust in sipSorceryEntities.Customers where cust.Name.ToLower() == username.ToLower() select cust).SingleOrDefault();
+
+                customer.ServiceLevel = serviceLevel.ToString();
+                customer.ServiceRenewalDate = (renewalDate != null) ? renewalDate.Value.ToUniversalTime().ToString("o") : null;
+
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void SetAllProvidersAndDialPlansReadonly(string username)
+        {
+            try
+            {
+                logger.Debug("Setting all providers and dial plans to readonly for " + username + ".");
+
+                using (var sipSorceryEntities = new SIPSorceryEntities())
+                {
+                    var providers = (from prov in sipSorceryEntities.SIPProviders where prov.Owner.ToLower() == username.ToLower() select prov).ToList();
+
+                    foreach (var provider in providers)
+                    {
+                        logger.Debug(" Setting provider " + provider.ProviderName + " to readonly.");
+                        provider.RegisterEnabled = false;
+                        provider.IsReadOnly = true;
+                    }
+
+                    sipSorceryEntities.SaveChanges();
+
+                    var dialplans = (from dp in sipSorceryEntities.SIPDialPlans where dp.Owner.ToLower() == username.ToLower() select dp).ToList();
+
+                    foreach (var dialplan in dialplans)
+                    {
+                        logger.Debug(" Setting dial plan " + dialplan.DialPlanName + " to readonly.");
+                        dialplan.IsReadOnly = true;
+                    }
+
+                    sipSorceryEntities.SaveChanges();
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SetAllProvidersAndDialPlansReadonly. " + excp.Message);
+                throw;
+            }
+        }
+
         #endregion
 
         #region SIP Accounts.
@@ -352,6 +407,7 @@ namespace SIPSorcery.Entities
                 }
 
                 existingAccount.SIPUsername = sipAccount.SIPUsername;
+                existingAccount.SIPDomain = sipAccount.SIPDomain;
                 existingAccount.DontMangleEnabled = sipAccount.DontMangleEnabled;
                 existingAccount.InDialPlanName = sipAccount.InDialPlanName;
                 existingAccount.IPAddressACL = sipAccount.IPAddressACL;
@@ -642,18 +698,18 @@ namespace SIPSorcery.Entities
         {
             if (sipProvider.RegisterContact.IsNullOrBlank())
             {
-                sipProvider.RegisterContact = "sip:" + owner.ToLower() + "@" + m_domainForProviderContact;
+                sipProvider.RegisterContact = "sip:" + sipProvider.ProviderName + "." + owner.ToLower() + "@" + m_domainForProviderContact;
             }
-            else
+
+            try
             {
-                try
-                {
-                    sipProvider.RegisterContact = SIPURI.ParseSIPURIRelaxed(sipProvider.RegisterContact.Trim()).ToString();
-                }
-                catch (Exception sipURIExcp)
-                {
-                    throw new ApplicationException(sipURIExcp.Message);
-                }
+                var registerURI = SIPURI.ParseSIPURIRelaxed(sipProvider.RegisterContact.Trim());
+                registerURI.User = SIPEscape.SIPEscapeString(registerURI.User);
+                sipProvider.RegisterContact = registerURI.ToString();
+            }
+            catch (Exception sipURIExcp)
+            {
+                throw new ApplicationException(sipURIExcp.Message);
             }
 
             if (sipProvider.RegisterExpiry == null || sipProvider.RegisterExpiry < SIPProvider.REGISTER_MINIMUM_EXPIRY || sipProvider.RegisterExpiry > SIPProvider.REGISTER_MAXIMUM_EXPIRY)
@@ -762,7 +818,7 @@ namespace SIPSorcery.Entities
                 existingAccount.DialPlanScript = sipDialPlan.DialPlanScript;
                 existingAccount.LastUpdate = DateTimeOffset.UtcNow.ToString("o");
                 existingAccount.TraceEmailAddress = sipDialPlan.TraceEmailAddress;
-                existingAccount.ScriptTypeDescription = sipDialPlan.ScriptTypeDescription;
+                //existingAccount.ScriptTypeDescription = sipDialPlan.ScriptTypeDescription;
                 existingAccount.AcceptNonInvite = sipDialPlan.AcceptNonInvite;
 
                 if (existingAccount.DialPlanName != sipDialPlan.DialPlanName)
@@ -882,8 +938,10 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to update the Simple Wizard rule.");
                 }
 
-                existingRule.ToProvider = rule.ToProvider;
-                existingRule.ToSIPAccount = rule.ToSIPAccount;
+                //existingRule.ToProvider = rule.ToProvider;
+                //existingRule.ToSIPAccount = rule.ToSIPAccount;
+                existingRule.ToMatchType = rule.ToMatchType;
+                existingRule.ToMatchParameter = rule.ToMatchParameter;
                 existingRule.Description = rule.Description;
                 existingRule.Command = rule.Command;
                 existingRule.CommandParameter1 = rule.CommandParameter1;
@@ -893,6 +951,7 @@ namespace SIPSorcery.Entities
                 existingRule.PatternType = rule.PatternType;
                 existingRule.Pattern = rule.Pattern;
                 existingRule.Priority = rule.Priority;
+                existingRule.IsDisabled = rule.IsDisabled;
                 existingRule.TimePattern = rule.TimePattern;
 
                 sipSorceryEntities.SaveChanges();
@@ -960,6 +1019,88 @@ namespace SIPSorcery.Entities
                 }
 
                 return query.AsEnumerable().OrderByDescending(x => x.Created).Skip(offset).Take(count).ToList();
+            }
+        }
+
+        #endregion
+
+        #region Web Callbacks
+
+        public IQueryable<WebCallback> GetWebCallbacks(string authUser)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetWebCallbackss.");
+            }
+
+            return new SIPSorceryEntities().WebCallbacks.Where(x => x.Owner == authUser.ToLower());
+        }
+
+        public void InsertWebCallback(string authUser, WebCallback webcallback)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for InsertWebCallback.");
+            }
+
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                webcallback.ID = Guid.NewGuid().ToString();
+                webcallback.Owner = authUser.ToLower();
+                webcallback.Inserted = DateTimeOffset.UtcNow.ToString("o");
+                
+                sipSorceryEntities.WebCallbacks.AddObject(webcallback);
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void UpdateWebCallback(string authUser, WebCallback webcallback)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for UpdateWebCallback.");
+            }
+
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                var existingAccount = (from wc in sipSorceryEntities.WebCallbacks where wc.ID == webcallback.ID && wc.Owner == authUser.ToLower() select wc).FirstOrDefault();
+
+                if (existingAccount == null)
+                {
+                    throw new ApplicationException("The web callback to update could not be found.");
+                }
+                else if (existingAccount.Owner != authUser.ToLower())
+                {
+                    throw new ApplicationException("Not authorised to update the web callback.");
+                }
+
+                logger.Debug("Updating web callback " + existingAccount.Description + " for " + existingAccount.Owner + ".");
+
+                existingAccount.DialString1 = webcallback.DialString1;
+                existingAccount.DialString2 = webcallback.DialString2;
+                existingAccount.Description = webcallback.Description;
+
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void DeleteWebCallback(string authUser, WebCallback webCallback)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                var existingAccount = (from wc in sipSorceryEntities.WebCallbacks where wc.ID == webCallback.ID && wc.Owner == authUser.ToLower() select wc).FirstOrDefault();
+
+                if (existingAccount == null)
+                {
+                    throw new ApplicationException("The web callback to delete could not be found.");
+                }
+                else if (existingAccount.Owner != authUser.ToLower())
+                {
+                    throw new ApplicationException("Not authorised to delete the web callback.");
+                }
+
+                sipSorceryEntities.WebCallbacks.DeleteObject(existingAccount);
+                sipSorceryEntities.SaveChanges();
             }
         }
 

@@ -28,6 +28,19 @@ namespace SIPSorcery.Entities
             }
         }
 
+        public SimpleWizardToMatchTypes SimpleWizardToMatchType
+        {
+            get
+            {
+                if (this.ToMatchType != null && this.ToMatchType.Trim().Length > 0)
+                {
+                    return (SimpleWizardToMatchTypes)Enum.Parse(typeof(SimpleWizardToMatchTypes), this.ToMatchType.Replace(" ", String.Empty), true);
+                }
+
+                return SimpleWizardToMatchTypes.Any;
+            }
+        }
+
         public string RuleCommandDescription
         {
             get 

@@ -95,9 +95,13 @@ namespace SIPSorcery.SIP
         public SIPCallDirection Direction { get; set; }              // Indicates whether the dialogue was created by a ingress or egress call.
 
         // User informational fields. They don't affect the operation of the dialogue but allow the user to optionally attach descriptive fields to it.
-        public string SwitchboardCallerDescription { get; set; }
-        public string SwitchboardDescription { get; set; }
+        //public string SwitchboardCallerDescription { get; set; }
+        //public string SwitchboardDescription { get; set; }
         public string SwitchboardOwner { get; set; }
+        public string SwitchboardLineName { get; set; }
+        public string CRMPersonName { get; set; }
+        public string CRMCompanyName { get; set; }
+        public string CRMPictureURL { get; set; }
 
         public string DialogueName
         {

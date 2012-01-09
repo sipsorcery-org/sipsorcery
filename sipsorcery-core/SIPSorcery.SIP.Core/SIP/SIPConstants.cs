@@ -225,21 +225,21 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_PROXY_SENDFROM = "Proxy-SendFrom";
 
         // Custom SIP headers to interact with the SIP Sorcery switchboard.
-        public const string SIP_HEADER_SWITCHBOARD_CALLID = "Switchboard-CallID";
-        public const string SIP_HEADER_SWITCHBOARD_CALLER_DESCRIPTION = "Switchboard-CallerDescription";
-        public const string SIP_HEADER_SWITCHBOARD_DESCRIPTION = "Switchboard-Description";
-        public const string SIP_HEADER_SWITCHBOARD_FROM = "Switchboard-From";
-        public const string SIP_HEADER_SWITCHBOARD_FROM_CONTACT_URL = "Switchboard-FromContactURL";
+        public const string SIP_HEADER_SWITCHBOARD_ORIGINAL_CALLID = "Switchboard-OriginalCallID";
+        //public const string SIP_HEADER_SWITCHBOARD_CALLER_DESCRIPTION = "Switchboard-CallerDescription";
+        public const string SIP_HEADER_SWITCHBOARD_LINE_NAME = "Switchboard-LineName";
+        //public const string SIP_HEADER_SWITCHBOARD_ORIGINAL_FROM = "Switchboard-OriginalFrom";
+        //public const string SIP_HEADER_SWITCHBOARD_FROM_CONTACT_URL = "Switchboard-FromContactURL";
         public const string SIP_HEADER_SWITCHBOARD_OWNER = "Switchboard-Owner";
-        public const string SIP_HEADER_SWITCHBOARD_TO = "Switchboard-To";
+        //public const string SIP_HEADER_SWITCHBOARD_ORIGINAL_TO = "Switchboard-OriginalTo";
         public const string SIP_HEADER_SWITCHBOARD_TERMINATE = "Switchboard-Terminate";
-        public const string SIP_HEADER_SWITCHBOARD_TOKEN = "Switchboard-Token";
-        public const string SIP_HEADER_SWITCHBOARD_TOKENREQUEST = "Switchboard-TokenRequest";
+        //public const string SIP_HEADER_SWITCHBOARD_TOKEN = "Switchboard-Token";
+        //public const string SIP_HEADER_SWITCHBOARD_TOKENREQUEST = "Switchboard-TokenRequest";
 
         // Custom SIP headers for CRM integration.
         public const string SIP_HEADER_CRM_PERSON_NAME = "CRM-PersonName";
         public const string SIP_HEADER_CRM_COMPANY_NAME = "CRM-CompanyName";
-        public const string SIP_HEADER_CRM_AVATAR_URL = "CRM-AvatarURL";
+        public const string SIP_HEADER_CRM_PICTURE_URL = "CRM-PictureURL";
 	}
 
 	public class SIPHeaderAncillary
@@ -433,8 +433,16 @@ namespace SIPSorcery.SIP
             if (!result.IsNullOrBlank())
             {
                 result = result.Replace(";", "%3B");
-                result = result.Replace("=", "%3D");
+                //result = result.Replace("/", "%2F");
+                //result = result.Replace("?", "%3F");
+                result = result.Replace(":", "%3A");
                 result = result.Replace("@", "%40");
+                //result = result.Replace("&", "%26");
+                //result = result.Replace("=", "%3D");
+                //result = result.Replace("+", "%2B");
+                //result = result.Replace("$", "%24");
+                //result = result.Replace("=", "%2C");
+                result = result.Replace(" ", "%20");
             }
             return result;
         }
@@ -446,9 +454,22 @@ namespace SIPSorcery.SIP
             {
                 result = result.Replace("%3B", ";");
                 result = result.Replace("%3b", ";");
-                result = result.Replace("%3D", "=");
-                result = result.Replace("%3d", "=");
+                //result = result.Replace("%2F", "/");
+                //result = result.Replace("%2f", "/");
+                //result = result.Replace("%3F", "?");
+                //result = result.Replace("%3f", "?");
+                result = result.Replace("%3A", ":");
+                result = result.Replace("%3a", ":");
                 result = result.Replace("%40", "@");
+                //result = result.Replace("%26", "&");
+                //result = result.Replace("%3D", "=");
+                //result = result.Replace("%3d", "=");
+                //result = result.Replace("%2B", "+");
+                //result = result.Replace("%2b", "+");
+                //result = result.Replace("%24", "$");
+                //result = result.Replace("%2C", "=");
+                //result = result.Replace("%2c", "=");
+                result = result.Replace("%20", " ");
             }
             return result;
         }

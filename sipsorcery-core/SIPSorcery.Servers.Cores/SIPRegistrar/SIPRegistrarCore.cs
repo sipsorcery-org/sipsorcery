@@ -431,19 +431,19 @@ namespace SIPSorcery.Servers
                             SIPResponse okResponse = GetOkResponse(sipRequest);
 
                             // If a request was made for a switchboard token and a certificate is available to sign the tokens then generate it.
-                            if (sipRequest.Header.SwitchboardTokenRequest > 0 && m_switchbboardRSAProvider != null)
-                            {
-                                SwitchboardToken token = new SwitchboardToken(sipRequest.Header.SwitchboardTokenRequest, sipAccount.Owner, uacRemoteEndPoint.Address.ToString());
+                            //if (sipRequest.Header.SwitchboardTokenRequest > 0 && m_switchbboardRSAProvider != null)
+                            //{
+                            //    SwitchboardToken token = new SwitchboardToken(sipRequest.Header.SwitchboardTokenRequest, sipAccount.Owner, uacRemoteEndPoint.Address.ToString());
 
-                                lock (m_switchbboardRSAProvider)
-                                {
-                                    token.SignedHash = Convert.ToBase64String(m_switchbboardRSAProvider.SignHash(Crypto.GetSHAHash(token.GetHashString()), null));
-                                }
+                            //    lock (m_switchbboardRSAProvider)
+                            //    {
+                            //        token.SignedHash = Convert.ToBase64String(m_switchbboardRSAProvider.SignHash(Crypto.GetSHAHash(token.GetHashString()), null));
+                            //    }
 
-                                string tokenXML = token.ToXML(true);
-                                logger.Debug("Switchboard token set for " + sipAccount.Owner + " with expiry of " + token.Expiry + "s.");
-                                okResponse.Header.SwitchboardToken = Crypto.SymmetricEncrypt(sipAccount.SIPPassword, sipRequest.Header.AuthenticationHeader.SIPDigest.Nonce, tokenXML);
-                            }
+                            //    string tokenXML = token.ToXML(true);
+                            //    logger.Debug("Switchboard token set for " + sipAccount.Owner + " with expiry of " + token.Expiry + "s.");
+                            //    okResponse.Header.SwitchboardToken = Crypto.SymmetricEncrypt(sipAccount.SIPPassword, sipRequest.Header.AuthenticationHeader.SIPDigest.Nonce, tokenXML);
+                            //}
 
                             registerTransaction.SendFinalResponse(okResponse);
                         }

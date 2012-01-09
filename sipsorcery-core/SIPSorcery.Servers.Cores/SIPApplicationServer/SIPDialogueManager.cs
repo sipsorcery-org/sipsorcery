@@ -888,7 +888,7 @@ namespace SIPSorcery.Servers
         {
             try
             {
-                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Initiating attended transfer .", dialogue.Owner));
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Initiating attended transfer.", dialogue.Owner));
                 SIPUserField referToField = SIPUserField.ParseSIPUserField(referRequest.Header.ReferTo);
 
                 if (referToField == null)

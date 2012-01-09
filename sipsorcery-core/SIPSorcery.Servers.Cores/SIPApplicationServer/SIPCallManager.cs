@@ -441,7 +441,7 @@ namespace SIPSorcery.Servers
                 }
                 else
                 {
-                    string dialPlanName = dialPlanName = (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.OutDialPlanName : sipAccount.InDialPlanName;
+                    string dialPlanName = (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.OutDialPlanName : sipAccount.InDialPlanName;
                     string owner = (uas.IsB2B) ? uas.SIPAccount.Owner : uas.Owner;
 
                     if (GetDialPlanAndCustomer(owner, dialPlanName, uas, out customer, out dialPlan))
@@ -464,28 +464,19 @@ namespace SIPSorcery.Servers
 
                                 if (dialPlan.ScriptType == SIPDialPlanScriptTypesEnum.Asterisk)
                                 {
-                                    if (customer.ServiceLevel == CustomerServiceLevels.Free.ToString())
-                                    {
-                                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Your service level does not permit the use of Asterisk dial plans.", owner));
-                                        uas.Reject(SIPResponseStatusCodesEnum.PaymentRequired, "Free plans cannot use Asterisk dial plans", null);
-                                        return;
-                                    }
-                                    else
-                                    {
-                                        DialPlanLineContext lineContext = new DialPlanLineContext(
-                                            Log_External,
-                                            m_sipTransport,
-                                            CreateDialogueBridge,
-                                            m_outboundProxy,
-                                            uas,
-                                            dialPlan,
-                                            GetSIPProviders_External(p => p.Owner == owner, null, 0, Int32.MaxValue),
-                                            m_traceDirectory,
-                                            (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.NetworkId : null,
-                                            customer);
-                                        //lineContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer);} ;
-                                        m_dialPlanEngine.Execute(lineContext, uas, uas.CallDirection, CreateDialogueBridge, this);
-                                    }
+                                    DialPlanLineContext lineContext = new DialPlanLineContext(
+                                        Log_External,
+                                        m_sipTransport,
+                                        CreateDialogueBridge,
+                                        m_outboundProxy,
+                                        uas,
+                                        dialPlan,
+                                        GetSIPProviders_External(p => p.Owner == owner, null, 0, Int32.MaxValue),
+                                        m_traceDirectory,
+                                        (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.NetworkId : null,
+                                        customer);
+                                    //lineContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer);} ;
+                                    m_dialPlanEngine.Execute(lineContext, uas, uas.CallDirection, CreateDialogueBridge, this);
                                 }
                                 else
                                 {
@@ -576,6 +567,14 @@ namespace SIPSorcery.Servers
             }
         }
 
+        /// <summary>
+        /// Processes actions initiated by the callmanager web service EXCEPT for the callback method.
+        /// </summary>
+        /// <param name="username">The UNAUTHENTICATED username that was specified in the callmanager request URL.</param>
+        /// <param name="number">The number parameter that was specified in the callmanager request URL.</param>
+        /// <param name="dialplanName">The dialplan to use to process web calls, typically this will be ahrd coded to a known dialplan name.</param>
+        /// <param name="replacesCallID">The replacesCallID parameter that was specified in the callmanager request URL.</param>
+        /// <returns>A string that is returned to the user making the callmanager request that inidcates what action was taken.</returns>
         public string ProcessWebCall(string username, string number, string dialplanName, string replacesCallID)
         {
             //bool wasExecutionCountIncremented = false;
@@ -596,6 +595,11 @@ namespace SIPSorcery.Servers
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web " + dialplanName + " rejected for " + username + " and " + number + ", user account is suspended.", null));
                     return "Sorry the user's account is suspended.";
+                }
+                else if (customer.ServiceLevel == CustomerServiceLevels.PremiumPayReqd.ToString() || customer.ServiceLevel == CustomerServiceLevels.ProfessionalPayReqd.ToString())
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web " + dialplanName + " rejected for " + username + " and " + number + ", user account requires payment.", null));
+                    return "Sorry the user's account requires payment.";
                 }
                 else if (!replacesCallID.IsNullOrBlank() && replacesDialogue == null)
                 {
@@ -677,6 +681,71 @@ namespace SIPSorcery.Servers
         }
 
         /// <summary>
+        /// Processes the callback action that is initiated by teh callmanager service. The callback method is typically initiated from
+        /// a link on an authenticated web page and requires the user to be authenticated.
+        /// </summary>
+        /// <param name="username">The authenticated username of the user making the callback request.</param>
+        /// <param name="dialString1">The first leg dial string of the callback.</param>
+        /// <param name="dialString2">The second leg dial string of the callback.</param>
+        /// <returns>A string that is returned to the user making the callmanager request that inidcates what action was taken.</returns>
+        public string ProcessCallback(string username, string dialString1, string dialString2)
+        {
+            Customer customer = null;
+
+            try
+            {
+                customer = m_customerPersistor.Get(c => c.CustomerUsername == username);
+
+                if (customer == null)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Callback rejected for " + username + " as no matching user.", null));
+                    return "Sorry no matching user was found, the callback was not initiated.";
+                }
+                else if (customer.Suspended)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Callback rejected for " + username + " as user account is suspended.", null));
+                    return "Sorry your account is suspended.";
+                }
+                else if (customer.ServiceLevel == CustomerServiceLevels.PremiumPayReqd.ToString() || customer.ServiceLevel == CustomerServiceLevels.ProfessionalPayReqd.ToString())
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Callback rejected for " + username + ", user account requires payment.", null));
+                    return "Sorry your account requires payment.";
+                }
+                else
+                {
+                    UASInviteTransaction dummyTransaction = GetDummyWebCallbackTransaction("callback");
+                    ISIPServerUserAgent uas = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, username, SIPDomainManager.DEFAULT_LOCAL_DOMAIN, SIPCallDirection.Out, GetSIPAccount_External, null, Log_External, dummyTransaction);
+
+                    string callbackScript =
+                      "sys.Log(\"Callback dialString1=" + dialString1 + ", dialString2=" + dialString2 + ".\")\n" +
+                      "sys.Callback(\"" + dialString1 + "\",\"" + dialString2 + "\", 0)\n";
+                    
+                    SIPDialPlan callbackDialPlan = new SIPDialPlan(username, null, null, callbackScript, SIPDialPlanScriptTypesEnum.Ruby);
+                    callbackDialPlan.Id = Guid.Empty; // Prevents the increment and decrement on the execution counts.
+                    DialPlanScriptContext scriptContext = new DialPlanScriptContext(
+                            Log_External,
+                            m_sipTransport,
+                            CreateDialogueBridge,
+                            m_outboundProxy,
+                            uas,
+                            callbackDialPlan,
+                            GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
+                            null,
+                            null,
+                            customer, null);
+                    m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
+
+                    return null;
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPCallManager ProcessCallback. " + excp.Message);
+                return "Sorry there was an unexpected error, the callback was not initiated.";
+            }
+        }
+
+        /// <summary>
         /// Processes an in dialogue REFER request that specifies a new destination for an existing call leg.
         /// </summary>
         /// <param name="username">The username of the user the transfer is being processed for.</param>
@@ -752,7 +821,7 @@ namespace SIPSorcery.Servers
                                     GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
                                     m_traceDirectory,
                                     null,
-                                    customer, 
+                                    customer,
                                     null);
                             //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                             m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
@@ -797,6 +866,11 @@ namespace SIPSorcery.Servers
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for customer " + owner + " as account is suspended.", null));
                     uas.Reject(SIPResponseStatusCodesEnum.DoesNotExistAnywhere, "User account is suspended", null);
                 }
+                else if (customer.ServiceLevel == CustomerServiceLevels.PremiumPayReqd.ToString() || customer.ServiceLevel == CustomerServiceLevels.ProfessionalPayReqd.ToString())
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for customer " + owner + " as payment is outstanding.", null));
+                    uas.Reject(SIPResponseStatusCodesEnum.PaymentRequired, null, null);
+                }
                 else if (dialPlanName.IsNullOrBlank() && uas.CallDirection == SIPCallDirection.Out)
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for customer " + owner + " as no dialplan is configured for an " + uas.CallDirection + " call.", null));
@@ -804,36 +878,55 @@ namespace SIPSorcery.Servers
                 }
                 else
                 {
-                    dialPlan = GetDialPlan_External(d => d.Owner == owner && d.DialPlanName == dialPlanName);
-                    if (dialPlan != null && dialPlan.IsReadOnly)
+                    if (dialPlanName.IsNullOrBlank())
                     {
-                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for read only dialplan " + dialPlanName + ". Upgrade to a Premium service to enable.", owner));
-                        uas.Reject(SIPResponseStatusCodesEnum.PaymentRequired, "Dial plan is readonly, upgrade to Premium service", null);
-                    }
-                    else if (!IsDialPlanExecutionAllowed(dialPlan, customer))
-                    {
-                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of dial plan " + dialPlanName + " was not processed as maximum execution count has been reached.", owner));
-                        uas.Reject(SIPResponseStatusCodesEnum.TemporarilyUnavailable, "Dial plan execution exceeded maximum allowed", null);
+                        // Incoming call with no dialplan.
+                        return true;
                     }
                     else
                     {
-                        if (m_dailyCallLimit == -1)
+                        dialPlan = GetDialPlan_External(d => d.Owner == owner && d.DialPlanName == dialPlanName);
+
+                        if (dialPlan == null)
                         {
-                            return true;
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected, dialplan " + dialPlanName + " could not be found.", owner));
+                            uas.Reject(SIPResponseStatusCodesEnum.InternalServerError, "Could not load dialplan " + dialPlanName, null);
+                        }
+                        else if (dialPlan != null && dialPlan.IsReadOnly)
+                        {
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for read only dialplan " + dialPlanName + ". Upgrade to a Premium service to enable.", owner));
+                            uas.Reject(SIPResponseStatusCodesEnum.PaymentRequired, "Dial plan is readonly, upgrade to Premium service", null);
+                        }
+                        else if (customer.ServiceLevel == CustomerServiceLevels.Free.ToString() && dialPlan.ScriptType == SIPDialPlanScriptTypesEnum.Asterisk)
+                        {
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Your service level does not permit the use of Asterisk dial plans.", owner));
+                            uas.Reject(SIPResponseStatusCodesEnum.PaymentRequired, "Free plans cannot use Asterisk dial plans", null);
+                        }
+                        else if (!IsDialPlanExecutionAllowed(dialPlan, customer))
+                        {
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of dial plan " + dialPlanName + " was not processed as maximum execution count has been reached.", owner));
+                            uas.Reject(SIPResponseStatusCodesEnum.TemporarilyUnavailable, "Dial plan execution exceeded maximum allowed", null);
                         }
                         else
                         {
-                            // Check whether the number of CDR's exceeds the daily call limit.
-                            DateTime yesterday = DateTime.Now.AddDays(-1);
-                            int cdrCount = m_sipCDRPersistor.Count(x => x.Owner == owner && x.Created > yesterday);
-                            if (cdrCount >= m_dailyCallLimit)
+                            if (m_dailyCallLimit == -1)
                             {
-                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of call for " + owner + " was not processed as daily call limit reached.", owner));
-                                uas.Reject(SIPResponseStatusCodesEnum.TemporarilyUnavailable, "Daily call limit reached", null);
+                                return true;
                             }
                             else
                             {
-                                return true;
+                                // Check whether the number of CDR's exceeds the daily call limit.
+                                DateTime yesterday = DateTime.Now.AddDays(-1);
+                                int cdrCount = m_sipCDRPersistor.Count(x => x.Owner == owner && x.Created > yesterday);
+                                if (cdrCount >= m_dailyCallLimit)
+                                {
+                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Execution of call for " + owner + " was not processed as daily call limit reached.", owner));
+                                    uas.Reject(SIPResponseStatusCodesEnum.TemporarilyUnavailable, "Daily call limit reached", null);
+                                }
+                                else
+                                {
+                                    return true;
+                                }
                             }
                         }
                     }
@@ -971,6 +1064,11 @@ namespace SIPSorcery.Servers
             }
         }*/
 
+        /// <summary>
+        /// Creates a dummy INVITE transaction to act as a substitute incoming call for dialplan executions that have been initiated from
+        /// a web request.
+        /// </summary>
+        /// <param name="number">The number that will end up as req.URI.User in the dialplan.</param>
         private UASInviteTransaction GetDummyWebCallbackTransaction(string number)
         {
             SIPRequest dummyInvite = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURIRelaxed(number + "@sipsorcery.com"));

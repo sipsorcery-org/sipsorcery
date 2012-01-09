@@ -348,7 +348,7 @@ namespace SIPSorcery.Servers
 
                 //logger.Debug(notifyRequest.ToString());
 
-                MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.NotifySent, "Notification sent for " + subscription.SubscriptionEventPackage.ToString() + " and " + subscription.ResourceURI.ToString() + " to " + subscription.SubscriptionDialogue.RemoteTarget.ToString() + ".", subscription.SubscriptionDialogue.Owner));
+                MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.NotifySent, "Notification sent for " + subscription.SubscriptionEventPackage.ToString() + " and " + subscription.ResourceURI.ToString() + " to " + subscription.SubscriptionDialogue.RemoteTarget.ToString() + " (cseq=" + notifyRequest.Header.CSeq + ").", subscription.SubscriptionDialogue.Owner));
 
                 subscription.NotificationSent();
             }

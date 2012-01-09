@@ -55,8 +55,12 @@ namespace SIPSorcery.SIP
         public SIPURI URI;
         public SIPURI TargetURI;
         public int CSeq;
-        public string SwitchboardDescription;           // A user definable field that can attach a description to the SIP account the call was received on or the call destination.
-        public string SwitchboardCallerDescription;     // A user definable field that can attach a description about the caller.
+        //public string SwitchboardDescription;           // A user definable field that can attach a description to the SIP account the call was received on or the call destination.
+        //public string SwitchboardCallerDescription;     // A user definable field that can attach a description about the caller.
+        public string SwitchboardLineName;
+        public string CRMPersonName;
+        public string CRMCompanyName;
+        public string CRMPictureURL;
 
         private SIPEventDialogParticipant()
         { }
@@ -95,8 +99,12 @@ namespace SIPSorcery.SIP
             }
 
             participant.CSeq = (participantElement.Element(ns + "cseq") != null) ? Convert.ToInt32(participantElement.Element(ns + "cseq").Value) : 0;
-            participant.SwitchboardDescription = (participantElement.Element(ss + "switchboarddescription") != null) ? participantElement.Element(ss + "switchboarddescription").Value : null;
-            participant.SwitchboardCallerDescription = (participantElement.Element(ss + "switchboardcallerdescription") != null) ? participantElement.Element(ss + "switchboardcallerdescription").Value : null;
+            //participant.SwitchboardDescription = (participantElement.Element(ss + "switchboarddescription") != null) ? participantElement.Element(ss + "switchboarddescription").Value : null;
+            //participant.SwitchboardCallerDescription = (participantElement.Element(ss + "switchboardcallerdescription") != null) ? participantElement.Element(ss + "switchboardcallerdescription").Value : null;
+            participant.SwitchboardLineName = (participantElement.Element(ss + "switchboardlinename") != null) ? participantElement.Element(ss + "switchboardlinename").Value : null;
+            participant.CRMPersonName = (participantElement.Element(ss + "crmpersonname") != null) ? participantElement.Element(ss + "crmpersonname").Value : null;
+            participant.CRMCompanyName = (participantElement.Element(ss + "crmcompanyname") != null) ? participantElement.Element(ss + "crmcompanyname").Value : null;
+            participant.CRMPictureURL = (participantElement.Element(ss + "crmpictureurl") != null) ? participantElement.Element(ss + "crmpictureurl").Value : null;
 
             return participant;
         }
@@ -134,16 +142,28 @@ namespace SIPSorcery.SIP
                 participantElement.Add(cseqElement);
             }
 
-            if (!SwitchboardDescription.IsNullOrBlank())
+            if (!SwitchboardLineName.IsNullOrBlank())
             {
-                XElement switchDescriptionElement = new XElement(ss + "switchboarddescription", SwitchboardDescription);
-                participantElement.Add(switchDescriptionElement);
+                XElement switchLineNameElement = new XElement(ss + "switchboardlinename", SwitchboardLineName);
+                participantElement.Add(switchLineNameElement);
             }
 
-            if (!SwitchboardCallerDescription.IsNullOrBlank())
+            if (!CRMPersonName.IsNullOrBlank())
             {
-                XElement switchCallerDescriptionElement = new XElement(ss + "switchboardcallerdescription", SwitchboardCallerDescription);
-                participantElement.Add(switchCallerDescriptionElement);
+                XElement crmPersonNameElement = new XElement(ss + "crmpersonname", CRMPersonName);
+                participantElement.Add(crmPersonNameElement);
+            }
+
+            if (!CRMCompanyName.IsNullOrBlank())
+            {
+                XElement crmCompanyNameElement = new XElement(ss + "crmcompanyname", CRMCompanyName);
+                participantElement.Add(crmCompanyNameElement);
+            }
+
+            if (!CRMPictureURL.IsNullOrBlank())
+            {
+                XElement crmPictureURLElement = new XElement(ss + "crmpictureurl", CRMPictureURL);
+                participantElement.Add(crmPictureURLElement);
             }
 
             return participantElement;

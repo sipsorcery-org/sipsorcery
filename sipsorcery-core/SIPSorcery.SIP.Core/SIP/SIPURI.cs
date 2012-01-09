@@ -215,6 +215,14 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public string UnescapedUser
+        {
+            get
+            {
+                return (User.IsNullOrBlank()) ? User : SIPEscape.SIPUnescapeString(User);
+            }
+        }
+
         private SIPURI()
         { }
 

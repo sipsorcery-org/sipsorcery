@@ -38,5 +38,10 @@ namespace SIPSorcery.Web.Services {
         {
             return base.Channel.DualTransfer(username, callID1, callID2);
         }
+
+        public string Callback(string username, string dialString1, string dialString2)
+        {
+            return base.Channel.Callback(username, dialString1, dialString2);
+        }
     }
 }
