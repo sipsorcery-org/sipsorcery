@@ -52,9 +52,11 @@ namespace SIPSorcery.CRM.UnitTests
         [TestMethod]
         public void PersonRequestByIDTest()
         {
-            int id = 59708303;
+            int id = 83447815;
             PersonRequest request = new PersonRequest(m_highriseURL, m_highriseAuthToken);
             Person person = request.GetByID(id);
+
+            Console.WriteLine(person.AvatarURL);
 
             Assert.AreEqual(id, person.ID, "The ID of the person record did not match the ID that was requested.");
         }

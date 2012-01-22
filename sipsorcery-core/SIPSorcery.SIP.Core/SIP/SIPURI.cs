@@ -219,7 +219,7 @@ namespace SIPSorcery.SIP
         {
             get
             {
-                return (User.IsNullOrBlank()) ? User : SIPEscape.SIPUnescapeString(User);
+                return (User.IsNullOrBlank()) ? User : SIPEscape.SIPURIUserUnescape(User);
             }
         }
 

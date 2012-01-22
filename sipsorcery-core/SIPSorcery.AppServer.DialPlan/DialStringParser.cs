@@ -296,6 +296,7 @@ namespace SIPSorcery.AppServer.DialPlan
             try
             {
                 Queue<List<SIPCallDescriptor>> callsQueue = new Queue<List<SIPCallDescriptor>>();
+                command = SubstituteRequestVars(sipRequest, command);
                 string[] followonLegs = command.Split(CALLLEG_FOLLOWON_SEPARATOR);
 
                 foreach (string followOnLeg in followonLegs)
@@ -320,7 +321,8 @@ namespace SIPSorcery.AppServer.DialPlan
                             }
 
                             // Determine whether the call forward is for a local domain or not.
-                            SIPURI callLegSIPURI = SIPURI.ParseSIPURIRelaxed(SubstituteRequestVars(sipRequest, callLegDestination));
+                            //SIPURI callLegSIPURI = SIPURI.ParseSIPURIRelaxed(SubstituteRequestVars(sipRequest, callLegDestination));
+                            SIPURI callLegSIPURI = SIPURI.ParseSIPURIRelaxed(callLegDestination);
                             if (callLegSIPURI != null && callLegSIPURI.User == null)
                             {
                                 callLegSIPURI.User = sipRequest.URI.User;
@@ -778,8 +780,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 {
                     string resultString = substituteString;
 
-                    #region Replacing ${dst} and ${exten} with request URI.
-
+                    // Replacing ${dst} and ${exten} with request URI.
                     if (Regex.Match(substituteString, @"\$\{(dst|exten)(:|\})", RegexOptions.IgnoreCase).Success)
                     {
                         MatchCollection matches = Regex.Matches(substituteString, @"\$\{(dst|exten):\d+?\}", RegexOptions.IgnoreCase);
@@ -801,25 +802,23 @@ namespace SIPSorcery.AppServer.DialPlan
                         resultString = Regex.Replace(resultString, @"\$\{(dst|exten).*?\}", request.URI.User, RegexOptions.IgnoreCase);
                     }
 
-                    #endregion
-
-                    #region Replacing ${fromname} with the request From header name.
-
+                    // Replacing ${fromname} with the request From header name.
                     if (request.Header.From != null && request.Header.From.FromName != null && Regex.Match(substituteString, @"\$\{fromname\}", RegexOptions.IgnoreCase).Success)
                     {
                         resultString = Regex.Replace(resultString, @"\$\{fromname\}", request.Header.From.FromName, RegexOptions.IgnoreCase);
                     }
 
-                    #endregion
-
-                    #region Replacing ${fromuriuser} with the request From URI user.
-
+                    // Replacing ${fromuriuser} with the request From URI user.
                     if (request.Header.From != null && request.Header.From.FromURI != null && request.Header.From.FromURI.User != null && Regex.Match(substituteString, @"\$\{fromuriuser\}", RegexOptions.IgnoreCase).Success)
                     {
                         resultString = Regex.Replace(resultString, @"\$\{fromuriuser\}", request.Header.From.FromURI.User, RegexOptions.IgnoreCase);
                     }
 
-                    #endregion
+                    // Replacing ${fromaor} with the request From URI address of record, e.g. user@sipsorcery.com.
+                    if (request.Header.From != null && request.Header.From.FromURI != null && request.Header.From.FromURI.User != null && Regex.Match(substituteString, @"\$\{fromaor\}", RegexOptions.IgnoreCase).Success)
+                    {
+                        resultString = Regex.Replace(resultString, @"\$\{fromaor\}", request.Header.From.FromURI.ToAOR(), RegexOptions.IgnoreCase);
+                    }
 
                     /*#region Replacing ${username} with the switch command username.
 
@@ -833,6 +832,7 @@ namespace SIPSorcery.AppServer.DialPlan
                     // If parts of the From header were empty replace them with an empty string.
                     resultString = Regex.Replace(resultString, @"\$\{fromname\}", "", RegexOptions.IgnoreCase);
                     resultString = Regex.Replace(resultString, @"\$\{fromuriuser\}", "", RegexOptions.IgnoreCase);
+                    resultString = Regex.Replace(resultString, @"\$\{fromaor\}", "", RegexOptions.IgnoreCase);
 
                     return resultString.Trim();
                 }

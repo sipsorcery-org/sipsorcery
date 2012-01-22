@@ -236,8 +236,9 @@ namespace SIPSorcery.Servers
                                             else
                                             {
                                                 // This binding was able to previously register so the problem could be a transient DNS probem. Delay the registration to give the problem a chance to clear up.
-                                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "DNS resolution for " + binding.RegistrarServer.ToString() + " had an error, delaying by " + REGISTER_DNSTIMEOUT_RETRY_INTERVAL + "s.", binding.Owner));
-                                                binding.RegistrationFailureMessage = "DNS resolution for " + binding.RegistrarServer.ToString() + " had an error. " + lookupResult.LookupError + " Delaying by " + REGISTER_DNSTIMEOUT_RETRY_INTERVAL + "s.";
+                                                var errorMinutes = DateTimeOffset.UtcNow.Subtract(provider.LastUpdate).TotalMinutes;
+                                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "DNS resolution for " + binding.RegistrarServer.ToString() + " has been in error for " + errorMinutes + " minutes, delaying next attempt by " + REGISTER_DNSTIMEOUT_RETRY_INTERVAL + "s.", binding.Owner));
+                                                binding.RegistrationFailureMessage = "DNS resolution for " + binding.RegistrarServer.ToString() + " has been in error for " + errorMinutes + " minutes. " + lookupResult.LookupError + " Delaying next attempt by " + REGISTER_DNSTIMEOUT_RETRY_INTERVAL + "s.";
                                                 binding.NextRegistrationTime = DateTimeOffset.UtcNow.AddSeconds(REGISTER_DNSTIMEOUT_RETRY_INTERVAL);
                                                 m_bindingPersistor.Update(binding);
                                             }
@@ -251,18 +252,19 @@ namespace SIPSorcery.Servers
                                                 DisableSIPProviderRegistration(provider.Id, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " + DNS_FAILURE_RETRY_WINDOW + " minutes.");
                                                 m_bindingPersistor.Delete(binding);
                                             }
-                                            else if (DateTimeOffset.UtcNow.Subtract(provider.LastUpdate).TotalMinutes > DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW)
-                                            {
-                                                // A previously registering provider has now failed to be resolved for a long time so assume that the hostname is invalid.
-                                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " + DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW + " minutes. DISABLING.", binding.Owner));
-                                                DisableSIPProviderRegistration(provider.Id, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " + DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW + " minutes.");
-                                                m_bindingPersistor.Delete(binding);
-                                            }
+                                            //else if (DateTimeOffset.UtcNow.Subtract(provider.LastUpdate).TotalMinutes > DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW)
+                                            //{
+                                            //    // A previously registering provider has now failed to be resolved for a long time so assume that the hostname is invalid.
+                                            //    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " + DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW + " minutes. DISABLING.", binding.Owner));
+                                            //    DisableSIPProviderRegistration(provider.Id, "Could not resolve registrar " + binding.RegistrarServer.ToString() + " after trying for " + DNS_FAILURE_EXISTING_PROVIDER_RETRY_WINDOW + " minutes.");
+                                            //    m_bindingPersistor.Delete(binding);
+                                            //}
                                             else
                                             {
                                                 // DNS timeouts can be caused by network or server issues. Delay the registration to give the problem a chance to clear up.
-                                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "DNS resolution for " + binding.RegistrarServer.ToString() + " timed out, delaying by " + REGISTER_DNSTIMEOUT_RETRY_INTERVAL + "s.", binding.Owner));
-                                                binding.RegistrationFailureMessage = "DNS resolution for " + binding.RegistrarServer.ToString() + " timed out.";
+                                                var timedoutMinutes = DateTimeOffset.UtcNow.Subtract(provider.LastUpdate).TotalMinutes;
+                                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "DNS resolution for " + binding.RegistrarServer.ToString() + " has timed out for " + timedoutMinutes.ToString("0") + " minutes, delaying next attempt by " + REGISTER_DNSTIMEOUT_RETRY_INTERVAL + "s.", binding.Owner));
+                                                binding.RegistrationFailureMessage = "DNS resolution for " + binding.RegistrarServer.ToString() + " has timed out for " + timedoutMinutes + " minutes.";
                                                 binding.NextRegistrationTime = DateTimeOffset.UtcNow.AddSeconds(REGISTER_DNSTIMEOUT_RETRY_INTERVAL);
                                                 m_bindingPersistor.Update(binding);
                                             }
@@ -270,7 +272,7 @@ namespace SIPSorcery.Servers
                                         else if (lookupResult.Pending)
                                         {
                                             // DNS lookup is pending, delay the registration attempt until the lookup is likely to have been completed.
-                                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "DNS Manager does not currently have an entry for " + binding.RegistrarServer.ToString() + ", delaying " + REGISTER_EMPTYDNS_RETRY_INTERVAL + "s.", binding.Owner));
+                                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "DNS Manager does not currently have an entry for " + binding.RegistrarServer.ToString() + ", delaying next attempt by " + REGISTER_EMPTYDNS_RETRY_INTERVAL + "s.", binding.Owner));
                                             binding.RegistrationFailureMessage = "DNS resolution for " + binding.RegistrarServer.ToString() + " is pending.";
                                             binding.NextRegistrationTime = DateTimeOffset.UtcNow.AddSeconds(REGISTER_EMPTYDNS_RETRY_INTERVAL);
                                             m_bindingPersistor.Update(binding);

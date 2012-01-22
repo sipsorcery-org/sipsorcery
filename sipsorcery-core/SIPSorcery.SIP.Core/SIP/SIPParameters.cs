@@ -247,7 +247,7 @@ namespace SIPSorcery.SIP
             {
                 if (m_dictionary.ContainsKey(name))
                 {
-                    return SIPEscape.SIPUnescapeString(m_dictionary[name]);
+                    return SIPEscape.SIPURIParameterUnescape(m_dictionary[name]);
                 }
                 else
                 {
@@ -310,7 +310,7 @@ namespace SIPSorcery.SIP
             if (m_dictionary != null) {
                 foreach (KeyValuePair<string, string> param in m_dictionary) {
                     if (param.Value != null && param.Value.Trim().Length > 0) {
-                        paramStr += TagDelimiter + param.Key + TAG_NAME_VALUE_SEPERATOR + SIPEscape.SIPEscapeString(param.Value);
+                        paramStr += TagDelimiter + param.Key + TAG_NAME_VALUE_SEPERATOR + SIPEscape.SIPURIParameterEscape(param.Value);
                     }
                     else {
                         paramStr += TagDelimiter + param.Key;

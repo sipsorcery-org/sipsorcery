@@ -78,6 +78,8 @@ namespace SIPSorcery.Entities
                     customer.MaxExecutionCount = Customer.FREE_MAXIMUM_EXECUTION_COUNT;
                     customer.APIKey = Crypto.GetRandomByteString(Customer.API_KEY_LENGTH / 2);
                     customer.ServiceLevel = (customer.ServiceLevel == null) ? CustomerServiceLevels.Free.ToString() : customer.ServiceLevel;
+                    customer.EmailAddressConfirmed = true;
+                    customer.CreatedFromIPAddress = System.Web.HttpContext.Current.Request.UserHostAddress;
 
                     if (customer.ServiceRenewalDate != null)
                     {
@@ -119,6 +121,7 @@ namespace SIPSorcery.Entities
                     };
                     sipSorceryEntities.SIPDialPlans.AddObject(defaultDialPlan);
                     sipSorceryEntities.SaveChanges();
+
                     logger.Debug("Default dialplan added for " + customer.Name + ".");
 
                     // Get default domain name.
@@ -704,7 +707,7 @@ namespace SIPSorcery.Entities
             try
             {
                 var registerURI = SIPURI.ParseSIPURIRelaxed(sipProvider.RegisterContact.Trim());
-                registerURI.User = SIPEscape.SIPEscapeString(registerURI.User);
+                registerURI.User = SIPEscape.SIPURIUserEscape(registerURI.User);
                 sipProvider.RegisterContact = registerURI.ToString();
             }
             catch (Exception sipURIExcp)

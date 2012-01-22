@@ -424,30 +424,59 @@ namespace SIPSorcery.SIP
         public const string MWI_TEXT_TYPE = "text/text";
         public const string PRESENCE_NOTIFY_CONTENT_TYPE = "application/pidf+xml";      // RFC3856 presence event package.
     }
-
+    /// <summary>
+    /// For SIP URI user portion the reserved characters below need to be escaped.
+    /// reserved    =  ";" / "/" / "?" / ":" / "@" / "&" / "=" / "+"  / "$" / ","
+    /// user-unreserved  =  "&" / "=" / "+" / "$" / "," / ";" / "?" / "/"
+    /// Leaving to be escaped = ":" / "@" 
+    /// 
+    /// For SIP URI parameters different characters are unreserved (just to amke life difficult).
+    /// reserved    =  ";" / "/" / "?" / ":" / "@" / "&" / "=" / "+"  / "$" / ","
+    /// param-unreserved = "[" / "]" / "/" / ":" / "&" / "+" / "$"
+    /// Leaving to be escaped =  ";" / "?" / "@" / "=" / ","
+    /// </summary>
     public static class SIPEscape
     {
-        public static string SIPEscapeString(string unescapedString)
+        public static string SIPURIUserEscape(string unescapedString)
         {
             string result = unescapedString;
             if (!result.IsNullOrBlank())
             {
-                result = result.Replace(";", "%3B");
-                //result = result.Replace("/", "%2F");
-                //result = result.Replace("?", "%3F");
                 result = result.Replace(":", "%3A");
                 result = result.Replace("@", "%40");
-                //result = result.Replace("&", "%26");
-                //result = result.Replace("=", "%3D");
-                //result = result.Replace("+", "%2B");
-                //result = result.Replace("$", "%24");
-                //result = result.Replace("=", "%2C");
                 result = result.Replace(" ", "%20");
             }
             return result;
         }
 
-        public static string SIPUnescapeString(string escapedString)
+        public static string SIPURIUserUnescape(string escapedString)
+        {
+            string result = escapedString;
+            if (!result.IsNullOrBlank())
+            {
+                result = result.Replace("%3A", ":");
+                result = result.Replace("%3a", ":");
+                result = result.Replace("%20", " ");
+            }
+            return result;
+        }
+
+        public static string SIPURIParameterEscape(string unescapedString)
+        {
+            string result = unescapedString;
+            if (!result.IsNullOrBlank())
+            {
+                result = result.Replace(";", "%3B");
+                result = result.Replace("?", "%3F");
+                result = result.Replace("@", "%40");
+                result = result.Replace("=", "%3D");
+                result = result.Replace(",", "%2C");
+                result = result.Replace(" ", "%20");
+            }
+            return result;
+        }
+
+        public static string SIPURIParameterUnescape(string escapedString)
         {
             string result = escapedString;
             if (!result.IsNullOrBlank())
@@ -456,19 +485,19 @@ namespace SIPSorcery.SIP
                 result = result.Replace("%3b", ";");
                 //result = result.Replace("%2F", "/");
                 //result = result.Replace("%2f", "/");
-                //result = result.Replace("%3F", "?");
-                //result = result.Replace("%3f", "?");
-                result = result.Replace("%3A", ":");
-                result = result.Replace("%3a", ":");
+                result = result.Replace("%3F", "?");
+                result = result.Replace("%3f", "?");
+                //result = result.Replace("%3A", ":");
+                //result = result.Replace("%3a", ":");
                 result = result.Replace("%40", "@");
                 //result = result.Replace("%26", "&");
-                //result = result.Replace("%3D", "=");
-                //result = result.Replace("%3d", "=");
+                result = result.Replace("%3D", "=");
+                result = result.Replace("%3d", "=");
                 //result = result.Replace("%2B", "+");
                 //result = result.Replace("%2b", "+");
                 //result = result.Replace("%24", "$");
-                //result = result.Replace("%2C", "=");
-                //result = result.Replace("%2c", "=");
+                result = result.Replace("%2C", ",");
+                result = result.Replace("%2c", ",");
                 result = result.Replace("%20", " ");
             }
             return result;

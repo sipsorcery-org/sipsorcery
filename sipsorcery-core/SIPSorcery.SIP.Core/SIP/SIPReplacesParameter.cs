@@ -47,18 +47,16 @@ namespace SIPSorcery.SIP
 
         public static SIPReplacesParameter Parse(string replaces)
         {
-            string unescaped = SIPEscape.SIPUnescapeString(replaces);
-
-            var callIDMatch = Regex.Match(unescaped, "^(?<callid>.*?);");
-            if (unescaped.IndexOf(';') != -1)
+            var callIDMatch = Regex.Match(replaces, "^(?<callid>.*?);");
+            if (replaces.IndexOf(';') != -1)
             {
-                var toTagMatch = Regex.Match(unescaped, "to-tag=(?<totag>.*?)(;|$)");
-                var fromTagMatch = Regex.Match(unescaped, "from-tag=(?<fromtag>.*?)(;|$)");
+                var toTagMatch = Regex.Match(replaces, "to-tag=(?<totag>.*?)(;|$)", RegexOptions.IgnoreCase);
+                var fromTagMatch = Regex.Match(replaces, "from-tag=(?<fromtag>.*?)(;|$)", RegexOptions.IgnoreCase);
 
                 if (toTagMatch.Success && fromTagMatch.Success)
                 {
                     SIPReplacesParameter replacesParam = new SIPReplacesParameter();
-                    replacesParam.CallID = unescaped.Substring(0, unescaped.IndexOf(';'));
+                    replacesParam.CallID = replaces.Substring(0, replaces.IndexOf(';'));
                     replacesParam.ToTag = toTagMatch.Result("${totag}");
                     replacesParam.FromTag = fromTagMatch.Result("${fromtag}");
 

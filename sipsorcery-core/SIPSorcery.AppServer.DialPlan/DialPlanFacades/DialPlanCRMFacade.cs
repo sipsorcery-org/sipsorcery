@@ -214,7 +214,8 @@ namespace SIPSorcery.AppServer.DialPlan
                         LogToMonitor(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Highrise contact match " + person.FirstName + " " + person.LastName + ", time taken " + secondsDuration.ToString("0.##") + "s.", m_context.Owner));
                     }
                     //m_context.SetCallerDetails(new CRMHeaders(person.FirstName + " " + person.LastName, companyName, person.AvatarURL));
-                    result = new CRMHeaders(person.FirstName + " " + person.LastName, companyName, person.AvatarURL);
+                    string personName = (!person.LastName.IsNullOrBlank()) ? person.FirstName + " " + person.LastName : person.FirstName;
+                    result = new CRMHeaders(personName, companyName, person.AvatarURL);
 
                     if (addCallNote)
                     {

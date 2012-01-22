@@ -231,6 +231,10 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
             }
         }
+        public List<SIPProvider> Providers
+        {
+            get { return m_dialPlanContext.SIPProviders; }
+        }
 
         public static IPAddress PublicIPAddress;    // If the app server is behind a NAT then it can set this address to be used in mangled SDP.
 
