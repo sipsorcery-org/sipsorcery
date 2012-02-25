@@ -387,6 +387,19 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public static bool TryParse(string uri)
+        {
+            try
+            {
+                ParseSIPURIRelaxed(uri);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public new string ToString()
         {
             try

@@ -89,6 +89,14 @@ namespace SIPSorcery.Entities
                     {
                         return "The Provider Register Server contains a disallowed string. If you are trying to create a Provider entry pointing to sipsorcery.com it is not permitted.";
                     }
+                    else if (!SIPURI.TryParse(sipProvider.ProviderServer))
+                    {
+                        return "The Provider Server could not be parsed as a valid SIP URI.";
+                    }
+                    else if (sipProvider.RegisterServer != null && !SIPURI.TryParse(sipProvider.RegisterServer))
+                    {
+                        return "The Register Server could not be parsed as a valid SIP URI.";
+                    }
                 }
                 else if (sipProvider.ProviderType == ProviderTypes.GoogleVoice.ToString())
                 {
