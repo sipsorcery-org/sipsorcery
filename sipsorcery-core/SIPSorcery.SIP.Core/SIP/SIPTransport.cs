@@ -52,50 +52,50 @@ namespace SIPSorcery.SIP
     /// <summary>
     /// Record number of each type of request received.
     /// </summary>
-    public struct SIPTransportMetric
-    {
-        public const string PACKET_VOLUMES_KEY = "pkts";
-        public const string SIPMETHOD_VOLUMES_KEY = "meth";
-        public const string TOPTALKERS_VOLUME_KEY = "talk";
+    //public struct SIPTransportMetric
+    //{
+    //    public const string PACKET_VOLUMES_KEY = "pkts";
+    //    public const string SIPMETHOD_VOLUMES_KEY = "meth";
+    //    public const string TOPTALKERS_VOLUME_KEY = "talk";
 
-        public DateTime ReceivedAt;
-        public IPEndPoint RemoteEndPoint;
-        public SIPMessageTypesEnum SIPMessageType;
-        public SIPMethodsEnum SIPMethod;
-        public bool STUNRequest;
-        public bool UnrecognisedPacket;
-        public bool BadSIPMessage;                  // Set to true if the message appeared to be a SIP Message but then couldn't be parsed as one.
-        public bool Discard;                        // If true indicates the SIP message was not parsed due to the receive queue being full and was instead discarded.
-        public bool TooLarge;                       // If the message is greater than the max accepted length.
-        public bool Originated;                     // If true inidcates the SIP message was sent by the transport layer, false means it was received.
-        public double ParseDuration;                // Time it took to parse the message in milliseconds.
+    //    public DateTime ReceivedAt;
+    //    public IPEndPoint RemoteEndPoint;
+    //    public SIPMessageTypesEnum SIPMessageType;
+    //    public SIPMethodsEnum SIPMethod;
+    //    public bool STUNRequest;
+    //    public bool UnrecognisedPacket;
+    //    public bool BadSIPMessage;                  // Set to true if the message appeared to be a SIP Message but then couldn't be parsed as one.
+    //    public bool Discard;                        // If true indicates the SIP message was not parsed due to the receive queue being full and was instead discarded.
+    //    public bool TooLarge;                       // If the message is greater than the max accepted length.
+    //    public bool Originated;                     // If true inidcates the SIP message was sent by the transport layer, false means it was received.
+    //    public double ParseDuration;                // Time it took to parse the message in milliseconds.
 
-        public SIPTransportMetric(
-            DateTime receivedAt,
-            IPEndPoint remoteEndPoint,
-            SIPMessageTypesEnum sipMessageType,
-            SIPMethodsEnum sipMethod,
-            bool stunRequest,
-            bool unrecognisedPacket,
-            bool badSIPMessage,
-            bool discard,
-            bool tooLarge,
-            bool originated,
-            double parseDuration)
-        {
-            ReceivedAt = receivedAt;
-            RemoteEndPoint = remoteEndPoint;
-            SIPMessageType = sipMessageType;
-            SIPMethod = sipMethod;
-            STUNRequest = stunRequest;
-            UnrecognisedPacket = unrecognisedPacket;
-            BadSIPMessage = badSIPMessage;
-            Discard = discard;
-            TooLarge = tooLarge;
-            Originated = originated;
-            ParseDuration = parseDuration;
-        }
-    }
+    //    public SIPTransportMetric(
+    //        DateTime receivedAt,
+    //        IPEndPoint remoteEndPoint,
+    //        SIPMessageTypesEnum sipMessageType,
+    //        SIPMethodsEnum sipMethod,
+    //        bool stunRequest,
+    //        bool unrecognisedPacket,
+    //        bool badSIPMessage,
+    //        bool discard,
+    //        bool tooLarge,
+    //        bool originated,
+    //        double parseDuration)
+    //    {
+    //        ReceivedAt = receivedAt;
+    //        RemoteEndPoint = remoteEndPoint;
+    //        SIPMessageType = sipMessageType;
+    //        SIPMethod = sipMethod;
+    //        STUNRequest = stunRequest;
+    //        UnrecognisedPacket = unrecognisedPacket;
+    //        BadSIPMessage = badSIPMessage;
+    //        Discard = discard;
+    //        TooLarge = tooLarge;
+    //        Originated = originated;
+    //        ParseDuration = parseDuration;
+    //    }
+    //}
 
     public class SIPTransport
     {
@@ -141,6 +141,8 @@ namespace SIPSorcery.SIP
         public event SIPTransportSIPBadMessageDelegate SIPBadResponseInTraceEvent;
 
         public string PerformanceMonitorPrefix;                              // Allows an application to set the prefix for the performance monitor counter it wants to use for tracking the SIP transport metrics.
+
+        public IPAddress ContactIPAddress;          // If set this address will be passed to the UAS Invite transaction so it can be used as the Contact address in Ok responses.
 
         // Contains a list of the SIP Requests/Response that are being monitored or responses and retransmitted on when none is recieved to attempt a more reliable delivery
         // rather then just relying on the initial request to get through.
@@ -1133,7 +1135,7 @@ namespace SIPSorcery.SIP
                                     {
                                         double nextTransmitMilliseconds = Math.Pow(2, transaction.Retransmits - 1) * m_t1;
                                         nextTransmitMilliseconds = (nextTransmitMilliseconds > m_t2) ? m_t2 : nextTransmitMilliseconds;
-                                        //logger.Debug("Time since retransmit " + transaction .RequestTransmits + " for " + transaction.InitialRequest.Method + " " + transaction.InitialRequest.URI.ToString() + " " + DateTime.Now.Subtract(transaction.LastRequestTransmit).TotalMilliseconds + ".");
+                                        //logger.Debug("Time since retransmit " + transaction.Retransmits + " for " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + " " + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + ".");
 
                                         if (DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds >= nextTransmitMilliseconds)
                                         {
@@ -1832,7 +1834,7 @@ namespace SIPSorcery.SIP
                 }
 
                 CheckTransactionEngineExists();
-                UASInviteTransaction uasInviteTransaction = new UASInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy);
+                UASInviteTransaction uasInviteTransaction = new UASInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy, ContactIPAddress);
                 m_transactionEngine.AddTransaction(uasInviteTransaction);
                 return uasInviteTransaction;
             }

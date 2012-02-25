@@ -1,4 +1,21 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: ICMPListener.cs
+//
+// Description: Raw socket to receive ICMP packets. Mainly used as a means to
+// detect when transmissions to dead UDP sockets are attempted.
+// 
+// History:
+// ??           Aaron Clauson	Created.
+// 07 Feb 2012  Aaron Clauson   The listener never worked up until now. The trick was
+//                              adding the IOControl socket directive. Also to allow all
+//                              ICMP packets in a firewall rule had to be set.
+//  netsh advfirewall firewall add rule name="All ICPM v4" dir=in action=allow protocol=icmpv4:any,any
+//
+// License: 
+// Aaron Clauson
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -16,18 +33,19 @@ namespace SIPSorcery.Net
         private Socket m_icmpListener;
         private bool m_stop;
 
-        public ICMPListener()
+        public event Action<ICMP, IPEndPoint> Receive;
+
+        public ICMPListener(IPAddress listenAddress)
         {
             m_icmpListener = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.Icmp);
-            //m_icmpListener.Blocking = true;
+            m_icmpListener.Bind(new IPEndPoint(listenAddress, 0));
+            m_icmpListener.IOControl(IOControlCode.ReceiveAll, new byte[] { 1, 0, 0, 0 }, new byte[] { 1, 0, 0, 0 });  //SIO_RCVALL of Winsock
         }
 
-        public void Start(object state)
+        public void Start()
         {
             try
             {
-                //m_icmpListener.Bind(new IPEndPoint(IPAddress.Any, 0));
-
                 byte[] buffer = new byte[4096];
                 EndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
@@ -37,6 +55,12 @@ namespace SIPSorcery.Net
                 {
                     int bytesRead = m_icmpListener.ReceiveFrom(buffer, ref remoteEndPoint);
                     logger.Debug("ICMPListener received " + bytesRead + " from " + remoteEndPoint.ToString());
+
+                    if (Receive != null)
+                    {
+                        Receive(new ICMP(buffer, bytesRead), remoteEndPoint as IPEndPoint);
+                    }
+
                     //m_icmpListener.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, this.ReceiveRawPacket, buffer);
                 }
 

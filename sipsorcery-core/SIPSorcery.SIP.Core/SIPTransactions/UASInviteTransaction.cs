@@ -34,6 +34,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -53,6 +54,8 @@ namespace SIPSorcery.SIP
     {
         private static string m_sipServerAgent = SIPConstants.SIP_SERVER_STRING;
 
+        private IPAddress m_contactIPAddress;   // If set this IP address should be used in the Contact header of the Ok response so that ACK requests can be delivered correctly.
+
         public string LocalTag
         {
             get { return m_localTag; }
@@ -67,11 +70,13 @@ namespace SIPSorcery.SIP
             SIPRequest sipRequest,
             SIPEndPoint dstEndPoint,
             SIPEndPoint localSIPEndPoint,
-            SIPEndPoint outboundProxy)
+            SIPEndPoint outboundProxy,
+            IPAddress contactIPAddress)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.Invite;
             m_remoteTag = sipRequest.Header.From.FromTag;
+            m_contactIPAddress = contactIPAddress;
 
             if (sipRequest.Header.To.ToTag == null)
             {
@@ -245,6 +250,12 @@ namespace SIPSorcery.SIP
 
                 SIPHeader requestHeader = sipRequest.Header;
                 okResponse.Header = new SIPHeader(new SIPContactHeader(null, new SIPURI(sipRequest.URI.Scheme, localSIPEndPoint)), requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);
+
+                if (m_contactIPAddress != null)
+                {
+                    okResponse.Header.Contact.First().ContactURI.Host = m_contactIPAddress.ToString();
+                }
+
                 okResponse.Header.To.ToTag = m_localTag;
                 okResponse.Header.CSeqMethod = requestHeader.CSeqMethod;
                 okResponse.Header.Vias = requestHeader.Vias;

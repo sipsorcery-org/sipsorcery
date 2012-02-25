@@ -950,6 +950,7 @@ namespace SIPSorcery.Entities
                 existingRule.CommandParameter1 = rule.CommandParameter1;
                 existingRule.CommandParameter2 = rule.CommandParameter2;
                 existingRule.CommandParameter3 = rule.CommandParameter3;
+                existingRule.CommandParameter4 = rule.CommandParameter4;
                 existingRule.Direction = rule.Direction;
                 existingRule.PatternType = rule.PatternType;
                 existingRule.Pattern = rule.Pattern;

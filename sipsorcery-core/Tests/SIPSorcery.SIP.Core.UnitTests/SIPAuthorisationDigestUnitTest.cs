@@ -211,5 +211,23 @@ namespace SIPSorcery.SIP.Core.UnitTests
 
             Console.WriteLine("-----------------------------------------");
         }
+
+        [TestMethod]
+        public void GenreateDigestTest()
+        {
+            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate, @"digest realm=""sipsorcery.com"", nonce=""1265068315059e3bbf3052cf13ea5ca22fb71669a7"", opaque=""09c0f23f71f89ce53baab5664c09cbfa"", algorithm=MD5");
+            authRequest.SetCredentials("username", "password", "sip:sipsorcery.com", "REGISTER");
+
+            string digest = authRequest.Digest;
+
+            Console.WriteLine("Digest = " + digest + ".");
+            Console.WriteLine(authRequest.ToString());
+
+            Assert.IsTrue(true, "True was false.");
+
+            Console.WriteLine("-----------------------------------------");
+        }
     }
 }

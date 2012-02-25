@@ -152,6 +152,7 @@
           <Property Name="ToMatchParameter" Type="varchar" MaxLength="2048" />
           <Property Name="ToMatchType" Type="varchar" MaxLength="50" />
           <Property Name="IsDisabled" Type="bit" Nullable="false" />
+          <Property Name="CommandParameter4" Type="varchar" MaxLength="2048" />
         </EntityType>
         <EntityType Name="sipaccounts">
           <Key>
@@ -928,6 +929,7 @@
           <Property Type="String" Name="ToMatchType" />
           <Property Type="Boolean" Name="IsDisabled" Nullable="false" />
           <NavigationProperty Name="sipdialplan" Relationship="SIPSorcery.Entities.simplewizardrule_ibfk_1" FromRole="simplewizardrule" ToRole="SIPDialPlan" />
+          <Property Type="String" Name="CommandParameter4" />
         </EntityType>
         <Association Name="simplewizardrule_ibfk_1">
           <End Type="SIPSorcery.Entities.SIPDialPlan" Role="SIPDialPlan" Multiplicity="1" />
@@ -1262,6 +1264,7 @@
           <EntitySetMapping Name="SimpleWizardRules">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.SimpleWizardRule">
               <MappingFragment StoreEntitySet="simplewizardrule">
+                <ScalarProperty Name="CommandParameter4" ColumnName="CommandParameter4" />
                 <ScalarProperty Name="IsDisabled" ColumnName="IsDisabled" />
                 <ScalarProperty Name="ToMatchType" ColumnName="ToMatchType" />
                 <ScalarProperty Name="ToMatchParameter" ColumnName="ToMatchParameter" />

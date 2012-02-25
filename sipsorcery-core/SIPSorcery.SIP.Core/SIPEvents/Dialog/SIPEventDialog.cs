@@ -62,7 +62,7 @@ namespace SIPSorcery.SIP
         public SIPEventDialogParticipant LocalParticipant;
         public SIPEventDialogParticipant RemoteParticipant;
         public string BridgeID;                             // SIPSorcery custom field that is used to show when two dialogues are bridged together by the B2BUA.
-        public string SwitchboardOwner;                     // SIP Sorcery custom filed that can be used to specify a sub-account as the owner of the call this dialog belongs to.
+        public string SwitchboardOwner;                     // SIP Sorcery custom field that can be used to specify a sub-account as the owner of the call this dialog belongs to.
         public bool HasBeenSent;                            // Can be used by a subscription manager to indicate the event has been included in a notify request.
 
         private SIPEventDialog()

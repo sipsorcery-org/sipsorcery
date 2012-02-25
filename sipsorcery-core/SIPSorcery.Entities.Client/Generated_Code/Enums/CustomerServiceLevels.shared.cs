@@ -53,6 +53,8 @@ namespace SIPSorcery.Entities
         Bronze = 7,
         Evaluation = 8,
         PremiumPayReqd = 9,
-        ProfessionalPayReqd = 10
+        ProfessionalPayReqd = 10,
+        Switchboard = 11,
+        SwitchboardPayReqd = 12,
     }
 }

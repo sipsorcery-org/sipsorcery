@@ -203,37 +203,5 @@ namespace SIPSorcery.SIP
 				logger.Warn("Exception SIPUDPChannel Close. " +excp.Message);
 			}
 		}
-
-		#region Unit testing.
-
-		#if UNITTEST
-	
-		[TestFixture]
-		public class SIPRequestUnitTest
-		{
-			[TestFixtureSetUp]
-			public void Init()
-			{
-				
-			}
-
-			[TestFixtureTearDown]
-			public void Dispose()
-			{			
-				
-			}
-
-			[Test]
-			public void SampleTest()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-				
-				Assert.IsTrue(true, "True was false.");
-			}
-		}
-
-		#endif
-
-		#endregion
 	}
 }

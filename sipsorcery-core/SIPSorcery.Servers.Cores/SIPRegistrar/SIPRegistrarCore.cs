@@ -50,6 +50,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
 using System.Xml.Serialization;
+using SIPSorcery.CRM;
 using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -79,6 +80,7 @@ namespace SIPSorcery.Servers
         NonRegisterMethod = 13,
         DomainNotServiced = 14,
         IntervalTooBrief = 15,
+        SwitchboardPaymentRequired = 16,
     }
 
     /// <summary>
@@ -118,6 +120,7 @@ namespace SIPSorcery.Servers
         private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
         private SIPAuthenticateRequestDelegate SIPRequestAuthenticator_External;
+        private SIPAssetPersistor<Customer> CustomerPersistor_External;
 
         private string m_serverAgent = SIPConstants.SIP_SERVER_STRING;
         private bool m_mangleUACContact = false;            // Whether or not to adjust contact URIs that contain private hosts to the value of the bottom via received socket.
@@ -126,7 +129,8 @@ namespace SIPSorcery.Servers
         private SIPUserAgentConfigurationManager m_userAgentConfigs;
         private Queue<SIPNonInviteTransaction> m_registerQueue = new Queue<SIPNonInviteTransaction>();
         private AutoResetEvent m_registerARE = new AutoResetEvent(false);
-        private RSACryptoServiceProvider m_switchbboardRSAProvider; // If available this certificate can be used to sign switchboard tokens.
+        //private RSACryptoServiceProvider m_switchbboardRSAProvider; // If available this certificate can be used to sign switchboard tokens.
+        private string m_switchboarduserAgentPrefix;
 
         public event Action<double, bool> RegisterComplete;     // Event to allow hook into get notifications about the processing time for registrations. The boolean parameter is true of the request contained an authentication header.
 
@@ -147,7 +151,8 @@ namespace SIPSorcery.Servers
             SIPMonitorLogDelegate proxyLogDelegate,
             SIPUserAgentConfigurationManager userAgentConfigs,
             SIPAuthenticateRequestDelegate sipRequestAuthenticator,
-            string switchboardCertificateName)
+            string switchboarduserAgentPrefix,
+            SIPAssetPersistor<Customer> customerPersistor)
         {
             m_sipTransport = sipTransport;
             m_registrarBindingsManager = registrarBindingsManager;
@@ -158,20 +163,22 @@ namespace SIPSorcery.Servers
             m_registrarLogEvent = proxyLogDelegate;
             m_userAgentConfigs = userAgentConfigs;
             SIPRequestAuthenticator_External = sipRequestAuthenticator;
+            m_switchboarduserAgentPrefix = switchboarduserAgentPrefix;
+            CustomerPersistor_External = customerPersistor;
 
-            try
-            {
-                if (!switchboardCertificateName.IsNullOrBlank())
-                {
-                    X509Certificate2 switchboardCertificate = AppState.LoadCertificate(StoreLocation.LocalMachine, switchboardCertificateName, false);
-                    m_switchbboardRSAProvider = (RSACryptoServiceProvider)switchboardCertificate.PrivateKey;
-                    logger.Debug("Switchboard RSA provider successfully loaded from " + switchboardCertificateName + " certificate.");
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception loading switchboard certificate using " + switchboardCertificateName + ". " + excp.Message);
-            }
+            //try
+            //{
+            //    if (!switchboardCertificateName.IsNullOrBlank())
+            //    {
+            //        X509Certificate2 switchboardCertificate = AppState.LoadCertificate(StoreLocation.LocalMachine, switchboardCertificateName, false);
+            //        m_switchbboardRSAProvider = (RSACryptoServiceProvider)switchboardCertificate.PrivateKey;
+            //        logger.Debug("Switchboard RSA provider successfully loaded from " + switchboardCertificateName + " certificate.");
+            //    }
+            //}
+            //catch (Exception excp)
+            //{
+            //    logger.Error("Exception loading switchboard certificate using " + switchboardCertificateName + ". " + excp.Message);
+            //}
         }
 
         public void Start(int threadCount)
@@ -357,6 +364,19 @@ namespace SIPSorcery.Servers
                 else
                 {
                     // Authenticated.
+                    if (!sipRequest.Header.UserAgent.IsNullOrBlank() && !m_switchboarduserAgentPrefix.IsNullOrBlank() && sipRequest.Header.UserAgent.StartsWith(m_switchboarduserAgentPrefix))
+                    {
+                        // Check that the switchboard user is authorised.
+                        var customer = CustomerPersistor_External.Get(x => x.CustomerUsername == sipAccount.Owner);
+                        if (!(customer.ServiceLevel == CustomerServiceLevels.Switchboard.ToString() || customer.ServiceLevel == CustomerServiceLevels.Gold.ToString()))
+                        {
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Warn, "Register request for switchboard from " + toHeader.ToURI.Host + " rejected as not correct service level.", sipAccount.Owner));
+                            SIPResponse payReqdResponse = GetErrorResponse(sipRequest, SIPResponseStatusCodesEnum.PaymentRequired, "You need to purchase a Switchboard service");
+                            registerTransaction.SendFinalResponse(payReqdResponse);
+                            return RegisterResultEnum.SwitchboardPaymentRequired;
+                        }
+                    }
+
                     if (sipRequest.Header.Contact == null || sipRequest.Header.Contact.Count == 0)
                     {
                         // No contacts header to update bindings with, return a list of the current bindings.

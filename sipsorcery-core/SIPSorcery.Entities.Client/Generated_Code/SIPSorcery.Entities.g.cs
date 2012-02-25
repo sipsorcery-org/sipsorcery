@@ -1805,6 +1805,8 @@ namespace SIPSorcery.Entities
         
         private string _commandParameter3;
         
+        private string _commandParameter4;
+        
         private string _description;
         
         private string _dialPlanID;
@@ -1850,6 +1852,8 @@ namespace SIPSorcery.Entities
         partial void OnCommandParameter2Changed();
         partial void OnCommandParameter3Changing(string value);
         partial void OnCommandParameter3Changed();
+        partial void OnCommandParameter4Changing(string value);
+        partial void OnCommandParameter4Changed();
         partial void OnDescriptionChanging(string value);
         partial void OnDescriptionChanged();
         partial void OnDialPlanIDChanging(string value);
@@ -1984,6 +1988,30 @@ namespace SIPSorcery.Entities
                     this._commandParameter3 = value;
                     this.RaiseDataMemberChanged("CommandParameter3");
                     this.OnCommandParameter3Changed();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'CommandParameter4' value.
+        /// </summary>
+        [DataMember()]
+        public string CommandParameter4
+        {
+            get
+            {
+                return this._commandParameter4;
+            }
+            set
+            {
+                if ((this._commandParameter4 != value))
+                {
+                    this.OnCommandParameter4Changing(value);
+                    this.RaiseDataMemberChanging("CommandParameter4");
+                    this.ValidateProperty("CommandParameter4", value);
+                    this._commandParameter4 = value;
+                    this.RaiseDataMemberChanged("CommandParameter4");
+                    this.OnCommandParameter4Changed();
                 }
             }
         }

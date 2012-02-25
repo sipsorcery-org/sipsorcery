@@ -2457,6 +2457,30 @@ namespace SIPSorcery.Entities
         private global::System.Boolean _IsDisabled;
         partial void OnIsDisabledChanging(global::System.Boolean value);
         partial void OnIsDisabledChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String CommandParameter4
+        {
+            get
+            {
+                return _CommandParameter4;
+            }
+            set
+            {
+                OnCommandParameter4Changing(value);
+                ReportPropertyChanging("CommandParameter4");
+                _CommandParameter4 = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("CommandParameter4");
+                OnCommandParameter4Changed();
+            }
+        }
+        private global::System.String _CommandParameter4;
+        partial void OnCommandParameter4Changing(global::System.String value);
+        partial void OnCommandParameter4Changed();
 
         #endregion
     
