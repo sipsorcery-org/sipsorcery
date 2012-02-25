@@ -42,6 +42,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Xml;
+using SIPSorcery.CRM;
 using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -49,8 +50,10 @@ using SIPSorcery.Servers;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace SIPSorcery.SIPRegistrar {
-    public class SIPRegistrarDaemon {
+namespace SIPSorcery.SIPRegistrar
+{
+    public class SIPRegistrarDaemon
+    {
         private ILog logger = AppState.logger;
 
         private XmlNode m_sipRegistrarSocketsNode = SIPRegistrarState.SIPRegistrarSocketsNode;
@@ -58,7 +61,8 @@ namespace SIPSorcery.SIPRegistrar {
         private int m_monitorLoopbackPort = SIPRegistrarState.MonitorLoopbackPort;
         private int m_maximumAccountBindings = SIPRegistrarState.MaximumAccountBindings;
         private IPEndPoint m_natKeepAliveRelaySocket = SIPRegistrarState.NATKeepAliveRelaySocket;
-        private string m_switchboardCertificateName = SIPRegistrarState.SwitchboardCertificateName;
+        //private string m_switchboardCertificateName = SIPRegistrarState.SwitchboardCertificateName;
+        private string m_switchboardUserAgentPrefix = SIPRegistrarState.SwitchboardUserAgentPrefix;
         private int m_threadCount = SIPRegistrarState.ThreadCount;
 
         private SIPTransport m_sipTransport;
@@ -72,32 +76,39 @@ namespace SIPSorcery.SIPRegistrar {
         //private SIPAssetGetFromDirectQueryDelegate<SIPAccount> GetSIPAccountFromQuery_External;
         private SIPAssetPersistor<SIPRegistrarBinding> m_registrarBindingsPersistor;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;
-       
+        public SIPAssetPersistor<Customer> CustomerPersistor_External;
+
         public SIPRegistrarDaemon(
             GetCanonicalDomainDelegate getDomain,
             SIPAssetGetDelegate<SIPAccount> getSIPAccount,
             //SIPAssetGetFromDirectQueryDelegate<SIPAccount> getSIPAccountFromQuery,
             SIPAssetPersistor<SIPRegistrarBinding> registrarBindingsPersistor,
-            SIPAuthenticateRequestDelegate sipRequestAuthenticator
-            ) {
+            SIPAuthenticateRequestDelegate sipRequestAuthenticator,
+            SIPAssetPersistor<Customer> customerPersistor)
+        {
             GetCanonicalDomain_External = getDomain;
             GetSIPAccount_External = getSIPAccount;
             //GetSIPAccountFromQuery_External = getSIPAccountFromQuery;
             m_registrarBindingsPersistor = registrarBindingsPersistor;
             SIPAuthenticateRequest_External = sipRequestAuthenticator;
+            CustomerPersistor_External = customerPersistor;
         }
 
-        public void Start() {
-            try {
+        public void Start()
+        {
+            try
+            {
                 logger.Debug("SIP Registrar daemon starting...");
 
                 // Pre-flight checks.
-                if (m_sipRegistrarSocketsNode == null || m_sipRegistrarSocketsNode.ChildNodes.Count == 0) {
+                if (m_sipRegistrarSocketsNode == null || m_sipRegistrarSocketsNode.ChildNodes.Count == 0)
+                {
                     throw new ApplicationException("The SIP Registrar cannot start without at least one socket specified to listen on, please check config file.");
                 }
 
                 // Send events from this process to the monitoring socket.
-                if (m_monitorLoopbackPort != 0) {
+                if (m_monitorLoopbackPort != 0)
+                {
                     // Events will be sent by the monitor channel to the loopback interface and this port.
                     m_monitorEventWriter = new SIPMonitorEventWriter(m_monitorLoopbackPort);
                     logger.Debug("Monitor channel initialised for 127.0.0.1:" + m_monitorLoopbackPort + ".");
@@ -110,24 +121,27 @@ namespace SIPSorcery.SIPRegistrar {
                 m_sipTransport.AddSIPChannel(sipChannels);
 
                 // Create and configure the SIP Registrar core.
-                if (m_natKeepAliveRelaySocket != null) {
+                if (m_natKeepAliveRelaySocket != null)
+                {
                     m_natKeepAliveSender = new UdpClient();
                 }
 
                 SIPUserAgentConfigurationManager userAgentConfigManager = new SIPUserAgentConfigurationManager(m_userAgentsConfigNode);
-                if (m_userAgentsConfigNode == null) {
+                if (m_userAgentsConfigNode == null)
+                {
                     logger.Warn("The UserAgent config's node was missing.");
                 }
                 m_registrarBindingsManager = new SIPRegistrarBindingsManager(FireSIPMonitorEvent, m_registrarBindingsPersistor, SendNATKeepAlive, m_maximumAccountBindings, userAgentConfigManager);
                 m_registrarBindingsManager.Start();
 
-                m_registrarCore = new RegistrarCore(m_sipTransport, m_registrarBindingsManager, GetSIPAccount_External, GetCanonicalDomain_External, true, true, FireSIPMonitorEvent, userAgentConfigManager, SIPAuthenticateRequest_External, m_switchboardCertificateName);
+                m_registrarCore = new RegistrarCore(m_sipTransport, m_registrarBindingsManager, GetSIPAccount_External, GetCanonicalDomain_External, true, true, FireSIPMonitorEvent, userAgentConfigManager, SIPAuthenticateRequest_External, m_switchboardUserAgentPrefix, CustomerPersistor_External);
                 m_registrarCore.Start(m_threadCount);
                 m_sipTransport.SIPTransportRequestReceived += m_registrarCore.AddRegisterRequest;
 
                 logger.Debug("SIP Registrar successfully started.");
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPRegistrarDaemon Start. " + excp.Message);
             }
         }
@@ -138,18 +152,23 @@ namespace SIPSorcery.SIPRegistrar {
         /// layer to multiplex a 4 byte null payload onto one of its sockets and send to the specified agent. A typical scenario would have the SIP Registrar
         /// firing this event every 15s to send the null payloads to each of its registered contacts.
         /// </summary>
-        private void SendNATKeepAlive(NATKeepAliveMessage keepAliveMessage) {
-            try {
+        private void SendNATKeepAlive(NATKeepAliveMessage keepAliveMessage)
+        {
+            try
+            {
                 byte[] buffer = keepAliveMessage.ToBuffer();
                 m_natKeepAliveSender.Send(buffer, buffer.Length, m_natKeepAliveRelaySocket);
             }
-            catch (Exception natSendExcp) {
+            catch (Exception natSendExcp)
+            {
                 logger.Warn("Exception SendNATKeepAlive " + keepAliveMessage.RemoteEndPoint + ". " + natSendExcp.Message);
             }
         }
 
-        public void Stop() {
-            try {
+        public void Stop()
+        {
+            try
+            {
                 logger.Debug("SIP Registrar daemon stopping...");
 
                 logger.Debug("Shutting down Registrar Bindings Manager.");
@@ -160,13 +179,16 @@ namespace SIPSorcery.SIPRegistrar {
 
                 logger.Debug("SIP Registrar daemon stopped.");
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPRegistrarDaemon Stop. " + excp.Message);
             }
         }
 
-        private void FireSIPMonitorEvent(SIPMonitorEvent sipMonitorEvent) {
-            try {
+        private void FireSIPMonitorEvent(SIPMonitorEvent sipMonitorEvent)
+        {
+            try
+            {
                 if (sipMonitorEvent != null && m_monitorEventWriter != null)
                 {
                     if (sipMonitorEvent is SIPMonitorConsoleEvent)
@@ -186,7 +208,8 @@ namespace SIPSorcery.SIPRegistrar {
                     }
                 }
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception FireSIPMonitorEvent. " + excp.Message);
             }
         }

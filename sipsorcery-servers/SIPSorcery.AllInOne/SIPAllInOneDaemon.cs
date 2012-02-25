@@ -195,7 +195,8 @@ namespace SIPSorcery.SIPAppServer
                         m_sipSorceryPersistor.SIPDomainManager.GetDomain,
                         m_sipSorceryPersistor.SIPAccountsPersistor.Get,
                         m_sipSorceryPersistor.SIPRegistrarBindingPersistor,
-                        SIPRequestAuthenticator.AuthenticateSIPRequest);
+                        SIPRequestAuthenticator.AuthenticateSIPRequest,
+                        m_customerSessionManager.CustomerPersistor);
                     m_sipRegistrarDaemon.Start();
                 }
 

@@ -59,7 +59,8 @@ namespace SIPSorcery.SIPRegistrar
         private const string MONITOR_LOOPBACK_PORT_KEY = "MonitorLoopbackPort";
         private const string MAXIMUM_ACCOUNT_BINDINGS_KEY = "MaximumAccountBindings";
         private const string NATKEEPALIVE_RELAY_SOCKET = "NATKeepAliveRelaySocket";
-        private const string SWITCHBOARD_CERTIFICATE_NAME_KEY = "SwitchboardCertificateName";
+        //private const string SWITCHBOARD_CERTIFICATE_NAME_KEY = "SwitchboardCertificateName";
+        private const string SWITCHBOARD_USERAGNET_PREFIX_KEY = "SwitchboardUserAgentPrefix";
         private const string THREAD_COUNT_KEY = "ThreadCount";
 
         public static ILog logger;
@@ -70,7 +71,8 @@ namespace SIPSorcery.SIPRegistrar
         public static readonly int MonitorLoopbackPort;
         public static readonly int MaximumAccountBindings = 1;
         public static IPEndPoint NATKeepAliveRelaySocket;
-        public static readonly string SwitchboardCertificateName;
+        //public static readonly string SwitchboardCertificateName;
+        public static readonly string SwitchboardUserAgentPrefix;
         public static readonly int ThreadCount = 1;
 
         static SIPRegistrarState()
@@ -116,7 +118,8 @@ namespace SIPSorcery.SIPRegistrar
                     {
                         NATKeepAliveRelaySocket = IPSocket.ParseSocketString(AppState.GetConfigNodeValue(m_sipRegistrarNode, NATKEEPALIVE_RELAY_SOCKET));
                     }
-                    SwitchboardCertificateName = AppState.GetConfigNodeValue(m_sipRegistrarNode, SWITCHBOARD_CERTIFICATE_NAME_KEY);
+                    //SwitchboardCertificateName = AppState.GetConfigNodeValue(m_sipRegistrarNode, SWITCHBOARD_CERTIFICATE_NAME_KEY);
+                    SwitchboardUserAgentPrefix = AppState.GetConfigNodeValue(m_sipRegistrarNode, SWITCHBOARD_USERAGNET_PREFIX_KEY);
                     if (!AppState.GetConfigNodeValue(m_sipRegistrarNode, THREAD_COUNT_KEY).IsNullOrBlank())
                     {
                         Int32.TryParse(AppState.GetConfigNodeValue(m_sipRegistrarNode, THREAD_COUNT_KEY), out ThreadCount);

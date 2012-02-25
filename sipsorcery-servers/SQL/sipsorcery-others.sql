@@ -339,6 +339,7 @@ create table SimpleWizardRule
   CommandParameter1 nvarchar(2048) not null,	
   CommandParameter2 nvarchar(2048),
   CommandParameter3 nvarchar(2048),
+  CommandParameter4 nvarchar(2048),
   TimePattern nvarchar(32) null,							-- If set refers to a time interval that dictates when this rule should apply
   IsDisabled bit not null default 0,						-- If set to 1 means the rule is disabled.
   Primary Key(ID),
