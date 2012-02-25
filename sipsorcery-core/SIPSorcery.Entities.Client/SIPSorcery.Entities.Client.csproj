@@ -40,7 +40,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="SIPSorcery.Silverlight.SIP, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL" />
+    <Reference Include="SIPSorcery.Silverlight.SIP">
+      <HintPath>..\..\stable\SIPSorcery.Silverlight.SIP.dll</HintPath>
+    </Reference>
     <Reference Include="System.ComponentModel.DataAnnotations, Version=2.0.5.0, Culture=neutral, PublicKeyToken=ddd0da4d3e678217, processorArchitecture=MSIL" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />

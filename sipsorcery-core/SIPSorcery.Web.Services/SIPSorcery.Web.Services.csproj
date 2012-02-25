@@ -184,6 +184,6 @@
   </ProjectExtensions>
   <PropertyGroup>
     <PostBuildEvent>copy "$(TargetPath)" "d:\temp\sipsorcery\"
-copy "$(TargetPath)" "d:\Data\LiveMesh\Source\SIPSorcery\sipsorcery-core\Build"</PostBuildEvent>
+copy "$(TargetPath)" "..\..\Build"</PostBuildEvent>
   </PropertyGroup>
 </Project>
