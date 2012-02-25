@@ -34,6 +34,11 @@
 								AlternatingRowBackground="LightSteelBlue" Margin="0" HorizontalAlignment="Left" Width="977" MouseLeftButtonUp="RulesDataGridClicked" MinHeight="231" Height="452">
 								<sdk:DataGrid.Columns>
 									<sdk:DataGridTextColumn 
+										Header="Priority" 
+										Binding="{Binding Priority}" 
+										IsReadOnly="True"
+										Width="70" />
+									<sdk:DataGridTextColumn 
 										Header="Type" 
 										Width="SizeToCells"
 										Binding="{Binding PatternType}" 
@@ -68,11 +73,6 @@
 										Binding="{Binding IsDisabled}" 
 										IsReadOnly="True"
 										Width="70" />
-									<sdk:DataGridTextColumn 
-										Header="Priority" 
-										Binding="{Binding Priority}" 
-										IsReadOnly="True"
-										Width="70" />
 									<sdk:DataGridTemplateColumn Header="Delete" MinWidth="100">
 										<sdk:DataGridTemplateColumn.CellTemplate>
 											<DataTemplate>
@@ -93,6 +93,11 @@
 								RowBackground="Azure" 
 								AlternatingRowBackground="LightSteelBlue" Margin="0" HorizontalAlignment="Left" Width="977" MouseLeftButtonUp="RulesDataGridClicked" MinHeight="231" Height="452" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto">
 								<sdk:DataGrid.Columns>
+									<sdk:DataGridTextColumn 
+										Header="Priority" 
+										Binding="{Binding Priority}" 
+										IsReadOnly="True"
+										Width="70" />
 									<sdk:DataGridTextColumn 
 										Header="Match Type" 
 										Binding="{Binding ToMatchType}" 
@@ -137,11 +142,6 @@
 									<sdk:DataGridTextColumn 
 										Header="Disabled" 
 										Binding="{Binding IsDisabled}" 
-										IsReadOnly="True"
-										Width="70" />
-									<sdk:DataGridTextColumn 
-										Header="Priority" 
-										Binding="{Binding Priority}" 
 										IsReadOnly="True"
 										Width="70" />
 									<sdk:DataGridTemplateColumn Header="Delete" MinWidth="100">

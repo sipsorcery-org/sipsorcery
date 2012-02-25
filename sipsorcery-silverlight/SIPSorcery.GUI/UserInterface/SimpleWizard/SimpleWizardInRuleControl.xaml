@@ -100,7 +100,7 @@
 					</DiscreteObjectKeyFrame.Value>
 				</DiscreteObjectKeyFrame>
 			</ObjectAnimationUsingKeyFrames>
-			<DoubleAnimation Duration="0" To="140" Storyboard.TargetProperty="(FrameworkElement.Height)" Storyboard.TargetName="m_commandCanvas" d:IsOptimized="True"/>
+			<DoubleAnimation Duration="0" To="180" Storyboard.TargetProperty="(FrameworkElement.Height)" Storyboard.TargetName="m_commandCanvas" d:IsOptimized="True"/>
 		</Storyboard>
 		<Storyboard x:Name="SpecificTimeStoryboard">
 			<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="textBlock">
@@ -295,7 +295,7 @@
 					<TextBlock Height="25" TextWrapping="Wrap" Text=":" Width="8" FontSize="16" Canvas.Left="371" Canvas.Top="83"/>
 					<TextBox x:Name="m_endTimeMin" Height="25" Canvas.Left="381" TextWrapping="Wrap" Text="59" Canvas.Top="80" Width="25" MaxLength="2" TabIndex="19"/>
 				</Canvas>
-				<StackPanel x:Name="m_commandCanvas" Background="#FFC0D7DA" Height="363" Margin="0">
+				<StackPanel x:Name="m_commandCanvas" Background="#FFC0D7DA" Height="392" Margin="0">
 					<Canvas x:Name="m_commandTypeCanvas" Height="38" Margin="0,0,8,0">
 						<ComboBox x:Name="m_ruleCommandType" Height="25" Width="140" SelectedIndex="0" Canvas.Left="166" Canvas.Top="8" SelectionChanged="RuleCommandTypeSelectionChanged" TabIndex="20">
 							<TextBlock FontSize="11" Text="Dial" />
@@ -333,13 +333,15 @@
 						<TextBlock TextWrapping="Wrap" Width="140" Height="16" Canvas.Left="20" Canvas.Top="44" Text="Reject Reason" FontWeight="Bold"/>
 						<TextBox x:Name="m_rejectReason" Height="22" TextWrapping="Wrap" Width="174" Canvas.Left="166" Canvas.Top="44" TabIndex="27"/>
 					</Canvas>
-					<Canvas x:Name="m_highriseLookupCanvas" Height="102">
+					<Canvas x:Name="m_highriseLookupCanvas" Height="139">
 						<TextBlock TextWrapping="Wrap" Width="108" Height="16" Text="Highrise URL" FontWeight="Bold" Canvas.Top="11" Canvas.Left="20"/>
 						<TextBlock TextWrapping="Wrap" Width="108" Height="16" FontWeight="Bold" Canvas.Top="46" Canvas.Left="20"><Run Text="Highrise "/><Run Text="Token"/></TextBlock>
 						<TextBox x:Name="m_highriseURL" Height="22" TextWrapping="Wrap" Width="476" Canvas.Left="166" Canvas.Top="7" TabIndex="28"/>
 						<TextBox x:Name="m_highriseToken" Height="22" TextWrapping="Wrap" Width="476" Canvas.Left="166" Canvas.Top="42" TabIndex="29"/>
 						<TextBlock TextWrapping="Wrap" Width="108" Height="16" FontWeight="Bold" Canvas.Top="77" Canvas.Left="20" Text="Record Call Note"/>
 						<CheckBox x:Name="m_recordHighriseNote" Content="" Height="16" Canvas.Left="166" Canvas.Top="77" Width="15"/>
+						<TextBlock TextWrapping="Wrap" Width="120" Height="16" FontWeight="Bold" Canvas.Top="113" Canvas.Left="20" Text="Do in background"/>
+						<CheckBox x:Name="m_asyncHighrise" Content="" Height="16" Canvas.Left="166" Canvas.Top="113" Width="15"/>
 					</Canvas>
 				</StackPanel>
 				<Canvas x:Name="m_buttonsCanvas" Height="69">

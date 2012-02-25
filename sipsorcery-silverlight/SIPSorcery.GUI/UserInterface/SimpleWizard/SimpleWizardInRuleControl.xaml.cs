@@ -421,6 +421,7 @@ namespace SIPSorcery
                 rule.CommandParameter1 = m_highriseURL.Text;
                 rule.CommandParameter2 = m_highriseToken.Text;
                 rule.CommandParameter3 = m_recordHighriseNote.IsChecked.ToString();
+                rule.CommandParameter4 = m_asyncHighrise.IsChecked.ToString();
             }
 
             return null;
@@ -457,6 +458,7 @@ namespace SIPSorcery
                 m_highriseURL.Text = rule.CommandParameter1;
                 m_highriseToken.Text = rule.CommandParameter2;
                 m_recordHighriseNote.IsChecked = (rule.CommandParameter3 != null) ? Convert.ToBoolean(rule.CommandParameter3) : false;
+                m_asyncHighrise.IsChecked = (rule.CommandParameter4 != null) ? Convert.ToBoolean(rule.CommandParameter4) : false;
             }
         }
 
