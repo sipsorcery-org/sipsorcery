@@ -23,8 +23,9 @@ namespace SIPSorcery.AppServer.DialPlan
             string traceDirectory,
             string callersNetworkId,
             Customer customer,
-            DialPlanEngine dialPlanEngine)
-            : base(monitorLogDelegate, sipTransport, createBridge, outboundProxy, sipServerUserAgent, dialPlan, sipProviders, traceDirectory, callersNetworkId, customer, dialPlanEngine)
+            DialPlanEngine dialPlanEngine,
+            GetCanonicalDomainDelegate getCanonicalDomain)
+            : base(monitorLogDelegate, sipTransport, createBridge, outboundProxy, sipServerUserAgent, dialPlan, sipProviders, traceDirectory, callersNetworkId, customer, dialPlanEngine, getCanonicalDomain)
         {
             ContextType = DialPlanContextsEnum.Script;
         }

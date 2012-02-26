@@ -45,10 +45,6 @@ using System.Threading;
 using SIPSorcery.Sys;
 using log4net;
 
-#if UNITTEST
-using NUnit.Framework;
-#endif
-
 namespace SIPSorcery.SIP
 {
     public class SIPTLSChannel : SIPChannel
@@ -67,6 +63,8 @@ namespace SIPSorcery.SIP
 
         //private string m_certificatePath;
         private X509Certificate2 m_serverCertificate;
+
+        private new ILog logger = AppState.GetLogger("siptls-channel");
 
         public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint)
         {
@@ -122,16 +120,16 @@ namespace SIPSorcery.SIP
 
                 while (!Closed)
                 {
-                    TcpClient tcpClient = m_tlsServerListener.AcceptTcpClient();
-                    tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-
-                    IPEndPoint remoteEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
-                    logger.Debug("SIP TLS Channel connection accepted from " + remoteEndPoint + ".");
-
-                    SslStream sslStream = new SslStream(tcpClient.GetStream(), false);
-
                     try
                     {
+                        TcpClient tcpClient = m_tlsServerListener.AcceptTcpClient();
+                        tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
+                        IPEndPoint remoteEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
+                        logger.Debug("SIP TLS Channel connection accepted from " + remoteEndPoint + ".");
+
+                        SslStream sslStream = new SslStream(tcpClient.GetStream(), false);
+
                         sslStream.AuthenticateAsServer(m_serverCertificate, false, SslProtocols.Tls, false);
                         // Display the properties and settings for the authenticated stream.
                         //DisplaySecurityLevel(sslStream);
@@ -154,8 +152,8 @@ namespace SIPSorcery.SIP
                     catch (Exception e)
                     {
                         logger.Error("SIPTLSChannel AuthenticationException. " + e.Message);
-                        sslStream.Close();
-                        tcpClient.Close();
+                        //sslStream.Close();
+                        //tcpClient.Close();
                     }
                 }
 

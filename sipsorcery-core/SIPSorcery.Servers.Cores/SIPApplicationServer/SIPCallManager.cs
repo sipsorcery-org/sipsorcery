@@ -434,7 +434,9 @@ namespace SIPSorcery.Servers
                             null,
                             null,
                             null,
-                            null, null);
+                            null, 
+                            null,
+                            null);
                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, null, this);
 
                     #endregion
@@ -492,7 +494,8 @@ namespace SIPSorcery.Servers
                                         m_traceDirectory,
                                         (uas.CallDirection == SIPCallDirection.Out) ? sipAccount.NetworkId : null,
                                         customer,
-                                        m_dialPlanEngine);
+                                        m_dialPlanEngine,
+                                        GetCanonicalDomain_External);
                                     //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer);};
                                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
                                 }
@@ -530,7 +533,8 @@ namespace SIPSorcery.Servers
                                             m_traceDirectory,
                                             null,
                                             customer,
-                                            null);
+                                            null,
+                                            GetCanonicalDomain_External);
                                     //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
                                 }
@@ -650,7 +654,9 @@ namespace SIPSorcery.Servers
                                     GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
                                     m_traceDirectory,
                                     null,
-                                    customer, null);
+                                    customer, 
+                                    null,
+                                    GetCanonicalDomain_External);
                             //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                             m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
 
@@ -732,7 +738,9 @@ namespace SIPSorcery.Servers
                             GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
                             null,
                             null,
-                            customer, null);
+                            customer, 
+                            null,
+                            GetCanonicalDomain_External);
                     m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
 
                     return null;
@@ -822,7 +830,8 @@ namespace SIPSorcery.Servers
                                     m_traceDirectory,
                                     null,
                                     customer,
-                                    null);
+                                    null,
+                                    GetCanonicalDomain_External);
                             //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                             m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
 

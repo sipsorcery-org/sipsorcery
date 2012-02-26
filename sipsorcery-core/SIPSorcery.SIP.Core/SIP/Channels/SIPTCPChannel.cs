@@ -107,11 +107,10 @@ namespace SIPSorcery.SIP
 
                 while (!Closed)
                 {
-                    //Socket clientSocket = m_sipConn.Accept();
-                    TcpClient tcpClient = m_tcpServerListener.AcceptTcpClient();
-
                     try
                     {
+                        TcpClient tcpClient = m_tcpServerListener.AcceptTcpClient();
+
                         tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                         //clientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 

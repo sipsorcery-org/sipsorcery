@@ -58,6 +58,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
         private SIPMonitorLogDelegate Log_External;
         public DialogueBridgeCreatedDelegate CreateBridge_External;
+        public GetCanonicalDomainDelegate GetCanonicalDomain_External;
 
         private SIPTransport m_sipTransport;
         private ISIPServerUserAgent m_sipServerUserAgent;
@@ -153,7 +154,8 @@ namespace SIPSorcery.AppServer.DialPlan
             string traceDirectory,
             string callersNetworkId,
             Customer customer,
-            DialPlanEngine dialPlanEngine)
+            DialPlanEngine dialPlanEngine,
+            GetCanonicalDomainDelegate getCanonicalDomain)
         {
             Log_External = monitorLogDelegate;
             CreateBridge_External = createBridge;
@@ -166,6 +168,7 @@ namespace SIPSorcery.AppServer.DialPlan
             CallersNetworkId = callersNetworkId;
             Customer = customer;
             m_dialPlanEngine = dialPlanEngine;
+            GetCanonicalDomain_External = getCanonicalDomain;
 
             m_sipServerUserAgent.CallCancelled += ClientCallCancelled;
             m_sipServerUserAgent.NoRingTimeout += ClientCallNoRingTimeout;
