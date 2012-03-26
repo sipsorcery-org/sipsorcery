@@ -238,6 +238,20 @@ namespace SIPSorcery.Sys
             throw new ApplicationException("GetRandomInt did not return an appropriate random number within 10 attempts.");
         }
 
+        public static UInt16 GetRandomUInt16()
+        {
+            byte[] uint16Buffer = new byte[2];
+            m_randomProvider.GetBytes(uint16Buffer);
+            return BitConverter.ToUInt16(uint16Buffer, 0);
+        }
+
+        public static UInt32 GetRandomUInt()
+        {
+            byte[] uint32Buffer = new byte[4];
+            m_randomProvider.GetBytes(uint32Buffer);
+            return BitConverter.ToUInt32(uint32Buffer, 0);
+        }
+
         public static string GetRandomString(int length)
         {
             string randomStr = GetRandomInt(length).ToString();

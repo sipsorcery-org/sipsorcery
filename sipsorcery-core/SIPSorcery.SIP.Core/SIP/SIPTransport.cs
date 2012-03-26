@@ -125,7 +125,7 @@ namespace SIPSorcery.SIP
         private bool m_closed = false;
 
         private Dictionary<string, SIPChannel> m_sipChannels = new Dictionary<string, SIPChannel>();    // List of the physical channels that have been opened and are under management by this instance.
-        
+
         private SIPTransactionEngine m_transactionEngine;
 
         public event SIPTransportRequestDelegate SIPTransportRequestReceived;
@@ -1254,7 +1254,7 @@ namespace SIPSorcery.SIP
 #if !SILVERLIGHT
                                 if (PerformanceMonitorPrefix != null)
                                 {
-                                   // SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
+                                    // SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
                                 }
 #endif
 
@@ -1344,10 +1344,10 @@ namespace SIPSorcery.SIP
                                     try
                                     {
                                         SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessage);
-                                        
+
                                         SIPValidationFieldsEnum sipRequestErrorField = SIPValidationFieldsEnum.Unknown;
                                         string sipRequestValidationError = null;
-                                        if(!sipRequest.IsValid(out sipRequestErrorField, out sipRequestValidationError) )
+                                        if (!sipRequest.IsValid(out sipRequestErrorField, out sipRequestValidationError))
                                         {
                                             throw new SIPValidationException(sipRequestErrorField, sipRequestValidationError);
                                         }
@@ -1763,7 +1763,7 @@ namespace SIPSorcery.SIP
             request.Header = header;
             header.CSeqMethod = method;
             header.Allow = ALLOWED_SIP_METHODS;
-            
+
             SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
             header.Vias.PushViaHeader(viaHeader);
 
@@ -1902,7 +1902,8 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                return GetURIEndPoint(sipRequest.URI, async);
+                //return GetURIEndPoint(sipRequest.URI, async);
+                return GetURIEndPoint(lookupURI, async);
             }
         }
 

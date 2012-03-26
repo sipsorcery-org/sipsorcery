@@ -124,7 +124,7 @@ create table sipproviders
  owner varchar(32) not null,
  adminmemberid varchar(32),
  providername varchar(50) not null,
- providerusername varchar(32) not null,
+ providerusername varchar(64) not null,
  providerpassword varchar(32),
  providerserver varchar(256) null,
  providerauthusername varchar(32),
@@ -180,7 +180,7 @@ create table sipdialplans
  adminmemberid varchar(32),
  dialplanname varchar(64) not null default 'default',			-- Name the owner has assigned to the dialplan to allow them to choose between their different ones.
  traceemailaddress varchar(256),
- dialplanscript text,
+ dialplanscript mediumtext,										-- mediumtext has a max col size of approx 16MB.
  scripttypedescription varchar(12) not null default 'Ruby',		-- The type of script the dialplan has, supported values are: Asterisk, Ruby, Python and JScript.
  inserted varchar(33) not null,
  lastupdate varchar(33) not null,
@@ -369,7 +369,7 @@ create table dialplandata
 (
   dataowner varchar(32)not null,
   datakey varchar(64) not null, 
-  datavalue varchar(1024) not null,
+  datavalue varchar(10000) not null,
   Primary Key(dataowner, datakey)
 );
 

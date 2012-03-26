@@ -4,7 +4,7 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0B7CB4A2-B101-473E-B5A8-3B746A232647}"
 	ProjectSection(SolutionItems) = preProject
 		Local.testsettings = Local.testsettings
-		SIPSorcery-Core2.vsmdi = SIPSorcery-Core2.vsmdi
+		SIPSorcery-Core.vsmdi = SIPSorcery-Core.vsmdi
 		TraceAndTestImpact.testsettings = TraceAndTestImpact.testsettings
 	EndProjectSection
 EndProject
@@ -53,7 +53,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Web.Services.Tes
 EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
-		CategoryFile = SIPSorcery-Core2.vsmdi
+		CategoryFile = SIPSorcery-Core.vsmdi
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

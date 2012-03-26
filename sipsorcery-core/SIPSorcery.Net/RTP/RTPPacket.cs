@@ -12,10 +12,6 @@
 
 using System;
 
-#if UNITTEST
-using NUnit.Framework;
-#endif
-
 namespace SIPSorcery.Net
 {
 	public class RTPPacket
@@ -31,12 +27,14 @@ namespace SIPSorcery.Net
 		public RTPPacket(int payloadSize)
 		{
 			Header = new RTPHeader();
-			Payload = new byte[payloadSize]; //GetNullPayload(payloadSize);
+			Payload = new byte[payloadSize];
 		}
 		
 		public RTPPacket(byte[] packet)
 		{
-			Header = new RTPHeader(packet);	
+			Header = new RTPHeader(packet);
+            Payload = new byte[packet.Length - Header.Length];
+            Array.Copy(packet, Header.Length, Payload, 0, Payload.Length);
 		}
 
 		public byte[] GetBytes()
@@ -63,37 +61,5 @@ namespace SIPSorcery.Net
 
 			return payload;
 		}
-
-        #region Unit testing.
-
-		#if UNITTEST
-	
-		[TestFixture]
-		public class RTPPacketUnitTest
-		{
-			[TestFixtureSetUp]
-			public void Init()
-			{
-				
-			}
-
-			[TestFixtureTearDown]
-			public void Dispose()
-			{			
-				
-			}
-
-			[Test]
-			public void SampleTest()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-				
-				Assert.IsTrue(true, "True was false.");
-			}
-		}
-
-		#endif
-
-		#endregion
 	}
 }

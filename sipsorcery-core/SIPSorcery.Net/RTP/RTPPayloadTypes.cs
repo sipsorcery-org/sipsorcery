@@ -19,7 +19,6 @@ namespace SIPSorcery.Net
 		PCMU = 0,
 		GSM = 3,
 	}
-	
 
 	public class RTPPayloadTypes
 	{

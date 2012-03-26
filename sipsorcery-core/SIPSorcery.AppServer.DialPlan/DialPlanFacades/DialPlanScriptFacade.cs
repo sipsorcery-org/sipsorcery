@@ -1713,11 +1713,13 @@ namespace SIPSorcery.AppServer.DialPlan
 
                     if (forUpdate)
                     {
-                        Log("DBReadForUpdate sucessful for datakey \"" + key + "\", value=" + result + ".");
+                        //Log("DBReadForUpdate sucessful for datakey \"" + key + "\", value=" + result + ".");
+                        Log("DBReadForUpdate sucessful for datakey \"" + key + "\".");
                     }
                     else
                     {
-                        Log("DBRead sucessful for datakey \"" + key + "\", value=" + result + ".");
+                        //Log("DBRead sucessful for datakey \"" + key + "\", value=" + result + ".");
+                        Log("DBRead sucessful for datakey \"" + key + "\".");
                     }
 
                     return result;

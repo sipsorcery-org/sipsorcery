@@ -91,7 +91,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             Console.WriteLine("Resolved SIP end point " + lookupSIPEndPoint);
 
             Assert.IsTrue(lookupSIPEndPoint.Protocol == SIPProtocolsEnum.udp, "The resolved protocol was not correct.");
-            Assert.IsTrue(lookupSIPEndPoint.GetIPEndPoint().ToString() == "194.213.29.100:5060", "The resolved socket was not correct.");
+            Assert.IsTrue(lookupSIPEndPoint.GetIPEndPoint().ToString() == "194.213.29.92:5060", "The resolved socket was not correct.");
         }
 
         [TestMethod]
@@ -118,7 +118,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             Console.WriteLine("Resolved SIP end point " + lookupSIPEndPoint);
 
             Assert.IsTrue(lookupSIPEndPoint.Protocol == SIPProtocolsEnum.udp, "The resolved protocol was not correct.");
-            Assert.IsTrue(lookupSIPEndPoint.GetIPEndPoint().ToString() == "194.213.29.100:5060", "The resolved socket was not correct.");
+            Assert.IsTrue(lookupSIPEndPoint.GetIPEndPoint().ToString() == "194.213.29.91:5060", "The resolved socket was not correct.");
         }
 
         [TestMethod]

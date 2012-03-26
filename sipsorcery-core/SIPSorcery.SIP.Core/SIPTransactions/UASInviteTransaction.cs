@@ -253,7 +253,9 @@ namespace SIPSorcery.SIP
 
                 if (m_contactIPAddress != null)
                 {
-                    okResponse.Header.Contact.First().ContactURI.Host = m_contactIPAddress.ToString();
+                    IPEndPoint contactEP = IPSocket.GetIPEndPoint(okResponse.Header.Contact.First().ContactURI.Host);
+                    contactEP.Address = m_contactIPAddress;
+                    okResponse.Header.Contact.First().ContactURI.Host = contactEP.ToString();
                 }
 
                 okResponse.Header.To.ToTag = m_localTag;

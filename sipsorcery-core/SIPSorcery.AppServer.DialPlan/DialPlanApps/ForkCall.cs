@@ -508,19 +508,19 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    string canincalDomain = m_dialPlanContext.GetCanonicalDomain_External(redirectURI.Host, false);
+                    //string canincalDomain = m_dialPlanContext.GetCanonicalDomain_External(redirectURI.Host, false);
 
-                    if (canincalDomain == null)
+                    if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.NewDialPlan)
                     {
-                        // The redirect URI is for an external SIP server so is safe to process since it won't be accessing the dialplan or providers.
+                        m_dialPlanContext.ExecuteDialPlanForRedirect(answeredResponse);
+                    }
+                    else
+                    {
+                        // The redirect was not explicitly allowed so will be processed as an anonymous call.
                         FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response to " + redirectURI.ToString() + " accepted.", m_username));
                         SIPCallDescriptor redirectCallDescriptor = answeredUAC.CallDescriptor.CopyOf();
                         redirectCallDescriptor.Uri = redirectURI.ToString();
                         StartNewCallAsync(redirectCallDescriptor);
-                    }
-                    else if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.NewDialPlan)
-                    {
-                        m_dialPlanContext.ExecuteDialPlanForRedirect(answeredResponse);
                     }
                     //else if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.Replace)
                     //{
@@ -528,11 +528,11 @@ namespace SIPSorcery.AppServer.DialPlan
                     //    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response rejected as Replace mode not yet implemented.", m_username));
                     //    CallLegCompleted();
                     //}
-                    else
-                    {
-                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response with URI " + redirectURI.ToString() + " was not acted on as not enabled in dial string.", m_username));
-                        CallLegCompleted();
-                    }
+                    //else
+                    //{
+                    //    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response with URI " + redirectURI.ToString() + " was not acted on as not enabled in dial string.", m_username));
+                    //    CallLegCompleted();
+                    //}
 
                     // A redirect response was received. Create a new call leg(s) using the SIP URIs in the contact header of the response.
                     //if (m_dialStringParser != null)

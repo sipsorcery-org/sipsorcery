@@ -120,6 +120,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="RTP\RTPChannel.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2AddressAttribute.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2Attribute.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2ChangeRequestAttribute.cs" />

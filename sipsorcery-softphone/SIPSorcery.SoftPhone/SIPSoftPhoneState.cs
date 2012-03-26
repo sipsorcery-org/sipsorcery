@@ -6,9 +6,11 @@ using System.Text;
 using System.Xml;
 using log4net;
 
-namespace SIPSorcery.SoftPhone {
-    public class SIPSoftPhoneState : IConfigurationSectionHandler {
-         private const string LOGGER_NAME = "sipsoftphone";
+namespace SIPSorcery.SoftPhone
+{
+    public class SIPSoftPhoneState : IConfigurationSectionHandler
+    {
+        private const string LOGGER_NAME = "sipsoftphone";
 
         private const string SIPSOFTPHONE_CONFIGNODE_NAME = "sipsoftphone";
         private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
@@ -38,11 +40,13 @@ namespace SIPSorcery.SoftPhone {
 
                 #endregion
 
-                if (ConfigurationManager.GetSection(SIPSOFTPHONE_CONFIGNODE_NAME) != null) {
+                if (ConfigurationManager.GetSection(SIPSOFTPHONE_CONFIGNODE_NAME) != null)
+                {
                     m_sipSoftPhoneConfigNode = (XmlNode)ConfigurationManager.GetSection(SIPSOFTPHONE_CONFIGNODE_NAME);
                 }
 
-                if (m_sipSoftPhoneConfigNode != null) {
+                if (m_sipSoftPhoneConfigNode != null)
+                {
                     SIPSocketsNode = m_sipSoftPhoneConfigNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
                 }
 
@@ -58,7 +62,8 @@ namespace SIPSorcery.SoftPhone {
         /// <summary>
         /// Handler for processing the App.Config file and passing retrieving the App.Config node.
         /// </summary>
-        public object Create(object parent, object context, XmlNode configSection) {
+        public object Create(object parent, object context, XmlNode configSection)
+        {
             return configSection;
         }
     }

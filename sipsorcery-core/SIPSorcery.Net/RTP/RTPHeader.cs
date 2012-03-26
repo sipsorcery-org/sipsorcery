@@ -19,7 +19,7 @@
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //
 // (V)ersion (2 bits) = 2
-// (P)adding (1 bit) = Inidcates whether the packet contains additional padding octets.
+// (P)adding (1 bit) = Indicates whether the packet contains additional padding octets.
 // e(X)tension (1 bit) = If set he fixed header must be followed by exactly one header extension.
 // CSRC Count (CC) (4 bits) = Number of Contributing Source identifiers following fixed header.
 // (M)arker (1 bit) = Used by profiles to enable marks to be set in the data.
@@ -55,10 +55,6 @@ using System.Collections;
 using System.Net;
 using SIPSorcery.Sys;
 
-#if UNITTEST
-using NUnit.Framework;
-#endif
-
 namespace SIPSorcery.Net
 {
 	public class RTPHeader
@@ -80,24 +76,16 @@ namespace SIPSorcery.Net
 		public uint SyncSource;									// 32 bits.
 		public int[] CSRCList;									// 32 bits.
 
+        public int Length
+        {
+            get { return MIN_HEADER_LEN + CSRCCount * 4; }
+        }
+
 		public RTPHeader()
 		{
-			Random rnd = new Random(DateTime.Now.Millisecond);
-			
-			int randomStart = 1;
-			int randomEnd = UInt16.MaxValue;
-			
-			// Generate a random value for the sequence number.
-			//SequenceNumber = Convert.ToUInt16(rnd.Next(randomStart, randomEnd));
-			SequenceNumber = 0;
-
-			randomEnd = int.MaxValue;
-
-			// Generate a random value for the sync source.
-			SyncSource = (uint)rnd.Next(randomStart, randomEnd) + (uint)rnd.Next(randomStart, randomEnd);
-
-			// Generate a random value for the timestamp.
-			//Timestamp = (uint)rnd.Next(randomStart, randomEnd) + (uint)rnd.Next(randomStart, randomEnd);
+            SequenceNumber = Crypto.GetRandomUInt16();
+            SyncSource = Crypto.GetRandomUInt();
+            Timestamp = Crypto.GetRandomUInt();
 		}
 
 		/// <summary>
@@ -184,132 +172,5 @@ namespace SIPSorcery.Net
 		{
             return DateTime.Now.Date.AddMilliseconds(timestamp);
 		}*/
-
-
-		#region Unit testing.
-
-		#if UNITTEST
-	
-		[TestFixture]
-		public class RTPHeaderUnitTest
-		{
-			[TestFixtureSetUp]
-			public void Init()
-			{
-				
-			}
-
-			[TestFixtureTearDown]
-			public void Dispose()
-			{			
-				
-			}
-
-			[Test]
-			public void SampleTest()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-				
-				Assert.IsTrue(true, "True was false.");
-			}
-
-			[Test]
-			public void GetHeaderTest()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-				RTPHeader rtpHeader = new RTPHeader();
-				byte[] headerBuffer = rtpHeader.GetHeader(1, 0, 1);
-
-				int byteNum = 1;
-				foreach(byte headerByte in headerBuffer)
-				{
-					Console.WriteLine(byteNum + ": " + headerByte.ToString("x"));
-					byteNum++;
-				}
-			}
-
-			[Test]
-			public void HeaderRoundTripTest()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-				RTPHeader src = new RTPHeader();
-				byte[] headerBuffer = src.GetHeader(1, 0, 1);
-				RTPHeader dst = new RTPHeader(headerBuffer);
-
-				Console.WriteLine("Versions: " + src.Version + ", " + dst.Version);
-				Console.WriteLine("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
-				Console.WriteLine("HeaderExtensionFlag: " + src.HeaderExtensionFlag + ", " + dst.HeaderExtensionFlag);
-				Console.WriteLine("CSRCCount: " + src.CSRCCount + ", " + dst.CSRCCount);
-				Console.WriteLine("MarkerBit: " + src.MarkerBit + ", " + dst.MarkerBit);
-				Console.WriteLine("PayloadType: " + src.PayloadType + ", " + dst.PayloadType);
-				Console.WriteLine("SequenceNumber: " + src.SequenceNumber + ", " + dst.SequenceNumber);
-				Console.WriteLine("Timestamp: " + src.Timestamp + ", " + dst.Timestamp);
-				Console.WriteLine("SyncSource: " + src.SyncSource + ", " + dst.SyncSource);
-
-				Console.WriteLine("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
-
-				Assert.IsTrue(src.Version == dst.Version, "Version was mismatched.");
-				Assert.IsTrue(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
-				Assert.IsTrue(src.HeaderExtensionFlag == dst.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
-				Assert.IsTrue(src.CSRCCount == dst.CSRCCount, "CSRCCount was mismatched.");
-				Assert.IsTrue(src.MarkerBit == dst.MarkerBit, "MarkerBit was mismatched.");
-				Assert.IsTrue(src.SequenceNumber == dst.SequenceNumber, "PayloadType was mismatched.");
-				Assert.IsTrue(src.HeaderExtensionFlag == dst.HeaderExtensionFlag, "SequenceNumber was mismatched.");
-				Assert.IsTrue(src.Timestamp == dst.Timestamp, "Timestamp was mismatched.");
-				Assert.IsTrue(src.SyncSource == dst.SyncSource, "SyncSource was mismatched.");
-			}
-
-			[Test]
-			public void CustomisedHeaderRoundTripTest()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-				RTPHeader src = new RTPHeader();
-				src.Version = 3;
-				src.PaddingFlag = 1;
-				src.HeaderExtensionFlag = 1;
-				src.MarkerBit = 1;
-				src.CSRCCount = 3;
-				src.PayloadType = (int)RTPPayloadTypesEnum.GSM;
-
-				byte[] headerBuffer = src.GetHeader(1, 0, 1);
-
-				RTPHeader dst = new RTPHeader(headerBuffer);
-
-				Console.WriteLine("Versions: " + src.Version + ", " + dst.Version);
-				Console.WriteLine("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
-				Console.WriteLine("HeaderExtensionFlag: " + src.HeaderExtensionFlag + ", " + dst.HeaderExtensionFlag);
-				Console.WriteLine("CSRCCount: " + src.CSRCCount + ", " + dst.CSRCCount);
-				Console.WriteLine("MarkerBit: " + src.MarkerBit + ", " + dst.MarkerBit);
-				Console.WriteLine("PayloadType: " + src.PayloadType + ", " + dst.PayloadType);
-				Console.WriteLine("SequenceNumber: " + src.SequenceNumber + ", " + dst.SequenceNumber);
-				Console.WriteLine("Timestamp: " + src.Timestamp + ", " + dst.Timestamp);
-				Console.WriteLine("SyncSource: " + src.SyncSource + ", " + dst.SyncSource);
-
-				string rawHeader = null;
-				foreach(byte headerByte in headerBuffer)
-				{
-					rawHeader += headerByte.ToString("x");
-				}
-
-				Console.WriteLine("Raw Header: " + rawHeader);
-
-				Assert.IsTrue(src.Version == dst.Version, "Version was mismatched.");
-				Assert.IsTrue(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
-				Assert.IsTrue(src.HeaderExtensionFlag == dst.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
-				Assert.IsTrue(src.CSRCCount == dst.CSRCCount, "CSRCCount was mismatched.");
-				Assert.IsTrue(src.MarkerBit == dst.MarkerBit, "MarkerBit was mismatched.");
-				Assert.IsTrue(src.SequenceNumber == dst.SequenceNumber, "PayloadType was mismatched.");
-				Assert.IsTrue(src.HeaderExtensionFlag == dst.HeaderExtensionFlag, "SequenceNumber was mismatched.");
-				Assert.IsTrue(src.Timestamp == dst.Timestamp, "Timestamp was mismatched.");
-				Assert.IsTrue(src.SyncSource == dst.SyncSource, "SyncSource was mismatched.");
-			}
-		}
-
-		#endif
-
-		#endregion
 	}
 }

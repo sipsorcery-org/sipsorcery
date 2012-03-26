@@ -39,19 +39,21 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml;
+using SIPSorcery.Sys;
+using log4net;
 
 namespace SIPSorcery.XMPP
 {
     public class WrappedStream : Stream
     {
+        private static ILog xmppLogger = AppState.GetLogger("xmpptrace");
+
         private Stream m_wrappedStream;
-        private StreamWriter m_traceStream;
         private Boolean m_blockIO;
 
-        public WrappedStream(Stream stream, StreamWriter traceStream)
+        public WrappedStream(Stream stream)
         {
             m_wrappedStream = stream;
-            m_traceStream = traceStream;
         }
 
         public override bool CanRead
@@ -97,16 +99,8 @@ namespace SIPSorcery.XMPP
             {
                 int bytesRead = m_wrappedStream.Read(buffer, offset, count);
 
-                if (m_traceStream != null)
-                {
-                    m_traceStream.WriteLine();
-                    m_traceStream.WriteLine("Receive=>");
-                    m_traceStream.Flush();
-                    m_traceStream.BaseStream.Write(buffer, offset, bytesRead);
-                    m_traceStream.Flush();
-                }
-
-                Console.WriteLine("Receive=> " + Encoding.UTF8.GetString(buffer, offset, bytesRead));
+                xmppLogger.Debug("Receive=>");
+                xmppLogger.Debug(Encoding.UTF8.GetString(buffer, offset, bytesRead));
 
                 return bytesRead;
             }
@@ -130,16 +124,8 @@ namespace SIPSorcery.XMPP
         {
             if (!m_blockIO)
             {
-                Console.WriteLine("Send => " + Encoding.UTF8.GetString(buffer, offset, count));
-
-                if (m_traceStream != null)
-                {
-                    m_traceStream.WriteLine();
-                    m_traceStream.WriteLine("Send=>");
-                    m_traceStream.Flush();
-                    m_traceStream.BaseStream.Write(buffer, offset, count);
-                    m_traceStream.Flush();
-                }
+                xmppLogger.Debug("Send=>");
+                xmppLogger.Debug(Encoding.UTF8.GetString(buffer, offset, count));
 
                 m_wrappedStream.Write(buffer, offset, count);
             }
@@ -152,7 +138,7 @@ namespace SIPSorcery.XMPP
 
         public override void Close()
         {
-            
+
         }
     }
 }

@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RTP\RTPHeaderUnitTest.cs" />
     <Compile Include="SDPUnitTests.cs" />
     <Compile Include="STUNUnitTest.cs" />
   </ItemGroup>

@@ -69,8 +69,6 @@ namespace SIPSorcery.XMPP
         private WrappedStream m_authWrappedStream;
         private XMPPAuthenticatedStream m_authenticatedStream;
 
-        private StreamWriter m_traceStream;
-
         public XMPPClient(string host, int port, string server, string username, string password)
         {
             m_host = host;
@@ -78,7 +76,6 @@ namespace SIPSorcery.XMPP
             m_server = server;
             m_fromUsername = username;
             m_saslToken = GetPlainSASLResponse(username, password);
-            m_traceStream = new StreamWriter("trace.txt");
         }
 
         public void Connect()
@@ -89,7 +86,7 @@ namespace SIPSorcery.XMPP
 
                 logger.Debug("XMPP client is connected to " + m_host + ":" + m_port + ".");
 
-                m_tcpWrappedStream = new WrappedStream(m_tcpClient.GetStream(), m_traceStream);
+                m_tcpWrappedStream = new WrappedStream(m_tcpClient.GetStream());
                 XMPPInitialStream initialStream = new XMPPInitialStream(m_tcpWrappedStream);
                 initialStream.Start(m_server, null, null);
 
@@ -148,7 +145,7 @@ namespace SIPSorcery.XMPP
             m_sslStream.ReadTimeout = SSL_READWRITE_TIMEOUT;
             m_sslStream.WriteTimeout = SSL_READWRITE_TIMEOUT;
             m_sslStream.AuthenticateAsClient(m_server);
-            m_sslWrappedStream = new WrappedStream(m_sslStream, m_traceStream);
+            m_sslWrappedStream = new WrappedStream(m_sslStream);
             XMPPEncryptedStream encryptedStream = new XMPPEncryptedStream(m_sslWrappedStream);
             encryptedStream.Start(m_server, m_saslToken, m_fromUsername);
         }
@@ -157,7 +154,7 @@ namespace SIPSorcery.XMPP
         {
             logger.Debug("XMPP client now authenticated as " + m_fromUsername + ", initiating binding.");
 
-            m_authWrappedStream = new WrappedStream(m_sslStream, m_traceStream);
+            m_authWrappedStream = new WrappedStream(m_sslStream);
             m_authenticatedStream = new XMPPAuthenticatedStream(m_authWrappedStream);
             m_authenticatedStream.IsBound = IsBound;
             m_authenticatedStream.Start(m_server, null, m_fromUsername);
