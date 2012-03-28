@@ -22,8 +22,6 @@ namespace SIPSorcery.Net
 {
     public class RTPChannel
     {
-        //private const int PAYLOAD_SIZE = 160;   //ULAW @ 20ms.
-
         private static ILog logger = AppState.logger;
 
         private UDPListener m_rtpListener;
