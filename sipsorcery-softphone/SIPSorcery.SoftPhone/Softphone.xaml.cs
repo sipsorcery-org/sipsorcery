@@ -48,10 +48,10 @@ namespace SIPSorcery.SoftPhone
     {
         private ILog logger = AppState.logger;
 
-        private SIPClient _sipClient;
-        private GingleClient _gingleClient;
-        private IVoIPClient _activeClient;
-        private SoftphoneSTUNClient _stunClient;
+        private SIPClient _sipClient;               // SIP calls.
+        private GingleClient _gingleClient;         // Google Voice calls.
+        private IVoIPClient _activeClient;          // The active client, either SIP or GV.
+        private SoftphoneSTUNClient _stunClient;    // STUN client to periodically check the public IP address.
 
         public SoftPhone()
         {
@@ -78,6 +78,9 @@ namespace SIPSorcery.SoftPhone
             _stunClient = new SoftphoneSTUNClient();
         }
 
+        /// <summary>
+        /// Application closing, shutdown the SIP, Google Voice and STUN clients.
+        /// </summary>
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             _sipClient.Shutdown();

@@ -45,7 +45,7 @@ namespace SIPSorcery.SoftPhone
 {
     public class SoftphoneSTUNClient
     {
-        private const string STUN_CLIENT_THREAD_NAME = "sipproxy-stunclient";
+        private const string STUN_CLIENT_THREAD_NAME = "stunclient";
 
         private ILog logger = AppState.logger;
 

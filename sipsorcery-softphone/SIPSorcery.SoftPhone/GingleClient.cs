@@ -2,7 +2,7 @@
 // Filename: GingleClient.cs
 //
 // Description: An XMPP based client for making calls via Google Voice's
-// XMPP and nastardised Jingle (Gingle) gateway. 
+// XMPP and bastardised Jingle (Gingle) gateway. 
 // 
 // History:
 // 27 Mar 2012	Aaron Clauson	Refactored.
@@ -33,6 +33,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -46,28 +47,30 @@ namespace SIPSorcery.SoftPhone
 {
     public class GingleClient : IVoIPClient
     {
-        public const string GINGLE_PREFIX = "gingle:";
+        public const string GINGLE_PREFIX = "gv:";
         private const string XMPP_SERVER = "talk.google.com";
         private const int XMPP_SERVER_PORT = 5222;
         private const string XMPP_REALM = "google.com";
         private const string GOOGLE_VOICE_HOST = "voice.google.com";
 
+        private string m_xmppUsername = ConfigurationManager.AppSettings["GoogleVoiceUsername"];    // Get the Google Voice username from the config file.
+        private string m_xmppPassword = ConfigurationManager.AppSettings["GoogleVoicePassword"];    // Get the Google Voice password from the config file.
+
         private ILog logger = AppState.logger;
 
         // Gingle variables.
-        private XMPPClient m_xmppClient;
-        private bool _isBound;
-        private XMPPPhoneSession m_xmppCall;
-        private string m_xmppUsername = "";
-        private string m_xmppPassword = "";
-        private string m_localSTUNUFrag;
-        private AudioChannel _audioChannel;
+        private XMPPClient m_xmppClient;        // XMPP client to establish the connection to the Google Voice gateway.
+        private XMPPPhoneSession m_xmppCall;    // An XMPP session on top of the XMPP client connection that can be used to place VoIP calls.
+        private bool _isBound;                  // Gets set to true when the XMPP client successfully authenticated and binds.
+        private string m_localSTUNUFrag;        // The ICE username used when place an XMPP call. Needed to send the STUN binding request over the RTP channel.
+        private AudioChannel _audioChannel;     // The audio and RTP channel to handle any media session created by a Google Voice call.
 
-        public event Action CallEnded;
-        public event Action<string> StatusMessage;
+        public event Action CallEnded;              // Fired when the Google Voice call has completely ended.   
+        public event Action<string> StatusMessage;  // Fired when the GingleClient has a message it wants to inform the UI about.
 
         public GingleClient()
         {
+            // Set up the XMPP client.
             m_xmppClient = new XMPPClient(XMPP_SERVER, XMPP_SERVER_PORT, XMPP_REALM, m_xmppUsername, m_xmppPassword);
             m_xmppClient.Disconnected += XMPPDisconnected;
             m_xmppClient.IsBound += () => { _isBound = true; };
@@ -75,12 +78,20 @@ namespace SIPSorcery.SoftPhone
             ThreadPool.QueueUserWorkItem(delegate { BindClient(); });
         }
 
+        /// <summary>
+        /// Establishes the XMPP connection with the Google Voice gateway. Once the connection is bound it can be used
+        /// to establish calls over.
+        /// </summary>
         private void BindClient()
         {
             logger.Debug("Commencing bind on XMPP client.");
-            m_xmppClient.Connect();   
+             m_xmppClient.Connect();   
         }
 
+        /// <summary>
+        /// Attempts to establish a new VoIP call via the Google Voice gateway.
+        /// </summary>
+        /// <param name="destination">The destination number to call.</param>
         public void Call(string destination)
         {
             if (!_isBound)
@@ -100,15 +111,20 @@ namespace SIPSorcery.SoftPhone
                 m_xmppCall.Rejected += XMPPCallFailed;
                 m_xmppCall.Hungup += Hangup;
 
-                m_localSTUNUFrag = Crypto.GetRandomString(8);
+                // Create the SDP packet to send to GV. Customise it with the ICE credentials that GV require.
                 SDP xmppSDP = _audioChannel.GetSDP(true);
                 xmppSDP.IcePwd = Crypto.GetRandomString(12);
+                m_localSTUNUFrag = Crypto.GetRandomString(8);
                 xmppSDP.IceUfrag = m_localSTUNUFrag;
 
                 m_xmppCall.PlaceCall(destination + "@" + GOOGLE_VOICE_HOST, xmppSDP);
             }
         }
 
+        /// <summary>
+        /// Event handler for an answer on an outgoing Google Voice call.
+        /// </summary>
+        /// <param name="xmppSDP">The SDP packet received from the Google Voice gateway.</param>
         private void XMPPAnswered(SDP xmppSDP)
         {
             StatusMessage("Google Voice call answered.");
@@ -116,25 +132,37 @@ namespace SIPSorcery.SoftPhone
             IPEndPoint remoteSDPEndPoint = SDP.GetSDPRTPEndPoint(xmppSDP.ToString());
             _audioChannel.SetRemoteRTPEndPoint(remoteSDPEndPoint);
             
+            // Google Voice require that a STUN exchange occurs on the RTP socket before the RTP packet can flow.
+            // This code block sends a STUN binding request to the Google Voice gateway.
             STUNMessage initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
             initMessage.AddUsernameAttribute(xmppSDP.IceUfrag + m_localSTUNUFrag);
             byte[] stunMessageBytes = initMessage.ToByteBuffer();
             _audioChannel.SendRTPRaw(stunMessageBytes, stunMessageBytes.Length);
         }
 
+        /// <summary>
+        /// The XMPP connection was disconnected.
+        /// </summary>
         private void XMPPDisconnected()
         {
             StatusMessage("The Google Voice XMPP client connection was unexpectedly disconnected.");
             m_xmppClient = null;
+            _isBound = false;
             CallFinished();
         }
 
+        /// <summary>
+        /// The outgoing Google Voice call failed.
+        /// </summary>
         private void XMPPCallFailed()
         {
             StatusMessage("Google Voice call failed.");
             CallFinished();
         }
 
+        /// <summary>
+        /// Cancel an outgoing Google Voice call that is in progress.
+        /// </summary>
         public void Cancel()
         {
             m_xmppCall.TerminateCall();
@@ -157,6 +185,9 @@ namespace SIPSorcery.SoftPhone
             throw new NotSupportedException("Incoming calls are currently not supported with the Gingle client.");
         }
 
+        /// <summary>
+        /// Hangup the Google Voice call.
+        /// </summary>
         public void Hangup()
         {
             m_xmppCall.TerminateCall();
@@ -164,6 +195,9 @@ namespace SIPSorcery.SoftPhone
             CallFinished();
         }
 
+        /// <summary>
+        /// The Google Voice call has completely finished and it's now safe to shutdown the audio channel.
+        /// </summary>
         private void CallFinished()
         {
             if (_audioChannel != null)
@@ -174,6 +208,10 @@ namespace SIPSorcery.SoftPhone
             CallEnded();
         }
 
+        /// <summary>
+        /// Close down the XMPP client completely along with the audio channel if it's open. This typically
+        /// happens when the application is exiting.
+        /// </summary>
         public void Shutdown()
         {
             if (_audioChannel != null)

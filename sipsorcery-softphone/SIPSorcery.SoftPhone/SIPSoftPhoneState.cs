@@ -42,7 +42,7 @@ using log4net;
 
 namespace SIPSorcery.SoftPhone
 {
-    public class SIPSoftPhoneState : IConfigurationSectionHandler
+    public class SIPSoftPhoneState
     {
         private const string SIPSOFTPHONE_CONFIGNODE_NAME = "sipsoftphone";
         private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
@@ -80,14 +80,6 @@ namespace SIPSorcery.SoftPhone
                 logger.Error("Exception SIPSoftPhoneState. " + excp.Message);
                 throw;
             }
-        }
-
-        /// <summary>
-        /// Handler for processing the App.Config file and passing retrieving the App.Config node.
-        /// </summary>
-        public object Create(object parent, object context, XmlNode configSection)
-        {
-            return configSection;
         }
     }
 }

@@ -84,6 +84,7 @@ namespace SIPSorcery.XMPP
         private string m_fromUsername;
 
         protected string StreamError;
+        public string StreamFailure;
         protected List<XMPPStreamFeature> Features;
         protected bool Exit;
         protected string SASLToken;
@@ -203,11 +204,20 @@ namespace SIPSorcery.XMPP
                                     Features = (from feature in streamDocElement.Nodes() select new XMPPStreamFeature((XElement)feature)).ToList();
                                     //Features.ForEach(x => Console.WriteLine("feature received " + x.Name + ", is required " + x.IsRequired + "."));
                                     break;
+                                case "failure":
+                                    StreamFailure = streamDocElement.Elements().First().Name.LocalName;
+                                    logger.Warn("XMPPStream failure: " + StreamFailure);
+                                    Close();
+                                    throw new ApplicationException("Failure attempting to authenticate XMPP stream.");
+                                    break;
                                 default:
                                     break;
                             }
 
-                            ElementReceived(streamDocElement);
+                            if (!Exit)
+                            {
+                                ElementReceived(streamDocElement);
+                            }
                         }
                     }
                     else if (xmlReader.NodeType == XmlNodeType.EndElement && xmlReader.Name == STREAM_PREFIX + ":" + STREAM_ELEMENT_NAME)

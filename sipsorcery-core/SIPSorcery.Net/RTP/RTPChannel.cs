@@ -30,7 +30,7 @@ namespace SIPSorcery.Net
 
         private RTPHeader m_sendRTPHeader = new RTPHeader();
 
-        public event Action<byte[]> SampleReceived;
+        public event Action<byte[], int> SampleReceived;
 
         public RTPChannel(IPEndPoint localEndPoint)
         {
@@ -103,10 +103,6 @@ namespace SIPSorcery.Net
 
         private void RTPPacketReceived(UDPListener listener, IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] buffer)
         {
-            //var rtpPacket = new RTPPacket(buffer);
-            logger.Debug("RTP packet received from " + remoteEndPoint + ".");
-            //logger.Debug("RTP packet received from " + remoteEndPoint + " " + rtpPacket.Header.MarkerBit + " " + rtpPacket.Header.SequenceNumber + " " + rtpPacket.Header.SyncSource + " " + rtpPacket.Header.Timestamp + ", length " + buffer.Length + ", payload length " + rtpPacket.Payload.Length + ".");
-
             if ((buffer[0] == 0x0 || buffer[0] == 0x1) && buffer.Length >= 20)
             {
                 // Probably a STUN request.
@@ -128,9 +124,16 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-            else if (SampleReceived != null)
+            else
             {
-                SampleReceived(buffer);
+                logger.Debug("RTP packet received from " + remoteEndPoint + ".");
+
+                if (SampleReceived != null)
+                {
+                    var rtpHeader = new RTPHeader(buffer);
+
+                    SampleReceived(buffer, rtpHeader.Length);
+                }
             }
         }
     }
