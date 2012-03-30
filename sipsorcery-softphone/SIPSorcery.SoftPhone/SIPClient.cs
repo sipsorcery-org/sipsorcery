@@ -32,6 +32,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -55,6 +56,11 @@ namespace SIPSorcery.SoftPhone
         private XmlNode m_sipSocketsNode = SIPSoftPhoneState.SIPSocketsNode;                // Optional XML node that can be used to configure the SIP channels used with the SIP transport layer.
         private IPAddress _defaultLocalAddress = SIPSoftPhoneState.DefaultLocalAddress;     // The default IPv4 address for the machine running the application.
         private int _defaultSIPUdpPort = SIPConstants.DEFAULT_SIP_PORT;                     // The default UDP SIP port.
+
+        private string m_sipUsername = ConfigurationManager.AppSettings["SIPUsername"];    // Get the SIP username from the config file.
+        private string m_sipPassword = ConfigurationManager.AppSettings["SIPPassword"];    // Get the SIP password from the config file.
+        private string m_sipServer = ConfigurationManager.AppSettings["SIPServer"];        // Get the SIP server from the config file.
+        private string m_sipFromName = ConfigurationManager.AppSettings["SIPFromName"];    // Get the SIP From display name from the config file.
 
         private SIPTransport m_sipTransport;                                                // SIP transport layer.
         private SIPClientUserAgent m_uac;                                                   // A SIP user agent client used to place outgoing calls.
@@ -193,10 +199,30 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Places an outgoing SIP call.
         /// </summary>
-        /// <param name="destination">The SIP URI to place a call to.</param>
+        /// <param name="destination">The SIP URI to place a call to. The destination can be a full SIP URI in which case the all will
+        /// be placed anonymously directly to that URI. Alternatively it can be just the user portion of a URI in which case it will
+        /// be sent to the configured SIP server.</param>
         public void Call(string destination)
         {
-            SIPURI callURI = SIPURI.ParseSIPURIRelaxed(destination);
+            // Determine if this is a direct anonymous call or whether it should be placed using the pre-configured SIP server account. 
+            SIPURI callURI = null;
+            string sipUsername = null;
+            string sipPassword = null;
+            string fromHeader = null;
+
+            if (destination.Contains("@") || m_sipServer == null)
+            {
+                // Anonymous call direct to SIP server specified in the URI.
+                callURI = SIPURI.ParseSIPURIRelaxed(destination);
+            }
+            else
+            {
+                // This call will use the pre-configured SIP account.
+                callURI = SIPURI.ParseSIPURIRelaxed(destination + "@" + m_sipServer);
+                sipUsername = m_sipUsername;
+                sipPassword = m_sipPassword;
+                fromHeader = (new SIPFromHeader(m_sipFromName, new SIPURI(m_sipUsername, m_sipServer, null), null)).ToString();
+            }
 
             StatusMessage("Starting call to " + callURI.ToString() + ".");
             
@@ -209,8 +235,8 @@ namespace SIPSorcery.SoftPhone
             _audioChannel = new AudioChannel();
 
             // Get the SDP requesting that the public IP address be used if the host on the call destination is not a private IP address.
-            SDP sdp = _audioChannel.GetSDP(!(IPSocket.IsIPAddress(callURI.Host) && IPSocket.IsPrivateAddress(callURI.Host))); 
-            SIPCallDescriptor callDescriptor = new SIPCallDescriptor("anonymous", null, callURI.ToString(), null, null, null, null, null, SIPCallDirection.Out, SDP.SDP_MIME_CONTENTTYPE, sdp.ToString(), null);
+            SDP sdp = _audioChannel.GetSDP(!(IPSocket.IsIPAddress(callURI.Host) && IPSocket.IsPrivateAddress(callURI.Host)));
+            SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, SDP.SDP_MIME_CONTENTTYPE, sdp.ToString(), null);
             m_uac.Call(callDescriptor);
         }
 

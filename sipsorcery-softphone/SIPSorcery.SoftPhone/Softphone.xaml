@@ -4,14 +4,16 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     x:Class="SIPSorcery.SoftPhone.SoftPhone"
-    Title="SIPSorcery SoftPhone" Height="143.6" Width="461.8" Background="#FF808080" HorizontalAlignment="Left"  mc:Ignorable="d" Closing="Window_Closing" VerticalAlignment="Top">
+    Title="SIPSorcery SoftPhone" Height="121.2" Width="461.8" Background="#FF808080" HorizontalAlignment="Left"  mc:Ignorable="d" Closing="Window_Closing" VerticalAlignment="Top" Icon="favicon.ico">
     <Grid>
         
-    	<Grid Margin="8,5,0,0" VerticalAlignment="Top" Height="31" x:Name="m_uacGrid" Grid.ColumnSpan="2">
+    	<Grid Margin="8,5,0,0" VerticalAlignment="Top" Height="35.8" x:Name="m_uacGrid" d:LayoutOverrides="GridBox">
     		<Button x:Name="m_cancelButton" Content="Cancel" Click="CancelButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,-0.203,8,0.203"/>
     		<Button x:Name="m_byeButton" Content="Bye" Click="ByeButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,-0.203,8,0.203"/>
     		<Button HorizontalAlignment="Right" x:Name="m_callButton" Width="64" Content="Call" Click="CallButton_Click" Margin="0,-0.203,8,0.203"/>
-    		<TextBox FontSize="16" Margin="0,0,76,0" x:Name="m_uriEntryTextBox" Text="sip:aaron@10.1.1.7" TextWrapping="Wrap"/>
+    		<TextBox FontSize="16" Margin="103.6,5,77.2,3" x:Name="m_uriEntryTextBox" TextWrapping="Wrap"/>
+    		<RadioButton x:Name="m_sipRadioButton" HorizontalAlignment="Left" Margin="6.8,3,0,0" Width="94" Height="16.04" VerticalAlignment="Top" Content="SIP" IsChecked="True"/>
+    		<RadioButton x:Name="m_googleVoiceRadioButton" Content="Google Voice" Width="92.8" HorizontalAlignment="Left" Margin="6.8,19.04,0,1"/>
     	</Grid>
     	<Grid Margin="8,5,0,0" x:Name="m_uasGrid" VerticalAlignment="Top" Height="31" Grid.ColumnSpan="2" d:IsHidden="True">
         
@@ -21,12 +23,8 @@
     		<Button x:Name="m_redirectButton" Content="Redirect" Click="RedirectButton_Click" Margin="136,-0.203,0,0.203" HorizontalAlignment="Left" Width="64" IsCancel="False"/>
     		<TextBox FontSize="16" Margin="204,0,8,0" x:Name="m_redirectURIEntryTextBox" Text="sip:aaron@sipsorcery.com" TextWrapping="Wrap"/>
     	</Grid>
-    	<TextBlock x:Name="m_localRTP" TextWrapping="Wrap" VerticalAlignment="Bottom" Margin="24,0,0,28.44" HorizontalAlignment="Left" Width="74.46"><Run Language="en-au" Text="Local RTP:"/></TextBlock>
-    	<TextBlock x:Name="m_remoteRTP" TextWrapping="Wrap" VerticalAlignment="Bottom" Margin="24,0,0,8.48" HorizontalAlignment="Left" Width="74.46"><Run Language="en-au" Text="Remote RTP:"/></TextBlock>
-    	<TextBlock x:Name="m_localRTP_Copy" TextWrapping="Wrap" Margin="24,43.24,0,48.4" d:LayoutOverrides="Height" HorizontalAlignment="Left" Width="74.46"><Run Language="en-au" Text="Status:"/></TextBlock>
-    	<TextBlock x:Name="m_signallingStatus" TextWrapping="Wrap" Margin="116.8,43.24,8,48.4" d:LayoutOverrides="Height"><Run Language="en-au" Text="waiting for call..."/></TextBlock>
-    	<TextBlock x:Name="m_localRTPStatus" TextWrapping="Wrap" Margin="116.8,0,77.74,28.44" VerticalAlignment="Bottom"><Run Language="en-au" Text="waiting for data..."/></TextBlock>
-    	<TextBlock x:Name="m_remoteRTPStatus" TextWrapping="Wrap" Margin="116.8,0,77.74,8.48" VerticalAlignment="Bottom"><Run Language="en-au" Text="waiting for data..."/></TextBlock>
+    	<TextBlock x:Name="m_localRTP_Copy" TextWrapping="Wrap" Margin="8,0,0,24.44" HorizontalAlignment="Left" Width="53.66" VerticalAlignment="Bottom" d:LayoutOverrides="VerticalAlignment"><Run Language="en-au" Text="Status:"/></TextBlock>
+    	<TextBlock x:Name="m_signallingStatus" TextWrapping="Wrap" Margin="65.66,44.8,8,6.44"><Run Language="en-au" Text="waiting for call..."/></TextBlock>
     	<TextBlock x:Name="m_localRTPCount" TextWrapping="Wrap" Margin="0,0,8,28.44" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="65.74" Height="15.96" d:LayoutOverrides="VerticalAlignment"/>
     	<TextBlock x:Name="m_remoteRTPCount" TextWrapping="Wrap" Margin="0,0,8,8" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="65.74" Height="15.96" d:LayoutOverrides="VerticalAlignment"/>
         

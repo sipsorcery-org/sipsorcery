@@ -47,7 +47,6 @@ namespace SIPSorcery.SoftPhone
 {
     public class GingleClient : IVoIPClient
     {
-        public const string GINGLE_PREFIX = "gv:";
         private const string XMPP_SERVER = "talk.google.com";
         private const int XMPP_SERVER_PORT = 5222;
         private const string XMPP_REALM = "google.com";
@@ -100,7 +99,6 @@ namespace SIPSorcery.SoftPhone
             }
             else
             {
-                destination = destination.Replace(GINGLE_PREFIX, "");
                 _audioChannel = new AudioChannel();
 
                 // Call to Google Voice over XMPP & Gingle (Google's version of Jingle).

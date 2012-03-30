@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: SoftphoneMain.xaml.cs
+// Filename: Softphone.xaml.cs
 //
-// Description: Main XAML interface for softphone. 
+// Description: The user interface for the softphone. 
 // 
 // History:
 // 11 Mar 2012	Aaron Clauson	Refactored.
@@ -128,11 +128,12 @@ namespace SIPSorcery.SoftPhone
             SetVisibility(m_byeButton, Visibility.Visible);
         }
 
+        /// <summary>
+        /// The button to place an outgoing call.
+        /// </summary>
         private void CallButton_Click(object sender, RoutedEventArgs e)
         {
             SetStatusText(m_signallingStatus, "calling " + m_uriEntryTextBox.Text + ".");
-            SetStatusText(m_remoteRTPStatus, "waiting for data...");
-            SetStatusText(m_localRTPStatus, "waiting for data...");
 
             m_callButton.Visibility = Visibility.Collapsed;
             m_cancelButton.Visibility = Visibility.Visible;
@@ -140,7 +141,8 @@ namespace SIPSorcery.SoftPhone
 
             string destination = m_uriEntryTextBox.Text;
 
-            if (destination.StartsWith(GingleClient.GINGLE_PREFIX))
+            // Use Google Voice or the SIP client to place the call depending on which radio button has been checked.
+            if (m_googleVoiceRadioButton.IsChecked.GetValueOrDefault())
             {
                 // Google Voice call.
                 _activeClient = _gingleClient;
@@ -154,18 +156,27 @@ namespace SIPSorcery.SoftPhone
             }
         }
 
+        /// <summary>
+        /// The button to cancel an outgoing call.
+        /// </summary>
         private void CancelButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             _activeClient.Cancel();
             ResetToCallStartState();
         }
 
+        /// <summary>
+        /// The button to hang up an outgoing call.
+        /// </summary>
         private void ByeButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             _activeClient.Hangup();
             ResetToCallStartState();
         }
 
+        /// <summary>
+        /// The button to answer an incoming call.
+        /// </summary>
         private void AnswerButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             _activeClient.Answer();
@@ -173,18 +184,27 @@ namespace SIPSorcery.SoftPhone
             SetVisibility(m_rejectButton, Visibility.Collapsed);
         }
 
+        /// <summary>
+        /// The button to reject an incoming call.
+        /// </summary>
         private void RejectButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             _activeClient.Reject();
             ResetToCallStartState();
         }
 
+        /// <summary>
+        /// The button to redirect an incoming call.
+        /// </summary>
         private void RedirectButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             _activeClient.Redirect(m_redirectURIEntryTextBox.Text);
             ResetToCallStartState();
         }
 
+        /// <summary>
+        /// The button to hang up an incoming call.
+        /// </summary>
         private void HangupButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             _activeClient.Hangup();
