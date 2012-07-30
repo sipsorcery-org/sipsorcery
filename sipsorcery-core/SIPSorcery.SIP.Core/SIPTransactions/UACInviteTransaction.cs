@@ -10,7 +10,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006 Aaron Clauson (aaronc@blueface.ie), Blue Face Ltd, Dublin, Ireland (www.blueface.ie)
+// Copyright (c) 2006-2012 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery Pty Ltd, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -18,7 +18,7 @@
 //
 // Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
 // Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following 
-// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of Blue Face Ltd. 
+// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of SIP Sorcery Pty Ltd. 
 // nor the names of its contributors may be used to endorse or promote products derived from this software without specific 
 // prior written permission. 
 //
@@ -39,10 +39,6 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
 using log4net;
-
-#if UNITTEST
-using NUnit.Framework;
-#endif
 
 namespace SIPSorcery.SIP
 {

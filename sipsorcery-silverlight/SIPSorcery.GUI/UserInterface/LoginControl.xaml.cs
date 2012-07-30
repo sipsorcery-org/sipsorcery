@@ -14,6 +14,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
+using SIPSorcery.Entities;
 using SIPSorcery.Entities.Services;
 //using SIPSorcery.Web.RIA;
 
@@ -23,7 +24,7 @@ namespace SIPSorcery
     {
         private const int MAX_STATUS_MESSAGE_LENGTH = 512;
 
-        private string m_loginUsername;
+        //private string m_loginUsername;
         private SIPEntitiesDomainContext m_riaContext;
 
         public event Action<string> CreateNewAccountClicked;    // The parameter is the verified invite code.
@@ -49,6 +50,7 @@ namespace SIPSorcery
             WriteLoginMessage(null);
             string username = m_usernameTextBox.Text;
             string password = m_passwordTextBox.Password;
+            string impersonateUsername = m_impersonateUsernameTextBox.Text;
 
             if (username == null || username.Trim().Length == 0)
             {
@@ -61,11 +63,8 @@ namespace SIPSorcery
             else
             {
                 WriteLoginMessage("Attempting login...");
-                m_loginUsername = username.ToLower().Trim();
-                LoginParameters loginParams = new LoginParameters(m_loginUsername, password);
-                //m_webContext.Authentication.Login(loginParams, LoginComplete, null);
-                //m_authenticationService.Login(loginParams, LoginComplete, null);
-                var query = m_riaContext.LoginQuery(m_loginUsername, password, true, null);
+
+                var query = m_riaContext.LoginQuery(username, password, true, impersonateUsername);
                 m_riaContext.Load(query, LoadBehavior.RefreshCurrent, LoginComplete, null);
             }
         }
@@ -75,6 +74,8 @@ namespace SIPSorcery
             UIHelper.SetText(m_usernameTextBox, String.Empty);
             UIHelper.SetText(m_passwordTextBox, String.Empty);
             UIHelper.SetText(m_loginError, String.Empty);
+            UIHelper.SetText(m_impersonateUsernameTextBox, String.Empty);
+            UIHelper.SetVisibility(m_impersonateCanvas, Visibility.Collapsed);
         }
 
         public void WriteLoginMessage(string message)
@@ -108,6 +109,13 @@ namespace SIPSorcery
             {
                 Login();
             }
+            else if(e.Key == Key.A && m_usernameTextBox.Text.IsNullOrBlank())
+            {
+                if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control && (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt)
+                {
+                    m_impersonateCanvas.Visibility = (m_impersonateCanvas.Visibility == System.Windows.Visibility.Collapsed) ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+                }
+            }
         }
 
         private void CreateNewAccount_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -135,13 +143,20 @@ namespace SIPSorcery
             }
             else
             {
-                Authenticated(m_loginUsername, null);
+                var user = op.Entities.SingleOrDefault() as User;
+                Authenticated(user.Name, null);
+                //Authenticated(m_loginUsername, null);
             }
         }
 
         public void FocusOnUsername()
         {
-            m_usernameTextBox.Focus();
+            var focusControl = FocusManager.GetFocusedElement();
+
+            if (focusControl != m_passwordTextBox && focusControl != m_loginButton)
+            {
+                m_usernameTextBox.Focus();
+            }
         }
     }
 }

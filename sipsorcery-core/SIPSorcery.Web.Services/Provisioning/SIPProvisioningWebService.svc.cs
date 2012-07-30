@@ -122,7 +122,7 @@ namespace SIPSorcery.Web.Services
             LogDelegate_External = log;
             m_newCustomersAllowedLimit = newCustomersAllowedLimit;
             m_inviteCodeRequired = inviteCodeRequired;
-           
+
             if (!String.IsNullOrEmpty(m_providerRegistrationsDisabled))
             {
                 Boolean.TryParse(m_providerRegistrationsDisabled, out m_providerRegDisabled);
@@ -465,7 +465,7 @@ namespace SIPSorcery.Web.Services
 
         public string AddSIPAccount(string username, string password, string domain, string avatarURL)
         {
-             Customer customer = AuthoriseRequest();
+            Customer customer = AuthoriseRequest();
 
             SIPSorcery.Entities.SIPAccount sipAccount = new Entities.SIPAccount()
             {
@@ -607,12 +607,12 @@ namespace SIPSorcery.Web.Services
         {
             Customer customer = AuthoriseRequest();
 
-            if(!customer.ServiceLevel.IsNullOrBlank() &&  customer.ServiceLevel.ToLower() == "free")
+            if (!customer.ServiceLevel.IsNullOrBlank() && customer.ServiceLevel.ToLower() == "free")
             {
                 // Check the number of SIP Provider is within limits.
                 if (GetSIPProvidersCount(null) >= 1)
                 {
-                    throw new ApplicationException("The SIP Provider cannot be added as your existing SIP Provider count has reached the allowed limit for your service level."); 
+                    throw new ApplicationException("The SIP Provider cannot be added as your existing SIP Provider count has reached the allowed limit for your service level.");
                 }
             }
 
@@ -839,40 +839,68 @@ namespace SIPSorcery.Web.Services
 
         public int GetCDRsCount(string whereExpression)
         {
-            Customer customer = AuthoriseRequest();
+            try
+            {
+                Customer customer = AuthoriseRequest();
 
-            string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
-            //logger.Debug("SIPProvisioningWebService GetCDRsCount for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
+                string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
+                //logger.Debug("SIPProvisioningWebService GetCDRsCount for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
-            //if (authoriseExpression.IsNullOrBlank())
-            //{
-            //    return SIPCDRPersistor.Count(null);
-            //}
-            //else
-            //{
-            //    return SIPCDRPersistor.Count(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression));
-            //}
+                //if (authoriseExpression.IsNullOrBlank())
+                //{
+                //    return SIPCDRPersistor.Count(null);
+                //}
+                //else
+                //{
+                //    return SIPCDRPersistor.Count(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression));
+                //}
 
-            return m_service.GetCDRCount(customer.CustomerUsername, whereExpression);
+                return m_service.GetCDRCount(customer.CustomerUsername, authoriseExpression);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception GetCDRsCount. " + excp.Message);
+
+                if (excp.InnerException != null)
+                {
+                    logger.Error("InnerException GetCDRs. " + excp.InnerException.Message);
+                }
+
+                throw;
+            }
         }
 
         public List<SIPSorcery.Entities.CDR> GetCDRs(string whereExpression, int offset, int count)
         {
-            Customer customer = AuthoriseRequest();
+            try
+            {
+                Customer customer = AuthoriseRequest();
 
-            string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
-            //logger.Debug("SIPProvisioningWebService GetCDRs for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
+                string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
+                //logger.Debug("SIPProvisioningWebService GetCDRs for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
-            //if (authoriseExpression.IsNullOrBlank())
-            //{
-            //    return SIPCDRPersistor.Get(null, "created desc", offset, count);
-            //}
-            //else
-            //{
-            //    return SIPCDRPersistor.Get(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression), "created desc", offset, count);
-            //}
+                //if (authoriseExpression.IsNullOrBlank())
+                //{
+                //    return SIPCDRPersistor.Get(null, "created desc", offset, count);
+                //}
+                //else
+                //{
+                //    return SIPCDRPersistor.Get(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression), "created desc", offset, count);
+                //}
 
-            return m_service.GetCDRs(customer.CustomerUsername, authoriseExpression, offset, count);
+                return m_service.GetCDRs(customer.CustomerUsername, authoriseExpression, offset, count);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception GetCDRsCount. " + excp.Message);
+
+                if (excp.InnerException != null)
+                {
+                    logger.Error("InnerException GetCDRs. " + excp.InnerException.Message);
+                }
+
+                throw;
+            }
         }
     }
 }

@@ -726,6 +726,52 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
+        public List<SIPCallDescriptor> GetForwardsForRedirect(SIPURI redirectURI, SIPCallDescriptor callDescriptor)
+        {
+            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Getting forwards for redirect to " + redirectURI.ToString() + ".", m_username));
+
+            List<SIPCallDescriptor> redirectCalls = new List<SIPCallDescriptor>();
+
+            string localDomain = GetCanonicalDomain_External(redirectURI.Host, false);
+            if (localDomain != null)
+            {
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect is for local SIP account " + redirectURI.User + " and canonical domain " + localDomain + ", looking up bindings.", m_username));
+
+                SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == redirectURI.User && s.SIPDomain == localDomain);
+
+                List<SIPRegistrarBinding> bindings = GetRegistrarBindings_External(b => b.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
+
+                if (bindings != null)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, bindings.Count + " bindigns found for local SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " when processing redirect.", m_username));
+
+                    // Build list of registered contacts.
+                    for (int index = 0; index < bindings.Count; index++)
+                    {
+                        SIPRegistrarBinding binding = bindings[index];
+                        SIPURI contactURI = binding.MangledContactSIPURI;
+                        SIPCallDescriptor redirectCallDescriptor = callDescriptor.CopyOf();
+                        redirectCallDescriptor.Uri = contactURI.ToString();
+                        redirectCalls.Add(redirectCallDescriptor);
+                    }
+                }
+                else
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No bindings were found for local SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " when processing redirect.", m_username));
+                }
+            }
+            else
+            {
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect destination " + redirectURI.ToString() + " was determined as an external URI.", m_username));
+
+                SIPCallDescriptor redirectCallDescriptor = callDescriptor.CopyOf();
+                redirectCallDescriptor.Uri = redirectURI.ToString();
+                redirectCalls.Add(redirectCallDescriptor);
+            }
+
+            return redirectCalls;
+        }
+
         /// <summary>
         /// The From header on forwarded calls can be customised. This method parses the dial plan option for
         /// the From header field or lack of it field and produces the From header string that will be used for

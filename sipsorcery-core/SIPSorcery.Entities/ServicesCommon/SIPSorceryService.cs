@@ -7,6 +7,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Dynamic;
 using System.Text;
+using System.Text.RegularExpressions;
 using SIPSorcery.SIP;
 using SIPSorcery.Sys;
 using log4net;
@@ -19,8 +20,10 @@ namespace SIPSorcery.Entities
         private const string NEW_ACCOUNT_EMAIL_SUBJECT = "SIP Sorcery Account Confirmation";
         private const int PROVIDER_COUNT_FREE_SERVICE = 1;  // The number of SIP Providers allowed on free accounts.
         private const int DIALPLAN_COUNT_FREE_SERVICE = 1;  // The number of dial plans allowed on free accounts.
+        private const int DEFAULT_COMMAND_TIMEOUT = 90;     // The MySQL command timeout in seconds.
 
-        private static string m_disabledProviderServerPattern = AppState.GetConfigSetting("DisabledProviderServersPattern");
+        private static string m_disabledProviderServerPattern = AppState.GetConfigSetting("DisabledProviderServersPattern");                    // Provider server fields that need to be completely disallowed.
+        private static string m_disabledRegisterProviderServerPattern = AppState.GetConfigSetting("DisabledRegisterProviderServersPattern");    // Provider server fields that need to be prevented from registering.
         private static string m_customerConfirmLink = AppState.GetConfigSetting("CustomerConfirmLink");
         private static string m_domainForProviderContact = AppState.GetConfigSetting("DomainForProviderContact") ?? "sipsorcery.com";
 
@@ -282,6 +285,38 @@ namespace SIPSorcery.Entities
             {
                 logger.Error("Exception SetAllProvidersAndDialPlansReadonly. " + excp.Message);
                 throw;
+            }
+        }
+
+        public void UpdateCustomer(string authUser, Customer customer)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for UpdateCustomer.");
+            }
+
+            using (var db = new SIPSorceryEntities())
+            {
+                var existingCustomer = (from cust in db.Customers where cust.Name.ToLower() == authUser.ToLower() select cust).Single();
+
+                if (existingCustomer == null)
+                {
+                    throw new ApplicationException("The customer record to update could not be found.");
+                }
+                else
+                {
+                    existingCustomer.Firstname = customer.Firstname;
+                    existingCustomer.Lastname = customer.Lastname;
+                    existingCustomer.EmailAddress = customer.EmailAddress;
+                    existingCustomer.SecurityQuestion = customer.SecurityQuestion;
+                    existingCustomer.SecurityAnswer = customer.SecurityAnswer;
+                    existingCustomer.City = customer.City;
+                    existingCustomer.Country = customer.Country;
+                    existingCustomer.WebSite = customer.WebSite;
+                    existingCustomer.Timezone = customer.Timezone;
+
+                    db.SaveChanges();
+                }
             }
         }
 
@@ -699,6 +734,11 @@ namespace SIPSorcery.Entities
         /// </summary>
         private void FixProviderRegisterDetails(SIPProvider sipProvider, string owner)
         {
+            if (!m_disabledRegisterProviderServerPattern.IsNullOrBlank() && Regex.Match(sipProvider.ProviderServer, m_disabledRegisterProviderServerPattern).Success)
+            {
+                throw new ApplicationException("Registrations are not supported with this provider. Please uncheck the Register box.");
+            }
+
             if (sipProvider.RegisterContact.IsNullOrBlank())
             {
                 sipProvider.RegisterContact = "sip:" + sipProvider.ProviderName + "." + owner.ToLower() + "@" + m_domainForProviderContact;
@@ -750,7 +790,7 @@ namespace SIPSorcery.Entities
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                string serviceLevel = (from cust in sipSorceryEntities.Customers where cust.Name == authUser.ToLower() select cust.ServiceLevel).FirstOrDefault();
+                string serviceLevel = (from cust in sipSorceryEntities.Customers where cust.Name.ToLower() == authUser.ToLower() select cust.ServiceLevel).FirstOrDefault();
 
                 if (!serviceLevel.IsNullOrBlank() && serviceLevel.ToLower() == CustomerServiceLevels.Free.ToString().ToLower())
                 {
@@ -801,7 +841,7 @@ namespace SIPSorcery.Entities
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlan.ID && dp.Owner == authUser.ToLower() select dp).FirstOrDefault();
+                SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlan.ID && dp.Owner.ToLower() == authUser.ToLower() select dp).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
@@ -995,6 +1035,8 @@ namespace SIPSorcery.Entities
 
             using (var entities = new SIPSorceryEntities())
             {
+                entities.CommandTimeout = DEFAULT_COMMAND_TIMEOUT;
+
                 var query = (from cdr in entities.CDRs where cdr.Owner == authUser.ToLower() select cdr);
 
                 if (where != null)
@@ -1015,6 +1057,8 @@ namespace SIPSorcery.Entities
 
             using (var entities = new SIPSorceryEntities())
             {
+                entities.CommandTimeout = DEFAULT_COMMAND_TIMEOUT;
+
                 var query = (from cdr in entities.CDRs where cdr.Owner.ToLower() == authUser.ToLower() select cdr);
 
                 if (where != null)

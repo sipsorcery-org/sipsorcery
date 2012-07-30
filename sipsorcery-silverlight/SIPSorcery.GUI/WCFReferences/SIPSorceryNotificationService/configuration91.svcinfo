@@ -27,17 +27,14 @@
         <property path="/hostNameComparisonMode" isComplexType="false" isExplicitlyDefined="false" clrType="System.ServiceModel.HostNameComparisonMode, System.ServiceModel, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue>StrongWildcard</serializedValue>
         </property>
-        <property path="/maxBufferSize" isComplexType="false" isExplicitlyDefined="true" clrType="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue>2147483647</serializedValue>
-        </property>
         <property path="/maxBufferPoolSize" isComplexType="false" isExplicitlyDefined="true" clrType="System.Int64, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue />
         </property>
-        <property path="/maxReceivedMessageSize" isComplexType="false" isExplicitlyDefined="true" clrType="System.Int64, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+        <property path="/maxBufferSize" isComplexType="false" isExplicitlyDefined="true" clrType="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue>2147483647</serializedValue>
         </property>
-        <property path="/messageEncoding" isComplexType="false" isExplicitlyDefined="false" clrType="System.ServiceModel.WSMessageEncoding, System.ServiceModel, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue>Text</serializedValue>
+        <property path="/maxReceivedMessageSize" isComplexType="false" isExplicitlyDefined="true" clrType="System.Int64, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+          <serializedValue>2147483647</serializedValue>
         </property>
         <property path="/proxyAddress" isComplexType="false" isExplicitlyDefined="false" clrType="System.Uri, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue />
@@ -59,6 +56,18 @@
         </property>
         <property path="/readerQuotas/maxNameTableCharCount" isComplexType="false" isExplicitlyDefined="false" clrType="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue>0</serializedValue>
+        </property>
+        <property path="/textEncoding" isComplexType="false" isExplicitlyDefined="false" clrType="System.Text.Encoding, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+          <serializedValue>System.Text.UTF8Encoding</serializedValue>
+        </property>
+        <property path="/transferMode" isComplexType="false" isExplicitlyDefined="false" clrType="System.ServiceModel.TransferMode, System.ServiceModel, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+          <serializedValue>Buffered</serializedValue>
+        </property>
+        <property path="/useDefaultWebProxy" isComplexType="false" isExplicitlyDefined="true" clrType="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+          <serializedValue />
+        </property>
+        <property path="/messageEncoding" isComplexType="false" isExplicitlyDefined="false" clrType="System.ServiceModel.WSMessageEncoding, System.ServiceModel, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+          <serializedValue>Text</serializedValue>
         </property>
         <property path="/security" isComplexType="true" isExplicitlyDefined="false" clrType="System.ServiceModel.Configuration.BasicHttpSecurityElement, System.ServiceModel, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue>System.ServiceModel.Configuration.BasicHttpSecurityElement</serializedValue>
@@ -98,15 +107,6 @@
         </property>
         <property path="/security/message/algorithmSuite" isComplexType="false" isExplicitlyDefined="false" clrType="System.ServiceModel.Security.SecurityAlgorithmSuite, System.ServiceModel, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue>Default</serializedValue>
-        </property>
-        <property path="/textEncoding" isComplexType="false" isExplicitlyDefined="false" clrType="System.Text.Encoding, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue>System.Text.UTF8Encoding</serializedValue>
-        </property>
-        <property path="/transferMode" isComplexType="false" isExplicitlyDefined="false" clrType="System.ServiceModel.TransferMode, System.ServiceModel, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue>Buffered</serializedValue>
-        </property>
-        <property path="/useDefaultWebProxy" isComplexType="false" isExplicitlyDefined="true" clrType="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue />
         </property>
       </properties>
     </bindingConfiguration>

@@ -65,6 +65,7 @@ namespace SIPSorcery.SIPAppServer
         private const string DIALPLAN_ENGINE_IMPERSONATION_USERNAME_KEY = "DialPlanEngineImpersonationUsername";
         private const string DIALPLAN_ENGINE_IMPERSONATION_PASSWORD_KEY = "DialPlanEngineImpersonationPassword";
         private const string DAILY_CALL_LIMIT_KEY = "DailyCallLimit";
+        private const string DIAL_PLAN_MAX_EXECUTION_LIMIT = "DialPlanMaxExecutionLimit";
 
 		public static ILog logger = null;
 
@@ -78,6 +79,7 @@ namespace SIPSorcery.SIPAppServer
         public static readonly string DialPlanEngineImpersonationUsername;
         public static readonly string DialPlanEngineImpersonationPassword;
         public static readonly int DailyCallLimit = -1;
+        public static readonly int DialPlanMaxExecutionLimit = 0;
 
 		static SIPAppServerState()
 		{
@@ -109,6 +111,11 @@ namespace SIPSorcery.SIPAppServer
                 if (!AppState.GetConfigNodeValue(m_sipAppServerConfigNode, DAILY_CALL_LIMIT_KEY).IsNullOrBlank())
                 {
                     Int32.TryParse(AppState.GetConfigNodeValue(m_sipAppServerConfigNode, DAILY_CALL_LIMIT_KEY), out DailyCallLimit);
+                }
+
+                if (!AppState.GetConfigNodeValue(m_sipAppServerConfigNode, DIAL_PLAN_MAX_EXECUTION_LIMIT).IsNullOrBlank())
+                {
+                    Int32.TryParse(AppState.GetConfigNodeValue(m_sipAppServerConfigNode, DIAL_PLAN_MAX_EXECUTION_LIMIT), out DialPlanMaxExecutionLimit);
                 }
 			}
 			catch(Exception excp)

@@ -244,6 +244,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan,"Could not find _rnr_se key on your Google Voice account page, callback cannot proceed.", m_username));
                     throw new ApplicationException("Could not find _rnr_se key on your Google Voice account page, callback cannot proceed.");
                 }
             }

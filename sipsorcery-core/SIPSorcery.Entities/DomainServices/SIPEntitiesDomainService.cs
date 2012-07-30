@@ -48,9 +48,30 @@ namespace SIPSorcery.Entities.Services
             return m_service.GetTimeZones();
         }
 
+        /// <param name="customData">If populated this field is used to inidcate the login requested is to impersonate this username. It's only available
+        /// to admin users.</param>
         public User Login(string username, string password, bool isPersistent, string customData)
         {
-            return m_authService.Login(username, password, isPersistent, customData);
+            if (!customData.IsNullOrBlank())
+            {
+                // An impersonation login has been requested. The requesting user MUST be an administrator.
+                using (var sipSorceryEntities = new SIPSorceryEntities())
+                {
+                    if (sipSorceryEntities.Customers.Any(x => x.Name.ToLower() == username.ToLower() && x.CustomerPassword == password && x.AdminID == Customer.TOPLEVEL_ADMIN_ID))
+                    {
+                        var impersonateCustomer = sipSorceryEntities.Customers.Where(x => x.Name.ToLower() == customData.ToLower() || x.EmailAddress.ToLower() == customData.ToLower()).Single();
+                        return m_authService.Login(impersonateCustomer.Name, impersonateCustomer.CustomerPassword, false, null);
+                    }
+                    else
+                    {
+                        throw new ApplicationException("You are not authorised.");
+                    }
+                }
+            }
+            else
+            {
+                return m_authService.Login(username, password, isPersistent, customData);
+            }
         }
 
         public void InsertCustomer(Customer customer)
@@ -124,7 +145,8 @@ namespace SIPSorcery.Entities.Services
             }
             else
             {
-                this.ObjectContext.Customers.AttachAsModified(currentCustomer, this.ChangeSet.GetOriginal(currentCustomer));
+                //this.ObjectContext.Customers.AttachAsModified(currentCustomer, this.ChangeSet.GetOriginal(currentCustomer));
+                m_service.UpdateCustomer(this.ServiceContext.User.Identity.Name, currentCustomer);
             }
         }
 
@@ -165,7 +187,7 @@ namespace SIPSorcery.Entities.Services
         }
 
         [RequiresAuthentication]
-        [Query(IsDefault=true)]
+        [Query(IsDefault = true)]
         public IQueryable<SIPAccount> GetSIPAccounts()
         {
             //return this.ObjectContext.SIPAccounts.Where(x => x.Owner == this.ServiceContext.User.Identity.Name);

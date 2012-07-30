@@ -3,8 +3,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:MediaControls="clr-namespace:WPFMediaKit.DirectShow.Controls;assembly=WPFMediaKit"
     x:Class="SIPSorcery.SoftPhone.SoftPhone"
-    Title="SIPSorcery SoftPhone" Height="121.2" Width="461.8" Background="#FF808080" HorizontalAlignment="Left"  mc:Ignorable="d" Closing="Window_Closing" VerticalAlignment="Top" Icon="favicon.ico">
+    Title="SIPSorcery SoftPhone" Height="399.6" Width="461.8" Background="#FF808080" HorizontalAlignment="Left"  mc:Ignorable="d" Closing="Window_Closing" VerticalAlignment="Top" Icon="favicon.ico">
     <Grid>
         
     	<Grid Margin="8,5,0,0" VerticalAlignment="Top" Height="35.8" x:Name="m_uacGrid" d:LayoutOverrides="GridBox">
@@ -23,10 +24,23 @@
     		<Button x:Name="m_redirectButton" Content="Redirect" Click="RedirectButton_Click" Margin="136,-0.203,0,0.203" HorizontalAlignment="Left" Width="64" IsCancel="False"/>
     		<TextBox FontSize="16" Margin="204,0,8,0" x:Name="m_redirectURIEntryTextBox" Text="sip:aaron@sipsorcery.com" TextWrapping="Wrap"/>
     	</Grid>
-    	<TextBlock x:Name="m_localRTP_Copy" TextWrapping="Wrap" Margin="8,0,0,24.44" HorizontalAlignment="Left" Width="53.66" VerticalAlignment="Bottom" d:LayoutOverrides="VerticalAlignment"><Run Language="en-au" Text="Status:"/></TextBlock>
-    	<TextBlock x:Name="m_signallingStatus" TextWrapping="Wrap" Margin="65.66,44.8,8,6.44"><Run Language="en-au" Text="waiting for call..."/></TextBlock>
-    	<TextBlock x:Name="m_localRTPCount" TextWrapping="Wrap" Margin="0,0,8,28.44" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="65.74" Height="15.96" d:LayoutOverrides="VerticalAlignment"/>
-    	<TextBlock x:Name="m_remoteRTPCount" TextWrapping="Wrap" Margin="0,0,8,8" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="65.74" Height="15.96" d:LayoutOverrides="VerticalAlignment"/>
+		
+    	<TextBlock x:Name="m_localRTP_Copy" TextWrapping="Wrap" Margin="16,0,0,302.84" HorizontalAlignment="Left" Width="49.66" VerticalAlignment="Bottom"><Run Language="en-au" Text="Status:"/></TextBlock>
+    	<TextBlock x:Name="m_signallingStatus" TextWrapping="Wrap" Margin="65.66,44.8,8,0" Height="34.76" VerticalAlignment="Top"><Run Language="en-au" Text="waiting for call..."/></TextBlock>
+    	<MediaControls:VideoCaptureElement DesiredPixelWidth="320"
+    		DesiredPixelHeight="240"
+    		FPS="30"
+    		Width="Auto"
+    		VideoCaptureDevice="{Binding SelectedItem, ElementName=videoCapDevices}"
+    		x:Name="videoElement" Stretch="Fill" Margin="50.46,83.56,46.9,49.6" />
         
+        <ComboBox x:Name="videoCapDevices"
+                  ItemsSource="{Binding Source={x:Static MediaControls:MultimediaUtil.VideoInputDevices}}"
+                  DisplayMemberPath="Name"
+		  	      SelectedIndex="0"
+                  Foreground="Black"
+                  FontSize="12"
+                  VerticalAlignment="Bottom"
+                  Margin="8,0,167.2,1.4" />
     </Grid>
 </Window>

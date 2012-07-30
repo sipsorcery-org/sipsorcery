@@ -69,12 +69,19 @@ namespace SIPSorcery.SoftPhone
 
         public GingleClient()
         {
-            // Set up the XMPP client.
-            m_xmppClient = new XMPPClient(XMPP_SERVER, XMPP_SERVER_PORT, XMPP_REALM, m_xmppUsername, m_xmppPassword);
-            m_xmppClient.Disconnected += XMPPDisconnected;
-            m_xmppClient.IsBound += () => { _isBound = true; };
+            if (!m_xmppUsername.IsNullOrBlank() && !m_xmppPassword.IsNullOrBlank())
+            {
+                // Set up the XMPP client.
+                m_xmppClient = new XMPPClient(XMPP_SERVER, XMPP_SERVER_PORT, XMPP_REALM, m_xmppUsername, m_xmppPassword);
+                m_xmppClient.Disconnected += XMPPDisconnected;
+                m_xmppClient.IsBound += () => { _isBound = true; };
 
-            ThreadPool.QueueUserWorkItem(delegate { BindClient(); });
+                ThreadPool.QueueUserWorkItem(delegate { BindClient(); });
+            }
+            else
+            {
+                logger.Warn("XMPP client stopping as no username and password provided.");
+            }
         }
 
         /// <summary>

@@ -14,6 +14,21 @@ namespace SIPSorcery.Entities
         public const int FREE_MAXIMUM_EXECUTION_COUNT = 5;              // The maximum allowed simultaneous executions for a customer on the free service level.
         public const int API_KEY_LENGTH = 96;                           // 384 bits of entropy.
 
+        public CustomerServiceLevels CustomerServiceLevel
+        {
+            get 
+            {
+                if (ServiceLevel != null && ServiceLevel.Trim().Length > 0)
+                {
+                    return (CustomerServiceLevels)Enum.Parse(typeof(CustomerServiceLevels), ServiceLevel, true);
+                }
+                else
+                {
+                    return CustomerServiceLevels.None;
+                }
+            }
+        }
+
         /// <summary>
         /// Use explicit setter and accessor with private variable to keep the RIA services auto-generation logic happy.
         /// </summary>

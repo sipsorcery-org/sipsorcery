@@ -8,12 +8,13 @@
 //------------------------------------------------------------------------------
 
 using System;
+using System.ComponentModel;
+using System.Data.EntityClient;
 using System.Data.Objects;
 using System.Data.Objects.DataClasses;
-using System.Data.EntityClient;
-using System.ComponentModel;
-using System.Xml.Serialization;
+using System.Linq;
 using System.Runtime.Serialization;
+using System.Xml.Serialization;
 
 [assembly: EdmSchemaAttribute()]
 #region EDM Relationship Metadata
@@ -331,8 +332,41 @@ namespace SIPSorcery.Entities
             }
         }
         private ObjectSet<WebCallback> _WebCallbacks;
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        public ObjectSet<CustomerAccount> CustomerAccounts1
+        {
+            get
+            {
+                if ((_CustomerAccounts1 == null))
+                {
+                    _CustomerAccounts1 = base.CreateObjectSet<CustomerAccount>("CustomerAccounts1");
+                }
+                return _CustomerAccounts1;
+            }
+        }
+        private ObjectSet<CustomerAccount> _CustomerAccounts1;
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        public ObjectSet<Rate> Rates1
+        {
+            get
+            {
+                if ((_Rates1 == null))
+                {
+                    _Rates1 = base.CreateObjectSet<Rate>("Rates1");
+                }
+                return _Rates1;
+            }
+        }
+        private ObjectSet<Rate> _Rates1;
 
         #endregion
+
         #region AddTo Methods
     
         /// <summary>
@@ -462,13 +496,29 @@ namespace SIPSorcery.Entities
         {
             base.AddObject("WebCallbacks", webCallback);
         }
+    
+        /// <summary>
+        /// Deprecated Method for adding a new object to the CustomerAccounts1 EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
+        /// </summary>
+        public void AddToCustomerAccounts1(CustomerAccount customerAccount)
+        {
+            base.AddObject("CustomerAccounts1", customerAccount);
+        }
+    
+        /// <summary>
+        /// Deprecated Method for adding a new object to the Rates1 EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
+        /// </summary>
+        public void AddToRates1(Rate rate)
+        {
+            base.AddObject("Rates1", rate);
+        }
 
         #endregion
+
     }
-    
 
     #endregion
-    
+
     #region Entities
     
     /// <summary>
@@ -509,6 +559,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -1137,8 +1188,129 @@ namespace SIPSorcery.Entities
         private Nullable<global::System.Int32> _RingDuration;
         partial void OnRingDurationChanging(Nullable<global::System.Int32> value);
         partial void OnRingDurationChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String AccountCode
+        {
+            get
+            {
+                return _AccountCode;
+            }
+            set
+            {
+                OnAccountCodeChanging(value);
+                ReportPropertyChanging("AccountCode");
+                _AccountCode = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("AccountCode");
+                OnAccountCodeChanged();
+            }
+        }
+        private global::System.String _AccountCode;
+        partial void OnAccountCodeChanging(global::System.String value);
+        partial void OnAccountCodeChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public Nullable<global::System.Int32> SecondsReserved
+        {
+            get
+            {
+                return _SecondsReserved;
+            }
+            set
+            {
+                OnSecondsReservedChanging(value);
+                ReportPropertyChanging("SecondsReserved");
+                _SecondsReserved = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("SecondsReserved");
+                OnSecondsReservedChanged();
+            }
+        }
+        private Nullable<global::System.Int32> _SecondsReserved;
+        partial void OnSecondsReservedChanging(Nullable<global::System.Int32> value);
+        partial void OnSecondsReservedChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public Nullable<global::System.Decimal> Cost
+        {
+            get
+            {
+                return _Cost;
+            }
+            set
+            {
+                OnCostChanging(value);
+                ReportPropertyChanging("Cost");
+                _Cost = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("Cost");
+                OnCostChanged();
+            }
+        }
+        private Nullable<global::System.Decimal> _Cost;
+        partial void OnCostChanging(Nullable<global::System.Decimal> value);
+        partial void OnCostChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public Nullable<global::System.Decimal> Rate
+        {
+            get
+            {
+                return _Rate;
+            }
+            set
+            {
+                OnRateChanging(value);
+                ReportPropertyChanging("Rate");
+                _Rate = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("Rate");
+                OnRateChanged();
+            }
+        }
+        private Nullable<global::System.Decimal> _Rate;
+        partial void OnRateChanging(Nullable<global::System.Decimal> value);
+        partial void OnRateChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public Nullable<global::System.DateTime> AnsweredDate
+        {
+            get
+            {
+                return _AnsweredDate;
+            }
+            set
+            {
+                OnAnsweredDateChanging(value);
+                ReportPropertyChanging("AnsweredDate");
+                _AnsweredDate = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("AnsweredDate");
+                OnAnsweredDateChanged();
+            }
+        }
+        private Nullable<global::System.DateTime> _AnsweredDate;
+        partial void OnAnsweredDateChanging(Nullable<global::System.DateTime> value);
+        partial void OnAnsweredDateChanged();
 
         #endregion
+
     
     }
     
@@ -1184,6 +1356,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -1982,6 +2155,303 @@ namespace SIPSorcery.Entities
         partial void OnServiceRenewalDateChanged();
 
         #endregion
+
+    
+    }
+    
+    /// <summary>
+    /// No Metadata Documentation available.
+    /// </summary>
+    [EdmEntityTypeAttribute(NamespaceName="SIPSorcery.Entities", Name="CustomerAccount")]
+    [Serializable()]
+    [DataContractAttribute(IsReference=true)]
+    public partial class CustomerAccount : EntityObject
+    {
+        #region Factory Method
+    
+        /// <summary>
+        /// Create a new CustomerAccount object.
+        /// </summary>
+        /// <param name="id">Initial value of the ID property.</param>
+        /// <param name="owner">Initial value of the Owner property.</param>
+        /// <param name="accountCode">Initial value of the AccountCode property.</param>
+        /// <param name="credit">Initial value of the Credit property.</param>
+        public static CustomerAccount CreateCustomerAccount(global::System.String id, global::System.String owner, global::System.String accountCode, global::System.Decimal credit)
+        {
+            CustomerAccount customerAccount = new CustomerAccount();
+            customerAccount.ID = id;
+            customerAccount.Owner = owner;
+            customerAccount.AccountCode = accountCode;
+            customerAccount.Credit = credit;
+            return customerAccount;
+        }
+
+        #endregion
+
+        #region Primitive Properties
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String ID
+        {
+            get
+            {
+                return _ID;
+            }
+            set
+            {
+                if (_ID != value)
+                {
+                    OnIDChanging(value);
+                    ReportPropertyChanging("ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
+                    ReportPropertyChanged("ID");
+                    OnIDChanged();
+                }
+            }
+        }
+        private global::System.String _ID;
+        partial void OnIDChanging(global::System.String value);
+        partial void OnIDChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String Owner
+        {
+            get
+            {
+                return _Owner;
+            }
+            set
+            {
+                OnOwnerChanging(value);
+                ReportPropertyChanging("Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("Owner");
+                OnOwnerChanged();
+            }
+        }
+        private global::System.String _Owner;
+        partial void OnOwnerChanging(global::System.String value);
+        partial void OnOwnerChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String AccountCode
+        {
+            get
+            {
+                return _AccountCode;
+            }
+            set
+            {
+                OnAccountCodeChanging(value);
+                ReportPropertyChanging("AccountCode");
+                _AccountCode = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("AccountCode");
+                OnAccountCodeChanged();
+            }
+        }
+        private global::System.String _AccountCode;
+        partial void OnAccountCodeChanging(global::System.String value);
+        partial void OnAccountCodeChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Decimal Credit
+        {
+            get
+            {
+                return _Credit;
+            }
+            set
+            {
+                OnCreditChanging(value);
+                ReportPropertyChanging("Credit");
+                _Credit = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("Credit");
+                OnCreditChanged();
+            }
+        }
+        private global::System.Decimal _Credit;
+        partial void OnCreditChanging(global::System.Decimal value);
+        partial void OnCreditChanged();
+
+        #endregion
+
+    
+    }
+    
+    /// <summary>
+    /// No Metadata Documentation available.
+    /// </summary>
+    [EdmEntityTypeAttribute(NamespaceName="SIPSorcery.Entities", Name="Rate")]
+    [Serializable()]
+    [DataContractAttribute(IsReference=true)]
+    public partial class Rate : EntityObject
+    {
+        #region Factory Method
+    
+        /// <summary>
+        /// Create a new Rate object.
+        /// </summary>
+        /// <param name="id">Initial value of the ID property.</param>
+        /// <param name="owner">Initial value of the Owner property.</param>
+        /// <param name="description">Initial value of the Description property.</param>
+        /// <param name="prefix">Initial value of the Prefix property.</param>
+        /// <param name="rate1">Initial value of the Rate1 property.</param>
+        public static Rate CreateRate(global::System.String id, global::System.String owner, global::System.String description, global::System.String prefix, global::System.Decimal rate1)
+        {
+            Rate rate = new Rate();
+            rate.ID = id;
+            rate.Owner = owner;
+            rate.Description = description;
+            rate.Prefix = prefix;
+            rate.Rate1 = rate1;
+            return rate;
+        }
+
+        #endregion
+
+        #region Primitive Properties
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String ID
+        {
+            get
+            {
+                return _ID;
+            }
+            set
+            {
+                if (_ID != value)
+                {
+                    OnIDChanging(value);
+                    ReportPropertyChanging("ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
+                    ReportPropertyChanged("ID");
+                    OnIDChanged();
+                }
+            }
+        }
+        private global::System.String _ID;
+        partial void OnIDChanging(global::System.String value);
+        partial void OnIDChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String Owner
+        {
+            get
+            {
+                return _Owner;
+            }
+            set
+            {
+                OnOwnerChanging(value);
+                ReportPropertyChanging("Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("Owner");
+                OnOwnerChanged();
+            }
+        }
+        private global::System.String _Owner;
+        partial void OnOwnerChanging(global::System.String value);
+        partial void OnOwnerChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String Description
+        {
+            get
+            {
+                return _Description;
+            }
+            set
+            {
+                OnDescriptionChanging(value);
+                ReportPropertyChanging("Description");
+                _Description = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("Description");
+                OnDescriptionChanged();
+            }
+        }
+        private global::System.String _Description;
+        partial void OnDescriptionChanging(global::System.String value);
+        partial void OnDescriptionChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String Prefix
+        {
+            get
+            {
+                return _Prefix;
+            }
+            set
+            {
+                OnPrefixChanging(value);
+                ReportPropertyChanging("Prefix");
+                _Prefix = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("Prefix");
+                OnPrefixChanged();
+            }
+        }
+        private global::System.String _Prefix;
+        partial void OnPrefixChanging(global::System.String value);
+        partial void OnPrefixChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Decimal Rate1
+        {
+            get
+            {
+                return _Rate1;
+            }
+            set
+            {
+                OnRate1Changing(value);
+                ReportPropertyChanging("Rate1");
+                _Rate1 = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("Rate1");
+                OnRate1Changed();
+            }
+        }
+        private global::System.Decimal _Rate1;
+        partial void OnRate1Changing(global::System.Decimal value);
+        partial void OnRate1Changed();
+
+        #endregion
+
     
     }
     
@@ -2021,6 +2491,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -2483,6 +2954,7 @@ namespace SIPSorcery.Entities
         partial void OnCommandParameter4Changed();
 
         #endregion
+
     
         #region Navigation Properties
     
@@ -2525,6 +2997,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
     }
     
     /// <summary>
@@ -2571,6 +3044,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -3033,6 +3507,7 @@ namespace SIPSorcery.Entities
         partial void OnAvatarURLChanged();
 
         #endregion
+
     
         #region Navigation Properties
     
@@ -3059,6 +3534,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
     }
     
     /// <summary>
@@ -3107,6 +3583,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -3785,6 +4262,7 @@ namespace SIPSorcery.Entities
         partial void OnCRMPictureURLChanged();
 
         #endregion
+
     
     }
     
@@ -3828,6 +4306,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -4170,6 +4649,7 @@ namespace SIPSorcery.Entities
         partial void OnIsReadOnlyChanged();
 
         #endregion
+
     
         #region Navigation Properties
     
@@ -4284,6 +4764,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
     }
     
     /// <summary>
@@ -4316,6 +4797,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -4490,6 +4972,7 @@ namespace SIPSorcery.Entities
         partial void OnDialPlanIDChanged();
 
         #endregion
+
     
         #region Navigation Properties
     
@@ -4532,6 +5015,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
     }
     
     /// <summary>
@@ -4562,6 +5046,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -4832,6 +5317,7 @@ namespace SIPSorcery.Entities
         partial void OnDialPlanIDChanged();
 
         #endregion
+
     
         #region Navigation Properties
     
@@ -4874,6 +5360,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
     }
     
     /// <summary>
@@ -4906,6 +5393,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -5080,6 +5568,7 @@ namespace SIPSorcery.Entities
         partial void OnDialPlanIDChanged();
 
         #endregion
+
     
         #region Navigation Properties
     
@@ -5122,6 +5611,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
     }
     
     /// <summary>
@@ -5156,6 +5646,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -5330,6 +5821,7 @@ namespace SIPSorcery.Entities
         partial void OnDialPlanIDChanged();
 
         #endregion
+
     
         #region Navigation Properties
     
@@ -5372,6 +5864,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
     }
     
     /// <summary>
@@ -5400,6 +5893,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -5526,6 +6020,7 @@ namespace SIPSorcery.Entities
         partial void OnOwnerChanged();
 
         #endregion
+
     
     }
     
@@ -5569,6 +6064,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -6175,6 +6671,7 @@ namespace SIPSorcery.Entities
         partial void OnIsReadOnlyChanged();
 
         #endregion
+
     
         #region Navigation Properties
     
@@ -6201,6 +6698,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
     }
     
     /// <summary>
@@ -6241,6 +6739,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -6583,6 +7082,7 @@ namespace SIPSorcery.Entities
         partial void OnRegistrationFailureMessageChanged();
 
         #endregion
+
     
         #region Navigation Properties
     
@@ -6625,6 +7125,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
     }
     
     /// <summary>
@@ -6667,6 +7168,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -7009,6 +7511,7 @@ namespace SIPSorcery.Entities
         partial void OnUserAgentChanged();
 
         #endregion
+
     
         #region Navigation Properties
     
@@ -7051,6 +7554,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
     }
     
     /// <summary>
@@ -7087,6 +7591,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -7261,6 +7766,7 @@ namespace SIPSorcery.Entities
         partial void OnInsertedChanged();
 
         #endregion
+
     
     }
     
@@ -7294,6 +7800,7 @@ namespace SIPSorcery.Entities
         }
 
         #endregion
+
         #region Primitive Properties
     
         /// <summary>
@@ -7444,9 +7951,11 @@ namespace SIPSorcery.Entities
         partial void OnInsertedChanged();
 
         #endregion
+
     
     }
 
     #endregion
+
     
 }

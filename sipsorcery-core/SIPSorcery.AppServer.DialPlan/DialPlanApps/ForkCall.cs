@@ -66,7 +66,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private QueueNewCallDelegate QueueNewCall_External;             // Function delegate to allow new calls to be placed on the call manager and run through the dialplan logic.              
         private DialPlanContext m_dialPlanContext;                      // Used to allow redirect responses that need to execute a new dial plan execution.
 
-        //private DialStringParser m_dialStringParser;            // Used to create a new list of calls if a redirect response is received to a fork call leg.
+        private DialStringParser m_dialStringParser;            // Used to create a new list of calls if a redirect response is received to a fork call leg.
         private string m_username;                              // The call owner.
         private string m_adminMemberId;
         private SIPEndPoint m_outboundProxySocket;              // If this app forwards calls via an outbound proxy this value will be set.
@@ -129,7 +129,7 @@ namespace SIPSorcery.AppServer.DialPlan
             m_sipTransport = sipTransport;
             m_statefulProxyLogEvent = statefulProxyLogEvent;
             QueueNewCall_External = queueNewCall;
-            //m_dialStringParser = dialStringParser;
+            m_dialStringParser = dialStringParser;
             m_username = username;
             m_adminMemberId = adminMemberId;
             m_outboundProxySocket = outboundProxy;
@@ -514,13 +514,26 @@ namespace SIPSorcery.AppServer.DialPlan
                     {
                         m_dialPlanContext.ExecuteDialPlanForRedirect(answeredResponse);
                     }
+                    else if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.Manual)
+                    {
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response with URI " + redirectURI.ToString() + " was not acted on as redirect mode set to manual in dial string.", m_username));
+                        CallLegCompleted();
+                    }
                     else
                     {
                         // The redirect was not explicitly allowed so will be processed as an anonymous call.
                         FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect response to " + redirectURI.ToString() + " accepted.", m_username));
-                        SIPCallDescriptor redirectCallDescriptor = answeredUAC.CallDescriptor.CopyOf();
-                        redirectCallDescriptor.Uri = redirectURI.ToString();
-                        StartNewCallAsync(redirectCallDescriptor);
+                        var redirectCalls = m_dialStringParser.GetForwardsForRedirect(redirectURI, answeredUAC.CallDescriptor);
+                        //SIPCallDescriptor redirectCallDescriptor = answeredUAC.CallDescriptor.CopyOf();
+                        //redirectCallDescriptor.Uri = redirectURI.ToString();
+                        //StartNewCallAsync(redirectCallDescriptor);
+                        if (redirectCalls != null && redirectCalls.Count > 0)
+                        {
+                            foreach (var redirectCall in redirectCalls)
+                            {
+                                StartNewCallAsync(redirectCall);
+                            }
+                        }
                     }
                     //else if (answeredUAC.CallDescriptor.RedirectMode == SIPCallRedirectModesEnum.Replace)
                     //{

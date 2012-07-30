@@ -652,10 +652,15 @@ namespace SIPSorcery.AppServer.DialPlan
         /// </summary>
         public void Callback(string dest1, string dest2)
         {
-            Callback(dest1, dest2, 0);
+            Callback(dest1, dest2, 0, 0, 0);
         }
 
         public void Callback(string dest1, string dest2, int delaySeconds)
+        {
+            Callback(dest1, dest2, delaySeconds, 0, 0);
+        }
+
+        public void Callback(string dest1, string dest2, int delaySeconds, int ringTimeoutLeg1, int ringTimeoutLeg2)
         {
             m_callbackRequests++;
             if (m_callbackRequests > MAX_CALLBACKS_ALLOWED)
@@ -665,7 +670,7 @@ namespace SIPSorcery.AppServer.DialPlan
             else
             {
                 CallbackApp callbackApp = new CallbackApp(m_sipTransport, m_callManager, m_dialStringParser, FireProxyLogEvent, m_username, m_adminMemberId, m_outboundProxySocket);
-                ThreadPool.QueueUserWorkItem(delegate { callbackApp.Callback(dest1, dest2, delaySeconds); });
+                ThreadPool.QueueUserWorkItem(delegate { callbackApp.Callback(dest1, dest2, delaySeconds, ringTimeoutLeg1, ringTimeoutLeg2); });
             }
         }
 
@@ -1290,7 +1295,6 @@ namespace SIPSorcery.AppServer.DialPlan
                 {
                     using (WebClient webClient = new WebClient())
                     {
-
                         if (timeout > 0)
                         {
                             timeout = (timeout > WEBGET_MAXIMUM_TIMEOUT) ? timeout = WEBGET_MAXIMUM_TIMEOUT : timeout;

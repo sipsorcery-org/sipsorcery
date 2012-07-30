@@ -44,7 +44,7 @@ namespace SIPSorcery.SIP
         {
             Protocol = protocol;
             Address = address;
-            Port = port;
+            Port = (port == 0) ? (Protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort : port;
         }
 
         public SIPEndPoint(SIPURI sipURI)
@@ -52,7 +52,7 @@ namespace SIPSorcery.SIP
             Protocol = sipURI.Protocol;
             IPEndPoint endPoint = IPSocket.ParseSocketString(sipURI.Host);
             Address = endPoint.Address;
-            Port = endPoint.Port;
+            Port = (endPoint.Port == 0) ? (Protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort : endPoint.Port;
         }
 
         public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint)

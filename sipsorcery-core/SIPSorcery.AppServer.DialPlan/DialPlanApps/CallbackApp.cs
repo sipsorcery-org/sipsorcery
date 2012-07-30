@@ -91,8 +91,10 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="dest1">The dial string of the first call to place.</param>
         /// <param name="dest2">The dial string of the second call to place.</param>
         /// <param name="delaySeconds">Delay in seconds before placing the first call. Gives the user a chance to hangup their phone if they are calling themselves back.</param>
+        /// <param name="ringTimeoutLeg1">The ring timeout for the first call leg, If 0 the mex timeout will be used.</param>
+        /// <param name="ringTimeoutLeg1">The ring timeout for the second call leg, If 0 the mex timeout will be used.</param>
         /// <returns>The result of the call.</returns>
-        public void Callback(string dest1, string dest2, int delaySeconds)
+        public void Callback(string dest1, string dest2, int delaySeconds, int ringTimeoutLeg1, int ringTimeoutLeg2)
         {
             try
             {
@@ -108,7 +110,8 @@ namespace SIPSorcery.AppServer.DialPlan
                 SIPEndPoint defaultUDPEP = m_sipTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp);
 
                 SIPRequest firstLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.GetIPEndPoint(), null);
-                m_firstLegDialogue = Dial(dest1, MAXCALLBACK_RINGTIME_SECONDS, 0, firstLegDummyInviteRequest);
+                ringTimeoutLeg1 = (ringTimeoutLeg1 > 0) ? ringTimeoutLeg1 : MAXCALLBACK_RINGTIME_SECONDS;
+                m_firstLegDialogue = Dial(dest1, ringTimeoutLeg1, 0, firstLegDummyInviteRequest);
                 if (m_firstLegDialogue == null)
                 {
                     Log("The first call leg to " + dest1 + " was unsuccessful.");
@@ -123,7 +126,8 @@ namespace SIPSorcery.AppServer.DialPlan
                 Log("Callback app commencing second leg to " + dest2 + ".");
 
                 SIPRequest secondLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.GetIPEndPoint(), m_firstLegDialogue.RemoteSDP);
-                SIPDialogue secondLegDialogue = Dial(dest2, MAXCALLBACK_RINGTIME_SECONDS, 0, secondLegDummyInviteRequest);
+                ringTimeoutLeg2 = (ringTimeoutLeg2 > 0) ? ringTimeoutLeg2 : MAXCALLBACK_RINGTIME_SECONDS;
+                SIPDialogue secondLegDialogue = Dial(dest2, ringTimeoutLeg2, 0, secondLegDummyInviteRequest);
                 if (secondLegDialogue == null)
                 {
                     Log("The second call leg to " + dest2 + " was unsuccessful.");

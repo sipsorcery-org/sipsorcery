@@ -7,7 +7,9 @@
     <Schema Namespace="Entities.Store" Alias="Self" Provider="MySql.Data.MySqlClient" ProviderManifestToken="5.1" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/02/edm/ssdl">
         <EntityContainer Name="EntitiesStoreContainer">
           <EntitySet Name="cdr" EntityType="Entities.Store.cdr" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="customeraccount" EntityType="Entities.Store.customeraccount" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="customers" EntityType="Entities.Store.customers" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="rate" EntityType="Entities.Store.rate" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="simplewizardrule" EntityType="Entities.Store.simplewizardrule" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipaccounts" EntityType="Entities.Store.sipaccounts" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipdialogues" EntityType="Entities.Store.sipdialogues" store:Type="Tables" Schema="sipsorcery" />
@@ -81,8 +83,24 @@
           <Property Name="duration" Type="int" />
           <Property Name="hunguptime" Type="varchar" MaxLength="33" />
           <Property Name="hungupreason" Type="varchar" MaxLength="512" />
+          <Property Name="accountcode" Type="varchar" MaxLength="36" />
+          <Property Name="secondsreserved" Type="int" />
+          <Property Name="cost" Type="decimal" />
+          <Property Name="rate" Type="decimal" />
+          <Property Name="answereddate" Type="date" />
+        </EntityType>
+        <EntityType Name="customeraccount">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
+          <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="accountcode" Type="varchar" Nullable="false" MaxLength="36" />
+          <Property Name="credit" Type="decimal" Nullable="false" />
         </EntityType>
         <!--Errors Found During Generation:
+      warning 6035: The relationship 'customeraccount_ibfk_1' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
+      warning 6035: The relationship 'rate_ibfk_1' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
       warning 6035: The relationship 'sipaccounts_ibfk_1' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
       warning 6035: The relationship 'sipdialogues_ibfk_1' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
       warning 6035: The relationship 'sipdialplans_ibfk_1' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
@@ -109,7 +127,7 @@
           <Property Name="suspended" Type="bit" Nullable="false" />
           <Property Name="securityquestion" Type="varchar" MaxLength="1024" />
           <Property Name="securityanswer" Type="varchar" MaxLength="256" />
-          <Property Name="createdfromipaddress" Type="varchar" MaxLength="15" />
+          <Property Name="createdfromipaddress" Type="varchar" MaxLength="45" />
           <Property Name="adminid" Type="varchar" MaxLength="32" />
           <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
           <Property Name="maxexecutioncount" Type="int" Nullable="false" />
@@ -129,6 +147,16 @@
           <Property Name="usernamerecoveryid" Type="varchar" MaxLength="36" />
           <Property Name="servicelevel" Type="varchar" Nullable="false" MaxLength="64" />
           <Property Name="servicerenewaldate" Type="varchar" MaxLength="33" />
+        </EntityType>
+        <EntityType Name="rate">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
+          <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="description" Type="varchar" Nullable="false" MaxLength="100" />
+          <Property Name="prefix" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="rate" Type="decimal" Nullable="false" />
         </EntityType>
         <EntityType Name="simplewizardrule">
           <Key>
@@ -272,7 +300,7 @@
           <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
           <Property Name="dialplanname" Type="varchar" Nullable="false" MaxLength="64" />
           <Property Name="traceemailaddress" Type="varchar" MaxLength="256" />
-          <Property Name="dialplanscript" Type="text" />
+          <Property Name="dialplanscript" Type="mediumtext" />
           <Property Name="scripttypedescription" Type="varchar" Nullable="false" MaxLength="12" />
           <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
           <Property Name="lastupdate" Type="varchar" Nullable="false" MaxLength="33" />
@@ -322,7 +350,7 @@
           <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
           <Property Name="adminmemberid" Type="varchar" MaxLength="32" />
           <Property Name="providername" Type="varchar" Nullable="false" MaxLength="50" />
-          <Property Name="providerusername" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="providerusername" Type="varchar" Nullable="false" MaxLength="64" />
           <Property Name="providerpassword" Type="varchar" MaxLength="32" />
           <Property Name="providerserver" Type="varchar" MaxLength="256" />
           <Property Name="providerauthusername" Type="varchar" MaxLength="32" />
@@ -533,6 +561,8 @@
             <End Role="simplewizardrule" EntitySet="SimpleWizardRules" />
           </AssociationSet>
           <EntitySet Name="WebCallbacks" EntityType="SIPSorcery.Entities.WebCallback" />
+          <EntitySet Name="CustomerAccounts1" EntityType="SIPSorcery.Entities.CustomerAccount" />
+          <EntitySet Name="Rates1" EntityType="SIPSorcery.Entities.Rate" />
         </EntityContainer>
         <EntityType Name="SIPDialplanLookup">
           <Key>
@@ -620,6 +650,11 @@
           <Property Type="String" Name="Owner" />
           <Property Type="String" Name="RemoteSocket" Nullable="false" />
           <Property Type="Int32" Name="RingDuration" />
+          <Property Type="String" Name="AccountCode" />
+          <Property Type="Int32" Name="SecondsReserved" />
+          <Property Type="Decimal" Name="Cost" />
+          <Property Type="Decimal" Name="Rate" />
+          <Property Type="DateTime" Name="AnsweredDate" />
         </EntityType>
         <EntityType Name="Customer">
           <Key>
@@ -954,6 +989,25 @@
           <Property Type="String" Name="Description" />
           <Property Type="String" Name="Inserted" Nullable="false" />
         </EntityType>
+        <EntityType Name="CustomerAccount">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Type="String" Name="ID" Nullable="false" />
+          <Property Type="String" Name="Owner" Nullable="false" />
+          <Property Type="String" Name="AccountCode" Nullable="false" />
+          <Property Type="Decimal" Name="Credit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Rate">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Type="String" Name="ID" Nullable="false" />
+          <Property Type="String" Name="Owner" Nullable="false" />
+          <Property Type="String" Name="Description" Nullable="false" />
+          <Property Type="String" Name="Prefix" Nullable="false" />
+          <Property Type="Decimal" Name="Rate1" Nullable="false" />
+        </EntityType>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -1019,6 +1073,11 @@
           <EntitySetMapping Name="CDRs">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.CDR">
               <MappingFragment StoreEntitySet="cdr">
+                <ScalarProperty Name="AnsweredDate" ColumnName="answereddate" />
+                <ScalarProperty Name="Rate" ColumnName="rate" />
+                <ScalarProperty Name="Cost" ColumnName="cost" />
+                <ScalarProperty Name="SecondsReserved" ColumnName="secondsreserved" />
+                <ScalarProperty Name="AccountCode" ColumnName="accountcode" />
                 <ScalarProperty Name="RingDuration" ColumnName="ringduration" />
                 <ScalarProperty Name="RemoteSocket" ColumnName="remotesocket" />
                 <ScalarProperty Name="Owner" ColumnName="owner" />
@@ -1298,6 +1357,27 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
+          <EntitySetMapping Name="CustomerAccounts1">
+            <EntityTypeMapping TypeName="SIPSorcery.Entities.CustomerAccount">
+              <MappingFragment StoreEntitySet="customeraccount">
+                <ScalarProperty Name="Credit" ColumnName="credit" />
+                <ScalarProperty Name="AccountCode" ColumnName="accountcode" />
+                <ScalarProperty Name="Owner" ColumnName="owner" />
+                <ScalarProperty Name="ID" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Rates1">
+            <EntityTypeMapping TypeName="SIPSorcery.Entities.Rate">
+              <MappingFragment StoreEntitySet="rate">
+                <ScalarProperty Name="Rate1" ColumnName="rate" />
+                <ScalarProperty Name="Prefix" ColumnName="prefix" />
+                <ScalarProperty Name="Description" ColumnName="description" />
+                <ScalarProperty Name="Owner" ColumnName="owner" />
+                <ScalarProperty Name="ID" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
         </EntityContainerMapping>
       </Mapping>
     </edmx:Mappings>
@@ -1323,7 +1403,7 @@
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanRoute" Width="1.875" PointX="18.375" PointY="0.75" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanProvider" Width="2.25" PointX="11.625" PointY="4.25" Height="2.5571907552083317" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanOption" Width="2.625" PointX="18.25" PointY="3.875" Height="3.3263964843749996" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.CDR" Width="1.5" PointX="3.75" PointY="0.625" Height="6.0186165364583317" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.CDR" Width="1.5" PointX="3.75" PointY="0.625" Height="6.787822265625" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.Customer" PointX="0.625" PointY="0.5" Width="2.625" Height="7.1724251302083326" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPAccount" Width="2.125" PointX="3.375" PointY="7.875" Height="5.0571093749999978" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialogue" Width="2.75" PointX="5.75" PointY="0.75" Height="5.634013671875" />
@@ -1363,6 +1443,8 @@
           <ConnectorPoint PointX="16.0625" PointY="7.625" />
         </AssociationConnector>
         <EntityTypeShape EntityType="SIPSorcery.Entities.WebCallback" Width="1.5" PointX="0.75" PointY="13.75" Height="2.1725878906250031" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.CustomerAccount" Width="1.875" PointX="3.25" PointY="14.25" Height="1.7879850260416674" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.Rate" Width="1.5" PointX="5.75" PointY="14.25" Height="2.0002864583333331" />
       </Diagram>
     </Diagrams>
   </Designer>

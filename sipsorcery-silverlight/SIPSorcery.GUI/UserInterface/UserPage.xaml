@@ -30,7 +30,7 @@
 			<TextBlock Cursor="Hand" x:Name="m_helpLink" Width="29" Foreground="{StaticResource NormalTextBrush}" Text="Help" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="HelpLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,202,0"/>
 			<TextBlock Cursor="Hand" x:Name="m_settingsLink" Width="95" Foreground="{StaticResource NormalTextBrush}" Text="Account Settings" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="SettingsLink_MouseLeftButtonUp" Height="15" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,76,0"/>
 			<TextBlock Cursor="Hand" x:Name="m_aboutLink" Foreground="{StaticResource NormalTextBrush}" Text="About" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="AboutLink_MouseLeftButtonUp" Margin="0,0,266,0" HorizontalAlignment="Right" Width="39" Height="15" VerticalAlignment="Bottom"/>
-			<TextBlock x:Name="m_serviceLevelTextBlock" HorizontalAlignment="Right" Margin="0,18,339,0" TextWrapping="Wrap" Width="76" Foreground="{StaticResource InfoTextBrush}" FontSize="13.333"/>
+			<TextBlock x:Name="m_serviceLevelTextBlock" HorizontalAlignment="Right" Margin="0,18,328,0" TextWrapping="Wrap" Width="102" Foreground="{StaticResource InfoTextBrush}" FontSize="13.333" TextAlignment="Center"/>
         </Grid>
 		<Border Height="Auto" Width="1018" Margin="0,0,0,5" BorderBrush="#FFA0F927" BorderThickness="2,2,2,2" CornerRadius="5,5,5,5">
 			<StackPanel Height="Auto" Width="1014">

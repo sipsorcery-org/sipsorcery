@@ -56,5 +56,6 @@ namespace SIPSorcery.Entities
         ProfessionalPayReqd = 10,
         Switchboard = 11,
         SwitchboardPayReqd = 12,
+        RenewalReqd = 13,
     }
 }

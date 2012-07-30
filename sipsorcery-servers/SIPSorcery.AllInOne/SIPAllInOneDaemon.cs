@@ -92,6 +92,7 @@ namespace SIPSorcery.SIPAppServer
         private string m_dialplanImpersonationUsername = SIPAppServerState.DialPlanEngineImpersonationUsername;
         private string m_dialplanImpersonationPassword = SIPAppServerState.DialPlanEngineImpersonationPassword;
         private int m_dailyCallLimit = SIPAppServerState.DailyCallLimit;
+        private int m_maxDialPlanExecutionLimit = SIPAppServerState.DialPlanMaxExecutionLimit;
 
         private SIPSorceryPersistor m_sipSorceryPersistor;
         private SIPMonitorEventWriter m_monitorEventWriter;
@@ -300,7 +301,8 @@ namespace SIPSorcery.SIPAppServer
                     m_outboundProxy,
                     m_rubyScriptCommonPath,
                     m_dialplanImpersonationUsername,
-                    m_dialplanImpersonationPassword);
+                    m_dialplanImpersonationPassword,
+                    m_maxDialPlanExecutionLimit);
 
                 m_sipDialogueManager = new SIPDialogueManager(
                     m_sipTransport,

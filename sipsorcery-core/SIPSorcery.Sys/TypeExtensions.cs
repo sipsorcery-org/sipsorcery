@@ -31,6 +31,16 @@ namespace SIPSorcery.Sys
             return false;
         }
 
+        public static bool NotNullOrBlank(this string s)
+        {
+            if (s == null || s.Trim(WhiteSpaceChars).Length == 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public static long GetEpoch(this DateTime dateTime)
         {
             var unixTime = dateTime.ToUniversalTime() -

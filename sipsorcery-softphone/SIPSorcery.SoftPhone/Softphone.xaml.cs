@@ -47,6 +47,7 @@ namespace SIPSorcery.SoftPhone
     public partial class SoftPhone : Window
     {
         private ILog logger = AppState.logger;
+        private ILog _videoLogger = AppState.GetLogger("videodevice");
 
         private SIPClient _sipClient;               // SIP calls.
         private GingleClient _gingleClient;         // Google Voice calls.
@@ -76,6 +77,13 @@ namespace SIPSorcery.SoftPhone
 
             // Lookup and periodically check the public IP address of the host machine.
             _stunClient = new SoftphoneSTUNClient();
+
+            videoElement.NewVideoSample += new EventHandler<WPFMediaKit.DirectShow.MediaPlayers.VideoSampleArgs>(videoElement_NewVideoSample);
+        }
+
+        void videoElement_NewVideoSample(object sender, WPFMediaKit.DirectShow.MediaPlayers.VideoSampleArgs e)
+        {
+            _videoLogger.Debug("New video frame sample received.");
         }
 
         /// <summary>

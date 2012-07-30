@@ -61,10 +61,15 @@ namespace SIPSorcery.Web.Services
                                 throw new ApplicationException("Your account is suspended.");
                             }
                             else if (customer.ServiceLevel == CustomerServiceLevels.PremiumPayReqd.ToString() ||
-                                customer.ServiceLevel == CustomerServiceLevels.ProfessionalPayReqd.ToString())
+                                customer.ServiceLevel == CustomerServiceLevels.ProfessionalPayReqd.ToString() ||
+                                customer.ServiceLevel == CustomerServiceLevels.SwitchboardPayReqd.ToString())
                             {
                                 var serviceLevel = (CustomerServiceLevels)Enum.Parse(typeof(CustomerServiceLevels), customer.ServiceLevel);
                                 throw new PaymentRequiredException(serviceLevel, "Your account requires payment before it can be activated. Please visit the payment page.");
+                            }
+                            else if (customer.ServiceRenewalDate != null && DateTimeOffset.Parse(customer.ServiceRenewalDate) < DateTimeOffset.Now)
+                            {
+                                throw new PaymentRequiredException(CustomerServiceLevels.RenewalReqd, "Your account is overdue please login to the web site (non-Silverlight login) to renew.");
                             }
                             else
                             {

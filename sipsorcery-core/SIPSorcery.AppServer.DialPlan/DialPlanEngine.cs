@@ -110,6 +110,7 @@ namespace SIPSorcery.AppServer.DialPlan
         //private SIPAssetPersistor<SIPDialPlan> m_dialPlanPersistor;
         private string m_impersonationUsername;
         private string m_impersonationPassword;
+        private int m_maxExecutionCount = MAX_ALLOWED_SCRIPTSCOPES;
 
         private DateTime? m_rubyCommonLastReload;
         private string m_rubyScriptCommonPath;
@@ -128,7 +129,8 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPEndPoint outboundProxySocket,
             string rubyScriptCommonPath,
             string impersonationUsername,
-            string impersonationPassword)
+            string impersonationPassword, 
+            int maxExecutionCount)
         {
             m_sipTransport = sipTransport;
             GetCanonicalDomainDelegate_External = getCanonicalDomain;
@@ -142,6 +144,7 @@ namespace SIPSorcery.AppServer.DialPlan
             m_rubyScriptCommonPath = rubyScriptCommonPath;
             m_impersonationUsername = impersonationUsername;
             m_impersonationPassword = impersonationPassword;
+            m_maxExecutionCount = (maxExecutionCount > 0) ? maxExecutionCount : MAX_ALLOWED_SCRIPTSCOPES;
 
             LoadRubyCommonScript();
 

@@ -12,6 +12,7 @@ namespace SIPSorcery.Sys
         MSSQL,
         Postgresql,
         MySQL,
+        Oracle,
         XML,
         DBLinqMySQL,
         DBLinqPostgresql,
@@ -19,6 +20,7 @@ namespace SIPSorcery.Sys
         SQLLinqMySQL,
         SQLLinqPostgresql,
         SQLLinqMSSQL,
+        SQLLinqOracle,
     }
 
     public class StorageTypesConverter

@@ -87,6 +87,7 @@ namespace SIPSorcery.SIP.App
         Authoriser = 12,
         Notifier = 13,
         NotifierClient = 14,
+        RTCC = 15,
 	}
 	
 	public enum SIPMonitorEventTypesEnum

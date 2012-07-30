@@ -16,7 +16,7 @@ create table customers
  suspended bit not null default 0,		-- Whether this account has been suspended. If so it will not be authorised for logins. 
  securityquestion varchar(1024),
  securityanswer varchar(256),
- createdfromipaddress varchar(15),
+ createdfromipaddress varchar(45),
  adminid varchar(32),						-- Like a whitelabelid. If set identifies this user as the administrative owner of all accounts that have the same value for their adminmemberid.
  adminmemberid varchar(32),					-- If set it designates this customer as a belonging to the administrative domain of the customer with the same adminid.
  maxexecutioncount int not null,	     	-- The mamimum number of simultaneous executions of the customer's dialplans that are permitted.
@@ -258,7 +258,35 @@ create table cdr
  duration int,									-- Number of seconds the call was established for.
  hunguptime varchar(33) null default null,	-- The time the call was hungup.
  hungupreason varchar(512),						-- The SIP response Reason header on the BYE request if present.
+ accountcode varchar(36) null,					-- If using real-time call control this is the account code that's supplying the credit.
+ secondsreserved int null,						-- If using real-time call control this is the cumulative number of seconds that have been reserved for the call.
+ answereddate date null default null,			-- The time the call was answered with a final response and as a native datetime value.
+ cost decimal null,								-- If using real-time call control this is cumulative cost of the call. Some credit maybe returned at the end of the call.
+ rate decimal null,								-- If using real-time call control this is the rate call credit is being reserved at.
  Primary Key(id)
+);
+
+create table CustomerAccount
+(
+ id varchar(36) not null,
+ owner varchar(32) not null,
+ accountcode varchar(36) not null,
+ credit decimal not null default 0,
+ Primary Key(id),
+ Foreign Key(owner) references Customers(customerusername),
+ unique(owner, accountcode)
+);
+
+create table Rate
+(
+ id varchar(36) not null,
+ owner varchar(32) not null,
+ description varchar(100) not null,
+ prefix varchar(32) not null,
+ rate decimal not null,
+ Primary Key(id),
+ Foreign Key(owner) references Customers(customerusername),
+ unique(owner, prefix)
 );
 
 -- Telis Dial Plan Wizard Tables.
@@ -373,8 +401,10 @@ create table dialplandata
   Primary Key(dataowner, datakey)
 );
 
-create index cdrs_lastname_index on cdr(created);
+create index cdrs_created_index on cdr(created);
 create index cdrs_owner_index on cdr(owner);
+create index cdrs_inserted_index on cdr(inserted);
+create index cdrs_fromheader_index on cdr(fromheader);
 create index providerbindings_nextregtime_index on sipproviderbindings(nextregistrationtime);
 create index regbindings_contact_index on sipregistrarbindings(contacturi);
 create index customers_custid_index on customers(customerusername);

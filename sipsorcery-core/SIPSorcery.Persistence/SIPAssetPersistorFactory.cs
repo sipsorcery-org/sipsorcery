@@ -81,6 +81,10 @@ namespace SIPSorcery.Persistence
                 {
                     return new MSSQLAssetPersistor<T>(System.Data.SqlClient.SqlClientFactory.Instance, storageConnectionStr);
                 }
+                //else if (storageType == StorageTypes.SQLLinqOracle)
+                //{
+                //    return new SQLAssetPersistor<T>(Oracle.DataAccess.Client.OracleClientFactory.Instance, storageConnectionStr);
+                //}
                 else
                 {
                     throw new ApplicationException(storageType + " is not supported as a CreateSIPAssetPersistor option.");

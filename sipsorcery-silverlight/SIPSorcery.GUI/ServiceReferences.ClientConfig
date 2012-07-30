@@ -16,9 +16,7 @@
                 </binding>
                 <binding name="BasicHttpBinding_INotifications" maxBufferSize="2147483647"
                     maxReceivedMessageSize="2147483647">
-                    <security mode="None">
-                        <message algorithmSuite="Default" />
-                    </security>
+                    <security mode="None" />
                 </binding>
             </basicHttpBinding>
             <customBinding>

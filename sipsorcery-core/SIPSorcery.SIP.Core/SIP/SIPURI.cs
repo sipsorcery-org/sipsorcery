@@ -125,11 +125,12 @@ namespace SIPSorcery.SIP
 
         private static ILog logger = AssemblyState.logger;
 
-        private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static char[] m_invalidSIPHostChars = new char[] { ',', '"' };
 
         private static SIPProtocolsEnum m_defaultSIPTransport = SIPProtocolsEnum.udp;
         private static SIPSchemesEnum m_defaultSIPScheme = SIPSchemesEnum.sip;
+        private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
+        private static int m_defaultSIPTLSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;
         private static string m_sipRegisterRemoveAll = SIPConstants.SIP_REGISTER_REMOVEALL;
         private static string m_uriParamTransportKey = SIPHeaderAncillary.SIP_HEADERANC_TRANSPORT;
 
@@ -476,7 +477,21 @@ namespace SIPSorcery.SIP
         {
             if (IPSocket.IsIPSocket(Host) || IPSocket.IsIPAddress(Host))
             {
-                return new SIPEndPoint(Protocol, IPSocket.GetIPEndPoint(Host));
+                if (Host.IndexOf(":") != -1)
+                {
+                    return new SIPEndPoint(Protocol, IPSocket.GetIPEndPoint(Host));
+                }
+                else
+                {
+                    if(Protocol == SIPProtocolsEnum.tls)
+                    {
+                        return new SIPEndPoint(Protocol, IPSocket.GetIPEndPoint(Host + ":" + m_defaultSIPTLSPort));
+                    }
+                    else
+                    {
+                        return new SIPEndPoint(Protocol, IPSocket.GetIPEndPoint(Host + ":" + m_defaultSIPPort));
+                    }
+                }
             }
             else
             {
