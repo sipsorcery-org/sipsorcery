@@ -203,7 +203,9 @@
     <Content Include="ExampleXMLConfig\sipdomains.xml" />
     <Content Include="ExampleXMLConfig\sipaccounts.xml" />
     <Content Include="ExampleXMLConfig\sipproviders.xml" />
-    <Content Include="NSshConfiguration.xml" />
+    <Content Include="NSshConfiguration.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>

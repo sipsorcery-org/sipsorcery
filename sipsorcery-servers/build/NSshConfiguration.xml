@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<NSsh>
+  <Configuration>
+    <ListenEndPoints>
+      <EndPoint IPAddress="0.0.0.0" Port="22" />
+    </ListenEndPoints>
+  </Configuration>
+</NSsh>
