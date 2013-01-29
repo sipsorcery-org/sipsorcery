@@ -844,7 +844,7 @@ namespace SIPSorcery.Web.Services
                 Customer customer = AuthoriseRequest();
 
                 string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
-                //logger.Debug("SIPProvisioningWebService GetCDRsCount for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
+                logger.Debug("SIPProvisioningWebService GetCDRsCount for " + customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
                 //if (authoriseExpression.IsNullOrBlank())
                 //{
@@ -877,7 +877,7 @@ namespace SIPSorcery.Web.Services
                 Customer customer = AuthoriseRequest();
 
                 string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
-                //logger.Debug("SIPProvisioningWebService GetCDRs for " + customerSession.Customer.CustomerUsername + " and where: " + authoriseExpression + ".");
+                logger.Debug("SIPProvisioningWebService GetCDRs for " + customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
                 //if (authoriseExpression.IsNullOrBlank())
                 //{

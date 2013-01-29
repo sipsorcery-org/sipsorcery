@@ -4,7 +4,7 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-    <Schema Namespace="Entities.Store" Alias="Self" Provider="MySql.Data.MySqlClient" ProviderManifestToken="5.1" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/02/edm/ssdl">
+    <Schema Namespace="Entities.Store" Alias="Self" Provider="MySql.Data.MySqlClient" ProviderManifestToken="5.5" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/02/edm/ssdl">
         <EntityContainer Name="EntitiesStoreContainer">
           <EntitySet Name="cdr" EntityType="Entities.Store.cdr" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="customeraccount" EntityType="Entities.Store.customeraccount" store:Type="Tables" Schema="sipsorcery" />
@@ -85,9 +85,13 @@
           <Property Name="hungupreason" Type="varchar" MaxLength="512" />
           <Property Name="accountcode" Type="varchar" MaxLength="36" />
           <Property Name="secondsreserved" Type="int" />
-          <Property Name="cost" Type="decimal" />
-          <Property Name="rate" Type="decimal" />
-          <Property Name="answereddate" Type="date" />
+          <Property Name="cost" Type="decimal" Scale="5" />
+          <Property Name="rate" Type="decimal" Scale="5" />
+          <Property Name="answeredat" Type="datetime" />
+          <Property Name="reconciliationresult" Type="varchar" MaxLength="256" />
+          <Property Name="reservationerror" Type="varchar" MaxLength="256" />
+          <Property Name="ishangingup" Type="bit" Nullable="false" />
+          <Property Name="postreconciliationbalance" Type="decimal" Scale="5" />
         </EntityType>
         <EntityType Name="customeraccount">
           <Key>
@@ -96,7 +100,11 @@
           <Property Name="id" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
           <Property Name="accountcode" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="credit" Type="decimal" Nullable="false" />
+          <Property Name="credit" Type="decimal" Nullable="false" Scale="5" />
+          <Property Name="AccountName" Type="varchar" Nullable="false" MaxLength="100" />
+          <Property Name="accountnumber" Type="varchar" MaxLength="32" />
+          <Property Name="PIN" Type="int" />
+          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
         </EntityType>
         <!--Errors Found During Generation:
       warning 6035: The relationship 'customeraccount_ibfk_1' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
@@ -147,6 +155,8 @@
           <Property Name="usernamerecoveryid" Type="varchar" MaxLength="36" />
           <Property Name="servicelevel" Type="varchar" Nullable="false" MaxLength="64" />
           <Property Name="servicerenewaldate" Type="varchar" MaxLength="33" />
+          <Property Name="RTCCBillingIncrement" Type="int" Nullable="false" />
+          <Property Name="RTCCInternationalPrefixes" Type="varchar" MaxLength="32" />
         </EntityType>
         <EntityType Name="rate">
           <Key>
@@ -156,7 +166,9 @@
           <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
           <Property Name="description" Type="varchar" Nullable="false" MaxLength="100" />
           <Property Name="prefix" Type="varchar" Nullable="false" MaxLength="32" />
-          <Property Name="rate" Type="decimal" Nullable="false" />
+          <Property Name="rate" Type="decimal" Nullable="false" Scale="5" />
+          <Property Name="ratecode" Type="varchar" MaxLength="32" />
+          <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
         </EntityType>
         <EntityType Name="simplewizardrule">
           <Key>
@@ -371,6 +383,7 @@
           <Property Name="gvcallbackpattern" Type="varchar" MaxLength="32" />
           <Property Name="gvcallbacktype" Type="varchar" MaxLength="16" />
           <Property Name="isreadonly" Type="bit" Nullable="false" />
+          <Property Name="sendmwisubscribe" Type="bit" Nullable="false" />
         </EntityType>
         <EntityType Name="sipregistrarbindings">
           <Key>
@@ -561,8 +574,8 @@
             <End Role="simplewizardrule" EntitySet="SimpleWizardRules" />
           </AssociationSet>
           <EntitySet Name="WebCallbacks" EntityType="SIPSorcery.Entities.WebCallback" />
-          <EntitySet Name="CustomerAccounts1" EntityType="SIPSorcery.Entities.CustomerAccount" />
-          <EntitySet Name="Rates1" EntityType="SIPSorcery.Entities.Rate" />
+          <EntitySet Name="CustomerAccounts" EntityType="SIPSorcery.Entities.CustomerAccount" />
+          <EntitySet Name="Rates" EntityType="SIPSorcery.Entities.Rate" />
         </EntityContainer>
         <EntityType Name="SIPDialplanLookup">
           <Key>
@@ -654,7 +667,11 @@
           <Property Type="Int32" Name="SecondsReserved" />
           <Property Type="Decimal" Name="Cost" />
           <Property Type="Decimal" Name="Rate" />
-          <Property Type="DateTime" Name="AnsweredDate" />
+          <Property Type="DateTime" Name="AnsweredAt" />
+          <Property Type="String" Name="ReconciliationResult" />
+          <Property Type="String" Name="ReservationError" />
+          <Property Type="Boolean" Name="IsHangingUp" Nullable="false" />
+          <Property Type="Decimal" Name="PostReconciliationBalance" />
         </EntityType>
         <EntityType Name="Customer">
           <Key>
@@ -693,6 +710,8 @@
           <Property Name="usernamerecoverylastattemptat" Type="String" />
           <Property Name="usernamerecoveryid" Type="String" />
           <Property Type="String" Name="ServiceRenewalDate" />
+          <Property Type="Int32" Name="RTCCBillingIncrement" Nullable="false" />
+          <Property Type="String" Name="RTCCInternationalPrefixes" MaxLength="32" FixedLength="false" Unicode="false" />
         </EntityType>
         <EntityType Name="SIPAccount">
           <Key>
@@ -836,6 +855,7 @@
           <Property Type="String" Name="RegisterServer" />
           <NavigationProperty Name="sipproviderbindings" Relationship="SIPSorcery.Entities.sipproviderbindings_ibfk_2" FromRole="SIPProvider" ToRole="SIPProviderBinding" />
           <Property Type="Boolean" Name="IsReadOnly" Nullable="false" />
+          <Property Type="Boolean" Name="SendMWISubscribe" Nullable="false" />
         </EntityType>
         <EntityType Name="SIPRegistrarBinding">
           <Key>
@@ -997,6 +1017,10 @@
           <Property Type="String" Name="Owner" Nullable="false" />
           <Property Type="String" Name="AccountCode" Nullable="false" />
           <Property Type="Decimal" Name="Credit" Nullable="false" />
+          <Property Type="String" Name="AccountName" Nullable="false" />
+          <Property Type="Int32" Name="PIN" />
+          <Property Type="String" Name="Inserted" Nullable="false" />
+          <Property Type="String" Name="AccountNumber" />
         </EntityType>
         <EntityType Name="Rate">
           <Key>
@@ -1007,6 +1031,8 @@
           <Property Type="String" Name="Description" Nullable="false" />
           <Property Type="String" Name="Prefix" Nullable="false" />
           <Property Type="Decimal" Name="Rate1" Nullable="false" />
+          <Property Type="String" Name="RateCode" />
+          <Property Type="String" Name="Inserted" Nullable="false" MaxLength="33" FixedLength="false" Unicode="false" />
         </EntityType>
       </Schema>
     </edmx:ConceptualModels>
@@ -1073,7 +1099,11 @@
           <EntitySetMapping Name="CDRs">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.CDR">
               <MappingFragment StoreEntitySet="cdr">
-                <ScalarProperty Name="AnsweredDate" ColumnName="answereddate" />
+                <ScalarProperty Name="PostReconciliationBalance" ColumnName="postreconciliationbalance" />
+                <ScalarProperty Name="IsHangingUp" ColumnName="ishangingup" />
+                <ScalarProperty Name="ReservationError" ColumnName="reservationerror" />
+                <ScalarProperty Name="ReconciliationResult" ColumnName="reconciliationresult" />
+                <ScalarProperty Name="AnsweredAt" ColumnName="answeredat" />
                 <ScalarProperty Name="Rate" ColumnName="rate" />
                 <ScalarProperty Name="Cost" ColumnName="cost" />
                 <ScalarProperty Name="SecondsReserved" ColumnName="secondsreserved" />
@@ -1110,6 +1140,8 @@
           <EntitySetMapping Name="Customers">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.Customer">
               <MappingFragment StoreEntitySet="customers">
+                <ScalarProperty Name="RTCCInternationalPrefixes" ColumnName="RTCCInternationalPrefixes" />
+                <ScalarProperty Name="RTCCBillingIncrement" ColumnName="RTCCBillingIncrement" />
                 <ScalarProperty Name="ServiceRenewalDate" ColumnName="servicerenewaldate" />
                 <ScalarProperty Name="usernamerecoveryid" ColumnName="usernamerecoveryid" />
                 <ScalarProperty Name="usernamerecoverylastattemptat" ColumnName="usernamerecoverylastattemptat" />
@@ -1259,6 +1291,7 @@
           <EntitySetMapping Name="SIPProviders">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.SIPProvider">
               <MappingFragment StoreEntitySet="sipproviders">
+                <ScalarProperty Name="SendMWISubscribe" ColumnName="sendmwisubscribe" />
                 <ScalarProperty Name="IsReadOnly" ColumnName="isreadonly" />
                 <ScalarProperty Name="RegisterServer" ColumnName="registerserver" />
                 <ScalarProperty Name="RegisterRealm" ColumnName="registerrealm" />
@@ -1357,9 +1390,13 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
-          <EntitySetMapping Name="CustomerAccounts1">
+          <EntitySetMapping Name="CustomerAccounts">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.CustomerAccount">
               <MappingFragment StoreEntitySet="customeraccount">
+                <ScalarProperty Name="AccountNumber" ColumnName="accountnumber" />
+                <ScalarProperty Name="Inserted" ColumnName="inserted" />
+                <ScalarProperty Name="PIN" ColumnName="PIN" />
+                <ScalarProperty Name="AccountName" ColumnName="AccountName" />
                 <ScalarProperty Name="Credit" ColumnName="credit" />
                 <ScalarProperty Name="AccountCode" ColumnName="accountcode" />
                 <ScalarProperty Name="Owner" ColumnName="owner" />
@@ -1367,9 +1404,11 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
-          <EntitySetMapping Name="Rates1">
+          <EntitySetMapping Name="Rates">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.Rate">
               <MappingFragment StoreEntitySet="rate">
+                <ScalarProperty Name="Inserted" ColumnName="inserted" />
+                <ScalarProperty Name="RateCode" ColumnName="ratecode" />
                 <ScalarProperty Name="Rate1" ColumnName="rate" />
                 <ScalarProperty Name="Prefix" ColumnName="prefix" />
                 <ScalarProperty Name="Description" ColumnName="description" />
@@ -1403,15 +1442,15 @@
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanRoute" Width="1.875" PointX="18.375" PointY="0.75" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanProvider" Width="2.25" PointX="11.625" PointY="4.25" Height="2.5571907552083317" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanOption" Width="2.625" PointX="18.25" PointY="3.875" Height="3.3263964843749996" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.CDR" Width="1.5" PointX="3.75" PointY="0.625" Height="6.787822265625" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.CDR" Width="1.75" PointX="3.625" PointY="0.5" Height="7.3647265625" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.Customer" PointX="0.625" PointY="0.5" Width="2.625" Height="7.1724251302083326" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPAccount" Width="2.125" PointX="3.375" PointY="7.875" Height="5.0571093749999978" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPAccount" Width="2.125" PointX="3.375" PointY="8.5" Height="4.8648079427083335" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialogue" Width="2.75" PointX="5.75" PointY="0.75" Height="5.634013671875" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialPlan" Width="2" PointX="15.25" PointY="1.25" Height="4.8648079427083326" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDomain" Width="1.5" PointX="9.125" PointY="5" Height="1.9802864583333317" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPProviderBinding" Width="2.125" PointX="8.875" PointY="7.75" Height="3.9033007812499996" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPProvider" Width="2" PointX="6.125" PointY="7.75" Height="6.0186165364583335" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPRegistrarBinding" Width="2" PointX="0.625" PointY="8.25" Height="3.9033007812499996" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPRegistrarBinding" Width="2" PointX="0.625" PointY="8.625" Height="3.9033007812499996" />
         <AssociationConnector Association="SIPSorcery.Entities.sipdialplanlookups_ibfk_1" >
           <ConnectorPoint PointX="15.25" PointY="2.4035953776041667" />
           <ConnectorPoint PointX="13.375" PointY="2.4035953776041667" />
@@ -1429,21 +1468,21 @@
           <ConnectorPoint PointX="18.375" PointY="2.2785953776041667" />
         </AssociationConnector>
         <AssociationConnector Association="SIPSorcery.Entities.sipregistrarbindings_ibfk_1" >
-          <ConnectorPoint PointX="3.375" PointY="10.201650390625" />
-          <ConnectorPoint PointX="2.625" PointY="10.201650390625" />
+          <ConnectorPoint PointX="3.375" PointY="10.576650390625" />
+          <ConnectorPoint PointX="2.625" PointY="10.576650390625" />
         </AssociationConnector>
         <AssociationConnector Association="SIPSorcery.Entities.sipproviderbindings_ibfk_2" >
           <ConnectorPoint PointX="8.125" PointY="9.701650390625" />
           <ConnectorPoint PointX="8.875" PointY="9.701650390625" />
         </AssociationConnector>
-        <EntityTypeShape EntityType="SIPSorcery.Entities.VoxalotMigration" Width="2.75" PointX="9.375" PointY="12.75" Height="2.3648893229166674" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.VoxalotMigration" Width="2.75" PointX="8.875" PointY="12.25" Height="2.3648893229166674" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SimpleWizardRule" Width="2.125" PointX="14.75" PointY="7.625" Height="4.6725065104166674" />
         <AssociationConnector Association="SIPSorcery.Entities.simplewizardrule_ibfk_1" >
           <ConnectorPoint PointX="16.0625" PointY="5.9225065104166656" />
           <ConnectorPoint PointX="16.0625" PointY="7.625" />
         </AssociationConnector>
         <EntityTypeShape EntityType="SIPSorcery.Entities.WebCallback" Width="1.5" PointX="0.75" PointY="13.75" Height="2.1725878906250031" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.CustomerAccount" Width="1.875" PointX="3.25" PointY="14.25" Height="1.7879850260416674" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.CustomerAccount" Width="1.875" PointX="3.25" PointY="14.25" Height="2.5571907552083353" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.Rate" Width="1.5" PointX="5.75" PointY="14.25" Height="2.0002864583333331" />
       </Diagram>
     </Diagrams>

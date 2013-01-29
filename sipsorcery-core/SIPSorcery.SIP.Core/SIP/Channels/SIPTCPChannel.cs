@@ -255,7 +255,7 @@ namespace SIPSorcery.SIP
                             //logger.Warn("TCP channel BeginWrite from " + SIPChannelEndPoint.ToString() + " to " + sipTCPClient.RemoteEndPoint + ": " + Encoding.ASCII.GetString(buffer, 0, 32) + ".");
                             sipTCPClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTCPClient);
                             //logger.Warn("TCP channel BeginWrite complete from " + SIPChannelEndPoint.ToString() + " to " + sipTCPClient.RemoteEndPoint + ".");
-                            sipTCPClient.SIPStream.Flush();
+                            //sipTCPClient.SIPStream.Flush();
                             sent = true;
                             sipTCPClient.LastTransmission = DateTime.Now;
                         }

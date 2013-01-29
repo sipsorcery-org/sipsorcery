@@ -133,6 +133,8 @@ namespace SIPSorcery.AppServer.DialPlan
             get { return m_redirectURI; }
         }
 
+        public string WebCallResponse;              // This property allows a script dialplan to set a return value for executions that are initiated by the callmanager web service.
+
         public CRMHeaders CallerCRMDetails = null;  // Can be populated asynchronously by looking up the caller's details in a CRM system.
 
         private List<ISIPClientUserAgent> m_uacWaitingForCallDetails = new List<ISIPClientUserAgent>();     // UACs can indicate they would like the call details when available.

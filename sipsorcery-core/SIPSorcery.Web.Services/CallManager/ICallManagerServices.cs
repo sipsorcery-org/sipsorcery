@@ -5,8 +5,8 @@ using System.ServiceModel;
 using System.ServiceModel.Web;
 using System.Text;
 
-namespace SIPSorcery.Web.Services {
-
+namespace SIPSorcery.Web.Services 
+{
     [ServiceContract(Namespace = "http://www.sipsorcery.com/callmanager")]
     public interface ICallManagerServices {
 

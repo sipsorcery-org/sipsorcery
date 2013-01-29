@@ -600,7 +600,7 @@ namespace SIPSorcery.Servers
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web " + dialplanName + " rejected for " + username + " and " + number + ", user account is suspended.", null));
                     return "Sorry the user's account is suspended.";
                 }
-                else if (customer.ServiceLevel == CustomerServiceLevels.PremiumPayReqd.ToString() || customer.ServiceLevel == CustomerServiceLevels.ProfessionalPayReqd.ToString())
+                else if (customer.ServiceLevel == CustomerServiceLevels.PremiumPayReqd.ToString() || customer.ServiceLevel == CustomerServiceLevels.ProfessionalPayReqd.ToString() || customer.ServiceLevel == CustomerServiceLevels.SwitchboardPayReqd.ToString())
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Web " + dialplanName + " rejected for " + username + " and " + number + ", user account requires payment.", null));
                     return "Sorry the user's account requires payment.";
@@ -660,7 +660,12 @@ namespace SIPSorcery.Servers
                             //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                             m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
 
-                            if (replacesCallID.IsNullOrBlank())
+                            if (scriptContext.WebCallResponse.NotNullOrBlank())
+                            {
+                                // The dialplan has set a custom response.
+                                return scriptContext.WebCallResponse;
+                            }
+                            else if (replacesCallID.IsNullOrBlank())
                             {
                                 return "Web call was successfully initiated.";
                             }
@@ -712,7 +717,7 @@ namespace SIPSorcery.Servers
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Callback rejected for " + username + " as user account is suspended.", null));
                     return "Sorry your account is suspended.";
                 }
-                else if (customer.ServiceLevel == CustomerServiceLevels.PremiumPayReqd.ToString() || customer.ServiceLevel == CustomerServiceLevels.ProfessionalPayReqd.ToString())
+                else if (customer.ServiceLevel == CustomerServiceLevels.PremiumPayReqd.ToString() || customer.ServiceLevel == CustomerServiceLevels.ProfessionalPayReqd.ToString() || customer.ServiceLevel == CustomerServiceLevels.SwitchboardPayReqd.ToString())
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Callback rejected for " + username + ", user account requires payment.", null));
                     return "Sorry your account requires payment.";
@@ -875,7 +880,7 @@ namespace SIPSorcery.Servers
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for customer " + owner + " as account is suspended.", null));
                     uas.Reject(SIPResponseStatusCodesEnum.DoesNotExistAnywhere, "User account is suspended", null);
                 }
-                else if (customer.ServiceLevel == CustomerServiceLevels.PremiumPayReqd.ToString() || customer.ServiceLevel == CustomerServiceLevels.ProfessionalPayReqd.ToString())
+                else if (customer.ServiceLevel == CustomerServiceLevels.PremiumPayReqd.ToString() || customer.ServiceLevel == CustomerServiceLevels.ProfessionalPayReqd.ToString() || customer.ServiceLevel == CustomerServiceLevels.SwitchboardPayReqd.ToString())
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call rejected for customer " + owner + " as payment is outstanding.", null));
                     uas.Reject(SIPResponseStatusCodesEnum.PaymentRequired, null, null);

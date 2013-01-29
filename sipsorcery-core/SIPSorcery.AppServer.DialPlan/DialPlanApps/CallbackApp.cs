@@ -91,10 +91,12 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="dest1">The dial string of the first call to place.</param>
         /// <param name="dest2">The dial string of the second call to place.</param>
         /// <param name="delaySeconds">Delay in seconds before placing the first call. Gives the user a chance to hangup their phone if they are calling themselves back.</param>
-        /// <param name="ringTimeoutLeg1">The ring timeout for the first call leg, If 0 the mex timeout will be used.</param>
-        /// <param name="ringTimeoutLeg1">The ring timeout for the second call leg, If 0 the mex timeout will be used.</param>
+        /// <param name="ringTimeoutLeg1">The ring timeout for the first call leg, If 0 the max timeout will be used.</param>
+        /// <param name="ringTimeoutLeg1">The ring timeout for the second call leg, If 0 the max timeout will be used.</param>
+        /// <param name="customHeadersCallLeg1">A | delimited string that contains a list of custom SIP headers to add to the INVITE request sent for the first call leg.</param>
+        /// /// <param name="customHeadersCallLeg2">A | delimited string that contains a list of custom SIP headers to add to the INVITE request sent for the second call leg.</param>
         /// <returns>The result of the call.</returns>
-        public void Callback(string dest1, string dest2, int delaySeconds, int ringTimeoutLeg1, int ringTimeoutLeg2)
+        public void Callback(string dest1, string dest2, int delaySeconds, int ringTimeoutLeg1, int ringTimeoutLeg2, string customHeadersCallLeg1, string customHeadersCallLeg2)
         {
             try
             {
@@ -111,7 +113,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPRequest firstLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.GetIPEndPoint(), null);
                 ringTimeoutLeg1 = (ringTimeoutLeg1 > 0) ? ringTimeoutLeg1 : MAXCALLBACK_RINGTIME_SECONDS;
-                m_firstLegDialogue = Dial(dest1, ringTimeoutLeg1, 0, firstLegDummyInviteRequest);
+                m_firstLegDialogue = Dial(dest1, ringTimeoutLeg1, 0, firstLegDummyInviteRequest, SIPCallDescriptor.ParseCustomHeaders(customHeadersCallLeg1));
                 if (m_firstLegDialogue == null)
                 {
                     Log("The first call leg to " + dest1 + " was unsuccessful.");
@@ -127,7 +129,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 SIPRequest secondLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.GetIPEndPoint(), m_firstLegDialogue.RemoteSDP);
                 ringTimeoutLeg2 = (ringTimeoutLeg2 > 0) ? ringTimeoutLeg2 : MAXCALLBACK_RINGTIME_SECONDS;
-                SIPDialogue secondLegDialogue = Dial(dest2, ringTimeoutLeg2, 0, secondLegDummyInviteRequest);
+                SIPDialogue secondLegDialogue = Dial(dest2, ringTimeoutLeg2, 0, secondLegDummyInviteRequest, SIPCallDescriptor.ParseCustomHeaders(customHeadersCallLeg2));
                 if (secondLegDialogue == null)
                 {
                     Log("The second call leg to " + dest2 + " was unsuccessful.");
@@ -161,7 +163,8 @@ namespace SIPSorcery.AppServer.DialPlan
           string data,
           int ringTimeout,
           int answeredCallLimit,
-          SIPRequest clientRequest) {
+          SIPRequest clientRequest,
+          List<string> customHeaders) {
 
             SIPDialogue answeredDialogue = null;
             ManualResetEvent waitForCallCompleted = new ManualResetEvent(false);
@@ -173,7 +176,7 @@ namespace SIPSorcery.AppServer.DialPlan
             call.CallAnswered += (s, r, toTag, h, t, b, d, transferMode) => { answeredDialogue = d; waitForCallCompleted.Set(); };
 
             try {
-                Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, null, null, null, null, null, null, null, null, CustomerServiceLevels.None);
+                Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, customHeaders, null, null, null, null, null, null, null, CustomerServiceLevels.None);
                 call.Start(callsQueue);
 
                 // Wait for an answer.

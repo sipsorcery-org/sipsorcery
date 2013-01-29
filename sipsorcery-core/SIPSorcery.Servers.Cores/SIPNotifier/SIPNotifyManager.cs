@@ -57,11 +57,13 @@ namespace SIPSorcery.Servers
         private const string PROCESS_NOTIFICATIONS_THREAD_NAME = "sipnotifymanager-processrequests";
         private const int MAX_QUEUEWAIT_PERIOD = 4000;              // Maximum time to wait to check the new notifications queue if no events are received.
         private const int MAX_NEWCALL_QUEUE = 10;                   // Maximum number of notification requests that will be queued for processing.
+        private const string MWI_EVENT_TYPE = "message-summary";
 
         private static ILog logger = AppState.logger;
 
         private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
-
+        private static readonly string m_crlf = SIPConstants.CRLF;
+            
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
         private bool m_stop;
@@ -163,6 +165,12 @@ namespace SIPSorcery.Servers
         {
             try
             {
+                // Hack to work around MWI request from callcentric not having a trailing CRLF and breaking some softphones like the Bria.
+                if (sipRequest.Header.Event == MWI_EVENT_TYPE && sipRequest.Body.NotNullOrBlank() && sipRequest.Body.Substring(sipRequest.Body.Length - 2) != m_crlf)
+                {
+                    sipRequest.Body += m_crlf;
+                }
+
                 string fromURI = (sipRequest.Header.From != null && sipRequest.Header.From.FromURI != null) ? sipRequest.Header.From.FromURI.ToString() : "unknown";
 
                 string domain = GetCanonicalDomain_External(sipRequest.URI.Host, true);

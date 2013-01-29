@@ -364,18 +364,18 @@ namespace SIPSorcery.Servers
                 else
                 {
                     // Authenticated.
-                    if (!sipRequest.Header.UserAgent.IsNullOrBlank() && !m_switchboarduserAgentPrefix.IsNullOrBlank() && sipRequest.Header.UserAgent.StartsWith(m_switchboarduserAgentPrefix))
-                    {
-                        // Check that the switchboard user is authorised.
-                        var customer = CustomerPersistor_External.Get(x => x.CustomerUsername == sipAccount.Owner);
-                        if (!(customer.ServiceLevel == CustomerServiceLevels.Switchboard.ToString() || customer.ServiceLevel == CustomerServiceLevels.Gold.ToString()))
-                        {
-                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Warn, "Register request for switchboard from " + toHeader.ToURI.Host + " rejected as not correct service level.", sipAccount.Owner));
-                            SIPResponse payReqdResponse = GetErrorResponse(sipRequest, SIPResponseStatusCodesEnum.PaymentRequired, "You need to purchase a Switchboard service");
-                            registerTransaction.SendFinalResponse(payReqdResponse);
-                            return RegisterResultEnum.SwitchboardPaymentRequired;
-                        }
-                    }
+                    //if (!sipRequest.Header.UserAgent.IsNullOrBlank() && !m_switchboarduserAgentPrefix.IsNullOrBlank() && sipRequest.Header.UserAgent.StartsWith(m_switchboarduserAgentPrefix))
+                    //{
+                    //    // Check that the switchboard user is authorised.
+                    //    var customer = CustomerPersistor_External.Get(x => x.CustomerUsername == sipAccount.Owner);
+                    //    if (!(customer.ServiceLevel == CustomerServiceLevels.Switchboard.ToString() || customer.ServiceLevel == CustomerServiceLevels.Gold.ToString()))
+                    //    {
+                    //        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Warn, "Register request for switchboard from " + toHeader.ToURI.Host + " rejected as not correct service level.", sipAccount.Owner));
+                    //        SIPResponse payReqdResponse = GetErrorResponse(sipRequest, SIPResponseStatusCodesEnum.PaymentRequired, "You need to purchase a Switchboard service");
+                    //        registerTransaction.SendFinalResponse(payReqdResponse);
+                    //        return RegisterResultEnum.SwitchboardPaymentRequired;
+                    //    }
+                    //}
 
                     if (sipRequest.Header.Contact == null || sipRequest.Header.Contact.Count == 0)
                     {

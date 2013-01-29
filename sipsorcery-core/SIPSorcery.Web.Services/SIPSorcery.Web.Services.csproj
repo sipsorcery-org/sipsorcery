@@ -231,6 +231,8 @@
       <DependentUpon>SIPProvisioningWebService.svc</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="REST\Accounting.cs" />
+    <Compile Include="REST\IAccounting.cs" />
     <Compile Include="REST\IProvisioning.cs" />
     <Compile Include="REST\JSONResult.cs" />
     <Compile Include="REST\Provisioning.cs" />

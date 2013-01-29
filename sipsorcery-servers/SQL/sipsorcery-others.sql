@@ -36,6 +36,8 @@ create table customers
  usernamerecoveryid varchar(36) null,
  servicelevel varchar(64) not null default 'Free',
  servicerenewaldate varchar(33) null,
+ RTCCBillingIncrement int not null default 1,
+ RTCCInternationalPrefixes varchar(32) null,
  Primary Key(id),
  Unique(customerusername)
 );
@@ -145,6 +147,7 @@ create table sipproviders
  gvcallbackpattern varchar(32) null,
  gvcallbacktype varchar(16) null,
  isreadonly bit not null default 0,
+ sendmwisubscribe bit not null,
  Primary Key(id),
  Foreign Key(owner) references customers(customerusername) on delete cascade on update cascade,
  Unique(owner, providername)
@@ -261,8 +264,12 @@ create table cdr
  accountcode varchar(36) null,					-- If using real-time call control this is the account code that's supplying the credit.
  secondsreserved int null,						-- If using real-time call control this is the cumulative number of seconds that have been reserved for the call.
  answereddate date null default null,			-- The time the call was answered with a final response and as a native datetime value.
- cost decimal null,								-- If using real-time call control this is cumulative cost of the call. Some credit maybe returned at the end of the call.
- rate decimal null,								-- If using real-time call control this is the rate call credit is being reserved at.
+ cost decimal(10,5) null,						-- If using real-time call control this is cumulative cost of the call. Some credit maybe returned at the end of the call.
+ rate decimal(10,5) null,						-- If using real-time call control this is the rate call credit is being reserved at.
+ reservationerror varchar(256) null,
+ reconciliationresult varchar(256) null,
+ ishangingup bit not null,						-- Set to true when the real-time call control engine is in the process of hanging up the call.
+ postreconciliationbalance decimal(10,5) null,	-- If a RTCC call this will hold the customer account's balance as it was after the reconciliation was complete.
  Primary Key(id)
 );
 
@@ -271,23 +278,30 @@ create table CustomerAccount
  id varchar(36) not null,
  owner varchar(32) not null,
  accountcode varchar(36) not null,
- credit decimal not null default 0,
+ credit decimal(10,5) not null default 0,
+ accountname varchar(100) not null,
+ accountnumber varchar(32)   null,
+ pin int null,
+ inserted varchar(33) not null,
  Primary Key(id),
  Foreign Key(owner) references Customers(customerusername),
- unique(owner, accountcode)
+ unique(owner, accountcode),
+ unique(owner, accountname),
+ unique(owner, accountnumber)
 );
 
-create table Rate
-(
- id varchar(36) not null,
- owner varchar(32) not null,
- description varchar(100) not null,
- prefix varchar(32) not null,
- rate decimal not null,
- Primary Key(id),
- Foreign Key(owner) references Customers(customerusername),
- unique(owner, prefix)
-);
+CREATE TABLE `rate` (
+  `id` varchar(36) NOT NULL,
+  `owner` varchar(32) NOT NULL,
+  `description` varchar(100) NOT NULL,
+  `prefix` varchar(32) NOT NULL,
+  `rate` decimal(10,5) NOT NULL,
+  `ratecode` varchar(32) DEFAULT NULL,
+  `inserted` varchar(33) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `owner` (`owner`,`prefix`),
+  CONSTRAINT `rate_ibfk_1` FOREIGN KEY (`owner`) REFERENCES `customers` (`customerusername`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 
 
 -- Telis Dial Plan Wizard Tables.
 
@@ -355,7 +369,7 @@ create table SimpleWizardRule
   Owner nvarchar(32) not null,
   DialPlanID nvarchar(36) not null,				-- The simple wizard dialplan the lookup entries will be used in.
   Direction nvarchar(3) not null,				-- In or Out dialplan rule.
-  Priority decimal(5,3) not null,
+  Priority decimal(8,3) not null,
   Description nvarchar(50) null,
   ToMatchType nvarchar(50) null,				-- Any, ToSIPAccount, ToSIPProvider, Regex.
   ToMatchParameter nvarchar(2048) null,
@@ -418,6 +432,7 @@ CREATE TABLE PayPalIPN
 	IsSandbox bit not null,
     TransactionID nvarchar(256) NULL,
 	TransactionType nvarchar(64) null,
+	PaymentStatus nvarchar(256) null,
     PayerFirstName nvarchar(256) NULL,
     PayerLastName nvarchar(256) NULL,
     PayerEmailAddress nvarchar(1024) NULL,
@@ -443,3 +458,11 @@ create table VoxalotMigration
   Primary Key(ID)
 );
 
+DELIMITER $$
+drop function IF EXISTS AddSeconds$$
+create function AddSeconds(theDate datetime, seconds int)
+RETURNS datetime
+DETERMINISTIC
+begin
+ return DATE_ADD(theDate, INTERVAL seconds SECOND);
+end$$

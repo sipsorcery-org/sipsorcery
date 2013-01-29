@@ -76,6 +76,10 @@
 						<TextBlock TextWrapping="Wrap" Text="Register Server" FontSize="12" Height="20" Width="99" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerRegisterServerHeading" Canvas.Left="8" Canvas.Top="0" />
 						<TextBox Text="" FontSize="12" x:Name="m_providerRegisterServer" Height="20" Background="#FF333333" BorderBrush="#FF8B8B8B" BorderThickness="0.5,0.5,0.5,0.5" FontFamily="Lucida Sans Unicode" Foreground="#FFFFFFFF" Padding="1,0,0,0" Width="250" Canvas.Left="120" IsEnabled="False"/>
 					</Canvas>
+					<Canvas Height="20" x:Name="m_providerSnedMWISubscribeCanvas" Width="457" Margin="0,2,0,2">
+						<TextBlock TextWrapping="Wrap" Text="Subscribe for MWI" FontSize="12" Height="20" Width="109" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" Canvas.Left="8" Canvas.Top="0" />
+						<CheckBox Height="18" Width="17" Content="" x:Name="m_providerSendMWISubscribe" d:LayoutOverrides="Width, Height" Canvas.Left="121.032" Canvas.Top="0.439" />
+					</Canvas>
 					<Canvas Height="74" x:Name="m_providerCustomerHeadersCanvas" Width="457" Margin="0,2,0,2">
 						<TextBlock TextWrapping="Wrap" Text="Custom Headers" FontSize="12" Height="20" Width="97" FontFamily="Lucida Sans Unicode" Foreground="#FFA0F927" OpacityMask="#FF000000" x:Name="m_providerCustomHeadersHeading" Canvas.Left="8" Canvas.Top="0" />
 						<ListBox Height="50" x:Name="m_providerCustomHeaders" Width="320" Canvas.Left="120" Canvas.Top="24" MouseLeftButtonUp="CustomHeaders_MouseLeftButtonUp" />

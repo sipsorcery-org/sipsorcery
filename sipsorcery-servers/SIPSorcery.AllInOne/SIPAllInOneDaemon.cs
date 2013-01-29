@@ -99,6 +99,7 @@ namespace SIPSorcery.SIPAppServer
         private SIPAppServerCore m_appServerCore;
         private SIPCallManager m_callManager;
         private SIPDialogueManager m_sipDialogueManager;
+        private RTCCCore m_rtccCore;
         private SIPNotifyManager m_notifyManager;
         private SIPProxyDaemon m_sipProxyDaemon;
         private SIPMonitorDaemon m_sipMonitorDaemon;
@@ -223,7 +224,7 @@ namespace SIPSorcery.SIPAppServer
                         m_sipSorceryPersistor.SIPRegistrarBindingPersistor.Count,
                         SIPRequestAuthenticator.AuthenticateSIPRequest,
                         m_sipMonitorPublisher);
-                        //new SIPMonitorUDPSink("127.0.0.1:10003"));
+                    //new SIPMonitorUDPSink("127.0.0.1:10003"));
                     m_sipNotifierDaemon.Start();
                 }
 
@@ -343,6 +344,12 @@ namespace SIPSorcery.SIPAppServer
                     m_sipDialogueManager,
                     SIPRequestAuthenticator.AuthenticateSIPRequest,
                     m_outboundProxy);
+
+                m_rtccCore = new RTCCCore(
+                    FireSIPMonitorEvent,
+                    m_sipDialogueManager,
+                    m_sipSorceryPersistor.SIPDialoguePersistor);
+                m_rtccCore.Start();
 
                 #endregion
 
@@ -507,6 +514,11 @@ namespace SIPSorcery.SIPAppServer
                 if (m_callManager != null)
                 {
                     m_callManager.Stop();
+                }
+
+                if (m_rtccCore != null)
+                {
+                    m_rtccCore.Stop();
                 }
 
                 if (m_notifyManager != null)

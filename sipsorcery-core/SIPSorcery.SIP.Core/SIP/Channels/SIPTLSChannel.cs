@@ -59,7 +59,7 @@ namespace SIPSorcery.SIP
         private TcpListener m_tlsServerListener;
         //private bool m_closed = false;
         private Dictionary<string, SIPConnection> m_connectedSockets = new Dictionary<string, SIPConnection>();
-        private List<IPEndPoint> m_connectingSockets = new List<IPEndPoint>(); // List of connecting sockets to avoid SIP re-transmits initiating multiple connect attempts.
+        private List<string> m_connectingSockets = new List<string>(); // List of connecting sockets to avoid SIP re-transmits initiating multiple connect attempts.
 
         //private string m_certificatePath;
         private X509Certificate2 m_serverCertificate;
@@ -170,20 +170,23 @@ namespace SIPSorcery.SIP
         {
             SIPConnection sipTLSConnection = (SIPConnection)ar.AsyncState;
 
-            try
+            if (sipTLSConnection != null && sipTLSConnection.SIPStream != null && sipTLSConnection.SIPStream.CanRead)
             {
-                int bytesRead = sipTLSConnection.SIPStream.EndRead(ar);
-                if (sipTLSConnection.SocketReadCompleted(bytesRead))
+                try
                 {
-                    sipTLSConnection.SIPStream.BeginRead(sipTLSConnection.SocketBuffer, sipTLSConnection.SocketBufferEndPosition, MaxSIPTCPMessageSize - sipTLSConnection.SocketBufferEndPosition, new AsyncCallback(ReceiveCallback), sipTLSConnection);
+                    int bytesRead = sipTLSConnection.SIPStream.EndRead(ar);
+                    if (sipTLSConnection.SocketReadCompleted(bytesRead))
+                    {
+                        sipTLSConnection.SIPStream.BeginRead(sipTLSConnection.SocketBuffer, sipTLSConnection.SocketBufferEndPosition, MaxSIPTCPMessageSize - sipTLSConnection.SocketBufferEndPosition, new AsyncCallback(ReceiveCallback), sipTLSConnection);
+                    }
                 }
-            }
-            catch (SocketException)  // Occurs if the remote end gets disconnected.
-            { }
-            catch (Exception excp)
-            {
-                logger.Warn("Exception SIPTLSChannel ReceiveCallback. " + excp.Message);
-                SIPTLSSocketDisconnected(sipTLSConnection.RemoteEndPoint);
+                catch (SocketException)  // Occurs if the remote end gets disconnected.
+                { }
+                catch (Exception excp)
+                {
+                    logger.Warn("Exception SIPTLSChannel ReceiveCallback. " + excp.Message);
+                    SIPTLSSocketDisconnected(sipTLSConnection.RemoteEndPoint);
+                }
             }
         }
 
@@ -214,18 +217,27 @@ namespace SIPSorcery.SIP
                 else
                 {
                     bool sent = false;
+                    bool existingConnection = false;
 
                     // Lookup a client socket that is connected to the destination.
                     //m_sipConn(buffer, buffer.Length, destinationEndPoint);
                     if (m_connectedSockets.ContainsKey(dstEndPoint.ToString()))
                     {
+                        existingConnection = true;
                         SIPConnection sipTLSClient = m_connectedSockets[dstEndPoint.ToString()];
 
                         try
                         {
-                            sipTLSClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTLSClient);
-                            sent = true;
-                            sipTLSClient.LastTransmission = DateTime.Now;
+                            if (sipTLSClient.SIPStream != null && sipTLSClient.SIPStream.CanWrite)
+                            {
+                                sipTLSClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTLSClient);
+                                sent = true;
+                                sipTLSClient.LastTransmission = DateTime.Now;
+                            }
+                            else
+                            {
+                                logger.Warn("A SIPTLSChannel write operation to " + dstEndPoint + " was dropped as the stream was null or could not be written to.");
+                            }
                         }
                         catch (SocketException)
                         {
@@ -235,22 +247,21 @@ namespace SIPSorcery.SIP
                         }
                     }
 
-                    if (!sent)
+                    if (!sent && !existingConnection)
                     {
                         if (serverCertificateName.IsNullOrBlank())
                         {
                             throw new ApplicationException("The SIP TLS Channel must be provided with the name of the expected server certificate, please use alternative method.");
                         }
 
-                        if (!m_connectingSockets.Contains(dstEndPoint))
+                        if (!m_connectingSockets.Contains(dstEndPoint.ToString()))
                         {
-
                             logger.Debug("Attempting to establish TLS connection to " + dstEndPoint + ".");
                             TcpClient tcpClient = new TcpClient();
                             tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                             tcpClient.Client.Bind(m_localSIPEndPoint.GetIPEndPoint());
 
-                            m_connectingSockets.Add(dstEndPoint);
+                            m_connectingSockets.Add(dstEndPoint.ToString());
                             tcpClient.BeginConnect(dstEndPoint.Address, dstEndPoint.Port, EndConnect, new object[] { tcpClient, dstEndPoint, buffer, serverCertificateName });
                         }
                         else
@@ -290,7 +301,7 @@ namespace SIPSorcery.SIP
                 byte[] buffer = (byte[])stateObj[2];
                 string serverCN = (string)stateObj[3];
 
-                m_connectedSockets.Remove(dstEndPoint.ToString());
+                m_connectingSockets.Remove(dstEndPoint.ToString());
 
                 SslStream sslStream = new SslStream(tcpClient.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
                 //DisplayCertificateInformation(sslStream);
@@ -300,7 +311,6 @@ namespace SIPSorcery.SIP
 
                 if (tcpClient != null && tcpClient.Connected)
                 {
-
                     SIPConnection callerConnection = new SIPConnection(this, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
                     m_connectedSockets.Add(dstEndPoint.ToString(), callerConnection);
 
@@ -347,6 +357,8 @@ namespace SIPSorcery.SIP
                 {
                     m_connectedSockets.Remove(remoteEndPoint.ToString());
                 }
+
+                m_connectingSockets.Remove(remoteEndPoint.ToString());
             }
             catch (Exception excp)
             {

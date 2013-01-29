@@ -340,6 +340,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                         string sipUsernameSuffix = callLegSIPURI.User.Substring(callLegSIPURI.User.LastIndexOf(".") + 1);
                                         calledSIPAccount = GetSIPAccount_External(s => s.SIPUsername == sipUsernameSuffix && s.SIPDomain == localDomain);
                                     }
+
                                     if (calledSIPAccount != null)
                                     {
                                         // An incoming dialplan won't be used if it's invoked from itself.
@@ -743,7 +744,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 if (bindings != null)
                 {
-                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, bindings.Count + " bindigns found for local SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " when processing redirect.", m_username));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, bindings.Count + " bindings found for local SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " when processing redirect.", m_username));
 
                     // Build list of registered contacts.
                     for (int index = 0; index < bindings.Count; index++)

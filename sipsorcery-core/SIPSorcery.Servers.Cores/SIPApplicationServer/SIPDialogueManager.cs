@@ -252,7 +252,7 @@ namespace SIPSorcery.Servers
                                         }
                                         else
                                         {
-                                            // The dialogue the blind transfer notifications were being sent on has been hungup no pint sending any more notifications.
+                                            // The dialogue the blind transfer notifications were being sent on has been hungup no point sending any more notifications.
                                             sendNotifications = false;
                                         }
                                     }

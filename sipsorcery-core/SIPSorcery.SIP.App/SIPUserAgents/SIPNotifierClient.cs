@@ -137,7 +137,7 @@ namespace SIPSorcery.SIP.App
 
                     m_exit = true;
                     m_attempts = 0;
-                    ThreadPool.QueueUserWorkItem(delegate { Subscribe(m_resourceURI, 0, m_sipEventPackage, m_subscribeCallID); });
+                    ThreadPool.QueueUserWorkItem(delegate { Subscribe(m_resourceURI, 0, m_sipEventPackage, m_subscribeCallID, null); });
                 }
             }
             catch (Exception excp)
@@ -207,7 +207,7 @@ namespace SIPSorcery.SIP.App
                     m_subscribed = false;
                     m_waitForSubscribeResponse.Reset();
 
-                    Subscribe(m_resourceURI, m_expiry, m_sipEventPackage, m_subscribeCallID);
+                    Subscribe(m_resourceURI, m_expiry, m_sipEventPackage, m_subscribeCallID, null);
 
                     m_waitForSubscribeResponse.WaitOne();
 
@@ -242,7 +242,7 @@ namespace SIPSorcery.SIP.App
         /// Initiates a SUBSCRIBE request to a notification server.
         /// </summary>
         /// <param name="subscribeToURI">The SIP user that dialog notifications are being subscribed to.</param>
-        private void Subscribe(SIPURI subscribeURI, int expiry, SIPEventPackage sipEventPackage, string subscribeCallID)
+        public void Subscribe(SIPURI subscribeURI, int expiry, SIPEventPackage sipEventPackage, string subscribeCallID, SIPURI contactURI)
         {
             try
             {
@@ -263,6 +263,12 @@ namespace SIPSorcery.SIP.App
                         m_resourceURI, 
                         new SIPToHeader(null, subscribeURI, m_subscriptionToTag),
                         null);
+
+
+                    if (contactURI != null)
+                    {
+                        subscribeRequest.Header.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, contactURI) };
+                    }
 
                     subscribeRequest.Header.From = new SIPFromHeader(null, new SIPURI(m_authUsername, m_authDomain, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp), m_subscriptionFromTag);
                     subscribeRequest.Header.CSeq = m_localCSeq;
@@ -310,7 +316,11 @@ namespace SIPSorcery.SIP.App
 
         private void SubsribeTransactionTimedOut(SIPTransaction sipTransaction)
         {
-            SubscriptionFailed(m_resourceURI, SIPResponseStatusCodesEnum.ServerTimeout, "Subscription request to " + m_resourceURI.ToString() + " timed out.");
+            if (SubscriptionFailed != null)
+            {
+                SubscriptionFailed(m_resourceURI, SIPResponseStatusCodesEnum.ServerTimeout, "Subscription request to " + m_resourceURI.ToString() + " timed out.");
+            }
+
             m_waitForSubscribeResponse.Set();
         }
 
@@ -323,7 +333,7 @@ namespace SIPSorcery.SIP.App
                     // The expiry interval used was too small. Adjust and try again.
                     m_expiry = (sipResponse.Header.MinExpires > 0) ? sipResponse.Header.MinExpires : m_expiry * 2;
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.NotifierClient, SIPMonitorEventTypesEnum.SubscribeFailed, "A subscribe request was rejected with IntervalTooBrief, adjusting expiry to " + m_expiry + " and trying again.", null));
-                    Subscribe(m_resourceURI, m_expiry, m_sipEventPackage, m_subscribeCallID);
+                    Subscribe(m_resourceURI, m_expiry, m_sipEventPackage, m_subscribeCallID, null);
                 }
                 else if (sipResponse.Status == SIPResponseStatusCodesEnum.Forbidden)
                 {

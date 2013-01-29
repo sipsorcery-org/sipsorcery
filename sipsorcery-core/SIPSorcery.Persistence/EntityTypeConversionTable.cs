@@ -15,6 +15,8 @@ namespace SIPSorcery.Persistence
             {"bit", DbType.Boolean},
             {"varchar", DbType.StringFixedLength},
             {"datetimeoffset", DbType.DateTimeOffset},
+            {"datetime", DbType.DateTime},
+            {"decimal", DbType.Decimal},
         };
 
         public static DbType LookupDbType(string entityType)

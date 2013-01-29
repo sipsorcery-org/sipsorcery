@@ -86,17 +86,11 @@ namespace SIPSorcery.SIPAppServer
         private SIPAppServerCore m_appServerCore;
         private SIPCallManager m_callManager;
         private SIPDialogueManager m_sipDialogueManager;
-        private SIPNotifyManager m_notifyManager;
 
         private SIPTransport m_sipTransport;
         private DialPlanEngine m_dialPlanEngine;
-        private ServiceHost m_accessPolicyHost;
-        private ServiceHost m_sipProvisioningHost;
         private ServiceHost m_callManagerSvcHost;
-        private ServiceHost m_sipNotificationsHost;
         private CustomerSessionManager m_customerSessionManager;
-        private ISIPMonitorPublisher m_sipMonitorPublisher;
-        private IPAddress m_publicIPAddress;
 
         private StorageTypes m_storageType;
         private string m_connectionString;
@@ -250,63 +244,6 @@ namespace SIPSorcery.SIPAppServer
 
                 try
                 {
-                    if (WCFUtility.DoesWCFServiceExist(typeof(SIPProvisioningWebService).FullName.ToString()))
-                    {
-                        if (m_sipSorceryPersistor == null)
-                        {
-                            logger.Warn("Provisioning hosted service could not be started as Persistor object was null.");
-                        }
-                        else
-                        {
-                            SIPProviderBindingSynchroniser sipProviderBindingSynchroniser = new SIPProviderBindingSynchroniser(m_sipSorceryPersistor.SIPProviderBindingsPersistor);
-                            m_sipSorceryPersistor.SIPProvidersPersistor.Added += sipProviderBindingSynchroniser.SIPProviderAdded;
-                            m_sipSorceryPersistor.SIPProvidersPersistor.Updated += sipProviderBindingSynchroniser.SIPProviderUpdated;
-                            m_sipSorceryPersistor.SIPProvidersPersistor.Deleted += sipProviderBindingSynchroniser.SIPProviderDeleted;
-
-                            ProvisioningServiceInstanceProvider instanceProvider = new ProvisioningServiceInstanceProvider(
-                                m_sipSorceryPersistor.SIPAccountsPersistor,
-                                m_sipSorceryPersistor.SIPDialPlanPersistor,
-                                m_sipSorceryPersistor.SIPProvidersPersistor,
-                                m_sipSorceryPersistor.SIPProviderBindingsPersistor,
-                                m_sipSorceryPersistor.SIPRegistrarBindingPersistor,
-                                m_sipSorceryPersistor.SIPDialoguePersistor,
-                                m_sipSorceryPersistor.SIPCDRPersistor,
-                                m_customerSessionManager,
-                                m_sipSorceryPersistor.SIPDomainManager,
-                                FireSIPMonitorEvent,
-                                0,
-                                false);
-
-                            m_sipProvisioningHost = new ServiceHost(typeof(SIPProvisioningWebService));
-                            m_sipProvisioningHost.Description.Behaviors.Add(instanceProvider);
-                            m_sipProvisioningHost.Open();
-
-                            logger.Debug("Provisioning hosted service successfully started on " + m_sipProvisioningHost.BaseAddresses[0].AbsoluteUri + ".");
-                        }
-                    }
-                }
-                catch (Exception excp)
-                {
-                    logger.Warn("Exception starting Provisioning hosted service. " + excp.Message);
-                }
-
-                try
-                {
-                    if (WCFUtility.DoesWCFServiceExist(typeof(CrossDomainService).FullName.ToString()))
-                    {
-                        m_accessPolicyHost = new ServiceHost(typeof(CrossDomainService));
-                        m_accessPolicyHost.Open();
-
-                        logger.Debug("CrossDomain hosted service successfully started on " + m_accessPolicyHost.BaseAddresses[0].AbsoluteUri + ".");
-                    }
-                }
-                catch (Exception excp)
-                {
-                    logger.Warn("Exception starting CrossDomain hosted service. " + excp.Message);
-                }
-
-                try
-                {
                     if (WCFUtility.DoesWCFServiceExist(typeof(CallManagerServices).FullName.ToString()))
                     {
                         CallManagerServiceInstanceProvider callManagerSvcInstanceProvider = new CallManagerServiceInstanceProvider(m_callManager, m_sipDialogueManager);
@@ -339,26 +276,6 @@ namespace SIPSorcery.SIPAppServer
                     logger.Warn("Exception starting CallManager hosted service. " + excp.Message);
                 }
 
-                if (WCFUtility.DoesWCFServiceExist(typeof(SIPNotifierService).FullName.ToString()))
-                {
-                    if (m_sipMonitorPublisher != null)
-                    {
-                        try
-                        {
-                            SIPNotifierService notifierService = new SIPNotifierService(m_sipMonitorPublisher, m_customerSessionManager);
-                            m_sipNotificationsHost = new ServiceHost(notifierService);
-
-                            m_sipNotificationsHost.Open();
-
-                            logger.Debug("SIPNotificationsService hosted service successfully started on " + m_sipNotificationsHost.BaseAddresses[0].AbsoluteUri + ".");
-                        }
-                        catch (Exception excp)
-                        {
-                            logger.Warn("Exception starting SIPNotificationsService hosted service. " + excp.Message);
-                        }
-                    }
-                }
-
                 #endregion
             }
             catch (Exception excp)
@@ -377,34 +294,14 @@ namespace SIPSorcery.SIPAppServer
                 DNSManager.Stop();
                 m_dialPlanEngine.StopScriptMonitoring = true;
 
-                if (m_accessPolicyHost != null)
-                {
-                    m_accessPolicyHost.Close();
-                }
-
-                if (m_sipProvisioningHost != null)
-                {
-                    m_sipProvisioningHost.Close();
-                }
-
                 if (m_callManagerSvcHost != null)
                 {
                     m_callManagerSvcHost.Close();
                 }
 
-                if (m_sipNotificationsHost != null)
-                {
-                    m_sipNotificationsHost.Close();
-                }
-
                 if (m_callManager != null)
                 {
                     m_callManager.Stop();
-                }
-
-                if (m_notifyManager != null)
-                {
-                    m_notifyManager.Stop();
                 }
 
                 if (m_monitorEventWriter != null)

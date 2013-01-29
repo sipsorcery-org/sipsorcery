@@ -403,6 +403,19 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+        private bool m_sendMWISubscribe;                     // If this is set and the provider is being registered then an MWI subscription will be sent on a successful registration.
+        [Column(Name = "sendmwisubscribe", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public bool SendMWISubscribe
+        {
+            get { return m_sendMWISubscribe; }
+            set
+            {
+                m_sendMWISubscribe = value;
+                NotifyPropertyChanged("SendMWISubscribe");
+            }
+        }
+
         /// <summary>
         /// Normally the registrar server will just be the main Provider server however in some cases they will be different.
         /// </summary>
@@ -578,6 +591,7 @@ namespace SIPSorcery.SIP.App
             table.Columns.Add(new DataColumn("inserted", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("lastupdate", typeof(DateTimeOffset)));
             table.Columns.Add(new DataColumn("isreadonly", typeof(Boolean)));
+            table.Columns.Add(new DataColumn("sendmwisubscribe", typeof(Boolean)));
             return table;
         }
 
@@ -610,6 +624,7 @@ namespace SIPSorcery.SIP.App
                 LastUpdate = (providerRow.Table.Columns.Contains("lastupdate") && providerRow["lastupdate"] != DBNull.Value && providerRow["lastupdate"] != null) ? DateTimeOffset.Parse(providerRow["lastupdate"] as string) : DateTimeOffset.UtcNow;
                 Inserted = (providerRow.Table.Columns.Contains("inserted") && providerRow["inserted"] != DBNull.Value && providerRow["inserted"] != null) ? DateTimeOffset.Parse(providerRow["inserted"] as string) : DateTimeOffset.UtcNow;
                 m_isReadOnly = (providerRow.Table.Columns.Contains("isreadonly") && providerRow["isreadonly"] != DBNull.Value && providerRow["isreadonly"] != null) ? StorageLayer.ConvertToBoolean(providerRow["isreadonly"]) : false;
+                m_sendMWISubscribe = (providerRow.Table.Columns.Contains("sendmwisubscribe") && providerRow["sendmwisubscribe"] != DBNull.Value && providerRow["sendmwisubscribe"] != null) ? StorageLayer.ConvertToBoolean(providerRow["sendmwisubscribe"]) : false;
 
                 if (m_registerContact == null && m_registerEnabled)
                 {
@@ -669,7 +684,8 @@ namespace SIPSorcery.SIP.App
                 "   <registerdisabledreason>" + SafeXML.MakeSafeXML(m_registerDisabledReason) + "</registerdisabledreason>" + m_newLine +
                 "   <inserted>" + m_inserted.ToString("o") + "</inserted>" + m_newLine +
                 "   <lastupdate>" + m_lastUpdate.ToString("o") + "</lastupdate>" + m_newLine +
-                "   <isreadonly>" + m_isReadOnly + "</isreadonly>" + m_newLine;
+                "   <isreadonly>" + m_isReadOnly + "</isreadonly>" + m_newLine +
+                "   <sendmwisubscribe>" + m_sendMWISubscribe + "</sendmwisubscribe>" + m_newLine;
 
             return providerXML;
         }

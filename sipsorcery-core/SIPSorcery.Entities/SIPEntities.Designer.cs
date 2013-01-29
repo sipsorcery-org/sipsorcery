@@ -336,34 +336,34 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        public ObjectSet<CustomerAccount> CustomerAccounts1
+        public ObjectSet<CustomerAccount> CustomerAccounts
         {
             get
             {
-                if ((_CustomerAccounts1 == null))
+                if ((_CustomerAccounts == null))
                 {
-                    _CustomerAccounts1 = base.CreateObjectSet<CustomerAccount>("CustomerAccounts1");
+                    _CustomerAccounts = base.CreateObjectSet<CustomerAccount>("CustomerAccounts");
                 }
-                return _CustomerAccounts1;
+                return _CustomerAccounts;
             }
         }
-        private ObjectSet<CustomerAccount> _CustomerAccounts1;
+        private ObjectSet<CustomerAccount> _CustomerAccounts;
     
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        public ObjectSet<Rate> Rates1
+        public ObjectSet<Rate> Rates
         {
             get
             {
-                if ((_Rates1 == null))
+                if ((_Rates == null))
                 {
-                    _Rates1 = base.CreateObjectSet<Rate>("Rates1");
+                    _Rates = base.CreateObjectSet<Rate>("Rates");
                 }
-                return _Rates1;
+                return _Rates;
             }
         }
-        private ObjectSet<Rate> _Rates1;
+        private ObjectSet<Rate> _Rates;
 
         #endregion
 
@@ -498,19 +498,19 @@ namespace SIPSorcery.Entities
         }
     
         /// <summary>
-        /// Deprecated Method for adding a new object to the CustomerAccounts1 EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
+        /// Deprecated Method for adding a new object to the CustomerAccounts EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
         /// </summary>
-        public void AddToCustomerAccounts1(CustomerAccount customerAccount)
+        public void AddToCustomerAccounts(CustomerAccount customerAccount)
         {
-            base.AddObject("CustomerAccounts1", customerAccount);
+            base.AddObject("CustomerAccounts", customerAccount);
         }
     
         /// <summary>
-        /// Deprecated Method for adding a new object to the Rates1 EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
+        /// Deprecated Method for adding a new object to the Rates EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
         /// </summary>
-        public void AddToRates1(Rate rate)
+        public void AddToRates(Rate rate)
         {
-            base.AddObject("Rates1", rate);
+            base.AddObject("Rates", rate);
         }
 
         #endregion
@@ -543,7 +543,8 @@ namespace SIPSorcery.Entities
         /// <param name="inserted">Initial value of the Inserted property.</param>
         /// <param name="localSocket">Initial value of the LocalSocket property.</param>
         /// <param name="remoteSocket">Initial value of the RemoteSocket property.</param>
-        public static CDR CreateCDR(global::System.String callID, global::System.String created, global::System.String direction, global::System.String dstHost, global::System.String dstURI, global::System.String id, global::System.String inserted, global::System.String localSocket, global::System.String remoteSocket)
+        /// <param name="isHangingUp">Initial value of the IsHangingUp property.</param>
+        public static CDR CreateCDR(global::System.String callID, global::System.String created, global::System.String direction, global::System.String dstHost, global::System.String dstURI, global::System.String id, global::System.String inserted, global::System.String localSocket, global::System.String remoteSocket, global::System.Boolean isHangingUp)
         {
             CDR cDR = new CDR();
             cDR.CallID = callID;
@@ -555,6 +556,7 @@ namespace SIPSorcery.Entities
             cDR.Inserted = inserted;
             cDR.LocalSocket = localSocket;
             cDR.RemoteSocket = remoteSocket;
+            cDR.IsHangingUp = isHangingUp;
             return cDR;
         }
 
@@ -1290,24 +1292,120 @@ namespace SIPSorcery.Entities
         /// </summary>
         [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
         [DataMemberAttribute()]
-        public Nullable<global::System.DateTime> AnsweredDate
+        public Nullable<global::System.DateTime> AnsweredAt
         {
             get
             {
-                return _AnsweredDate;
+                return _AnsweredAt;
             }
             set
             {
-                OnAnsweredDateChanging(value);
-                ReportPropertyChanging("AnsweredDate");
-                _AnsweredDate = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("AnsweredDate");
-                OnAnsweredDateChanged();
+                OnAnsweredAtChanging(value);
+                ReportPropertyChanging("AnsweredAt");
+                _AnsweredAt = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("AnsweredAt");
+                OnAnsweredAtChanged();
             }
         }
-        private Nullable<global::System.DateTime> _AnsweredDate;
-        partial void OnAnsweredDateChanging(Nullable<global::System.DateTime> value);
-        partial void OnAnsweredDateChanged();
+        private Nullable<global::System.DateTime> _AnsweredAt;
+        partial void OnAnsweredAtChanging(Nullable<global::System.DateTime> value);
+        partial void OnAnsweredAtChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String ReconciliationResult
+        {
+            get
+            {
+                return _ReconciliationResult;
+            }
+            set
+            {
+                OnReconciliationResultChanging(value);
+                ReportPropertyChanging("ReconciliationResult");
+                _ReconciliationResult = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("ReconciliationResult");
+                OnReconciliationResultChanged();
+            }
+        }
+        private global::System.String _ReconciliationResult;
+        partial void OnReconciliationResultChanging(global::System.String value);
+        partial void OnReconciliationResultChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String ReservationError
+        {
+            get
+            {
+                return _ReservationError;
+            }
+            set
+            {
+                OnReservationErrorChanging(value);
+                ReportPropertyChanging("ReservationError");
+                _ReservationError = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("ReservationError");
+                OnReservationErrorChanged();
+            }
+        }
+        private global::System.String _ReservationError;
+        partial void OnReservationErrorChanging(global::System.String value);
+        partial void OnReservationErrorChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Boolean IsHangingUp
+        {
+            get
+            {
+                return _IsHangingUp;
+            }
+            set
+            {
+                OnIsHangingUpChanging(value);
+                ReportPropertyChanging("IsHangingUp");
+                _IsHangingUp = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("IsHangingUp");
+                OnIsHangingUpChanged();
+            }
+        }
+        private global::System.Boolean _IsHangingUp;
+        partial void OnIsHangingUpChanging(global::System.Boolean value);
+        partial void OnIsHangingUpChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public Nullable<global::System.Decimal> PostReconciliationBalance
+        {
+            get
+            {
+                return _PostReconciliationBalance;
+            }
+            set
+            {
+                OnPostReconciliationBalanceChanging(value);
+                ReportPropertyChanging("PostReconciliationBalance");
+                _PostReconciliationBalance = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("PostReconciliationBalance");
+                OnPostReconciliationBalanceChanged();
+            }
+        }
+        private Nullable<global::System.Decimal> _PostReconciliationBalance;
+        partial void OnPostReconciliationBalanceChanging(Nullable<global::System.Decimal> value);
+        partial void OnPostReconciliationBalanceChanged();
 
         #endregion
 
@@ -1338,7 +1436,8 @@ namespace SIPSorcery.Entities
         /// <param name="maxExecutionCount">Initial value of the MaxExecutionCount property.</param>
         /// <param name="suspended">Initial value of the Suspended property.</param>
         /// <param name="serviceLevel">Initial value of the ServiceLevel property.</param>
-        public static Customer CreateCustomer(global::System.Boolean active, global::System.String customerPassword, global::System.String name, global::System.String emailAddress, global::System.Boolean emailAddressConfirmed, global::System.Int32 executionCount, global::System.String id, global::System.String inserted, global::System.Int32 maxExecutionCount, global::System.Boolean suspended, global::System.String serviceLevel)
+        /// <param name="rTCCBillingIncrement">Initial value of the RTCCBillingIncrement property.</param>
+        public static Customer CreateCustomer(global::System.Boolean active, global::System.String customerPassword, global::System.String name, global::System.String emailAddress, global::System.Boolean emailAddressConfirmed, global::System.Int32 executionCount, global::System.String id, global::System.String inserted, global::System.Int32 maxExecutionCount, global::System.Boolean suspended, global::System.String serviceLevel, global::System.Int32 rTCCBillingIncrement)
         {
             Customer customer = new Customer();
             customer.Active = active;
@@ -1352,6 +1451,7 @@ namespace SIPSorcery.Entities
             customer.MaxExecutionCount = maxExecutionCount;
             customer.Suspended = suspended;
             customer.ServiceLevel = serviceLevel;
+            customer.RTCCBillingIncrement = rTCCBillingIncrement;
             return customer;
         }
 
@@ -2153,6 +2253,54 @@ namespace SIPSorcery.Entities
         private global::System.String _ServiceRenewalDate;
         partial void OnServiceRenewalDateChanging(global::System.String value);
         partial void OnServiceRenewalDateChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Int32 RTCCBillingIncrement
+        {
+            get
+            {
+                return _RTCCBillingIncrement;
+            }
+            set
+            {
+                OnRTCCBillingIncrementChanging(value);
+                ReportPropertyChanging("RTCCBillingIncrement");
+                _RTCCBillingIncrement = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("RTCCBillingIncrement");
+                OnRTCCBillingIncrementChanged();
+            }
+        }
+        private global::System.Int32 _RTCCBillingIncrement;
+        partial void OnRTCCBillingIncrementChanging(global::System.Int32 value);
+        partial void OnRTCCBillingIncrementChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String RTCCInternationalPrefixes
+        {
+            get
+            {
+                return _RTCCInternationalPrefixes;
+            }
+            set
+            {
+                OnRTCCInternationalPrefixesChanging(value);
+                ReportPropertyChanging("RTCCInternationalPrefixes");
+                _RTCCInternationalPrefixes = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("RTCCInternationalPrefixes");
+                OnRTCCInternationalPrefixesChanged();
+            }
+        }
+        private global::System.String _RTCCInternationalPrefixes;
+        partial void OnRTCCInternationalPrefixesChanging(global::System.String value);
+        partial void OnRTCCInternationalPrefixesChanged();
 
         #endregion
 
@@ -2176,13 +2324,17 @@ namespace SIPSorcery.Entities
         /// <param name="owner">Initial value of the Owner property.</param>
         /// <param name="accountCode">Initial value of the AccountCode property.</param>
         /// <param name="credit">Initial value of the Credit property.</param>
-        public static CustomerAccount CreateCustomerAccount(global::System.String id, global::System.String owner, global::System.String accountCode, global::System.Decimal credit)
+        /// <param name="accountName">Initial value of the AccountName property.</param>
+        /// <param name="inserted">Initial value of the Inserted property.</param>
+        public static CustomerAccount CreateCustomerAccount(global::System.String id, global::System.String owner, global::System.String accountCode, global::System.Decimal credit, global::System.String accountName, global::System.String inserted)
         {
             CustomerAccount customerAccount = new CustomerAccount();
             customerAccount.ID = id;
             customerAccount.Owner = owner;
             customerAccount.AccountCode = accountCode;
             customerAccount.Credit = credit;
+            customerAccount.AccountName = accountName;
+            customerAccount.Inserted = inserted;
             return customerAccount;
         }
 
@@ -2288,6 +2440,102 @@ namespace SIPSorcery.Entities
         private global::System.Decimal _Credit;
         partial void OnCreditChanging(global::System.Decimal value);
         partial void OnCreditChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String AccountName
+        {
+            get
+            {
+                return _AccountName;
+            }
+            set
+            {
+                OnAccountNameChanging(value);
+                ReportPropertyChanging("AccountName");
+                _AccountName = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("AccountName");
+                OnAccountNameChanged();
+            }
+        }
+        private global::System.String _AccountName;
+        partial void OnAccountNameChanging(global::System.String value);
+        partial void OnAccountNameChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public Nullable<global::System.Int32> PIN
+        {
+            get
+            {
+                return _PIN;
+            }
+            set
+            {
+                OnPINChanging(value);
+                ReportPropertyChanging("PIN");
+                _PIN = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("PIN");
+                OnPINChanged();
+            }
+        }
+        private Nullable<global::System.Int32> _PIN;
+        partial void OnPINChanging(Nullable<global::System.Int32> value);
+        partial void OnPINChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String Inserted
+        {
+            get
+            {
+                return _Inserted;
+            }
+            set
+            {
+                OnInsertedChanging(value);
+                ReportPropertyChanging("Inserted");
+                _Inserted = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("Inserted");
+                OnInsertedChanged();
+            }
+        }
+        private global::System.String _Inserted;
+        partial void OnInsertedChanging(global::System.String value);
+        partial void OnInsertedChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String AccountNumber
+        {
+            get
+            {
+                return _AccountNumber;
+            }
+            set
+            {
+                OnAccountNumberChanging(value);
+                ReportPropertyChanging("AccountNumber");
+                _AccountNumber = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("AccountNumber");
+                OnAccountNumberChanged();
+            }
+        }
+        private global::System.String _AccountNumber;
+        partial void OnAccountNumberChanging(global::System.String value);
+        partial void OnAccountNumberChanged();
 
         #endregion
 
@@ -2312,7 +2560,8 @@ namespace SIPSorcery.Entities
         /// <param name="description">Initial value of the Description property.</param>
         /// <param name="prefix">Initial value of the Prefix property.</param>
         /// <param name="rate1">Initial value of the Rate1 property.</param>
-        public static Rate CreateRate(global::System.String id, global::System.String owner, global::System.String description, global::System.String prefix, global::System.Decimal rate1)
+        /// <param name="inserted">Initial value of the Inserted property.</param>
+        public static Rate CreateRate(global::System.String id, global::System.String owner, global::System.String description, global::System.String prefix, global::System.Decimal rate1, global::System.String inserted)
         {
             Rate rate = new Rate();
             rate.ID = id;
@@ -2320,6 +2569,7 @@ namespace SIPSorcery.Entities
             rate.Description = description;
             rate.Prefix = prefix;
             rate.Rate1 = rate1;
+            rate.Inserted = inserted;
             return rate;
         }
 
@@ -2449,6 +2699,54 @@ namespace SIPSorcery.Entities
         private global::System.Decimal _Rate1;
         partial void OnRate1Changing(global::System.Decimal value);
         partial void OnRate1Changed();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String RateCode
+        {
+            get
+            {
+                return _RateCode;
+            }
+            set
+            {
+                OnRateCodeChanging(value);
+                ReportPropertyChanging("RateCode");
+                _RateCode = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("RateCode");
+                OnRateCodeChanged();
+            }
+        }
+        private global::System.String _RateCode;
+        partial void OnRateCodeChanging(global::System.String value);
+        partial void OnRateCodeChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String Inserted
+        {
+            get
+            {
+                return _Inserted;
+            }
+            set
+            {
+                OnInsertedChanging(value);
+                ReportPropertyChanging("Inserted");
+                _Inserted = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("Inserted");
+                OnInsertedChanged();
+            }
+        }
+        private global::System.String _Inserted;
+        partial void OnInsertedChanging(global::System.String value);
+        partial void OnInsertedChanged();
 
         #endregion
 
@@ -6047,7 +6345,8 @@ namespace SIPSorcery.Entities
         /// <param name="registerAdminEnabled">Initial value of the RegisterAdminEnabled property.</param>
         /// <param name="registerEnabled">Initial value of the RegisterEnabled property.</param>
         /// <param name="isReadOnly">Initial value of the IsReadOnly property.</param>
-        public static SIPProvider CreateSIPProvider(global::System.String id, global::System.String inserted, global::System.String lastUpdate, global::System.String owner, global::System.String providerName, global::System.String providerType, global::System.String providerUsername, global::System.Boolean registerAdminEnabled, global::System.Boolean registerEnabled, global::System.Boolean isReadOnly)
+        /// <param name="sendMWISubscribe">Initial value of the SendMWISubscribe property.</param>
+        public static SIPProvider CreateSIPProvider(global::System.String id, global::System.String inserted, global::System.String lastUpdate, global::System.String owner, global::System.String providerName, global::System.String providerType, global::System.String providerUsername, global::System.Boolean registerAdminEnabled, global::System.Boolean registerEnabled, global::System.Boolean isReadOnly, global::System.Boolean sendMWISubscribe)
         {
             SIPProvider sIPProvider = new SIPProvider();
             sIPProvider.ID = id;
@@ -6060,6 +6359,7 @@ namespace SIPSorcery.Entities
             sIPProvider.RegisterAdminEnabled = registerAdminEnabled;
             sIPProvider.RegisterEnabled = registerEnabled;
             sIPProvider.IsReadOnly = isReadOnly;
+            sIPProvider.SendMWISubscribe = sendMWISubscribe;
             return sIPProvider;
         }
 
@@ -6669,6 +6969,30 @@ namespace SIPSorcery.Entities
         private global::System.Boolean _IsReadOnly;
         partial void OnIsReadOnlyChanging(global::System.Boolean value);
         partial void OnIsReadOnlyChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Boolean SendMWISubscribe
+        {
+            get
+            {
+                return _SendMWISubscribe;
+            }
+            set
+            {
+                OnSendMWISubscribeChanging(value);
+                ReportPropertyChanging("SendMWISubscribe");
+                _SendMWISubscribe = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("SendMWISubscribe");
+                OnSendMWISubscribeChanged();
+            }
+        }
+        private global::System.Boolean _SendMWISubscribe;
+        partial void OnSendMWISubscribeChanging(global::System.Boolean value);
+        partial void OnSendMWISubscribeChanged();
 
         #endregion
 

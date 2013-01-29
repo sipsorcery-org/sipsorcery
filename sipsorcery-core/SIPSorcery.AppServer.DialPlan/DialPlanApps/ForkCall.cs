@@ -62,6 +62,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
         private SIPTransport m_sipTransport;
         private ISIPCallManager m_callManager;
+        private SIPSorcery.Entities.CustomerAccountDataLayer m_customerAccountDataLayer = new SIPSorcery.Entities.CustomerAccountDataLayer();
         private event SIPMonitorLogDelegate m_statefulProxyLogEvent;    // Used to send log messages back to the application server core.
         private QueueNewCallDelegate QueueNewCall_External;             // Function delegate to allow new calls to be placed on the call manager and run through the dialplan logic.              
         private DialPlanContext m_dialPlanContext;                      // Used to allow redirect responses that need to execute a new dial plan execution.

@@ -63,6 +63,9 @@ using agsXMPP.protocol.client;
 using GaDotNet.Common.Data;
 using GaDotNet.Common.Helpers;
 using GaDotNet.Common;
+using Google.GData.Client;
+using Google.GData.Contacts;
+using Google.GData.Extensions;
 
 namespace SIPSorcery.AppServer.DialPlan
 {
@@ -106,6 +109,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private List<SIPProvider> m_sipProviders;
         private DialogueBridgeCreatedDelegate CreateBridge_External;
         //private DialPlanEngine m_dialPlanEngine;                                        // Used for allowed redirect responses that need to execute a new dial plan execution.
+        private SIPSorcery.Entities.CustomerAccountDataLayer m_customerAccountDataLayer = new SIPSorcery.Entities.CustomerAccountDataLayer();
 
         private GetCanonicalDomainDelegate m_getCanonicalDomainDelegate;
         private SIPRequest m_sipRequest;                                                // This is a copy of the SIP request from m_clientTransaction.
@@ -592,7 +596,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                 if (LastDialled != null && LastDialled.Count > 0)
                                 {
                                     var redirect = (from trans in LastDialled
-                                                    where trans.TransactionFinalResponse.StatusCode >= 300 &&
+                                                    where trans.TransactionFinalResponse != null && trans.TransactionFinalResponse.StatusCode >= 300 &&
                                                         trans.TransactionFinalResponse.StatusCode <= 399 && trans.TransactionFinalResponse.Header.Contact != null
                                                         && trans.TransactionFinalResponse.Header.Contact.Count > 0
                                                     select trans.TransactionFinalResponse).FirstOrDefault();
@@ -652,15 +656,20 @@ namespace SIPSorcery.AppServer.DialPlan
         /// </summary>
         public void Callback(string dest1, string dest2)
         {
-            Callback(dest1, dest2, 0, 0, 0);
+            Callback(dest1, dest2, 0, 0, 0, null, null);
         }
 
         public void Callback(string dest1, string dest2, int delaySeconds)
         {
-            Callback(dest1, dest2, delaySeconds, 0, 0);
+            Callback(dest1, dest2, delaySeconds, 0, 0, null, null);
         }
 
         public void Callback(string dest1, string dest2, int delaySeconds, int ringTimeoutLeg1, int ringTimeoutLeg2)
+        {
+            Callback(dest1, dest2, delaySeconds, 0, 0, null, null);
+        }
+
+        public void Callback(string dest1, string dest2, int delaySeconds, int ringTimeoutLeg1, int ringTimeoutLeg2, string customHeadersCallLeg1, string customHeadersCallLeg2)
         {
             m_callbackRequests++;
             if (m_callbackRequests > MAX_CALLBACKS_ALLOWED)
@@ -670,7 +679,7 @@ namespace SIPSorcery.AppServer.DialPlan
             else
             {
                 CallbackApp callbackApp = new CallbackApp(m_sipTransport, m_callManager, m_dialStringParser, FireProxyLogEvent, m_username, m_adminMemberId, m_outboundProxySocket);
-                ThreadPool.QueueUserWorkItem(delegate { callbackApp.Callback(dest1, dest2, delaySeconds, ringTimeoutLeg1, ringTimeoutLeg2); });
+                ThreadPool.QueueUserWorkItem(delegate { callbackApp.Callback(dest1, dest2, delaySeconds, ringTimeoutLeg1, ringTimeoutLeg2, customHeadersCallLeg1, customHeadersCallLeg2); });
             }
         }
 
@@ -2062,6 +2071,11 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public void SendRequest(string methodStr, string destination, string contentType, string body, int responseTimeoutSeconds)
         {
+            SendRequest(methodStr, destination, contentType, body, responseTimeoutSeconds, null, null);
+        }
+
+        public void SendRequest(string methodStr, string destination, string contentType, string body, int responseTimeoutSeconds, string username, string password)
+        {
             try
             {
                 int timeout = (responseTimeoutSeconds > NON_INVITE_MAX_RESPONSE_TIMEOUT) ? NON_INVITE_MAX_RESPONSE_TIMEOUT * 1000 : responseTimeoutSeconds * 1000;
@@ -2078,45 +2092,65 @@ namespace SIPSorcery.AppServer.DialPlan
                 {
                     SIPMethodsEnum method = (SIPMethodsEnum)Enum.Parse(typeof(SIPMethodsEnum), methodStr, true);
 
-                    Queue<List<SIPCallDescriptor>> destinationQueue = m_dialStringParser.ParseDialString(
-                           DialPlanContextsEnum.Script,
-                           m_sipRequest,
-                           destination,
-                           m_customSIPHeaders,
-                           contentType,
-                           body,
-                           m_dialPlanContext.CallersNetworkId,
-                           m_customFromName,
-                           m_customFromUser,
-                           m_customFromHost,
-                           null,
-                           ServiceLevel);
-
-                    if (destinationQueue == null || destinationQueue.Count == 0)
-                    {
-                        Log("Error in SendRequest the request destination could not be extracted from " + destination + ".");
-                    }
-                    else if (method == SIPMethodsEnum.ACK || method == SIPMethodsEnum.BYE || method == SIPMethodsEnum.CANCEL ||
+                    if (method == SIPMethodsEnum.ACK || method == SIPMethodsEnum.BYE || method == SIPMethodsEnum.CANCEL ||
                         method == SIPMethodsEnum.INVITE || method == SIPMethodsEnum.REGISTER)
                     {
                         Log("SendRequest cannot be used for " + method + " requests.");
                     }
                     else
                     {
-                        SIPCallDescriptor callDescriptor = destinationQueue.Dequeue()[0];
-                        SIPNonInviteClientUserAgent nonInviteUserAgent = new SIPNonInviteClientUserAgent(m_sipTransport, m_outboundProxySocket, callDescriptor, m_username, m_adminMemberId, FireProxyLogEvent);
-                        ManualResetEvent waitForResponse = new ManualResetEvent(false);
-                        nonInviteUserAgent.ResponseReceived += (sipResponse) =>
-                            {
-                                string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
-                                Log("SendRequest " + sipResponse.StatusCode + " " + reasonPhrase + " response received for " + method + " to " + destination + ".");
-                                waitForResponse.Set();
-                            };
-                        nonInviteUserAgent.SendRequest(method);
+                        Queue<List<SIPCallDescriptor>> destinationQueue = m_dialStringParser.ParseDialString(
+                               DialPlanContextsEnum.Script,
+                               m_sipRequest,
+                               destination,
+                               m_customSIPHeaders,
+                               contentType,
+                               body,
+                               m_dialPlanContext.CallersNetworkId,
+                               m_customFromName,
+                               m_customFromUser,
+                               m_customFromHost,
+                               null,
+                               ServiceLevel);
 
-                        if (timeout > 0 && !waitForResponse.WaitOne(timeout))
+                        if (destinationQueue == null || destinationQueue.Count == 0)
                         {
-                            Log("SendRequest timed out after " + timeout + "s waiting for " + method + " to " + destination + ".");
+                            Log("Error in SendRequest the request destination could not be extracted from " + destination + ".");
+                        }
+                        else
+                        {
+                            var callDescriptorList = destinationQueue.Dequeue();
+
+                            if (callDescriptorList == null || callDescriptorList.Count == 0)
+                            {
+                                Log("Error in SendRequest the request destination of " + destination + " did not result in any call legs.");
+                            }
+                            else
+                            {
+                                foreach (SIPCallDescriptor callDescriptor in callDescriptorList)
+                                {
+                                    if (username.NotNullOrBlank())
+                                    {
+                                        callDescriptor.Username = username;
+                                    }
+                                    callDescriptor.Password = password;
+
+                                    SIPNonInviteClientUserAgent nonInviteUserAgent = new SIPNonInviteClientUserAgent(m_sipTransport, m_outboundProxySocket, callDescriptor, m_username, m_adminMemberId, FireProxyLogEvent);
+                                    ManualResetEvent waitForResponse = new ManualResetEvent(false);
+                                    nonInviteUserAgent.ResponseReceived += (sipResponse) =>
+                                        {
+                                            string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
+                                            Log("SendRequest " + sipResponse.StatusCode + " " + reasonPhrase + " response received for " + method + " to " + destination + ".");
+                                            waitForResponse.Set();
+                                        };
+                                    nonInviteUserAgent.SendRequest(method);
+
+                                    if (timeout > 0 && !waitForResponse.WaitOne(timeout))
+                                    {
+                                        Log("SendRequest timed out after " + timeout + "s waiting for " + method + " to " + destination + ".");
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -2159,6 +2193,71 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 return SIPSorcery.Entities.TimeZoneHelper.GetTimeZonesUTCOffsetMinutes(m_dialPlanContext.Customer.TimeZone);
             }
+        }
+
+        public string GoogleContactLookup(string username, string password, string lookup)
+        {
+            try
+            {
+                Log("Starting Google Contact Lookup for " + lookup + ".");
+
+                ContactsService service = new ContactsService("sipsorcery-lookup");
+                ((GDataRequestFactory)service.RequestFactory).KeepAlive = false;
+
+                service.setUserCredentials(username, password);
+                var result = service.QueryClientLoginToken();
+
+                var query = new ContactsQuery(ContactsQuery.CreateContactsUri("default"));
+                query.ExtraParameters = "q=" + lookup + "&max-results=1";
+
+                ContactsFeed feed = service.Query(query);
+
+                if (feed != null && feed.Entries != null && feed.Entries.Count > 0)
+                {
+                    var entry = feed.Entries.First() as ContactEntry;
+
+                    if (entry.Name != null && entry.Name.FullName.NotNullOrBlank())
+                    {
+                        Log("Result found Google Contact Lookup for " + lookup + " of " + entry.Name.FullName + ".");
+                        return entry.Name.FullName;
+                    }
+                    else
+                    {
+                        Log("A result was found Google Contact Lookup for " + lookup + " but the FullName field was empty.");
+                        return null;
+                    }
+                }
+                else
+                {
+                    Log("No result was found with a Google Contact Lookup for " + lookup + ".");
+                    return null;
+                }
+            }
+            catch (Exception excp)
+            {
+                Log("Exception in GoogleContactLookup. " + excp.Message);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets the balance for a customer account record.
+        /// </summary>
+        /// <param name="accountCode">The account code to get the record for.</param>
+        /// <returns>If the account code exists the balance for it otherwise -1.</returns>
+        public decimal GetBalance(string accountCode)
+        {
+            return m_customerAccountDataLayer.GetBalance(accountCode);
+        }
+
+        /// <summary>
+        /// Sets a property on the script context object that will be passed back for calls that have been initiated with the 
+        /// webcallback method of the callmanager web service.
+        /// </summary>
+        /// <param name="response">The response string to pass back to the callmanager web service.</param>
+        public void SetCallManagerResponse(string response)
+        {
+            m_dialPlanContext.WebCallResponse = response;
         }
 
         /// <summary>
@@ -2214,7 +2313,14 @@ namespace SIPSorcery.AppServer.DialPlan
                         label,
                         value);
                     TrackingRequest request = new RequestFactory().BuildRequest(googleEvent);
-                    ThreadPool.QueueUserWorkItem(delegate { GoogleTracking.FireTrackingEvent(request); });
+                    ThreadPool.QueueUserWorkItem(delegate
+                    {
+                        try
+                        {
+                            GoogleTracking.FireTrackingEvent(request);
+                        }
+                        catch { }
+                    });
                 }
             }
             catch (Exception excp)

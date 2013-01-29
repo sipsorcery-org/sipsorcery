@@ -43,7 +43,8 @@ namespace SIPSorcery.Entities
                 SIPDomain = domain,
                 Owner = owner,
                 SIPPassword = password,
-                OutDialPlanName = outDialPlanName
+                OutDialPlanName = outDialPlanName,
+                IsSwitchboardEnabled = true
             };
         }
 

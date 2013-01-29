@@ -165,7 +165,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataLayers\RateDataLayer.cs" />
     <Compile Include="DataLayers\CustomerAccountDataLayer.cs" />
+    <Compile Include="Entities\JSON\CDRJSON.cs" />
+    <Compile Include="Entities\JSON\SIPRegistrarBindingJSON.cs" />
+    <Compile Include="Entities\JSON\SIPProviderBindingJSON.cs" />
     <Compile Include="Entities\SimpleWizardRule.shared.cs" />
     <Compile Include="Entities\Customer.shared.cs" />
     <Compile Include="DomainServices\SIPEntitiesDomainService.cs" />

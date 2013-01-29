@@ -36,6 +36,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
@@ -90,6 +91,11 @@ namespace SIPSorcery.Sys.Auth
                     //logger.Debug("authid cookie found: " + authIdCookie.Value + ".");
                     token = authIdCookie.Value;
                 }
+                else
+                {
+                    // Not in the cookie so check the request parameters.
+                    token = HttpContext.Current.Request.Params[tokenName];
+                }
             }
 
             // No HTTP context available so try and get a cookie value from the operation context.
@@ -103,13 +109,27 @@ namespace SIPSorcery.Sys.Auth
                     token = httpRequest.Headers[authIDHeader];
                     //logger.Debug("authid HTTP header found: " + authId + ".");
                 }
-                else if (httpRequest.Headers.AllKeys.Contains(COOKIES_KEY, StringComparer.InvariantCultureIgnoreCase))
+
+                if (token == null && httpRequest.Headers.AllKeys.Contains(COOKIES_KEY, StringComparer.InvariantCultureIgnoreCase))
                 {
                     Match authIDMatch = Regex.Match(httpRequest.Headers[COOKIES_KEY], tokenName + @"=(?<token>.+)");
                     if (authIDMatch.Success)
                     {
                         token = authIDMatch.Result("${token}");
                         //logger.Debug("authid HTTP cookie found: " + authId + ".");
+                    }
+                }
+
+                if (token == null && httpRequest.QueryString.NotNullOrBlank())
+                {
+                    NameValueCollection qscoll = HttpUtility.ParseQueryString(httpRequest.QueryString);
+                    if (qscoll[AUTH_TOKEN_KEY].NotNullOrBlank())
+                    {
+                        token = qscoll[AUTH_TOKEN_KEY];
+                    }
+                    else if (qscoll[API_KEY].NotNullOrBlank())
+                    {
+                        token = qscoll[API_KEY];
                     }
                 }
             }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
+using System.ServiceModel.Web;
 using System.Text;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -43,6 +45,19 @@ namespace SIPSorcery.Web.Services
                 }
                 else
                 {
+                    // if a format query string parameter has been specified, set the response format to that. If no such
+                    // query string parameter exists the Accept header will be used
+                    string formatQueryStringValue = WebOperationContext.Current.IncomingRequest.UriTemplateMatch.QueryParameters["format"];
+
+                    if (formatQueryStringValue.NotNullOrBlank() && formatQueryStringValue.Equals("json", System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        WebOperationContext.Current.OutgoingResponse.Format = WebMessageFormat.Json;
+                    }
+                    else if(formatQueryStringValue.NotNullOrBlank())
+                    {
+                        logger.Warn("Unsupported format of " + formatQueryStringValue + " specified for the WbCallback method, ignoring.");
+                    }
+
                     return m_sipCallManager.ProcessWebCall(username, number, WEB_CALLBACK_DIALPLAN_NAME, null);
                 }
             }

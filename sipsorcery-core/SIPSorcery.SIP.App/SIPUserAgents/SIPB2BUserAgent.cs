@@ -56,6 +56,12 @@ namespace SIPSorcery.SIP.App
         private QueueNewCallDelegate QueueNewCall_External;
         private SIPTransport m_sipTransport;
 
+        // Real-time call control properties (not used by this user agent).
+        //public string AccountCode { get; set; }
+        //public decimal ReservedCredit { get; set; }
+        //public int ReservedSeconds { get; set; }
+        //public decimal Rate { get; set; }
+
         // UAC fields.
         private string m_uacOwner;
         private string m_uacAdminMemberId;

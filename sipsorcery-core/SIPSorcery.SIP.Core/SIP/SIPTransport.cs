@@ -566,6 +566,8 @@ namespace SIPSorcery.SIP
                     throw new ApplicationException("No channels are configured in the SIP transport layer. The request could not be sent.");
                 }
 
+                sipRequest.Header.ContentLength = (sipRequest.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipRequest.Body) : 0;
+
                 if (sipChannel.IsTLS)
                 {
                     sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host);
@@ -803,6 +805,7 @@ namespace SIPSorcery.SIP
                     throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
                 }
 
+                sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
                 sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
 
                 if (SIPRequestOutTraceEvent != null)

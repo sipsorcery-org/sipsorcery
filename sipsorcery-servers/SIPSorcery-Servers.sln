@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPNotifier", "S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIPAllInOne", "SIPSorcery.AllInOne\SIPSorcery.SIPAllInOne.csproj", "{239E384E-BF07-4FE2-B218-162FE95EC341}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.RTCC", "SIPSorcery.RTCC\SIPSorcery.RTCC.csproj", "{4587EE4B-857B-4C43-A944-8B53F3D78F12}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -139,6 +141,16 @@ Global
 		{239E384E-BF07-4FE2-B218-162FE95EC341}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{239E384E-BF07-4FE2-B218-162FE95EC341}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{239E384E-BF07-4FE2-B218-162FE95EC341}.Release|x86.ActiveCfg = Release|Any CPU
+		{4587EE4B-857B-4C43-A944-8B53F3D78F12}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{4587EE4B-857B-4C43-A944-8B53F3D78F12}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{4587EE4B-857B-4C43-A944-8B53F3D78F12}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{4587EE4B-857B-4C43-A944-8B53F3D78F12}.Debug|x86.ActiveCfg = Debug|x86
+		{4587EE4B-857B-4C43-A944-8B53F3D78F12}.Debug|x86.Build.0 = Debug|x86
+		{4587EE4B-857B-4C43-A944-8B53F3D78F12}.Release|Any CPU.ActiveCfg = Release|x86
+		{4587EE4B-857B-4C43-A944-8B53F3D78F12}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{4587EE4B-857B-4C43-A944-8B53F3D78F12}.Release|Mixed Platforms.Build.0 = Release|x86
+		{4587EE4B-857B-4C43-A944-8B53F3D78F12}.Release|x86.ActiveCfg = Release|x86
+		{4587EE4B-857B-4C43-A944-8B53F3D78F12}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

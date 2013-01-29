@@ -644,6 +644,25 @@ namespace SIPSorcery.Servers
                     m_bindingPersistor.Update(binding);
                     UpdateSIPProviderOutboundProxy(binding, sipResponse.Header.ProxyReceivedOn);
                     FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegistered, "Contact successfully registered for " + binding.Owner + " on " + binding.RegistrarServer.ToString() + ", expiry " + binding.BindingExpiry + "s.", binding.Owner));
+
+                    if (binding.SendMWISubscribe)
+                    {
+                        try
+                        {
+                            var mwiURI = SIPURI.ParseSIPURIRelaxed(binding.ProviderAuthUsername + "@" + binding.RegistrarRealm);
+
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.MWI, "Sending MWI subscription request for provider " + binding.ProviderName + " with URI " + mwiURI.ToParameterlessString() + ".", binding.Owner));
+
+                            SIPNotifierClient<SIPEvent> mwiSubscriber = new SIPNotifierClient<SIPEvent>(FireProxyLogEvent, m_sipTransport, m_outboundProxy, SIPEventPackage.MessageSummary, mwiURI, binding.ProviderAuthUsername, binding.RegistrarRealm, binding.ProviderPassword, binding.BindingExpiry, null);
+                            mwiSubscriber.SubscriptionFailed += (resourceURI, failureStatus, errorMessage) => { FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.MWI, "MWI failed for " + resourceURI.ToParameterlessString() + ", " + errorMessage, binding.Owner)); };
+                            mwiSubscriber.SubscriptionSuccessful += (resourceURI) => { FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.MWI, "MWI subscription successful for " + resourceURI.ToParameterlessString() + ".", binding.Owner)); };
+                            mwiSubscriber.Subscribe(mwiURI, binding.BindingExpiry, SIPEventPackage.MessageSummary, CallProperties.CreateNewCallId(), binding.BindingSIPURI);
+                        }
+                        catch (Exception excp)
+                        {
+                            logger.Error("Exception SIPRegistrationAgent MWI Subscription. " + excp.Message);
+                        }
+                    }
                 }
             }
             catch (Exception excp)

@@ -37,7 +37,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Objects;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Transactions;
@@ -54,11 +57,11 @@ namespace SIPSorcery.Servers
     {
         private const string RTCC_THREAD_NAME = "rtcc-core";
         private const int NUMBER_CDRS_PER_ROUNDTRIP = 5;
-
-        private static ILog logger = AppState.logger;
+        
+        private static ILog logger = AppState.GetLogger("rtcc");
 
         private SIPMonitorLogDelegate Log_External;
-        SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
+        private SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
         private SIPDialogueManager m_sipDialogueManager;
         private int m_reserveDueSeconds = 15;           // A reservation is due when there is only this many seconds remaining on the call.
         private int m_reservationAmountSeconds = 60;    // The amount of seconds to reserve on each reservation request.
@@ -69,10 +72,11 @@ namespace SIPSorcery.Servers
         public RTCCCore(
             SIPMonitorLogDelegate logDelegate,
             SIPDialogueManager sipDialogueManager,
-           int reserveDueSeconds)
+            SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor)
         {
             Log_External = logDelegate;
             m_sipDialogueManager = sipDialogueManager;
+            m_sipDialoguePersistor = sipDialoguePersistor;
         }
 
         public void Start()
@@ -96,18 +100,21 @@ namespace SIPSorcery.Servers
             {
                 Thread.CurrentThread.Name = RTCC_THREAD_NAME;
 
+                logger.Debug("RTCC Core Starting Monitor CDRs thread.");
+
                 while (!m_exit)
                 {
-                    try
+                    using (var db = new SIPSorceryEntities())
                     {
-                        using (var db = new SIPSorceryEntities())
+                        try
                         {
-                            DateTimeOffset reservationDue = DateTimeOffset.UtcNow.AddSeconds(-1 * m_reserveDueSeconds); 
+                            // Try and reserve credit on in progress calls.
+                            DateTime reservationDue = DateTime.Now.AddSeconds(m_reserveDueSeconds);
 
                             var cdrsReservationDue = (from cdr in db.CDRs
-                                                      where cdr.AccountCode != null && cdr.HungupTime == null && cdr.AnsweredDate != null &&
-                                                            cdr.AnsweredDate.Value >= reservationDue
-                                                      orderby cdr.AnsweredDate
+                                                      where cdr.AccountCode != null && cdr.HungupTime == null && cdr.AnsweredAt != null && cdr.SecondsReserved != null && cdr.SecondsReserved > 0 &&
+                                                            cdr.AnsweredStatus >= 200 && cdr.AnsweredStatus <= 299 && EntityFunctions.AddSeconds(cdr.AnsweredAt, cdr.SecondsReserved) <= reservationDue && cdr.ReservationError == null
+                                                      orderby cdr.AnsweredAt
                                                       select cdr).Take(NUMBER_CDRS_PER_ROUNDTRIP);
 
                             while (cdrsReservationDue.Count() > 0)
@@ -117,36 +124,80 @@ namespace SIPSorcery.Servers
                                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.DialPlan, "Reserving credit for call " + cdr.Dst + ".", cdr.Owner));
 
                                     // Attempt to re-reserve the next chunk of credit for the call.
-                                    if (!m_customerAccountDataLayer.ReserveCredit(m_reservationAmountSeconds, cdr.ID))
+                                    m_customerAccountDataLayer.ReserveCredit(m_reservationAmountSeconds, cdr.ID);
+                                }
+                            }
+                        }
+                        //catch (ReflectionTypeLoadException ex)
+                        //{
+                        //    StringBuilder sb = new StringBuilder();
+                        //    foreach (Exception exSub in ex.LoaderExceptions)
+                        //    {
+                        //        sb.AppendLine(exSub.Message);
+                        //        if (exSub is FileNotFoundException)
+                        //        {
+                        //            FileNotFoundException exFileNotFound = exSub as FileNotFoundException;
+                        //            if (!string.IsNullOrEmpty(exFileNotFound.FusionLog))
+                        //            {
+                        //                sb.AppendLine("Fusion Log:");
+                        //                sb.AppendLine(exFileNotFound.FusionLog);
+                        //            }
+                        //        }
+                        //        sb.AppendLine();
+                        //    }
+                        //    string errorMessage = sb.ToString();
+                        //    logger.Error(errorMessage);
+                        //}
+                        catch (Exception monitorExcp)
+                        {
+                            logger.Error("Exception MonitorCDRs Credit Reservation. " + monitorExcp);
+                            logger.Error("InnerException MonitorCDRs Credit Reservation. " + monitorExcp.InnerException);
+                        }
+
+                        try
+                        {
+                            // Terminate any calls that have reached their time limit.
+                            DateTime now = DateTime.Now;
+                            var cdrsTerminationDue = (from cdr in db.CDRs
+                                                      where !cdr.IsHangingUp && cdr.AccountCode != null && cdr.HungupTime == null && cdr.AnsweredAt != null && cdr.SecondsReserved != null &&
+                                                              cdr.AnsweredStatus >= 200 && cdr.AnsweredStatus <= 299 && EntityFunctions.AddSeconds(cdr.AnsweredAt, cdr.SecondsReserved) <= now && !cdr.IsHangingUp
+                                                      orderby cdr.AnsweredAt
+                                                      select cdr).Take(NUMBER_CDRS_PER_ROUNDTRIP);
+
+                            while (cdrsTerminationDue.Count() > 0)
+                            {
+                                foreach (CDR cdr in cdrsTerminationDue)
+                                {
+                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.DialPlan, "Terminating call due to reservation limit being reached " + cdr.Dst + ".", cdr.Owner));
+
+                                    m_customerAccountDataLayer.SetCDRIsHangingUp(cdr.ID);
+
+                                    var dialogue = m_sipDialoguePersistor.Get(x => x.CDRId == cdr.ID, null, 0, 1).FirstOrDefault();
+                                    if (dialogue != null)
                                     {
-                                        // If the credit reservation fails then hangup the call.
-                                        var dialogue = m_sipDialoguePersistor.Get(x => x.CDRId == cdr.ID, null, 0, 1).FirstOrDefault();
-                                        if (dialogue != null)
-                                        {
-                                            m_sipDialogueManager.CallHungup(dialogue.SIPDialogue, "No credit", true);
-                                        }
-                                        else
-                                        {
-                                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.Warn, "A dialogue could not be found when terminating a call due to no credit.", cdr.Owner));
-                                        }
+                                        m_sipDialogueManager.CallHungup(dialogue.SIPDialogue, "RTCC time limit reached", true);
+                                    }
+                                    else
+                                    {
+                                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.Warn, "A dialogue could not be found when terminating a call due to reservation limit being reached.", cdr.Owner));
                                     }
                                 }
                             }
                         }
-                    }
-                    catch (Exception monitorExcp)
-                    {
-                        logger.Error("Exception MonitorCDRs Monitoring. " + monitorExcp.Message);
+                        catch (Exception monitorExcp)
+                        {
+                            logger.Error("Exception RTCCCore MonitorCDRs Call Termination. " + monitorExcp.Message);
+                        }
                     }
 
                     Thread.Sleep(1000);
                 }
 
-                logger.Warn("SIPCallManger MonitorCDRs thread stopping.");
+                logger.Warn("RTCCCore MonitorCDRs thread stopping.");
             }
             catch (Exception excp)
             {
-                logger.Error("Exception MonitorCDRs. " + excp.Message);
+                logger.Error("Exception RTCCCore MonitorCDRs. " + excp.Message);
             }
         }
 
@@ -159,6 +210,8 @@ namespace SIPSorcery.Servers
             {
                 Thread.CurrentThread.Name = RTCC_THREAD_NAME;
 
+                logger.Debug("RTCC Core Starting Reconcile CDRs thread.");
+
                 while (!m_exit)
                 {
                     try
@@ -166,9 +219,10 @@ namespace SIPSorcery.Servers
                         using (var db = new SIPSorceryEntities())
                         {
                             var cdrsReconciliationDue = (from cdr in db.CDRs
-                                                      where cdr.AccountCode != null && cdr.HungupTime != null
-                                                      orderby cdr.HungupTime
-                                                      select cdr).Take(NUMBER_CDRS_PER_ROUNDTRIP);
+                                                         where cdr.AccountCode != null && (cdr.AnsweredStatus < 200 || cdr.AnsweredStatus >= 300 || cdr.HungupTime != null) && cdr.ReconciliationResult == null
+                                                             && cdr.Cost > 0
+                                                         orderby cdr.HungupTime
+                                                         select cdr).Take(NUMBER_CDRS_PER_ROUNDTRIP);
 
                             while (cdrsReconciliationDue.Count() > 0)
                             {
@@ -180,19 +234,40 @@ namespace SIPSorcery.Servers
                             }
                         }
                     }
+                    //catch (ReflectionTypeLoadException ex)
+                    //{
+                    //    StringBuilder sb = new StringBuilder();
+                    //    foreach (Exception exSub in ex.LoaderExceptions)
+                    //    {
+                    //        sb.AppendLine(exSub.Message);
+                    //        if (exSub is FileNotFoundException)
+                    //        {
+                    //            FileNotFoundException exFileNotFound = exSub as FileNotFoundException;
+                    //            if (!string.IsNullOrEmpty(exFileNotFound.FusionLog))
+                    //            {
+                    //                sb.AppendLine("Fusion Log:");
+                    //                sb.AppendLine(exFileNotFound.FusionLog);
+                    //            }
+                    //        }
+                    //        sb.AppendLine();
+                    //    }
+                    //    string errorMessage = sb.ToString();
+                    //    logger.Error(errorMessage);
+                    //}
                     catch (Exception monitorExcp)
                     {
-                        logger.Error("Exception ReconcileCDRs Monitoring. " + monitorExcp.Message);
+                        logger.Error("Exception ReconcileCDRs Monitoring. " + monitorExcp);
                     }
 
                     Thread.Sleep(1000);
                 }
 
-                logger.Warn("SIPCallManger ReconcileCDRs thread stopping.");
+                logger.Warn("RTCCCore ReconcileCDRs thread stopping.");
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ReconcileCDRs. " + excp.Message);
+                logger.Error("Exception RTCCCore ReconcileCDRs. " + excp.Message);
+                logger.Error("InnerException RTCCCore ReconcileCDRs. " + excp.InnerException);
             }
         }
     }

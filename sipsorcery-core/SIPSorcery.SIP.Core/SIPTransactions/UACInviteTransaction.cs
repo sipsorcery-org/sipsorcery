@@ -274,7 +274,7 @@ namespace SIPSorcery.SIP
             return ackRequest;
         }
 
-        public void CancelCall()
+        public void CancelCall(string cancelReason = null)
         {
             try
             {
@@ -282,7 +282,7 @@ namespace SIPSorcery.SIP
 
                 if (CDR != null)
                 {
-                    CDR.Cancelled();
+                    CDR.Cancelled(cancelReason);
                 }
             }
             catch (Exception excp)

@@ -46,6 +46,12 @@ namespace SIPSorcery.SIP.App {
         SIPCallDescriptor CallDescriptor { get; }
         bool IsUACAnswered { get; }
 
+        // Real-time call control properties.
+        //string AccountCode { get; set; }
+        //decimal ReservedCredit { get; set; }
+        //int ReservedSeconds { get; set; }
+        //decimal Rate { get; set; }
+
         event SIPCallResponseDelegate CallTrying;
         event SIPCallResponseDelegate CallRinging;
         event SIPCallResponseDelegate CallAnswered;

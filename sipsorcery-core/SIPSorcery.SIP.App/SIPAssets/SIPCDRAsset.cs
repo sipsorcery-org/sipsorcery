@@ -277,6 +277,62 @@ namespace SIPSorcery.SIP.App {
             set { m_sipCDR.HangupReason = value; }
         }
 
+        [Column(Name = "accountcode", DbType = "varchar(36)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public string AccountCode
+        {
+            get { return m_sipCDR.AccountCode; }
+            set { m_sipCDR.AccountCode = value; }
+        }
+
+        [Column(Name = "secondsreserved", DbType = "int", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public int SecondsReserved
+        {
+            get { return m_sipCDR.SecondsReserved; }
+            set { m_sipCDR.SecondsReserved = value; }
+        }
+
+        [Column(Name = "cost", DbType = "decimal", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public decimal Cost
+        {
+            get { return m_sipCDR.Cost; }
+            set { m_sipCDR.Cost = value; }
+        }
+
+        [Column(Name = "rate", DbType = "decimal", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public decimal Rate
+        {
+            get { return m_sipCDR.Rate; }
+            set { m_sipCDR.Rate = value; }
+        }
+       
+        [Column(Name = "answeredat", DbType = "datetime", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public DateTime? AnsweredAt
+        {
+            get { return m_sipCDR.AnsweredAt; }
+            set { m_sipCDR.AnsweredAt = value; }
+        }
+
+        [Column(Name = "reconciliationresult", DbType = "varchar(36)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public string ReconciliationResult
+        {
+            get { return m_sipCDR.ReconciliationResult; }
+            set { m_sipCDR.ReconciliationResult = value; }
+        }
+
+        [Column(Name = "ishangingup", DbType = "bit", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public bool IsHangingUp
+        {
+            get { return m_sipCDR.IsHangingUp; }
+            set { m_sipCDR.IsHangingUp = value; }
+        }
+
         public SIPCDRAsset() {
             Inserted = DateTimeOffset.UtcNow;
             m_sipCDR = new SIPCDR();
@@ -321,6 +377,13 @@ namespace SIPSorcery.SIP.App {
             table.Columns.Add(new DataColumn("hungupreason", typeof(String)));
             table.Columns.Add(new DataColumn("ringduration", typeof(Int32)));
             table.Columns.Add(new DataColumn("duration", typeof(Int32)));
+            table.Columns.Add(new DataColumn("accountcode", typeof(String)));
+            table.Columns.Add(new DataColumn("secondsreserved", typeof(Int32)));
+            table.Columns.Add(new DataColumn("cost", typeof(Decimal)));
+            table.Columns.Add(new DataColumn("rate", typeof(Decimal)));
+            table.Columns.Add(new DataColumn("answeredat", typeof(DateTime)));
+            table.Columns.Add(new DataColumn("reconciliationresult", typeof(String)));
+            table.Columns.Add(new DataColumn("ishangingup", typeof(Boolean)));
             return table;
         }
 
@@ -367,6 +430,16 @@ namespace SIPSorcery.SIP.App {
             m_sipCDR.InProgress = (m_sipCDR.ProgressTime != null);
             m_sipCDR.IsAnswered = (m_sipCDR.AnswerTime != null);
             m_sipCDR.IsHungup = (m_sipCDR.HangupTime != null);
+            m_sipCDR.AccountCode = cdrRow["accountcode"] as string;
+            m_sipCDR.SecondsReserved = (cdrRow["secondsreserved"] != null) ? Convert.ToInt32(cdrRow["secondsreserved"]) : 0;
+            m_sipCDR.Rate = (cdrRow["rate"] != null) ? Convert.ToDecimal(cdrRow["rate"]) : Decimal.Zero;
+            m_sipCDR.Cost = (cdrRow["cost"] != null) ? Convert.ToDecimal(cdrRow["cost"]) : Decimal.Zero;
+            if (cdrRow["answeredat"] != DBNull.Value && cdrRow["answeredat"] != null)
+            {
+                AnsweredAt = (DateTime)cdrRow["answeredat"];
+            }
+            m_sipCDR.ReconciliationResult = cdrRow["reconciliationresult"] as string;
+            m_sipCDR.IsHangingUp = (cdrRow.Table.Columns.Contains("ishangingup") && cdrRow["ishangingup"] != null && cdrRow["ishangingup"] != DBNull.Value) ? Convert.ToBoolean(cdrRow["ishangingup"]) : false;
         }
 
         public Dictionary<Guid, object> Load(XmlDocument dom) {

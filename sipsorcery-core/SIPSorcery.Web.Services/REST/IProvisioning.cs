@@ -92,11 +92,11 @@ namespace SIPSorcery.Web.Services
 
         [OperationContract]
         [WebGet(UriTemplate = "sipaccountbinding/count?where={where}", ResponseFormat = WebMessageFormat.Json)]
-        int GetSIPAccountBindingsCount(string where);
+        JSONResult<int> GetSIPAccountBindingsCount(string where);
 
         [OperationContract]
         [WebGet(UriTemplate = "sipaccountbinding/get?where={where}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
-        List<SIPRegistrarBinding> GetSIPAccountBindings(string where, int offset, int count);
+        JSONResult<List<SIPRegistrarBindingJSON>> GetSIPAccountBindings(string where, int offset, int count);
 
         [OperationContract]
         [WebGet(UriTemplate = "sipprovider/count?where={where}", ResponseFormat = WebMessageFormat.Json)]
@@ -117,14 +117,14 @@ namespace SIPSorcery.Web.Services
         [OperationContract]
         [WebGet(UriTemplate = "sipprovider/delete?id={id}", ResponseFormat = WebMessageFormat.Json)]
         JSONResult<bool> DeleteSIPProvider(string id);
-
+        
         [OperationContract]
         [WebGet(UriTemplate = "sipproviderbinding/count?where={where}", ResponseFormat = WebMessageFormat.Json)]
-        int GetSIPProviderBindingsCount(string where);
+        JSONResult<int> GetSIPProviderBindingsCount(string where);
 
         [OperationContract]
         [WebGet(UriTemplate = "sipproviderbinding/get?where={where}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
-        List<SIPProviderBinding> GetSIPProviderBindings(string where, int offset, int count);
+        JSONResult<List<SIPProviderBindingJSON>> GetSIPProviderBindings(string where, int offset, int count);
 
         [OperationContract]
         [WebGet(UriTemplate = "dialplan/count?where={where}", ResponseFormat = WebMessageFormat.Json)]
@@ -144,10 +144,10 @@ namespace SIPSorcery.Web.Services
 
         [OperationContract]
         [WebGet(UriTemplate = "cdr/count?where={where}", ResponseFormat = WebMessageFormat.Json)]
-        int GetCDRsCount(string where);
+        JSONResult<int> GetCDRsCount(string where);
 
         [OperationContract]
         [WebGet(UriTemplate = "cdr/get?where={where}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
-        List<CDR> GetCDRs(string where, int offset, int count);
+        JSONResult<List<CDRJSON>> GetCDRs(string where, int offset, int count);
     }
 }

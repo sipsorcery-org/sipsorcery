@@ -110,6 +110,8 @@ namespace SIPSorcery.SIP.App
         public const string FROM_HOST_KEY = "fh";               // Dial string option to customise the From header SIP URI Host on the call request.
         public const string TRANSFER_MODE_OPTION_KEY = "tr";    // Dial string option to dictate how REFER (transfer) requests will be handled.
         public const string REQUEST_CALLER_DETAILS = "rcd";     // Dial string option to indicate the client agent would like any caller details if/when available.
+        public const string ACCOUNT_CODE_KEY = "ac";            // Dial string option which indicates that the call leg is billable and the account code it should be billed against.
+        public const string RATE_CODE_KEY = "rc";               // Dial string option which indicates the rate code a billable call leg should use. If no rate code is specified then the rate will be looked up based on the call destination.
 
         // Switchboard dial string options.
         public const string SWITCHBOARD_LINE_NAME_KEY = "swln";             // Dial string option to set the Switchboard-LineName header on the call leg.
@@ -147,6 +149,10 @@ namespace SIPSorcery.SIP.App
 
         // Custom headers for sipsorcery switchboard application.
         public SwitchboardHeaders SwitchboardHeaders = new SwitchboardHeaders();
+
+        // Real-time call control variables.
+        public string AccountCode;          // If set indicates this is a billable call and this is the account code to bill the call against.
+        public string RateCode;             // If set indicates and the call is billable indicates the rate code that should be used to determine the rate for the call.
 
         public CRMHeaders CRMHeaders;
 
@@ -418,6 +424,20 @@ namespace SIPSorcery.SIP.App
                 if (callerDetailsMatch.Success)
                 {
                     Boolean.TryParse(callerDetailsMatch.Result("${callerdetails}"), out RequestCallerDetails);
+                }
+
+                // Parse the accountcode.
+                Match accountCodeMatch = Regex.Match(options, ACCOUNT_CODE_KEY + @"=(?<accountCode>\w+)");
+                if (accountCodeMatch.Success)
+                {
+                    AccountCode = accountCodeMatch.Result("${accountCode}");
+                }
+
+                // Parse the rate code.
+                Match rateCodeMatch = Regex.Match(options, RATE_CODE_KEY + @"=(?<rateCode>\w+)");
+                if (rateCodeMatch.Success)
+                {
+                    RateCode = rateCodeMatch.Result("${rateCode}");
                 }
             }
         }

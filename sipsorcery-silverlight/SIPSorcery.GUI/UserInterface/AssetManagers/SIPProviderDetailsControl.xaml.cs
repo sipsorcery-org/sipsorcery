@@ -108,14 +108,15 @@ namespace SIPSorcery
 
                 //if (!m_disableProviderRegistrations)
                 //{
-                    m_providerRegister.IsChecked = sipProvider.RegisterEnabled;
-                    m_providerRegisterContact.Text = (sipProvider.RegisterContact != null) ? sipProvider.RegisterContact.ToString() : String.Empty;
-                    m_providerRegisterExpiry.Text = sipProvider.RegisterExpiry.ToString();
-                    m_providerRegisterServer.Text = (sipProvider.RegisterServer != null) ? sipProvider.RegisterServer.ToString() : String.Empty;
+                m_providerRegister.IsChecked = sipProvider.RegisterEnabled;
+                m_providerSendMWISubscribe.IsChecked = sipProvider.SendMWISubscribe;
+                m_providerRegisterContact.Text = (sipProvider.RegisterContact != null) ? sipProvider.RegisterContact.ToString() : String.Empty;
+                m_providerRegisterExpiry.Text = sipProvider.RegisterExpiry.ToString();
+                m_providerRegisterServer.Text = (sipProvider.RegisterServer != null) ? sipProvider.RegisterServer.ToString() : String.Empty;
 
-                    m_providerRegisterContact.IsEnabled = m_providerRegister.IsChecked.Value;
-                    m_providerRegisterExpiry.IsEnabled = m_providerRegister.IsChecked.Value;
-                    m_providerRegisterServer.IsEnabled = m_providerRegister.IsChecked.Value;
+                m_providerRegisterContact.IsEnabled = m_providerRegister.IsChecked.Value;
+                m_providerRegisterExpiry.IsEnabled = m_providerRegister.IsChecked.Value;
+                m_providerRegisterServer.IsEnabled = m_providerRegister.IsChecked.Value;
                 //}
 
                 if (sipProvider.CustomHeaders != null && sipProvider.CustomHeaders.Trim().Length > 0)
@@ -182,6 +183,7 @@ namespace SIPSorcery
                 {
                     SIPURI providerServer = (!m_providerServer.Text.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(m_providerServer.Text.Trim()) : null;
                     bool registerEnabled = m_providerRegister.IsChecked.Value;
+                    bool sendMWISubscribe = m_providerSendMWISubscribe.IsChecked.Value;
                     SIPURI registerContact = (!m_providerRegisterContact.Text.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(m_providerRegisterContact.Text.Trim()) : null;
                     string authUsername = m_providerAuthUsername.Text.Trim();
                     string providerFrom = m_providerFromHeader.Text.Trim();
@@ -218,6 +220,7 @@ namespace SIPSorcery
                         ProviderAuthUsername = authUsername,
                         RegisterRealm = registerRealm,
                         RegisterEnabled = registerEnabled,
+                        SendMWISubscribe = sendMWISubscribe,
                         RegisterAdminEnabled = true,
                         Inserted = DateTime.Now.ToString("o"),
                         LastUpdate = DateTime.Now.ToString("o")
@@ -273,12 +276,13 @@ namespace SIPSorcery
                 m_sipProvider.ProviderPassword = m_providerPassword.Text;
                 m_sipProvider.ProviderServer = (!m_providerServer.Text.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(m_providerServer.Text.Trim()).ToString() : null;
                 m_sipProvider.RegisterEnabled = m_providerRegister.IsChecked.Value;
+                m_sipProvider.SendMWISubscribe = m_providerSendMWISubscribe.IsChecked.Value;
                 m_sipProvider.RegisterContact = (!m_providerRegisterContact.Text.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(m_providerRegisterContact.Text.Trim()).ToString() : null;
                 m_sipProvider.ProviderAuthUsername = m_providerAuthUsername.Text;
                 m_sipProvider.ProviderFrom = m_providerFromHeader.Text;
                 m_sipProvider.RegisterRealm = m_providerRegisterRealm.Text;
                 m_sipProvider.RegisterServer = (!m_providerRegisterServer.Text.IsNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(m_providerRegisterServer.Text.Trim()).ToString() : null;
-                
+
                 int registerExpiry = m_defaultRegisterExpiry;
                 if (Int32.TryParse(m_providerRegisterExpiry.Text, out registerExpiry))
                 {
@@ -358,19 +362,19 @@ namespace SIPSorcery
         {
             //if (!m_disableProviderRegistrations)
             //{
-                m_providerRegisterContact.IsEnabled = true;
-                m_providerRegisterExpiry.IsEnabled = true;
-                m_providerRegisterServer.IsEnabled = true;
+            m_providerRegisterContact.IsEnabled = true;
+            m_providerRegisterExpiry.IsEnabled = true;
+            m_providerRegisterServer.IsEnabled = true;
 
-                if (m_providerRegisterExpiry.Text.Trim().Length == 0)
-                {
-                    m_providerRegisterExpiry.Text = m_defaultRegisterExpiry.ToString();
-                }
+            if (m_providerRegisterExpiry.Text.Trim().Length == 0)
+            {
+                m_providerRegisterExpiry.Text = m_defaultRegisterExpiry.ToString();
+            }
 
-                if (m_providerRegisterContact.Text.Trim().Length == 0)
-                {
-                    m_providerRegisterContact.Text = m_owner + "@" + m_defaultContactHost;
-                }
+            if (m_providerRegisterContact.Text.Trim().Length == 0)
+            {
+                m_providerRegisterContact.Text = m_owner + "@" + m_defaultContactHost;
+            }
             //}
         }
 

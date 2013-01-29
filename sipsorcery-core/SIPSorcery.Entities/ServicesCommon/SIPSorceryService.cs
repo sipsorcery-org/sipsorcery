@@ -20,7 +20,7 @@ namespace SIPSorcery.Entities
         private const string NEW_ACCOUNT_EMAIL_SUBJECT = "SIP Sorcery Account Confirmation";
         private const int PROVIDER_COUNT_FREE_SERVICE = 1;  // The number of SIP Providers allowed on free accounts.
         private const int DIALPLAN_COUNT_FREE_SERVICE = 1;  // The number of dial plans allowed on free accounts.
-        private const int DEFAULT_COMMAND_TIMEOUT = 90;     // The MySQL command timeout in seconds.
+        private const int DEFAULT_COMMAND_TIMEOUT = 180;     // The MySQL command timeout in seconds.
 
         private static string m_disabledProviderServerPattern = AppState.GetConfigSetting("DisabledProviderServersPattern");                    // Provider server fields that need to be completely disallowed.
         private static string m_disabledRegisterProviderServerPattern = AppState.GetConfigSetting("DisabledRegisterProviderServersPattern");    // Provider server fields that need to be prevented from registering.
@@ -37,9 +37,12 @@ namespace SIPSorcery.Entities
 
         private static ILog logger = AppState.logger;
 
+        internal CustomerAccountDataLayer _customerAccountDataLayer = new CustomerAccountDataLayer();
+        internal RateDataLayer _rateDataLayer = new RateDataLayer();
+
         static SIPSorceryService()
         {
-            // Prevent users from creaing loopback or other crazy providers.
+            // Prevent users from creating loopback or other crazy providers.
             if (!m_disabledProviderServerPattern.IsNullOrBlank())
             {
                 SIPProvider.ProhibitedServerPatterns = m_disabledProviderServerPattern;
@@ -320,6 +323,34 @@ namespace SIPSorcery.Entities
             }
         }
 
+        public void CustomerResetAPIKey(string authUser, string customerUsername)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for CustomerResetAPIKey.");
+            }
+            else if (authUser.ToLower() != customerUsername.ToLower())
+            {
+                throw new ArgumentException("You are not authorised to reset the API key for " + customerUsername + ".");
+            }
+
+            using (var db = new SIPSorceryEntities())
+            {
+                var existingCustomer = (from cust in db.Customers where cust.Name.ToLower() == customerUsername.ToLower() select cust).Single();
+
+                if (existingCustomer == null)
+                {
+                    throw new ApplicationException("The customer record to reset the API key for could not be found.");
+                }
+                else
+                {
+                    existingCustomer.APIKey = Crypto.GetRandomByteString(Customer.API_KEY_LENGTH / 2);
+
+                    db.SaveChanges();
+                }
+            }
+        }
+
         #endregion
 
         #region SIP Accounts.
@@ -433,6 +464,7 @@ namespace SIPSorcery.Entities
                 }
                 else if (existingAccount.Owner != authUser.ToLower())
                 {
+                    logger.Warn("User " + authUser + " was not authorised to update SIP account " + existingAccount.SIPUsername + " belonging to " + existingAccount.Owner + ".");
                     throw new ApplicationException("Not authorised to update the SIP Account.");
                 }
 
@@ -507,14 +539,56 @@ namespace SIPSorcery.Entities
             }
         }
 
+        public int GetSIPRegistrarBindingsCount(string authUser, string where)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetSIPRegistrarBindingsCount.");
+            }
+
+            logger.Debug("GetSIPRegistrarBindingsCount for " + authUser + " and where=" + where + ".");
+
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from bind in entities.SIPRegistrarBindings where bind.Owner.ToLower() == authUser.ToLower() select bind);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<SIPRegistrarBinding, bool>(where));
+                }
+
+                return query.Count();
+            }
+        }
+
         public IQueryable<SIPRegistrarBinding> GetSIPRegistrarBindings(string authUser)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for SIPRegistrarBindings.");
+            }
+
+            return new SIPSorceryEntities().SIPRegistrarBindings.Where(x => x.Owner.ToLower() == authUser.ToLower());
+        }
+
+        public List<SIPRegistrarBinding> GetSIPRegistrarBindings(string authUser, string where, int offset, int count)
         {
             if (authUser.IsNullOrBlank())
             {
                 throw new ArgumentException("An authenticated user is required for GetSIPRegistrarBindings.");
             }
 
-            return new SIPSorceryEntities().SIPRegistrarBindings.Where(x => x.Owner == authUser.ToLower());
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from bind in entities.SIPRegistrarBindings where bind.Owner.ToLower() == authUser.ToLower() select bind);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<SIPRegistrarBinding, bool>(where));
+                }
+
+                return query.AsEnumerable().OrderBy(x => x.SIPAccountName).Skip(offset).Take(count).ToList();
+            }
         }
 
         #endregion
@@ -661,6 +735,7 @@ namespace SIPSorcery.Entities
                 existingAccount.RegisterRealm = sipProvider.RegisterRealm;
                 existingAccount.RegisterServer = sipProvider.RegisterServer;
                 existingAccount.RegisterDisabledReason = sipProvider.RegisterDisabledReason;
+                existingAccount.SendMWISubscribe = sipProvider.SendMWISubscribe;
 
                 if (existingAccount.RegisterEnabled)
                 {
@@ -719,6 +794,28 @@ namespace SIPSorcery.Entities
             }
         }
 
+        public int GetSIPProviderBindingsCount(string authUser, string where)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetSIPProviderBindingsCount.");
+            }
+
+            logger.Debug("GetSIPProviderBindingsCount for " + authUser + " and where=" + where + ".");
+
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from bind in entities.SIPProviderBindings where bind.Owner.ToLower() == authUser.ToLower() select bind);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<SIPProviderBinding, bool>(where));
+                }
+
+                return query.Count();
+            }
+        }
+
         public IQueryable<SIPProviderBinding> GetSIPProviderBindings(string authUser)
         {
             if (authUser.IsNullOrBlank())
@@ -727,6 +824,26 @@ namespace SIPSorcery.Entities
             }
 
             return new SIPSorceryEntities().SIPProviderBindings.Where(x => x.Owner.ToLower() == authUser.ToLower());
+        }
+
+        public List<SIPProviderBinding> GetSIPProviderBindings(string authUser, string where, int offset, int count)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetSIPProviderBindings.");
+            }
+
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from bind in entities.SIPProviderBindings where bind.Owner.ToLower() == authUser.ToLower() select bind);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<SIPProviderBinding, bool>(where));
+                }
+
+                return query.AsEnumerable().OrderBy(x => x.ProviderName).Skip(offset).Take(count).ToList();
+            }
         }
 
         /// <summary>
@@ -849,6 +966,7 @@ namespace SIPSorcery.Entities
                 }
                 else if (existingAccount.Owner != authUser.ToLower())
                 {
+                    logger.Warn("User " + authUser + " was not authorised to update dial plan " + existingAccount.DialPlanName + " belonging to " + existingAccount.Owner + ".");
                     throw new ApplicationException("Not authorised to update the SIP Dial Plan.");
                 }
                 else if (existingAccount.IsReadOnly)
@@ -1078,7 +1196,7 @@ namespace SIPSorcery.Entities
         {
             if (authUser.IsNullOrBlank())
             {
-                throw new ArgumentException("An authenticated user is required for GetWebCallbackss.");
+                throw new ArgumentException("An authenticated user is required for GetWebCallbacks.");
             }
 
             return new SIPSorceryEntities().WebCallbacks.Where(x => x.Owner == authUser.ToLower());
@@ -1096,7 +1214,7 @@ namespace SIPSorcery.Entities
                 webcallback.ID = Guid.NewGuid().ToString();
                 webcallback.Owner = authUser.ToLower();
                 webcallback.Inserted = DateTimeOffset.UtcNow.ToString("o");
-                
+
                 sipSorceryEntities.WebCallbacks.AddObject(webcallback);
                 sipSorceryEntities.SaveChanges();
             }
@@ -1148,6 +1266,118 @@ namespace SIPSorcery.Entities
                 }
 
                 sipSorceryEntities.WebCallbacks.DeleteObject(existingAccount);
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        #endregion
+
+        #region Customer Accounts
+
+        public IQueryable<CustomerAccount> GetCustomerAccounts(string authUser)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetCustomerAccounts.");
+            }
+
+            return new SIPSorceryEntities().CustomerAccounts.Where(x => x.Owner == authUser.ToLower());
+        } 
+
+        public void InsertCustomerAccount(string authUser, CustomerAccount customerAccount)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for InsertCustomerAccount.");
+            }
+
+            customerAccount.Owner = authUser;
+            _customerAccountDataLayer.Add(customerAccount);
+        }
+
+        public void UpdateCustomerAccount(string authUser, CustomerAccount customerAccount)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for UpdateCustomerAccount.");
+            }
+
+            customerAccount.Owner = authUser;
+            _customerAccountDataLayer.Update(customerAccount);
+        }
+
+        public void DeleteCustomerAccount(string authUser, CustomerAccount customerAccount)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                var existingAccount = (from ca in sipSorceryEntities.CustomerAccounts where ca.ID == customerAccount.ID && ca.Owner == authUser.ToLower() select ca).FirstOrDefault();
+
+                if (existingAccount == null)
+                {
+                    throw new ApplicationException("The customer account to delete could not be found.");
+                }
+                else if (existingAccount.Owner != authUser.ToLower())
+                {
+                    throw new ApplicationException("Not authorised to delete the customer account.");
+                }
+
+                sipSorceryEntities.CustomerAccounts.DeleteObject(existingAccount);
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        #endregion
+
+        #region Rates
+
+        public IQueryable<Rate> GetRates(string authUser)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetRates.");
+            }
+
+            return new SIPSorceryEntities().Rates.Where(x => x.Owner == authUser.ToLower());
+        }
+
+        public void InsertRate(string authUser, Rate rate)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for InsertRate.");
+            }
+
+            rate.Owner = authUser;
+            _rateDataLayer.Add(rate);
+        }
+
+        public void UpdateRate(string authUser, Rate rate)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for UpdateRate.");
+            }
+
+            rate.Owner = authUser;
+            _rateDataLayer.Update(rate);
+        }
+
+        public void DeleteRate(string authUser, Rate rate)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                var existingRate = (from ra in sipSorceryEntities.Rates where ra.ID == rate.ID && ra.Owner == authUser.ToLower() select ra).FirstOrDefault();
+
+                if (existingRate == null)
+                {
+                    throw new ApplicationException("The rate to delete could not be found.");
+                }
+                else if (existingRate.Owner != authUser.ToLower())
+                {
+                    throw new ApplicationException("Not authorised to delete the rate.");
+                }
+
+                sipSorceryEntities.Rates.DeleteObject(existingRate);
                 sipSorceryEntities.SaveChanges();
             }
         }

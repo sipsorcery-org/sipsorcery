@@ -281,14 +281,57 @@ namespace SIPSorcery.Web.Services
             }
         }
 
-        public int GetSIPAccountBindingsCount(string where)
+        public JSONResult<int> GetSIPAccountBindingsCount(string where)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                var result = m_service.GetSIPRegistrarBindingsCount(customer.Name, where);
+
+                return new JSONResult<int>() { Success = true, Result = result };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<int>() { Success = false, Error = excp.Message };
+            }
         }
 
-        public List<SIPRegistrarBinding> GetSIPAccountBindings(string where, int offset, int count)
+        public JSONResult<List<SIPRegistrarBindingJSON>> GetSIPAccountBindings(string where, int offset, int count)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                if (count <= 0)
+                {
+                    count = DEFAULT_COUNT;
+                }
+
+                var result = from binding in m_service.GetSIPRegistrarBindings(customer.Name, @where, offset, count)
+                             select
+                                 new SIPRegistrarBindingJSON()
+                                 {
+                                     ID = binding.ID,
+                                     SIPAccountID = binding.SIPAccountID,
+                                     SIPAccountName = binding.SIPAccountName,
+                                     UserAgent = binding.UserAgent,
+                                     ContactURI = binding.ContactURI,
+                                     MangledContactURI = binding.MangledContactURI,
+                                     Expiry = binding.Expiry,
+                                     RemoteSIPSocket = binding.RemoteSIPSocket,
+                                     ProxySIPSocket = binding.ProxySIPSocket,
+                                     RegistrarSIPSocket = binding.RegistrarSIPSocket,
+                                     LastUpdate = binding.LastUpdate,
+                                     ExpiryTime = binding.ExpiryTime
+                                 };
+
+                return new JSONResult<List<SIPRegistrarBindingJSON>>() { Success = true, Result = result.ToList() };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<List<SIPRegistrarBindingJSON>>() { Success = false, Error = excp.Message };
+            }
         }
 
         /// <summary>
@@ -407,14 +450,56 @@ namespace SIPSorcery.Web.Services
             }
         }
 
-        public int GetSIPProviderBindingsCount(string where)
+        public JSONResult<int> GetSIPProviderBindingsCount(string where)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                var count = m_service.GetSIPProviderBindingsCount(customer.Name, where);
+
+                return new JSONResult<int>() { Success = true, Result = count };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<int>() { Success = false, Error = excp.Message };
+            }
         }
 
-        public List<SIPProviderBinding> GetSIPProviderBindings(string where, int offset, int count)
+        public JSONResult<List<SIPProviderBindingJSON>> GetSIPProviderBindings(string where, int offset, int count)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                if (count <= 0)
+                {
+                    count = DEFAULT_COUNT;
+                }
+
+                var result = from binding in m_service.GetSIPProviderBindings(customer.Name, @where, offset, count)
+                             select new SIPProviderBindingJSON()
+                             {
+                                 ID = binding.ID,
+                                 ProviderID = binding.ProviderID,
+                                 ProviderName = binding.ProviderName,
+                                 RegistrationFailureMessage = binding.RegistrationFailureMessage,
+                                 LastRegisterTime = binding.LastRegisterTimeLocal,
+                                 LastRegisterAttempt = binding.LastRegisterAttemptLocal,
+                                 NextRegistrationTime = binding.NextRegistrationTimeLocal,
+                                 IsRegistered = binding.IsRegistered,
+                                 BindingExpiry = binding.BindingExpiry,
+                                 BindingURI = binding.BindingURI,
+                                 RegistrarSIPSocket = binding.RegistrarSIPSocket,
+                                 CSeq = binding.CSeq
+                             };
+
+                return new JSONResult<List<SIPProviderBindingJSON>>() { Success = true, Result = result.ToList() };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<List<SIPProviderBindingJSON>>() { Success = false, Error = excp.Message };
+            }
         }
 
         public int GetDialPlansCount(string where)
@@ -437,14 +522,68 @@ namespace SIPSorcery.Web.Services
             throw new NotImplementedException();
         }
 
-        public int GetCDRsCount(string where)
+        public JSONResult<int> GetCDRsCount(string where)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                var result = m_service.GetCDRCount(customer.Name, where);
+
+                return new JSONResult<int>() { Success = true, Result = result };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<int>() { Success = false, Error = excp.Message };
+            }
         }
 
-        public List<CDR> GetCDRs(string where, int offset, int count)
+        public JSONResult<List<CDRJSON>> GetCDRs(string where, int offset, int count)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                if (count <= 0)
+                {
+                    count = DEFAULT_COUNT;
+                }
+
+                var result = m_service.GetCDRs(customer.Name, @where, offset, count).Select(x =>
+                    new CDRJSON()
+                    {
+                        ID = x.ID,
+                        Inserted = x.Inserted,
+                        CallDirection = x.Direction,
+                        Created = x.Created,
+                        Dst = x.Dst,
+                        DstHost = x.DstHost,
+                        DstURI = x.DstURI,
+                        FromUser = x.FromUser,
+                        FromName = x.FromName,
+                        FromHeader = x.FromHeader,
+                        CallId = x.CallID,
+                        LocalSocket = x.LocalSocket,
+                        RemoteSocket = x.RemoteSocket,
+                        BridgeId = x.BridgeID,
+                        InProgressTime = x.InProgressTime,
+                        InProgressStatus = x.InProgressStatus,
+                        InProgressReason = x.InProgressReason,
+                        RingDuration = x.RingDuration,
+                        AnsweredTime = x.AnsweredTime,
+                        AnsweredStatus = x.AnsweredStatus,
+                        AnsweredReason = x.AnsweredReason,
+                        Duration = x.Duration,
+                        HungupTime = x.HungupTime,
+                        HungupReason = x.HungupReason
+                    });
+
+                return new JSONResult<List<CDRJSON>>() { Success = true, Result = result.ToList() };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<List<CDRJSON>>() { Success = false, Error = excp.Message };
+            }
         }
     }
 }

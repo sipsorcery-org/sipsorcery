@@ -30,9 +30,11 @@ namespace SIPSorcery.Sys
         public const int DEFAULT_RANDOM_LENGTH = 10;    // Number of digits to return for default random numbers.
         public const int AES_KEY_SIZE = 32;
         public const int AES_IV_SIZE = 16;
+        private const string CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
         private static ILog logger = AppState.logger;
 
+        private static Random _rng = new Random();
         private static RNGCryptoServiceProvider m_randomProvider = new RNGCryptoServiceProvider();
 
 #if !SILVERLIGHT
@@ -176,9 +178,20 @@ namespace SIPSorcery.Sys
             return Encoding.UTF8.GetBytes(value);
         }
 
+        public static string GetRandomString(int length)
+        {
+            char[] buffer = new char[length];
+
+            for (int i = 0; i < length; i++)
+            {
+                buffer[i] = CHARS[_rng.Next(CHARS.Length)];
+            }
+            return new string(buffer);
+        }
+
         public static string GetRandomString()
         {
-            return GetRandomInt(DEFAULT_RANDOM_LENGTH).ToString();
+            return GetRandomString(DEFAULT_RANDOM_LENGTH);
         }
 
         /// <summary>
@@ -252,11 +265,11 @@ namespace SIPSorcery.Sys
             return BitConverter.ToUInt32(uint32Buffer, 0);
         }
 
-        public static string GetRandomString(int length)
-        {
-            string randomStr = GetRandomInt(length).ToString();
-            return (randomStr.Length > length) ? randomStr.Substring(0, length) : randomStr;
-        }
+        //public static string GetRandomString(int length)
+        //{
+        //    string randomStr = GetRandomInt(length).ToString();
+        //    return (randomStr.Length > length) ? randomStr.Substring(0, length) : randomStr;
+        //}
 
         public static byte[] createRandomSalt(int length)
         {

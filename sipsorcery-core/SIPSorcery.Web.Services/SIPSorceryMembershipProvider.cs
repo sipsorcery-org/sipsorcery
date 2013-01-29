@@ -67,7 +67,7 @@ namespace SIPSorcery.Web.Services
                                 var serviceLevel = (CustomerServiceLevels)Enum.Parse(typeof(CustomerServiceLevels), customer.ServiceLevel);
                                 throw new PaymentRequiredException(serviceLevel, "Your account requires payment before it can be activated. Please visit the payment page.");
                             }
-                            else if (customer.ServiceRenewalDate != null && DateTimeOffset.Parse(customer.ServiceRenewalDate) < DateTimeOffset.Now)
+                            else if (customer.ServiceRenewalDate != null && DateTimeOffset.Parse(customer.ServiceRenewalDate) < DateTimeOffset.Now.AddDays(-1))
                             {
                                 throw new PaymentRequiredException(CustomerServiceLevels.RenewalReqd, "Your account is overdue please login to the web site (non-Silverlight login) to renew.");
                             }

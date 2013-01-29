@@ -160,6 +160,27 @@ namespace SIPSorcery.SIP
         [DataMember]
         public Guid BridgeId { get; set; }                              // If the call formed part of a bridge this will be set to the bridge id.
 
+        [DataMember]
+        public string AccountCode { get; set; }
+
+        [DataMember]
+        public int SecondsReserved { get; set; }
+
+        [DataMember]
+        public decimal Cost { get; set; }
+
+        [DataMember]
+        public decimal Rate { get; set; }
+
+        [DataMember]
+        public string ReconciliationResult { get; set; }
+
+        [DataMember]
+        public bool IsHangingUp { get; set; }
+
+        [DataMember]
+        public DateTime? AnsweredAt { get; set; }
+
         public string CallId { get; set; }
         public SIPEndPoint LocalSIPEndPoint { get; set; }
         public SIPEndPoint RemoteEndPoint { get; set; }
@@ -216,6 +237,7 @@ namespace SIPSorcery.SIP
                 AnswerTime = DateTimeOffset.UtcNow;
                 AnswerStatus = (int)answerStatus;
                 AnswerReasonPhrase = answerReason;
+                AnsweredAt = DateTime.Now;
 
                 if (localEndPoint != null)
                 {
@@ -235,11 +257,11 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public void Cancelled()
+        public void Cancelled(string cancelReason = null)
         {
             try
             {
-                HangupReason = "Client cancelled";
+                HangupReason = (cancelReason != null) ? cancelReason : "Client cancelled";
                 CDRAnswered(this);
             }
             catch (Exception excp)

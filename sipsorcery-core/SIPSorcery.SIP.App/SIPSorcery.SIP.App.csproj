@@ -272,6 +272,10 @@
       <Project>{F951789F-1ABB-42E8-BB51-F028DC4824EF}</Project>
       <Name>SIPSorcery.CRM</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Entities\SIPSorcery.Entities.csproj">
+      <Project>{8EB4E07E-76C8-445A-8252-5B392A9C12FB}</Project>
+      <Name>SIPSorcery.Entities %28SIPSorcery.Entities\SIPSorcery.Entities%29</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">
       <Project>{55898587-8456-40D4-BB88-C9FC8BD6BA9C}</Project>
       <Name>SIPSorcery.Net</Name>

@@ -254,13 +254,14 @@ namespace SIPSorcery.SIP.App
         public SIPEndPoint LocalSIPEndPoint;                        // The SIP end point the registration agent sent the request from.
         public SIPEndPoint RegistrarSIPEndPoint;                    // The SIP end point of the remote SIP Registrar.
 
-        // Fields populated and re-populated by the SIPProvider entry whenever a registration is initiated or refereshed.
+        // Fields populated and re-populated by the SIPProvider entry whenever a registration is initiated or refreshed.
         // The details are persisted and used for authentication of previous register requests or to remove existing bindings.
         public SIPURI RegistrarServer;
         public string ProviderAuthUsername;
         public string ProviderPassword;
         public string RegistrarRealm;
         public string ProviderOutboundProxy;
+        public bool SendMWISubscribe;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -369,6 +370,7 @@ namespace SIPSorcery.SIP.App
             RegistrarServer = sipProvider.Registrar.CopyOf();
             RegistrarRealm = (!sipProvider.RegisterRealm.IsNullOrBlank()) ? sipProvider.RegisterRealm : RegistrarServer.Host;
             ProviderOutboundProxy = sipProvider.ProviderOutboundProxy;
+            SendMWISubscribe = sipProvider.SendMWISubscribe;
 
             if (sipProvider.RegisterEnabled) {
                 BindingExpiry = sipProvider.RegisterExpiry;

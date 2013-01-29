@@ -59,6 +59,12 @@ namespace SIPSorcery.AppServer.DialPlan
         public SIPCallDescriptor CallDescriptor { get; set; }
         public bool IsUACAnswered { get; set; }
 
+        // Real-time call control properties (not used by this user agent).
+        //public string AccountCode { get; set; }
+        //public decimal ReservedCredit { get; set; }
+        //public int ReservedSeconds { get; set; }
+        //public decimal Rate { get; set; }
+
         public event SIPCallResponseDelegate CallTrying;
         public event SIPCallResponseDelegate CallRinging;
         public event SIPCallResponseDelegate CallAnswered;
