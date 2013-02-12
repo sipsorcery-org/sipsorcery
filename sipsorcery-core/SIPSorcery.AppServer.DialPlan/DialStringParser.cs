@@ -323,7 +323,7 @@ namespace SIPSorcery.AppServer.DialPlan
                             // Determine whether the call forward is for a local domain or not.
                             //SIPURI callLegSIPURI = SIPURI.ParseSIPURIRelaxed(SubstituteRequestVars(sipRequest, callLegDestination));
                             SIPURI callLegSIPURI = SIPURI.ParseSIPURIRelaxed(callLegDestination);
-                            if (callLegSIPURI != null && callLegSIPURI.User == null)
+                            if (callLegSIPURI != null && callLegSIPURI.User == null && !callLegDestination.StartsWith("sip:") && !callLegDestination.StartsWith("sips:"))
                             {
                                 callLegSIPURI.User = sipRequest.URI.User;
                             }

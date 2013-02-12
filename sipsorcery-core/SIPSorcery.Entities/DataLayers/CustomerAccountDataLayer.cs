@@ -150,7 +150,7 @@ namespace SIPSorcery.Entities
 
                 if (customerAccount == null)
                 {
-                    return 0;
+                    return -1;
                 }
                 else
                 {

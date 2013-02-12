@@ -2251,16 +2251,6 @@ namespace SIPSorcery.AppServer.DialPlan
         }
 
         /// <summary>
-        /// Sets a property on the script context object that will be passed back for calls that have been initiated with the 
-        /// webcallback method of the callmanager web service.
-        /// </summary>
-        /// <param name="response">The response string to pass back to the callmanager web service.</param>
-        public void SetCallManagerResponse(string response)
-        {
-            m_dialPlanContext.WebCallResponse = response;
-        }
-
-        /// <summary>
         /// Used to authorise calls to privileged dialplan applications. For example sending an email requires that the dialplan has the "email" in
         /// its list of authorised apps.
         /// </summary>

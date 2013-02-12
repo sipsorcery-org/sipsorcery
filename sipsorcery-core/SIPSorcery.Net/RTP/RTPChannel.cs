@@ -28,8 +28,6 @@ namespace SIPSorcery.Net
         private IPEndPoint m_localEndPoint;
         private IPEndPoint m_remoteEndPoint;
 
-        private RTPHeader m_sendRTPHeader = new RTPHeader();
-
         public event Action<byte[], int> SampleReceived;
 
         public RTPChannel(IPEndPoint localEndPoint)
@@ -72,12 +70,13 @@ namespace SIPSorcery.Net
             }
             else
             {
-                m_sendRTPHeader.SequenceNumber++;
-                m_sendRTPHeader.Timestamp += samplePeriod;
+                RTPHeader sendRTPHeader = new RTPHeader();
+                sendRTPHeader.SequenceNumber++;
+                sendRTPHeader.Timestamp += samplePeriod;
 
                 RTPPacket rtpPacket = new RTPPacket()
                 {
-                    Header = m_sendRTPHeader,
+                    Header = sendRTPHeader,
                     Payload = buffer
                 };
 

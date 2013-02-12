@@ -8466,6 +8466,66 @@ namespace SIPSorcery.Entities.Services
         }
         
         /// <summary>
+        /// Asynchronously invokes the 'ChangeSIPDialplanName' method of the DomainService.
+        /// </summary>
+        /// <param name="sipDialplanID">The value for the 'sipDialplanID' parameter of this action.</param>
+        /// <param name="name">The value for the 'name' parameter of this action.</param>
+        /// <param name="callback">Callback to invoke when the operation completes.</param>
+        /// <param name="userState">Value to pass to the callback.  It can be <c>null</c>.</param>
+        /// <returns>An operation instance that can be used to manage the asynchronous request.</returns>
+        public InvokeOperation ChangeSIPDialplanName(string sipDialplanID, string name, Action<InvokeOperation> callback, object userState)
+        {
+            Dictionary<string, object> parameters = new Dictionary<string, object>();
+            parameters.Add("sipDialplanID", sipDialplanID);
+            parameters.Add("name", name);
+            this.ValidateMethod("ChangeSIPDialplanName", parameters);
+            return this.InvokeOperation("ChangeSIPDialplanName", typeof(void), parameters, true, callback, userState);
+        }
+        
+        /// <summary>
+        /// Asynchronously invokes the 'ChangeSIPDialplanName' method of the DomainService.
+        /// </summary>
+        /// <param name="sipDialplanID">The value for the 'sipDialplanID' parameter of this action.</param>
+        /// <param name="name">The value for the 'name' parameter of this action.</param>
+        /// <returns>An operation instance that can be used to manage the asynchronous request.</returns>
+        public InvokeOperation ChangeSIPDialplanName(string sipDialplanID, string name)
+        {
+            Dictionary<string, object> parameters = new Dictionary<string, object>();
+            parameters.Add("sipDialplanID", sipDialplanID);
+            parameters.Add("name", name);
+            this.ValidateMethod("ChangeSIPDialplanName", parameters);
+            return this.InvokeOperation("ChangeSIPDialplanName", typeof(void), parameters, true, null, null);
+        }
+        
+        /// <summary>
+        /// Asynchronously invokes the 'CopySIPDialplan' method of the DomainService.
+        /// </summary>
+        /// <param name="sipDialplanID">The value for the 'sipDialplanID' parameter of this action.</param>
+        /// <param name="callback">Callback to invoke when the operation completes.</param>
+        /// <param name="userState">Value to pass to the callback.  It can be <c>null</c>.</param>
+        /// <returns>An operation instance that can be used to manage the asynchronous request.</returns>
+        public InvokeOperation CopySIPDialplan(string sipDialplanID, Action<InvokeOperation> callback, object userState)
+        {
+            Dictionary<string, object> parameters = new Dictionary<string, object>();
+            parameters.Add("sipDialplanID", sipDialplanID);
+            this.ValidateMethod("CopySIPDialplan", parameters);
+            return this.InvokeOperation("CopySIPDialplan", typeof(void), parameters, true, callback, userState);
+        }
+        
+        /// <summary>
+        /// Asynchronously invokes the 'CopySIPDialplan' method of the DomainService.
+        /// </summary>
+        /// <param name="sipDialplanID">The value for the 'sipDialplanID' parameter of this action.</param>
+        /// <returns>An operation instance that can be used to manage the asynchronous request.</returns>
+        public InvokeOperation CopySIPDialplan(string sipDialplanID)
+        {
+            Dictionary<string, object> parameters = new Dictionary<string, object>();
+            parameters.Add("sipDialplanID", sipDialplanID);
+            this.ValidateMethod("CopySIPDialplan", parameters);
+            return this.InvokeOperation("CopySIPDialplan", typeof(void), parameters, true, null, null);
+        }
+        
+        /// <summary>
         /// Asynchronously invokes the 'GetTimeZoneOffsetMinutes' method of the DomainService.
         /// </summary>
         /// <param name="callback">Callback to invoke when the operation completes.</param>
@@ -8564,6 +8624,42 @@ namespace SIPSorcery.Entities.Services
             /// </summary>
             /// <param name="result">The IAsyncResult returned from 'BeginChangePassword'.</param>
             void EndChangePassword(IAsyncResult result);
+            
+            /// <summary>
+            /// Asynchronously invokes the 'ChangeSIPDialplanName' operation.
+            /// </summary>
+            /// <param name="sipDialplanID">The value for the 'sipDialplanID' parameter of this action.</param>
+            /// <param name="name">The value for the 'name' parameter of this action.</param>
+            /// <param name="callback">Callback to invoke on completion.</param>
+            /// <param name="asyncState">Optional state object.</param>
+            /// <returns>An IAsyncResult that can be used to monitor the request.</returns>
+            [FaultContract(typeof(DomainServiceFault), Action="http://tempuri.org/SIPEntitiesDomainService/ChangeSIPDialplanNameDomainServiceFau" +
+                "lt", Name="DomainServiceFault", Namespace="DomainServices")]
+            [OperationContract(AsyncPattern=true, Action="http://tempuri.org/SIPEntitiesDomainService/ChangeSIPDialplanName", ReplyAction="http://tempuri.org/SIPEntitiesDomainService/ChangeSIPDialplanNameResponse")]
+            IAsyncResult BeginChangeSIPDialplanName(string sipDialplanID, string name, AsyncCallback callback, object asyncState);
+            
+            /// <summary>
+            /// Completes the asynchronous operation begun by 'BeginChangeSIPDialplanName'.
+            /// </summary>
+            /// <param name="result">The IAsyncResult returned from 'BeginChangeSIPDialplanName'.</param>
+            void EndChangeSIPDialplanName(IAsyncResult result);
+            
+            /// <summary>
+            /// Asynchronously invokes the 'CopySIPDialplan' operation.
+            /// </summary>
+            /// <param name="sipDialplanID">The value for the 'sipDialplanID' parameter of this action.</param>
+            /// <param name="callback">Callback to invoke on completion.</param>
+            /// <param name="asyncState">Optional state object.</param>
+            /// <returns>An IAsyncResult that can be used to monitor the request.</returns>
+            [FaultContract(typeof(DomainServiceFault), Action="http://tempuri.org/SIPEntitiesDomainService/CopySIPDialplanDomainServiceFault", Name="DomainServiceFault", Namespace="DomainServices")]
+            [OperationContract(AsyncPattern=true, Action="http://tempuri.org/SIPEntitiesDomainService/CopySIPDialplan", ReplyAction="http://tempuri.org/SIPEntitiesDomainService/CopySIPDialplanResponse")]
+            IAsyncResult BeginCopySIPDialplan(string sipDialplanID, AsyncCallback callback, object asyncState);
+            
+            /// <summary>
+            /// Completes the asynchronous operation begun by 'BeginCopySIPDialplan'.
+            /// </summary>
+            /// <param name="result">The IAsyncResult returned from 'BeginCopySIPDialplan'.</param>
+            void EndCopySIPDialplan(IAsyncResult result);
             
             /// <summary>
             /// Asynchronously invokes the 'GetCDRs' operation.

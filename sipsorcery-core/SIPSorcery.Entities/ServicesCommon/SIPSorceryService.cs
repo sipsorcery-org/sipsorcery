@@ -986,26 +986,8 @@ namespace SIPSorcery.Entities
                 {
                     // Need to update the SIP accounts using the dial plan.
                     string dialPlanName = existingAccount.DialPlanName;
-                    var sipAccounts = (from sa in sipSorceryEntities.SIPAccounts
-                                       where
-                                           (sa.OutDialPlanName == dialPlanName || sa.InDialPlanName == dialPlanName)
-                                           && sa.Owner == authUser.ToLower()
-                                       select sa).ToList();
 
-                    foreach (SIPAccount sipAccount in sipAccounts)
-                    {
-                        if (sipAccount.InDialPlanName == dialPlanName)
-                        {
-                            logger.Debug("SIP dialplan name updated; updating in dialplan on SIP account" + sipAccount.SIPUsername + " for " + existingAccount.Owner + " to " + sipDialPlan.DialPlanName + ".");
-                            sipAccount.InDialPlanName = sipDialPlan.DialPlanName;
-                        }
-
-                        if (sipAccount.OutDialPlanName == dialPlanName)
-                        {
-                            logger.Debug("SIP dialplan name updated; updating out dialplan on SIP account" + sipAccount.SIPUsername + " for " + existingAccount.Owner + " to " + sipDialPlan.DialPlanName + ".");
-                            sipAccount.OutDialPlanName = sipDialPlan.DialPlanName;
-                        }
-                    }
+                    UpdateSIPAccountsDialPlanName(sipSorceryEntities, authUser, existingAccount.DialPlanName, sipDialPlan.DialPlanName);
 
                     existingAccount.DialPlanName = sipDialPlan.DialPlanName;
                 }
@@ -1036,6 +1018,183 @@ namespace SIPSorcery.Entities
 
                 sipSorceryEntities.SIPDialPlans.DeleteObject(existingAccount);
                 sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void CopySIPDialPlan(string authUser, string sipDialPlanID)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for CopySIPDialPlan.");
+            }
+
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlanID && dp.Owner.ToLower() == authUser.ToLower() select dp).FirstOrDefault();
+
+                if (existingAccount == null)
+                {
+                    throw new ApplicationException("The SIP Dial Plan to copy could not be found.");
+                }
+                else if (existingAccount.Owner != authUser.ToLower())
+                {
+                    logger.Warn("User " + authUser + " was not authorised to copy dial plan " + existingAccount.DialPlanName + " belonging to " + existingAccount.Owner + ".");
+                    throw new ApplicationException("Not authorised to copy the SIP Dial Plan.");
+                }
+                else if (existingAccount.IsReadOnly)
+                {
+                    throw new ApplicationException("This Dial Plan is read-only. Please upgrade to a Premium service to enable it.");
+                }
+
+                logger.Debug("Copying SIP dialplan " + existingAccount.DialPlanName + " for " + existingAccount.Owner + ".");
+
+                string newDialPlanName = existingAccount.DialPlanName + " Copy";
+
+                if(sipSorceryEntities.SIPDialPlans.Any(x => x.DialPlanName.ToLower() == newDialPlanName.ToLower() && x.Owner.ToLower() == authUser.ToLower()))
+                {
+                    int attempts = 2;
+                    string newNameAttempt = newDialPlanName + " " + attempts.ToString();
+
+                    while (sipSorceryEntities.SIPDialPlans.Any(x => x.DialPlanName.ToLower() == newNameAttempt.ToLower() && x.Owner.ToLower() == authUser.ToLower()) && attempts < 10)
+                    {
+                        attempts++;
+                        newNameAttempt = newDialPlanName + " " + attempts.ToString();
+                    }
+
+                    if (attempts < 10)
+                    {
+                        newDialPlanName = newNameAttempt;
+                    }
+                    else
+                    {
+                        throw new ApplicationException("A new dial plan name could not be created for a dial plan copy operation.");
+                    }
+                }
+
+                SIPDialPlan copy = new SIPDialPlan();
+                copy.ID = Guid.NewGuid().ToString();
+                copy.Owner = authUser.ToLower();
+                copy.AdminMemberId = existingAccount.AdminMemberId;
+                copy.Inserted = DateTimeOffset.UtcNow.ToString("o");
+                copy.LastUpdate = DateTimeOffset.UtcNow.ToString("o");
+                copy.MaxExecutionCount = SIPDialPlan.DEFAULT_MAXIMUM_EXECUTION_COUNT;
+                copy.DialPlanName = newDialPlanName;
+                copy.DialPlanScript = existingAccount.DialPlanScript;
+                copy.ScriptTypeDescription = existingAccount.ScriptTypeDescription;
+                copy.AuthorisedApps = existingAccount.AuthorisedApps;
+                copy.AcceptNonInvite = existingAccount.AcceptNonInvite;
+
+                sipSorceryEntities.SIPDialPlans.AddObject(copy);
+                //sipSorceryEntities.SaveChanges();
+
+                logger.Debug("A new dial plan copy was created for " + existingAccount.DialPlanName + ", new dial plan name " + copy.DialPlanName + ".");
+
+                if (existingAccount.ScriptType == SIPDialPlanScriptTypesEnum.SimpleWizard)
+                {
+                    var simpleWizardRules = sipSorceryEntities.SimpleWizardRules.Where(x => x.Owner == authUser.ToLower() && x.DialPlanID == existingAccount.ID);
+
+                    if (simpleWizardRules != null && simpleWizardRules.Count() > 0)
+                    {
+                        foreach (var rule in simpleWizardRules)
+                        {
+                            SimpleWizardRule copiedRule = new SimpleWizardRule();
+                            copiedRule.ID = Guid.NewGuid().ToString();
+                            copiedRule.DialPlanID = copy.ID;
+                            copiedRule.Owner = authUser.ToLower();
+                            copiedRule.ToMatchType = rule.ToMatchType;
+                            copiedRule.ToMatchParameter = rule.ToMatchParameter;
+                            copiedRule.Description = rule.Description;
+                            copiedRule.Command = rule.Command;
+                            copiedRule.CommandParameter1 = rule.CommandParameter1;
+                            copiedRule.CommandParameter2 = rule.CommandParameter2;
+                            copiedRule.CommandParameter3 = rule.CommandParameter3;
+                            copiedRule.CommandParameter4 = rule.CommandParameter4;
+                            copiedRule.Direction = rule.Direction;
+                            copiedRule.PatternType = rule.PatternType;
+                            copiedRule.Pattern = rule.Pattern;
+                            copiedRule.Priority = rule.Priority;
+                            copiedRule.IsDisabled = rule.IsDisabled;
+                            copiedRule.TimePattern = rule.TimePattern;
+                            copiedRule.ToSIPAccount = rule.ToSIPAccount;
+                            copiedRule.ToProvider = rule.ToProvider;
+
+                            sipSorceryEntities.SimpleWizardRules.AddObject(copiedRule);
+
+                            logger.Debug("Copied simple wizard rule priority " + rule.Priority + " to dial plan " + copy.DialPlanName + ".");
+                        }
+                    }
+                }
+
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void ChangeSIPDialPlanName(string authUser, string sipDialPlanID, string name)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for ChangeSIPDialPlanName.");
+            }
+            else if (name.IsNullOrBlank())
+            {
+                throw new ArgumentNullException("The new name cannot be empty in ChangeSIPDialPlanName.");
+            }
+
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlanID && dp.Owner.ToLower() == authUser.ToLower() select dp).FirstOrDefault();
+
+                if (existingAccount == null)
+                {
+                    throw new ApplicationException("The SIP Dial Plan to change the name for could not be found.");
+                }
+                else if (existingAccount.Owner != authUser.ToLower())
+                {
+                    logger.Warn("User " + authUser + " was not authorised to change dial plan " + existingAccount.DialPlanName + " belonging to " + existingAccount.Owner + ".");
+                    throw new ApplicationException("Not authorised to change the SIP Dial Plan name.");
+                }
+                else if (existingAccount.IsReadOnly)
+                {
+                    throw new ApplicationException("This Dial Plan is read-only. Please upgrade to a Premium service to enable it.");
+                }
+
+                logger.Debug("Changing the SIP dialplan " + existingAccount.DialPlanName + " for " + existingAccount.Owner + " to " + name + ".");
+
+                if (sipSorceryEntities.SIPDialPlans.Any(x => x.DialPlanName.ToLower() == name.ToLower() && x.Owner.ToLower() == authUser.ToLower()))
+                {
+                    throw new ApplicationException("There is already a dialplan with the same name. Please choose something different.");
+                }
+
+                // Need to update any SIP accounts that are using the old dialplan name.
+                UpdateSIPAccountsDialPlanName(sipSorceryEntities, authUser, existingAccount.DialPlanName, name);
+
+                existingAccount.DialPlanName = name;
+
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        private void UpdateSIPAccountsDialPlanName(SIPSorceryEntities dbContext, string owner, string oldDialPlanName, string newDialPlanName)
+        {
+            var sipAccounts = (from sa in dbContext.SIPAccounts
+                               where
+                                   (sa.OutDialPlanName == oldDialPlanName || sa.InDialPlanName == oldDialPlanName)
+                                   && sa.Owner == owner.ToLower()
+                               select sa).ToList();
+
+            foreach (SIPAccount sipAccount in sipAccounts)
+            {
+                if (sipAccount.InDialPlanName == oldDialPlanName)
+                {
+                    logger.Debug("SIP dialplan name updated; updating in dialplan on SIP account" + sipAccount.SIPUsername + " for " + owner + " to " + newDialPlanName + ".");
+                    sipAccount.InDialPlanName = newDialPlanName;
+                }
+
+                if (sipAccount.OutDialPlanName == oldDialPlanName)
+                {
+                    logger.Debug("SIP dialplan name updated; updating out dialplan on SIP account" + sipAccount.SIPUsername + " for " + owner + " to " + newDialPlanName + ".");
+                    sipAccount.OutDialPlanName = newDialPlanName;
+                }
             }
         }
 

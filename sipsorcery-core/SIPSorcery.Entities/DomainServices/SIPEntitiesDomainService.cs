@@ -358,6 +358,20 @@ namespace SIPSorcery.Entities.Services
             m_service.DeleteSIPDialPlan(this.ServiceContext.User.Identity.Name, sipDialplan);
         }
 
+        [Invoke]
+        [RequiresAuthentication]
+        public void CopySIPDialplan(string sipDialplanID)
+        {
+            m_service.CopySIPDialPlan(this.ServiceContext.User.Identity.Name, sipDialplanID);
+        }
+
+        [Invoke]
+        [RequiresAuthentication]
+        public void ChangeSIPDialplanName(string sipDialplanID, string name)
+        {
+            m_service.ChangeSIPDialPlanName(this.ServiceContext.User.Identity.Name, sipDialplanID, name);
+        }
+
         [RequiresAuthentication]
         public IQueryable<SIPDialplanLookup> GetSIPDialplanLookups()
         {

@@ -660,12 +660,7 @@ namespace SIPSorcery.Servers
                             //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
                             m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
 
-                            if (scriptContext.WebCallResponse.NotNullOrBlank())
-                            {
-                                // The dialplan has set a custom response.
-                                return scriptContext.WebCallResponse;
-                            }
-                            else if (replacesCallID.IsNullOrBlank())
+                            if (replacesCallID.IsNullOrBlank())
                             {
                                 return "Web call was successfully initiated.";
                             }
