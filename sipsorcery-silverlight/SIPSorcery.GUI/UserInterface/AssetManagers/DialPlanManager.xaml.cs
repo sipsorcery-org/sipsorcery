@@ -181,7 +181,7 @@ namespace SIPSorcery
                 if (!m_dialPlansPanelRefreshInProgress && m_riaContext.SIPDialPlans.Count() > 0)
                 {
                     DataGrid dataGrid = (DataGrid)sender;
-                    if (dataGrid.CurrentColumn.Header as string != "Delete")
+                    if (dataGrid.CurrentColumn.Header as string != "Delete" && dataGrid.CurrentColumn.Header as string != "Copy")
                     {
                         SIPDialPlan dialPlan = (SIPDialPlan)m_dialPlansDataGrid.SelectedItem;
                         EditDialPlan(dialPlan);
@@ -246,6 +246,27 @@ namespace SIPSorcery
             else
             {
                 m_dialPlansPanel.AssetDeleted();
+            }
+        }
+
+        private void CopyDialPlan(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            SIPDialPlan dialPlan = m_dialPlansDataGrid.SelectedItem as SIPDialPlan;
+            LogActivityMessage_External(MessageLevelsEnum.Info, "Sending copy request for Dial Plan " + dialPlan.DialPlanName + ".");
+            m_riaContext.CopySIPDialplan(dialPlan.ID, CopyDialPlanComplete, null);
+        }
+
+        private void CopyDialPlanComplete(InvokeOperation io)
+        {
+            if (io.HasError)
+            {
+                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error copying the dial plan. " + io.Error.Message);
+                io.MarkErrorAsHandled();
+            }
+            else
+            {
+                LogActivityMessage_External(MessageLevelsEnum.Info, "The dial plan copy was successful.");
+                m_dialPlansPanel.RefreshAsync();
             }
         }
 

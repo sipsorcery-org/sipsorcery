@@ -61,6 +61,7 @@ namespace SIPSorcery
             m_riaContext.RejectChanges();
 
             m_dialPlanName.Text = m_dialPlan.DialPlanName;
+            _dialPlanNameTextBox.Text = m_dialPlan.DialPlanName;
 
             // Set up the outgoing rules grid.
             m_outgoingRulesUpdateControl.SetStatusMessage(SimpleWizardOutRuleControl.ADD_TEXT, false);
@@ -329,6 +330,57 @@ namespace SIPSorcery
             catch
             {
                 LogActivityMessage_External(MessageLevelsEnum.Warn, "Unable to display help, you may have popup windows disabled. Alternatively navigate to " + DEFAULT_HELP_URL + ".");
+            }
+        }
+
+        private void ChangeSimpleWizardDialPlanNameClick(object sender, System.Windows.RoutedEventArgs e)
+        {
+            _dialPlanNameTextBox.Visibility = System.Windows.Visibility.Visible;
+            m_dialPlanName.Visibility = System.Windows.Visibility.Collapsed;
+            _changeButton.Visibility = System.Windows.Visibility.Collapsed;
+            _saveButton.Visibility = System.Windows.Visibility.Visible;
+            _dialPlanNameTextBox.IsEnabled = true;
+            _saveButton.IsEnabled = true;
+        }
+
+        private void SaveSimpleWizardDialPlanNameClick(object sender, System.Windows.RoutedEventArgs e)
+        {
+            string newName = _dialPlanNameTextBox.Text;
+
+            if (newName.IsNullOrBlank())
+            {
+                LogActivityMessage_External(MessageLevelsEnum.Warn, "The new dial plan name cannot be empty. Please enter a new name.");
+            }
+            else
+            {
+                _dialPlanNameTextBox.IsEnabled = false;
+                _saveButton.IsEnabled = false;
+                LogActivityMessage_External(MessageLevelsEnum.Info, "Sending change name request for Dial Plan " + m_dialPlan.DialPlanName + " to " + newName + ".");
+                m_riaContext.ChangeSIPDialplanName(m_dialPlan.ID, newName, ChangeSIPDialPlanComplete, newName);
+            }
+        }
+
+        private void ChangeSIPDialPlanComplete(InvokeOperation io)
+        {
+            if (io.HasError)
+            {
+                LogActivityMessage_External(MessageLevelsEnum.Error, "There was an error changing the dial plan name. " + io.Error.Message);
+                io.MarkErrorAsHandled();
+                UIHelper.SetIsEnabled(_saveButton, true);
+                UIHelper.SetIsEnabled(_dialPlanNameTextBox, IsEnabled);
+            }
+            else
+            {
+                string newName = (string)io.UserState;
+
+                LogActivityMessage_External(MessageLevelsEnum.Info, "The dial plan name was successfully changed to " + newName + ".");
+
+                UIHelper.SetText(_dialPlanNameTextBox, newName);
+                UIHelper.SetText(m_dialPlanName, newName);
+                UIHelper.SetVisibility(_dialPlanNameTextBox, System.Windows.Visibility.Collapsed);
+                UIHelper.SetVisibility(m_dialPlanName, System.Windows.Visibility.Visible);
+                UIHelper.SetVisibility(_changeButton, System.Windows.Visibility.Visible);
+                UIHelper.SetVisibility(_saveButton, System.Windows.Visibility.Collapsed);
             }
         }
     }

@@ -58,6 +58,13 @@
 							Binding="{Binding Path=LastUpdateLocal, Converter={StaticResource DateTimeConverter}}" 
 							IsReadOnly="True"
 							MinWidth="100" />
+						<data:DataGridTemplateColumn Header="Copy" MinWidth="100">
+							<data:DataGridTemplateColumn.CellTemplate>
+								<DataTemplate>
+									<TextBlock Cursor="Hand" Foreground="Purple" Text="copy" TextDecorations="Underline" MouseLeftButtonUp="CopyDialPlan" HorizontalAlignment="Center" />
+								</DataTemplate>
+							</data:DataGridTemplateColumn.CellTemplate>
+						</data:DataGridTemplateColumn>
 						<data:DataGridTemplateColumn Header="Delete" MinWidth="100">
 							<data:DataGridTemplateColumn.CellTemplate>
 								<DataTemplate>

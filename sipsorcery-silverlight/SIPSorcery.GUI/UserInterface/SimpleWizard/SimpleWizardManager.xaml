@@ -16,7 +16,10 @@
 			<Canvas Height="26" Margin="8,0">
 				<Button Content="X" x:Name="m_closeButton" Click="CloseButton_Click" Width="23" Height="20" Canvas.Left="977" Canvas.Top="5" />
 				<TextBlock Cursor="Hand" x:Name="m_helpLink" Width="122" Foreground="{StaticResource NormalTextBrush}" Text="Simple Wizard Help" TextDecorations="Underline" TextWrapping="Wrap" MouseLeftButtonUp="HelpLink_MouseLeftButtonUp" Height="15" Canvas.Left="808" Canvas.Top="8"/>
-				<TextBlock Cursor="None" x:Name="m_dialPlanName" Foreground="{StaticResource NormalTextBrush}" Text="Dial Plan Name" TextWrapping="Wrap" Height="15" Canvas.Top="11" Canvas.Left="435" FontSize="16" HorizontalAlignment="Center"/>
+				<TextBlock Cursor="None" x:Name="m_dialPlanName" Foreground="{StaticResource NormalTextBrush}" Text="Dial Plan Name" TextWrapping="Wrap" Height="20" Canvas.Top="5" Canvas.Left="435" FontSize="16" HorizontalAlignment="Center"/>
+				<Button x:Name="_changeButton" Content="change name" Height="21" Canvas.Left="620" Canvas.Top="5" Width="91" Click="ChangeSimpleWizardDialPlanNameClick"/>
+				<TextBox x:Name="_dialPlanNameTextBox" Height="25" Canvas.Left="435" TextWrapping="Wrap" Width="154" Canvas.Top="5" Visibility="Collapsed"/>
+				<Button x:Name="_saveButton" Content="save" Height="21" Canvas.Left="620" Canvas.Top="5" Width="54" Visibility="Collapsed" Click="SaveSimpleWizardDialPlanNameClick"/>
 			</Canvas>
 			<sdk:TabControl Margin="8,0" SelectionChanged="TabControl_SelectionChanged">
 				<sdk:TabControl.Background>
@@ -157,6 +160,7 @@
 					</StackPanel>	
 				</sdk:TabItem>
 			</sdk:TabControl>
+			<TextBox Height="25" Margin="432,0,446,0" TextWrapping="Wrap" Text="TextBox"/>
 		</StackPanel>
 	</Border>
 </UserControl>
