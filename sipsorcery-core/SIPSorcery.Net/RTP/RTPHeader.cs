@@ -132,7 +132,6 @@ namespace SIPSorcery.Net
 			return GetBytes();
 		}
 
-
 		public byte[] GetBytes()
 		{
 			byte[] header = new byte[12];
