@@ -160,7 +160,6 @@
 					</StackPanel>	
 				</sdk:TabItem>
 			</sdk:TabControl>
-			<TextBox Height="25" Margin="432,0,446,0" TextWrapping="Wrap" Text="TextBox"/>
 		</StackPanel>
 	</Border>
 </UserControl>
