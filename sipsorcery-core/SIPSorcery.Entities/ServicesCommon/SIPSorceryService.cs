@@ -87,6 +87,11 @@ namespace SIPSorcery.Entities
                     customer.EmailAddressConfirmed = true;
                     customer.CreatedFromIPAddress = System.Web.HttpContext.Current.Request.UserHostAddress;
 
+                    // Hash the password.
+                    string salt = PasswordHash.GenerateSalt();
+                    customer.CustomerPassword = PasswordHash.Hash(customer.CustomerPassword, salt);
+                    customer.Salt = salt;
+
                     if (customer.ServiceRenewalDate != null)
                     {
                         DateTime renewalDate = DateTime.MinValue;

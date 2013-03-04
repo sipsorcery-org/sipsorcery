@@ -38,6 +38,7 @@ create table customers
  servicerenewaldate varchar(33) null,
  RTCCBillingIncrement int not null default 1,
  RTCCInternationalPrefixes varchar(32) null,
+ Salt varchar(64) not null,
  Primary Key(id),
  Unique(customerusername)
 );

@@ -1437,7 +1437,8 @@ namespace SIPSorcery.Entities
         /// <param name="suspended">Initial value of the Suspended property.</param>
         /// <param name="serviceLevel">Initial value of the ServiceLevel property.</param>
         /// <param name="rTCCBillingIncrement">Initial value of the RTCCBillingIncrement property.</param>
-        public static Customer CreateCustomer(global::System.Boolean active, global::System.String customerPassword, global::System.String name, global::System.String emailAddress, global::System.Boolean emailAddressConfirmed, global::System.Int32 executionCount, global::System.String id, global::System.String inserted, global::System.Int32 maxExecutionCount, global::System.Boolean suspended, global::System.String serviceLevel, global::System.Int32 rTCCBillingIncrement)
+        /// <param name="salt">Initial value of the Salt property.</param>
+        public static Customer CreateCustomer(global::System.Boolean active, global::System.String customerPassword, global::System.String name, global::System.String emailAddress, global::System.Boolean emailAddressConfirmed, global::System.Int32 executionCount, global::System.String id, global::System.String inserted, global::System.Int32 maxExecutionCount, global::System.Boolean suspended, global::System.String serviceLevel, global::System.Int32 rTCCBillingIncrement, global::System.String salt)
         {
             Customer customer = new Customer();
             customer.Active = active;
@@ -1452,6 +1453,7 @@ namespace SIPSorcery.Entities
             customer.Suspended = suspended;
             customer.ServiceLevel = serviceLevel;
             customer.RTCCBillingIncrement = rTCCBillingIncrement;
+            customer.Salt = salt;
             return customer;
         }
 
@@ -2301,6 +2303,30 @@ namespace SIPSorcery.Entities
         private global::System.String _RTCCInternationalPrefixes;
         partial void OnRTCCInternationalPrefixesChanging(global::System.String value);
         partial void OnRTCCInternationalPrefixesChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String Salt
+        {
+            get
+            {
+                return _Salt;
+            }
+            set
+            {
+                OnSaltChanging(value);
+                ReportPropertyChanging("Salt");
+                _Salt = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("Salt");
+                OnSaltChanged();
+            }
+        }
+        private global::System.String _Salt;
+        partial void OnSaltChanging(global::System.String value);
+        partial void OnSaltChanged();
 
         #endregion
 

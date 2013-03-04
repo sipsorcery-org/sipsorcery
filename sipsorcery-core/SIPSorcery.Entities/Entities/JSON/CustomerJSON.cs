@@ -67,7 +67,7 @@ namespace SIPSorcery.Entities
         { 
             City = customer.City;
                 Country = customer.Country;
-                CustomerPassword = customer.CustomerPassword;
+                //CustomerPassword = customer.CustomerPassword;
                 EmailAddress = customer.EmailAddress;
                 EmailAddressConfirmed = customer.EmailAddressConfirmed;
                 Firstname = customer.Firstname;

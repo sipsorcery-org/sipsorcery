@@ -157,6 +157,7 @@
           <Property Name="servicerenewaldate" Type="varchar" MaxLength="33" />
           <Property Name="RTCCBillingIncrement" Type="int" Nullable="false" />
           <Property Name="RTCCInternationalPrefixes" Type="varchar" MaxLength="32" />
+          <Property Name="Salt" Type="varchar" Nullable="false" MaxLength="64" />
         </EntityType>
         <EntityType Name="rate">
           <Key>
@@ -178,7 +179,7 @@
           <Property Name="Owner" Type="varchar" Nullable="false" MaxLength="32" />
           <Property Name="DialPlanID" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="Direction" Type="varchar" Nullable="false" MaxLength="3" />
-          <Property Name="Priority" Type="decimal" Nullable="false" Precision="5" Scale="3" />
+          <Property Name="Priority" Type="decimal" Nullable="false" Precision="8" Scale="3" />
           <Property Name="Description" Type="varchar" MaxLength="50" />
           <Property Name="ToSIPAccount" Type="varchar" MaxLength="161" />
           <Property Name="ToProvider" Type="varchar" MaxLength="50" />
@@ -712,6 +713,7 @@
           <Property Type="String" Name="ServiceRenewalDate" />
           <Property Type="Int32" Name="RTCCBillingIncrement" Nullable="false" />
           <Property Type="String" Name="RTCCInternationalPrefixes" MaxLength="32" FixedLength="false" Unicode="false" />
+          <Property Type="String" Name="Salt" Nullable="false" />
         </EntityType>
         <EntityType Name="SIPAccount">
           <Key>
@@ -1140,6 +1142,7 @@
           <EntitySetMapping Name="Customers">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.Customer">
               <MappingFragment StoreEntitySet="customers">
+                <ScalarProperty Name="Salt" ColumnName="Salt" />
                 <ScalarProperty Name="RTCCInternationalPrefixes" ColumnName="RTCCInternationalPrefixes" />
                 <ScalarProperty Name="RTCCBillingIncrement" ColumnName="RTCCBillingIncrement" />
                 <ScalarProperty Name="ServiceRenewalDate" ColumnName="servicerenewaldate" />
@@ -1437,7 +1440,7 @@
     </Options>
     <!-- Diagram content (shape and connector positions) -->
     <Diagrams>
-      <Diagram Name="SIPEntities" ZoomLevel="61">
+      <Diagram Name="SIPEntities" ZoomLevel="58">
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanLookup" Width="1.875" PointX="11.5" PointY="1" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanRoute" Width="1.875" PointX="18.375" PointY="0.75" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanProvider" Width="2.25" PointX="11.625" PointY="4.25" Height="2.5571907552083317" />

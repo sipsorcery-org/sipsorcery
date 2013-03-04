@@ -100,7 +100,7 @@ namespace SIPSorcery.CRM
                     // Don't do the password check via the database as different ones have different string case matching.
                     Customer customer = m_customerPersistor.Get(c => c.CustomerUsername == username);
 
-                    if (customer != null && customer.CustomerPassword == password)
+                    if (customer != null && PasswordHash.Hash(password, customer.Salt) == customer.CustomerPassword)
                     {
                         if (!customer.EmailAddressConfirmed)
                         {

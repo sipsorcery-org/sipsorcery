@@ -396,14 +396,20 @@ namespace SIPSorcery.Web.Services
 
             if (customer.CustomerUsername == username)
             {
-                if (customer.CustomerPassword != oldPassword)
+                if (PasswordHash.Hash(oldPassword, customer.Salt) != customer.CustomerPassword)
                 {
                     throw new ApplicationException("The existing password did not match when attempting a password update.");
                 }
                 else
                 {
                     logger.Debug("Updating customer password for " + customer.CustomerUsername);
-                    customer.CustomerPassword = newPassword;
+                    //customer.CustomerPassword = newPassword;
+                    
+                    // Hash the password.
+                    string salt = PasswordHash.GenerateSalt();
+                    customer.CustomerPassword = PasswordHash.Hash(newPassword, salt);
+                    customer.Salt = salt;
+
                     CRMCustomerPersistor.Update(customer);
                 }
             }

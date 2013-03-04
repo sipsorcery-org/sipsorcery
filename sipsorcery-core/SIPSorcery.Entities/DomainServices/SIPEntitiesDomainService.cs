@@ -5,10 +5,12 @@ using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Data.EntityClient;
 using System.Linq;
+using System.ServiceModel;
 using System.ServiceModel.DomainServices.EntityFramework;
 using System.ServiceModel.DomainServices.Hosting;
 using System.ServiceModel.DomainServices.Server;
 using System.ServiceModel.DomainServices.Server.ApplicationServices;
+using System.Web;
 using System.Web.Security;
 using System.Web.Configuration;
 using SIPSorcery.Entities;
@@ -33,7 +35,7 @@ namespace SIPSorcery.Entities.Services
         SIPSorceryService m_service = new SIPSorceryService();
 
         public class AuthenticationDomainService : AuthenticationBase<User>
-        { }
+        {  }
 
         private AuthenticationDomainService m_authService = new AuthenticationDomainService();
 
@@ -48,7 +50,7 @@ namespace SIPSorcery.Entities.Services
             return m_service.GetTimeZones();
         }
 
-        /// <param name="customData">If populated this field is used to inidcate the login requested is to impersonate this username. It's only available
+        /// <param name="customData">If populated this field is used to indicate the login requested is to impersonate this username. It's only available
         /// to admin users.</param>
         public User Login(string username, string password, bool isPersistent, string customData)
         {
@@ -57,10 +59,28 @@ namespace SIPSorcery.Entities.Services
                 // An impersonation login has been requested. The requesting user MUST be an administrator.
                 using (var sipSorceryEntities = new SIPSorceryEntities())
                 {
-                    if (sipSorceryEntities.Customers.Any(x => x.Name.ToLower() == username.ToLower() && x.CustomerPassword == password && x.AdminID == Customer.TOPLEVEL_ADMIN_ID))
+                    var admin = sipSorceryEntities.Customers.SingleOrDefault(x => x.Name.ToLower() == username.ToLower() && x.AdminID == Customer.TOPLEVEL_ADMIN_ID);
+
+                    if (admin != null && PasswordHash.Hash(password, admin.Salt) == admin.CustomerPassword)
                     {
                         var impersonateCustomer = sipSorceryEntities.Customers.Where(x => x.Name.ToLower() == customData.ToLower() || x.EmailAddress.ToLower() == customData.ToLower()).Single();
-                        return m_authService.Login(impersonateCustomer.Name, impersonateCustomer.CustomerPassword, false, null);
+                        //return m_authService.Impersonate(impersonateCustomer.Name);
+
+                        FormsAuthenticationTicket ticket = new FormsAuthenticationTicket(
+                                                  2,
+                                                  impersonateCustomer.Name,
+                                                  DateTime.Now,
+                                                  DateTime.Now.AddMinutes(FormsAuthentication.Timeout.TotalMinutes),
+                                                  true,
+                                                  string.Empty,
+                                                  FormsAuthentication.FormsCookiePath);
+
+                        string encryptedTicket = FormsAuthentication.Encrypt(ticket);
+                        HttpCookie cookie = new HttpCookie(FormsAuthentication.FormsCookieName, encryptedTicket);
+                        cookie.Expires = DateTime.Now.AddMinutes(FormsAuthentication.Timeout.TotalMinutes);
+                        HttpContext.Current.Response.Cookies.Add(cookie);
+
+                        return new User() { Name = impersonateCustomer.Name };
                     }
                     else
                     {
@@ -156,13 +176,18 @@ namespace SIPSorcery.Entities.Services
         {
             Customer customer = this.ObjectContext.Customers.Where(x => x.Name == this.ServiceContext.User.Identity.Name).First();
 
-            if (customer.CustomerPassword != oldPassword)
+            if (PasswordHash.Hash(oldPassword, customer.Salt) != customer.CustomerPassword)
             {
                 throw new ApplicationException("The old password was not correct. Password was not updated.");
             }
             else
             {
-                customer.CustomerPassword = newPassword;
+                //customer.CustomerPassword = newPassword;
+
+                string salt = PasswordHash.GenerateSalt();
+                customer.CustomerPassword = PasswordHash.Hash(newPassword, salt);
+                customer.Salt = salt;
+
                 this.ObjectContext.SaveChanges();
             }
         }

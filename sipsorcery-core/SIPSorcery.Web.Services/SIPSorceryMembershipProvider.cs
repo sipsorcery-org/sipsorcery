@@ -50,7 +50,7 @@ namespace SIPSorcery.Web.Services
                                              where cust.Name.ToLower() == username.ToLower()
                                              select cust).SingleOrDefault();
 
-                        if (customer != null && customer.CustomerPassword == password)
+                        if (customer != null && PasswordHash.Hash(password, customer.Salt) == customer.CustomerPassword)
                         {
                             if (!customer.EmailAddressConfirmed)
                             {

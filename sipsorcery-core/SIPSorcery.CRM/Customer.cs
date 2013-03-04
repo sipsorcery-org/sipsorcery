@@ -82,6 +82,9 @@ namespace SIPSorcery.CRM
         [Column(Name = "customerpassword", DbType = "varchar(32)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public string CustomerPassword { get; set; }
 
+        [Column(Name = "salt", DbType = "varchar(64)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
+        public string Salt { get; set; }
+
         [Column(Name = "emailaddress", DbType = "varchar(255)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         public string EmailAddress { get; set; }
 
@@ -221,6 +224,7 @@ namespace SIPSorcery.CRM
             table.Columns.Add(new DataColumn("id", typeof(String)));
             table.Columns.Add(new DataColumn("customerusername", typeof(String)));
             table.Columns.Add(new DataColumn("customerpassword", typeof(String)));
+            table.Columns.Add(new DataColumn("salt", typeof(String)));
             table.Columns.Add(new DataColumn("emailaddress", typeof(String)));
             table.Columns.Add(new DataColumn("adminid", typeof(String)));
             table.Columns.Add(new DataColumn("adminmemberid", typeof(String)));
@@ -253,6 +257,7 @@ namespace SIPSorcery.CRM
                 Id = new Guid(customerRow["id"] as string);
                 CustomerUsername = customerRow["customerusername"] as string;
                 CustomerPassword = customerRow["customerpassword"] as string;
+                CustomerPassword = customerRow["salt"] as string;
                 EmailAddress = (customerRow.Table.Columns.Contains("emailaddress") && customerRow["emailaddress"] != null) ?  customerRow["emailaddress"] as string : null;
                 AdminId = (customerRow.Table.Columns.Contains("adminid") && customerRow["adminid"] != null) ? customerRow["adminid"] as string : null;
                 AdminMemberId = (customerRow.Table.Columns.Contains("adminmemberid") && customerRow["adminmemberid"] != null) ? customerRow["adminmemberid"] as string : null;
@@ -303,6 +308,7 @@ namespace SIPSorcery.CRM
                  "  <id>" + Id + "</id>" + m_newLine +
                  "  <customerusername>" + CustomerUsername + "</customerusername>" + m_newLine +
                  "  <customerpassword>" + CustomerPassword + "</customerpassword>" + m_newLine +
+                 "  <salt>" + Salt + "</salt>" + m_newLine +
                  "  <emailaddress>" + EmailAddress + "</emailaddress>" + m_newLine +
                  "  <firstname>" + SafeXML.MakeSafeXML(FirstName) + "</firstname>" + m_newLine +
                  "  <lastname>" + SafeXML.MakeSafeXML(LastName) + "</lastname>" + m_newLine +

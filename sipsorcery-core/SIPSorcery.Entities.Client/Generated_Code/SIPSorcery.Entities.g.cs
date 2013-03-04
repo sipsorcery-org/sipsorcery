@@ -1103,6 +1103,8 @@ namespace SIPSorcery.Entities
         
         private string _rtccInternationalPrefixes;
         
+        private string _salt;
+        
         private string _securityAnswer;
         
         private string _securityQuestion;
@@ -1180,6 +1182,8 @@ namespace SIPSorcery.Entities
         partial void OnRTCCBillingIncrementChanged();
         partial void OnRTCCInternationalPrefixesChanging(string value);
         partial void OnRTCCInternationalPrefixesChanged();
+        partial void OnSaltChanging(string value);
+        partial void OnSaltChanged();
         partial void OnSecurityAnswerChanging(string value);
         partial void OnSecurityAnswerChanged();
         partial void OnSecurityQuestionChanging(string value);
@@ -1791,6 +1795,31 @@ namespace SIPSorcery.Entities
                     this._rtccInternationalPrefixes = value;
                     this.RaiseDataMemberChanged("RTCCInternationalPrefixes");
                     this.OnRTCCInternationalPrefixesChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'Salt' value.
+        /// </summary>
+        [DataMember()]
+        [Required()]
+        public string Salt
+        {
+            get
+            {
+                return this._salt;
+            }
+            set
+            {
+                if ((this._salt != value))
+                {
+                    this.OnSaltChanging(value);
+                    this.RaiseDataMemberChanging("Salt");
+                    this.ValidateProperty("Salt", value);
+                    this._salt = value;
+                    this.RaiseDataMemberChanged("Salt");
+                    this.OnSaltChanged();
                 }
             }
         }
