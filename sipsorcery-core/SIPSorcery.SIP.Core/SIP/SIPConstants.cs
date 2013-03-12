@@ -173,6 +173,7 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_DATE = "Date";
         public const string SIP_HEADER_ERROR_INFO = "Error-Info";
         public const string SIP_HEADER_EVENT = "Event";                             // RC3265 (SIP Events).
+        public const string SIP_HEADER_ETAG = "SIP-ETag";                           // RFC3903
         public const string SIP_HEADER_EXPIRES = "Expires";
 		public const string SIP_HEADER_FROM = "From";
         public const string SIP_HEADER_IN_REPLY_TO = "In-Reply-To";

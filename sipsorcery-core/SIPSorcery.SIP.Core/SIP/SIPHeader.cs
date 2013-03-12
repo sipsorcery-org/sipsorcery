@@ -1787,6 +1787,7 @@ namespace SIPSorcery.SIP
         public SIPMethodsEnum CSeqMethod;
         public string Date;
         public string ErrorInfo;
+        public string ETag;                                 // added by Tilmann: look RFC3903
         public string Event;                                // RFC3265 SIP Events.
         public int Expires = -1;
         public SIPFromHeader From;
@@ -2457,7 +2458,12 @@ namespace SIPSorcery.SIP
                             sipHeader.CRMPictureURL = headerValue;
                         }
                         #endregion
-
+                        #region ETag
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ETAG.ToLower())
+                        {
+                            sipHeader.ETag = headerValue;
+                        }
+                        #endregion
                         else
                         {
                             sipHeader.UnknownHeaders.Add(headerLine);
@@ -2577,6 +2583,7 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((Timestamp != null) ? SIPHeaders.SIP_HEADER_TIMESTAMP + ": " + Timestamp + m_CRLF : null);
                 headersBuilder.Append((Unsupported != null) ? SIPHeaders.SIP_HEADER_UNSUPPORTED + ": " + Unsupported + m_CRLF : null);
                 headersBuilder.Append((Warning != null) ? SIPHeaders.SIP_HEADER_WARNING + ": " + Warning + m_CRLF : null);
+                headersBuilder.Append((ETag != null) ? SIPHeaders.SIP_HEADER_ETAG + ": " + ETag + m_CRLF : null);
                 headersBuilder.Append(SIPHeaders.SIP_HEADER_CONTENTLENGTH + ": " + this.ContentLength + m_CRLF);
                 if (this.ContentType != null && this.ContentType.Trim().Length > 0)
                 {
