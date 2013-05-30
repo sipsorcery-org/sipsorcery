@@ -54,5 +54,45 @@ namespace SIPSorcery.Web.Services
         [OperationContract]
         [WebGet(UriTemplate = "customeraccount/exists?accountnumber={accountNumber}", ResponseFormat = WebMessageFormat.Json)]
         bool DoesAccountNumberExist(string accountNumber);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "customeraccount/count?where={where}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<int> GetCustomerAccountsCount(string where);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "customeraccount/get?where={where}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<List<CustomerAccountJSON>> GetCustomerAccounts(string where, int offset, int count);
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", UriTemplate = "customeraccount/add", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<string> AddCustomerAccount(CustomerAccountJSON customerAccount);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "customeraccount/delete?id={id}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<bool> DeleteCustomerAccount(string id);
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", UriTemplate = "customeraccount/update", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<string> UpdateCustomerAccount(CustomerAccountJSON customerAccount);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "rate/count?where={where}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<int> GetRatesCount(string where);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "rate/get?where={where}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<List<RateJSON>> GetRates(string where, int offset, int count);
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", UriTemplate = "rate/add", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<string> AddRate(RateJSON rate);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "rate/delete?id={id}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<bool> DeleteRate(string id);
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", UriTemplate = "rate/update", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<string> UpdateRate(RateJSON rate);
     }
 }

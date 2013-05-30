@@ -1,15 +1,15 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: CDRJSON.cs
+// Filename: RateJSON.cs
 //
-// Description: A translation class to allow a CDR to be serialised to and from JSON.
+// Description: A translation class to allow a Rate object to be serialised to and from JSON.
 // 
 // History:
-// 02 Oct 2012	Aaron Clauson	    Created.
+// 29 Apr 2013	Aaron Clauson	    Created.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2011 Aaron Clauson (aaron@sipsorcery.com), SIPSorcery Pty Ltd, Hobart, Australia (www.sipsorcery.com)
+// Copyright (c) 2013 Aaron Clauson (aaron@sipsorcery.com), SIPSorcery Pty Ltd, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -40,31 +40,47 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.Entities
 {
     [DataContractAttribute]
-    public class CDRJSON
+    public class RateJSON
     {
-        [DataMember] public string ID { get; set; }
-        [DataMember] public string Inserted { get; set; }
-        [DataMember] public string CallDirection { get; set; }
-        [DataMember] public string Created { get; set; }
-        [DataMember] public string Dst { get; set; }
-        [DataMember] public string DstHost { get; set; }
-        [DataMember] public string DstURI { get; set; }
-        [DataMember] public string FromUser { get; set; }
-        [DataMember] public string FromName { get; set; }
-        [DataMember] public string FromHeader { get; set; }
-        [DataMember] public string CallId { get; set;}
-        [DataMember] public string LocalSocket { get; set; }
-        [DataMember] public string RemoteSocket { get; set; }
-        [DataMember] public string BridgeId { get; set; }
-        [DataMember] public string InProgressTime { get; set; }
-        [DataMember] public int? InProgressStatus { get; set; }
-        [DataMember] public string InProgressReason { get; set; }
-        [DataMember] public int? RingDuration { get; set; }
-        [DataMember] public string AnsweredTime { get; set; }
-        [DataMember] public int? AnsweredStatus { get; set; }
-        [DataMember] public string AnsweredReason { get; set; }
-        [DataMember] public int? Duration { get; set; }
-        [DataMember] public string HungupTime { get; set; }
-        [DataMember] public string HungupReason {get; set; }
+        [DataMember] 
+        public string ID { get; set; }
+
+        [DataMember] 
+        public string Inserted { get; set; }
+
+        [DataMember]
+        public string Description { get; set; }
+
+        [DataMember]
+        public string Prefix { get; set; }
+
+        [DataMember]
+        public string RateCode { get; set; }
+
+        [DataMember]
+        public decimal Rate { get; set; }
+
+        [DataMember]
+        public decimal SetupCost { get; set; }
+
+        [DataMember]
+        public int IncrementSeconds { get; set; }
+
+        public Rate ToRate()
+        {
+            Rate rate = new Rate()
+            {
+                Owner = String.Empty,
+                ID = ID,
+                Description = Description,
+                Prefix = Prefix,
+                RateCode = RateCode,
+                Rate1 = Rate,
+                SetupCost = SetupCost,
+                IncrementSeconds = IncrementSeconds
+            };
+
+            return rate;
+        }
     }
 }

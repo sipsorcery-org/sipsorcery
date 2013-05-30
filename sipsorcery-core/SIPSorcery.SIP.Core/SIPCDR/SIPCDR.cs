@@ -173,6 +173,12 @@ namespace SIPSorcery.SIP
         public decimal Rate { get; set; }
 
         [DataMember]
+        public decimal SetupCost { get; set; }
+
+        [DataMember]
+        public int IncrementSeconds { get; set; }
+
+        [DataMember]
         public string ReconciliationResult { get; set; }
 
         [DataMember]

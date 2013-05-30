@@ -97,6 +97,8 @@ namespace SIPSorcery.CRM
                 }
                 else
                 {
+                    logger.Debug("CustomerSessionManager authenticate requested for username " + username + " from " + ipAddress + ".");
+
                     // Don't do the password check via the database as different ones have different string case matching.
                     Customer customer = m_customerPersistor.Get(c => c.CustomerUsername == username);
 

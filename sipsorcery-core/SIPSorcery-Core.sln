@@ -1,12 +1,16 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0B7CB4A2-B101-473E-B5A8-3B746A232647}"
 	ProjectSection(SolutionItems) = preProject
 		Local.testsettings = Local.testsettings
 		SIPSorcery-Core.vsmdi = SIPSorcery-Core.vsmdi
 		TraceAndTestImpact.testsettings = TraceAndTestImpact.testsettings
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{5A855FE1-8B93-429D-95A5-B8215CF62A9D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SIPSorcery.Entities", "SIPSorcery.Entities", "{1D60DF26-FD77-4779-85F6-96485EB9B65D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.CRM", "SIPSorcery.CRM\SIPSorcery.CRM.csproj", "{F951789F-1ABB-42E8-BB51-F028DC4824EF}"
 EndProject
@@ -26,8 +30,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Persistence", "S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Web.Services", "SIPSorcery.Web.Services\SIPSorcery.Web.Services.csproj", "{5D73FBAC-897F-4FEA-BAF9-61823545FE70}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{5A855FE1-8B93-429D-95A5-B8215CF62A9D}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Net.UnitTests", "Tests\SIPSorcery.Net.UnitTests\SIPSorcery.Net.UnitTests.csproj", "{FE8521C9-8F01-44C5-BD8C-2920E9AAC906}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIP.Core.UnitTests", "Tests\SIPSorcery.SIP.Core.UnitTests\SIPSorcery.SIP.Core.UnitTests.csproj", "{13B2C19A-621A-4404-99E1-8345B7283CB6}"
@@ -37,8 +39,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.AppServer.DialPlan.UnitTests", "Tests\SIPSorcery.AppServer.DialPlan.UnitTests\SIPSorcery.AppServer.DialPlan.UnitTests.csproj", "{976A21FD-126C-409E-A9E8-4E2278D67360}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.CRM.UnitTests", "Tests\SIPSorcery.CRM.UnitTests\SIPSorcery.CRM.UnitTests.csproj", "{1F5CAE96-9ABC-4F9C-964A-86DDD9AC272E}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SIPSorcery.Entities", "SIPSorcery.Entities", "{1D60DF26-FD77-4779-85F6-96485EB9B65D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Entities", "SIPSorcery.Entities\SIPSorcery.Entities.csproj", "{8EB4E07E-76C8-445A-8252-5B392A9C12FB}"
 EndProject

@@ -308,6 +308,22 @@ namespace SIPSorcery.SIP.App {
             get { return m_sipCDR.Rate; }
             set { m_sipCDR.Rate = value; }
         }
+
+        [Column(Name = "setupcost", DbType = "decimal", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public decimal SetupCost
+        {
+            get { return m_sipCDR.SetupCost; }
+            set { m_sipCDR.SetupCost = value; }
+        }
+
+        [Column(Name = "incrementseconds", DbType = "int", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public int IncrementSeconds
+        {
+            get { return m_sipCDR.IncrementSeconds; }
+            set { m_sipCDR.IncrementSeconds = value; }
+        }
        
         [Column(Name = "answeredat", DbType = "datetime", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
@@ -381,6 +397,8 @@ namespace SIPSorcery.SIP.App {
             table.Columns.Add(new DataColumn("secondsreserved", typeof(Int32)));
             table.Columns.Add(new DataColumn("cost", typeof(Decimal)));
             table.Columns.Add(new DataColumn("rate", typeof(Decimal)));
+            table.Columns.Add(new DataColumn("setupcost", typeof(Decimal)));
+            table.Columns.Add(new DataColumn("incrementseconds", typeof(int)));
             table.Columns.Add(new DataColumn("answeredat", typeof(DateTime)));
             table.Columns.Add(new DataColumn("reconciliationresult", typeof(String)));
             table.Columns.Add(new DataColumn("ishangingup", typeof(Boolean)));
@@ -433,6 +451,8 @@ namespace SIPSorcery.SIP.App {
             m_sipCDR.AccountCode = cdrRow["accountcode"] as string;
             m_sipCDR.SecondsReserved = (cdrRow["secondsreserved"] != null) ? Convert.ToInt32(cdrRow["secondsreserved"]) : 0;
             m_sipCDR.Rate = (cdrRow["rate"] != null) ? Convert.ToDecimal(cdrRow["rate"]) : Decimal.Zero;
+            m_sipCDR.SetupCost = (cdrRow["setupcost"] != null) ? Convert.ToDecimal(cdrRow["setupcost"]) : Decimal.Zero;
+            m_sipCDR.IncrementSeconds = (cdrRow["incrementseconds"] != null) ? Convert.ToInt32(cdrRow["incrementseconds"]) : 0;
             m_sipCDR.Cost = (cdrRow["cost"] != null) ? Convert.ToDecimal(cdrRow["cost"]) : Decimal.Zero;
             if (cdrRow["answeredat"] != DBNull.Value && cdrRow["answeredat"] != null)
             {

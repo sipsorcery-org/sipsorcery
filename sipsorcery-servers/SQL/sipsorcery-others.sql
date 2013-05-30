@@ -36,7 +36,6 @@ create table customers
  usernamerecoveryid varchar(36) null,
  servicelevel varchar(64) not null default 'Free',
  servicerenewaldate varchar(33) null,
- RTCCBillingIncrement int not null default 1,
  RTCCInternationalPrefixes varchar(32) null,
  Salt varchar(64) not null,
  Primary Key(id),
@@ -226,9 +225,9 @@ create table sipdialogues
  switchboardcallerdescription varchar(1024),
  SwitchboardOwner varchar(1024),
  SwitchboardLineName varchar(128),
- CRMPersonName nvarchar(256) NULL,
- CRMCompanyName nvarchar(256) NULL,
- CRMPictureURL nvarchar(1024) NULL,
+ CRMPersonName varchar(256) NULL,
+ CRMCompanyName varchar(256) NULL,
+ CRMPictureURL varchar(1024) NULL,
  Primary Key(id),
  Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade
 );
@@ -264,13 +263,15 @@ create table cdr
  hungupreason varchar(512),						-- The SIP response Reason header on the BYE request if present.
  accountcode varchar(36) null,					-- If using real-time call control this is the account code that's supplying the credit.
  secondsreserved int null,						-- If using real-time call control this is the cumulative number of seconds that have been reserved for the call.
- answereddate date null default null,			-- The time the call was answered with a final response and as a native datetime value.
+ answeredat datetime default null,			-- The time the call was answered with a final response and as a native datetime value.
  cost decimal(10,5) null,						-- If using real-time call control this is cumulative cost of the call. Some credit maybe returned at the end of the call.
  rate decimal(10,5) null,						-- If using real-time call control this is the rate call credit is being reserved at.
  reservationerror varchar(256) null,
  reconciliationresult varchar(256) null,
  ishangingup bit not null,						-- Set to true when the real-time call control engine is in the process of hanging up the call.
  postreconciliationbalance decimal(10,5) null,	-- If a RTCC call this will hold the customer account's balance as it was after the reconciliation was complete.
+ setupcost decimal(10,5) not null default 0,
+ incrementseconds int(4) not null default 1,
  Primary Key(id)
 );
 
@@ -299,10 +300,12 @@ CREATE TABLE `rate` (
   `rate` decimal(10,5) NOT NULL,
   `ratecode` varchar(32) DEFAULT NULL,
   `inserted` varchar(33) NOT NULL,
+  setupcost decimal(10,5) not null default 0,
+  incrementseconds int(4) not null default 1, 
   PRIMARY KEY (`id`),
   UNIQUE KEY `owner` (`owner`,`prefix`),
   CONSTRAINT `rate_ibfk_1` FOREIGN KEY (`owner`) REFERENCES `customers` (`customerusername`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 
+);
 
 -- Telis Dial Plan Wizard Tables.
 
@@ -366,24 +369,24 @@ create table sipdialplanoptions
 
 create table SimpleWizardRule
 (
-  ID nvarchar(36) not null,
-  Owner nvarchar(32) not null,
-  DialPlanID nvarchar(36) not null,				-- The simple wizard dialplan the lookup entries will be used in.
-  Direction nvarchar(3) not null,				-- In or Out dialplan rule.
+  ID varchar(36) not null,
+  Owner varchar(32) not null,
+  DialPlanID varchar(36) not null,				-- The simple wizard dialplan the lookup entries will be used in.
+  Direction varchar(3) not null,				-- In or Out dialplan rule.
   Priority decimal(8,3) not null,
-  Description nvarchar(50) null,
-  ToMatchType nvarchar(50) null,				-- Any, ToSIPAccount, ToSIPProvider, Regex.
-  ToMatchParameter nvarchar(2048) null,
-  ToSIPAccount nvarchar(161) null,				-- For incoming rules this can optionally hold the To SIP account the rule is for.
-  ToProvider nvarchar(50) null,					-- For incoming rules this can optionally hold the To Provider the rule is for.
-  PatternType nvarchar(16) null,
-  Pattern nvarchar(1024) null,
-  Command nvarchar(32) not null,				-- The dialplan command, e.g. Dial, Respond
-  CommandParameter1 nvarchar(2048) not null,	
-  CommandParameter2 nvarchar(2048),
-  CommandParameter3 nvarchar(2048),
-  CommandParameter4 nvarchar(2048),
-  TimePattern nvarchar(32) null,							-- If set refers to a time interval that dictates when this rule should apply
+  Description varchar(50) null,
+  ToMatchType varchar(50) null,				-- Any, ToSIPAccount, ToSIPProvider, Regex.
+  ToMatchParameter varchar(2048) null,
+  ToSIPAccount varchar(161) null,				-- For incoming rules this can optionally hold the To SIP account the rule is for.
+  ToProvider varchar(50) null,					-- For incoming rules this can optionally hold the To Provider the rule is for.
+  PatternType varchar(16) null,
+  Pattern varchar(1024) null,
+  Command varchar(32) not null,				-- The dialplan command, e.g. Dial, Respond
+  CommandParameter1 varchar(2048) not null,	
+  CommandParameter2 varchar(2048),
+  CommandParameter3 varchar(2048),
+  CommandParameter4 varchar(2048),
+  TimePattern varchar(32) null,							-- If set refers to a time interval that dictates when this rule should apply
   IsDisabled bit not null default 0,						-- If set to 1 means the rule is disabled.
   Primary Key(ID),
   Foreign Key(DialPlanID) references SIPDialPlans(id) on delete cascade on update cascade
@@ -391,11 +394,11 @@ create table SimpleWizardRule
 
 create table WebCallback
 (
-  ID nvarchar(36) not null,
-  Owner nvarchar(32) not null,
-  DialString1 nvarchar(256) not null,
-  DialString2 nvarchar(256) not null,
-  Description nvarchar(128) null,
+  ID varchar(36) not null,
+  Owner varchar(32) not null,
+  DialString1 varchar(256) not null,
+  DialString2 varchar(256) not null,
+  Description varchar(128) null,
   Inserted varchar(33) not null,
   Primary Key(ID),
   Foreign Key(owner) references Customers(customerusername) on delete cascade on update cascade
@@ -428,34 +431,34 @@ create index regbindings_sipaccid_index on sipregistrarbindings(sipaccountid);
 CREATE TABLE PayPalIPN
 (
     ID varchar(36) not null,
-    RawRequest nvarchar(10000) NOT NULL,
-    ValidationResponse nvarchar(1024) NULL,
+    RawRequest varchar(10000) NOT NULL,
+    ValidationResponse varchar(1024) NULL,
 	IsSandbox bit not null,
-    TransactionID nvarchar(256) NULL,
-	TransactionType nvarchar(64) null,
-	PaymentStatus nvarchar(256) null,
-    PayerFirstName nvarchar(256) NULL,
-    PayerLastName nvarchar(256) NULL,
-    PayerEmailAddress nvarchar(1024) NULL,
-    Currency nvarchar(6)  NULL,
+    TransactionID varchar(256) NULL,
+	TransactionType varchar(64) null,
+	PaymentStatus varchar(256) null,
+    PayerFirstName varchar(256) NULL,
+    PayerLastName varchar(256) NULL,
+    PayerEmailAddress varchar(1024) NULL,
+    Currency varchar(6)  NULL,
     Total decimal(6,3)  NULL,
     PayPalFee decimal(6,3)  NULL,
     Inserted datetime NOT NULL,
-    ItemId nvarchar(256),
-	CustomerID nvarchar(128) NULL,
-	ActionTaken nvarchar(2048) NULL,
+    ItemId varchar(256),
+	CustomerID varchar(128) NULL,
+	ActionTaken varchar(2048) NULL,
 	Primary Key(ID)
 );
 
 create table VoxalotMigration
 (
   ID varchar(36) not null,
-  FullName nvarchar(128) not null,
-  EmailAddress nvarchar(128) not null, 
-  VoxalotAccountNumber nvarchar(10) not null,
-  VoxalotAccountType nvarchar(32) not null,
-  VoxalotExport nvarchar(8000) not null,
-  Inserted nvarchar(33) not null,
+  FullName varchar(128) not null,
+  EmailAddress varchar(128) not null, 
+  VoxalotAccountNumber varchar(10) not null,
+  VoxalotAccountType varchar(32) not null,
+  VoxalotExport varchar(8000) not null,
+  Inserted varchar(33) not null,
   Primary Key(ID)
 );
 

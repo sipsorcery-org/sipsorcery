@@ -666,7 +666,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public void Callback(string dest1, string dest2, int delaySeconds, int ringTimeoutLeg1, int ringTimeoutLeg2)
         {
-            Callback(dest1, dest2, delaySeconds, 0, 0, null, null);
+            Callback(dest1, dest2, delaySeconds, ringTimeoutLeg1, ringTimeoutLeg2, null, null);
         }
 
         public void Callback(string dest1, string dest2, int delaySeconds, int ringTimeoutLeg1, int ringTimeoutLeg2, string customHeadersCallLeg1, string customHeadersCallLeg2)
@@ -678,7 +678,7 @@ namespace SIPSorcery.AppServer.DialPlan
             }
             else
             {
-                CallbackApp callbackApp = new CallbackApp(m_sipTransport, m_callManager, m_dialStringParser, FireProxyLogEvent, m_username, m_adminMemberId, m_outboundProxySocket);
+                CallbackApp callbackApp = new CallbackApp(m_sipTransport, m_callManager, m_dialStringParser, FireProxyLogEvent, m_username, m_adminMemberId, m_outboundProxySocket, m_sipSorceryPersistor.SIPDialoguePersistor);
                 ThreadPool.QueueUserWorkItem(delegate { callbackApp.Callback(dest1, dest2, delaySeconds, ringTimeoutLeg1, ringTimeoutLeg2, customHeadersCallLeg1, customHeadersCallLeg2); });
             }
         }
@@ -1926,6 +1926,10 @@ namespace SIPSorcery.AppServer.DialPlan
             else if (Regex.Match(dbType, "(pgsql|postgres)", RegexOptions.IgnoreCase).Success)
             {
                 return StorageTypes.Postgresql;
+            }
+            else if (Regex.Match(dbType, "mssql", RegexOptions.IgnoreCase).Success)
+            {
+                return StorageTypes.MSSQL;
             }
             else
             {

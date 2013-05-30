@@ -39,6 +39,7 @@ using System.Security;
 using System.Text;
 using System.Threading;
 using SIPSorcery.Net;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -49,10 +50,10 @@ namespace SIPSorcery.AppServer.DialPlan
     public class CallbackApp
     {
         private const int MAXCALLBACK_DELAY_SECONDS = 15;       // The maximum seconds a callback method can be delayed for.
-        private const int MAXCALLBACK_RINGTIME_SECONDS = 120;   // Set ring time for calls being created by dial plan. There is nothing that can cancel the call.
+        private const int MAXCALLBACK_RINGTIME_SECONDS = 30;   // Set ring time for calls being created by dial plan. There is nothing that can cancel the call.
         
         private string CRLF = SIPConstants.CRLF;
-        private static int m_maxRingTime = SIPTimings.MAX_RING_TIME;
+        //private static int m_maxRingTime = SIPTimings.MAX_RING_TIME;
 
         private static ILog logger = AppState.logger;
         private SIPMonitorLogDelegate Log_External;
@@ -65,6 +66,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private SIPEndPoint m_outboundProxy;
         private SIPDialogue m_firstLegDialogue;
         private bool m_firstLegEarlyMediaSet;
+        private SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
 
         public CallbackApp(
             SIPTransport sipTransport, 
@@ -73,7 +75,8 @@ namespace SIPSorcery.AppServer.DialPlan
             SIPMonitorLogDelegate logDelegate, 
             string username,
             string adminMemberId,
-            SIPEndPoint outboundProxy)
+            SIPEndPoint outboundProxy,
+            SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor)
         {
             m_sipTransport = sipTransport;
             m_callManager = callManager;
@@ -82,6 +85,7 @@ namespace SIPSorcery.AppServer.DialPlan
             m_username = username;
             m_adminMemberId = adminMemberId;
             m_outboundProxy = outboundProxy;
+            m_sipDialoguePersistor = sipDialoguePersistor;
         }
 
         /// <summary>
@@ -112,13 +116,15 @@ namespace SIPSorcery.AppServer.DialPlan
                 SIPEndPoint defaultUDPEP = m_sipTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp);
 
                 SIPRequest firstLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.GetIPEndPoint(), null);
-                ringTimeoutLeg1 = (ringTimeoutLeg1 > 0) ? ringTimeoutLeg1 : MAXCALLBACK_RINGTIME_SECONDS;
                 m_firstLegDialogue = Dial(dest1, ringTimeoutLeg1, 0, firstLegDummyInviteRequest, SIPCallDescriptor.ParseCustomHeaders(customHeadersCallLeg1));
                 if (m_firstLegDialogue == null)
                 {
                     Log("The first call leg to " + dest1 + " was unsuccessful.");
                     return;
                 }
+
+                // Persist the dialogue to the database so any hangup can be detected.
+                m_sipDialoguePersistor.Add(new SIPDialogueAsset(m_firstLegDialogue));
 
                 SDP firstLegSDP = SDP.ParseSDPDescription(m_firstLegDialogue.RemoteSDP);
                 string call1SDPIPAddress = firstLegSDP.Connection.ConnectionAddress;
@@ -128,7 +134,6 @@ namespace SIPSorcery.AppServer.DialPlan
                 Log("Callback app commencing second leg to " + dest2 + ".");
 
                 SIPRequest secondLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.GetIPEndPoint(), m_firstLegDialogue.RemoteSDP);
-                ringTimeoutLeg2 = (ringTimeoutLeg2 > 0) ? ringTimeoutLeg2 : MAXCALLBACK_RINGTIME_SECONDS;
                 SIPDialogue secondLegDialogue = Dial(dest2, ringTimeoutLeg2, 0, secondLegDummyInviteRequest, SIPCallDescriptor.ParseCustomHeaders(customHeadersCallLeg2));
                 if (secondLegDialogue == null)
                 {
@@ -137,12 +142,28 @@ namespace SIPSorcery.AppServer.DialPlan
                     return;
                 }
 
+                // Check that the first call leg hasn't been hung up.
+                var firstLegDialog = m_sipDialoguePersistor.Get(m_firstLegDialogue.Id);
+                if (firstLegDialog == null)
+                {
+                    // The first call leg has been hungup while waiting for the second call.
+                    Log("The first call leg was hungup while waiting for the second call leg.");
+                    secondLegDialogue.Hangup(m_sipTransport, m_outboundProxy);
+                    return;
+                }
+
                 SDP secondLegSDP = SDP.ParseSDPDescription(secondLegDialogue.RemoteSDP);
                 string call2SDPIPAddress = secondLegSDP.Connection.ConnectionAddress;
                 int call2SDPPort = secondLegSDP.Media[0].Port;
                 Log("The second call leg to " + dest2 + " was successful, audio socket=" + call2SDPIPAddress + ":" + call2SDPPort + ".");
 
-                m_callManager.CreateDialogueBridge(m_firstLegDialogue, secondLegDialogue, m_username);
+                // Persist the second leg dialogue and update the bridge ID on the first call leg.
+                Guid bridgeId = Guid.NewGuid();
+                secondLegDialogue.BridgeId = bridgeId;
+                m_sipDialoguePersistor.Add(new SIPDialogueAsset(secondLegDialogue));
+                m_sipDialoguePersistor.UpdateProperty(firstLegDialog.Id, "BridgeID", bridgeId.ToString());
+
+                //m_callManager.CreateDialogueBridge(m_firstLegDialogue, secondLegDialogue, m_username);
 
                 Log("Re-inviting Callback dialogues to each other.");
 
@@ -174,17 +195,19 @@ namespace SIPSorcery.AppServer.DialPlan
             call.CallProgress += CallProgress;
             call.CallFailed += (s, r, h) => { waitForCallCompleted.Set(); };
             call.CallAnswered += (s, r, toTag, h, t, b, d, transferMode) => { answeredDialogue = d; waitForCallCompleted.Set(); };
-
+           
             try {
                 Queue<List<SIPCallDescriptor>> callsQueue = m_dialStringParser.ParseDialString(DialPlanContextsEnum.Script, clientRequest, data, customHeaders, null, null, null, null, null, null, null, CustomerServiceLevels.None);
                 call.Start(callsQueue);
 
                 // Wait for an answer.
-                ringTimeout = (ringTimeout > m_maxRingTime) ? m_maxRingTime : ringTimeout;
-                if (waitForCallCompleted.WaitOne(ringTimeout * 1000, false)) {
-                    // Call timed out.
+                ringTimeout = (ringTimeout > MAXCALLBACK_RINGTIME_SECONDS || ringTimeout <= 0) ? MAXCALLBACK_RINGTIME_SECONDS : ringTimeout;
+                logger.Debug("Set callback cancel timeout to " + ringTimeout + " seconds.");
+                if (!waitForCallCompleted.WaitOne(ringTimeout * 1000, false)) {
                     call.CancelNotRequiredCallLegs(CallCancelCause.TimedOut);
                 }
+
+                logger.Debug("Callback dial returning has dialogue ? " + (answeredDialogue == null) + ".");
 
                 return answeredDialogue;
             }

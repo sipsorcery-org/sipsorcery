@@ -84,7 +84,12 @@ namespace SIPSorcery.SIP.App
         private SIPNonInviteTransaction m_cancelTransaction;        // If the server call is cancelled this transaction contains the CANCEL in case it needs to be resent.
         private SIPEndPoint m_outboundProxy;                        // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
         private SIPDialogue m_sipDialogue;
+
+#if !SILVERLIGHT
+
         private SIPSorcery.Entities.CustomerAccountDataLayer m_customerAccountDataLayer = new SIPSorcery.Entities.CustomerAccountDataLayer();
+
+#endif
 
         public event SIPCallResponseDelegate CallTrying;
         public event SIPCallResponseDelegate CallRinging;
@@ -281,6 +286,8 @@ namespace SIPSorcery.SIP.App
                             m_serverTransaction.CDR.Owner = Owner;
                             m_serverTransaction.CDR.AdminMemberId = AdminMemberId;
 
+#if !SILVERLIGHT
+
                             if (m_sipCallDescriptor.AccountCode != null)
                             {
                                 AccountCode = m_sipCallDescriptor.AccountCode;
@@ -292,9 +299,9 @@ namespace SIPSorcery.SIP.App
                                     rateDestination = SIPURI.ParseSIPURIRelaxed(m_sipCallDescriptor.Uri).User;
                                 }
 
-                                decimal rate = m_customerAccountDataLayer.GetRate(m_sipCallDescriptor.AccountCode, m_sipCallDescriptor.RateCode, rateDestination);
+                                var rate = m_customerAccountDataLayer.GetRate(m_sipCallDescriptor.AccountCode, m_sipCallDescriptor.RateCode, rateDestination);
 
-                                if (rate == Decimal.MinusOne)
+                                if (rate == null)
                                 {
                                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A billable call could not proceed as no rate could be determined for destination " + rateDestination + ".", Owner));
                                     rtccLogger.Debug("A billable call could not proceed as no rate could be determined for destination " + rateDestination + " and owner " + Owner + ".");
@@ -302,11 +309,13 @@ namespace SIPSorcery.SIP.App
                                 }
                                 else
                                 {
-                                    m_serverTransaction.CDR.Rate = rate;
-                                    Rate = rate;
+                                    m_serverTransaction.CDR.Rate = rate.Rate1;
+                                    m_serverTransaction.CDR.SetupCost = rate.SetupCost;
+                                    m_serverTransaction.CDR.IncrementSeconds = rate.IncrementSeconds;
+                                    Rate = rate.Rate1;
                                     decimal balance = m_customerAccountDataLayer.GetBalance(m_sipCallDescriptor.AccountCode);
 
-                                    if (balance < rate)
+                                    if (balance < Rate)
                                     {
                                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A billable call could not proceed as the available credit for " + m_sipCallDescriptor.AccountCode + " was not sufficient for 60 seconds to destination " + rateDestination + ".", Owner));
                                         rtccLogger.Debug("A billable call could not proceed as the available credit for " + m_sipCallDescriptor.AccountCode + " was not sufficient for 60 seconds to destination " + rateDestination + " and owner " + Owner + ".");
@@ -315,7 +324,7 @@ namespace SIPSorcery.SIP.App
                                     else
                                     {
                                         int intialSeconds = 0;
-                                        var reservationCost = m_customerAccountDataLayer.ReserveInitialCredit(m_serverTransaction.CDR.AccountCode, m_serverTransaction.CDR.Rate, out intialSeconds);
+                                        var reservationCost = m_customerAccountDataLayer.ReserveInitialCredit(m_serverTransaction.CDR.AccountCode, m_serverTransaction.CDR.Rate, m_serverTransaction.CDR.SetupCost, m_serverTransaction.CDR.IncrementSeconds, out intialSeconds);
 
                                         if (reservationCost == Decimal.MinusOne)
                                         {
@@ -333,6 +342,8 @@ namespace SIPSorcery.SIP.App
                                     }
                                 }
                             }
+#endif
+
                         }
 
                         // If this is a billable call attempt to reserve the first chunk of credit.
@@ -549,15 +560,15 @@ namespace SIPSorcery.SIP.App
 
                             SIPRequest authInviteRequest = m_serverTransaction.TransactionRequest;
 
-                            if (SIPProviderMagicJack.IsMagicJackRequest(sipResponse))
-                            {
-                                authInviteRequest.Header.AuthenticationHeader = SIPProviderMagicJack.GetAuthenticationHeader(sipResponse);
-                            }
-                            else
-                            {
+                            //if (SIPProviderMagicJack.IsMagicJackRequest(sipResponse))
+                            //{
+                            //    authInviteRequest.Header.AuthenticationHeader = SIPProviderMagicJack.GetAuthenticationHeader(sipResponse);
+                            //}
+                            //else
+                            //{
                                 authInviteRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
                                 authInviteRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
-                            }
+                            //}
 
                             authInviteRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                             authInviteRequest.Header.CSeq = authInviteRequest.Header.CSeq + 1;
@@ -575,6 +586,7 @@ namespace SIPSorcery.SIP.App
                                 // Transfer any credit reservations from the original call to the new call.
                                 m_serverTransaction.CDR.SecondsReserved = originalCallTransaction.CDR.SecondsReserved;
                                 m_serverTransaction.CDR.Cost = originalCallTransaction.CDR.Cost;
+                                m_serverTransaction.CDR.IncrementSeconds = originalCallTransaction.CDR.IncrementSeconds;
                                 originalCallTransaction.CDR.SecondsReserved = 0;
                                 originalCallTransaction.CDR.Cost = 0;
                                 originalCallTransaction.CDR.ReconciliationResult = "reallocated";
@@ -650,7 +662,7 @@ namespace SIPSorcery.SIP.App
                                                 publicIPAddress = remoteUASAddress.ToString();
                                             }
                                         }
-                                        else if (!IPSocket.IsPrivateAddress(remoteEndPoint.Address.ToString()))
+                                        else if (!IPSocket.IsPrivateAddress(remoteEndPoint.Address.ToString()) && remoteEndPoint.Address != IPAddress.Any)
                                         {
                                             publicIPAddress = remoteEndPoint.Address.ToString();
                                         }

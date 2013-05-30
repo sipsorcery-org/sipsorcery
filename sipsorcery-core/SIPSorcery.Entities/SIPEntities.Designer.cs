@@ -288,22 +288,6 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        public ObjectSet<VoxalotMigration> VoxalotMigrations1
-        {
-            get
-            {
-                if ((_VoxalotMigrations1 == null))
-                {
-                    _VoxalotMigrations1 = base.CreateObjectSet<VoxalotMigration>("VoxalotMigrations1");
-                }
-                return _VoxalotMigrations1;
-            }
-        }
-        private ObjectSet<VoxalotMigration> _VoxalotMigrations1;
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
         public ObjectSet<SimpleWizardRule> SimpleWizardRules
         {
             get
@@ -474,14 +458,6 @@ namespace SIPSorcery.Entities
         }
     
         /// <summary>
-        /// Deprecated Method for adding a new object to the VoxalotMigrations1 EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
-        /// </summary>
-        public void AddToVoxalotMigrations1(VoxalotMigration voxalotMigration)
-        {
-            base.AddObject("VoxalotMigrations1", voxalotMigration);
-        }
-    
-        /// <summary>
         /// Deprecated Method for adding a new object to the SimpleWizardRules EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
         /// </summary>
         public void AddToSimpleWizardRules(SimpleWizardRule simpleWizardRule)
@@ -544,7 +520,9 @@ namespace SIPSorcery.Entities
         /// <param name="localSocket">Initial value of the LocalSocket property.</param>
         /// <param name="remoteSocket">Initial value of the RemoteSocket property.</param>
         /// <param name="isHangingUp">Initial value of the IsHangingUp property.</param>
-        public static CDR CreateCDR(global::System.String callID, global::System.String created, global::System.String direction, global::System.String dstHost, global::System.String dstURI, global::System.String id, global::System.String inserted, global::System.String localSocket, global::System.String remoteSocket, global::System.Boolean isHangingUp)
+        /// <param name="setupCost">Initial value of the SetupCost property.</param>
+        /// <param name="incrementSeconds">Initial value of the IncrementSeconds property.</param>
+        public static CDR CreateCDR(global::System.String callID, global::System.String created, global::System.String direction, global::System.String dstHost, global::System.String dstURI, global::System.String id, global::System.String inserted, global::System.String localSocket, global::System.String remoteSocket, global::System.Boolean isHangingUp, global::System.Decimal setupCost, global::System.Int32 incrementSeconds)
         {
             CDR cDR = new CDR();
             cDR.CallID = callID;
@@ -557,6 +535,8 @@ namespace SIPSorcery.Entities
             cDR.LocalSocket = localSocket;
             cDR.RemoteSocket = remoteSocket;
             cDR.IsHangingUp = isHangingUp;
+            cDR.SetupCost = setupCost;
+            cDR.IncrementSeconds = incrementSeconds;
             return cDR;
         }
 
@@ -1406,6 +1386,54 @@ namespace SIPSorcery.Entities
         private Nullable<global::System.Decimal> _PostReconciliationBalance;
         partial void OnPostReconciliationBalanceChanging(Nullable<global::System.Decimal> value);
         partial void OnPostReconciliationBalanceChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Decimal SetupCost
+        {
+            get
+            {
+                return _SetupCost;
+            }
+            set
+            {
+                OnSetupCostChanging(value);
+                ReportPropertyChanging("SetupCost");
+                _SetupCost = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("SetupCost");
+                OnSetupCostChanged();
+            }
+        }
+        private global::System.Decimal _SetupCost;
+        partial void OnSetupCostChanging(global::System.Decimal value);
+        partial void OnSetupCostChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Int32 IncrementSeconds
+        {
+            get
+            {
+                return _IncrementSeconds;
+            }
+            set
+            {
+                OnIncrementSecondsChanging(value);
+                ReportPropertyChanging("IncrementSeconds");
+                _IncrementSeconds = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("IncrementSeconds");
+                OnIncrementSecondsChanged();
+            }
+        }
+        private global::System.Int32 _IncrementSeconds;
+        partial void OnIncrementSecondsChanging(global::System.Int32 value);
+        partial void OnIncrementSecondsChanged();
 
         #endregion
 
@@ -1436,9 +1464,8 @@ namespace SIPSorcery.Entities
         /// <param name="maxExecutionCount">Initial value of the MaxExecutionCount property.</param>
         /// <param name="suspended">Initial value of the Suspended property.</param>
         /// <param name="serviceLevel">Initial value of the ServiceLevel property.</param>
-        /// <param name="rTCCBillingIncrement">Initial value of the RTCCBillingIncrement property.</param>
         /// <param name="salt">Initial value of the Salt property.</param>
-        public static Customer CreateCustomer(global::System.Boolean active, global::System.String customerPassword, global::System.String name, global::System.String emailAddress, global::System.Boolean emailAddressConfirmed, global::System.Int32 executionCount, global::System.String id, global::System.String inserted, global::System.Int32 maxExecutionCount, global::System.Boolean suspended, global::System.String serviceLevel, global::System.Int32 rTCCBillingIncrement, global::System.String salt)
+        public static Customer CreateCustomer(global::System.Boolean active, global::System.String customerPassword, global::System.String name, global::System.String emailAddress, global::System.Boolean emailAddressConfirmed, global::System.Int32 executionCount, global::System.String id, global::System.String inserted, global::System.Int32 maxExecutionCount, global::System.Boolean suspended, global::System.String serviceLevel, global::System.String salt)
         {
             Customer customer = new Customer();
             customer.Active = active;
@@ -1452,7 +1479,6 @@ namespace SIPSorcery.Entities
             customer.MaxExecutionCount = maxExecutionCount;
             customer.Suspended = suspended;
             customer.ServiceLevel = serviceLevel;
-            customer.RTCCBillingIncrement = rTCCBillingIncrement;
             customer.Salt = salt;
             return customer;
         }
@@ -2259,30 +2285,6 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.Int32 RTCCBillingIncrement
-        {
-            get
-            {
-                return _RTCCBillingIncrement;
-            }
-            set
-            {
-                OnRTCCBillingIncrementChanging(value);
-                ReportPropertyChanging("RTCCBillingIncrement");
-                _RTCCBillingIncrement = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("RTCCBillingIncrement");
-                OnRTCCBillingIncrementChanged();
-            }
-        }
-        private global::System.Int32 _RTCCBillingIncrement;
-        partial void OnRTCCBillingIncrementChanging(global::System.Int32 value);
-        partial void OnRTCCBillingIncrementChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
         [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
         [DataMemberAttribute()]
         public global::System.String RTCCInternationalPrefixes
@@ -2350,17 +2352,17 @@ namespace SIPSorcery.Entities
         /// <param name="owner">Initial value of the Owner property.</param>
         /// <param name="accountCode">Initial value of the AccountCode property.</param>
         /// <param name="credit">Initial value of the Credit property.</param>
-        /// <param name="accountName">Initial value of the AccountName property.</param>
         /// <param name="inserted">Initial value of the Inserted property.</param>
-        public static CustomerAccount CreateCustomerAccount(global::System.String id, global::System.String owner, global::System.String accountCode, global::System.Decimal credit, global::System.String accountName, global::System.String inserted)
+        /// <param name="accountName">Initial value of the AccountName property.</param>
+        public static CustomerAccount CreateCustomerAccount(global::System.String id, global::System.String owner, global::System.String accountCode, global::System.Decimal credit, global::System.String inserted, global::System.String accountName)
         {
             CustomerAccount customerAccount = new CustomerAccount();
             customerAccount.ID = id;
             customerAccount.Owner = owner;
             customerAccount.AccountCode = accountCode;
             customerAccount.Credit = credit;
-            customerAccount.AccountName = accountName;
             customerAccount.Inserted = inserted;
+            customerAccount.AccountName = accountName;
             return customerAccount;
         }
 
@@ -2472,54 +2474,6 @@ namespace SIPSorcery.Entities
         /// </summary>
         [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
         [DataMemberAttribute()]
-        public global::System.String AccountName
-        {
-            get
-            {
-                return _AccountName;
-            }
-            set
-            {
-                OnAccountNameChanging(value);
-                ReportPropertyChanging("AccountName");
-                _AccountName = StructuralObject.SetValidValue(value, false);
-                ReportPropertyChanged("AccountName");
-                OnAccountNameChanged();
-            }
-        }
-        private global::System.String _AccountName;
-        partial void OnAccountNameChanging(global::System.String value);
-        partial void OnAccountNameChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
-        public Nullable<global::System.Int32> PIN
-        {
-            get
-            {
-                return _PIN;
-            }
-            set
-            {
-                OnPINChanging(value);
-                ReportPropertyChanging("PIN");
-                _PIN = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("PIN");
-                OnPINChanged();
-            }
-        }
-        private Nullable<global::System.Int32> _PIN;
-        partial void OnPINChanging(Nullable<global::System.Int32> value);
-        partial void OnPINChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
         public global::System.String Inserted
         {
             get
@@ -2562,6 +2516,54 @@ namespace SIPSorcery.Entities
         private global::System.String _AccountNumber;
         partial void OnAccountNumberChanging(global::System.String value);
         partial void OnAccountNumberChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String AccountName
+        {
+            get
+            {
+                return _AccountName;
+            }
+            set
+            {
+                OnAccountNameChanging(value);
+                ReportPropertyChanging("AccountName");
+                _AccountName = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("AccountName");
+                OnAccountNameChanged();
+            }
+        }
+        private global::System.String _AccountName;
+        partial void OnAccountNameChanging(global::System.String value);
+        partial void OnAccountNameChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public Nullable<global::System.Int32> PIN
+        {
+            get
+            {
+                return _PIN;
+            }
+            set
+            {
+                OnPINChanging(value);
+                ReportPropertyChanging("PIN");
+                _PIN = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("PIN");
+                OnPINChanged();
+            }
+        }
+        private Nullable<global::System.Int32> _PIN;
+        partial void OnPINChanging(Nullable<global::System.Int32> value);
+        partial void OnPINChanged();
 
         #endregion
 
@@ -2587,7 +2589,9 @@ namespace SIPSorcery.Entities
         /// <param name="prefix">Initial value of the Prefix property.</param>
         /// <param name="rate1">Initial value of the Rate1 property.</param>
         /// <param name="inserted">Initial value of the Inserted property.</param>
-        public static Rate CreateRate(global::System.String id, global::System.String owner, global::System.String description, global::System.String prefix, global::System.Decimal rate1, global::System.String inserted)
+        /// <param name="setupCost">Initial value of the SetupCost property.</param>
+        /// <param name="incrementSeconds">Initial value of the IncrementSeconds property.</param>
+        public static Rate CreateRate(global::System.String id, global::System.String owner, global::System.String description, global::System.String prefix, global::System.Decimal rate1, global::System.String inserted, global::System.Decimal setupCost, global::System.Int32 incrementSeconds)
         {
             Rate rate = new Rate();
             rate.ID = id;
@@ -2596,6 +2600,8 @@ namespace SIPSorcery.Entities
             rate.Prefix = prefix;
             rate.Rate1 = rate1;
             rate.Inserted = inserted;
+            rate.SetupCost = setupCost;
+            rate.IncrementSeconds = incrementSeconds;
             return rate;
         }
 
@@ -2773,6 +2779,54 @@ namespace SIPSorcery.Entities
         private global::System.String _Inserted;
         partial void OnInsertedChanging(global::System.String value);
         partial void OnInsertedChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Decimal SetupCost
+        {
+            get
+            {
+                return _SetupCost;
+            }
+            set
+            {
+                OnSetupCostChanging(value);
+                ReportPropertyChanging("SetupCost");
+                _SetupCost = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("SetupCost");
+                OnSetupCostChanged();
+            }
+        }
+        private global::System.Decimal _SetupCost;
+        partial void OnSetupCostChanging(global::System.Decimal value);
+        partial void OnSetupCostChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Int32 IncrementSeconds
+        {
+            get
+            {
+                return _IncrementSeconds;
+            }
+            set
+            {
+                OnIncrementSecondsChanging(value);
+                ReportPropertyChanging("IncrementSeconds");
+                _IncrementSeconds = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("IncrementSeconds");
+                OnIncrementSecondsChanged();
+            }
+        }
+        private global::System.Int32 _IncrementSeconds;
+        partial void OnIncrementSecondsChanging(global::System.Int32 value);
+        partial void OnIncrementSecondsChanged();
 
         #endregion
 
@@ -4470,30 +4524,6 @@ namespace SIPSorcery.Entities
         /// </summary>
         [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
         [DataMemberAttribute()]
-        public global::System.String SwitchboardOwner
-        {
-            get
-            {
-                return _SwitchboardOwner;
-            }
-            set
-            {
-                OnSwitchboardOwnerChanging(value);
-                ReportPropertyChanging("SwitchboardOwner");
-                _SwitchboardOwner = StructuralObject.SetValidValue(value, true);
-                ReportPropertyChanged("SwitchboardOwner");
-                OnSwitchboardOwnerChanged();
-            }
-        }
-        private global::System.String _SwitchboardOwner;
-        partial void OnSwitchboardOwnerChanging(global::System.String value);
-        partial void OnSwitchboardOwnerChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
         public global::System.String SwitchboardLineName
         {
             get
@@ -4584,6 +4614,30 @@ namespace SIPSorcery.Entities
         private global::System.String _CRMPictureURL;
         partial void OnCRMPictureURLChanging(global::System.String value);
         partial void OnCRMPictureURLChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String SwitchboardOwner
+        {
+            get
+            {
+                return _SwitchboardOwner;
+            }
+            set
+            {
+                OnSwitchboardOwnerChanging(value);
+                ReportPropertyChanging("SwitchboardOwner");
+                _SwitchboardOwner = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("SwitchboardOwner");
+                OnSwitchboardOwnerChanged();
+            }
+        }
+        private global::System.String _SwitchboardOwner;
+        partial void OnSwitchboardOwnerChanging(global::System.String value);
+        partial void OnSwitchboardOwnerChanged();
 
         #endregion
 
@@ -7905,219 +7959,6 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-    }
-    
-    /// <summary>
-    /// No Metadata Documentation available.
-    /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="SIPSorcery.Entities", Name="VoxalotMigration")]
-    [Serializable()]
-    [DataContractAttribute(IsReference=true)]
-    public partial class VoxalotMigration : EntityObject
-    {
-        #region Factory Method
-    
-        /// <summary>
-        /// Create a new VoxalotMigration object.
-        /// </summary>
-        /// <param name="id">Initial value of the ID property.</param>
-        /// <param name="fullName">Initial value of the FullName property.</param>
-        /// <param name="emailAddress">Initial value of the EmailAddress property.</param>
-        /// <param name="voxalotAccountNumber">Initial value of the VoxalotAccountNumber property.</param>
-        /// <param name="voxalotAccountType">Initial value of the VoxalotAccountType property.</param>
-        /// <param name="voxalotExport">Initial value of the VoxalotExport property.</param>
-        /// <param name="inserted">Initial value of the Inserted property.</param>
-        public static VoxalotMigration CreateVoxalotMigration(global::System.String id, global::System.String fullName, global::System.String emailAddress, global::System.String voxalotAccountNumber, global::System.String voxalotAccountType, global::System.String voxalotExport, global::System.String inserted)
-        {
-            VoxalotMigration voxalotMigration = new VoxalotMigration();
-            voxalotMigration.ID = id;
-            voxalotMigration.FullName = fullName;
-            voxalotMigration.EmailAddress = emailAddress;
-            voxalotMigration.VoxalotAccountNumber = voxalotAccountNumber;
-            voxalotMigration.VoxalotAccountType = voxalotAccountType;
-            voxalotMigration.VoxalotExport = voxalotExport;
-            voxalotMigration.Inserted = inserted;
-            return voxalotMigration;
-        }
-
-        #endregion
-
-        #region Primitive Properties
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String ID
-        {
-            get
-            {
-                return _ID;
-            }
-            set
-            {
-                if (_ID != value)
-                {
-                    OnIDChanging(value);
-                    ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false);
-                    ReportPropertyChanged("ID");
-                    OnIDChanged();
-                }
-            }
-        }
-        private global::System.String _ID;
-        partial void OnIDChanging(global::System.String value);
-        partial void OnIDChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String FullName
-        {
-            get
-            {
-                return _FullName;
-            }
-            set
-            {
-                OnFullNameChanging(value);
-                ReportPropertyChanging("FullName");
-                _FullName = StructuralObject.SetValidValue(value, false);
-                ReportPropertyChanged("FullName");
-                OnFullNameChanged();
-            }
-        }
-        private global::System.String _FullName;
-        partial void OnFullNameChanging(global::System.String value);
-        partial void OnFullNameChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String EmailAddress
-        {
-            get
-            {
-                return _EmailAddress;
-            }
-            set
-            {
-                OnEmailAddressChanging(value);
-                ReportPropertyChanging("EmailAddress");
-                _EmailAddress = StructuralObject.SetValidValue(value, false);
-                ReportPropertyChanged("EmailAddress");
-                OnEmailAddressChanged();
-            }
-        }
-        private global::System.String _EmailAddress;
-        partial void OnEmailAddressChanging(global::System.String value);
-        partial void OnEmailAddressChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String VoxalotAccountNumber
-        {
-            get
-            {
-                return _VoxalotAccountNumber;
-            }
-            set
-            {
-                OnVoxalotAccountNumberChanging(value);
-                ReportPropertyChanging("VoxalotAccountNumber");
-                _VoxalotAccountNumber = StructuralObject.SetValidValue(value, false);
-                ReportPropertyChanged("VoxalotAccountNumber");
-                OnVoxalotAccountNumberChanged();
-            }
-        }
-        private global::System.String _VoxalotAccountNumber;
-        partial void OnVoxalotAccountNumberChanging(global::System.String value);
-        partial void OnVoxalotAccountNumberChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String VoxalotAccountType
-        {
-            get
-            {
-                return _VoxalotAccountType;
-            }
-            set
-            {
-                OnVoxalotAccountTypeChanging(value);
-                ReportPropertyChanging("VoxalotAccountType");
-                _VoxalotAccountType = StructuralObject.SetValidValue(value, false);
-                ReportPropertyChanged("VoxalotAccountType");
-                OnVoxalotAccountTypeChanged();
-            }
-        }
-        private global::System.String _VoxalotAccountType;
-        partial void OnVoxalotAccountTypeChanging(global::System.String value);
-        partial void OnVoxalotAccountTypeChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String VoxalotExport
-        {
-            get
-            {
-                return _VoxalotExport;
-            }
-            set
-            {
-                OnVoxalotExportChanging(value);
-                ReportPropertyChanging("VoxalotExport");
-                _VoxalotExport = StructuralObject.SetValidValue(value, false);
-                ReportPropertyChanged("VoxalotExport");
-                OnVoxalotExportChanged();
-            }
-        }
-        private global::System.String _VoxalotExport;
-        partial void OnVoxalotExportChanging(global::System.String value);
-        partial void OnVoxalotExportChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.String Inserted
-        {
-            get
-            {
-                return _Inserted;
-            }
-            set
-            {
-                OnInsertedChanging(value);
-                ReportPropertyChanging("Inserted");
-                _Inserted = StructuralObject.SetValidValue(value, false);
-                ReportPropertyChanged("Inserted");
-                OnInsertedChanged();
-            }
-        }
-        private global::System.String _Inserted;
-        partial void OnInsertedChanging(global::System.String value);
-        partial void OnInsertedChanged();
-
-        #endregion
-
-    
     }
     
     /// <summary>

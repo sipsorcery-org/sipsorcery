@@ -257,7 +257,7 @@ namespace SIPSorcery.CRM
                 Id = new Guid(customerRow["id"] as string);
                 CustomerUsername = customerRow["customerusername"] as string;
                 CustomerPassword = customerRow["customerpassword"] as string;
-                CustomerPassword = customerRow["salt"] as string;
+                Salt = customerRow["salt"] as string;
                 EmailAddress = (customerRow.Table.Columns.Contains("emailaddress") && customerRow["emailaddress"] != null) ?  customerRow["emailaddress"] as string : null;
                 AdminId = (customerRow.Table.Columns.Contains("adminid") && customerRow["adminid"] != null) ? customerRow["adminid"] as string : null;
                 AdminMemberId = (customerRow.Table.Columns.Contains("adminmemberid") && customerRow["adminmemberid"] != null) ? customerRow["adminmemberid"] as string : null;

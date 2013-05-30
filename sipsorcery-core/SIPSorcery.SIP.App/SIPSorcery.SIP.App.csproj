@@ -254,7 +254,6 @@
     <Compile Include="SIPUserAgents\SIPNonInviteServerUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPNotifierClient.cs" />
     <Compile Include="SIPPacketMangler.cs" />
-    <Compile Include="SIPProviderTweaks\SIPProviderMagicJack.cs" />
     <Compile Include="SIPRequestAuthoriser\SIPRequestAuthenticationResult.cs" />
     <Compile Include="SIPRequestAuthoriser\SIPRequestAuthenticator.cs" />
     <Compile Include="SIPUserAgents\ISIPServerUserAgent.cs" />

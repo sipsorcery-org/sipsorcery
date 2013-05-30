@@ -53,7 +53,7 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                if ((from rt in sipSorceryEntities.Rates where rt.Prefix == rate.Prefix select rt).Any())
+                if ((from rt in sipSorceryEntities.Rates where rt.Prefix == rate.Prefix && rt.Owner == rate.Owner select rt).Any())
                 {
                     throw new ApplicationException("The rate prefix is already in use.");
                 }
@@ -102,6 +102,8 @@ namespace SIPSorcery.Entities
                     existingRate.Prefix = rate.Prefix;
                     existingRate.Rate1 = rate.Rate1;
                     existingRate.RateCode = rate.RateCode;
+                    existingRate.SetupCost = rate.SetupCost;
+                    existingRate.IncrementSeconds = rate.IncrementSeconds;
 
                     db.SaveChanges();
                 }

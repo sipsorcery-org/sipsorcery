@@ -219,7 +219,7 @@ namespace SIPSorcery.Servers
                         using (var db = new SIPSorceryEntities())
                         {
                             var cdrsReconciliationDue = (from cdr in db.CDRs
-                                                         where cdr.AccountCode != null && (cdr.AnsweredStatus < 200 || cdr.AnsweredStatus >= 300 || cdr.HungupTime != null) && cdr.ReconciliationResult == null
+                                                         where cdr.AccountCode != null && (cdr.AnsweredStatus < 200 || cdr.AnsweredStatus >= 300 || cdr.HungupTime != null || cdr.HungupReason != null) && cdr.ReconciliationResult == null
                                                              && cdr.Cost > 0
                                                          orderby cdr.HungupTime
                                                          select cdr).Take(NUMBER_CDRS_PER_ROUNDTRIP);
@@ -229,6 +229,8 @@ namespace SIPSorcery.Servers
                                 foreach (CDR cdr in cdrsReconciliationDue)
                                 {
                                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.DialPlan, "Reconciling credit for call " + cdr.Dst + ".", cdr.Owner));
+                                    logger.Debug("Reconciliation starting for CDR " + cdr.ID + ", owner " + cdr.Owner + ", destination " + cdr.Dst + ", duration " + cdr.Duration + ", rate " + cdr.Rate + ", setup cost " + 
+                                        cdr.SetupCost +", increment seconds " + cdr.IncrementSeconds + " and reserved credit of " + cdr.Cost + ".");
                                     m_customerAccountDataLayer.ReturnUnusedCredit(cdr.ID);
                                 }
                             }

@@ -128,19 +128,35 @@ namespace SIPSorcery.Web.Services
 
         [OperationContract]
         [WebGet(UriTemplate = "dialplan/count?where={where}", ResponseFormat = WebMessageFormat.Json)]
-        int GetDialPlansCount(string where);
+        JSONResult<int> GetDialPlansCount(string where);
 
         [OperationContract]
         [WebGet(UriTemplate = "dialplan/get?where={where}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
-        List<SIPDialPlan> GetDialPlans(string where, int offset, int count);
+        JSONResult<List<SIPDialPlanJSON>> GetDialPlans(string where, int offset, int count);
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", UriTemplate = "dialplan/add", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<string> AddDialPlan(SIPDialPlanJSON dialPlan);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "dialplan/delete?id={id}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<bool> DeleteDialPlan(string id);
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", UriTemplate = "dialplan/update", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<string> UpdateDialPlan(SIPDialPlanJSON dialPlan);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "dialplan/copy?id={id}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<bool> CopyDialPlan(string id);
 
         [OperationContract]
         [WebGet(UriTemplate = "call/count?where={where}", ResponseFormat = WebMessageFormat.Json)]
-        int GetCallsCount(string where);
+        JSONResult<int> GetCallsCount(string where);
 
         [OperationContract]
         [WebGet(UriTemplate = "call/get?where={where}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
-        List<SIPDialogue> GetCalls(string where, int offset, int count);
+        JSONResult<List<SIPDialogue>> GetCalls(string where, int offset, int count);
 
         [OperationContract]
         [WebGet(UriTemplate = "cdr/count?where={where}", ResponseFormat = WebMessageFormat.Json)]

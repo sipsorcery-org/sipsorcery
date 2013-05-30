@@ -502,22 +502,129 @@ namespace SIPSorcery.Web.Services
             }
         }
 
-        public int GetDialPlansCount(string where)
+        public JSONResult<int> GetDialPlansCount(string where)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                var count = m_service.GetSIPDialPlansCount(customer.Name, where);
+
+                return new JSONResult<int>() { Success = true, Result = count };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<int>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<List<SIPDialPlanJSON>> GetDialPlans(string where, int offset, int count)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                if (count <= 0)
+                {
+                    count = DEFAULT_COUNT;
+                }
+
+                var result = from dialPlan in m_service.GetSIPSIPDialPlans(customer.Name, @where, offset, count)
+                             select new SIPDialPlanJSON()
+                             {
+                                 ID = dialPlan.ID,
+                                 DialPlanName = dialPlan.DialPlanName,
+                                 TraceEmailAddress = dialPlan.TraceEmailAddress,
+                                 DialPlanScript = dialPlan.DialPlanScript,
+                                 ScriptTypeDescription = dialPlan.ScriptTypeDescription,
+                                 AcceptNonInvite = dialPlan.AcceptNonInvite
+                             };
+
+                return new JSONResult<List<SIPDialPlanJSON>>() { Success = true, Result = result.ToList() };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<List<SIPDialPlanJSON>>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<bool> DeleteDialPlan(string id)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                m_service.DeleteSIPDialPlan(customer.Name, id);
+
+                return new JSONResult<bool>() { Success = true, Result = true };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<bool>() { Success = false, Error = excp.Message, Result = false };
+            }
+        }
+
+        public JSONResult<string> AddDialPlan(SIPDialPlanJSON sipDialPlan)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                if (sipDialPlan.ScriptTypeDescription.IsNullOrBlank())
+                {
+                    sipDialPlan.ScriptTypeDescription = SIPDialPlanScriptTypesEnum.Ruby.ToString();
+                }
+
+                SIPDialPlan entityDialPlan = sipDialPlan.ToSIPDialPlan();
+                m_service.InsertSIPDialPlan(customer.Name, entityDialPlan);
+
+                return new JSONResult<string>() { Success = true, Result = entityDialPlan.ID };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<string>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<string> UpdateDialPlan(SIPDialPlanJSON sipDialPlan)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                SIPDialPlan entityDialPlan = sipDialPlan.ToSIPDialPlan();
+                m_service.UpdateSIPDialPlan(customer.Name, entityDialPlan);
+
+                return new JSONResult<string>() { Success = true, Result = entityDialPlan.ID };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<string>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<bool> CopyDialPlan(string id)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                m_service.CopySIPDialPlan(customer.Name, id);
+
+                return new JSONResult<bool>() { Success = true, Result = true };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<bool>() { Success = false, Error = excp.Message, Result = false };
+            }
+        }
+
+        public JSONResult<int> GetCallsCount(string where)
         {
             throw new NotImplementedException();
         }
 
-        public List<SIPDialPlan> GetDialPlans(string where, int offset, int count)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int GetCallsCount(string where)
-        {
-            throw new NotImplementedException();
-        }
-
-        public List<SIPDialogue> GetCalls(string where, int offset, int count)
+        public JSONResult<List<SIPDialogue>> GetCalls(string where, int offset, int count)
         {
             throw new NotImplementedException();
         }

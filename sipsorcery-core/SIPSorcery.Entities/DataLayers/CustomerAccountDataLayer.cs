@@ -49,6 +49,7 @@ namespace SIPSorcery.Entities
         private const int ACCOUNT_CODE_RANDOM_NUMBER_SUFFIX_LENGTH = 10;
         private const decimal SECONDS_FOR_RATE = 60M;   // The number of seconds of call time a rate corresponds to.
         private const int SECONDS_LENIENCY_FOR_RECONCILIATION = 3;
+        private const int DEFAULT_INCREMENT_SECONDS = 1;                // The default number of seconds to bill calls in increments.
 
         private static ILog logger = AppState.GetLogger("rtcc");
 
@@ -61,13 +62,13 @@ namespace SIPSorcery.Entities
         /// take precedence over the destination.</param>
         /// <param name="destination">The call desintation the rate lookup is for.</param>
         /// <returns>If a matching rate is found a greater than 0 decimal value otherwise 0.</returns>
-        public decimal GetRate(string accountCode, string rateCode, string destination)
+        public Rate GetRate(string accountCode, string rateCode, string destination)
         {
             logger.Debug("GetRate for accountcode " + accountCode + ", ratecode " + rateCode + " and destination " + destination + ".");
 
             if (accountCode.IsNullOrBlank() || destination.IsNullOrBlank())
             {
-                return Decimal.MinusOne;
+                return null;
             }
 
             using (var db = new SIPSorceryEntities())
@@ -99,7 +100,7 @@ namespace SIPSorcery.Entities
                     if (customerAccount == null)
                     {
                         logger.Debug("The rate lookup for " + accountCode + " failed due to the no matching accountcode.");
-                        return Decimal.MinusOne;
+                        return null;
                     }
 
                     string rtccInternationalPrefixes = (from cust in db.Customers where cust.Name.ToLower() == customerAccount.Owner.ToLower() select cust.RTCCInternationalPrefixes).Single();
@@ -132,12 +133,12 @@ namespace SIPSorcery.Entities
                 if (callRate != null)
                 {
                     logger.Debug("Rate found for " + accountCode + " and " + destination + " was " + callRate.Rate1 + ".");
-                    return callRate.Rate1;
+                    return callRate;
                 }
                 else
                 {
                     logger.Debug("No rate found for " + accountCode + " and " + destination + ".");
-                    return Decimal.MinusOne;
+                    return null;
                 }
             }
         }
@@ -167,9 +168,9 @@ namespace SIPSorcery.Entities
         /// <param name="rate">The rate for the call destination and the values that will be used for subsequent credit reservations.</param>
         /// <param name="initialSeconds">IF the reservation is successful this parameter will hold the number of seconds that were reserved for the initial reservation.</param>
         /// <returns>True if there was enough credit for the reservation otherwise false.</returns>
-        public decimal ReserveInitialCredit(string accountCode, decimal rate, out int initialSeconds)
+        public decimal ReserveInitialCredit(string accountCode, decimal rate, decimal setupCost, int incrementSeconds, out int initialSeconds)
         {
-            logger.Debug("ReserveInitialCredit for " + accountCode + ", rate " + rate + ".");
+            logger.Debug("ReserveInitialCredit for " + accountCode + ", rate " + rate + ", setup cost " + setupCost + ", increment seconds " + incrementSeconds + ".");
 
             initialSeconds = 0;
 
@@ -191,11 +192,11 @@ namespace SIPSorcery.Entities
                     }
 
                     // Get the owning customer's RTCC billing increment.
-                    int rtccIncrement = (from cust in db.Customers where cust.Name.ToLower() == customerAccount.Owner.ToLower() select cust.RTCCBillingIncrement).Single();
+                    //int rtccIncrement = (from cust in db.Customers where cust.Name.ToLower() == customerAccount.Owner.ToLower() select cust.RTCCBillingIncrement).Single();
 
-                    initialSeconds = (rtccIncrement > MINIMUM_INITIAL_RESERVATION_SECONDS) ? rtccIncrement : MINIMUM_INITIAL_RESERVATION_SECONDS;
+                    initialSeconds = (incrementSeconds > MINIMUM_INITIAL_RESERVATION_SECONDS) ? incrementSeconds : MINIMUM_INITIAL_RESERVATION_SECONDS;
 
-                    decimal reservationCost = (decimal)initialSeconds / (decimal)60 * rate;
+                    decimal reservationCost = ((decimal)initialSeconds / (decimal)60 * rate) + setupCost;
 
                     if (customerAccount.Credit < reservationCost)
                     {
@@ -342,6 +343,10 @@ namespace SIPSorcery.Entities
                         {
                             logger.Error("The unused credit could not be returned for " + cdrID + "  due to the no matching CDR.");
                         }
+                        else if (callCDR.ReconciliationResult != null)
+                        {
+                            logger.Error("This CDR has already been reconciled, no further action will be taken " + cdrID + ".");
+                        }
                         else
                         {
                             string reconciliationError = null;
@@ -377,6 +382,8 @@ namespace SIPSorcery.Entities
                                 string accountCode = callCDR.AccountCode;
                                 var customerAccount = db.CustomerAccounts.Where(x => x.AccountCode == accountCode).SingleOrDefault();
 
+                                logger.Debug("The pre-reconciliation balance for account " + accountCode + " was " + customerAccount.Credit + " when processing CDR ID " + cdrID + ".");
+
                                 if (customerAccount == null)
                                 {
                                     logger.Debug("The unused credit could not be returned for " + cdrID + " due to the no matching accountcode.");
@@ -386,11 +393,12 @@ namespace SIPSorcery.Entities
                                 else
                                 {
                                     // Get the owning customer's RTCC billing increment.
-                                    int rtccIncrement = (from cust in db.Customers where cust.Name.ToLower() == callCDR.Owner.ToLower() select cust.RTCCBillingIncrement).Single();
+                                    //int rtccIncrement = (from cust in db.Customers where cust.Name.ToLower() == callCDR.Owner.ToLower() select cust.RTCCBillingIncrement).Single();
+                                    int rtccIncrement = (callCDR.IncrementSeconds <= 0) ? DEFAULT_INCREMENT_SECONDS : callCDR.IncrementSeconds;
 
                                     int billableDuration = (callCDR.Duration.Value % rtccIncrement == 0) ? callCDR.Duration.Value : (callCDR.Duration.Value / rtccIncrement + 1) * rtccIncrement;
 
-                                    decimal actualCallCost = (Convert.ToDecimal(billableDuration) / SECONDS_FOR_RATE) * callCDR.Rate.Value;
+                                    decimal actualCallCost = ((Convert.ToDecimal(billableDuration) / SECONDS_FOR_RATE) * callCDR.Rate.Value) + callCDR.SetupCost;
 
                                     logger.Debug("RTCC billable duration " + billableDuration + " (increment " + rtccIncrement + "), actual call cost calculated at " + actualCallCost.ToString("0.#####") + " for call with cost of " + callCDR.Cost + ".");
 
@@ -403,30 +411,41 @@ namespace SIPSorcery.Entities
                                             // There is some credit to return to the customer account.
                                             callCDR.Cost = callCDR.Cost.Value - returnCredit;
                                             callCDR.ReconciliationResult = "ok";
-                                            callCDR.PostReconciliationBalance = customerAccount.Credit + returnCredit;
                                             customerAccount.Credit = customerAccount.Credit + returnCredit;
+                                            callCDR.PostReconciliationBalance = customerAccount.Credit;
+
+                                            logger.Debug("The billed call cost was " + actualCallCost.ToString("0.#####") + ", return credit amount " + returnCredit.ToString("0.#####") + ", post reconciliation balance " + customerAccount.Credit.ToString("0.#####") + ".");
                                         }
                                         else
                                         {
                                             // An error has occurred and the credit reserved was less than the cost of the call.
                                             callCDR.ReconciliationResult = "Error: Actual call cost calculated as " + actualCallCost.ToString("0.#####");
-                                            callCDR.PostReconciliationBalance = customerAccount.Credit + returnCredit;
                                             customerAccount.Credit = customerAccount.Credit + returnCredit;
+                                            callCDR.PostReconciliationBalance = customerAccount.Credit;
+
+                                            logger.Debug("Error, the billed call cost was " + actualCallCost.ToString("0.#####") + " which resulted in a negative return credit amount of " + returnCredit.ToString("0.#####") + ", post reconciliation balance " + customerAccount.Credit.ToString("0.#####") + ".");
                                         }
 
                                         db.SaveChanges();
                                     }
                                     else if (Math.Round(actualCallCost, 5) > Math.Round(callCDR.Cost.Value, 5) && Math.Abs(callCDR.Duration.Value - callCDR.SecondsReserved.Value) <= SECONDS_LENIENCY_FOR_RECONCILIATION)
                                     {
-                                        logger.Debug("The billed call duration was in +/- " + SECONDS_LENIENCY_FOR_RECONCILIATION + " of actual call duration so a a bille call cost of " + callCDR.Cost.Value.ToString("0.#####") + " was accepted for an actual call cost of " + actualCallCost.ToString("0.#####") + ".");
                                         callCDR.ReconciliationResult = "ok";
                                         callCDR.PostReconciliationBalance = customerAccount.Credit;
+
+                                        logger.Debug("The billed call duration was in +/- " + SECONDS_LENIENCY_FOR_RECONCILIATION + " of actual call duration so a billable call cost of " + callCDR.Cost.Value.ToString("0.#####") + " was accepted for an actual call cost of " + actualCallCost.ToString("0.#####")
+                                            + ", post reconciliation balance " + callCDR.PostReconciliationBalance.Value.ToString("0.#####") + ".");
+
                                         db.SaveChanges();
                                     }
                                     else if (Math.Round(actualCallCost, 5) > Math.Round(callCDR.Cost.Value, 5))
                                     {
                                         callCDR.ReconciliationResult = "Error, calculated cost of " + actualCallCost.ToString("0.#####") + " exceeded reserved cost of " + callCDR.Cost.Value.ToString("0.#####") + ".";
                                         callCDR.PostReconciliationBalance = customerAccount.Credit;
+
+                                        logger.Debug("Error, calculated cost of " + actualCallCost.ToString("0.#####") + " exceeded reserved cost of " + callCDR.Cost.Value.ToString("0.#####")
+                                             + ", post reconciliation balance " + callCDR.PostReconciliationBalance.Value.ToString("0.#####") + ".");
+
                                         db.SaveChanges();
                                     }
                                     else
@@ -434,6 +453,9 @@ namespace SIPSorcery.Entities
                                         // Call cost exactly matches the reserved cost.
                                         callCDR.ReconciliationResult = "ok";
                                         callCDR.PostReconciliationBalance = customerAccount.Credit;
+
+                                        logger.Debug("The billed call duration was the exact amount reserved of " + callCDR.Cost.Value.ToString("0.#####") + ", post reconciliation balance " + callCDR.PostReconciliationBalance.Value.ToString("0.#####") + ".");
+
                                         db.SaveChanges();
                                     }
                                 }

@@ -79,7 +79,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
-    <Reference Include="SIPSorcery.Entities.Client">
+    <Reference Include="SIPSorcery.Entities.Client, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Entities.Client.dll</HintPath>
     </Reference>
     <Reference Include="SIPSorcery.Net, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -98,7 +99,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Build\SIPSorcery.Silverlight.SIP.dll</HintPath>
     </Reference>
-    <Reference Include="SIPSorcery.Silverlight.SIP.App, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL" />
+    <Reference Include="SIPSorcery.Silverlight.SIP.App">
+      <HintPath>..\Build\SIPSorcery.Silverlight.SIP.App.dll</HintPath>
+    </Reference>
     <Reference Include="SIPSorcery.Sys, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Build\SIPSorcery.Sys.dll</HintPath>

@@ -22,7 +22,6 @@
           <EntitySet Name="sipproviderbindings" EntityType="Entities.Store.sipproviderbindings" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipproviders" EntityType="Entities.Store.sipproviders" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipregistrarbindings" EntityType="Entities.Store.sipregistrarbindings" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="voxalotmigration" EntityType="Entities.Store.voxalotmigration" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="webcallback" EntityType="Entities.Store.webcallback" store:Type="Tables" Schema="sipsorcery" />
           <AssociationSet Name="simplewizardrule_ibfk_1" Association="Entities.Store.simplewizardrule_ibfk_1">
             <End Role="sipdialplans" EntitySet="sipdialplans" />
@@ -77,7 +76,6 @@
           <Property Name="inprogressstatus" Type="int" />
           <Property Name="inprogressreason" Type="varchar" MaxLength="512" />
           <Property Name="ringduration" Type="int" />
-          <Property Name="answeredtime" Type="varchar" MaxLength="33" />
           <Property Name="answeredstatus" Type="int" />
           <Property Name="answeredreason" Type="varchar" MaxLength="512" />
           <Property Name="duration" Type="int" />
@@ -87,11 +85,14 @@
           <Property Name="secondsreserved" Type="int" />
           <Property Name="cost" Type="decimal" Scale="5" />
           <Property Name="rate" Type="decimal" Scale="5" />
-          <Property Name="answeredat" Type="datetime" />
-          <Property Name="reconciliationresult" Type="varchar" MaxLength="256" />
           <Property Name="reservationerror" Type="varchar" MaxLength="256" />
+          <Property Name="reconciliationresult" Type="varchar" MaxLength="256" />
           <Property Name="ishangingup" Type="bit" Nullable="false" />
           <Property Name="postreconciliationbalance" Type="decimal" Scale="5" />
+          <Property Name="answeredat" Type="datetime" />
+          <Property Name="answeredtime" Type="varchar" MaxLength="33" />
+          <Property Name="setupcost" Type="decimal" Nullable="false" Scale="5" />
+          <Property Name="incrementseconds" Type="int" Nullable="false" />
         </EntityType>
         <EntityType Name="customeraccount">
           <Key>
@@ -101,9 +102,9 @@
           <Property Name="owner" Type="varchar" Nullable="false" MaxLength="32" />
           <Property Name="accountcode" Type="varchar" Nullable="false" MaxLength="36" />
           <Property Name="credit" Type="decimal" Nullable="false" Scale="5" />
-          <Property Name="AccountName" Type="varchar" Nullable="false" MaxLength="100" />
+          <Property Name="accountname" Type="varchar" Nullable="false" MaxLength="100" />
           <Property Name="accountnumber" Type="varchar" MaxLength="32" />
-          <Property Name="PIN" Type="int" />
+          <Property Name="pin" Type="int" />
           <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
         </EntityType>
         <!--Errors Found During Generation:
@@ -155,7 +156,6 @@
           <Property Name="usernamerecoveryid" Type="varchar" MaxLength="36" />
           <Property Name="servicelevel" Type="varchar" Nullable="false" MaxLength="64" />
           <Property Name="servicerenewaldate" Type="varchar" MaxLength="33" />
-          <Property Name="RTCCBillingIncrement" Type="int" Nullable="false" />
           <Property Name="RTCCInternationalPrefixes" Type="varchar" MaxLength="32" />
           <Property Name="Salt" Type="varchar" Nullable="false" MaxLength="64" />
         </EntityType>
@@ -170,6 +170,8 @@
           <Property Name="rate" Type="decimal" Nullable="false" Scale="5" />
           <Property Name="ratecode" Type="varchar" MaxLength="32" />
           <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
+          <Property Name="setupcost" Type="decimal" Nullable="false" Scale="5" />
+          <Property Name="incrementseconds" Type="int" Nullable="false" />
         </EntityType>
         <EntityType Name="simplewizardrule">
           <Key>
@@ -181,19 +183,19 @@
           <Property Name="Direction" Type="varchar" Nullable="false" MaxLength="3" />
           <Property Name="Priority" Type="decimal" Nullable="false" Precision="8" Scale="3" />
           <Property Name="Description" Type="varchar" MaxLength="50" />
+          <Property Name="ToMatchType" Type="varchar" MaxLength="50" />
+          <Property Name="ToMatchParameter" Type="varchar" MaxLength="2048" />
           <Property Name="ToSIPAccount" Type="varchar" MaxLength="161" />
           <Property Name="ToProvider" Type="varchar" MaxLength="50" />
+          <Property Name="PatternType" Type="varchar" MaxLength="16" />
           <Property Name="Pattern" Type="varchar" MaxLength="1024" />
           <Property Name="Command" Type="varchar" Nullable="false" MaxLength="32" />
           <Property Name="CommandParameter1" Type="varchar" Nullable="false" MaxLength="2048" />
           <Property Name="CommandParameter2" Type="varchar" MaxLength="2048" />
           <Property Name="CommandParameter3" Type="varchar" MaxLength="2048" />
-          <Property Name="TimePattern" Type="varchar" MaxLength="32" />
-          <Property Name="PatternType" Type="varchar" MaxLength="16" />
-          <Property Name="ToMatchParameter" Type="varchar" MaxLength="2048" />
-          <Property Name="ToMatchType" Type="varchar" MaxLength="50" />
-          <Property Name="IsDisabled" Type="bit" Nullable="false" />
           <Property Name="CommandParameter4" Type="varchar" MaxLength="2048" />
+          <Property Name="TimePattern" Type="varchar" MaxLength="32" />
+          <Property Name="IsDisabled" Type="bit" Nullable="false" />
         </EntityType>
         <EntityType Name="sipaccounts">
           <Key>
@@ -246,7 +248,7 @@
           <Property Name="remotesdp" Type="varchar" MaxLength="2048" />
           <Property Name="switchboarddescription" Type="varchar" MaxLength="1024" />
           <Property Name="switchboardcallerdescription" Type="varchar" MaxLength="1024" />
-          <Property Name="switchboardowner" Type="varchar" MaxLength="1024" />
+          <Property Name="SwitchboardOwner" Type="varchar" MaxLength="1024" />
           <Property Name="SwitchboardLineName" Type="varchar" MaxLength="128" />
           <Property Name="CRMPersonName" Type="varchar" MaxLength="256" />
           <Property Name="CRMCompanyName" Type="varchar" MaxLength="256" />
@@ -405,18 +407,6 @@
           <Property Name="lastupdate" Type="varchar" Nullable="false" MaxLength="33" />
           <Property Name="expirytime" Type="varchar" Nullable="false" MaxLength="33" />
         </EntityType>
-        <EntityType Name="voxalotmigration">
-          <Key>
-            <PropertyRef Name="ID" />
-          </Key>
-          <Property Name="ID" Type="varchar" Nullable="false" MaxLength="36" />
-          <Property Name="FullName" Type="varchar" Nullable="false" MaxLength="128" />
-          <Property Name="EmailAddress" Type="varchar" Nullable="false" MaxLength="128" />
-          <Property Name="VoxalotAccountNumber" Type="varchar" Nullable="false" MaxLength="10" />
-          <Property Name="VoxalotAccountType" Type="varchar" Nullable="false" MaxLength="32" />
-          <Property Name="voxalotexport" Type="varchar" Nullable="false" MaxLength="20000" />
-          <Property Name="Inserted" Type="varchar" Nullable="false" MaxLength="33" />
-        </EntityType>
         <EntityType Name="webcallback">
           <Key>
             <PropertyRef Name="ID" />
@@ -568,7 +558,6 @@
             <End Role="SIPProvider" EntitySet="SIPProviders" />
             <End Role="SIPProviderBinding" EntitySet="SIPProviderBindings" />
           </AssociationSet>
-          <EntitySet Name="VoxalotMigrations1" EntityType="SIPSorcery.Entities.VoxalotMigration" />
           <EntitySet Name="SimpleWizardRules" EntityType="SIPSorcery.Entities.SimpleWizardRule" />
           <AssociationSet Name="simplewizardrule_ibfk_1" Association="SIPSorcery.Entities.simplewizardrule_ibfk_1">
             <End Role="SIPDialPlan" EntitySet="SIPDialPlans" />
@@ -673,6 +662,8 @@
           <Property Type="String" Name="ReservationError" />
           <Property Type="Boolean" Name="IsHangingUp" Nullable="false" />
           <Property Type="Decimal" Name="PostReconciliationBalance" />
+          <Property Type="Decimal" Name="SetupCost" Nullable="false" />
+          <Property Type="Int32" Name="IncrementSeconds" Nullable="false" />
         </EntityType>
         <EntityType Name="Customer">
           <Key>
@@ -711,7 +702,6 @@
           <Property Name="usernamerecoverylastattemptat" Type="String" />
           <Property Name="usernamerecoveryid" Type="String" />
           <Property Type="String" Name="ServiceRenewalDate" />
-          <Property Type="Int32" Name="RTCCBillingIncrement" Nullable="false" />
           <Property Type="String" Name="RTCCInternationalPrefixes" MaxLength="32" FixedLength="false" Unicode="false" />
           <Property Type="String" Name="Salt" Nullable="false" />
         </EntityType>
@@ -767,11 +757,11 @@
           <Property Type="String" Name="TransferMode" />
           <Property Type="String" Name="SwitchboardCallerDescription" />
           <Property Type="String" Name="SwitchboardDescription" />
-          <Property Type="String" Name="SwitchboardOwner" />
           <Property Type="String" Name="SwitchboardLineName" />
           <Property Type="String" Name="CRMPersonName" />
           <Property Type="String" Name="CRMCompanyName" />
           <Property Type="String" Name="CRMPictureURL" />
+          <Property Type="String" Name="SwitchboardOwner" MaxLength="1024" FixedLength="false" Unicode="false" />
         </EntityType>
         <EntityType Name="SIPDialPlan">
           <Key>
@@ -951,18 +941,6 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <EntityType Name="VoxalotMigration">
-          <Key>
-            <PropertyRef Name="ID" />
-          </Key>
-          <Property Type="String" Name="ID" Nullable="false" />
-          <Property Type="String" Name="FullName" Nullable="false" />
-          <Property Type="String" Name="EmailAddress" Nullable="false" />
-          <Property Type="String" Name="VoxalotAccountNumber" Nullable="false" />
-          <Property Type="String" Name="VoxalotAccountType" Nullable="false" />
-          <Property Type="String" Name="VoxalotExport" Nullable="false" />
-          <Property Type="String" Name="Inserted" Nullable="false" />
-        </EntityType>
         <EntityType Name="SimpleWizardRule">
           <Key>
             <PropertyRef Name="ID" />
@@ -1019,10 +997,10 @@
           <Property Type="String" Name="Owner" Nullable="false" />
           <Property Type="String" Name="AccountCode" Nullable="false" />
           <Property Type="Decimal" Name="Credit" Nullable="false" />
-          <Property Type="String" Name="AccountName" Nullable="false" />
-          <Property Type="Int32" Name="PIN" />
           <Property Type="String" Name="Inserted" Nullable="false" />
           <Property Type="String" Name="AccountNumber" />
+          <Property Type="String" Name="AccountName" Nullable="false" MaxLength="100" FixedLength="false" Unicode="false" />
+          <Property Type="Int32" Name="PIN" />
         </EntityType>
         <EntityType Name="Rate">
           <Key>
@@ -1035,6 +1013,8 @@
           <Property Type="Decimal" Name="Rate1" Nullable="false" />
           <Property Type="String" Name="RateCode" />
           <Property Type="String" Name="Inserted" Nullable="false" MaxLength="33" FixedLength="false" Unicode="false" />
+          <Property Type="Decimal" Name="SetupCost" Nullable="false" />
+          <Property Type="Int32" Name="IncrementSeconds" Nullable="false" />
         </EntityType>
       </Schema>
     </edmx:ConceptualModels>
@@ -1101,6 +1081,8 @@
           <EntitySetMapping Name="CDRs">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.CDR">
               <MappingFragment StoreEntitySet="cdr">
+                <ScalarProperty Name="IncrementSeconds" ColumnName="incrementseconds" />
+                <ScalarProperty Name="SetupCost" ColumnName="setupcost" />
                 <ScalarProperty Name="PostReconciliationBalance" ColumnName="postreconciliationbalance" />
                 <ScalarProperty Name="IsHangingUp" ColumnName="ishangingup" />
                 <ScalarProperty Name="ReservationError" ColumnName="reservationerror" />
@@ -1144,7 +1126,6 @@
               <MappingFragment StoreEntitySet="customers">
                 <ScalarProperty Name="Salt" ColumnName="Salt" />
                 <ScalarProperty Name="RTCCInternationalPrefixes" ColumnName="RTCCInternationalPrefixes" />
-                <ScalarProperty Name="RTCCBillingIncrement" ColumnName="RTCCBillingIncrement" />
                 <ScalarProperty Name="ServiceRenewalDate" ColumnName="servicerenewaldate" />
                 <ScalarProperty Name="usernamerecoveryid" ColumnName="usernamerecoveryid" />
                 <ScalarProperty Name="usernamerecoverylastattemptat" ColumnName="usernamerecoverylastattemptat" />
@@ -1209,11 +1190,11 @@
           <EntitySetMapping Name="SIPDialogues">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.SIPDialogue">
               <MappingFragment StoreEntitySet="sipdialogues">
+                <ScalarProperty Name="SwitchboardOwner" ColumnName="SwitchboardOwner" />
                 <ScalarProperty Name="CRMPictureURL" ColumnName="CRMPictureURL" />
                 <ScalarProperty Name="CRMCompanyName" ColumnName="CRMCompanyName" />
                 <ScalarProperty Name="CRMPersonName" ColumnName="CRMPersonName" />
                 <ScalarProperty Name="SwitchboardLineName" ColumnName="SwitchboardLineName" />
-                <ScalarProperty Name="SwitchboardOwner" ColumnName="switchboardowner" />
                 <ScalarProperty Name="SwitchboardDescription" ColumnName="switchboarddescription" />
                 <ScalarProperty Name="SwitchboardCallerDescription" ColumnName="switchboardcallerdescription" />
                 <ScalarProperty Name="TransferMode" ColumnName="transfermode" />
@@ -1343,19 +1324,6 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
-          <EntitySetMapping Name="VoxalotMigrations1">
-            <EntityTypeMapping TypeName="SIPSorcery.Entities.VoxalotMigration">
-              <MappingFragment StoreEntitySet="voxalotmigration">
-                <ScalarProperty Name="Inserted" ColumnName="Inserted" />
-                <ScalarProperty Name="VoxalotExport" ColumnName="voxalotexport" />
-                <ScalarProperty Name="VoxalotAccountType" ColumnName="VoxalotAccountType" />
-                <ScalarProperty Name="VoxalotAccountNumber" ColumnName="VoxalotAccountNumber" />
-                <ScalarProperty Name="EmailAddress" ColumnName="EmailAddress" />
-                <ScalarProperty Name="FullName" ColumnName="FullName" />
-                <ScalarProperty Name="ID" ColumnName="ID" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
           <EntitySetMapping Name="SimpleWizardRules">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.SimpleWizardRule">
               <MappingFragment StoreEntitySet="simplewizardrule">
@@ -1396,10 +1364,10 @@
           <EntitySetMapping Name="CustomerAccounts">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.CustomerAccount">
               <MappingFragment StoreEntitySet="customeraccount">
+                <ScalarProperty Name="PIN" ColumnName="pin" />
+                <ScalarProperty Name="AccountName" ColumnName="accountname" />
                 <ScalarProperty Name="AccountNumber" ColumnName="accountnumber" />
                 <ScalarProperty Name="Inserted" ColumnName="inserted" />
-                <ScalarProperty Name="PIN" ColumnName="PIN" />
-                <ScalarProperty Name="AccountName" ColumnName="AccountName" />
                 <ScalarProperty Name="Credit" ColumnName="credit" />
                 <ScalarProperty Name="AccountCode" ColumnName="accountcode" />
                 <ScalarProperty Name="Owner" ColumnName="owner" />
@@ -1410,6 +1378,8 @@
           <EntitySetMapping Name="Rates">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.Rate">
               <MappingFragment StoreEntitySet="rate">
+                <ScalarProperty Name="IncrementSeconds" ColumnName="incrementseconds" />
+                <ScalarProperty Name="SetupCost" ColumnName="setupcost" />
                 <ScalarProperty Name="Inserted" ColumnName="inserted" />
                 <ScalarProperty Name="RateCode" ColumnName="ratecode" />
                 <ScalarProperty Name="Rate1" ColumnName="rate" />
@@ -1440,15 +1410,15 @@
     </Options>
     <!-- Diagram content (shape and connector positions) -->
     <Diagrams>
-      <Diagram Name="SIPEntities" ZoomLevel="58">
+      <Diagram Name="SIPEntities" ZoomLevel="86">
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanLookup" Width="1.875" PointX="11.5" PointY="1" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanRoute" Width="1.875" PointX="18.375" PointY="0.75" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanProvider" Width="2.25" PointX="11.625" PointY="4.25" Height="2.5571907552083317" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanOption" Width="2.625" PointX="18.25" PointY="3.875" Height="3.3263964843749996" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.CDR" Width="1.75" PointX="3.625" PointY="0.5" Height="7.3647265625" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.Customer" PointX="0.625" PointY="0.5" Width="2.625" Height="7.1724251302083326" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPAccount" Width="2.125" PointX="3.375" PointY="8.5" Height="4.8648079427083335" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialogue" Width="2.75" PointX="5.75" PointY="0.75" Height="5.634013671875" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.Customer" PointX="0.625" PointY="0.5" Width="2.625" Height="7.7493294270833335" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPAccount" Width="2.125" PointX="3.375" PointY="8.75" Height="4.8648079427083335" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialogue" Width="2.75" PointX="5.75" PointY="0.75" Height="6.4032194010416656" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialPlan" Width="2" PointX="15.25" PointY="1.25" Height="4.8648079427083326" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDomain" Width="1.5" PointX="9.125" PointY="5" Height="1.9802864583333317" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPProviderBinding" Width="2.125" PointX="8.875" PointY="7.75" Height="3.9033007812499996" />
@@ -1471,14 +1441,13 @@
           <ConnectorPoint PointX="18.375" PointY="2.2785953776041667" />
         </AssociationConnector>
         <AssociationConnector Association="SIPSorcery.Entities.sipregistrarbindings_ibfk_1" >
-          <ConnectorPoint PointX="3.375" PointY="10.576650390625" />
-          <ConnectorPoint PointX="2.625" PointY="10.576650390625" />
+          <ConnectorPoint PointX="3.375" PointY="10.639150390625" />
+          <ConnectorPoint PointX="2.625" PointY="10.639150390625" />
         </AssociationConnector>
         <AssociationConnector Association="SIPSorcery.Entities.sipproviderbindings_ibfk_2" >
           <ConnectorPoint PointX="8.125" PointY="9.701650390625" />
           <ConnectorPoint PointX="8.875" PointY="9.701650390625" />
         </AssociationConnector>
-        <EntityTypeShape EntityType="SIPSorcery.Entities.VoxalotMigration" Width="2.75" PointX="8.875" PointY="12.25" Height="2.3648893229166674" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SimpleWizardRule" Width="2.125" PointX="14.75" PointY="7.625" Height="4.6725065104166674" />
         <AssociationConnector Association="SIPSorcery.Entities.simplewizardrule_ibfk_1" >
           <ConnectorPoint PointX="16.0625" PointY="5.9225065104166656" />

@@ -143,6 +143,7 @@
     <Reference Include="log4net">
       <HintPath>..\..\stable\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="MySql.Data, Version=6.6.4.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.configuration" />
@@ -168,6 +169,9 @@
     <Compile Include="DataLayers\RateDataLayer.cs" />
     <Compile Include="DataLayers\CustomerAccountDataLayer.cs" />
     <Compile Include="Entities\JSON\CDRJSON.cs" />
+    <Compile Include="Entities\JSON\CustomerAccountJSON.cs" />
+    <Compile Include="Entities\JSON\RateJSON.cs" />
+    <Compile Include="Entities\JSON\SIPDialPlanJSON.cs" />
     <Compile Include="Entities\JSON\SIPRegistrarBindingJSON.cs" />
     <Compile Include="Entities\JSON\SIPProviderBindingJSON.cs" />
     <Compile Include="Entities\SimpleWizardRule.shared.cs" />

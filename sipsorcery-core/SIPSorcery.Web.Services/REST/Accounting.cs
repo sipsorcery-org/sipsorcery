@@ -55,6 +55,7 @@ namespace SIPSorcery.Web.Services
         private SIPSorceryService m_service = new SIPSorceryService();
 
         internal CustomerAccountDataLayer _customerAccountDataLayer = new CustomerAccountDataLayer();
+        internal RateDataLayer _rateDataLayer = new RateDataLayer();
 
         private Customer AuthoriseRequest()
         {
@@ -72,6 +73,10 @@ namespace SIPSorcery.Web.Services
                     else if (customer.Suspended)
                     {
                         throw new ApplicationException("Your account is suspended.");
+                    }
+                    else if (!(customer.ServiceLevel == CustomerServiceLevels.Professional.ToString() || customer.ServiceLevel == CustomerServiceLevels.Gold.ToString()))
+                    {
+                         throw new ApplicationException("The requested method is only available for Professional accounts.");
                     }
                     else
                     {
@@ -94,6 +99,8 @@ namespace SIPSorcery.Web.Services
         {
             return true;
         }
+
+        #region Customer Accounts.
 
         public bool VerifyCustomerAccount(string accountNumber, int pin)
         {
@@ -145,5 +152,206 @@ namespace SIPSorcery.Web.Services
                 return false;
             }
         }
+
+        public JSONResult<int> GetCustomerAccountsCount(string where)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                var count = m_service.GetCustomerAccountsCount(customer.Name, where);
+
+                return new JSONResult<int>() { Success = true, Result = count };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<int>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<List<CustomerAccountJSON>> GetCustomerAccounts(string where, int offset, int count)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                if (count <= 0)
+                {
+                    count = DEFAULT_COUNT;
+                }
+
+                var result = from account in m_service.GetCustomerAccounts(customer.Name, @where, offset, count)
+                             select new CustomerAccountJSON()
+                             {
+                                 ID = account.ID,
+                                 Inserted = account.Inserted,
+                                 AccountCode = account.AccountCode,
+                                 AccountName = account.AccountName,
+                                 AccountNumber = account.AccountNumber,
+                                 Credit = account.Credit,
+                                 PIN = account.PIN
+                             };
+
+                return new JSONResult<List<CustomerAccountJSON>>() { Success = true, Result = result.ToList() };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<List<CustomerAccountJSON>>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<bool> DeleteCustomerAccount(string id)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                m_service.DeleteCustomerAccount(customer.Name, id);
+
+                return new JSONResult<bool>() { Success = true, Result = true };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<bool>() { Success = false, Error = excp.Message, Result = false };
+            }
+        }
+
+        public JSONResult<string> AddCustomerAccount(CustomerAccountJSON customerAccount)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                CustomerAccount entityCustomerAccount = customerAccount.ToCustomerAccount();
+                m_service.InsertCustomerAccount(customer.Name, entityCustomerAccount);
+
+                return new JSONResult<string>() { Success = true, Result = entityCustomerAccount.ID };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<string>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<string> UpdateCustomerAccount(CustomerAccountJSON customerAccount)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                CustomerAccount entityCustomerAccount = customerAccount.ToCustomerAccount();
+                m_service.UpdateCustomerAccount(customer.Name, entityCustomerAccount);
+
+                return new JSONResult<string>() { Success = true, Result = entityCustomerAccount.ID };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<string>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        #endregion
+
+        #region Rates.
+
+        public JSONResult<int> GetRatesCount(string where)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                var count = m_service.GetRatesCount(customer.Name, where);
+
+                return new JSONResult<int>() { Success = true, Result = count };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<int>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<List<RateJSON>> GetRates(string where, int offset, int count)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                if (count <= 0)
+                {
+                    count = DEFAULT_COUNT;
+                }
+
+                var result = from dialPlan in m_service.GetRates(customer.Name, @where, offset, count)
+                             select new RateJSON()
+                             {
+                                 ID = dialPlan.ID,
+                                 Inserted = dialPlan.Inserted,
+                                 Description = dialPlan.Description,
+                                 Prefix = dialPlan.Prefix,
+                                 Rate = dialPlan.Rate1,
+                                 RateCode = dialPlan.RateCode,
+                                 SetupCost = dialPlan.SetupCost,
+                                 IncrementSeconds = dialPlan.IncrementSeconds
+                             };
+
+                return new JSONResult<List<RateJSON>>() { Success = true, Result = result.ToList() };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<List<RateJSON>>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<bool> DeleteRate(string id)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                m_service.DeleteRate(customer.Name, id);
+
+                return new JSONResult<bool>() { Success = true, Result = true };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<bool>() { Success = false, Error = excp.Message, Result = false };
+            }
+        }
+
+        public JSONResult<string> AddRate(RateJSON rate)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                Rate entityRate = rate.ToRate();
+                m_service.InsertRate(customer.Name, entityRate);
+
+                return new JSONResult<string>() { Success = true, Result = entityRate.ID };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<string>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<string> UpdateRate(RateJSON rate)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                Rate entityRate = rate.ToRate();
+                m_service.UpdateRate(customer.Name, entityRate);
+
+                return new JSONResult<string>() { Success = true, Result = entityRate.ID };
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<string>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        #endregion
     }
 }

@@ -767,15 +767,15 @@ namespace SIPSorcery.Servers
                 regRequest.Header.To.ToTag = null;
                 regRequest.Header.CSeq = ++binding.CSeq;
 
-                if (SIPProviderMagicJack.IsMagicJackRequest(sipResponse))
-                {
-                    regRequest.Header.AuthenticationHeader = SIPProviderMagicJack.GetAuthenticationHeader(sipResponse);
-                }
-                else
-                {
+                //if (SIPProviderMagicJack.IsMagicJackRequest(sipResponse))
+                //{
+                //    regRequest.Header.AuthenticationHeader = SIPProviderMagicJack.GetAuthenticationHeader(sipResponse);
+                //}
+                //else
+                //{
                     regRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
                     regRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
-                }
+                //}
 
                 return regRequest;
             }

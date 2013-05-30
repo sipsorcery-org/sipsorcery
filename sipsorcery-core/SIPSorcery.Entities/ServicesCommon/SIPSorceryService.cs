@@ -887,6 +887,26 @@ namespace SIPSorcery.Entities
 
         #region SIP Dial Plan
 
+        public int GetSIPDialPlansCount(string authUser, string where)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetSIPDialPlansCount.");
+            }
+
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from dialPlan in entities.SIPDialPlans where dialPlan.Owner.ToLower() == authUser.ToLower() select dialPlan);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<SIPDialPlan, bool>(where));
+                }
+
+                return query.Count();
+            }
+        }
+
         public IQueryable<SIPDialPlan> GetSIPSIPDialPlans(string authUser)
         {
             if (authUser.IsNullOrBlank())
@@ -895,6 +915,26 @@ namespace SIPSorcery.Entities
             }
 
             return new SIPSorceryEntities().SIPDialPlans.Where(x => x.Owner == authUser.ToLower());
+        }
+
+        public List<SIPDialPlan> GetSIPSIPDialPlans(string authUser, string where, int offset, int count)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetSIPSIPDialPlans.");
+            }
+
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from dialPlan in entities.SIPDialPlans where dialPlan.Owner.ToLower() == authUser.ToLower() select dialPlan);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<SIPDialPlan, bool>(where));
+                }
+
+                return query.AsEnumerable().OrderBy(x => x.DialPlanName).Skip(offset).Take(count).ToList();
+            }
         }
 
         public void InsertSIPDialPlan(string authUser, SIPDialPlan sipDialPlan)
@@ -1011,6 +1051,26 @@ namespace SIPSorcery.Entities
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
                 SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlan.ID && dp.Owner == authUser.ToLower() select dp).FirstOrDefault();
+
+                if (existingAccount == null)
+                {
+                    throw new ApplicationException("The SIP Dial Plan to delete could not be found.");
+                }
+                else if (existingAccount.Owner != authUser.ToLower())
+                {
+                    throw new ApplicationException("Not authorised to delete the SIP Dial Plan.");
+                }
+
+                sipSorceryEntities.SIPDialPlans.DeleteObject(existingAccount);
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void DeleteSIPDialPlan(string authUser, string sipDialPlanID)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlanID && dp.Owner.ToLower() == authUser.ToLower() select dp).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
@@ -1438,6 +1498,26 @@ namespace SIPSorcery.Entities
 
         #region Customer Accounts
 
+        public int GetCustomerAccountsCount(string authUser, string where)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetCustomerAccountsCount.");
+            }
+
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from acc in entities.CustomerAccounts where acc.Owner.ToLower() == authUser.ToLower() select acc);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<CustomerAccount, bool>(where));
+                }
+
+                return query.Count();
+            }
+        }
+
         public IQueryable<CustomerAccount> GetCustomerAccounts(string authUser)
         {
             if (authUser.IsNullOrBlank())
@@ -1446,7 +1526,27 @@ namespace SIPSorcery.Entities
             }
 
             return new SIPSorceryEntities().CustomerAccounts.Where(x => x.Owner == authUser.ToLower());
-        } 
+        }
+
+        public List<CustomerAccount> GetCustomerAccounts(string authUser, string where, int offset, int count)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetCustomerAccounts.");
+            }
+
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from acc in entities.CustomerAccounts where acc.Owner.ToLower() == authUser.ToLower() select acc);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<CustomerAccount, bool>(where));
+                }
+
+                return query.AsEnumerable().OrderBy(x => x.AccountCode).Skip(offset).Take(count).ToList();
+            }
+        }
 
         public void InsertCustomerAccount(string authUser, CustomerAccount customerAccount)
         {
@@ -1474,7 +1574,27 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                var existingAccount = (from ca in sipSorceryEntities.CustomerAccounts where ca.ID == customerAccount.ID && ca.Owner == authUser.ToLower() select ca).FirstOrDefault();
+                var existingAccount = (from ca in sipSorceryEntities.CustomerAccounts where ca.ID == customerAccount.ID && ca.Owner.ToLower() == authUser.ToLower() select ca).FirstOrDefault();
+
+                if (existingAccount == null)
+                {
+                    throw new ApplicationException("The customer account to delete could not be found.");
+                }
+                else if (existingAccount.Owner != authUser.ToLower())
+                {
+                    throw new ApplicationException("Not authorised to delete the customer account.");
+                }
+
+                sipSorceryEntities.CustomerAccounts.DeleteObject(existingAccount);
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void DeleteCustomerAccount(string authUser, string customerAccountID)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                var existingAccount = (from ca in sipSorceryEntities.CustomerAccounts where ca.ID == customerAccountID && ca.Owner.ToLower() == authUser.ToLower() select ca).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
@@ -1494,6 +1614,26 @@ namespace SIPSorcery.Entities
 
         #region Rates
 
+        public int GetRatesCount(string authUser, string where)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetRatesCount.");
+            }
+
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from rate in entities.Rates where rate.Owner.ToLower() == authUser.ToLower() select rate);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<Rate, bool>(where));
+                }
+
+                return query.Count();
+            }
+        }
+
         public IQueryable<Rate> GetRates(string authUser)
         {
             if (authUser.IsNullOrBlank())
@@ -1501,7 +1641,27 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for GetRates.");
             }
 
-            return new SIPSorceryEntities().Rates.Where(x => x.Owner == authUser.ToLower());
+            return new SIPSorceryEntities().Rates.Where(x => x.Owner.ToLower() == authUser.ToLower());
+        }
+
+        public List<Rate> GetRates(string authUser, string where, int offset, int count)
+        {
+            if (authUser.IsNullOrBlank())
+            {
+                throw new ArgumentException("An authenticated user is required for GetRates.");
+            }
+
+            using (var entities = new SIPSorceryEntities())
+            {
+                var query = (from rate in entities.Rates where rate.Owner.ToLower() == authUser.ToLower() select rate);
+
+                if (where != null)
+                {
+                    query = query.Where(DynamicExpression.ParseLambda<Rate, bool>(where));
+                }
+
+                return query.AsEnumerable().OrderBy(x => x.Description).Skip(offset).Take(count).ToList();
+            }
         }
 
         public void InsertRate(string authUser, Rate rate)
@@ -1531,6 +1691,26 @@ namespace SIPSorcery.Entities
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
                 var existingRate = (from ra in sipSorceryEntities.Rates where ra.ID == rate.ID && ra.Owner == authUser.ToLower() select ra).FirstOrDefault();
+
+                if (existingRate == null)
+                {
+                    throw new ApplicationException("The rate to delete could not be found.");
+                }
+                else if (existingRate.Owner != authUser.ToLower())
+                {
+                    throw new ApplicationException("Not authorised to delete the rate.");
+                }
+
+                sipSorceryEntities.Rates.DeleteObject(existingRate);
+                sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        public void DeleteRate(string authUser, string rateID)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                var existingRate = (from ra in sipSorceryEntities.Rates where ra.ID == rateID && ra.Owner.ToLower() == authUser.ToLower() select ra).FirstOrDefault();
 
                 if (existingRate == null)
                 {
