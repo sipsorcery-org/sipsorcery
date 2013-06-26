@@ -118,8 +118,8 @@ namespace SIPSorcery.Net
 			Version = firstWord >> 14;
 			PaddingFlag = (firstWord >> 13) & 0x1;
 			HeaderExtensionFlag = (firstWord >> 12) & 0x1;
-			CSRCCount = firstWord & 0xf;
-			MarkerBit = firstWord >> 9 & 0x1;
+			CSRCCount = (firstWord >> 8) & 0xf;
+			MarkerBit = (firstWord >> 7) & 0x1;
 			PayloadType = firstWord & 0x7f;
 		}
 
