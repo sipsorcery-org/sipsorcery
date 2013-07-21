@@ -29,8 +29,6 @@ namespace SIPSorcery.Entities
     public sealed partial class CDR : Entity
     {
         
-        private string _accountCode;
-        
         private string _adminMemberID;
         
         private Nullable<DateTime> _answeredAt;
@@ -45,9 +43,9 @@ namespace SIPSorcery.Entities
         
         private string _callID;
         
-        private Nullable<decimal> _cost;
-        
         private string _created;
+        
+        private string _dialPlanContextID;
         
         private string _direction;
         
@@ -71,8 +69,6 @@ namespace SIPSorcery.Entities
         
         private string _id;
         
-        private int _incrementSeconds;
-        
         private string _inProgressReason;
         
         private Nullable<int> _inProgressStatus;
@@ -81,27 +77,13 @@ namespace SIPSorcery.Entities
         
         private string _inserted;
         
-        private bool _isHangingUp;
-        
         private string _localSocket;
         
         private string _owner;
         
-        private Nullable<decimal> _postReconciliationBalance;
-        
-        private Nullable<decimal> _rate;
-        
-        private string _reconciliationResult;
-        
         private string _remoteSocket;
         
-        private string _reservationError;
-        
         private Nullable<int> _ringDuration;
-        
-        private Nullable<int> _secondsReserved;
-        
-        private decimal _setupCost;
         
         #region Extensibility Method Definitions
 
@@ -110,8 +92,6 @@ namespace SIPSorcery.Entities
         /// can be used for further object setup.
         /// </summary>
         partial void OnCreated();
-        partial void OnAccountCodeChanging(string value);
-        partial void OnAccountCodeChanged();
         partial void OnAdminMemberIDChanging(string value);
         partial void OnAdminMemberIDChanged();
         partial void OnAnsweredAtChanging(Nullable<DateTime> value);
@@ -126,10 +106,10 @@ namespace SIPSorcery.Entities
         partial void OnBridgeIDChanged();
         partial void OnCallIDChanging(string value);
         partial void OnCallIDChanged();
-        partial void OnCostChanging(Nullable<decimal> value);
-        partial void OnCostChanged();
         partial void OnCreatedChanging(string value);
         partial void OnCreatedChanged();
+        partial void OnDialPlanContextIDChanging(string value);
+        partial void OnDialPlanContextIDChanged();
         partial void OnDirectionChanging(string value);
         partial void OnDirectionChanged();
         partial void OnDstChanging(string value);
@@ -152,8 +132,6 @@ namespace SIPSorcery.Entities
         partial void OnHungupTimeChanged();
         partial void OnIDChanging(string value);
         partial void OnIDChanged();
-        partial void OnIncrementSecondsChanging(int value);
-        partial void OnIncrementSecondsChanged();
         partial void OnInProgressReasonChanging(string value);
         partial void OnInProgressReasonChanged();
         partial void OnInProgressStatusChanging(Nullable<int> value);
@@ -162,28 +140,14 @@ namespace SIPSorcery.Entities
         partial void OnInProgressTimeChanged();
         partial void OnInsertedChanging(string value);
         partial void OnInsertedChanged();
-        partial void OnIsHangingUpChanging(bool value);
-        partial void OnIsHangingUpChanged();
         partial void OnLocalSocketChanging(string value);
         partial void OnLocalSocketChanged();
         partial void OnOwnerChanging(string value);
         partial void OnOwnerChanged();
-        partial void OnPostReconciliationBalanceChanging(Nullable<decimal> value);
-        partial void OnPostReconciliationBalanceChanged();
-        partial void OnRateChanging(Nullable<decimal> value);
-        partial void OnRateChanged();
-        partial void OnReconciliationResultChanging(string value);
-        partial void OnReconciliationResultChanged();
         partial void OnRemoteSocketChanging(string value);
         partial void OnRemoteSocketChanged();
-        partial void OnReservationErrorChanging(string value);
-        partial void OnReservationErrorChanged();
         partial void OnRingDurationChanging(Nullable<int> value);
         partial void OnRingDurationChanged();
-        partial void OnSecondsReservedChanging(Nullable<int> value);
-        partial void OnSecondsReservedChanged();
-        partial void OnSetupCostChanging(decimal value);
-        partial void OnSetupCostChanged();
 
         #endregion
         
@@ -194,30 +158,6 @@ namespace SIPSorcery.Entities
         public CDR()
         {
             this.OnCreated();
-        }
-        
-        /// <summary>
-        /// Gets or sets the 'AccountCode' value.
-        /// </summary>
-        [DataMember()]
-        public string AccountCode
-        {
-            get
-            {
-                return this._accountCode;
-            }
-            set
-            {
-                if ((this._accountCode != value))
-                {
-                    this.OnAccountCodeChanging(value);
-                    this.RaiseDataMemberChanging("AccountCode");
-                    this.ValidateProperty("AccountCode", value);
-                    this._accountCode = value;
-                    this.RaiseDataMemberChanged("AccountCode");
-                    this.OnAccountCodeChanged();
-                }
-            }
         }
         
         /// <summary>
@@ -390,30 +330,6 @@ namespace SIPSorcery.Entities
         }
         
         /// <summary>
-        /// Gets or sets the 'Cost' value.
-        /// </summary>
-        [DataMember()]
-        public Nullable<decimal> Cost
-        {
-            get
-            {
-                return this._cost;
-            }
-            set
-            {
-                if ((this._cost != value))
-                {
-                    this.OnCostChanging(value);
-                    this.RaiseDataMemberChanging("Cost");
-                    this.ValidateProperty("Cost", value);
-                    this._cost = value;
-                    this.RaiseDataMemberChanged("Cost");
-                    this.OnCostChanged();
-                }
-            }
-        }
-        
-        /// <summary>
         /// Gets or sets the 'Created' value.
         /// </summary>
         [DataMember()]
@@ -434,6 +350,31 @@ namespace SIPSorcery.Entities
                     this._created = value;
                     this.RaiseDataMemberChanged("Created");
                     this.OnCreatedChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'DialPlanContextID' value.
+        /// </summary>
+        [DataMember()]
+        [StringLength(36)]
+        public string DialPlanContextID
+        {
+            get
+            {
+                return this._dialPlanContextID;
+            }
+            set
+            {
+                if ((this._dialPlanContextID != value))
+                {
+                    this.OnDialPlanContextIDChanging(value);
+                    this.RaiseDataMemberChanging("DialPlanContextID");
+                    this.ValidateProperty("DialPlanContextID", value);
+                    this._dialPlanContextID = value;
+                    this.RaiseDataMemberChanged("DialPlanContextID");
+                    this.OnDialPlanContextIDChanged();
                 }
             }
         }
@@ -709,30 +650,6 @@ namespace SIPSorcery.Entities
         }
         
         /// <summary>
-        /// Gets or sets the 'IncrementSeconds' value.
-        /// </summary>
-        [DataMember()]
-        public int IncrementSeconds
-        {
-            get
-            {
-                return this._incrementSeconds;
-            }
-            set
-            {
-                if ((this._incrementSeconds != value))
-                {
-                    this.OnIncrementSecondsChanging(value);
-                    this.RaiseDataMemberChanging("IncrementSeconds");
-                    this.ValidateProperty("IncrementSeconds", value);
-                    this._incrementSeconds = value;
-                    this.RaiseDataMemberChanged("IncrementSeconds");
-                    this.OnIncrementSecondsChanged();
-                }
-            }
-        }
-        
-        /// <summary>
         /// Gets or sets the 'InProgressReason' value.
         /// </summary>
         [DataMember()]
@@ -830,30 +747,6 @@ namespace SIPSorcery.Entities
         }
         
         /// <summary>
-        /// Gets or sets the 'IsHangingUp' value.
-        /// </summary>
-        [DataMember()]
-        public bool IsHangingUp
-        {
-            get
-            {
-                return this._isHangingUp;
-            }
-            set
-            {
-                if ((this._isHangingUp != value))
-                {
-                    this.OnIsHangingUpChanging(value);
-                    this.RaiseDataMemberChanging("IsHangingUp");
-                    this.ValidateProperty("IsHangingUp", value);
-                    this._isHangingUp = value;
-                    this.RaiseDataMemberChanged("IsHangingUp");
-                    this.OnIsHangingUpChanged();
-                }
-            }
-        }
-        
-        /// <summary>
         /// Gets or sets the 'LocalSocket' value.
         /// </summary>
         [DataMember()]
@@ -903,78 +796,6 @@ namespace SIPSorcery.Entities
         }
         
         /// <summary>
-        /// Gets or sets the 'PostReconciliationBalance' value.
-        /// </summary>
-        [DataMember()]
-        public Nullable<decimal> PostReconciliationBalance
-        {
-            get
-            {
-                return this._postReconciliationBalance;
-            }
-            set
-            {
-                if ((this._postReconciliationBalance != value))
-                {
-                    this.OnPostReconciliationBalanceChanging(value);
-                    this.RaiseDataMemberChanging("PostReconciliationBalance");
-                    this.ValidateProperty("PostReconciliationBalance", value);
-                    this._postReconciliationBalance = value;
-                    this.RaiseDataMemberChanged("PostReconciliationBalance");
-                    this.OnPostReconciliationBalanceChanged();
-                }
-            }
-        }
-        
-        /// <summary>
-        /// Gets or sets the 'Rate' value.
-        /// </summary>
-        [DataMember()]
-        public Nullable<decimal> Rate
-        {
-            get
-            {
-                return this._rate;
-            }
-            set
-            {
-                if ((this._rate != value))
-                {
-                    this.OnRateChanging(value);
-                    this.RaiseDataMemberChanging("Rate");
-                    this.ValidateProperty("Rate", value);
-                    this._rate = value;
-                    this.RaiseDataMemberChanged("Rate");
-                    this.OnRateChanged();
-                }
-            }
-        }
-        
-        /// <summary>
-        /// Gets or sets the 'ReconciliationResult' value.
-        /// </summary>
-        [DataMember()]
-        public string ReconciliationResult
-        {
-            get
-            {
-                return this._reconciliationResult;
-            }
-            set
-            {
-                if ((this._reconciliationResult != value))
-                {
-                    this.OnReconciliationResultChanging(value);
-                    this.RaiseDataMemberChanging("ReconciliationResult");
-                    this.ValidateProperty("ReconciliationResult", value);
-                    this._reconciliationResult = value;
-                    this.RaiseDataMemberChanged("ReconciliationResult");
-                    this.OnReconciliationResultChanged();
-                }
-            }
-        }
-        
-        /// <summary>
         /// Gets or sets the 'RemoteSocket' value.
         /// </summary>
         [DataMember()]
@@ -1000,30 +821,6 @@ namespace SIPSorcery.Entities
         }
         
         /// <summary>
-        /// Gets or sets the 'ReservationError' value.
-        /// </summary>
-        [DataMember()]
-        public string ReservationError
-        {
-            get
-            {
-                return this._reservationError;
-            }
-            set
-            {
-                if ((this._reservationError != value))
-                {
-                    this.OnReservationErrorChanging(value);
-                    this.RaiseDataMemberChanging("ReservationError");
-                    this.ValidateProperty("ReservationError", value);
-                    this._reservationError = value;
-                    this.RaiseDataMemberChanged("ReservationError");
-                    this.OnReservationErrorChanged();
-                }
-            }
-        }
-        
-        /// <summary>
         /// Gets or sets the 'RingDuration' value.
         /// </summary>
         [DataMember()]
@@ -1043,54 +840,6 @@ namespace SIPSorcery.Entities
                     this._ringDuration = value;
                     this.RaiseDataMemberChanged("RingDuration");
                     this.OnRingDurationChanged();
-                }
-            }
-        }
-        
-        /// <summary>
-        /// Gets or sets the 'SecondsReserved' value.
-        /// </summary>
-        [DataMember()]
-        public Nullable<int> SecondsReserved
-        {
-            get
-            {
-                return this._secondsReserved;
-            }
-            set
-            {
-                if ((this._secondsReserved != value))
-                {
-                    this.OnSecondsReservedChanging(value);
-                    this.RaiseDataMemberChanging("SecondsReserved");
-                    this.ValidateProperty("SecondsReserved", value);
-                    this._secondsReserved = value;
-                    this.RaiseDataMemberChanged("SecondsReserved");
-                    this.OnSecondsReservedChanged();
-                }
-            }
-        }
-        
-        /// <summary>
-        /// Gets or sets the 'SetupCost' value.
-        /// </summary>
-        [DataMember()]
-        public decimal SetupCost
-        {
-            get
-            {
-                return this._setupCost;
-            }
-            set
-            {
-                if ((this._setupCost != value))
-                {
-                    this.OnSetupCostChanging(value);
-                    this.RaiseDataMemberChanging("SetupCost");
-                    this.ValidateProperty("SetupCost", value);
-                    this._setupCost = value;
-                    this.RaiseDataMemberChanged("SetupCost");
-                    this.OnSetupCostChanged();
                 }
             }
         }
@@ -2791,11 +2540,15 @@ namespace SIPSorcery.Entities
     public sealed partial class SIPAccount : Entity
     {
         
+        private string _accountCode;
+        
         private string _adminDisabledReason;
         
         private string _adminMemberID;
         
         private string _avatarURL;
+        
+        private string _description;
         
         private bool _dontMangleEnabled;
         
@@ -2838,12 +2591,16 @@ namespace SIPSorcery.Entities
         /// can be used for further object setup.
         /// </summary>
         partial void OnCreated();
+        partial void OnAccountCodeChanging(string value);
+        partial void OnAccountCodeChanged();
         partial void OnAdminDisabledReasonChanging(string value);
         partial void OnAdminDisabledReasonChanged();
         partial void OnAdminMemberIDChanging(string value);
         partial void OnAdminMemberIDChanged();
         partial void OnAvatarURLChanging(string value);
         partial void OnAvatarURLChanged();
+        partial void OnDescriptionChanging(string value);
+        partial void OnDescriptionChanged();
         partial void OnDontMangleEnabledChanging(bool value);
         partial void OnDontMangleEnabledChanged();
         partial void OnIDChanging(string value);
@@ -2886,6 +2643,31 @@ namespace SIPSorcery.Entities
         public SIPAccount()
         {
             this.OnCreated();
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'AccountCode' value.
+        /// </summary>
+        [DataMember()]
+        [StringLength(36)]
+        public string AccountCode
+        {
+            get
+            {
+                return this._accountCode;
+            }
+            set
+            {
+                if ((this._accountCode != value))
+                {
+                    this.OnAccountCodeChanging(value);
+                    this.RaiseDataMemberChanging("AccountCode");
+                    this.ValidateProperty("AccountCode", value);
+                    this._accountCode = value;
+                    this.RaiseDataMemberChanged("AccountCode");
+                    this.OnAccountCodeChanged();
+                }
+            }
         }
         
         /// <summary>
@@ -2956,6 +2738,31 @@ namespace SIPSorcery.Entities
                     this._avatarURL = value;
                     this.RaiseDataMemberChanged("AvatarURL");
                     this.OnAvatarURLChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'Description' value.
+        /// </summary>
+        [DataMember()]
+        [StringLength(1024)]
+        public string Description
+        {
+            get
+            {
+                return this._description;
+            }
+            set
+            {
+                if ((this._description != value))
+                {
+                    this.OnDescriptionChanging(value);
+                    this.RaiseDataMemberChanging("Description");
+                    this.ValidateProperty("Description", value);
+                    this._description = value;
+                    this.RaiseDataMemberChanged("Description");
+                    this.OnDescriptionChanged();
                 }
             }
         }

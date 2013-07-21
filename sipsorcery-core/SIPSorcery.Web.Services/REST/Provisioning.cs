@@ -216,7 +216,9 @@ namespace SIPSorcery.Web.Services
                                  SendNATKeepAlives = sipAccount.SendNATKeepAlives,
                                  SIPDomain = sipAccount.SIPDomain,
                                  SIPPassword = sipAccount.SIPPassword,
-                                 SIPUsername = sipAccount.SIPUsername
+                                 SIPUsername = sipAccount.SIPUsername,
+                                 AccountCode = sipAccount.AccountCode,
+                                 Description = sipAccount.Description
                              };
 
                 return new JSONResult<List<SIPAccountJSON>>() { Success = true, Result = result.ToList() };
@@ -379,6 +381,7 @@ namespace SIPSorcery.Web.Services
                                  ProviderType = sipProvider.ProviderType,
                                  ProviderFrom = sipProvider.ProviderFrom,
                                  CustomHeaders = sipProvider.CustomHeaders,
+                                 RegisterEnabled = sipProvider.RegisterEnabled,
                                  RegisterContact = sipProvider.RegisterContact,
                                  RegisterExpiry = sipProvider.RegisterExpiry != null ? sipProvider.RegisterExpiry.Value : 0,
                                  RegisterServer = sipProvider.RegisterServer,
@@ -484,9 +487,9 @@ namespace SIPSorcery.Web.Services
                                  ProviderID = binding.ProviderID,
                                  ProviderName = binding.ProviderName,
                                  RegistrationFailureMessage = binding.RegistrationFailureMessage,
-                                 LastRegisterTime = binding.LastRegisterTimeLocal,
-                                 LastRegisterAttempt = binding.LastRegisterAttemptLocal,
-                                 NextRegistrationTime = binding.NextRegistrationTimeLocal,
+                                 LastRegisterTime = binding.LastRegisterTimeLocal.ToString("o"),
+                                 LastRegisterAttempt = binding.LastRegisterAttemptLocal.ToString("o"),
+                                 NextRegistrationTime = binding.NextRegistrationTimeLocal.ToString("o"),
                                  IsRegistered = binding.IsRegistered,
                                  BindingExpiry = binding.BindingExpiry,
                                  BindingURI = binding.BindingURI,
@@ -682,7 +685,13 @@ namespace SIPSorcery.Web.Services
                         AnsweredReason = x.AnsweredReason,
                         Duration = x.Duration,
                         HungupTime = x.HungupTime,
-                        HungupReason = x.HungupReason
+                        HungupReason = x.HungupReason,
+                        AccountCode = (x.rtccs.Count > 0) ? x.rtccs.First().AccountCode : null,
+                        Rate = (x.rtccs.Count > 0) ? x.rtccs.First().Rate.GetValueOrDefault() : 0,
+                        Cost = (x.rtccs.Count > 0) ? x.rtccs.First().Cost.GetValueOrDefault() : 0,
+                        SetupCost = (x.rtccs.Count > 0) ? x.rtccs.First().SetupCost : 0,
+                        IncrementSeconds = (x.rtccs.Count > 0) ? x.rtccs.First().IncrementSeconds : 0,
+                        Balance =  (x.rtccs.Count > 0) ? x.rtccs.First().PostReconciliationBalance.GetValueOrDefault() : 0
                     });
 
                 return new JSONResult<List<CDRJSON>>() { Success = true, Result = result.ToList() };

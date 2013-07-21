@@ -239,6 +239,10 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             get { return m_dialPlanContext.SIPProviders; }
         }
+        public SIPAccount FromSIPAccount
+        {
+            get { return m_dialPlanContext.SIPAccount; }
+        }
 
         public static IPAddress PublicIPAddress;    // If the app server is behind a NAT then it can set this address to be used in mangled SDP.
 
@@ -2252,6 +2256,20 @@ namespace SIPSorcery.AppServer.DialPlan
         public decimal GetBalance(string accountCode)
         {
             return m_customerAccountDataLayer.GetBalance(accountCode);
+        }
+
+        /// <summary>
+        /// Allows a list of all the dialplan owner's SIP accounts to be retrieved.
+        /// </summary>
+        /// <returns>A list of SIP accounts.</returns>
+        public List<SIPAccount> GetSIPAccounts()
+        {
+            return m_sipSorceryPersistor.SIPAccountsPersistor.Get(x => x.Owner == m_dialPlanContext.Owner, "SIPUsername", 0, Int32.MaxValue);
+        }
+
+        public SIPSorcery.Entities.Rate GetRate(string rateCode, string destination) 
+        {
+            return m_customerAccountDataLayer.GetRate(m_dialPlanContext.Owner, rateCode, destination);
         }
 
         /// <summary>

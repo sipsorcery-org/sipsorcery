@@ -66,5 +66,11 @@ namespace SIPSorcery.Entities
         [DataMember] public int? Duration { get; set; }
         [DataMember] public string HungupTime { get; set; }
         [DataMember] public string HungupReason {get; set; }
+        [DataMember] public string AccountCode { get; set; }
+        [DataMember] public decimal Rate { get; set; }
+        [DataMember] public decimal SetupCost { get; set; }
+        [DataMember] public int IncrementSeconds { get; set; }
+        [DataMember] public decimal Cost { get; set; }
+        [DataMember] public decimal Balance { get; set; }
     }
 }

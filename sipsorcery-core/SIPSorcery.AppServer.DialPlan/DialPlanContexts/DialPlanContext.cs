@@ -70,6 +70,12 @@ namespace SIPSorcery.AppServer.DialPlan
         protected StringBuilder m_traceLog = new StringBuilder();
         protected SIPDialPlan m_dialPlan;
 
+        private Guid m_dialPlanContextID = Guid.NewGuid();
+        public Guid DialPlanContextID
+        {
+            get { return m_dialPlanContextID; }
+        }
+
         public SIPDialPlan SIPDialPlan
         {
             get { return m_dialPlan; }

@@ -82,6 +82,7 @@ namespace SIPSorcery.Entities
                 ProviderType = ProviderType,
                 ProviderFrom = ProviderFrom,
                 CustomHeaders = CustomHeaders,
+                RegisterEnabled = RegisterEnabled,
                 RegisterContact = RegisterContact,
                 RegisterExpiry = RegisterExpiry,
                 RegisterServer = RegisterServer,

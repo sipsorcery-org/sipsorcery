@@ -260,5 +260,10 @@ namespace SIPSorcery.SIP.App
 
             return dummyInvite;
         }
+
+        public void SetDialPlanContextID(Guid dialPlanContextID)
+        {
+            throw new NotImplementedException("SIPTransferServerUserAgent SetDialPlanContextID");
+        }
     }
 }

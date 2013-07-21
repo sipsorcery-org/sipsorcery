@@ -111,20 +111,21 @@ namespace SIPSorcery.Servers
                             // Try and reserve credit on in progress calls.
                             DateTime reservationDue = DateTime.Now.AddSeconds(m_reserveDueSeconds);
 
-                            var cdrsReservationDue = (from cdr in db.CDRs
-                                                      where cdr.AccountCode != null && cdr.HungupTime == null && cdr.AnsweredAt != null && cdr.SecondsReserved != null && cdr.SecondsReserved > 0 &&
-                                                            cdr.AnsweredStatus >= 200 && cdr.AnsweredStatus <= 299 && EntityFunctions.AddSeconds(cdr.AnsweredAt, cdr.SecondsReserved) <= reservationDue && cdr.ReservationError == null
-                                                      orderby cdr.AnsweredAt
-                                                      select cdr).Take(NUMBER_CDRS_PER_ROUNDTRIP);
+                            var rtccReservationDue = (from rtcc in db.RTCCs1.Include("cdr")
+                                                      where rtcc.AccountCode != null && rtcc.SecondsReserved != null && rtcc.SecondsReserved > 0 && rtcc.ReservationError == null && rtcc.ReconciliationResult == null
+                                                            && rtcc.cdr.HungupTime == null && rtcc.cdr.AnsweredAt != null && rtcc.cdr.AnsweredStatus >= 200 && rtcc.cdr.AnsweredStatus <= 299 
+                                                            && EntityFunctions.AddSeconds(rtcc.cdr.AnsweredAt, rtcc.SecondsReserved) <= reservationDue
+                                                      orderby rtcc.cdr.AnsweredAt
+                                                      select rtcc).Take(NUMBER_CDRS_PER_ROUNDTRIP);
 
-                            while (cdrsReservationDue.Count() > 0)
+                            while (rtccReservationDue.Count() > 0)
                             {
-                                foreach (CDR cdr in cdrsReservationDue)
+                                foreach (RTCC rtcc in rtccReservationDue)
                                 {
-                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.DialPlan, "Reserving credit for call " + cdr.Dst + ".", cdr.Owner));
+                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.DialPlan, "Reserving credit for call " + rtcc.cdr.Dst + ".", rtcc.cdr.Owner));
 
                                     // Attempt to re-reserve the next chunk of credit for the call.
-                                    m_customerAccountDataLayer.ReserveCredit(m_reservationAmountSeconds, cdr.ID);
+                                    m_customerAccountDataLayer.ReserveCredit(m_reservationAmountSeconds, rtcc.ID);
                                 }
                             }
                         }
@@ -158,28 +159,29 @@ namespace SIPSorcery.Servers
                         {
                             // Terminate any calls that have reached their time limit.
                             DateTime now = DateTime.Now;
-                            var cdrsTerminationDue = (from cdr in db.CDRs
-                                                      where !cdr.IsHangingUp && cdr.AccountCode != null && cdr.HungupTime == null && cdr.AnsweredAt != null && cdr.SecondsReserved != null &&
-                                                              cdr.AnsweredStatus >= 200 && cdr.AnsweredStatus <= 299 && EntityFunctions.AddSeconds(cdr.AnsweredAt, cdr.SecondsReserved) <= now && !cdr.IsHangingUp
-                                                      orderby cdr.AnsweredAt
-                                                      select cdr).Take(NUMBER_CDRS_PER_ROUNDTRIP);
+                            var rtccTerminationDue = (from rtcc in db.RTCCs1.Include("cdr")
+                                                      where !rtcc.IsHangingUp && rtcc.AccountCode != null && rtcc.cdr.HungupTime == null && rtcc.cdr.AnsweredAt != null && rtcc.SecondsReserved != null && 
+                                                              rtcc.cdr.AnsweredStatus >= 200 && rtcc.cdr.AnsweredStatus <= 299 && EntityFunctions.AddSeconds(rtcc.cdr.AnsweredAt, rtcc.SecondsReserved) <= now && !rtcc.IsHangingUp
+                                                              && rtcc.ReservationError == null && rtcc.ReconciliationResult == null
+                                                      orderby rtcc.cdr.AnsweredAt
+                                                      select rtcc).Take(NUMBER_CDRS_PER_ROUNDTRIP);
 
-                            while (cdrsTerminationDue.Count() > 0)
+                            while (rtccTerminationDue.Count() > 0)
                             {
-                                foreach (CDR cdr in cdrsTerminationDue)
+                                foreach (RTCC rtcc in rtccTerminationDue)
                                 {
-                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.DialPlan, "Terminating call due to reservation limit being reached " + cdr.Dst + ".", cdr.Owner));
+                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.DialPlan, "Terminating call due to reservation limit being reached " + rtcc.cdr.Dst + ".", rtcc.cdr.Owner));
 
-                                    m_customerAccountDataLayer.SetCDRIsHangingUp(cdr.ID);
+                                    m_customerAccountDataLayer.SetCDRIsHangingUp(rtcc.cdr.ID);
 
-                                    var dialogue = m_sipDialoguePersistor.Get(x => x.CDRId == cdr.ID, null, 0, 1).FirstOrDefault();
+                                    var dialogue = m_sipDialoguePersistor.Get(x => x.CDRId == rtcc.ID, null, 0, 1).FirstOrDefault();
                                     if (dialogue != null)
                                     {
                                         m_sipDialogueManager.CallHungup(dialogue.SIPDialogue, "RTCC time limit reached", true);
                                     }
                                     else
                                     {
-                                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.Warn, "A dialogue could not be found when terminating a call due to reservation limit being reached.", cdr.Owner));
+                                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.Warn, "A dialogue could not be found when terminating a call due to reservation limit being reached.", rtcc.cdr.Owner));
                                     }
                                 }
                             }
@@ -218,20 +220,20 @@ namespace SIPSorcery.Servers
                     {
                         using (var db = new SIPSorceryEntities())
                         {
-                            var cdrsReconciliationDue = (from cdr in db.CDRs
-                                                         where cdr.AccountCode != null && (cdr.AnsweredStatus < 200 || cdr.AnsweredStatus >= 300 || cdr.HungupTime != null || cdr.HungupReason != null) && cdr.ReconciliationResult == null
-                                                             && cdr.Cost > 0
-                                                         orderby cdr.HungupTime
-                                                         select cdr).Take(NUMBER_CDRS_PER_ROUNDTRIP);
+                            var rtccReconciliationDue = (from rtcc in db.RTCCs1.Include("cdr")
+                                                         where rtcc.AccountCode != null && (rtcc.cdr.AnsweredStatus < 200 || rtcc.cdr.AnsweredStatus >= 300 || rtcc.cdr.HungupTime != null || rtcc.cdr.HungupReason != null) 
+                                                            && rtcc.ReconciliationResult == null && rtcc.PostReconciliationBalance == null && rtcc.Cost > 0
+                                                         orderby rtcc.cdr.HungupTime
+                                                         select rtcc).Take(NUMBER_CDRS_PER_ROUNDTRIP);
 
-                            while (cdrsReconciliationDue.Count() > 0)
+                            while (rtccReconciliationDue.Count() > 0)
                             {
-                                foreach (CDR cdr in cdrsReconciliationDue)
+                                foreach (RTCC rtcc in rtccReconciliationDue)
                                 {
-                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.DialPlan, "Reconciling credit for call " + cdr.Dst + ".", cdr.Owner));
-                                    logger.Debug("Reconciliation starting for CDR " + cdr.ID + ", owner " + cdr.Owner + ", destination " + cdr.Dst + ", duration " + cdr.Duration + ", rate " + cdr.Rate + ", setup cost " + 
-                                        cdr.SetupCost +", increment seconds " + cdr.IncrementSeconds + " and reserved credit of " + cdr.Cost + ".");
-                                    m_customerAccountDataLayer.ReturnUnusedCredit(cdr.ID);
+                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.DialPlan, "Reconciling credit for call " + rtcc.cdr.Dst + ".", rtcc.cdr.Owner));
+                                    logger.Debug("Reconciliation starting for CDR " + rtcc.cdr.ID + ", owner " + rtcc.cdr.Owner + ", destination " + rtcc.cdr.Dst + ", duration " + rtcc.cdr.Duration + ", rate " + rtcc.Rate + ", setup cost " + 
+                                        rtcc.SetupCost +", increment seconds " + rtcc.IncrementSeconds + " and reserved credit of " + rtcc.Cost + ".");
+                                    m_customerAccountDataLayer.ReturnUnusedCredit(rtcc.ID);
                                 }
                             }
                         }

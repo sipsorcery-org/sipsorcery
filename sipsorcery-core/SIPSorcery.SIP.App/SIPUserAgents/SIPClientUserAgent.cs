@@ -38,6 +38,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using SIPSorcery.Entities;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorcery.SIP;
@@ -276,6 +277,7 @@ namespace SIPSorcery.SIP.App
 
                         // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
                         m_serverTransaction = m_sipTransport.CreateUACTransaction(switchServerInvite, m_serverEndPoint, m_localSIPEndPoint, m_outboundProxy);
+                        m_serverTransaction.CDR.DialPlanContextID = m_sipCallDescriptor.DialPlanContextID;
 
                         #region Real-time call control processing.
 
@@ -291,7 +293,6 @@ namespace SIPSorcery.SIP.App
                             if (m_sipCallDescriptor.AccountCode != null)
                             {
                                 AccountCode = m_sipCallDescriptor.AccountCode;
-                                m_serverTransaction.CDR.AccountCode = m_sipCallDescriptor.AccountCode;
 
                                 string rateDestination = m_sipCallDescriptor.Uri;
                                 if (SIPURI.TryParse(m_sipCallDescriptor.Uri))
@@ -299,7 +300,7 @@ namespace SIPSorcery.SIP.App
                                     rateDestination = SIPURI.ParseSIPURIRelaxed(m_sipCallDescriptor.Uri).User;
                                 }
 
-                                var rate = m_customerAccountDataLayer.GetRate(m_sipCallDescriptor.AccountCode, m_sipCallDescriptor.RateCode, rateDestination);
+                                var rate = m_customerAccountDataLayer.GetRate(Owner, m_sipCallDescriptor.RateCode, rateDestination);
 
                                 if (rate == null)
                                 {
@@ -309,35 +310,54 @@ namespace SIPSorcery.SIP.App
                                 }
                                 else
                                 {
-                                    m_serverTransaction.CDR.Rate = rate.Rate1;
-                                    m_serverTransaction.CDR.SetupCost = rate.SetupCost;
-                                    m_serverTransaction.CDR.IncrementSeconds = rate.IncrementSeconds;
                                     Rate = rate.Rate1;
-                                    decimal balance = m_customerAccountDataLayer.GetBalance(m_sipCallDescriptor.AccountCode);
 
-                                    if (balance < Rate)
+                                    if (rate.Rate1 == 0 && rate.SetupCost == 0)
                                     {
-                                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A billable call could not proceed as the available credit for " + m_sipCallDescriptor.AccountCode + " was not sufficient for 60 seconds to destination " + rateDestination + ".", Owner));
-                                        rtccLogger.Debug("A billable call could not proceed as the available credit for " + m_sipCallDescriptor.AccountCode + " was not sufficient for 60 seconds to destination " + rateDestination + " and owner " + Owner + ".");
-                                        rtccError = "Real-time call control insufficient credit";
+                                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The rate and setup cost for the " + rateDestination + "were both zero. The call will be allowed to proceed with no RTCC reservation.", Owner));
                                     }
                                     else
                                     {
-                                        int intialSeconds = 0;
-                                        var reservationCost = m_customerAccountDataLayer.ReserveInitialCredit(m_serverTransaction.CDR.AccountCode, m_serverTransaction.CDR.Rate, m_serverTransaction.CDR.SetupCost, m_serverTransaction.CDR.IncrementSeconds, out intialSeconds);
+                                        decimal balance = m_customerAccountDataLayer.GetBalance(m_sipCallDescriptor.AccountCode);
 
-                                        if (reservationCost == Decimal.MinusOne)
+                                        if (balance < Rate)
                                         {
-                                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call will not proceed as the intial real-time call control credit reservation failed.", Owner));
-                                            rtccLogger.Debug("Call will not proceed as the intial real-time call control credit reservation failed for owner " + Owner + ".");
-                                            rtccError = "Real-time call control initial reservation failed";
+                                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A billable call could not proceed as the available credit for " + m_sipCallDescriptor.AccountCode + " was not sufficient for 60 seconds to destination " + rateDestination + ".", Owner));
+                                            rtccLogger.Debug("A billable call could not proceed as the available credit for " + m_sipCallDescriptor.AccountCode + " was not sufficient for 60 seconds to destination " + rateDestination + " and owner " + Owner + ".");
+                                            rtccError = "Real-time call control insufficient credit";
                                         }
                                         else
                                         {
-                                            ReservedCredit = reservationCost;
-                                            ReservedSeconds = intialSeconds;
-                                            m_serverTransaction.CDR.SecondsReserved = intialSeconds;
-                                            m_serverTransaction.CDR.Cost = reservationCost;
+                                            int intialSeconds = 0;
+                                            var rtccCDR = new SIPSorcery.Entities.CDR()
+                                            {
+                                                ID = m_serverTransaction.CDR.CDRId.ToString(),
+                                                Owner = m_serverTransaction.CDR.Owner,
+                                                AdminMemberID = m_serverTransaction.CDR.AdminMemberId,
+                                                Inserted = DateTimeOffset.UtcNow.ToString("o"),
+                                                Created = DateTimeOffset.UtcNow.ToString("o"),
+                                                DstHost = "",
+                                                DstURI = m_sipCallDescriptor.Uri,
+                                                CallID = "",
+                                                FromHeader = m_sipCallDescriptor.From,
+                                                LocalSocket = "udp:0.0.0.0:5060",
+                                                RemoteSocket = "udp:0.0.0.0:5060",
+                                                Direction = m_serverTransaction.CDR.CallDirection.ToString()
+                                            };
+
+                                            var reservationCost = m_customerAccountDataLayer.ReserveInitialCredit(m_sipCallDescriptor.AccountCode, rate, rtccCDR, out intialSeconds);
+
+                                            if (reservationCost == Decimal.MinusOne)
+                                            {
+                                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call will not proceed as the intial real-time call control credit reservation failed.", Owner));
+                                                rtccLogger.Debug("Call will not proceed as the intial real-time call control credit reservation failed for owner " + Owner + ".");
+                                                rtccError = "Real-time call control initial reservation failed";
+                                            }
+                                            else
+                                            {
+                                                ReservedCredit = reservationCost;
+                                                ReservedSeconds = intialSeconds;
+                                            }
                                         }
                                     }
                                 }
@@ -580,17 +600,39 @@ namespace SIPSorcery.SIP.App
                             {
                                 m_serverTransaction.CDR.Owner = Owner;
                                 m_serverTransaction.CDR.AdminMemberId = AdminMemberId;
-                                m_serverTransaction.CDR.AccountCode = AccountCode;
-                                m_serverTransaction.CDR.Rate = Rate;
 
-                                // Transfer any credit reservations from the original call to the new call.
-                                m_serverTransaction.CDR.SecondsReserved = originalCallTransaction.CDR.SecondsReserved;
-                                m_serverTransaction.CDR.Cost = originalCallTransaction.CDR.Cost;
-                                m_serverTransaction.CDR.IncrementSeconds = originalCallTransaction.CDR.IncrementSeconds;
-                                originalCallTransaction.CDR.SecondsReserved = 0;
-                                originalCallTransaction.CDR.Cost = 0;
-                                originalCallTransaction.CDR.ReconciliationResult = "reallocated";
-                                originalCallTransaction.CDR.IsHangingUp = true;
+                                if (m_sipCallDescriptor.AccountCode != null)
+                                {
+                                    var rtccCDR = new SIPSorcery.Entities.CDR()
+                                    {
+                                        ID = m_serverTransaction.CDR.CDRId.ToString(),
+                                        Owner = m_serverTransaction.CDR.Owner,
+                                        AdminMemberID = m_serverTransaction.CDR.AdminMemberId,
+                                        Inserted = DateTimeOffset.UtcNow.ToString("o"),
+                                        Created = DateTimeOffset.UtcNow.ToString("o"),
+                                        DstHost = "",
+                                        DstURI = m_sipCallDescriptor.Uri,
+                                        CallID = "",
+                                        FromHeader = m_sipCallDescriptor.From,
+                                        LocalSocket = "udp:0.0.0.0:5060",
+                                        RemoteSocket = "udp:0.0.0.0:5060",
+                                        Direction = m_serverTransaction.CDR.CallDirection.ToString()
+                                    };
+
+                                    m_customerAccountDataLayer.UpdateRealTimeCallControlCDRID(originalCallTransaction.CDR.CDRId.ToString(), rtccCDR);
+
+                                    //m_serverTransaction.CDR.AccountCode = AccountCode;
+                                    //m_serverTransaction.CDR.Rate = Rate;
+
+                                    // Transfer any credit reservations from the original call to the new call.
+                                    //m_serverTransaction.CDR.SecondsReserved = originalCallTransaction.CDR.SecondsReserved;
+                                    //m_serverTransaction.CDR.Cost = originalCallTransaction.CDR.Cost;
+                                    //m_serverTransaction.CDR.IncrementSeconds = originalCallTransaction.CDR.IncrementSeconds;
+                                    //originalCallTransaction.CDR.SecondsReserved = 0;
+                                    //originalCallTransaction.CDR.Cost = 0;
+                                    //originalCallTransaction.CDR.ReconciliationResult = "reallocated";
+                                    //originalCallTransaction.CDR.IsHangingUp = true;
+                                }
 
                                 logger.Debug("RTCC reservation was reallocated from CDR " + originalCallTransaction.CDR.CDRId + " to " + m_serverTransaction.CDR.CDRId + " for owner " + Owner + ".");
                             }

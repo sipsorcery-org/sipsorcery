@@ -349,5 +349,10 @@ namespace SIPSorcery.SIP.App
         {
             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentServer, SIPMonitorEventTypesEnum.SIPTransaction, message, null));
         }
+
+        public void SetDialPlanContextID(Guid dialPlanContextID)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -49,9 +49,9 @@ namespace SIPSorcery.Entities
         [DataMember] public string ProviderID { get; set; }
         [DataMember] public string ProviderName { get; set; }
         [DataMember] public string RegistrationFailureMessage { get; set; }
-        [DataMember] public DateTime LastRegisterTime { get; set; }
-        [DataMember] public DateTime LastRegisterAttempt { get; set; }
-        [DataMember] public DateTime NextRegistrationTime { get; set; }
+        [DataMember] public string LastRegisterTime { get; set; }
+        [DataMember] public string LastRegisterAttempt { get; set; }
+        [DataMember] public string NextRegistrationTime { get; set; }
         [DataMember] public bool IsRegistered { get; set; }
         [DataMember] public int BindingExpiry { get; set; }
         [DataMember] public string BindingURI { get; set; }

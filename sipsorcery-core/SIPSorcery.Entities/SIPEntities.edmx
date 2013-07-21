@@ -10,6 +10,7 @@
           <EntitySet Name="customeraccount" EntityType="Entities.Store.customeraccount" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="customers" EntityType="Entities.Store.customers" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="rate" EntityType="Entities.Store.rate" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="rtcc" EntityType="Entities.Store.rtcc" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="simplewizardrule" EntityType="Entities.Store.simplewizardrule" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipaccounts" EntityType="Entities.Store.sipaccounts" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipdialogues" EntityType="Entities.Store.sipdialogues" store:Type="Tables" Schema="sipsorcery" />
@@ -23,6 +24,10 @@
           <EntitySet Name="sipproviders" EntityType="Entities.Store.sipproviders" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="sipregistrarbindings" EntityType="Entities.Store.sipregistrarbindings" store:Type="Tables" Schema="sipsorcery" />
           <EntitySet Name="webcallback" EntityType="Entities.Store.webcallback" store:Type="Tables" Schema="sipsorcery" />
+          <AssociationSet Name="rtcc_ibfk_1" Association="Entities.Store.rtcc_ibfk_1">
+            <End Role="cdr" EntitySet="cdr" />
+            <End Role="rtcc" EntitySet="rtcc" />
+          </AssociationSet>
           <AssociationSet Name="simplewizardrule_ibfk_1" Association="Entities.Store.simplewizardrule_ibfk_1">
             <End Role="sipdialplans" EntitySet="sipdialplans" />
             <End Role="simplewizardrule" EntitySet="simplewizardrule" />
@@ -81,18 +86,9 @@
           <Property Name="duration" Type="int" />
           <Property Name="hunguptime" Type="varchar" MaxLength="33" />
           <Property Name="hungupreason" Type="varchar" MaxLength="512" />
-          <Property Name="accountcode" Type="varchar" MaxLength="36" />
-          <Property Name="secondsreserved" Type="int" />
-          <Property Name="cost" Type="decimal" Scale="5" />
-          <Property Name="rate" Type="decimal" Scale="5" />
-          <Property Name="reservationerror" Type="varchar" MaxLength="256" />
-          <Property Name="reconciliationresult" Type="varchar" MaxLength="256" />
-          <Property Name="ishangingup" Type="bit" Nullable="false" />
-          <Property Name="postreconciliationbalance" Type="decimal" Scale="5" />
           <Property Name="answeredat" Type="datetime" />
           <Property Name="answeredtime" Type="varchar" MaxLength="33" />
-          <Property Name="setupcost" Type="decimal" Nullable="false" Scale="5" />
-          <Property Name="incrementseconds" Type="int" Nullable="false" />
+          <Property Name="dialplancontextid" Type="varchar" MaxLength="36" />
         </EntityType>
         <EntityType Name="customeraccount">
           <Key>
@@ -173,6 +169,24 @@
           <Property Name="setupcost" Type="decimal" Nullable="false" Scale="5" />
           <Property Name="incrementseconds" Type="int" Nullable="false" />
         </EntityType>
+        <EntityType Name="rtcc">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="varchar" Nullable="false" MaxLength="36" />
+          <Property Name="CDRID" Type="varchar" Nullable="false" MaxLength="36" />
+          <Property Name="accountcode" Type="varchar" MaxLength="36" />
+          <Property Name="secondsreserved" Type="int" />
+          <Property Name="cost" Type="decimal" Scale="5" />
+          <Property Name="rate" Type="decimal" Scale="5" />
+          <Property Name="reservationerror" Type="varchar" MaxLength="256" />
+          <Property Name="reconciliationresult" Type="varchar" MaxLength="256" />
+          <Property Name="ishangingup" Type="bit" Nullable="false" />
+          <Property Name="postreconciliationbalance" Type="decimal" Scale="5" />
+          <Property Name="setupcost" Type="decimal" Nullable="false" Scale="5" />
+          <Property Name="incrementseconds" Type="int" Nullable="false" />
+          <Property Name="inserted" Type="datetime" Nullable="false" />
+        </EntityType>
         <EntityType Name="simplewizardrule">
           <Key>
             <PropertyRef Name="ID" />
@@ -220,6 +234,8 @@
           <Property Name="isswitchboardenabled" Type="bit" Nullable="false" />
           <Property Name="dontmangleenabled" Type="bit" Nullable="false" />
           <Property Name="avatarurl" Type="varchar" MaxLength="1024" />
+          <Property Name="description" Type="varchar" MaxLength="1024" />
+          <Property Name="accountcode" Type="varchar" MaxLength="36" />
         </EntityType>
         <EntityType Name="sipdialogues">
           <Key>
@@ -418,6 +434,20 @@
           <Property Name="Description" Type="varchar" MaxLength="128" />
           <Property Name="Inserted" Type="varchar" Nullable="false" MaxLength="33" />
         </EntityType>
+        <Association Name="rtcc_ibfk_1">
+          <End Role="cdr" Type="Entities.Store.cdr" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="rtcc" Type="Entities.Store.rtcc" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="cdr">
+              <PropertyRef Name="id" />
+            </Principal>
+            <Dependent Role="rtcc">
+              <PropertyRef Name="CDRID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <Association Name="simplewizardrule_ibfk_1">
           <End Role="sipdialplans" Type="Entities.Store.sipdialplans" Multiplicity="1">
             <OnDelete Action="Cascade" />
@@ -566,6 +596,11 @@
           <EntitySet Name="WebCallbacks" EntityType="SIPSorcery.Entities.WebCallback" />
           <EntitySet Name="CustomerAccounts" EntityType="SIPSorcery.Entities.CustomerAccount" />
           <EntitySet Name="Rates" EntityType="SIPSorcery.Entities.Rate" />
+          <EntitySet Name="RTCCs1" EntityType="SIPSorcery.Entities.RTCC" />
+          <AssociationSet Name="rtcc_ibfk_1" Association="SIPSorcery.Entities.rtcc_ibfk_1">
+            <End Role="CDR" EntitySet="CDRs" />
+            <End Role="RTCC" EntitySet="RTCCs1" />
+          </AssociationSet>
         </EntityContainer>
         <EntityType Name="SIPDialplanLookup">
           <Key>
@@ -653,17 +688,9 @@
           <Property Type="String" Name="Owner" />
           <Property Type="String" Name="RemoteSocket" Nullable="false" />
           <Property Type="Int32" Name="RingDuration" />
-          <Property Type="String" Name="AccountCode" />
-          <Property Type="Int32" Name="SecondsReserved" />
-          <Property Type="Decimal" Name="Cost" />
-          <Property Type="Decimal" Name="Rate" />
           <Property Type="DateTime" Name="AnsweredAt" />
-          <Property Type="String" Name="ReconciliationResult" />
-          <Property Type="String" Name="ReservationError" />
-          <Property Type="Boolean" Name="IsHangingUp" Nullable="false" />
-          <Property Type="Decimal" Name="PostReconciliationBalance" />
-          <Property Type="Decimal" Name="SetupCost" Nullable="false" />
-          <Property Type="Int32" Name="IncrementSeconds" Nullable="false" />
+          <NavigationProperty Name="rtccs" Relationship="SIPSorcery.Entities.rtcc_ibfk_1" FromRole="CDR" ToRole="RTCC" />
+          <Property Type="String" Name="DialPlanContextID" MaxLength="36" FixedLength="false" Unicode="false" />
         </EntityType>
         <EntityType Name="Customer">
           <Key>
@@ -729,6 +756,8 @@
           <Property Type="String" Name="SIPUsername" Nullable="false" />
           <NavigationProperty Name="sipregistrarbindings" Relationship="SIPSorcery.Entities.sipregistrarbindings_ibfk_1" FromRole="SIPAccount" ToRole="SIPRegistrarBinding" />
           <Property Type="String" Name="AvatarURL" />
+          <Property Type="String" Name="Description" MaxLength="1024" FixedLength="false" Unicode="false" />
+          <Property Type="String" Name="AccountCode" MaxLength="36" FixedLength="false" Unicode="false" />
         </EntityType>
         <EntityType Name="SIPDialogue">
           <Key>
@@ -1016,6 +1045,37 @@
           <Property Type="Decimal" Name="SetupCost" Nullable="false" />
           <Property Type="Int32" Name="IncrementSeconds" Nullable="false" />
         </EntityType>
+        <EntityType Name="RTCC">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Type="String" Name="ID" Nullable="false" MaxLength="36" FixedLength="false" Unicode="false" />
+          <Property Type="String" Name="CDRID" Nullable="false" MaxLength="36" FixedLength="false" Unicode="false" />
+          <Property Type="String" Name="AccountCode" MaxLength="36" FixedLength="false" Unicode="false" />
+          <Property Type="Int32" Name="SecondsReserved" />
+          <Property Type="Decimal" Name="Cost" />
+          <Property Type="Decimal" Name="Rate" />
+          <Property Type="String" Name="ReservationError" MaxLength="256" FixedLength="false" Unicode="false" />
+          <Property Type="String" Name="ReconciliationResult" MaxLength="256" FixedLength="false" Unicode="false" />
+          <Property Type="Boolean" Name="IsHangingUp" Nullable="false" />
+          <Property Type="Decimal" Name="PostReconciliationBalance" />
+          <Property Type="Decimal" Name="SetupCost" Nullable="false" />
+          <Property Type="Int32" Name="IncrementSeconds" Nullable="false" />
+          <NavigationProperty Name="cdr" Relationship="SIPSorcery.Entities.rtcc_ibfk_1" FromRole="RTCC" ToRole="CDR" />
+          <Property Type="DateTime" Name="Inserted" Nullable="false" />
+        </EntityType>
+        <Association Name="rtcc_ibfk_1">
+          <End Type="SIPSorcery.Entities.CDR" Role="CDR" Multiplicity="1" />
+          <End Type="SIPSorcery.Entities.RTCC" Role="RTCC" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="CDR">
+              <PropertyRef Name="ID" />
+            </Principal>
+            <Dependent Role="RTCC">
+              <PropertyRef Name="CDRID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -1081,17 +1141,8 @@
           <EntitySetMapping Name="CDRs">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.CDR">
               <MappingFragment StoreEntitySet="cdr">
-                <ScalarProperty Name="IncrementSeconds" ColumnName="incrementseconds" />
-                <ScalarProperty Name="SetupCost" ColumnName="setupcost" />
-                <ScalarProperty Name="PostReconciliationBalance" ColumnName="postreconciliationbalance" />
-                <ScalarProperty Name="IsHangingUp" ColumnName="ishangingup" />
-                <ScalarProperty Name="ReservationError" ColumnName="reservationerror" />
-                <ScalarProperty Name="ReconciliationResult" ColumnName="reconciliationresult" />
+                <ScalarProperty Name="DialPlanContextID" ColumnName="dialplancontextid" />
                 <ScalarProperty Name="AnsweredAt" ColumnName="answeredat" />
-                <ScalarProperty Name="Rate" ColumnName="rate" />
-                <ScalarProperty Name="Cost" ColumnName="cost" />
-                <ScalarProperty Name="SecondsReserved" ColumnName="secondsreserved" />
-                <ScalarProperty Name="AccountCode" ColumnName="accountcode" />
                 <ScalarProperty Name="RingDuration" ColumnName="ringduration" />
                 <ScalarProperty Name="RemoteSocket" ColumnName="remotesocket" />
                 <ScalarProperty Name="Owner" ColumnName="owner" />
@@ -1165,6 +1216,8 @@
           <EntitySetMapping Name="SIPAccounts">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.SIPAccount">
               <MappingFragment StoreEntitySet="sipaccounts">
+                <ScalarProperty Name="AccountCode" ColumnName="accountcode" />
+                <ScalarProperty Name="Description" ColumnName="description" />
                 <ScalarProperty Name="AvatarURL" ColumnName="avatarurl" />
                 <ScalarProperty Name="SIPUsername" ColumnName="sipusername" />
                 <ScalarProperty Name="SIPPassword" ColumnName="sippassword" />
@@ -1390,6 +1443,25 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
+          <EntitySetMapping Name="RTCCs1">
+            <EntityTypeMapping TypeName="SIPSorcery.Entities.RTCC">
+              <MappingFragment StoreEntitySet="rtcc">
+                <ScalarProperty Name="Inserted" ColumnName="inserted" />
+                <ScalarProperty Name="IncrementSeconds" ColumnName="incrementseconds" />
+                <ScalarProperty Name="SetupCost" ColumnName="setupcost" />
+                <ScalarProperty Name="PostReconciliationBalance" ColumnName="postreconciliationbalance" />
+                <ScalarProperty Name="IsHangingUp" ColumnName="ishangingup" />
+                <ScalarProperty Name="ReconciliationResult" ColumnName="reconciliationresult" />
+                <ScalarProperty Name="ReservationError" ColumnName="reservationerror" />
+                <ScalarProperty Name="Rate" ColumnName="rate" />
+                <ScalarProperty Name="Cost" ColumnName="cost" />
+                <ScalarProperty Name="SecondsReserved" ColumnName="secondsreserved" />
+                <ScalarProperty Name="AccountCode" ColumnName="accountcode" />
+                <ScalarProperty Name="CDRID" ColumnName="CDRID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
         </EntityContainerMapping>
       </Mapping>
     </edmx:Mappings>
@@ -1410,17 +1482,17 @@
     </Options>
     <!-- Diagram content (shape and connector positions) -->
     <Diagrams>
-      <Diagram Name="SIPEntities" ZoomLevel="86">
+      <Diagram Name="SIPEntities" ZoomLevel="88">
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanLookup" Width="1.875" PointX="11.5" PointY="1" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanRoute" Width="1.875" PointX="18.375" PointY="0.75" Height="2.5571907552083331" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanProvider" Width="2.25" PointX="11.625" PointY="4.25" Height="2.5571907552083317" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanProvider" Width="2.25" PointX="11.625" PointY="3.875" Height="2.5571907552083317" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanOption" Width="2.625" PointX="18.25" PointY="3.875" Height="3.3263964843749996" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.CDR" Width="1.75" PointX="3.625" PointY="0.5" Height="7.3647265625" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.Customer" PointX="0.625" PointY="0.5" Width="2.625" Height="7.7493294270833335" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPAccount" Width="2.125" PointX="3.375" PointY="8.75" Height="4.8648079427083335" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialogue" Width="2.75" PointX="5.75" PointY="0.75" Height="6.4032194010416656" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialogue" Width="2.75" PointX="8.25" PointY="0.75" Height="6.4032194010416656" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialPlan" Width="2" PointX="15.25" PointY="1.25" Height="4.8648079427083326" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDomain" Width="1.5" PointX="9.125" PointY="5" Height="1.9802864583333317" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDomain" Width="1.5" PointX="11.5" PointY="6.75" Height="1.9802864583333317" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPProviderBinding" Width="2.125" PointX="8.875" PointY="7.75" Height="3.9033007812499996" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPProvider" Width="2" PointX="6.125" PointY="7.75" Height="6.0186165364583335" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPRegistrarBinding" Width="2" PointX="0.625" PointY="8.625" Height="3.9033007812499996" />
@@ -1456,6 +1528,8 @@
         <EntityTypeShape EntityType="SIPSorcery.Entities.WebCallback" Width="1.5" PointX="0.75" PointY="13.75" Height="2.1725878906250031" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.CustomerAccount" Width="1.875" PointX="3.25" PointY="14.25" Height="2.5571907552083353" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.Rate" Width="1.5" PointX="5.75" PointY="14.25" Height="2.0002864583333331" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.RTCC" Width="2" PointX="5.75" PointY="0.5" />
+        <AssociationConnector Association="SIPSorcery.Entities.rtcc_ibfk_1" />
       </Diagram>
     </Diagrams>
   </Designer>

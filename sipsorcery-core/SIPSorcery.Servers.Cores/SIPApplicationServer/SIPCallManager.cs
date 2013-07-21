@@ -496,6 +496,7 @@ namespace SIPSorcery.Servers
                                         customer,
                                         m_dialPlanEngine,
                                         GetCanonicalDomain_External);
+                                    uas.SetDialPlanContextID(scriptContext.DialPlanContextID);
                                     //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer);};
                                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, CreateDialogueBridge, this);
                                 }

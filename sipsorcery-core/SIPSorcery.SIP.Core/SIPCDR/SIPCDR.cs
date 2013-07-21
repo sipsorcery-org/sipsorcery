@@ -161,31 +161,10 @@ namespace SIPSorcery.SIP
         public Guid BridgeId { get; set; }                              // If the call formed part of a bridge this will be set to the bridge id.
 
         [DataMember]
-        public string AccountCode { get; set; }
-
-        [DataMember]
-        public int SecondsReserved { get; set; }
-
-        [DataMember]
-        public decimal Cost { get; set; }
-
-        [DataMember]
-        public decimal Rate { get; set; }
-
-        [DataMember]
-        public decimal SetupCost { get; set; }
-
-        [DataMember]
-        public int IncrementSeconds { get; set; }
-
-        [DataMember]
-        public string ReconciliationResult { get; set; }
-
-        [DataMember]
-        public bool IsHangingUp { get; set; }
-
-        [DataMember]
         public DateTime? AnsweredAt { get; set; }
+
+        [DataMember]
+        public Guid DialPlanContextID { get; set; }                     // If the call is received into or initiated from a dialplan then this will hold the dialplan context ID.
 
         public string CallId { get; set; }
         public SIPEndPoint LocalSIPEndPoint { get; set; }

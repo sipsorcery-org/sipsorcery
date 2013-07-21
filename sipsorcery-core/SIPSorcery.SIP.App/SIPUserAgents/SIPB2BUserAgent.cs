@@ -376,7 +376,6 @@ namespace SIPSorcery.SIP.App
 
         public void SetOwner(string owner, string adminMemberId)
         {
-
             if (m_uasTransaction.CDR != null)
             {
                 m_uasTransaction.CDR.Owner = owner;
@@ -384,6 +383,13 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+        public void SetDialPlanContextID(Guid dialPlanContextID)
+        {
+            if (m_uasTransaction.CDR != null)
+            {
+                m_uasTransaction.CDR.DialPlanContextID = dialPlanContextID;
+            }
+        }
 
         #endregion
 

@@ -59,6 +59,8 @@ namespace SIPSorcery.Entities
         [DataMember] public string SIPDomain { get; set; }
         [DataMember] public string SIPPassword { get; set; }
         [DataMember] public string SIPUsername { get; set; }
+        [DataMember] public string AccountCode { get; set; }
+        [DataMember] public string Description { get; set; }
 
         public SIPAccountJSON()
         { }
@@ -80,7 +82,9 @@ namespace SIPSorcery.Entities
                 OutDialPlanName = OutDialPlanName,
                 SendNATKeepAlives = SendNATKeepAlives,
                 SIPPassword = SIPPassword,
-                SIPUsername = SIPUsername
+                SIPUsername = SIPUsername,
+                AccountCode = AccountCode,
+                Description = Description
             };
 
             if (!SIPDomain.IsNullOrBlank())

@@ -87,6 +87,8 @@ namespace SIPSorcery.Entities
                     customer.EmailAddressConfirmed = true;
                     customer.CreatedFromIPAddress = System.Web.HttpContext.Current.Request.UserHostAddress;
 
+                    string plainTextassword = customer.CustomerPassword;
+
                     // Hash the password.
                     string salt = PasswordHash.GenerateSalt();
                     customer.CustomerPassword = PasswordHash.Hash(customer.CustomerPassword, salt);
@@ -154,7 +156,7 @@ namespace SIPSorcery.Entities
                             string testUsername = customer.Name + Crypto.GetRandomString(4);
                             if (!sipSorceryEntities.SIPAccounts.Any(s => s.SIPUsername == testUsername && s.SIPDomain == defaultDomain))
                             {
-                                SIPAccount sipAccount = SIPAccount.Create(customer.Name, defaultDomain, testUsername, customer.CustomerPassword, "default");
+                                SIPAccount sipAccount = SIPAccount.Create(customer.Name, defaultDomain, testUsername, plainTextassword, "default");
                                 sipSorceryEntities.SIPAccounts.AddObject(sipAccount);
                                 sipSorceryEntities.SaveChanges();
                                 logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");
@@ -493,6 +495,8 @@ namespace SIPSorcery.Entities
                 existingAccount.OutDialPlanName = sipAccount.OutDialPlanName;
                 existingAccount.SendNATKeepAlives = sipAccount.SendNATKeepAlives;
                 existingAccount.SIPPassword = sipAccount.SIPPassword;
+                existingAccount.AccountCode = sipAccount.AccountCode;
+                existingAccount.Description = sipAccount.Description;
 
                 string validationError = SIPAccount.Validate(existingAccount);
                 if (validationError != null)
@@ -1401,7 +1405,7 @@ namespace SIPSorcery.Entities
             {
                 entities.CommandTimeout = DEFAULT_COMMAND_TIMEOUT;
 
-                var query = (from cdr in entities.CDRs where cdr.Owner.ToLower() == authUser.ToLower() select cdr);
+                var query = (from cdr in entities.CDRs.Include("rtccs") where cdr.Owner.ToLower() == authUser.ToLower() select cdr);
 
                 if (where != null)
                 {

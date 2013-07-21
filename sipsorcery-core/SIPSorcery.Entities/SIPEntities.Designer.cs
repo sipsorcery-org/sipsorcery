@@ -26,6 +26,7 @@ using System.Xml.Serialization;
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipregistrarbindings_ibfk_1", "SIPAccount", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPAccount), "SIPRegistrarBinding", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPRegistrarBinding), true)]
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "sipproviderbindings_ibfk_2", "SIPProvider", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPProvider), "SIPProviderBinding", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SIPProviderBinding), true)]
 [assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "simplewizardrule_ibfk_1", "SIPDialPlan", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.SIPDialPlan), "simplewizardrule", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.SimpleWizardRule), true)]
+[assembly: EdmRelationshipAttribute("SIPSorcery.Entities", "rtcc_ibfk_1", "CDR", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(SIPSorcery.Entities.CDR), "RTCC", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SIPSorcery.Entities.RTCC), true)]
 
 #endregion
 
@@ -348,6 +349,22 @@ namespace SIPSorcery.Entities
             }
         }
         private ObjectSet<Rate> _Rates;
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        public ObjectSet<RTCC> RTCCs1
+        {
+            get
+            {
+                if ((_RTCCs1 == null))
+                {
+                    _RTCCs1 = base.CreateObjectSet<RTCC>("RTCCs1");
+                }
+                return _RTCCs1;
+            }
+        }
+        private ObjectSet<RTCC> _RTCCs1;
 
         #endregion
 
@@ -488,6 +505,14 @@ namespace SIPSorcery.Entities
         {
             base.AddObject("Rates", rate);
         }
+    
+        /// <summary>
+        /// Deprecated Method for adding a new object to the RTCCs1 EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
+        /// </summary>
+        public void AddToRTCCs1(RTCC rTCC)
+        {
+            base.AddObject("RTCCs1", rTCC);
+        }
 
         #endregion
 
@@ -519,10 +544,7 @@ namespace SIPSorcery.Entities
         /// <param name="inserted">Initial value of the Inserted property.</param>
         /// <param name="localSocket">Initial value of the LocalSocket property.</param>
         /// <param name="remoteSocket">Initial value of the RemoteSocket property.</param>
-        /// <param name="isHangingUp">Initial value of the IsHangingUp property.</param>
-        /// <param name="setupCost">Initial value of the SetupCost property.</param>
-        /// <param name="incrementSeconds">Initial value of the IncrementSeconds property.</param>
-        public static CDR CreateCDR(global::System.String callID, global::System.String created, global::System.String direction, global::System.String dstHost, global::System.String dstURI, global::System.String id, global::System.String inserted, global::System.String localSocket, global::System.String remoteSocket, global::System.Boolean isHangingUp, global::System.Decimal setupCost, global::System.Int32 incrementSeconds)
+        public static CDR CreateCDR(global::System.String callID, global::System.String created, global::System.String direction, global::System.String dstHost, global::System.String dstURI, global::System.String id, global::System.String inserted, global::System.String localSocket, global::System.String remoteSocket)
         {
             CDR cDR = new CDR();
             cDR.CallID = callID;
@@ -534,9 +556,6 @@ namespace SIPSorcery.Entities
             cDR.Inserted = inserted;
             cDR.LocalSocket = localSocket;
             cDR.RemoteSocket = remoteSocket;
-            cDR.IsHangingUp = isHangingUp;
-            cDR.SetupCost = setupCost;
-            cDR.IncrementSeconds = incrementSeconds;
             return cDR;
         }
 
@@ -1176,102 +1195,6 @@ namespace SIPSorcery.Entities
         /// </summary>
         [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
         [DataMemberAttribute()]
-        public global::System.String AccountCode
-        {
-            get
-            {
-                return _AccountCode;
-            }
-            set
-            {
-                OnAccountCodeChanging(value);
-                ReportPropertyChanging("AccountCode");
-                _AccountCode = StructuralObject.SetValidValue(value, true);
-                ReportPropertyChanged("AccountCode");
-                OnAccountCodeChanged();
-            }
-        }
-        private global::System.String _AccountCode;
-        partial void OnAccountCodeChanging(global::System.String value);
-        partial void OnAccountCodeChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
-        public Nullable<global::System.Int32> SecondsReserved
-        {
-            get
-            {
-                return _SecondsReserved;
-            }
-            set
-            {
-                OnSecondsReservedChanging(value);
-                ReportPropertyChanging("SecondsReserved");
-                _SecondsReserved = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("SecondsReserved");
-                OnSecondsReservedChanged();
-            }
-        }
-        private Nullable<global::System.Int32> _SecondsReserved;
-        partial void OnSecondsReservedChanging(Nullable<global::System.Int32> value);
-        partial void OnSecondsReservedChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
-        public Nullable<global::System.Decimal> Cost
-        {
-            get
-            {
-                return _Cost;
-            }
-            set
-            {
-                OnCostChanging(value);
-                ReportPropertyChanging("Cost");
-                _Cost = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("Cost");
-                OnCostChanged();
-            }
-        }
-        private Nullable<global::System.Decimal> _Cost;
-        partial void OnCostChanging(Nullable<global::System.Decimal> value);
-        partial void OnCostChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
-        public Nullable<global::System.Decimal> Rate
-        {
-            get
-            {
-                return _Rate;
-            }
-            set
-            {
-                OnRateChanging(value);
-                ReportPropertyChanging("Rate");
-                _Rate = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("Rate");
-                OnRateChanged();
-            }
-        }
-        private Nullable<global::System.Decimal> _Rate;
-        partial void OnRateChanging(Nullable<global::System.Decimal> value);
-        partial void OnRateChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
         public Nullable<global::System.DateTime> AnsweredAt
         {
             get
@@ -1296,148 +1219,54 @@ namespace SIPSorcery.Entities
         /// </summary>
         [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
         [DataMemberAttribute()]
-        public global::System.String ReconciliationResult
+        public global::System.String DialPlanContextID
         {
             get
             {
-                return _ReconciliationResult;
+                return _DialPlanContextID;
             }
             set
             {
-                OnReconciliationResultChanging(value);
-                ReportPropertyChanging("ReconciliationResult");
-                _ReconciliationResult = StructuralObject.SetValidValue(value, true);
-                ReportPropertyChanged("ReconciliationResult");
-                OnReconciliationResultChanged();
+                OnDialPlanContextIDChanging(value);
+                ReportPropertyChanging("DialPlanContextID");
+                _DialPlanContextID = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("DialPlanContextID");
+                OnDialPlanContextIDChanged();
             }
         }
-        private global::System.String _ReconciliationResult;
-        partial void OnReconciliationResultChanging(global::System.String value);
-        partial void OnReconciliationResultChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
-        public global::System.String ReservationError
-        {
-            get
-            {
-                return _ReservationError;
-            }
-            set
-            {
-                OnReservationErrorChanging(value);
-                ReportPropertyChanging("ReservationError");
-                _ReservationError = StructuralObject.SetValidValue(value, true);
-                ReportPropertyChanged("ReservationError");
-                OnReservationErrorChanged();
-            }
-        }
-        private global::System.String _ReservationError;
-        partial void OnReservationErrorChanging(global::System.String value);
-        partial void OnReservationErrorChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.Boolean IsHangingUp
-        {
-            get
-            {
-                return _IsHangingUp;
-            }
-            set
-            {
-                OnIsHangingUpChanging(value);
-                ReportPropertyChanging("IsHangingUp");
-                _IsHangingUp = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("IsHangingUp");
-                OnIsHangingUpChanged();
-            }
-        }
-        private global::System.Boolean _IsHangingUp;
-        partial void OnIsHangingUpChanging(global::System.Boolean value);
-        partial void OnIsHangingUpChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
-        public Nullable<global::System.Decimal> PostReconciliationBalance
-        {
-            get
-            {
-                return _PostReconciliationBalance;
-            }
-            set
-            {
-                OnPostReconciliationBalanceChanging(value);
-                ReportPropertyChanging("PostReconciliationBalance");
-                _PostReconciliationBalance = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("PostReconciliationBalance");
-                OnPostReconciliationBalanceChanged();
-            }
-        }
-        private Nullable<global::System.Decimal> _PostReconciliationBalance;
-        partial void OnPostReconciliationBalanceChanging(Nullable<global::System.Decimal> value);
-        partial void OnPostReconciliationBalanceChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.Decimal SetupCost
-        {
-            get
-            {
-                return _SetupCost;
-            }
-            set
-            {
-                OnSetupCostChanging(value);
-                ReportPropertyChanging("SetupCost");
-                _SetupCost = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("SetupCost");
-                OnSetupCostChanged();
-            }
-        }
-        private global::System.Decimal _SetupCost;
-        partial void OnSetupCostChanging(global::System.Decimal value);
-        partial void OnSetupCostChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.Int32 IncrementSeconds
-        {
-            get
-            {
-                return _IncrementSeconds;
-            }
-            set
-            {
-                OnIncrementSecondsChanging(value);
-                ReportPropertyChanging("IncrementSeconds");
-                _IncrementSeconds = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("IncrementSeconds");
-                OnIncrementSecondsChanged();
-            }
-        }
-        private global::System.Int32 _IncrementSeconds;
-        partial void OnIncrementSecondsChanging(global::System.Int32 value);
-        partial void OnIncrementSecondsChanged();
+        private global::System.String _DialPlanContextID;
+        partial void OnDialPlanContextIDChanging(global::System.String value);
+        partial void OnDialPlanContextIDChanged();
 
         #endregion
 
     
+        #region Navigation Properties
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [XmlIgnoreAttribute()]
+        [SoapIgnoreAttribute()]
+        [DataMemberAttribute()]
+        [EdmRelationshipNavigationPropertyAttribute("SIPSorcery.Entities", "rtcc_ibfk_1", "RTCC")]
+        public EntityCollection<RTCC> rtccs
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedCollection<RTCC>("SIPSorcery.Entities.rtcc_ibfk_1", "RTCC");
+            }
+            set
+            {
+                if ((value != null))
+                {
+                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<RTCC>("SIPSorcery.Entities.rtcc_ibfk_1", "RTCC", value);
+                }
+            }
+        }
+
+        #endregion
+
     }
     
     /// <summary>
@@ -2836,6 +2665,403 @@ namespace SIPSorcery.Entities
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
+    [EdmEntityTypeAttribute(NamespaceName="SIPSorcery.Entities", Name="RTCC")]
+    [Serializable()]
+    [DataContractAttribute(IsReference=true)]
+    public partial class RTCC : EntityObject
+    {
+        #region Factory Method
+    
+        /// <summary>
+        /// Create a new RTCC object.
+        /// </summary>
+        /// <param name="id">Initial value of the ID property.</param>
+        /// <param name="cDRID">Initial value of the CDRID property.</param>
+        /// <param name="isHangingUp">Initial value of the IsHangingUp property.</param>
+        /// <param name="setupCost">Initial value of the SetupCost property.</param>
+        /// <param name="incrementSeconds">Initial value of the IncrementSeconds property.</param>
+        /// <param name="inserted">Initial value of the Inserted property.</param>
+        public static RTCC CreateRTCC(global::System.String id, global::System.String cDRID, global::System.Boolean isHangingUp, global::System.Decimal setupCost, global::System.Int32 incrementSeconds, global::System.DateTime inserted)
+        {
+            RTCC rTCC = new RTCC();
+            rTCC.ID = id;
+            rTCC.CDRID = cDRID;
+            rTCC.IsHangingUp = isHangingUp;
+            rTCC.SetupCost = setupCost;
+            rTCC.IncrementSeconds = incrementSeconds;
+            rTCC.Inserted = inserted;
+            return rTCC;
+        }
+
+        #endregion
+
+        #region Primitive Properties
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String ID
+        {
+            get
+            {
+                return _ID;
+            }
+            set
+            {
+                if (_ID != value)
+                {
+                    OnIDChanging(value);
+                    ReportPropertyChanging("ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
+                    ReportPropertyChanged("ID");
+                    OnIDChanged();
+                }
+            }
+        }
+        private global::System.String _ID;
+        partial void OnIDChanging(global::System.String value);
+        partial void OnIDChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String CDRID
+        {
+            get
+            {
+                return _CDRID;
+            }
+            set
+            {
+                OnCDRIDChanging(value);
+                ReportPropertyChanging("CDRID");
+                _CDRID = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("CDRID");
+                OnCDRIDChanged();
+            }
+        }
+        private global::System.String _CDRID;
+        partial void OnCDRIDChanging(global::System.String value);
+        partial void OnCDRIDChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String AccountCode
+        {
+            get
+            {
+                return _AccountCode;
+            }
+            set
+            {
+                OnAccountCodeChanging(value);
+                ReportPropertyChanging("AccountCode");
+                _AccountCode = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("AccountCode");
+                OnAccountCodeChanged();
+            }
+        }
+        private global::System.String _AccountCode;
+        partial void OnAccountCodeChanging(global::System.String value);
+        partial void OnAccountCodeChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public Nullable<global::System.Int32> SecondsReserved
+        {
+            get
+            {
+                return _SecondsReserved;
+            }
+            set
+            {
+                OnSecondsReservedChanging(value);
+                ReportPropertyChanging("SecondsReserved");
+                _SecondsReserved = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("SecondsReserved");
+                OnSecondsReservedChanged();
+            }
+        }
+        private Nullable<global::System.Int32> _SecondsReserved;
+        partial void OnSecondsReservedChanging(Nullable<global::System.Int32> value);
+        partial void OnSecondsReservedChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public Nullable<global::System.Decimal> Cost
+        {
+            get
+            {
+                return _Cost;
+            }
+            set
+            {
+                OnCostChanging(value);
+                ReportPropertyChanging("Cost");
+                _Cost = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("Cost");
+                OnCostChanged();
+            }
+        }
+        private Nullable<global::System.Decimal> _Cost;
+        partial void OnCostChanging(Nullable<global::System.Decimal> value);
+        partial void OnCostChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public Nullable<global::System.Decimal> Rate
+        {
+            get
+            {
+                return _Rate;
+            }
+            set
+            {
+                OnRateChanging(value);
+                ReportPropertyChanging("Rate");
+                _Rate = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("Rate");
+                OnRateChanged();
+            }
+        }
+        private Nullable<global::System.Decimal> _Rate;
+        partial void OnRateChanging(Nullable<global::System.Decimal> value);
+        partial void OnRateChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String ReservationError
+        {
+            get
+            {
+                return _ReservationError;
+            }
+            set
+            {
+                OnReservationErrorChanging(value);
+                ReportPropertyChanging("ReservationError");
+                _ReservationError = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("ReservationError");
+                OnReservationErrorChanged();
+            }
+        }
+        private global::System.String _ReservationError;
+        partial void OnReservationErrorChanging(global::System.String value);
+        partial void OnReservationErrorChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String ReconciliationResult
+        {
+            get
+            {
+                return _ReconciliationResult;
+            }
+            set
+            {
+                OnReconciliationResultChanging(value);
+                ReportPropertyChanging("ReconciliationResult");
+                _ReconciliationResult = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("ReconciliationResult");
+                OnReconciliationResultChanged();
+            }
+        }
+        private global::System.String _ReconciliationResult;
+        partial void OnReconciliationResultChanging(global::System.String value);
+        partial void OnReconciliationResultChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Boolean IsHangingUp
+        {
+            get
+            {
+                return _IsHangingUp;
+            }
+            set
+            {
+                OnIsHangingUpChanging(value);
+                ReportPropertyChanging("IsHangingUp");
+                _IsHangingUp = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("IsHangingUp");
+                OnIsHangingUpChanged();
+            }
+        }
+        private global::System.Boolean _IsHangingUp;
+        partial void OnIsHangingUpChanging(global::System.Boolean value);
+        partial void OnIsHangingUpChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public Nullable<global::System.Decimal> PostReconciliationBalance
+        {
+            get
+            {
+                return _PostReconciliationBalance;
+            }
+            set
+            {
+                OnPostReconciliationBalanceChanging(value);
+                ReportPropertyChanging("PostReconciliationBalance");
+                _PostReconciliationBalance = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("PostReconciliationBalance");
+                OnPostReconciliationBalanceChanged();
+            }
+        }
+        private Nullable<global::System.Decimal> _PostReconciliationBalance;
+        partial void OnPostReconciliationBalanceChanging(Nullable<global::System.Decimal> value);
+        partial void OnPostReconciliationBalanceChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Decimal SetupCost
+        {
+            get
+            {
+                return _SetupCost;
+            }
+            set
+            {
+                OnSetupCostChanging(value);
+                ReportPropertyChanging("SetupCost");
+                _SetupCost = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("SetupCost");
+                OnSetupCostChanged();
+            }
+        }
+        private global::System.Decimal _SetupCost;
+        partial void OnSetupCostChanging(global::System.Decimal value);
+        partial void OnSetupCostChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Int32 IncrementSeconds
+        {
+            get
+            {
+                return _IncrementSeconds;
+            }
+            set
+            {
+                OnIncrementSecondsChanging(value);
+                ReportPropertyChanging("IncrementSeconds");
+                _IncrementSeconds = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("IncrementSeconds");
+                OnIncrementSecondsChanged();
+            }
+        }
+        private global::System.Int32 _IncrementSeconds;
+        partial void OnIncrementSecondsChanging(global::System.Int32 value);
+        partial void OnIncrementSecondsChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.DateTime Inserted
+        {
+            get
+            {
+                return _Inserted;
+            }
+            set
+            {
+                OnInsertedChanging(value);
+                ReportPropertyChanging("Inserted");
+                _Inserted = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("Inserted");
+                OnInsertedChanged();
+            }
+        }
+        private global::System.DateTime _Inserted;
+        partial void OnInsertedChanging(global::System.DateTime value);
+        partial void OnInsertedChanged();
+
+        #endregion
+
+    
+        #region Navigation Properties
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [XmlIgnoreAttribute()]
+        [SoapIgnoreAttribute()]
+        [DataMemberAttribute()]
+        [EdmRelationshipNavigationPropertyAttribute("SIPSorcery.Entities", "rtcc_ibfk_1", "CDR")]
+        public CDR cdr
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<CDR>("SIPSorcery.Entities.rtcc_ibfk_1", "CDR").Value;
+            }
+            set
+            {
+                ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<CDR>("SIPSorcery.Entities.rtcc_ibfk_1", "CDR").Value = value;
+            }
+        }
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [BrowsableAttribute(false)]
+        [DataMemberAttribute()]
+        public EntityReference<CDR> cdrReference
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<CDR>("SIPSorcery.Entities.rtcc_ibfk_1", "CDR");
+            }
+            set
+            {
+                if ((value != null))
+                {
+                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedReference<CDR>("SIPSorcery.Entities.rtcc_ibfk_1", "CDR", value);
+                }
+            }
+        }
+
+        #endregion
+
+    }
+    
+    /// <summary>
+    /// No Metadata Documentation available.
+    /// </summary>
     [EdmEntityTypeAttribute(NamespaceName="SIPSorcery.Entities", Name="SimpleWizardRule")]
     [Serializable()]
     [DataContractAttribute(IsReference=true)]
@@ -3883,6 +4109,54 @@ namespace SIPSorcery.Entities
         private global::System.String _AvatarURL;
         partial void OnAvatarURLChanging(global::System.String value);
         partial void OnAvatarURLChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String Description
+        {
+            get
+            {
+                return _Description;
+            }
+            set
+            {
+                OnDescriptionChanging(value);
+                ReportPropertyChanging("Description");
+                _Description = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("Description");
+                OnDescriptionChanged();
+            }
+        }
+        private global::System.String _Description;
+        partial void OnDescriptionChanging(global::System.String value);
+        partial void OnDescriptionChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String AccountCode
+        {
+            get
+            {
+                return _AccountCode;
+            }
+            set
+            {
+                OnAccountCodeChanging(value);
+                ReportPropertyChanging("AccountCode");
+                _AccountCode = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("AccountCode");
+                OnAccountCodeChanged();
+            }
+        }
+        private global::System.String _AccountCode;
+        partial void OnAccountCodeChanging(global::System.String value);
+        partial void OnAccountCodeChanged();
 
         #endregion
 

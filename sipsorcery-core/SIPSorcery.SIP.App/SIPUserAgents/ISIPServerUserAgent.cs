@@ -68,5 +68,6 @@ namespace SIPSorcery.SIP.App
         void SetTraceDelegate(SIPTransactionTraceMessageDelegate traceDelegate);
         void SetOwner(string owner, string adminMemberId);
         void AnswerNonInvite(SIPResponseStatusCodesEnum answerStatus, string reasonPhrase, string[] customHeaders, string contentType, string body);
+        void SetDialPlanContextID(Guid dialPlanContextID);
     }
 }

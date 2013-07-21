@@ -146,6 +146,7 @@ namespace SIPSorcery.SIP.App
         public string FromURIHost;
         public SIPDialogueTransferModesEnum TransferMode = SIPDialogueTransferModesEnum.Default;   // Determines how the call (dialogues) created by this descriptor will handle transfers (REFER requests).
         public bool RequestCallerDetails;       // If true indicates the client agent would like to pass on any caller details if/when available.
+        public Guid DialPlanContextID;
 
         // Custom headers for sipsorcery switchboard application.
         public SwitchboardHeaders SwitchboardHeaders = new SwitchboardHeaders();

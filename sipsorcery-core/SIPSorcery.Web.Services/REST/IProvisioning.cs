@@ -112,7 +112,7 @@ namespace SIPSorcery.Web.Services
 
         [OperationContract]
         [WebInvoke(Method = "POST", UriTemplate = "sipprovider/update", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        JSONResult<string> UpdateSIPProvider(SIPProviderJSON sipAccount);
+        JSONResult<string> UpdateSIPProvider(SIPProviderJSON sipProvider);
 
         [OperationContract]
         [WebGet(UriTemplate = "sipprovider/delete?id={id}", ResponseFormat = WebMessageFormat.Json)]

@@ -215,6 +215,8 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
+                callDescriptor.DialPlanContextID = (m_dialPlanContext != null) ? m_dialPlanContext.DialPlanContextID : Guid.Empty;
+
                 if (Thread.CurrentThread.Name == null)
                 {
                     Thread.CurrentThread.Name = THEAD_NAME + DateTime.Now.ToString("HHmmss") + "-" + Crypto.GetRandomString(3);
@@ -232,6 +234,8 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
+                callDescriptor.DialPlanContextID = (m_dialPlanContext != null) ? m_dialPlanContext.DialPlanContextID : Guid.Empty;
+
                 // A call will not be delayed if there are no other calls being attempted.
                 if (callDescriptor.DelaySeconds != 0 && m_switchCalls.Count > 0)
                 {

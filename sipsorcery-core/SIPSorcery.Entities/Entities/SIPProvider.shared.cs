@@ -36,7 +36,7 @@ namespace SIPSorcery.Entities
         /// </summary>
         public SIPURI GetRegistrar()
         {
-            return (RegisterServer != null) ? SIPURI.ParseSIPURIRelaxed(RegisterServer) : SIPURI.ParseSIPURIRelaxed(ProviderServer);
+            return (RegisterServer.NotNullOrBlank()) ? SIPURI.ParseSIPURIRelaxed(RegisterServer) : SIPURI.ParseSIPURIRelaxed(ProviderServer);
         }
 
         public static string Validate(SIPProvider sipProvider)

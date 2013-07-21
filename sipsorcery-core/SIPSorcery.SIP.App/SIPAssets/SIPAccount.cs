@@ -318,6 +318,32 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+        private string m_accountCode;
+        [Column(Name = "accountcode", DbType = "varchar(36)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public string AccountCode
+        {
+            get { return m_accountCode; }
+            set
+            {
+                m_accountCode = value;
+                NotifyPropertyChanged("AccountCode");
+            }
+        }
+
+        private string m_description;
+        [Column(Name = "description", DbType = "varchar(1024)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
+        [DataMember]
+        public string Description
+        {
+            get { return m_description; }
+            set
+            {
+                m_description = value;
+                NotifyPropertyChanged("Description");
+            }
+        }
+
         public DateTimeOffset InsertedLocal {
             get { return Inserted.AddMinutes(TimeZoneOffsetMinutes); }
         }
@@ -358,6 +384,8 @@ namespace SIPSorcery.SIP.App
             table.Columns.Add(new DataColumn("isswitchboardenabled", typeof(Boolean)));
             table.Columns.Add(new DataColumn("dontmangleenabled", typeof(Boolean)));
             table.Columns.Add(new DataColumn("avatarurl", typeof(String)));
+            table.Columns.Add(new DataColumn("description", typeof(String)));
+            table.Columns.Add(new DataColumn("accountcode", typeof(String)));
             return table;
         }
 
@@ -382,6 +410,8 @@ namespace SIPSorcery.SIP.App
                 m_isSwitchboardEnabled = (sipAccountRow.Table.Columns.Contains("isswitchboardenabled") && sipAccountRow["isswitchboardenabled"] != null && sipAccountRow["isswitchboardenabled"] != DBNull.Value) ? Convert.ToBoolean(sipAccountRow["isswitchboardenabled"]) : false;
                 m_dontMangleEnabled = (sipAccountRow.Table.Columns.Contains("dontmangleenabled") && sipAccountRow["dontmangleenabled"] != null && sipAccountRow["dontmangleenabled"] != DBNull.Value) ? Convert.ToBoolean(sipAccountRow["dontmangleenabled"]) : false;
                 m_avatarURL = (sipAccountRow.Table.Columns.Contains("avatarurl") && sipAccountRow["avatarurl"] != null) ? sipAccountRow["avatarurl"] as string : null;
+                m_accountCode = (sipAccountRow.Table.Columns.Contains("accountcode") && sipAccountRow["accountcode"] != null) ? sipAccountRow["accountcode"] as string : null;
+                m_description = (sipAccountRow.Table.Columns.Contains("description") && sipAccountRow["description"] != null) ? sipAccountRow["description"] as string : null;
             }
             catch (Exception excp) {
                 logger.Error("Exception SIPAccount Load. " + excp);

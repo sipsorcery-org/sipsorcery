@@ -155,16 +155,23 @@ namespace SIPSorcery.SIP.App
                     {
                         if (m_pendingCDRs.Count > 0)
                         {
-
                             SIPCDRAsset cdrAsset = new SIPCDRAsset(m_pendingCDRs.Dequeue());
-                            if (m_sipCDRPersistor.Count(c => c.Id == cdrAsset.Id) == 1)
-                            {
-                                m_sipCDRPersistor.Update(cdrAsset);
-                            }
-                            else
+
+                            // Check whether the CDR has been hungup already in which case no more updates are permitted.
+                            var existingCDR = m_sipCDRPersistor.Get(cdrAsset.Id);
+
+                            if (existingCDR == null)
                             {
                                 m_sipCDRPersistor.Add(cdrAsset);
                             }
+                            else //if (existingCDR.ReconciliationResult == null)
+                            {
+                                m_sipCDRPersistor.Update(cdrAsset);
+                            }
+                            //else
+                            //{
+                            //    logger.Warn("A CDR was not updated as the copy in the database had already been processed by the RTCC engine (" + existingCDR.Id + ").");
+                            //}
                         }
                         else
                         {
