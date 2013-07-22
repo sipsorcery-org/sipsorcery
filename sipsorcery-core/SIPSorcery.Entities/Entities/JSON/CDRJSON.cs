@@ -72,5 +72,6 @@ namespace SIPSorcery.Entities
         [DataMember] public int IncrementSeconds { get; set; }
         [DataMember] public decimal Cost { get; set; }
         [DataMember] public decimal Balance { get; set; }
+        [DataMember] public string DialPlanContextID { get; set; }
     }
 }

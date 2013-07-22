@@ -352,7 +352,7 @@ namespace SIPSorcery.SIP.App
 
         public void SetDialPlanContextID(Guid dialPlanContextID)
         {
-            throw new NotImplementedException();
+           
         }
     }
 }

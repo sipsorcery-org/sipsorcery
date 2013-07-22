@@ -691,7 +691,8 @@ namespace SIPSorcery.Web.Services
                         Cost = (x.rtccs.Count > 0) ? x.rtccs.First().Cost.GetValueOrDefault() : 0,
                         SetupCost = (x.rtccs.Count > 0) ? x.rtccs.First().SetupCost : 0,
                         IncrementSeconds = (x.rtccs.Count > 0) ? x.rtccs.First().IncrementSeconds : 0,
-                        Balance =  (x.rtccs.Count > 0) ? x.rtccs.First().PostReconciliationBalance.GetValueOrDefault() : 0
+                        Balance =  (x.rtccs.Count > 0) ? x.rtccs.First().PostReconciliationBalance.GetValueOrDefault() : 0,
+                        DialPlanContextID = x.DialPlanContextID
                     });
 
                 return new JSONResult<List<CDRJSON>>() { Success = true, Result = result.ToList() };

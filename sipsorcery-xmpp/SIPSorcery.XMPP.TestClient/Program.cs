@@ -59,8 +59,8 @@ Pass: The GTalk password that will be used to connect to the GTalk XMPP service.
         private const string XMPP_REALM = "google.com";
 
         private static XMPPClient m_xmppClient;
-        private static string m_xmppUsername = "x@gmail.com";
-        private static string m_xmppPassword = "x";
+        private static string m_xmppUsername = "";
+        private static string m_xmppPassword = "";
 
         static void Main(string[] args)
         {

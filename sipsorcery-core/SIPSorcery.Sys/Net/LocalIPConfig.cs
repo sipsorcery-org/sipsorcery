@@ -80,9 +80,9 @@ namespace SIPSorcery.Sys
                            adapter.GetIPProperties().GatewayAddresses[0].Address.ToString() != "0.0.0.0"
                            select adapter;
 
-            if (adapters.Count() > 1)
+            if (adapters == null || adapters.Count() == 0)
             {
-                throw new ApplicationException("The default IPv4 address could not be determined as there are two interfaces with gateways.");
+                throw new ApplicationException("The default IPv4 address could not be determined as there are were no interfaces with a gateway.");
             }
             else
             {

@@ -27,7 +27,7 @@
 		
     	<TextBlock x:Name="m_localRTP_Copy" TextWrapping="Wrap" Margin="16,0,0,302.84" HorizontalAlignment="Left" Width="49.66" VerticalAlignment="Bottom"><Run Language="en-au" Text="Status:"/></TextBlock>
     	<TextBlock x:Name="m_signallingStatus" TextWrapping="Wrap" Margin="65.66,44.8,8,0" Height="34.76" VerticalAlignment="Top"><Run Language="en-au" Text="waiting for call..."/></TextBlock>
-    	<MediaControls:VideoCaptureElement DesiredPixelWidth="320"
+    	<!--<MediaControls:VideoCaptureElement DesiredPixelWidth="320"
     		DesiredPixelHeight="240"
     		FPS="30"
     		Width="Auto"
@@ -41,6 +41,6 @@
                   Foreground="Black"
                   FontSize="12"
                   VerticalAlignment="Bottom"
-                  Margin="8,0,167.2,1.4" />
+                  Margin="8,0,167.2,1.4" />-->
     </Grid>
 </Window>

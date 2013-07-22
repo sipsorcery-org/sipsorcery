@@ -78,13 +78,13 @@ namespace SIPSorcery.SoftPhone
             // Lookup and periodically check the public IP address of the host machine.
             _stunClient = new SoftphoneSTUNClient();
 
-            videoElement.NewVideoSample += new EventHandler<WPFMediaKit.DirectShow.MediaPlayers.VideoSampleArgs>(videoElement_NewVideoSample);
+            //videoElement.NewVideoSample += new EventHandler<WPFMediaKit.DirectShow.MediaPlayers.VideoSampleArgs>(videoElement_NewVideoSample);
         }
 
-        void videoElement_NewVideoSample(object sender, WPFMediaKit.DirectShow.MediaPlayers.VideoSampleArgs e)
-        {
-            _videoLogger.Debug("New video frame sample received.");
-        }
+        //void videoElement_NewVideoSample(object sender, WPFMediaKit.DirectShow.MediaPlayers.VideoSampleArgs e)
+        //{
+        //    _videoLogger.Debug("New video frame sample received.");
+        //}
 
         /// <summary>
         /// Application closing, shutdown the SIP, Google Voice and STUN clients.
