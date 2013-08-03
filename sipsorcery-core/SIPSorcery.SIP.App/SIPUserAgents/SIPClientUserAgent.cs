@@ -600,6 +600,7 @@ namespace SIPSorcery.SIP.App
                             {
                                 m_serverTransaction.CDR.Owner = Owner;
                                 m_serverTransaction.CDR.AdminMemberId = AdminMemberId;
+                                m_serverTransaction.CDR.DialPlanContextID = m_sipCallDescriptor.DialPlanContextID;
 
                                 if (m_sipCallDescriptor.AccountCode != null)
                                 {
@@ -616,7 +617,8 @@ namespace SIPSorcery.SIP.App
                                         FromHeader = m_sipCallDescriptor.From,
                                         LocalSocket = "udp:0.0.0.0:5060",
                                         RemoteSocket = "udp:0.0.0.0:5060",
-                                        Direction = m_serverTransaction.CDR.CallDirection.ToString()
+                                        Direction = m_serverTransaction.CDR.CallDirection.ToString(),
+                                        DialPlanContextID = m_sipCallDescriptor.DialPlanContextID.ToString()
                                     };
 
                                     m_customerAccountDataLayer.UpdateRealTimeCallControlCDRID(originalCallTransaction.CDR.CDRId.ToString(), rtccCDR);
@@ -658,7 +660,6 @@ namespace SIPSorcery.SIP.App
                 {
                     if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
                     {
-
                         if (sipResponse.Body.IsNullOrBlank())
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Body on UAC response was empty.", Owner));
