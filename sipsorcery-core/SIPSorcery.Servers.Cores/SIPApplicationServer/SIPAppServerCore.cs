@@ -186,10 +186,10 @@ namespace SIPSorcery.Servers
                     if (sipRequest.URI.User == m_dispatcherUsername)
                     {
                         // Incoming call from monitoring process checking the application server is still running.
-                        UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy);
-                        uasTransaction.CDR = null;
+                        UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, m_outboundProxy, true);
+                        //uasTransaction.CDR = null;
                         SIPServerUserAgent incomingCall = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, sipRequest.URI.User, sipRequest.URI.Host, SIPCallDirection.In, null, null, null, uasTransaction);
-                        incomingCall.NoCDR();
+                        //incomingCall.NoCDR();
                         uasTransaction.NewCallReceived += (local, remote, transaction, request) => { m_callManager.QueueNewCall(incomingCall); };
                         uasTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
                     }

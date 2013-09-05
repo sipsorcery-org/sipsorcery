@@ -162,7 +162,7 @@ namespace SIPSorcery.Servers
                             var rtccTerminationDue = (from rtcc in db.RTCCs1.Include("cdr")
                                                       where !rtcc.IsHangingUp && rtcc.AccountCode != null && rtcc.cdr.HungupTime == null && rtcc.cdr.AnsweredAt != null && rtcc.SecondsReserved != null && 
                                                               rtcc.cdr.AnsweredStatus >= 200 && rtcc.cdr.AnsweredStatus <= 299 && EntityFunctions.AddSeconds(rtcc.cdr.AnsweredAt, rtcc.SecondsReserved) <= now && !rtcc.IsHangingUp
-                                                              && rtcc.ReservationError == null && rtcc.ReconciliationResult == null
+                                                              && rtcc.ReconciliationResult == null
                                                       orderby rtcc.cdr.AnsweredAt
                                                       select rtcc).Take(NUMBER_CDRS_PER_ROUNDTRIP);
 
@@ -172,9 +172,9 @@ namespace SIPSorcery.Servers
                                 {
                                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.DialPlan, "Terminating call due to reservation limit being reached " + rtcc.cdr.Dst + ".", rtcc.cdr.Owner));
 
-                                    m_customerAccountDataLayer.SetCDRIsHangingUp(rtcc.cdr.ID);
+                                    m_customerAccountDataLayer.SetCDRIsHangingUp(rtcc.ID);
 
-                                    var dialogue = m_sipDialoguePersistor.Get(x => x.CDRId == rtcc.ID, null, 0, 1).FirstOrDefault();
+                                    var dialogue = m_sipDialoguePersistor.Get(x => x.CDRId == rtcc.CDRID, null, 0, 1).FirstOrDefault();
                                     if (dialogue != null)
                                     {
                                         m_sipDialogueManager.CallHungup(dialogue.SIPDialogue, "RTCC time limit reached", true);
@@ -221,7 +221,7 @@ namespace SIPSorcery.Servers
                         using (var db = new SIPSorceryEntities())
                         {
                             var rtccReconciliationDue = (from rtcc in db.RTCCs1.Include("cdr")
-                                                         where rtcc.AccountCode != null && (rtcc.cdr.AnsweredStatus < 200 || rtcc.cdr.AnsweredStatus >= 300 || rtcc.cdr.HungupTime != null || rtcc.cdr.HungupReason != null) 
+                                                         where rtcc.AccountCode != null && ((rtcc.cdr.AnsweredStatus > 0 && rtcc.cdr.AnsweredStatus < 200) || rtcc.cdr.AnsweredStatus >= 300 || rtcc.cdr.HungupTime != null || rtcc.cdr.HungupReason != null) 
                                                             && rtcc.ReconciliationResult == null && rtcc.PostReconciliationBalance == null && rtcc.Cost > 0
                                                          orderby rtcc.cdr.HungupTime
                                                          select rtcc).Take(NUMBER_CDRS_PER_ROUNDTRIP);
@@ -231,6 +231,9 @@ namespace SIPSorcery.Servers
                                 foreach (RTCC rtcc in rtccReconciliationDue)
                                 {
                                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RTCC, SIPMonitorEventTypesEnum.DialPlan, "Reconciling credit for call " + rtcc.cdr.Dst + ".", rtcc.cdr.Owner));
+
+                                    logger.Debug("Answered Status=" + rtcc.cdr.AnsweredStatus + ", hungup time=" + rtcc.cdr.HungupTime + ", hungup reason=" + rtcc.cdr.HungupReason + ".");
+
                                     logger.Debug("Reconciliation starting for CDR " + rtcc.cdr.ID + ", owner " + rtcc.cdr.Owner + ", destination " + rtcc.cdr.Dst + ", duration " + rtcc.cdr.Duration + ", rate " + rtcc.Rate + ", setup cost " + 
                                         rtcc.SetupCost +", increment seconds " + rtcc.IncrementSeconds + " and reserved credit of " + rtcc.Cost + ".");
                                     m_customerAccountDataLayer.ReturnUnusedCredit(rtcc.ID);
@@ -238,26 +241,6 @@ namespace SIPSorcery.Servers
                             }
                         }
                     }
-                    //catch (ReflectionTypeLoadException ex)
-                    //{
-                    //    StringBuilder sb = new StringBuilder();
-                    //    foreach (Exception exSub in ex.LoaderExceptions)
-                    //    {
-                    //        sb.AppendLine(exSub.Message);
-                    //        if (exSub is FileNotFoundException)
-                    //        {
-                    //            FileNotFoundException exFileNotFound = exSub as FileNotFoundException;
-                    //            if (!string.IsNullOrEmpty(exFileNotFound.FusionLog))
-                    //            {
-                    //                sb.AppendLine("Fusion Log:");
-                    //                sb.AppendLine(exFileNotFound.FusionLog);
-                    //            }
-                    //        }
-                    //        sb.AppendLine();
-                    //    }
-                    //    string errorMessage = sb.ToString();
-                    //    logger.Error(errorMessage);
-                    //}
                     catch (Exception monitorExcp)
                     {
                         logger.Error("Exception ReconcileCDRs Monitoring. " + monitorExcp);

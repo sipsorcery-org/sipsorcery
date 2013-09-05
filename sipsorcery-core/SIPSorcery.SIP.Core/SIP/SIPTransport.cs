@@ -1827,7 +1827,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public UASInviteTransaction CreateUASTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy)
+        public UASInviteTransaction CreateUASTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy, bool noCDR = false)
         {
             try
             {
@@ -1837,13 +1837,13 @@ namespace SIPSorcery.SIP
                 }
 
                 CheckTransactionEngineExists();
-                UASInviteTransaction uasInviteTransaction = new UASInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy, ContactIPAddress);
+                UASInviteTransaction uasInviteTransaction = new UASInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy, ContactIPAddress, noCDR);
                 m_transactionEngine.AddTransaction(uasInviteTransaction);
                 return uasInviteTransaction;
             }
             catch (Exception excp)
             {
-                logger.Error("Exception CreateUASTransaction. " + excp.Message);
+                logger.Error("Exception CreateUASTransaction. " + excp);
                 throw;
             }
         }
@@ -1864,7 +1864,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception CreateUASTransaction. " + excp.Message);
+                logger.Error("Exception CreateUASTransaction. " + excp);
                 throw;
             }
         }

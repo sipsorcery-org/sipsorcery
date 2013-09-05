@@ -166,6 +166,7 @@ namespace SIPSorcery.SIP.App
                 {
                     m_uacTransaction.CDR.Owner = m_uacOwner;
                     m_uacTransaction.CDR.AdminMemberId = m_uacAdminMemberId;
+                    m_uacTransaction.CDR.DialPlanContextID = (m_uacCallDescriptor != null) ? m_uacCallDescriptor.DialPlanContextID : Guid.Empty;
                 }
 
                 //uacTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
@@ -380,6 +381,9 @@ namespace SIPSorcery.SIP.App
             {
                 m_uasTransaction.CDR.Owner = owner;
                 m_uasTransaction.CDR.AdminMemberId = adminMemberId;
+                m_uasTransaction.CDR.DialPlanContextID = (m_uacCallDescriptor != null) ? m_uacCallDescriptor.DialPlanContextID : Guid.Empty;
+
+                m_uasTransaction.CDR.Updated();
             }
         }
 
@@ -388,6 +392,8 @@ namespace SIPSorcery.SIP.App
             if (m_uasTransaction.CDR != null)
             {
                 m_uasTransaction.CDR.DialPlanContextID = dialPlanContextID;
+
+                m_uasTransaction.CDR.Updated();
             }
         }
 

@@ -102,6 +102,7 @@
           <Property Name="accountnumber" Type="varchar" MaxLength="32" />
           <Property Name="pin" Type="int" />
           <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
+          <Property Name="RatePlan" Type="int" Nullable="false" />
         </EntityType>
         <!--Errors Found During Generation:
       warning 6035: The relationship 'customeraccount_ibfk_1' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
@@ -154,6 +155,7 @@
           <Property Name="servicerenewaldate" Type="varchar" MaxLength="33" />
           <Property Name="RTCCInternationalPrefixes" Type="varchar" MaxLength="32" />
           <Property Name="Salt" Type="varchar" Nullable="false" MaxLength="64" />
+          <Property Name="FTPPrefix" Type="varchar" MaxLength="8" />
         </EntityType>
         <EntityType Name="rate">
           <Key>
@@ -168,6 +170,7 @@
           <Property Name="inserted" Type="varchar" Nullable="false" MaxLength="33" />
           <Property Name="setupcost" Type="decimal" Nullable="false" Scale="5" />
           <Property Name="incrementseconds" Type="int" Nullable="false" />
+          <Property Name="RatePlan" Type="int" Nullable="false" />
         </EntityType>
         <EntityType Name="rtcc">
           <Key>
@@ -731,6 +734,7 @@
           <Property Type="String" Name="ServiceRenewalDate" />
           <Property Type="String" Name="RTCCInternationalPrefixes" MaxLength="32" FixedLength="false" Unicode="false" />
           <Property Type="String" Name="Salt" Nullable="false" />
+          <Property Type="String" Name="FTPPrefix" MaxLength="8" FixedLength="false" Unicode="false" />
         </EntityType>
         <EntityType Name="SIPAccount">
           <Key>
@@ -1030,6 +1034,7 @@
           <Property Type="String" Name="AccountNumber" />
           <Property Type="String" Name="AccountName" Nullable="false" MaxLength="100" FixedLength="false" Unicode="false" />
           <Property Type="Int32" Name="PIN" />
+          <Property Type="Int32" Name="RatePlan" Nullable="false" />
         </EntityType>
         <EntityType Name="Rate">
           <Key>
@@ -1044,6 +1049,7 @@
           <Property Type="String" Name="Inserted" Nullable="false" MaxLength="33" FixedLength="false" Unicode="false" />
           <Property Type="Decimal" Name="SetupCost" Nullable="false" />
           <Property Type="Int32" Name="IncrementSeconds" Nullable="false" />
+          <Property Type="Int32" Name="RatePlan" Nullable="false" />
         </EntityType>
         <EntityType Name="RTCC">
           <Key>
@@ -1175,6 +1181,7 @@
           <EntitySetMapping Name="Customers">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.Customer">
               <MappingFragment StoreEntitySet="customers">
+                <ScalarProperty Name="FTPPrefix" ColumnName="FTPPrefix" />
                 <ScalarProperty Name="Salt" ColumnName="Salt" />
                 <ScalarProperty Name="RTCCInternationalPrefixes" ColumnName="RTCCInternationalPrefixes" />
                 <ScalarProperty Name="ServiceRenewalDate" ColumnName="servicerenewaldate" />
@@ -1417,6 +1424,7 @@
           <EntitySetMapping Name="CustomerAccounts">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.CustomerAccount">
               <MappingFragment StoreEntitySet="customeraccount">
+                <ScalarProperty Name="RatePlan" ColumnName="RatePlan" />
                 <ScalarProperty Name="PIN" ColumnName="pin" />
                 <ScalarProperty Name="AccountName" ColumnName="accountname" />
                 <ScalarProperty Name="AccountNumber" ColumnName="accountnumber" />
@@ -1431,6 +1439,7 @@
           <EntitySetMapping Name="Rates">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.Rate">
               <MappingFragment StoreEntitySet="rate">
+                <ScalarProperty Name="RatePlan" ColumnName="RatePlan" />
                 <ScalarProperty Name="IncrementSeconds" ColumnName="incrementseconds" />
                 <ScalarProperty Name="SetupCost" ColumnName="setupcost" />
                 <ScalarProperty Name="Inserted" ColumnName="inserted" />
@@ -1527,7 +1536,7 @@
         </AssociationConnector>
         <EntityTypeShape EntityType="SIPSorcery.Entities.WebCallback" Width="1.5" PointX="0.75" PointY="13.75" Height="2.1725878906250031" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.CustomerAccount" Width="1.875" PointX="3.25" PointY="14.25" Height="2.5571907552083353" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.Rate" Width="1.5" PointX="5.75" PointY="14.25" Height="2.0002864583333331" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.Rate" Width="1.75" PointX="5.75" PointY="14.25" Height="2.0002864583333331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.RTCC" Width="2" PointX="5.75" PointY="0.5" />
         <AssociationConnector Association="SIPSorcery.Entities.rtcc_ibfk_1" />
       </Diagram>

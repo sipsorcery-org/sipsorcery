@@ -888,6 +888,8 @@ namespace SIPSorcery.Entities
         
         private string _firstname;
         
+        private string _ftpPrefix;
+        
         private string _id;
         
         private string _inserted;
@@ -965,6 +967,8 @@ namespace SIPSorcery.Entities
         partial void OnExecutionCountChanged();
         partial void OnFirstnameChanging(string value);
         partial void OnFirstnameChanged();
+        partial void OnFTPPrefixChanging(string value);
+        partial void OnFTPPrefixChanged();
         partial void OnIDChanging(string value);
         partial void OnIDChanged();
         partial void OnInsertedChanging(string value);
@@ -1343,6 +1347,31 @@ namespace SIPSorcery.Entities
                     this._firstname = value;
                     this.RaiseDataMemberChanged("Firstname");
                     this.OnFirstnameChanged();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Gets or sets the 'FTPPrefix' value.
+        /// </summary>
+        [DataMember()]
+        [StringLength(8)]
+        public string FTPPrefix
+        {
+            get
+            {
+                return this._ftpPrefix;
+            }
+            set
+            {
+                if ((this._ftpPrefix != value))
+                {
+                    this.OnFTPPrefixChanging(value);
+                    this.RaiseDataMemberChanging("FTPPrefix");
+                    this.ValidateProperty("FTPPrefix", value);
+                    this._ftpPrefix = value;
+                    this.RaiseDataMemberChanged("FTPPrefix");
+                    this.OnFTPPrefixChanged();
                 }
             }
         }

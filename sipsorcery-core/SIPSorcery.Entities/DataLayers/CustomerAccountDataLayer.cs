@@ -37,6 +37,7 @@ using System.Linq;
 using System.Text;
 using System.Transactions;
 using SIPSorcery.Entities;
+using SIPSorcery.SIP;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -62,7 +63,7 @@ namespace SIPSorcery.Entities
         /// take precedence over the destination.</param>
         /// <param name="destination">The call desintation the rate lookup is for.</param>
         /// <returns>If a matching rate is found a greater than 0 decimal value otherwise 0.</returns>
-        public Rate GetRate(string owner, string rateCode, string destination)
+        public Rate GetRate(string owner, string rateCode, string destination, int ratePlan)
         {
             logger.Debug("GetRate for owner " + owner + ", ratecode " + rateCode + " and destination " + destination + ".");
 
@@ -78,14 +79,14 @@ namespace SIPSorcery.Entities
                 if (rateCode.NotNullOrBlank())
                 {
                     callRate = (from rate in db.Rates
-                                where rate.Owner.ToLower() == owner.ToLower() && rate.RateCode == rateCode
+                                where rate.Owner.ToLower() == owner.ToLower() && rate.RateCode == rateCode && rate.RatePlan == ratePlan
                                 select rate).SingleOrDefault();
                 }
 
                 if (callRate == null)
                 {
                     callRate = (from rate in db.Rates
-                                where rate.Owner.ToLower() == owner.ToLower() && destination.StartsWith(rate.Prefix)
+                                where rate.Owner.ToLower() == owner.ToLower() && destination.StartsWith(rate.Prefix) && rate.RatePlan == ratePlan
                                 orderby rate.Prefix.Length descending
                                 select rate).FirstOrDefault();
                 }
@@ -120,7 +121,7 @@ namespace SIPSorcery.Entities
                         if (trimmedDestination != null)
                         {
                             callRate = (from rate in db.Rates
-                                        where rate.Owner.ToLower() == owner.ToLower() && trimmedDestination.StartsWith(rate.Prefix)
+                                        where rate.Owner.ToLower() == owner.ToLower() && trimmedDestination.StartsWith(rate.Prefix) && rate.RatePlan == ratePlan
                                         orderby rate.Prefix.Length descending
                                         select rate).FirstOrDefault();
                         }
@@ -165,7 +166,7 @@ namespace SIPSorcery.Entities
         /// <param name="rate">The rate for the call destination and the values that will be used for subsequent credit reservations.</param>
         /// <param name="initialSeconds">IF the reservation is successful this parameter will hold the number of seconds that were reserved for the initial reservation.</param>
         /// <returns>True if there was enough credit for the reservation otherwise false.</returns>
-        public decimal ReserveInitialCredit(string accountCode, Rate rate, CDR cdr, out int initialSeconds)
+        public decimal ReserveInitialCredit(string accountCode, Rate rate, SIPCDR cdr, out int initialSeconds)
         {
             try
             {
@@ -207,7 +208,7 @@ namespace SIPSorcery.Entities
                             var rtccRecord = new RTCC()
                             {
                                 ID = Guid.NewGuid().ToString(),
-                                CDRID = cdr.ID,
+                                CDRID = cdr.CDRId.ToString(),
                                 AccountCode = accountCode,
                                 SecondsReserved = initialSeconds,
                                 Cost = reservationCost,
@@ -240,7 +241,7 @@ namespace SIPSorcery.Entities
                             //callCDR.AccountCode = accountCode;
                             //callCDR.Cost = reservationCost;
 
-                            db.CDRs.AddObject(cdr);
+                            //db.CDRs.AddObject(cdr);
 
                             db.SaveChanges();
 
@@ -260,9 +261,9 @@ namespace SIPSorcery.Entities
             }
         }
 
-        public void UpdateRealTimeCallControlCDRID(string oldCDRID, CDR newCDR)
+        public void UpdateRealTimeCallControlCDRID(string oldCDRID, SIPCDR newCDR)
         {
-            logger.Debug("UpdateRealTimeCallControlCDRID old CDR ID " + oldCDRID + ", new CDR ID " + newCDR.ID + ".");
+            logger.Debug("UpdateRealTimeCallControlCDRID old CDR ID " + oldCDRID + ", new CDR ID " + newCDR.CDRId.ToString() + ".");
 
             using (var db = new SIPSorceryEntities())
             {
@@ -276,9 +277,9 @@ namespace SIPSorcery.Entities
                     }
                     else
                     {
-                        db.CDRs.AddObject(newCDR);
+                        //db.CDRs.AddObject(newCDR);
 
-                        realTimeCallControl.CDRID = newCDR.ID;
+                        realTimeCallControl.CDRID = newCDR.CDRId.ToString();
 
                         db.SaveChanges();
 
@@ -638,6 +639,7 @@ namespace SIPSorcery.Entities
                     existingAccount.AccountNumber = customerAccount.AccountNumber;
                     existingAccount.Credit = customerAccount.Credit;
                     existingAccount.PIN = customerAccount.PIN;
+                    existingAccount.RatePlan = customerAccount.RatePlan;
 
                     db.SaveChanges();
                 }
@@ -677,6 +679,26 @@ namespace SIPSorcery.Entities
                     callRTCC.IsHangingUp = true;
                     db.SaveChanges();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Checks the account code is valid and if not will also check the account number.
+        /// </summary>
+        /// <param name="owner">The owner of the customer accounts to check.</param>
+        /// <param name="accountNumber">The account code to check.</param>
+        /// <returns>If a matching accountcode or number is found the account code will be returned otherwise null.</returns>
+        public CustomerAccount CheckAccountCode(string owner, string accountCode)
+        {
+            using (var db = new SIPSorceryEntities())
+            {
+                var account = (from ca in db.CustomerAccounts
+                        where
+                            ca.Owner == owner.ToLower() &&
+                           (ca.AccountCode.ToLower() == accountCode.ToLower() || ca.AccountNumber == accountCode)
+                        select ca).SingleOrDefault();
+
+                return (account != null) ? account : null;
             }
         }
     }

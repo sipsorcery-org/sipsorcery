@@ -71,7 +71,8 @@ namespace SIPSorcery.SIP
             SIPEndPoint dstEndPoint,
             SIPEndPoint localSIPEndPoint,
             SIPEndPoint outboundProxy,
-            IPAddress contactIPAddress)
+            IPAddress contactIPAddress,
+            bool noCDR = false)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.Invite;
@@ -92,7 +93,11 @@ namespace SIPSorcery.SIP
             //logger.Debug("New UASTransaction (" + TransactionId + ") for " + TransactionRequest.URI.ToString() + " to " + RemoteEndPoint + ".");
             SIPEndPoint localEP = SIPEndPoint.TryParse(sipRequest.Header.ProxyReceivedOn) ?? localSIPEndPoint;
             SIPEndPoint remoteEP = SIPEndPoint.TryParse(sipRequest.Header.ProxyReceivedFrom) ?? dstEndPoint;
-            CDR = new SIPCDR(SIPCallDirection.In, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, localEP, remoteEP);
+
+            if (!noCDR)
+            {
+                CDR = new SIPCDR(SIPCallDirection.In, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, localEP, remoteEP);
+            }
 
             //UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
 

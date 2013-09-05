@@ -64,6 +64,7 @@ namespace SIPSorcery.SIP
         private static string m_newLine = AppState.NewLine;
 
         public static event CDRReadyDelegate CDRCreated = c => { };
+        public static event CDRReadyDelegate CDRUpdated = c => { };
         public static event CDRReadyDelegate CDRAnswered = c => { };
         public static event CDRReadyDelegate CDRHungup = c => { };
 
@@ -194,6 +195,8 @@ namespace SIPSorcery.SIP
             InProgress = false;
             IsAnswered = false;
             IsHungup = false;
+
+            CDRCreated(this);
         }
 
         public void Progress(SIPResponseStatusCodesEnum progressStatus, string progressReason, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint)
@@ -238,7 +241,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPCDR Answered. " + excp.Message);
+                logger.Error("Exception SIPCDR Answered. " + excp);
             }
         }
 
@@ -251,7 +254,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPCDR Cancelled. " + excp.Message);
+                logger.Error("Exception SIPCDR Cancelled. " + excp);
             }
         }
 
@@ -264,7 +267,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPCDR TimedOut. " + excp.Message);
+                logger.Error("Exception SIPCDR TimedOut. " + excp);
             }
         }
 
@@ -280,7 +283,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPCDR Hungup. " + excp.Message);
+                logger.Error("Exception SIPCDR Hungup. " + excp);
             }
         }
 
@@ -292,6 +295,18 @@ namespace SIPSorcery.SIP
         public int GetAnsweredDuration()
         {
             return (AnswerTime != null && HangupTime != null) ? Convert.ToInt32(HangupTime.Value.Subtract(AnswerTime.Value).TotalSeconds) : 0;
+        }
+
+        public void Updated()
+        {
+            try
+            {
+                CDRUpdated(this);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPCDR Updated. " + excp);
+            }
         }
     }
 }

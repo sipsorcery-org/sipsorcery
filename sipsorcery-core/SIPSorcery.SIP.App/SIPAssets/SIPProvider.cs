@@ -620,7 +620,7 @@ namespace SIPSorcery.SIP.App
                 m_registerDisabledReason = (providerRow.Table.Columns.Contains("registerdisabledreason") && providerRow["registerdisabledreason"] != DBNull.Value && providerRow["registerdisabledreason"] != null) ? providerRow["registerdisabledreason"] as string : null;
                 m_gvCallbackNumber = (providerRow.Table.Columns.Contains("gvcallbacknumber") && providerRow["gvcallbacknumber"] != null) ? providerRow["gvcallbacknumber"] as string : null;
                 m_gvCallbackPattern = (providerRow.Table.Columns.Contains("gvcallbackpattern") && providerRow["gvcallbackpattern"] != null) ? providerRow["gvcallbackpattern"] as string : null;
-                m_gvCallbackType = (providerRow.Table.Columns.Contains("gvcallbacktype") && providerRow["gvcallbacktype"] != DBNull.Value && providerRow["gvcallbacktype"] != null) ? (GoogleVoiceCallbackTypes)Enum.Parse(typeof(GoogleVoiceCallbackTypes), providerRow["gvcallbacktype"] as string, true) : (GoogleVoiceCallbackTypes?)null;
+                m_gvCallbackType = (providerRow.Table.Columns.Contains("gvcallbacktype") && providerRow["gvcallbacktype"] != DBNull.Value && providerRow["gvcallbacktype"] != null && (providerRow["gvcallbacktype"] as string).NotNullOrBlank()) ? (GoogleVoiceCallbackTypes)Enum.Parse(typeof(GoogleVoiceCallbackTypes), providerRow["gvcallbacktype"] as string, true) : (GoogleVoiceCallbackTypes?)null;
                 LastUpdate = (providerRow.Table.Columns.Contains("lastupdate") && providerRow["lastupdate"] != DBNull.Value && providerRow["lastupdate"] != null) ? DateTimeOffset.Parse(providerRow["lastupdate"] as string) : DateTimeOffset.UtcNow;
                 Inserted = (providerRow.Table.Columns.Contains("inserted") && providerRow["inserted"] != DBNull.Value && providerRow["inserted"] != null) ? DateTimeOffset.Parse(providerRow["inserted"] as string) : DateTimeOffset.UtcNow;
                 m_isReadOnly = (providerRow.Table.Columns.Contains("isreadonly") && providerRow["isreadonly"] != DBNull.Value && providerRow["isreadonly"] != null) ? StorageLayer.ConvertToBoolean(providerRow["isreadonly"]) : false;
@@ -630,7 +630,7 @@ namespace SIPSorcery.SIP.App
                 {
                     m_registerEnabled = false;
                     m_registerDisabledReason = "No Contact URI was specified for the registration.";
-                    logger.Warn("Registrations for provider " + m_providerName + " owned by " + m_owner + " have been disabled due to an empty or invalid Contact URI.");
+                     logger.Warn("Registrations for provider " + m_providerName + " owned by " + m_owner + " have been disabled due to an empty or invalid Contact URI.");
                 }
             }
             catch (Exception excp)

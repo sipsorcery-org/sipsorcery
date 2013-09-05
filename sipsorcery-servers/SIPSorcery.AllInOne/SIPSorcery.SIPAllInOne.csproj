@@ -74,6 +74,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.CRM.dll</HintPath>
     </Reference>
+    <Reference Include="SIPSorcery.Entities, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Entities.dll</HintPath>
+    </Reference>
     <Reference Include="SIPSorcery.Net, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Net.dll</HintPath>
@@ -108,6 +112,7 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data" />
+    <Reference Include="System.Data.Entity" />
     <Reference Include="System.Data.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>

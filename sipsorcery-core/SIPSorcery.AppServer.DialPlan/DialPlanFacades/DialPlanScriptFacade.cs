@@ -2269,7 +2269,12 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public SIPSorcery.Entities.Rate GetRate(string rateCode, string destination) 
         {
-            return m_customerAccountDataLayer.GetRate(m_dialPlanContext.Owner, rateCode, destination);
+            return m_customerAccountDataLayer.GetRate(m_dialPlanContext.Owner, rateCode, destination, 0);
+        }
+
+        public SIPSorcery.Entities.Rate GetRate(string rateCode, string destination, int ratePlan)
+        {
+            return m_customerAccountDataLayer.GetRate(m_dialPlanContext.Owner, rateCode, destination, ratePlan);
         }
 
         /// <summary>

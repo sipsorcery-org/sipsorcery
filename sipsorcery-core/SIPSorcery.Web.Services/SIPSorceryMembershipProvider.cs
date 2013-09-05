@@ -91,7 +91,7 @@ namespace SIPSorcery.Web.Services
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPSorceryMembershipProvider ValidateUser. " + excp.Message);
+                logger.Error("Exception SIPSorceryMembershipProvider ValidateUser. " + excp);
                 throw new ApplicationException("There was an " + excp.GetType().ToString() + " server error attempting to login.");
             }
         }

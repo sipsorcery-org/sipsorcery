@@ -23,11 +23,14 @@ namespace SIPSorcery.RTCC
         private SIPMonitorEventWriter m_monitorEventWriter;
         private SIPDialogueManager m_sipDialogueManager;
         private SIPSorceryPersistor m_sipSorceryPersistor;
+        private SIPSorcery.Entities.CDRDataLayer m_cdrDataLayer;
         private RTCCCore m_rtccCore;
+        private RateBulkUpdater m_rateUpdater;
 
         public RTCCDaemon(SIPSorceryPersistor sipSorceryPersistor)
         {
             m_sipSorceryPersistor = sipSorceryPersistor;
+            m_cdrDataLayer = new Entities.CDRDataLayer();
         }
 
         public void Start()
@@ -55,11 +58,12 @@ namespace SIPSorcery.RTCC
                 List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_rtccSIPSocketsNode);
                 m_sipTransport.AddSIPChannel(sipChannels);
 
-                if (m_sipSorceryPersistor != null && m_sipSorceryPersistor.SIPCDRPersistor != null)
+                if (m_cdrDataLayer != null)
                 {
-                    SIPCDR.CDRCreated += m_sipSorceryPersistor.QueueCDR;
-                    SIPCDR.CDRAnswered += m_sipSorceryPersistor.QueueCDR;
-                    SIPCDR.CDRHungup += m_sipSorceryPersistor.QueueCDR;
+                    SIPCDR.CDRCreated += m_cdrDataLayer.Add;
+                    SIPCDR.CDRAnswered += m_cdrDataLayer.Update; 
+                    SIPCDR.CDRHungup += m_cdrDataLayer.Update;
+                    SIPCDR.CDRUpdated += m_cdrDataLayer.Update;
                 }
 
                 m_sipDialogueManager = new SIPDialogueManager(
@@ -77,6 +81,9 @@ namespace SIPSorcery.RTCC
                     m_sipDialogueManager,
                     m_sipSorceryPersistor.SIPDialoguePersistor);
                 m_rtccCore.Start();
+
+                m_rateUpdater = new RateBulkUpdater(FireSIPMonitorEvent);
+                m_rateUpdater.Start();
 
                 logger.Debug("RTCC Daemon successfully started.");
             }
@@ -98,6 +105,10 @@ namespace SIPSorcery.RTCC
                 if (m_rtccCore != null)
                 {
                     m_rtccCore.Stop();
+                }
+                if (m_rateUpdater != null)
+                {
+                    m_rateUpdater.Stop();
                 }
 
                 logger.Debug("RTCC daemon stopped.");

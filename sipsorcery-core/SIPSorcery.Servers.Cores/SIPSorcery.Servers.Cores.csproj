@@ -251,6 +251,7 @@
     <Reference Include="System.ServiceModel">
       <RequiredTargetFramework>3.0</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.ServiceModel.DomainServices.Server, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.ServiceModel.Web">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -304,6 +305,7 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="RealTimeCallControl\RateBulkUpdater.cs" />
     <Compile Include="RealTimeCallControl\RTCCCore.cs" />
     <Compile Include="SIPApplicationServer\SIPDialogueManager.cs" />
     <Compile Include="SIPNotifier\NotifierSubscriptionsManager.cs" />

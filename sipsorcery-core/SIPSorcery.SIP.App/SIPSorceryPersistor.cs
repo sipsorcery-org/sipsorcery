@@ -122,19 +122,33 @@ namespace SIPSorcery.SIP.App
             m_sipDialoguePersistor = SIPAssetPersistorFactory<SIPDialogueAsset>.CreateSIPAssetPersistor(storageType, storageConnectionStr, m_sipDialoguesXMLFilename);
             m_sipCDRPersistor = SIPAssetPersistorFactory<SIPCDRAsset>.CreateSIPAssetPersistor(storageType, storageConnectionStr, m_sipCDRsXMLFilename);
 
-            if (m_sipCDRPersistor != null)
-            {
-                ThreadPool.QueueUserWorkItem(delegate { WriteCDRs(); });
-            }
+            //if (m_sipCDRPersistor != null)
+            //{
+            //    ThreadPool.QueueUserWorkItem(delegate { WriteCDRs(); });
+            //}
         }
 
-        public void QueueCDR(SIPCDR cdr)
+        public void WriteCDR(SIPCDR cdr)
         {
             try
             {
-                if (m_sipCDRPersistor != null && !StopCDRWrites && !m_pendingCDRs.Contains(cdr))
+                //if (m_sipCDRPersistor != null && !StopCDRWrites && !m_pendingCDRs.Contains(cdr))
+                //{
+                //    m_pendingCDRs.Enqueue(cdr);
+                //}
+
+                SIPCDRAsset cdrAsset = new SIPCDRAsset(cdr);
+
+                var existingCDR = m_sipCDRPersistor.Get(cdrAsset.Id);
+
+                if (existingCDR == null)
                 {
-                    m_pendingCDRs.Enqueue(cdr);
+                    cdrAsset.Inserted = DateTimeOffset.UtcNow;
+                    m_sipCDRPersistor.Add(cdrAsset);
+                }
+                else //if (existingCDR.ReconciliationResult == null)
+                {
+                    m_sipCDRPersistor.Update(cdrAsset);
                 }
             }
             catch (Exception excp)
@@ -143,51 +157,52 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private void WriteCDRs()
-        {
-            try
-            {
-                Thread.CurrentThread.Name = WRITE_CDRS_THREAD_NAME;
+    //    private void WriteCDRs()
+    //    {
+    //        try
+    //        {
+    //            Thread.CurrentThread.Name = WRITE_CDRS_THREAD_NAME;
 
-                while (!StopCDRWrites || m_pendingCDRs.Count > 0)
-                {
-                    try
-                    {
-                        if (m_pendingCDRs.Count > 0)
-                        {
-                            SIPCDRAsset cdrAsset = new SIPCDRAsset(m_pendingCDRs.Dequeue());
+    //            while (!StopCDRWrites || m_pendingCDRs.Count > 0)
+    //            {
+    //                try
+    //                {
+    //                    if (m_pendingCDRs.Count > 0)
+    //                    {
+    //                        SIPCDRAsset cdrAsset = new SIPCDRAsset(m_pendingCDRs.Dequeue());
 
-                            // Check whether the CDR has been hungup already in which case no more updates are permitted.
-                            var existingCDR = m_sipCDRPersistor.Get(cdrAsset.Id);
+    //                        // Check whether the CDR has been hungup already in which case no more updates are permitted.
+    //                        var existingCDR = m_sipCDRPersistor.Get(cdrAsset.Id);
 
-                            if (existingCDR == null)
-                            {
-                                m_sipCDRPersistor.Add(cdrAsset);
-                            }
-                            else //if (existingCDR.ReconciliationResult == null)
-                            {
-                                m_sipCDRPersistor.Update(cdrAsset);
-                            }
-                            //else
-                            //{
-                            //    logger.Warn("A CDR was not updated as the copy in the database had already been processed by the RTCC engine (" + existingCDR.Id + ").");
-                            //}
-                        }
-                        else
-                        {
-                            Thread.Sleep(1000);
-                        }
-                    }
-                    catch (Exception writeExcp)
-                    {
-                        logger.Error("Exception WriteCDRs writing CDR. " + writeExcp.Message);
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception WriteCDRs. " + excp.Message);
-            }
-        }
+    //                        if (existingCDR == null)
+    //                        {
+    //                            cdrAsset.Inserted = DateTimeOffset.UtcNow;
+    //                            m_sipCDRPersistor.Add(cdrAsset);
+    //                        }
+    //                        else //if (existingCDR.ReconciliationResult == null)
+    //                        {
+    //                            m_sipCDRPersistor.Update(cdrAsset);
+    //                        }
+    //                        //else
+    //                        //{
+    //                        //    logger.Warn("A CDR was not updated as the copy in the database had already been processed by the RTCC engine (" + existingCDR.Id + ").");
+    //                        //}
+    //                    }
+    //                    else
+    //                    {
+    //                        Thread.Sleep(1000);
+    //                    }
+    //                }
+    //                catch (Exception writeExcp)
+    //                {
+    //                    logger.Error("Exception WriteCDRs writing CDR. " + writeExcp.Message);
+    //                }
+    //            }
+    //        }
+    //        catch (Exception excp)
+    //        {
+    //            logger.Error("Exception WriteCDRs. " + excp.Message);
+    //        }
+    //    }
     }
 }

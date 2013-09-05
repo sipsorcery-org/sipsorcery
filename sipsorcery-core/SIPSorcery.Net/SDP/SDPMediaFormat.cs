@@ -11,6 +11,7 @@ namespace SIPSorcery.Net
         PCMU = 0,
         GSM = 3,
         PCMA = 8,
+        G729 = 18,
         G723 = 96,
     }
 

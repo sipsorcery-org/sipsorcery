@@ -514,6 +514,8 @@ namespace SIPSorcery.SIP.App
             {
                 m_uasTransaction.CDR.Owner = owner;
                 m_uasTransaction.CDR.AdminMemberId = adminMemberId;
+
+                m_uasTransaction.CDR.Updated();
             }
         }
 
@@ -527,6 +529,8 @@ namespace SIPSorcery.SIP.App
             if (m_uasTransaction.CDR != null)
             {
                 m_uasTransaction.CDR.DialPlanContextID = dialPlanContextID;
+
+                m_uasTransaction.CDR.Updated();
             }
         }
     }

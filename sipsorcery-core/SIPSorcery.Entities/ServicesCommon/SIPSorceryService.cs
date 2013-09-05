@@ -143,7 +143,7 @@ namespace SIPSorcery.Entities
                     // Create SIP account.
                     if (!sipSorceryEntities.SIPAccounts.Any(s => s.SIPUsername == customer.Name && s.SIPDomain == defaultDomain))
                     {
-                        SIPAccount sipAccount = SIPAccount.Create(customer.Name, defaultDomain, customer.Name, customer.CustomerPassword, "default");
+                        SIPAccount sipAccount = SIPAccount.Create(customer.Name, defaultDomain, customer.Name, plainTextassword, "default");
                         sipSorceryEntities.SIPAccounts.AddObject(sipAccount);
                         sipSorceryEntities.SaveChanges();
                         logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");

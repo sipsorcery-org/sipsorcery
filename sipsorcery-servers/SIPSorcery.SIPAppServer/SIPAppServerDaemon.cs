@@ -82,6 +82,7 @@ namespace SIPSorcery.SIPAppServer
         private int m_maxDialPlanExecutionLimit = SIPAppServerState.DialPlanMaxExecutionLimit;
 
         private SIPSorceryPersistor m_sipSorceryPersistor;
+        private SIPSorcery.Entities.CDRDataLayer m_cdrDataLayer;
         private SIPMonitorEventWriter m_monitorEventWriter;
         private SIPAppServerCore m_appServerCore;
         private SIPCallManager m_callManager;
@@ -131,6 +132,7 @@ namespace SIPSorcery.SIPAppServer
                 SIPDNSManager.SIPMonitorLogEvent = FireSIPMonitorEvent;
                 m_sipSorceryPersistor = new SIPSorceryPersistor(m_storageType, m_connectionString);
                 m_customerSessionManager = new CustomerSessionManager(m_storageType, m_connectionString);
+                m_cdrDataLayer = new Entities.CDRDataLayer();
 
                 #region Initialise the SIP Application Server and its logging mechanisms including CDRs.
 
@@ -142,11 +144,12 @@ namespace SIPSorcery.SIPAppServer
                     m_monitorEventWriter = new SIPMonitorEventWriter(m_monitorEventLoopbackPort);
                 }
 
-                if (m_sipSorceryPersistor != null && m_sipSorceryPersistor.SIPCDRPersistor != null)
+                if (m_cdrDataLayer != null)
                 {
-                    SIPCDR.CDRCreated += m_sipSorceryPersistor.QueueCDR;
-                    SIPCDR.CDRAnswered += m_sipSorceryPersistor.QueueCDR;
-                    SIPCDR.CDRHungup += m_sipSorceryPersistor.QueueCDR;
+                    SIPCDR.CDRCreated += m_cdrDataLayer.Add;
+                    SIPCDR.CDRAnswered += m_cdrDataLayer.Update;
+                    SIPCDR.CDRHungup += m_cdrDataLayer.Update;
+                    SIPCDR.CDRUpdated += m_cdrDataLayer.Update;
                 }
 
                 #region Initialise the SIPTransport layers.

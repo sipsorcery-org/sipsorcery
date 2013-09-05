@@ -38,6 +38,7 @@ create table customers
  servicerenewaldate varchar(33) null,
  RTCCInternationalPrefixes varchar(32) null,
  Salt varchar(64) not null,
+ FTPPrefix varchar(8) null						-- A random prefix that allows FTP uploads to a common directory to be associated with a customer account.
  Primary Key(id),
  Unique(customerusername)
 );
@@ -298,6 +299,7 @@ create table CustomerAccount
  accountnumber varchar(32)   null,
  pin int null,
  inserted varchar(33) not null,
+ RatePlan int not null default 0,
  Primary Key(id),
  Foreign Key(owner) references Customers(customerusername),
  unique(owner, accountcode),
@@ -315,6 +317,7 @@ CREATE TABLE `rate` (
   `inserted` varchar(33) NOT NULL,
   setupcost decimal(10,5) not null default 0,
   incrementseconds int(4) not null default 1, 
+  RatePlan int not null default 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `owner` (`owner`,`prefix`),
   CONSTRAINT `rate_ibfk_1` FOREIGN KEY (`owner`) REFERENCES `customers` (`customerusername`)

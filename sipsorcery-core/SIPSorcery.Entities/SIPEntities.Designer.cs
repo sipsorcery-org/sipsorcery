@@ -2158,6 +2158,30 @@ namespace SIPSorcery.Entities
         private global::System.String _Salt;
         partial void OnSaltChanging(global::System.String value);
         partial void OnSaltChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String FTPPrefix
+        {
+            get
+            {
+                return _FTPPrefix;
+            }
+            set
+            {
+                OnFTPPrefixChanging(value);
+                ReportPropertyChanging("FTPPrefix");
+                _FTPPrefix = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("FTPPrefix");
+                OnFTPPrefixChanged();
+            }
+        }
+        private global::System.String _FTPPrefix;
+        partial void OnFTPPrefixChanging(global::System.String value);
+        partial void OnFTPPrefixChanged();
 
         #endregion
 
@@ -2183,7 +2207,8 @@ namespace SIPSorcery.Entities
         /// <param name="credit">Initial value of the Credit property.</param>
         /// <param name="inserted">Initial value of the Inserted property.</param>
         /// <param name="accountName">Initial value of the AccountName property.</param>
-        public static CustomerAccount CreateCustomerAccount(global::System.String id, global::System.String owner, global::System.String accountCode, global::System.Decimal credit, global::System.String inserted, global::System.String accountName)
+        /// <param name="ratePlan">Initial value of the RatePlan property.</param>
+        public static CustomerAccount CreateCustomerAccount(global::System.String id, global::System.String owner, global::System.String accountCode, global::System.Decimal credit, global::System.String inserted, global::System.String accountName, global::System.Int32 ratePlan)
         {
             CustomerAccount customerAccount = new CustomerAccount();
             customerAccount.ID = id;
@@ -2192,6 +2217,7 @@ namespace SIPSorcery.Entities
             customerAccount.Credit = credit;
             customerAccount.Inserted = inserted;
             customerAccount.AccountName = accountName;
+            customerAccount.RatePlan = ratePlan;
             return customerAccount;
         }
 
@@ -2393,6 +2419,30 @@ namespace SIPSorcery.Entities
         private Nullable<global::System.Int32> _PIN;
         partial void OnPINChanging(Nullable<global::System.Int32> value);
         partial void OnPINChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Int32 RatePlan
+        {
+            get
+            {
+                return _RatePlan;
+            }
+            set
+            {
+                OnRatePlanChanging(value);
+                ReportPropertyChanging("RatePlan");
+                _RatePlan = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("RatePlan");
+                OnRatePlanChanged();
+            }
+        }
+        private global::System.Int32 _RatePlan;
+        partial void OnRatePlanChanging(global::System.Int32 value);
+        partial void OnRatePlanChanged();
 
         #endregion
 
@@ -2420,7 +2470,8 @@ namespace SIPSorcery.Entities
         /// <param name="inserted">Initial value of the Inserted property.</param>
         /// <param name="setupCost">Initial value of the SetupCost property.</param>
         /// <param name="incrementSeconds">Initial value of the IncrementSeconds property.</param>
-        public static Rate CreateRate(global::System.String id, global::System.String owner, global::System.String description, global::System.String prefix, global::System.Decimal rate1, global::System.String inserted, global::System.Decimal setupCost, global::System.Int32 incrementSeconds)
+        /// <param name="ratePlan">Initial value of the RatePlan property.</param>
+        public static Rate CreateRate(global::System.String id, global::System.String owner, global::System.String description, global::System.String prefix, global::System.Decimal rate1, global::System.String inserted, global::System.Decimal setupCost, global::System.Int32 incrementSeconds, global::System.Int32 ratePlan)
         {
             Rate rate = new Rate();
             rate.ID = id;
@@ -2431,6 +2482,7 @@ namespace SIPSorcery.Entities
             rate.Inserted = inserted;
             rate.SetupCost = setupCost;
             rate.IncrementSeconds = incrementSeconds;
+            rate.RatePlan = ratePlan;
             return rate;
         }
 
@@ -2656,6 +2708,30 @@ namespace SIPSorcery.Entities
         private global::System.Int32 _IncrementSeconds;
         partial void OnIncrementSecondsChanging(global::System.Int32 value);
         partial void OnIncrementSecondsChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Int32 RatePlan
+        {
+            get
+            {
+                return _RatePlan;
+            }
+            set
+            {
+                OnRatePlanChanging(value);
+                ReportPropertyChanging("RatePlan");
+                _RatePlan = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("RatePlan");
+                OnRatePlanChanged();
+            }
+        }
+        private global::System.Int32 _RatePlan;
+        partial void OnRatePlanChanging(global::System.Int32 value);
+        partial void OnRatePlanChanged();
 
         #endregion
 

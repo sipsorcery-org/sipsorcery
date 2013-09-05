@@ -349,13 +349,13 @@ namespace SIPSorcery.SIP.App
 
         public SIPCDRAsset()
         {
-            Inserted = DateTimeOffset.UtcNow;
+            //Inserted = DateTimeOffset.UtcNow;
             m_sipCDR = new SIPCDR();
         }
 
         public SIPCDRAsset(SIPCDR sipCDR)
         {
-            Inserted = DateTimeOffset.UtcNow;
+            //Inserted = DateTimeOffset.UtcNow;
             m_sipCDR = sipCDR;
         }
 

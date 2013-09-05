@@ -104,6 +104,7 @@ namespace SIPSorcery.Entities
                     existingRate.RateCode = rate.RateCode;
                     existingRate.SetupCost = rate.SetupCost;
                     existingRate.IncrementSeconds = rate.IncrementSeconds;
+                    existingRate.RatePlan = rate.RatePlan;
 
                     db.SaveChanges();
                 }
@@ -124,6 +125,36 @@ namespace SIPSorcery.Entities
                             ra.Owner == owner.ToLower() &&
                             ra.ID.ToLower() == id.ToLower()
                         select ra).SingleOrDefault();
+            }
+        }
+
+        /// <summary>
+        /// Deletes an existing rate.
+        /// </summary>
+        /// <param name="id">The ID of the rate record to delete.</param>
+        public void Delete(string id)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                var rate = (from rt in sipSorceryEntities.Rates where rt.ID == id select rt).SingleOrDefault();
+
+                if (rate != null)
+                {
+                    sipSorceryEntities.Rates.DeleteObject(rate);
+                    sipSorceryEntities.SaveChanges();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Deletes all the rates for a specific owner account.
+        /// </summary>
+        /// <param name="owner">The owner to delete all the rates for.</param>
+        public void DeleteAll(string owner)
+        {
+            using (var sipSorceryEntities = new SIPSorceryEntities())
+            {
+                sipSorceryEntities.ExecuteStoreCommand("delete from rate where owner = @p0", owner);
             }
         }
     }

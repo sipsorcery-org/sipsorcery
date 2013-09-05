@@ -166,6 +166,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataLayers\CDRDataLayer.cs" />
+    <Compile Include="DataLayers\CustomerDataLayer.cs" />
     <Compile Include="DataLayers\RateDataLayer.cs" />
     <Compile Include="DataLayers\CustomerAccountDataLayer.cs" />
     <Compile Include="Entities\JSON\CDRJSON.cs" />

@@ -13,7 +13,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006 Aaron Clauson (aaronc@blueface.ie), Blue Face Ltd, Dublin, Ireland (www.blueface.ie)
+// Copyright (c) 2006-2013 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -21,7 +21,7 @@
 //
 // Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
 // Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following 
-// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of Blue Face Ltd. 
+// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of SIP Sorcery PTY LTD 
 // nor the names of its contributors may be used to endorse or promote products derived from this software without specific 
 // prior written permission. 
 //
@@ -100,12 +100,14 @@ namespace SIPSorcery.SIPAppServer
         private SIPCallManager m_callManager;
         private SIPDialogueManager m_sipDialogueManager;
         private RTCCCore m_rtccCore;
+        private RateBulkUpdater m_rateUpdater;
         private SIPNotifyManager m_notifyManager;
         private SIPProxyDaemon m_sipProxyDaemon;
         private SIPMonitorDaemon m_sipMonitorDaemon;
         private SIPRegAgentDaemon m_sipRegAgentDaemon;
         private SIPRegistrarDaemon m_sipRegistrarDaemon;
         private SIPNotifierDaemon m_sipNotifierDaemon;
+        private SIPSorcery.Entities.CDRDataLayer m_cdrDataLayer;
 
         private SIPTransport m_sipTransport;
         private DialPlanEngine m_dialPlanEngine;
@@ -156,6 +158,7 @@ namespace SIPSorcery.SIPAppServer
                 SIPDNSManager.SIPMonitorLogEvent = FireSIPMonitorEvent;
                 m_sipSorceryPersistor = new SIPSorceryPersistor(m_storageType, m_connectionString);
                 m_customerSessionManager = new CustomerSessionManager(m_storageType, m_connectionString);
+                m_cdrDataLayer = new Entities.CDRDataLayer();
 
                 if (m_sipProxyEnabled)
                 {
@@ -245,11 +248,12 @@ namespace SIPSorcery.SIPAppServer
                     m_monitorEventWriter = new SIPMonitorEventWriter(m_monitorEventLoopbackPort);
                 }
 
-                if (m_sipSorceryPersistor != null && m_sipSorceryPersistor.SIPCDRPersistor != null)
+                if (m_cdrDataLayer != null)
                 {
-                    SIPCDR.CDRCreated += m_sipSorceryPersistor.QueueCDR;
-                    SIPCDR.CDRAnswered += m_sipSorceryPersistor.QueueCDR;
-                    SIPCDR.CDRHungup += m_sipSorceryPersistor.QueueCDR;
+                    SIPCDR.CDRCreated += m_cdrDataLayer.Add;
+                    SIPCDR.CDRAnswered += m_cdrDataLayer.Update;
+                    SIPCDR.CDRHungup += m_cdrDataLayer.Update;
+                    SIPCDR.CDRUpdated += m_cdrDataLayer.Update;
                 }
 
                 #region Initialise the SIPTransport layers.
@@ -350,6 +354,9 @@ namespace SIPSorcery.SIPAppServer
                     m_sipDialogueManager,
                     m_sipSorceryPersistor.SIPDialoguePersistor);
                 m_rtccCore.Start();
+
+                m_rateUpdater = new RateBulkUpdater(FireSIPMonitorEvent);
+                m_rateUpdater.Start();
 
                 #endregion
 
