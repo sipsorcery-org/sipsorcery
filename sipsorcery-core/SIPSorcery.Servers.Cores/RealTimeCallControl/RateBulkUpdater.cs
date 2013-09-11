@@ -63,7 +63,7 @@ namespace SIPSorcery.Servers
     public class RateBulkUpdater
     {
         private const string RATE_BULK_THREAD_NAME = "rate-bulk";
-        private const int CHECK_FOR_FILE_INTERVAL = 10000;
+        private const int CHECK_FOR_FILE_INTERVAL = 30000;
         private const string EMAIL_FROM_ADDRESS = "admin@sipsorcery.com";
 
         private const string DELETE_ALL_RATES_KEY = "DELETE_ALL";
@@ -81,6 +81,7 @@ namespace SIPSorcery.Servers
         private CustomerDataLayer m_customerDataLayer = new CustomerDataLayer();
         private CustomerAccountDataLayer m_customerAccountDataLayer = new CustomerAccountDataLayer();
         private RateDataLayer m_rateDataLayer = new RateDataLayer();
+        private Dictionary<string, long> m_newFiles = new Dictionary<string, long>();   // Keeps track of new files to determine if there have been any changes within a set period.
 
         private bool m_exit;
 
@@ -130,11 +131,30 @@ namespace SIPSorcery.Servers
 
                         while (newFile != null)
                         {
-                            ProcessBulkRateFile(newFile);
+                            FileInfo newFileInfo = new FileInfo(newFile);
+
+                            if (!m_newFiles.ContainsKey(newFile))
+                            {
+                                logger.Warn("First appearance of " + newFile + " recording length " + newFileInfo.Length + ".");
+                                m_newFiles.Add(newFile, newFileInfo.Length);
+                            }
+                            else
+                            {
+                                if (m_newFiles[newFile] >= newFileInfo.Length)
+                                {
+                                    m_newFiles.Remove(newFile);
+                                    ProcessBulkRateFile(newFile);
+                                }
+                                else
+                                {
+                                    logger.Warn("The length of " + newFile + " is larger than the last check, previously " + m_newFiles[newFile] + " now " + newFileInfo.Length + ".");
+                                    m_newFiles[newFile] = newFileInfo.Length;
+                                }
+                            }
+
+                            Thread.Sleep(CHECK_FOR_FILE_INTERVAL);
 
                             newFile = Directory.GetFiles(_monitorDirectory).FirstOrDefault();
-
-                            Thread.Sleep(2000);
                         }
 
                         Thread.Sleep(CHECK_FOR_FILE_INTERVAL);
@@ -179,8 +199,10 @@ namespace SIPSorcery.Servers
                     customerEmailAddress = customer.EmailAddress;
                     logger.Debug("Processing bulk rate update file for " + owner + ".");
 
-                    using (StreamReader sr = new StreamReader(fullPath))
+                    using (FileStream fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
                     {
+                        StreamReader sr = new StreamReader(fs);
+
                         using (var transaction = new TransactionScope())
                         {
                             bool isFirstLine = true;
@@ -314,15 +336,10 @@ namespace SIPSorcery.Servers
                     File.Move(fullPath, _processedUpdateFilesDirectory + DateTime.Now.ToString("ddMMMyyyyHHmmss") + "_" + fileName);
                 }
             }
-            catch (ApplicationException appExcp)
-            {
-                wasSuccess = false;
-                logger.Warn("ApplicationException ProcessBulkRateFile. " + appExcp.Message);
-            }
             catch (Exception excp)
             {
                 wasSuccess = false;
-                updateLog += " <- Exception " + excp.GetType().ToString() + ".\r\n";
+                updateLog += " <- Exception " + excp.GetType().ToString() + " " + excp.Message + ".\r\n";
                 logger.Error("Exception ProcessBulkRateFile. " + excp);
 
                 try
@@ -340,7 +357,7 @@ namespace SIPSorcery.Servers
                 {
                     try
                     {
-                        logger.Debug("Sending bul rate update result to " + customerEmailAddress + ".");
+                        logger.Debug("Sending bulk rate update result to " + customerEmailAddress + ".");
                         string subject = (wasSuccess) ? "SIP Sorcery Bulk Rate Update Success" : "SIP Sorcery Bulk Rate Update Failure";
                         SIPSorcerySMTP.SendEmail(customerEmailAddress, EMAIL_FROM_ADDRESS, null, EMAIL_FROM_ADDRESS, subject, updateLog);
                     }
