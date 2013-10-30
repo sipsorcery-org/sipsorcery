@@ -108,7 +108,7 @@ namespace SIPSorcery.Entities
                     {
                         string trimmedDestination = null;
                         string[] prefixes = rtccInternationalPrefixes.Split(',');
-                        foreach (string prefix in prefixes)
+                        foreach (string prefix in prefixes.OrderByDescending(x => x.Length))
                         {
                             if (destination.StartsWith(prefix))
                             {

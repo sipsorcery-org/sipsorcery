@@ -1387,6 +1387,9 @@ namespace SIPSorcery.Entities
 
                 if (where != null)
                 {
+                    // The CDR entity uses Direction where the JSON uses CallDirection.
+                    where = Regex.Replace(where, "calldirection", "Direction", RegexOptions.IgnoreCase);  
+
                     query = query.Where(DynamicExpression.ParseLambda<CDR, bool>(where));
                 }
 
@@ -1409,6 +1412,9 @@ namespace SIPSorcery.Entities
 
                 if (where != null)
                 {
+                    // The CDR entity uses Direction where the JSON uses CallDirection.
+                    where = Regex.Replace(where, "calldirection", "Direction", RegexOptions.IgnoreCase);  
+
                     query = query.Where(DynamicExpression.ParseLambda<CDR, bool>(where));
                 }
 

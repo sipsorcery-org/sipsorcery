@@ -973,15 +973,16 @@ namespace SIPSorcery.Servers
                 //return (customer.ExecutionCount < customer.MaxExecutionCount);
 
                 int currentlyExecuting = m_dialPlanEngine.GetExecutionCountForUser(customer.CustomerUsername);
+                return currentlyExecuting < customer.MaxExecutionCount;
 
-                if (dialPlan != null)
-                {
-                    return currentlyExecuting < customer.MaxExecutionCount && currentlyExecuting < dialPlan.MaxExecutionCount;
-                }
-                else
-                {
-                    return currentlyExecuting < customer.MaxExecutionCount;
-                }
+                //if (dialPlan != null)
+                //{
+                //    return currentlyExecuting < customer.MaxExecutionCount && currentlyExecuting < dialPlan.MaxExecutionCount;
+                //}
+                //else
+                //{
+                //    return currentlyExecuting < customer.MaxExecutionCount;
+                //}
             }
             catch (Exception excp)
             {

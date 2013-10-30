@@ -150,7 +150,7 @@ namespace SIPSorcery.SIP.App
             try
             {
                 m_uacCallDescriptor = sipCallDescriptor;
-                SIPRequest uacInviteRequest = GetInviteRequest(m_uacCallDescriptor.Uri, sipCallDescriptor.GetFromHeader());
+                SIPRequest uacInviteRequest = GetInviteRequest(m_uacCallDescriptor.Uri, sipCallDescriptor);
                 if (sipCallDescriptor.MangleResponseSDP && sipCallDescriptor.MangleIPAddress != null)
                 {
                     uacInviteRequest.Header.ProxyReceivedFrom = sipCallDescriptor.MangleIPAddress.ToString();
@@ -399,8 +399,9 @@ namespace SIPSorcery.SIP.App
 
         #endregion
 
-        private SIPRequest GetInviteRequest(string callURI, SIPFromHeader fromHeader)
+        private SIPRequest GetInviteRequest(string callURI, SIPCallDescriptor sipCallDescriptor)
         {
+            SIPFromHeader fromHeader = sipCallDescriptor.GetFromHeader();
 
             SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI(callURI));
             inviteRequest.LocalSIPEndPoint = m_blackhole;
@@ -416,6 +417,32 @@ namespace SIPSorcery.SIP.App
 
             SIPViaHeader viaHeader = new SIPViaHeader(m_blackhole, CallProperties.CreateBranchId());
             inviteRequest.Header.Vias.PushViaHeader(viaHeader);
+
+            try
+            {
+                if (sipCallDescriptor.CustomHeaders != null && sipCallDescriptor.CustomHeaders.Count > 0)
+                {
+                    foreach (string customHeader in sipCallDescriptor.CustomHeaders)
+                    {
+                        if (customHeader.IsNullOrBlank())
+                        {
+                            continue;
+                        }
+                        else if (customHeader.Trim().StartsWith(SIPHeaders.SIP_HEADER_USERAGENT))
+                        {
+                            inviteRequest.Header.UserAgent = customHeader.Substring(customHeader.IndexOf(":") + 1).Trim();
+                        }
+                        else
+                        {
+                            inviteRequest.Header.UnknownHeaders.Add(customHeader);
+                        }
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception Parsing CustomHeader for GetInviteRequest. " + excp.Message + sipCallDescriptor.CustomHeaders);
+            }
 
             return inviteRequest;
         }

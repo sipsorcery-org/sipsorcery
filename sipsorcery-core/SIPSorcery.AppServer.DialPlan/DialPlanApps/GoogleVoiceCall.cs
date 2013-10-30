@@ -176,7 +176,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 string galxResponseFromServer = galxReader.ReadToEnd();
                 galxResponse.Close();
 
-                Match galxMatch = Regex.Match(galxResponseFromServer, @"name=""GALX""\s+?value=""(?<galxvalue>.*?)""");
+                Match galxMatch = Regex.Match(galxResponseFromServer, @"name=""GALX""[^>]+value=""(?<galxvalue>.*?)""");
                 if (galxMatch.Success)
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "GALX key " + galxMatch.Result("${galxvalue}") + " successfully retrieved.", m_username));

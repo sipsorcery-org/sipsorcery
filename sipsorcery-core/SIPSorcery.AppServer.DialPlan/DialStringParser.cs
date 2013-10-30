@@ -372,13 +372,14 @@ namespace SIPSorcery.AppServer.DialPlan
                                             SIPCallDescriptor loopbackCall = new SIPCallDescriptor(calledSIPAccount, callLegSIPURI.ToString(), fromHeader.ToString(), contentType, content);
                                             loopbackCall.SetGeneralFromHeaderFields(fromDisplayName, fromUsername, fromHost);
                                             loopbackCall.MangleIPAddress = (PublicIPAddress != null) ? PublicIPAddress : SIPPacketMangler.GetRequestIPAddress(sipRequest);
+                                            loopbackCall.CustomHeaders = customHeaders;
                                             loopbackCall.ParseCallOptions(options);
                                             switchCalls.Add(loopbackCall);
                                         }
                                     }
                                     else
                                     {
-                                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account could be found for local call leg " + callLeg + ".", m_username));
+                                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No SIP account could be found for local call leg " + callLeg + ".", m_username));
                                     }
                                 }
                                 else
