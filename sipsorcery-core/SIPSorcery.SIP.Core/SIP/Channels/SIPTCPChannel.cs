@@ -82,6 +82,8 @@ namespace SIPSorcery.SIP
                 m_tcpServerListener = new TcpListener(m_localSIPEndPoint.GetIPEndPoint());
                 m_tcpServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
+                m_tcpServerListener.Start(MAX_TCP_CONNECTIONS);
+
                 ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + m_localSIPEndPoint.Port); });
                 ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + m_localSIPEndPoint.Port); });
 
@@ -100,10 +102,7 @@ namespace SIPSorcery.SIP
             {
                 Thread.CurrentThread.Name = threadName;
 
-                //m_sipConn.Listen(MAX_TCP_CONNECTIONS);
-                m_tcpServerListener.Start(MAX_TCP_CONNECTIONS);
-
-                logger.Debug("SIPTCPChannel socket on " + m_localSIPEndPoint + " listening started.");
+                logger.Debug("SIPTCPChannel socket on " + m_localSIPEndPoint + " accept connections thread started.");
 
                 while (!Closed)
                 {

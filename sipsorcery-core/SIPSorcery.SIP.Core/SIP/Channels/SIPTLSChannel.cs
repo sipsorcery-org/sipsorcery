@@ -95,11 +95,13 @@ namespace SIPSorcery.SIP
                 m_tlsServerListener = new TcpListener(m_localSIPEndPoint.GetIPEndPoint());
                 m_tlsServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
+                m_tlsServerListener.Start(MAX_TLS_CONNECTIONS);
+
                 ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + m_localSIPEndPoint.Port); });
                 ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + m_localSIPEndPoint.Port); });
 
                 logger.Debug("SIP TLS Channel listener created " + m_localSIPEndPoint.GetIPEndPoint() + ".");
-            }
+           }
             catch (Exception excp)
             {
                 logger.Error("Exception SIPTLSChannel Initialise. " + excp.Message);
@@ -113,10 +115,7 @@ namespace SIPSorcery.SIP
             {
                 Thread.CurrentThread.Name = threadName;
 
-                //m_sipConn.Listen(MAX_TCP_CONNECTIONS);
-                m_tlsServerListener.Start(MAX_TLS_CONNECTIONS);
-
-                logger.Debug("SIPTLSChannel socket on " + m_localSIPEndPoint + " listening started.");
+                logger.Debug("SIPTLSChannel socket on " + m_localSIPEndPoint + " accept connections thread started.");
 
                 while (!Closed)
                 {
