@@ -35,6 +35,13 @@ namespace SIPSorcery.Net
             Connection = connection;
         }
 
+        public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, int port, List<SDPMediaFormat> mediaFormats)
+        {
+            Media = mediaType;
+            Port = port;
+            MediaFormats = mediaFormats;
+        }
+
         public void ParseMediaFormats(string formatList)
         {
             if (!String.IsNullOrWhiteSpace(formatList))
@@ -110,7 +117,7 @@ namespace SIPSorcery.Net
 
             if (MediaFormats != null)
             {
-                foreach (SDPMediaFormat mediaFormat in MediaFormats)
+                foreach (SDPMediaFormat mediaFormat in MediaFormats.Where(x => x.IsStandardAttribute == false))
                 {
                     if (mediaFormat.FormatAttribute != null)
                     {

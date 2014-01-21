@@ -115,7 +115,7 @@ namespace SIPSorcery.Net
             RTSPRequest rtspRequest = new RTSPRequest(RTSPMethodsEnum.SETUP, url);
             RTSPHeader rtspHeader = new RTSPHeader(2, null);
             int controlPort = rtpPort + 1;
-            rtspHeader.Transport = "RTP/AVP;unicast;dest_addr=" + remoteAddress + ";client_port=" + rtpPort + "-" + controlPort;
+            rtspHeader.Transport = new RTSPTransportHeader() { Destination = remoteAddress.ToString(), ClientRTPPortRange = rtpPort + "-" + controlPort };
             rtspRequest.Header = rtspHeader;
             string rtspReqStr = rtspRequest.ToString();
 

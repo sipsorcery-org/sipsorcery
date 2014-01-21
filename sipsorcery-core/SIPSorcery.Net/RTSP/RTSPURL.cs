@@ -85,10 +85,10 @@ namespace SIPSorcery.Net
 		public static RTSPURL ParseRTSPURL(string url)
 		{
 			RTSPHeaderParserError notConcerned;
-			return ParseRTSPURI(url, out notConcerned);
+			return ParseRTSPURL(url, out notConcerned);
 		}
 	
-		public static RTSPURL ParseRTSPURI(string url, out RTSPHeaderParserError parserError)
+		public static RTSPURL ParseRTSPURL(string url, out RTSPHeaderParserError parserError)
 		{
             try
             {

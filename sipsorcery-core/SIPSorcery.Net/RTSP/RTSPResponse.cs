@@ -34,6 +34,7 @@ using System;
 using System.Net;
 using System.Collections.Generic;
 using System.Text;
+using SIPSorcery.Sys;
 using log4net;
 
 namespace SIPSorcery.Net
@@ -52,7 +53,7 @@ namespace SIPSorcery.Net
     {
         private static ILog logger = AssemblyStreamState.logger;
 		
-		//private static string m_CRLF = RTSPConstants.CRLF;
+		private static string m_CRLF = RTSPConstants.CRLF;
 		//private static string m_rtspFullVersion = RTSPConstants.RTSP_FULLVERSION_STRING;
 		private static string m_rtspVersion = RTSPConstants.RTSP_VERSION_STRING;
 		private static int m_rtspMajorVersion = RTSPConstants.RTSP_MAJOR_VERSION;
@@ -73,18 +74,15 @@ namespace SIPSorcery.Net
 		public DateTime ReceivedAt = DateTime.MinValue;
 		public IPEndPoint ReceivedFrom;
 
-		public RTSPResponse()
-		{
-			//RTSPHeaderParserError headerParserError = RTSPHeaderParserError.None;
-			
-			try
-			{
+        private RTSPResponse()
+        { }
 
-			}
-			catch(Exception excp)
-			{
-				logger.Error("Exception RTSPResponse Ctor. " + excp.Message);
-			}
+        public RTSPResponse(RTSPResponseStatusCodesEnum responseType, string reasonPhrase)
+		{
+            StatusCode = (int)responseType;
+            Status = responseType;
+            ReasonPhrase = reasonPhrase;
+            ReasonPhrase = responseType.ToString();
 		}
 
         public static RTSPResponse ParseRTSPResponse(RTSPMessage rtspMessage)
@@ -129,7 +127,22 @@ namespace SIPSorcery.Net
 		{
 			try
 			{
-                return null;
+                string reasonPhrase = (!ReasonPhrase.IsNullOrBlank()) ? " " + ReasonPhrase : null;
+
+                string message =
+                    RTSPVersion + "/" + RTSPMajorVersion + "." + RTSPMinorVersion + " " + StatusCode + reasonPhrase + m_CRLF +
+                    this.Header.ToString();
+
+                if (Body != null)
+                {
+                    message += m_CRLF + Body;
+                }
+                else
+                {
+                    message += m_CRLF;
+                }
+
+                return message;
 			}
 			catch(Exception excp)
 			{

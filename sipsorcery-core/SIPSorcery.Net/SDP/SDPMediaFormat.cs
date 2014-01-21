@@ -8,11 +8,13 @@ namespace SIPSorcery.Net
 {
     public enum SDPMediaFormatsEnum
     {
-        PCMU = 0,
-        GSM = 3,
-        PCMA = 8,
-        G729 = 18,
-        G723 = 96,
+        PCMU = 0,   // Audio.
+        GSM = 3,    // Audio.
+        G723 = 4,   // Audio.
+        PCMA = 8,   // Audio.
+        G729 = 18,  // Audio.
+        JPEG = 26,  // Video
+        H263 = 34,  // Video.
     }
 
     public class SDPMediaFormat
@@ -25,6 +27,7 @@ namespace SIPSorcery.Net
         public string FormatAttribute { get; private set; }
         public string Name { get; private set; }
         public int ClockRate { get; private set; }
+        public bool IsStandardAttribute { get; set; }           // If true this is a standard media format and the attribute line is not required.
 
         static SDPMediaFormat()
         {
@@ -57,6 +60,13 @@ namespace SIPSorcery.Net
             Name = name;
             ClockRate = clockRate;
             FormatAttribute = (ClockRate == 0) ? Name : Name + "/" + ClockRate;
+        }
+
+        public SDPMediaFormat(SDPMediaFormatsEnum format)
+        {
+            FormatID = (int)format;
+            Name = format.ToString();
+            IsStandardAttribute = true;
         }
 
         public void SetFormatAttribute(string attribute)

@@ -84,7 +84,7 @@ namespace SIPSorcery.Net
 			{
 				Method = method;
 				
-				URL = RTSPURL.ParseRTSPURI(url, out urlParserError);
+				URL = RTSPURL.ParseRTSPURL(url, out urlParserError);
                 if (urlParserError != RTSPHeaderParserError.None)
                 {
                     throw new ApplicationException("Error parsing RTSP URL, " + urlParserError.ToString() + ".");
@@ -114,17 +114,48 @@ namespace SIPSorcery.Net
 		public static RTSPRequest ParseRTSPRequest(RTSPMessage rtspMessage, out RTSPRequestParserError requestParserError)
 		{
             requestParserError = RTSPRequestParserError.None;
-            string uriStr = null;
+            string urlStr = null;
 			
 			try
 			{
 				RTSPRequest rtspRequest = new RTSPRequest();
-			
+
+                string statusLine = rtspMessage.FirstLine;
+
+                int firstSpacePosn = statusLine.IndexOf(" ");
+
+                string method = statusLine.Substring(0, firstSpacePosn).Trim();
+                rtspRequest.Method = RTSPMethods.GetMethod(method);
+                if (rtspRequest.Method == RTSPMethodsEnum.UNKNOWN)
+                {
+                    rtspRequest.UnknownMethod = method;
+                    logger.Warn("Unknown RTSP method received " + rtspRequest.Method + ".");
+                }
+
+                statusLine = statusLine.Substring(firstSpacePosn).Trim();
+                int secondSpacePosn = statusLine.IndexOf(" ");
+
+                if (secondSpacePosn != -1)
+                {
+                    urlStr = statusLine.Substring(0, secondSpacePosn);
+
+                    rtspRequest.URL = RTSPURL.ParseRTSPURL(urlStr);
+                    rtspRequest.RTSPVersion = statusLine.Substring(secondSpacePosn, statusLine.Length - secondSpacePosn).Trim();
+                    rtspRequest.Header = (rtspMessage.RTSPHeaders != null) ? RTSPHeader.ParseRTSPHeaders(rtspMessage.RTSPHeaders) : new RTSPHeader(0, null);
+                    rtspRequest.Body = rtspMessage.Body;
+
+                    return rtspRequest;
+                }
+                else
+                {
+                    throw new ApplicationException("URI was missing on RTSP request.");
+                }
+
 			    return rtspRequest;
     		}
 			catch(Exception excp)
 			{
-				logger.Error("Exception parsing RTSP request. URI, " + uriStr + ".");
+				logger.Error("Exception parsing RTSP request. URI, " + urlStr + ".");
 				throw new ApplicationException("There was an exception parsing an RTSP request. " + excp.Message);
 			}
 		}

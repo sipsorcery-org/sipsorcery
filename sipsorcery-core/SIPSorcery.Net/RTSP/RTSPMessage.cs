@@ -132,7 +132,7 @@ namespace SIPSorcery.Net
                         string headerString = message.Substring(endFistLinePosn + 2, message.Length - endFistLinePosn - 2);
                         rtspMessage.RTSPHeaders = RTSPHeader.SplitHeaders(headerString); 
                     }
-                    else
+                    else if (endHeaderPosn > endFistLinePosn + 2)
                     {
                         string headerString = message.Substring(endFistLinePosn + 2, endHeaderPosn - endFistLinePosn - 2);
                         rtspMessage.RTSPHeaders = RTSPHeader.SplitHeaders(headerString); 

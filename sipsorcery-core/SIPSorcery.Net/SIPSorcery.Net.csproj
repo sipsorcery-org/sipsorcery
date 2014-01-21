@@ -218,10 +218,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="nunit.framework, Version=2.2.2.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\stable\nunit.framework.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core">
@@ -242,6 +238,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="RTP\RTPChannel.cs" />
+    <Compile Include="RTSP\RTSPConnection.cs" />
+    <Compile Include="RTSP\RTSPServer.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2AddressAttribute.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2Attribute.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2ChangeRequestAttribute.cs" />
