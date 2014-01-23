@@ -240,6 +240,7 @@
     <Compile Include="RTP\RTPChannel.cs" />
     <Compile Include="RTSP\RTSPConnection.cs" />
     <Compile Include="RTSP\RTSPServer.cs" />
+    <Compile Include="RTSP\RTSPSession.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2AddressAttribute.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2Attribute.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2ChangeRequestAttribute.cs" />
