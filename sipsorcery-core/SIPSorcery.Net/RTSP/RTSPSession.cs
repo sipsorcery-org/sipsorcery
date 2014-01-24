@@ -47,6 +47,9 @@ namespace SIPSorcery.Net
     {
         private const int RFC_2435_FREQUENCY_BASELINE = 90000;
         private const int RTP_MAX_PAYLOAD = 1452;
+        private const int RECEIVE_BUFFER_SIZE = 2048;
+        private const int MEDIA_PORT_START = 30000;             // Arbitrary port number to start allocating RTP and control ports from.
+        private const int MEDIA_PORT_END = 40000;               // Arbitrary port number that RTP and control ports won't be allocaetd above
 
         private static DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
         private static DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -54,12 +57,19 @@ namespace SIPSorcery.Net
 
         private static ILog logger = AppState.logger;
 
-        private int _rtpPort;
-        private int _controlPort;
-        private IPEndPoint _remoteEndPoint;
         private Socket _rtpSocket;
+        private SocketError _rtpSocketError = SocketError.Success;
+        private byte[] _rtpSocketBuffer;
         private Socket _controlSocket;
-        private bool _hasRTPSocketError = false;
+        private SocketError _controlSocketError = SocketError.Success;
+        private byte[] _controlSocketBuffer;
+        private bool _closed;
+
+        private IPEndPoint _remoteEndPoint;
+        public IPEndPoint RemoteEndPoint
+        {
+            get { return _remoteEndPoint; }
+        }
 
         private string _sessionID;
         public string SessionID
@@ -67,9 +77,33 @@ namespace SIPSorcery.Net
             get { return _sessionID; }
         }
 
+        private int _rtpPort;
+        public int RTPPort
+        {
+            get { return _rtpPort; }
+        }
+
+        private DateTime _rtpLastActivityAt;
+        public DateTime RTPLastActivityAt
+        {
+            get { return _rtpLastActivityAt; }
+        }
+
+        private int _controlPort;
+        public int ControlPort
+        {
+            get { return _controlPort; }
+        }
+
+        private DateTime _controlLastActivityAt;
+        public DateTime ControlLastActivityAt
+        {
+            get { return _controlLastActivityAt; }
+        }
+
         public bool IsClosed
         {
-            get { return _hasRTPSocketError; }
+            get { return _closed; }
         }
 
         // Fields that track the RTP stream being managed in this session.
@@ -77,33 +111,216 @@ namespace SIPSorcery.Net
         private uint _timestamp = 0;
         private uint _syncSource = 0;
 
-        public RTSPSession(string sessionID, int rtpPort, int controlPort, IPEndPoint remoteEndPoint)
+        public event Action<string, byte[]> RTPDataReceived;
+        public event Action<string> RTPSocketDisconnected;
+        public event Action<string, byte[]> ControlDataReceived;
+        public event Action<string> ControlSocketDisconnected;
+
+        public RTSPSession(string sessionID, IPEndPoint remoteEndPoint)
         {
             _sessionID = sessionID;
-            _rtpPort = rtpPort;
-            _controlPort = controlPort;
             _remoteEndPoint = remoteEndPoint;
             _syncSource = Convert.ToUInt32(Crypto.GetRandomInt(0, 9999999));
         }
 
-        public void Start()
+        /// <summary>
+        /// Attempts to reserve the RTP and control ports for the RTP session.
+        /// </summary>
+        public void ReservePorts()
         {
-            _rtpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _rtpSocket.Bind(new IPEndPoint(IPAddress.Any, _rtpPort));
+            var inUseUDPPorts = (from p in System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners() where p.Port >= MEDIA_PORT_START select p.Port).OrderBy(x => x).ToList();
+
+            _rtpPort = 0;
+            _controlPort = 0;
+
+            if (inUseUDPPorts.Count > 0)
+            {
+                // Find the first two available for the RTP socket.
+                for (int index = MEDIA_PORT_START; index <= MEDIA_PORT_END; index++)
+                {
+                    if (!inUseUDPPorts.Contains(index))
+                    {
+                        _rtpPort = index;
+                        break;
+                    }
+                }
+
+                // Find the next available for the control socket.
+                for (int index = _rtpPort + 1; index <= MEDIA_PORT_END; index++)
+                {
+                    if (!inUseUDPPorts.Contains(index))
+                    {
+                        _controlPort = index;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                _rtpPort = MEDIA_PORT_START;
+                _controlPort = MEDIA_PORT_START + 1;
+            }
+
+            if (_rtpPort != 0 && _controlPort != 0)
+            {
+                // The potential ports have been found now try and use them.
+                _rtpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                _rtpSocket.Bind(new IPEndPoint(IPAddress.Any, _rtpPort));
+
+                _controlSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                _controlSocket.Bind(new IPEndPoint(IPAddress.Any, _controlPort));
+
+                logger.Debug("RTSP session " + _sessionID + " allocated RTP port of " + _rtpPort + " and control port of " + _controlPort + ".");
+            }
+            else
+            {
+                throw new ApplicationException("An RTSP session could not allocate the RTP and/or control ports within the range of " + MEDIA_PORT_START + " to " + MEDIA_PORT_END + ".");
+            }
         }
 
+        /// <summary>
+        /// Starts listenting on the RTP and control ports.
+        /// </summary>
+        public void Start()
+        {
+            if (_rtpSocket != null && _controlSocket != null)
+            {
+                _rtpSocketBuffer = new byte[RECEIVE_BUFFER_SIZE];
+                _rtpSocket.BeginReceive(_rtpSocketBuffer, 0, _rtpSocketBuffer.Length, SocketFlags.None, out _rtpSocketError, RTPSocketReceive, null);
+                _controlSocketBuffer = new byte[RECEIVE_BUFFER_SIZE];
+                _controlSocket.BeginReceive(_controlSocketBuffer, 0, _controlSocketBuffer.Length, SocketFlags.None, out _controlSocketError, ControlSocketReceive, null);
+            }
+            else
+            {
+                logger.Warn("An RTSP session could not start as eith ther RTP or control sockets were not available.");
+            }
+        }
+
+        /// <summary>
+        /// CLoses the session's RTP and control ports.
+        /// </summary>
         public void Close()
+        {
+            if (!_closed)
+            {
+                try
+                {
+                    logger.Debug("Closing RTP and control sockets for RTSP session " + _sessionID + ".");
+
+                    _closed = true;
+
+                    if (_rtpSocket != null)
+                    {
+                        _rtpSocket.Close();
+                    }
+
+                    if (_controlSocket != null)
+                    {
+                        _controlSocket.Close();
+                    }
+                }
+                catch (Exception excp)
+                {
+                    logger.Error("Exception RTSPSession.Close. " + excp);
+                }
+            }
+        }
+
+        private void RTPSocketReceive(IAsyncResult ar)
         {
             try
             {
-                if (_rtpSocket != null)
+                int bytesRead = _rtpSocket.EndReceive(ar);
+
+                if (_rtpSocketError == SocketError.Success)
                 {
-                    _rtpSocket.Close();
+                    _rtpLastActivityAt = DateTime.Now;
+
+                    //System.Diagnostics.Debug.WriteLine(bytesRead + " bytes read from RTP socket for RTSP session " + _sessionID + ".");
+
+                    if (RTPDataReceived != null)
+                    {
+                        RTPDataReceived(_sessionID, _rtpSocketBuffer.Take(bytesRead).ToArray());
+                    }
+
+                    _rtpSocket.BeginReceive(_rtpSocketBuffer, 0, _rtpSocketBuffer.Length, SocketFlags.None, out _rtpSocketError, RTPSocketReceive, null);
+                }
+                else
+                {
+                    logger.Warn("A " + _rtpSocketError + " occurred receiving on RTP socket for RTSP session " + _sessionID + ".");
+
+                    if (RTPSocketDisconnected != null)
+                    {
+                        RTPSocketDisconnected(_sessionID);
+                    }
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                logger.Debug("RTSPSession.RTPSocketReceive socket was disposed.");
+
+                if (RTPSocketDisconnected != null)
+                {
+                    RTPSocketDisconnected(_sessionID);
                 }
             }
             catch (Exception excp)
             {
-                logger.Error("Exception RTSPSession.Close. " + excp);
+                logger.Warn("Exception RTSPSession.RTPSocketReceive. " + excp);
+
+                if (RTPSocketDisconnected != null)
+                {
+                    RTPSocketDisconnected(_sessionID);
+                }
+            }
+        }
+
+        private void ControlSocketReceive(IAsyncResult ar)
+        {
+            try
+            {
+                int bytesRead = _controlSocket.EndReceive(ar);
+
+                if (_controlSocketError == SocketError.Success)
+                {
+                    _controlLastActivityAt = DateTime.Now;
+
+                    //System.Diagnostics.Debug.WriteLine(bytesRead + " bytes read from Control socket for RTSP session " + _sessionID + ".");
+
+                    if (ControlDataReceived != null)
+                    {
+                        ControlDataReceived(_sessionID, _controlSocketBuffer.Take(bytesRead).ToArray());
+                    }
+
+                    _controlSocket.BeginReceive(_controlSocketBuffer, 0, _controlSocketBuffer.Length, SocketFlags.None, out _controlSocketError, ControlSocketReceive, null);
+                }
+                else
+                {
+                    logger.Warn("A " + _controlSocketError + " occurred receiving on Control socket for RTSP session " + _sessionID + ".");
+
+                    if (ControlSocketDisconnected != null)
+                    {
+                        ControlSocketDisconnected(_sessionID);
+                    }
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                logger.Debug("RTSPSession.ControlSocketReceive socket was disposed.");
+
+                if (ControlSocketDisconnected != null)
+                {
+                    ControlSocketDisconnected(_sessionID);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Warn("Exception RTSPSession.ControlSocketReceive. " + excp);
+
+                if (ControlSocketDisconnected != null)
+                {
+                    ControlSocketDisconnected(_sessionID);
+                }
             }
         }
 
@@ -153,12 +370,17 @@ namespace SIPSorcery.Net
                 catch (Exception excp)
                 {
                     logger.Warn("Exception RTPSession.SendJpegFrame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
-                    _hasRTPSocketError = true;
+                    _rtpSocketError = SocketError.SocketError;
+
+                    if (RTPSocketDisconnected != null)
+                    {
+                        RTPSocketDisconnected(_sessionID);
+                    }
                 }
             }
         }
 
-        public static uint DateTimeToNptTimestamp32(DateTime value) { return (uint)((DateTimeToNptTimestamp(value) >> 16) & 0xFFFFFFFF); }
+        private static uint DateTimeToNptTimestamp32(DateTime value) { return (uint)((DateTimeToNptTimestamp(value) >> 16) & 0xFFFFFFFF); }
 
         /// <summary>
         /// Converts specified DateTime value to long NPT time.
@@ -176,7 +398,7 @@ namespace SIPSorcery.Net
         /// bits of the integer part and the high 16 bits of the fractional part.
         /// The high 16 bits of the integer part must be determined independently.
         /// </notes>
-        public static ulong DateTimeToNptTimestamp(DateTime value)
+        private static ulong DateTimeToNptTimestamp(DateTime value)
         {
             DateTime baseDate = value >= UtcEpoch2036 ? UtcEpoch2036 : UtcEpoch1900;
 
@@ -228,7 +450,7 @@ namespace SIPSorcery.Net
             rtpJpegHeader[6] = (byte)(width / 8);
 
             // Byte 7: http://tools.ietf.org/search/rfc2435#section-3.1.6 (Height)
-             rtpJpegHeader[7] = (byte)(height / 8);
+            rtpJpegHeader[7] = (byte)(height / 8);
 
             return rtpJpegHeader;
         }

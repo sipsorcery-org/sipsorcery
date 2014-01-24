@@ -58,6 +58,7 @@ namespace SIPSorcery.Net
         private const int MAX_TCP_CONNECTIONS = 1000;               // Maximum number of connections for the TCP listener.
         private const int CONNECTION_ATTEMPTS_ALLOWED = 3;          // The number of failed connection attempts permitted before classifying a remote socket as failed.
         private const int FAILED_CONNECTION_DONTUSE_INTERVAL = 300; // If a socket cannot be connected to don't try and reconnect to it for this interval.
+        private const int CLOSE_RTSP_SESSION_NO_DATA_SECONDS = 120; // The number of seconds after which to close an RTSP session if nothing is received on the RTP or control sockets.
 
         private static int MaxMessageSize = RTSPConstants.RTSP_MAXIMUM_LENGTH;
 
@@ -65,8 +66,9 @@ namespace SIPSorcery.Net
 
         private IPEndPoint m_localIPEndPoint;
         private TcpListener m_tcpServerListener;
-        private Dictionary<string, RTSPConnection> m_connectedSockets = new Dictionary<string, RTSPConnection>();
-        
+        private Dictionary<string, RTSPConnection> m_connectedSockets = new Dictionary<string, RTSPConnection>();   // Keeps a track of the TCP current TCP connections that have been establised by RTSP clients.
+        private Dictionary<string, RTSPSession> m_rtspSessions = new Dictionary<string, RTSPSession>();             // Keeps a track of the current RTSP sessions that have been established by this server.
+
         public bool Closed;
 
         public IPEndPoint LocalEndPoint
@@ -83,6 +85,9 @@ namespace SIPSorcery.Net
             Initialise();
         }
 
+        /// <summary>
+        /// Initialises and starts listening on the RTSP server socket.
+        /// </summary>
         private void Initialise()
         {
             try
@@ -150,7 +155,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public void ReceiveCallback(IAsyncResult ar)
+        private void ReceiveCallback(IAsyncResult ar)
         {
             RTSPConnection rtspConnection = (RTSPConnection)ar.AsyncState;
 
@@ -207,12 +212,22 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Sends a message to the RTSP client listening on the destination end point.
+        /// </summary>
+        /// <param name="destinationEndPoint">The destination to send the message to.</param>
+        /// <param name="message">The message to send.</param>
         public void Send(IPEndPoint destinationEndPoint, string message)
         {
             byte[] messageBuffer = Encoding.UTF8.GetBytes(message);
             Send(destinationEndPoint, messageBuffer);
         }
 
+        /// <summary>
+        /// Sends data to the RTSP client listening on the destination end point.
+        /// </summary>
+        /// <param name="destinationEndPoint">The destination to send the message to.</param>
+        /// <param name="buffer">The data to send.</param>
         public void Send(IPEndPoint dstEndPoint, byte[] buffer)
         {
             try
@@ -276,6 +291,9 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Closes the RTSP server socket as well as any open sessions.
+        /// </summary>
         public void Close()
         {
             logger.Debug("Closing RTSP server socket " + m_localIPEndPoint + ".");
@@ -305,10 +323,42 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Creates a new RTSP session and intialises the RTP and control sockets for the session.
+        /// </summary>
+        /// <param name="remoteEndPoint">The remote end point of the RTSP client that requested the RTSP session be set up.</param>
+        /// <returns>An RTSP session object.</returns>
+        public RTSPSession CreateRTSPSession(IPEndPoint remoteEndPoint)
+        {
+            var rtspSession = new RTSPSession(Guid.NewGuid().ToString(), remoteEndPoint);
+            rtspSession.ReservePorts();
+            rtspSession.RTPSocketDisconnected += RTPSocketDisconnected;
+
+            lock (m_rtspSessions)
+            {
+                m_rtspSessions.Add(rtspSession.SessionID, rtspSession);
+            }
+
+            return rtspSession;
+        }
+
+        private void RTPSocketDisconnected(string sessionID)
+        {
+            logger.Debug("The RTP socket for RTSP session " + sessionID + " was disconnected.");
+
+            lock (m_rtspSessions)
+            {
+                if (m_rtspSessions.ContainsKey(sessionID))
+                {
+                    m_rtspSessions[sessionID].Close();
+                }
+            }
+        }
+
+        /// <summary>
         /// Periodically checks the established connections and closes any that have not had a transmission for a specified 
         /// period or where the number of connections allowed per IP address has been exceeded. 
         /// </summary>
-        protected void PruneConnections(string threadName)
+        private void PruneConnections(string threadName)
         {
             try
             {
@@ -318,50 +368,81 @@ namespace SIPSorcery.Net
 
                 while (!Closed)
                 {
-                    bool checkComplete = false;
-
-                    while (!checkComplete)
+                    // Check the TCP connections established by RTSP clients for any inactive ones.
+                    try
                     {
-                        try
+                        RTSPConnection inactiveConnection = null;
+
+                        lock (m_connectedSockets)
                         {
-                            RTSPConnection inactiveConnection = null;
+                            var inactiveConnectionKey = (from connection in m_connectedSockets
+                                                         where connection.Value.LastTransmission < DateTime.Now.AddMinutes(PRUNE_NOTRANSMISSION_MINUTES * -1)
+                                                         select connection.Key).FirstOrDefault();
 
-                            lock (m_connectedSockets)
+                            while (inactiveConnectionKey != null)
                             {
-                                var inactiveConnectionKey = (from connection in m_connectedSockets
-                                                             where connection.Value.LastTransmission < DateTime.Now.AddMinutes(PRUNE_NOTRANSMISSION_MINUTES * -1)
-                                                             select connection.Key).FirstOrDefault();
-
                                 if (inactiveConnectionKey != null)
                                 {
                                     inactiveConnection = m_connectedSockets[inactiveConnectionKey];
                                     m_connectedSockets.Remove(inactiveConnectionKey);
-                                }
-                            }
 
-                            if (inactiveConnection != null)
-                            {
-                                logger.Debug("Pruning inactive RTSP connection on to remote end point " + inactiveConnection.RemoteEndPoint.ToString() + ".");
-                                inactiveConnection.Close();
+                                    logger.Debug("Pruning inactive RTSP connection on to remote end point " + inactiveConnection.RemoteEndPoint + ".");
+                                    inactiveConnection.Close();
+                                }
+
+                                inactiveConnectionKey = (from connection in m_connectedSockets
+                                                         where connection.Value.LastTransmission < DateTime.Now.AddMinutes(PRUNE_NOTRANSMISSION_MINUTES * -1)
+                                                         select connection.Key).FirstOrDefault();
                             }
-                            else
+                        }
+                    }
+                    catch (SocketException)
+                    {
+                        // Will be thrown if the socket is already closed.
+                    }
+                    catch (Exception pruneExcp)
+                    {
+                        logger.Error("Exception RTSPServer PruneConnections (pruning). " + pruneExcp.Message);
+                    }
+
+                    // Check the list of active RTSP sessions for any that have stopped communicating or that have closed.
+                    try
+                    {
+                        RTSPSession inactiveSession = null;
+
+                        lock (m_rtspSessions)
+                        {
+                            var inactiveSessionKey = (from session in m_rtspSessions
+                                                      where (session.Value.RTPLastActivityAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
+                                                               && session.Value.ControlLastActivityAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1))
+                                                               || session.Value.IsClosed
+                                                      select session.Key).FirstOrDefault();
+
+                            while (inactiveSessionKey != null)
                             {
-                                checkComplete = true;
+                                if (inactiveSessionKey != null)
+                                {
+                                    inactiveSession = m_rtspSessions[inactiveSessionKey];
+                                    m_rtspSessions.Remove(inactiveSessionKey);
+
+                                    logger.Debug("Closing inactive RTSP session for session ID " + inactiveSession.SessionID + " established from RTSP client on " + inactiveSession.RemoteEndPoint + ".");
+                                    inactiveSession.Close();
+                                }
+
+                                inactiveSessionKey = (from session in m_rtspSessions
+                                                      where (session.Value.RTPLastActivityAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
+                                                               && session.Value.ControlLastActivityAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1))
+                                                            || session.Value.IsClosed
+                                                      select session.Key).FirstOrDefault();
                             }
                         }
-                        catch (SocketException)
-                        {
-                            // Will be thrown if the socket is already closed.
-                        }
-                        catch (Exception pruneExcp)
-                        {
-                            logger.Error("Exception RTSPServer PruneConnections (pruning). " + pruneExcp.Message);
-                            checkComplete = true;
-                        }
+                    }
+                    catch (Exception rtspSessExcp)
+                    {
+                        logger.Error("Exception RTSPServer checking for inactive RTSP sessions. " + rtspSessExcp);
                     }
 
                     Thread.Sleep(PRUNE_CONNECTIONS_INTERVAL);
-                    checkComplete = false;
                 }
 
                 logger.Debug("RTSPServer socket on " + m_localIPEndPoint.ToString() + " pruning connections halted.");
