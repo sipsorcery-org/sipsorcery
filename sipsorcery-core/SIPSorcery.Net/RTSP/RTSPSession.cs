@@ -75,12 +75,19 @@ namespace SIPSorcery.Net
         public string SessionID
         {
             get { return _sessionID; }
+            set { _sessionID = value; }
         }
 
         private int _rtpPort;
         public int RTPPort
         {
             get { return _rtpPort; }
+        }
+
+        private DateTime _startedAt;
+        public DateTime StartedAt
+        {
+            get { return _startedAt; }
         }
 
         private DateTime _rtpLastActivityAt;
@@ -111,10 +118,13 @@ namespace SIPSorcery.Net
         private uint _timestamp = 0;
         private uint _syncSource = 0;
 
-        public event Action<string, byte[]> RTPDataReceived;
-        public event Action<string> RTPSocketDisconnected;
-        public event Action<string, byte[]> ControlDataReceived;
-        public event Action<string> ControlSocketDisconnected;
+        public event Action<string, byte[]> OnRTPDataReceived;
+        public event Action<string> OnRTPSocketDisconnected;
+        public event Action<string, byte[]> OnControlDataReceived;
+        public event Action<string> OnControlSocketDisconnected;
+
+        public RTSPSession()
+        { }
 
         public RTSPSession(string sessionID, IPEndPoint remoteEndPoint)
         {
@@ -185,6 +195,8 @@ namespace SIPSorcery.Net
         {
             if (_rtpSocket != null && _controlSocket != null)
             {
+                _startedAt = DateTime.Now;
+
                 _rtpSocketBuffer = new byte[RECEIVE_BUFFER_SIZE];
                 _rtpSocket.BeginReceive(_rtpSocketBuffer, 0, _rtpSocketBuffer.Length, SocketFlags.None, out _rtpSocketError, RTPSocketReceive, null);
                 _controlSocketBuffer = new byte[RECEIVE_BUFFER_SIZE];
@@ -197,7 +209,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// CLoses the session's RTP and control ports.
+        /// Closes the session's RTP and control ports.
         /// </summary>
         public void Close()
         {
@@ -236,11 +248,11 @@ namespace SIPSorcery.Net
                 {
                     _rtpLastActivityAt = DateTime.Now;
 
-                    //System.Diagnostics.Debug.WriteLine(bytesRead + " bytes read from RTP socket for RTSP session " + _sessionID + ".");
+                    System.Diagnostics.Debug.WriteLine(bytesRead + " bytes read from RTP socket for RTSP session " + _sessionID + ".");
 
-                    if (RTPDataReceived != null)
+                    if (OnRTPDataReceived != null)
                     {
-                        RTPDataReceived(_sessionID, _rtpSocketBuffer.Take(bytesRead).ToArray());
+                        OnRTPDataReceived(_sessionID, _rtpSocketBuffer.Take(bytesRead).ToArray());
                     }
 
                     _rtpSocket.BeginReceive(_rtpSocketBuffer, 0, _rtpSocketBuffer.Length, SocketFlags.None, out _rtpSocketError, RTPSocketReceive, null);
@@ -249,9 +261,9 @@ namespace SIPSorcery.Net
                 {
                     logger.Warn("A " + _rtpSocketError + " occurred receiving on RTP socket for RTSP session " + _sessionID + ".");
 
-                    if (RTPSocketDisconnected != null)
+                    if (OnRTPSocketDisconnected != null)
                     {
-                        RTPSocketDisconnected(_sessionID);
+                        OnRTPSocketDisconnected(_sessionID);
                     }
                 }
             }
@@ -259,18 +271,18 @@ namespace SIPSorcery.Net
             {
                 logger.Debug("RTSPSession.RTPSocketReceive socket was disposed.");
 
-                if (RTPSocketDisconnected != null)
+                if (OnRTPSocketDisconnected != null)
                 {
-                    RTPSocketDisconnected(_sessionID);
+                    OnRTPSocketDisconnected(_sessionID);
                 }
             }
             catch (Exception excp)
             {
                 logger.Warn("Exception RTSPSession.RTPSocketReceive. " + excp);
 
-                if (RTPSocketDisconnected != null)
+                if (OnRTPSocketDisconnected != null)
                 {
-                    RTPSocketDisconnected(_sessionID);
+                    OnRTPSocketDisconnected(_sessionID);
                 }
             }
         }
@@ -285,11 +297,11 @@ namespace SIPSorcery.Net
                 {
                     _controlLastActivityAt = DateTime.Now;
 
-                    //System.Diagnostics.Debug.WriteLine(bytesRead + " bytes read from Control socket for RTSP session " + _sessionID + ".");
+                    System.Diagnostics.Debug.WriteLine(bytesRead + " bytes read from Control socket for RTSP session " + _sessionID + ".");
 
-                    if (ControlDataReceived != null)
+                    if (OnControlDataReceived != null)
                     {
-                        ControlDataReceived(_sessionID, _controlSocketBuffer.Take(bytesRead).ToArray());
+                        OnControlDataReceived(_sessionID, _controlSocketBuffer.Take(bytesRead).ToArray());
                     }
 
                     _controlSocket.BeginReceive(_controlSocketBuffer, 0, _controlSocketBuffer.Length, SocketFlags.None, out _controlSocketError, ControlSocketReceive, null);
@@ -298,9 +310,9 @@ namespace SIPSorcery.Net
                 {
                     logger.Warn("A " + _controlSocketError + " occurred receiving on Control socket for RTSP session " + _sessionID + ".");
 
-                    if (ControlSocketDisconnected != null)
+                    if (OnControlSocketDisconnected != null)
                     {
-                        ControlSocketDisconnected(_sessionID);
+                        OnControlSocketDisconnected(_sessionID);
                     }
                 }
             }
@@ -308,18 +320,18 @@ namespace SIPSorcery.Net
             {
                 logger.Debug("RTSPSession.ControlSocketReceive socket was disposed.");
 
-                if (ControlSocketDisconnected != null)
+                if (OnControlSocketDisconnected != null)
                 {
-                    ControlSocketDisconnected(_sessionID);
+                    OnControlSocketDisconnected(_sessionID);
                 }
             }
             catch (Exception excp)
             {
                 logger.Warn("Exception RTSPSession.ControlSocketReceive. " + excp);
 
-                if (ControlSocketDisconnected != null)
+                if (OnControlSocketDisconnected != null)
                 {
-                    ControlSocketDisconnected(_sessionID);
+                    OnControlSocketDisconnected(_sessionID);
                 }
             }
         }
@@ -361,7 +373,7 @@ namespace SIPSorcery.Net
 
                 byte[] rtpBytes = rtpPacket.GetBytes();
 
-                //System.Diagnostics.Debug.WriteLine(" offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ".");
+                System.Diagnostics.Debug.WriteLine(" offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ".");
 
                 try
                 {
@@ -372,10 +384,75 @@ namespace SIPSorcery.Net
                     logger.Warn("Exception RTPSession.SendJpegFrame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
                     _rtpSocketError = SocketError.SocketError;
 
-                    if (RTPSocketDisconnected != null)
+                    if (OnRTPSocketDisconnected != null)
                     {
-                        RTPSocketDisconnected(_sessionID);
+                        OnRTPSocketDisconnected(_sessionID);
                     }
+                }
+            }
+        }
+
+        public void SendRawFrame(byte[] payload, uint frameSpacing, int payloadType)
+        {
+            //_timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + frameSpacing) % UInt32.MaxValue;
+            _timestamp = DateTimeToNptTimestamp32(DateTime.Now);
+
+            //System.Diagnostics.Debug.WriteLine("Sending " + jpegBytes.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ", image dimensions " + jpegWidth + " x " + jpegHeight + ".");
+
+            for (int index = 0; index * RTP_MAX_PAYLOAD < payload.Length; index++)
+            {
+                uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
+
+                RTPPacket rtpPacket = new RTPPacket(payload.Length);
+                rtpPacket.Header.SyncSource = _syncSource;
+                rtpPacket.Header.SequenceNumber = _sequenceNumber++;
+                rtpPacket.Header.Timestamp = _timestamp;
+                rtpPacket.Header.MarkerBit = ((index + 1) * RTP_MAX_PAYLOAD < payload.Length) ? 0 : 1;
+                rtpPacket.Header.PayloadType = payloadType;
+                rtpPacket.Payload = payload;
+
+                byte[] rtpBytes = rtpPacket.GetBytes();
+
+                //System.Diagnostics.Debug.WriteLine(" offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ".");
+
+                try
+                {
+                    _rtpSocket.SendTo(rtpBytes, _remoteEndPoint);
+                }
+                catch (Exception excp)
+                {
+                    logger.Warn("Exception RTPSession.SendRawFrame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
+                    _rtpSocketError = SocketError.SocketError;
+
+                    if (OnRTPSocketDisconnected != null)
+                    {
+                        OnRTPSocketDisconnected(_sessionID);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends a packet to the RTSP server on the RTP socket.
+        /// </summary>
+        public void SendRTPRaw(byte[] payload)
+        {
+            try
+            {
+                if (!IsClosed && _rtpSocket != null && _remoteEndPoint != null)
+                {
+                    _rtpSocket.SendTo(payload, _remoteEndPoint);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception RTSPSession.SendRTPRaw attempting to send to " + _remoteEndPoint + ". " + excp);
+
+                _rtpSocketError = SocketError.SocketError;
+
+                if (OnRTPSocketDisconnected != null)
+                {
+                    OnRTPSocketDisconnected(_sessionID);
                 }
             }
         }

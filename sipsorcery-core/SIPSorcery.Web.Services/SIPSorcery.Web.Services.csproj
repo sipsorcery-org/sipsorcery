@@ -187,9 +187,6 @@
   <ItemGroup>
     <Content Include="Notifications\SIPNotifierService.svc" />
     <Content Include="Provisioning\SIPProvisioningWebService.svc" />
-    <Content Include="Web.config">
-      <SubType>Designer</SubType>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CallDispatcher\ICallDispatcherService.cs" />

@@ -307,8 +307,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'CallID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string CallID
         {
             get
@@ -332,8 +336,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Created' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Created
         {
             get
@@ -357,8 +365,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'DialPlanContextID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(36)]
+        // 
         [DataMember()]
-        [StringLength(36)]
         public string DialPlanContextID
         {
             get
@@ -382,8 +394,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Direction' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Direction
         {
             get
@@ -431,8 +447,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'DstHost' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string DstHost
         {
             get
@@ -456,8 +476,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'DstURI' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string DstURI
         {
             get
@@ -625,10 +649,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -724,8 +756,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Inserted' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Inserted
         {
             get
@@ -749,8 +785,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'LocalSocket' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string LocalSocket
         {
             get
@@ -798,8 +838,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'RemoteSocket' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string RemoteSocket
         {
             get
@@ -857,7 +901,11 @@ namespace SIPSorcery.Entities
     /// <summary>
     /// The 'Customer' entity class.
     /// </summary>
-    [CustomValidation(typeof(CustomerValidator), "IsValid")]
+    // The following attributes were not generated:
+    // 
+    // - The attribute 'System.ComponentModel.DataAnnotations.CustomValidationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+    // [CustomValidationAttribute(typeof(SIPSorcery.Entities.CustomerValidator), "IsValid")]
+    // 
     [DataContract(Namespace="http://schemas.datacontract.org/2004/07/SIPSorcery.Entities")]
     public sealed partial class Customer : Entity
     {
@@ -1028,8 +1076,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Active' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False)]
+        // 
         [DataMember()]
-        [Editable(false)]
         public bool Active
         {
             get
@@ -1052,8 +1104,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'AdminID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False)]
+        // 
         [DataMember()]
-        [Editable(false)]
         public string AdminID
         {
             get
@@ -1076,8 +1132,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'AdminMemberID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False)]
+        // 
         [DataMember()]
-        [Editable(false)]
         public string AdminMemberID
         {
             get
@@ -1124,8 +1184,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'AuthorisedApps' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False)]
+        // 
         [DataMember()]
-        [Editable(false)]
         public string AuthorisedApps
         {
             get
@@ -1148,9 +1212,15 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'City' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "Please enter the city you live in or that is closest to where you live.")]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(64, ErrorMessage = "The email address is too long. The maximum length allowed is 64 characters.")]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="Please enter the city you live in or that is closest to where you live.")]
-        [StringLength(64, ErrorMessage="The email address is too long. The maximum length allowed is 64 characters.")]
         public string City
         {
             get
@@ -1174,8 +1244,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Country' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "Please select the country you live in from the list.")]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="Please select the country you live in from the list.")]
         public string Country
         {
             get
@@ -1199,8 +1273,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'CreatedFromIPAddress' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False)]
+        // 
         [DataMember()]
-        [Editable(false)]
         public string CreatedFromIPAddress
         {
             get
@@ -1223,10 +1301,15 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'CustomerPassword' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "A password must be specified.")]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(32, ErrorMessage = "The password is an invalid length. The minimum length required is 6 characters and the maximum length allowed is 32 characters.", MinimumLength = 6)]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="A password must be specified.")]
-        [StringLength(32, ErrorMessage="The password is an invalid length. The minimum length required is 6 characters an" +
-            "d the maximum length allowed is 32 characters.", MinimumLength=6)]
         public string CustomerPassword
         {
             get
@@ -1250,13 +1333,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'EmailAddress' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RegularExpressionAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RegularExpressionAttribute("^([\w\!\#$\%\&\'\*\+\-\/\=\?\^\`{\|\}\~]+\.)*[\w\!\#$\%\&\'\*\+\-\/\=\?\^\`{\|\}\~]+@((((([a-zA-Z0-9]{1}[a-zA-Z0-9\-]{0,62}[a-zA-Z0-9]{1})|[a-zA-Z])\.)+[a-zA-Z]{2,6})|(\d{1,3}\.){3}\d{1,3}(\:\d{1,5})?)$", ErrorMessage = "The value was not recognised as a valid email address.")]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "Please enter your email address. A confirmation email will be sent to this address before your account is activated.")]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(255, ErrorMessage = "The email address is too long. The maximum length allowed is 255 characters.")]
+        // 
         [DataMember()]
-        [RegularExpression("^([\\w\\!\\#$\\%\\&\\\'\\*\\+\\-\\/\\=\\?\\^\\`{\\|\\}\\~]+\\.)*[\\w\\!\\#$\\%\\&\\\'\\*\\+\\-\\/\\=\\?\\^\\`{\\|\\}\\" +
-            "~]+@((((([a-zA-Z0-9]{1}[a-zA-Z0-9\\-]{0,62}[a-zA-Z0-9]{1})|[a-zA-Z])\\.)+[a-zA-Z]{" +
-            "2,6})|(\\d{1,3}\\.){3}\\d{1,3}(\\:\\d{1,5})?)$", ErrorMessage="The value was not recognised as a valid email address.")]
-        [Required(ErrorMessage="Please enter your email address. A confirmation email will be sent to this addres" +
-            "s before your account is activated.")]
-        [StringLength(255, ErrorMessage="The email address is too long. The maximum length allowed is 255 characters.")]
         public string EmailAddress
         {
             get
@@ -1280,8 +1368,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'EmailAddressConfirmed' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False)]
+        // 
         [DataMember()]
-        [Editable(false)]
         public bool EmailAddressConfirmed
         {
             get
@@ -1304,8 +1396,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ExecutionCount' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False)]
+        // 
         [DataMember()]
-        [Editable(false)]
         public int ExecutionCount
         {
             get
@@ -1328,9 +1424,15 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Firstname' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "Please enter your first name.")]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(64, ErrorMessage = "The first name is too long. The maximum length allowed is 64 characters.")]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="Please enter your first name.")]
-        [StringLength(64, ErrorMessage="The first name is too long. The maximum length allowed is 64 characters.")]
         public string Firstname
         {
             get
@@ -1354,8 +1456,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'FTPPrefix' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(8)]
+        // 
         [DataMember()]
-        [StringLength(8)]
         public string FTPPrefix
         {
             get
@@ -1379,10 +1485,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -1406,9 +1520,15 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Inserted' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Required()]
         public string Inserted
         {
             get
@@ -1431,8 +1551,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'InviteCode' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(36, ErrorMessage = "The invite code is the wrong length is must be 36 characters long.")]
+        // 
         [DataMember()]
-        [StringLength(36, ErrorMessage="The invite code is the wrong length is must be 36 characters long.")]
         public string InviteCode
         {
             get
@@ -1456,9 +1580,15 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Lastname' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "Please enter your last name.")]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(64, ErrorMessage = "The last name is too long. The maximum length allowed is 64 characters.")]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="Please enter your last name.")]
-        [StringLength(64, ErrorMessage="The last name is too long. The maximum length allowed is 64 characters.")]
         public string Lastname
         {
             get
@@ -1482,8 +1612,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'MaxExecutionCount' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False)]
+        // 
         [DataMember()]
-        [Editable(false)]
         public int MaxExecutionCount
         {
             get
@@ -1506,12 +1640,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Name' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RegularExpressionAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RegularExpressionAttribute("[a-zA-Z0-9_\-]*", ErrorMessage = "The username contained an illegal character. Only characters a-zA-Z0-9_- are permitted.")]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "Please choose a username.")]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(32, ErrorMessage = "The username is an invalid length. The minimum length required is 5 characters and the maximum length allowed is 32 characters.", MinimumLength = 5)]
+        // 
         [DataMember()]
-        [RegularExpression("[a-zA-Z0-9_\\-]*", ErrorMessage="The username contained an illegal character. Only characters a-zA-Z0-9_- are perm" +
-            "itted.")]
-        [Required(ErrorMessage="Please choose a username.")]
-        [StringLength(32, ErrorMessage="The username is an invalid length. The minimum length required is 5 characters an" +
-            "d the maximum length allowed is 32 characters.", MinimumLength=5)]
         public string Name
         {
             get
@@ -1535,8 +1675,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'PasswordResetID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False)]
+        // 
         [DataMember()]
-        [Editable(false)]
         public string PasswordResetID
         {
             get
@@ -1559,8 +1703,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'PasswordResetIDSetAt' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False)]
+        // 
         [DataMember()]
-        [Editable(false)]
         public string PasswordResetIDSetAt
         {
             get
@@ -1583,8 +1731,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'RTCCInternationalPrefixes' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(32)]
+        // 
         [DataMember()]
-        [StringLength(32)]
         public string RTCCInternationalPrefixes
         {
             get
@@ -1608,8 +1760,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Salt' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Salt
         {
             get
@@ -1633,9 +1789,15 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'SecurityAnswer' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "Please enter an answer to the security question.")]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(256, ErrorMessage = "The security answer is too long. The maximum length allowed is 256 characters.")]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="Please enter an answer to the security question.")]
-        [StringLength(256, ErrorMessage="The security answer is too long. The maximum length allowed is 256 characters.")]
         public string SecurityAnswer
         {
             get
@@ -1659,8 +1821,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'SecurityQuestion' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "Please select a security question from the list.")]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="Please select a security question from the list.")]
         public string SecurityQuestion
         {
             get
@@ -1684,8 +1850,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ServiceLevel' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string ServiceLevel
         {
             get
@@ -1733,8 +1903,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Suspended' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False)]
+        // 
         [DataMember()]
-        [Editable(false)]
         public bool Suspended
         {
             get
@@ -1757,8 +1931,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'SuspendedReason' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False)]
+        // 
         [DataMember()]
-        [Editable(false)]
         public string SuspendedReason
         {
             get
@@ -1781,8 +1959,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Timezone' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "Please select your timezone from the list.")]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="Please select your timezone from the list.")]
         public string Timezone
         {
             get
@@ -1902,8 +2084,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'WebSite' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(256, ErrorMessage = "The web site is too long. The maximum length allowed is 256 characters.")]
+        // 
         [DataMember()]
-        [StringLength(256, ErrorMessage="The web site is too long. The maximum length allowed is 256 characters.")]
         public string WebSite
         {
             get
@@ -2041,8 +2227,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Command' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Command
         {
             get
@@ -2066,8 +2256,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'CommandParameter1' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string CommandParameter1
         {
             get
@@ -2187,8 +2381,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'DialPlanID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         [RoundtripOriginal()]
         public string DialPlanID
         {
@@ -2213,8 +2411,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Direction' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Direction
         {
             get
@@ -2238,10 +2440,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -2289,8 +2499,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Owner' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "An owner must be specified for a dial plan rule.")]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="An owner must be specified for a dial plan rule.")]
         public string Owner
         {
             get
@@ -2386,7 +2600,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the associated <see cref="SIPDialPlan"/> entity.
         /// </summary>
-        [Association("SIPDialPlan_SimpleWizardRule", "DialPlanID", "ID", IsForeignKey=true)]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPDialPlan_SimpleWizardRule", "DialPlanID", "ID", IsForeignKey = True)]
+        // 
         [XmlIgnore()]
         public SIPDialPlan sipdialplan
         {
@@ -2677,8 +2895,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'AccountCode' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(36)]
+        // 
         [DataMember()]
-        [StringLength(36)]
         public string AccountCode
         {
             get
@@ -2774,8 +2996,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Description' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(1024)]
+        // 
         [DataMember()]
-        [StringLength(1024)]
         public string Description
         {
             get
@@ -2823,10 +3049,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -2874,8 +3108,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Inserted' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Inserted
         {
             get
@@ -3067,8 +3305,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Owner' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "An owner must be specified for the SIP account.")]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="An owner must be specified for the SIP account.")]
         public string Owner
         {
             get
@@ -3116,8 +3358,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'SIPDomain' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "A domain must be specified for the SIP account.")]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="A domain must be specified for the SIP account.")]
         public string SIPDomain
         {
             get
@@ -3141,9 +3387,15 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'SIPPassword' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "A password must be specified for the SIP account.")]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(15, ErrorMessage = "The password must be between 6 and 15 characters.", MinimumLength = 6)]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="A password must be specified for the SIP account.")]
-        [StringLength(15, ErrorMessage="The password must be between 6 and 15 characters.", MinimumLength=6)]
         public string SIPPassword
         {
             get
@@ -3167,7 +3419,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets the collection of associated <see cref="SIPRegistrarBinding"/> entity instances.
         /// </summary>
-        [Association("SIPAccount_SIPRegistrarBinding", "ID", "SIPAccountID")]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPAccount_SIPRegistrarBinding", "ID", "SIPAccountID")]
+        // 
         [XmlIgnore()]
         public EntityCollection<SIPRegistrarBinding> sipregistrarbindings
         {
@@ -3184,11 +3440,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'SIPUsername' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RegularExpressionAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RegularExpressionAttribute("[a-zA-Z0-9_\-\.]+", ErrorMessage = "The username contained an illegal character. Only alpha-numeric characters and .-_ are allowed.")]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "A username must be specified for the SIP account.")]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(32, ErrorMessage = "The username must be between 5 and 32 characters.", MinimumLength = 5)]
+        // 
         [DataMember()]
-        [RegularExpression("[a-zA-Z0-9_\\-\\.]+", ErrorMessage="The username contained an illegal character. Only alpha-numeric characters and .-" +
-            "_ are allowed.")]
-        [Required(ErrorMessage="A username must be specified for the SIP account.")]
-        [StringLength(32, ErrorMessage="The username must be between 5 and 32 characters.", MinimumLength=5)]
         public string SIPUsername
         {
             get
@@ -3399,8 +3662,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'BridgeID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string BridgeID
         {
             get
@@ -3448,8 +3715,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'CallID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string CallID
         {
             get
@@ -3473,8 +3744,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'CDRID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string CDRID
         {
             get
@@ -3594,8 +3869,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Direction' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Direction
         {
             get
@@ -3643,10 +3922,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -3670,8 +3957,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Inserted' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Inserted
         {
             get
@@ -3695,8 +3986,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'LocalTag' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string LocalTag
         {
             get
@@ -3720,8 +4015,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'LocalUserField' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string LocalUserField
         {
             get
@@ -3745,8 +4044,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Owner' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Owner
         {
             get
@@ -3818,8 +4121,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'RemoteTag' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string RemoteTag
         {
             get
@@ -3843,8 +4150,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'RemoteTarget' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string RemoteTarget
         {
             get
@@ -3868,8 +4179,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'RemoteUserField' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string RemoteUserField
         {
             get
@@ -4013,8 +4328,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'SwitchboardOwner' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.StringLengthAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [StringLengthAttribute(1024)]
+        // 
         [DataMember()]
-        [StringLength(1024)]
         public string SwitchboardOwner
         {
             get
@@ -4236,8 +4555,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'DialPlanName' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string DialPlanName
         {
             get
@@ -4309,10 +4632,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -4336,8 +4667,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Inserted' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Inserted
         {
             get
@@ -4385,8 +4720,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'LastUpdate' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string LastUpdate
         {
             get
@@ -4434,8 +4773,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Owner' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Owner
         {
             get
@@ -4459,8 +4802,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ScriptTypeDescription' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string ScriptTypeDescription
         {
             get
@@ -4484,7 +4831,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets the collection of associated <see cref="SimpleWizardRule"/> entity instances.
         /// </summary>
-        [Association("SIPDialPlan_SimpleWizardRule", "ID", "DialPlanID")]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPDialPlan_SimpleWizardRule", "ID", "DialPlanID")]
+        // 
         [XmlIgnore()]
         public EntityCollection<SimpleWizardRule> simplewizardrules
         {
@@ -4501,7 +4852,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets the collection of associated <see cref="SIPDialplanLookup"/> entity instances.
         /// </summary>
-        [Association("SIPDialPlan_SIPDialplanLookup", "ID", "DialPlanID")]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPDialPlan_SIPDialplanLookup", "ID", "DialPlanID")]
+        // 
         [XmlIgnore()]
         public EntityCollection<SIPDialplanLookup> sipdialplanlookups
         {
@@ -4518,7 +4873,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets the collection of associated <see cref="SIPDialplanOption"/> entity instances.
         /// </summary>
-        [Association("SIPDialPlan_SIPDialplanOption", "ID", "DialPlanID")]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPDialPlan_SIPDialplanOption", "ID", "DialPlanID")]
+        // 
         [XmlIgnore()]
         public EntityCollection<SIPDialplanOption> sipdialplanoptions
         {
@@ -4535,7 +4894,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets the collection of associated <see cref="SIPDialplanProvider"/> entity instances.
         /// </summary>
-        [Association("SIPDialPlan_SIPDialplanProvider", "ID", "DialPlanID")]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPDialPlan_SIPDialplanProvider", "ID", "DialPlanID")]
+        // 
         [XmlIgnore()]
         public EntityCollection<SIPDialplanProvider> sipdialplanproviders
         {
@@ -4552,7 +4915,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets the collection of associated <see cref="SIPDialplanRoute"/> entity instances.
         /// </summary>
-        [Association("SIPDialPlan_SIPDialplanRoute", "ID", "DialPlanID")]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPDialPlan_SIPDialplanRoute", "ID", "DialPlanID")]
+        // 
         [XmlIgnore()]
         public EntityCollection<SIPDialplanRoute> sipdialplanroutes
         {
@@ -4758,8 +5125,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'DialPlanID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         [RoundtripOriginal()]
         public string DialPlanID
         {
@@ -4784,10 +5155,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -4811,8 +5190,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'LookupKey' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string LookupKey
         {
             get
@@ -4884,8 +5267,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Owner' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Owner
         {
             get
@@ -4909,7 +5296,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the associated <see cref="SIPDialPlan"/> entity.
         /// </summary>
-        [Association("SIPDialPlan_SIPDialplanLookup", "DialPlanID", "ID", IsForeignKey=true)]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPDialPlan_SIPDialplanLookup", "DialPlanID", "ID", IsForeignKey = True)]
+        // 
         [XmlIgnore()]
         public SIPDialPlan sipdialplan
         {
@@ -5112,8 +5503,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'DialPlanID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         [RoundtripOriginal()]
         public string DialPlanID
         {
@@ -5210,10 +5605,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -5237,8 +5640,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Owner' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Owner
         {
             get
@@ -5262,7 +5669,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the associated <see cref="SIPDialPlan"/> entity.
         /// </summary>
-        [Association("SIPDialPlan_SIPDialplanOption", "DialPlanID", "ID", IsForeignKey=true)]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPDialPlan_SIPDialplanOption", "DialPlanID", "ID", IsForeignKey = True)]
+        // 
         [XmlIgnore()]
         public SIPDialPlan sipdialplan
         {
@@ -5425,8 +5836,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'DialPlanID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         [RoundtripOriginal()]
         public string DialPlanID
         {
@@ -5451,10 +5866,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -5478,8 +5901,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Owner' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Owner
         {
             get
@@ -5527,8 +5954,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ProviderDialString' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string ProviderDialString
         {
             get
@@ -5552,8 +5983,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ProviderName' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string ProviderName
         {
             get
@@ -5601,7 +6036,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the associated <see cref="SIPDialPlan"/> entity.
         /// </summary>
-        [Association("SIPDialPlan_SIPDialplanProvider", "DialPlanID", "ID", IsForeignKey=true)]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPDialPlan_SIPDialplanProvider", "DialPlanID", "ID", IsForeignKey = True)]
+        // 
         [XmlIgnore()]
         public SIPDialPlan sipdialplan
         {
@@ -5716,8 +6155,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'DialPlanID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         [RoundtripOriginal()]
         public string DialPlanID
         {
@@ -5742,10 +6185,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -5769,8 +6220,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Owner' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Owner
         {
             get
@@ -5818,8 +6273,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'RouteDestination' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string RouteDestination
         {
             get
@@ -5843,8 +6302,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'RouteName' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string RouteName
         {
             get
@@ -5868,8 +6331,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'RoutePattern' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string RoutePattern
         {
             get
@@ -5893,7 +6360,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the associated <see cref="SIPDialPlan"/> entity.
         /// </summary>
-        [Association("SIPDialPlan_SIPDialplanRoute", "DialPlanID", "ID", IsForeignKey=true)]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPDialPlan_SIPDialplanRoute", "DialPlanID", "ID", IsForeignKey = True)]
+        // 
         [XmlIgnore()]
         public SIPDialPlan sipdialplan
         {
@@ -6022,8 +6493,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Domain' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Domain
         {
             get
@@ -6047,10 +6522,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -6074,8 +6557,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Inserted' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Inserted
         {
             get
@@ -6385,10 +6872,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -6412,8 +6907,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Inserted' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Inserted
         {
             get
@@ -6461,8 +6960,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'LastUpdate' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string LastUpdate
         {
             get
@@ -6486,8 +6989,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Owner' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "An owner must be specified for the SIP provider.")]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="An owner must be specified for the SIP provider.")]
         public string Owner
         {
             get
@@ -6559,10 +7066,15 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ProviderName' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RegularExpressionAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RegularExpressionAttribute("[^\.]+", ErrorMessage = "Provider names cannot contain a full stop '.' in order to avoid ambiguity with DNS host names, please remove the '.'.")]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "A provider name must be specified.")]
+        // 
         [DataMember()]
-        [RegularExpression("[^\\.]+", ErrorMessage="Provider names cannot contain a full stop \'.\' in order to avoid ambiguity with DN" +
-            "S host names, please remove the \'.\'.")]
-        [Required(ErrorMessage="A provider name must be specified.")]
         public string ProviderName
         {
             get
@@ -6634,9 +7146,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ProviderServer' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RegularExpressionAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RegularExpressionAttribute(".+\..+", ErrorMessage = "The provider server should contain at least one '.' to be recognised as a valid hostname or IP address.")]
+        // 
         [DataMember()]
-        [RegularExpression(".+\\..+", ErrorMessage="The provider server should contain at least one \'.\' to be recognised as a valid h" +
-            "ostname or IP address.")]
         public string ProviderServer
         {
             get
@@ -6660,8 +7175,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ProviderType' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string ProviderType
         {
             get
@@ -6685,8 +7204,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ProviderUsername' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute(ErrorMessage = "A username must be specified for the provider.")]
+        // 
         [DataMember()]
-        [Required(ErrorMessage="A username must be specified for the provider.")]
         public string ProviderUsername
         {
             get
@@ -6734,8 +7257,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'RegisterContact' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RegularExpressionAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RegularExpressionAttribute(".+@.+\..+", ErrorMessage = "The register contact should be of the form user@server.com.")]
+        // 
         [DataMember()]
-        [RegularExpression(".+@.+\\..+", ErrorMessage="The register contact should be of the form user@server.com.")]
         public string RegisterContact
         {
             get
@@ -6855,9 +7382,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'RegisterServer' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RegularExpressionAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RegularExpressionAttribute(".+\..+", ErrorMessage = "The register server should contain at least one '.' to be recognised as a valid hostname or IP address.")]
+        // 
         [DataMember()]
-        [RegularExpression(".+\\..+", ErrorMessage="The register server should contain at least one \'.\' to be recognised as a valid h" +
-            "ostname or IP address.")]
         public string RegisterServer
         {
             get
@@ -6905,7 +7435,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets the collection of associated <see cref="SIPProviderBinding"/> entity instances.
         /// </summary>
-        [Association("SIPProvider_SIPProviderBinding", "ID", "ProviderID")]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPProvider_SIPProviderBinding", "ID", "ProviderID")]
+        // 
         [XmlIgnore()]
         public EntityCollection<SIPProviderBinding> sipproviderbindings
         {
@@ -7079,8 +7613,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'BindingURI' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string BindingURI
         {
             get
@@ -7128,10 +7666,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -7227,8 +7773,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'NextRegistrationTime' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string NextRegistrationTime
         {
             get
@@ -7252,8 +7802,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Owner' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Owner
         {
             get
@@ -7277,8 +7831,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ProviderID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         [RoundtripOriginal()]
         public string ProviderID
         {
@@ -7303,8 +7861,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ProviderName' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string ProviderName
         {
             get
@@ -7376,7 +7938,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the associated <see cref="SIPProvider"/> entity.
         /// </summary>
-        [Association("SIPProvider_SIPProviderBinding", "ProviderID", "ID", IsForeignKey=true)]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPProvider_SIPProviderBinding", "ProviderID", "ID", IsForeignKey = True)]
+        // 
         [XmlIgnore()]
         public SIPProvider sipprovider
         {
@@ -7543,8 +8109,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ContactURI' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string ContactURI
         {
             get
@@ -7592,8 +8162,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ExpiryTime' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string ExpiryTime
         {
             get
@@ -7617,10 +8191,18 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'ID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
-        [Required()]
         [RoundtripOriginal()]
         public string ID
         {
@@ -7644,8 +8226,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'LastUpdate' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string LastUpdate
         {
             get
@@ -7693,8 +8279,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'Owner' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string Owner
         {
             get
@@ -7742,8 +8332,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'RegistrarSIPSocket' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string RegistrarSIPSocket
         {
             get
@@ -7767,8 +8361,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'RemoteSIPSocket' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string RemoteSIPSocket
         {
             get
@@ -7792,7 +8390,11 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the associated <see cref="SIPAccount"/> entity.
         /// </summary>
-        [Association("SIPAccount_SIPRegistrarBinding", "SIPAccountID", "ID", IsForeignKey=true)]
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.AssociationAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [AssociationAttribute("SIPAccount_SIPRegistrarBinding", "SIPAccountID", "ID", IsForeignKey = True)]
+        // 
         [XmlIgnore()]
         public SIPAccount sipaccount
         {
@@ -7836,8 +8438,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'SIPAccountID' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         [RoundtripOriginal()]
         public string SIPAccountID
         {
@@ -7862,8 +8468,12 @@ namespace SIPSorcery.Entities
         /// <summary>
         /// Gets or sets the 'SIPAccountName' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.RequiredAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [RequiredAttribute()]
+        // 
         [DataMember()]
-        [Required()]
         public string SIPAccountName
         {
             get
@@ -9002,9 +9612,15 @@ namespace SIPSorcery.Entities.Services
         /// <summary>
         /// Gets or sets the 'Name' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False, AllowInitialValue = True)]
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.KeyAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [KeyAttribute()]
+        // 
         [DataMember()]
-        [Editable(false, AllowInitialValue=true)]
-        [Key()]
         [RoundtripOriginal()]
         public string Name
         {
@@ -9029,8 +9645,12 @@ namespace SIPSorcery.Entities.Services
         /// <summary>
         /// Gets or sets the 'Roles' value.
         /// </summary>
+        // The following attributes were not generated:
+        // 
+        // - The attribute 'System.ComponentModel.DataAnnotations.EditableAttribute' is not visible in the client project 'SIPSorcery.Entities.Client'. Are you missing an assembly reference?
+        // [EditableAttribute(False)]
+        // 
         [DataMember()]
-        [Editable(false)]
         public IEnumerable<string> Roles
         {
             get
