@@ -157,7 +157,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 m_clientTransaction.SendFinalResponse(sipResponse);
 
-                rtspClient.Start(m_rtspAppStruct.URL, m_clientTransaction.RemoteEndPoint.Address, m_rtpPort);
+                //rtspClient.Start(m_rtspAppStruct.URL, m_clientTransaction.RemoteEndPoint.Address, m_rtpPort);
             }
             catch (Exception excp)
             {
