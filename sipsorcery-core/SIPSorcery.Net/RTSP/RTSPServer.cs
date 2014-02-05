@@ -58,7 +58,7 @@ namespace SIPSorcery.Net
         private const int MAX_TCP_CONNECTIONS = 1000;               // Maximum number of connections for the TCP listener.
         private const int CONNECTION_ATTEMPTS_ALLOWED = 3;          // The number of failed connection attempts permitted before classifying a remote socket as failed.
         private const int FAILED_CONNECTION_DONTUSE_INTERVAL = 300; // If a socket cannot be connected to don't try and reconnect to it for this interval.
-        private const int CLOSE_RTSP_SESSION_NO_DATA_SECONDS = 30; // The number of seconds after which to close an RTSP session if nothing is received on the RTP or control sockets.
+        private const int CLOSE_RTSP_SESSION_NO_DATA_SECONDS = 60; // The number of seconds after which to close an RTSP session if nothing is received on the RTP or control sockets.
 
         private static int MaxMessageSize = RTSPConstants.RTSP_MAXIMUM_LENGTH;
 
@@ -425,8 +425,11 @@ namespace SIPSorcery.Net
                                 inactiveSession = m_rtspSessions[inactiveSessionKey];
                                 m_rtspSessions.Remove(inactiveSessionKey);
 
-                                logger.Debug("Closing inactive RTSP session for session ID " + inactiveSession.SessionID + " established from RTSP client on " + inactiveSession.RemoteEndPoint + " (started at " + inactiveSession.StartedAt + ", RTP last activity at " + inactiveSession.RTPLastActivityAt + ", control last activity at " + inactiveSession.ControlLastActivityAt + ", is closed " + inactiveSession.IsClosed + ").");
-                                inactiveSession.Close();
+                                if (!inactiveSession.IsClosed)
+                                {
+                                    logger.Debug("Closing inactive RTSP session for session ID " + inactiveSession.SessionID + " established from RTSP client on " + inactiveSession.RemoteEndPoint + " (started at " + inactiveSession.StartedAt + ", RTP last activity at " + inactiveSession.RTPLastActivityAt + ", control last activity at " + inactiveSession.ControlLastActivityAt + ", is closed " + inactiveSession.IsClosed + ").");
+                                    inactiveSession.Close();
+                                }
 
                                 inactiveSessionKey = inactiveSessionQuery.FirstOrDefault();
                             }

@@ -129,9 +129,9 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Attempts to determine the remote RTP port based on the transport header attributes.
+        /// Attempts to determine the client RTP port based on the transport header attributes.
         /// </summary>
-        /// <returns>The remote port that RTP packets should be sent to. If the port cannot be determined then 0.</returns>
+        /// <returns>The client port that RTP packets should be sent to. If the port cannot be determined then 0.</returns>
         public int GetClientRTPPort()
         {
             if(ClientRTPPortRange.NotNullOrBlank())
@@ -143,6 +143,28 @@ namespace SIPSorcery.Net
                 if(Int32.TryParse(fields[0], out clientRTPPort))
                 {
                     return clientRTPPort;
+                }
+            }
+
+            return 0;
+        }
+
+
+        /// <summary>
+        /// Attempts to determine the server RTP port based on the transport header attributes.
+        /// </summary>
+        /// <returns>The server port that RTP packets should be sent to. If the port cannot be determined then 0.</returns>
+        public int GetServerRTPPort()
+        {
+            if (ServerRTPPortRange.NotNullOrBlank())
+            {
+                int serverRTPPort = 0;
+
+                var fields = ServerRTPPortRange.Split('-');
+
+                if (Int32.TryParse(fields[0], out serverRTPPort))
+                {
+                    return serverRTPPort;
                 }
             }
 

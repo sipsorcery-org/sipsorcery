@@ -49,22 +49,38 @@ namespace SIPSorcery.Net
         public const int RTSP_PORT = 554;
         private const int MAX_FRAMES_QUEUE_LENGTH = 1000;
         private const int RTP_KEEP_ALIVE_INTERVAL = 30;     // The interval at which to send RTP keep-alive packets to keep the RTSP server from closing the connection.
+        private const int RTP_TIMEOUT_SECONDS = 60;         // If no RTP pakcets are received during this interval then assume the connection has failed.
 
         private static ILog logger = AssemblyStreamState.logger;
 
         private string _url;
         private int _cseq = 1;
-        private TcpClient _rtspConection;
+        private TcpClient _rtspConnection;
         private NetworkStream _rtspStream;
         private RTSPSession _rtspSession;
-        private Queue<RTPPacket> _packets = new Queue<RTPPacket>();
         private List<RTPFrame> _frames = new List<RTPFrame>();
         private uint _lastCompleteFrameTimestamp;
+        private Action<string> _rtpTrackingAction;
+        private DateTime _lastRTPReceivedAt;
+        private ManualResetEvent _sendKeepAlivesMRE = new ManualResetEvent(false);
 
         public event Action<RTSPClient> OnSetupSuccess;
         public event Action<RTSPClient, RTPFrame> OnFrameReady;
+        public event Action<RTSPClient> OnClosed;
 
-        public bool IsClosed;
+        private bool _isClosed;
+        public bool IsClosed
+        {
+            get { return _isClosed; }
+        }
+
+        public RTSPClient()
+        { }
+
+        public RTSPClient(Action<string> rtpTrackingAction)
+        {
+            _rtpTrackingAction = rtpTrackingAction;
+        }
 
         public string GetStreamDescription(string url)
         {
@@ -130,12 +146,12 @@ namespace SIPSorcery.Net
             string hostname = Regex.Match(url, @"rtsp://(?<hostname>\S+?)/").Result("${hostname}");
 
             logger.Debug("RTSP Client Connecting to " + hostname + ".");
-            _rtspConection = new TcpClient(hostname, RTSP_PORT);
-            _rtspStream = _rtspConection.GetStream();
+            _rtspConnection = new TcpClient(hostname, RTSP_PORT);
+            _rtspStream = _rtspConnection.GetStream();
 
             _rtspSession = new RTSPSession();
             _rtspSession.ReservePorts();
-            _rtspSession.OnRTPDataReceived += RTPReceive;
+            _rtspSession.OnRTPQueueFull += RTPQueueFull;
 
             RTSPRequest rtspRequest = new RTSPRequest(RTSPMethodsEnum.SETUP, url);
             RTSPHeader rtspHeader = new RTSPHeader(_cseq++, null);
@@ -144,9 +160,9 @@ namespace SIPSorcery.Net
             string rtspReqStr = rtspRequest.ToString();
 
             RTSPMessage rtspMessage = null;
-            RTSPResponse rtspResponse = null;
 
-            Console.WriteLine(rtspReqStr);
+            System.Diagnostics.Debug.WriteLine(rtspReqStr);
+
             byte[] rtspRequestBuffer = Encoding.UTF8.GetBytes(rtspReqStr);
             _rtspStream.Write(rtspRequestBuffer, 0, rtspRequestBuffer.Length);
 
@@ -155,59 +171,95 @@ namespace SIPSorcery.Net
 
             if (bytesRead > 0)
             {
-                Console.Write(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+                System.Diagnostics.Debug.WriteLine(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+
                 rtspMessage = RTSPMessage.ParseRTSPMessage(buffer, null, null);
 
                 if (rtspMessage.RTSPMessageType == RTSPMessageTypesEnum.Response)
                 {
-                    rtspResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
-                    Console.WriteLine("RTSP Response received to SETUP: " + rtspResponse.StatusCode + " " + rtspResponse.Status + " " + rtspResponse.ReasonPhrase + ".");
+                    var setupResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
 
-                    _rtspSession.SessionID = rtspResponse.Header.Session;
-                    _rtspSession.Start();
-
-                    ThreadPool.QueueUserWorkItem(delegate { ProcessRTPPackets(); });
-                    ThreadPool.QueueUserWorkItem(delegate { SendKeepAlives(); });
-
-                    if (OnSetupSuccess != null)
+                    if (setupResponse.Status == RTSPResponseStatusCodesEnum.OK)
                     {
-                        OnSetupSuccess(this);
+                        _rtspSession.SessionID = setupResponse.Header.Session;
+                        _rtspSession.RemoteEndPoint = new IPEndPoint((_rtspConnection.Client.RemoteEndPoint as IPEndPoint).Address, setupResponse.Header.Transport.GetServerRTPPort());
+                        _rtspSession.Start();
+
+                        logger.Debug("RTSP Response received to SETUP: " + setupResponse.Status + ", session ID " + _rtspSession.SessionID + ", server RTP endpoint " + _rtspSession.RemoteEndPoint + ".");
+
+                        if (OnSetupSuccess != null)
+                        {
+                            OnSetupSuccess(this);
+                        }
+                    }
+                    else
+                    {
+                        logger.Warn("RTSP Response received to SETUP: " + setupResponse.Status + ".");
+                        throw new ApplicationException("An error response of " + setupResponse.Status + " was received for an RTSP setup request.");
                     }
                 }
             }
             else
             {
-                Console.WriteLine("socket closed.");
+                throw new ApplicationException("Zero bytes were read from the RTSP client socket in response to a SETUP request.");
             }
+        }
 
-            if (rtspResponse != null && rtspResponse.StatusCode >= 200 && rtspResponse.StatusCode <= 299)
+        private void RTPQueueFull()
+        {
+            try
             {
-                RTSPRequest playRequest = new RTSPRequest(RTSPMethodsEnum.PLAY, url);
-                RTSPHeader playHeader = new RTSPHeader(_cseq++, rtspResponse.Header.Session);
-                playRequest.Header = playHeader;
+                logger.Warn("RTSPCient.RTPQueueFull purging frames list.");
+                System.Diagnostics.Debug.WriteLine("RTSPCient.RTPQueueFull purging frames list.");
 
-                Console.WriteLine(playRequest.ToString());
-                rtspRequestBuffer = Encoding.UTF8.GetBytes(playRequest.ToString());
-                _rtspStream.Write(rtspRequestBuffer, 0, rtspRequestBuffer.Length);
+                lock (_frames)
+                {
+                    _frames.Clear();
+                }
+
+                _lastCompleteFrameTimestamp = 0;
             }
+            catch(Exception excp)
+            {
+                logger.Error("Exception RTSPClient.RTPQueueFull. " + excp);
+            }
+        }
 
-            buffer = new byte[2048];
-            bytesRead = _rtspStream.Read(buffer, 0, 2048);
+        /// <summary>
+        /// Send a PLAY request to the RTSP server to commence the media stream.
+        /// </summary>
+        public void Play()
+        {
+            ThreadPool.QueueUserWorkItem(delegate { ProcessRTPPackets(); });
+            ThreadPool.QueueUserWorkItem(delegate { SendKeepAlives(); });
+
+            RTSPRequest playRequest = new RTSPRequest(RTSPMethodsEnum.PLAY, _url);
+            RTSPHeader playHeader = new RTSPHeader(_cseq++, _rtspSession.SessionID);
+            playRequest.Header = playHeader;
+
+            System.Diagnostics.Debug.WriteLine(playRequest.ToString());
+
+            var rtspRequestBuffer = Encoding.UTF8.GetBytes(playRequest.ToString());
+            _rtspStream.Write(rtspRequestBuffer, 0, rtspRequestBuffer.Length);
+
+            var buffer = new byte[2048];
+            var bytesRead = _rtspStream.Read(buffer, 0, 2048);
 
             if (bytesRead > 0)
             {
-                Console.Write(Encoding.UTF8.GetString(buffer, 0, bytesRead));
-                rtspMessage = RTSPMessage.ParseRTSPMessage(buffer, null, null);
+                System.Diagnostics.Debug.WriteLine(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+
+                var rtspMessage = RTSPMessage.ParseRTSPMessage(buffer, null, null);
 
                 if (rtspMessage.RTSPMessageType == RTSPMessageTypesEnum.Response)
                 {
-                    rtspResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
-                    Console.WriteLine("RTSP Response received to PLAY: " + rtspResponse.StatusCode + " " + rtspResponse.Status + " " + rtspResponse.ReasonPhrase + ".");
+                    var playResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
+                    logger.Debug("RTSP Response received to PLAY: " + playResponse.StatusCode + " " + playResponse.Status + " " + playResponse.ReasonPhrase + ".");
                 }
             }
             else
             {
-                Console.WriteLine("socket closed.");
+                throw new ApplicationException("Zero bytes were read from the RTSP client socket in response to a PLAY request.");
             }
         }
 
@@ -216,7 +268,7 @@ namespace SIPSorcery.Net
         /// </summary>
         private void Teardown()
         {
-            if (_rtspStream != null && _rtspConection.Connected)
+            if (_rtspStream != null && _rtspConnection.Connected)
             {
                 logger.Debug("RTSP client sending teardown request for " + _url + ".");
 
@@ -238,15 +290,33 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Closes the session and the RTSP connection to the server.
         /// </summary>
-        public void Disconnect()
+        public void Close()
         {
             try
             {
-                Teardown();
-
-                if (_rtspSession != null && !_rtspSession.IsClosed)
+                if (!_isClosed)
                 {
-                    _rtspSession.Close();
+                    logger.Debug("RTSP client, closing connection for " + _url + ".");
+
+                    _isClosed = true;
+                    _sendKeepAlivesMRE.Set();
+
+                    Teardown();
+
+                    if (_rtspSession != null && !_rtspSession.IsClosed)
+                    {
+                        _rtspSession.Close();
+                    }
+
+                    if(_rtspStream != null)
+                    {
+                        _rtspStream.Close();
+                    }
+
+                    if(OnClosed != null)
+                    {
+                        OnClosed(this);
+                    }
                 }
             }
             catch (Exception excp)
@@ -255,95 +325,88 @@ namespace SIPSorcery.Net
             }
         }
 
-        private void RTPReceive(string sessionID, byte[] rtpPayload)
-        {
-            try
-            {
-                RTPPacket rtpPacket = new RTPPacket(rtpPayload);
-
-                System.Diagnostics.Debug.WriteLine("RTPReceive ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
-
-                if (rtpPacket.Header.Timestamp < _lastCompleteFrameTimestamp)
-                {
-                    System.Diagnostics.Debug.WriteLine("Ignoring RTP packet with timestamp " + rtpPacket.Header.Timestamp + " as it's earlier than the last complete frame.");
-                }
-                else
-                {
-                    //lock(_packets)
-                    //{
-                        _packets.Enqueue(rtpPacket);
-                    //}
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception RTSPClient.RTPReceive. " + excp);
-            }
-        }
-
         private void ProcessRTPPackets()
         {
             try
             {
-                while (!IsClosed)
-                {
-                    while (_packets.Count > 0)
-                    {
-                        RTPPacket rtpPacket = null;
+                _lastRTPReceivedAt = DateTime.Now;
 
-                        //lock (_packets)
-                        //{
-                            rtpPacket = _packets.Dequeue();
-                        //}
+                while (!_isClosed)
+                {
+                    while (_rtspSession.HasRTPPacket())
+                    {
+                        RTPPacket rtpPacket = _rtspSession.GetNextRTPPacket();
 
                         if (rtpPacket != null)
                         {
-                            while (_frames.Count > MAX_FRAMES_QUEUE_LENGTH)
+                            _lastRTPReceivedAt = DateTime.Now;
+
+                            if (_rtpTrackingAction != null)
                             {
-                                var oldestFrame = _frames.OrderBy(x => x.Timestamp).First();
-                                _frames.Remove(oldestFrame);
-                                System.Diagnostics.Debug.WriteLine("Receive queue full, dropping oldest frame with timestamp " + oldestFrame.Timestamp + ".");
+                                string rtpTrackingText = String.Format("Rcvd At: {0}\r\nSeq Num: {1}\r\nTS: {2}", DateTime.Now.ToString("HH:mm:ss:fff"), rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp);
+                                _rtpTrackingAction(rtpTrackingText);
                             }
 
-                            var frame = _frames.Where(x => x.Timestamp == rtpPacket.Header.Timestamp).SingleOrDefault();
-
-                            if (frame == null)
+                            if (rtpPacket.Header.Timestamp < _lastCompleteFrameTimestamp)
                             {
-                                frame = new RTPFrame() { Timestamp = rtpPacket.Header.Timestamp, HasMarker = rtpPacket.Header.MarkerBit == 1 };
-                                frame.AddRTPPacket(rtpPacket);
-                                _frames.Add(frame);
+                                System.Diagnostics.Debug.WriteLine("Ignoring RTP packet with timestamp " + rtpPacket.Header.Timestamp + " as it's earlier than the last complete frame.");
                             }
                             else
                             {
-                                frame.HasMarker = rtpPacket.Header.MarkerBit == 1;
-                                frame.AddRTPPacket(rtpPacket);
-                            }
-
-                            if (frame.FramePayload != null)
-                            {
-                                // The frame is ready for handing over to the UI.
-                                byte[] imageBytes = frame.FramePayload;
-
-                                _lastCompleteFrameTimestamp = rtpPacket.Header.Timestamp;
-                                System.Diagnostics.Debug.WriteLine("Frame ready " + frame.Timestamp + ", sequence numbers " + frame.StartSequenceNumber + " to " + frame.EndSequenceNumber + ",  payload length " + imageBytes.Length + ".");
-                                _frames.Remove(frame);
-
-                                // Also remove any earlier frames as we don't care about anything that's earlier than the current complete frame.
-                                foreach (var oldFrame in _frames.Where(x => x.Timestamp <= rtpPacket.Header.Timestamp).ToList())
+                                while (_frames.Count > MAX_FRAMES_QUEUE_LENGTH)
                                 {
-                                    System.Diagnostics.Debug.WriteLine("Discarding old frame for timestamp " + oldFrame.Timestamp + ".");
-                                    _frames.Remove(oldFrame);
+                                    var oldestFrame = _frames.OrderBy(x => x.Timestamp).First();
+                                    _frames.Remove(oldestFrame);
+                                    System.Diagnostics.Debug.WriteLine("Receive queue full, dropping oldest frame with timestamp " + oldestFrame.Timestamp + ".");
                                 }
 
-                                if (OnFrameReady != null)
+                                var frame = _frames.Where(x => x.Timestamp == rtpPacket.Header.Timestamp).SingleOrDefault();
+
+                                if (frame == null)
                                 {
-                                    OnFrameReady(this, frame);
+                                    frame = new RTPFrame() { Timestamp = rtpPacket.Header.Timestamp, HasMarker = rtpPacket.Header.MarkerBit == 1 };
+                                    frame.AddRTPPacket(rtpPacket);
+                                    _frames.Add(frame);
+                                }
+                                else
+                                {
+                                    frame.HasMarker = rtpPacket.Header.MarkerBit == 1;
+                                    frame.AddRTPPacket(rtpPacket);
+                                }
+
+                                if (frame.FramePayload != null)
+                                {
+                                    // The frame is ready for handing over to the UI.
+                                    byte[] imageBytes = frame.FramePayload;
+
+                                    _lastCompleteFrameTimestamp = rtpPacket.Header.Timestamp;
+                                    //System.Diagnostics.Debug.WriteLine("Frame ready " + frame.Timestamp + ", sequence numbers " + frame.StartSequenceNumber + " to " + frame.EndSequenceNumber + ",  payload length " + imageBytes.Length + ".");
+                                    _frames.Remove(frame);
+
+                                    // Also remove any earlier frames as we don't care about anything that's earlier than the current complete frame.
+                                    foreach (var oldFrame in _frames.Where(x => x.Timestamp <= rtpPacket.Header.Timestamp).ToList())
+                                    {
+                                        System.Diagnostics.Debug.WriteLine("Discarding old frame for timestamp " + oldFrame.Timestamp + ".");
+                                        _frames.Remove(oldFrame);
+                                    }
+
+                                    if (OnFrameReady != null)
+                                    {
+                                        OnFrameReady(this, frame);
+                                    }
                                 }
                             }
                         }
                     }
 
-                    Thread.Sleep(20);
+                    if (DateTime.Now.Subtract(_lastRTPReceivedAt).TotalSeconds > RTP_TIMEOUT_SECONDS)
+                    {
+                        Close();
+                    }
+                    else
+                    {
+                        Thread.Sleep(1);
+                    }
                 }
             }
             catch (Exception excp)
@@ -359,14 +422,18 @@ namespace SIPSorcery.Net
         {
             try
             {
-                while(!IsClosed)
+                // Set the initial pause as half the keep-alive interval.
+                Thread.Sleep(RTP_KEEP_ALIVE_INTERVAL * 500);
+
+                while (!_isClosed)
                 {
                     _rtspSession.SendRTPRaw(new byte[] { 0x00, 0x00, 0x00, 0x00 });
 
-                    Thread.Sleep(RTP_KEEP_ALIVE_INTERVAL * 1000);
+                    _sendKeepAlivesMRE.Reset();
+                    _sendKeepAlivesMRE.WaitOne(RTP_KEEP_ALIVE_INTERVAL * 1000);
                 }
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.Error("Exception RTSPClient.SendKeepAlives. " + excp);
             }

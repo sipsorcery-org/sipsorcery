@@ -150,8 +150,6 @@ namespace SIPSorcery.Net
                 {
                     throw new ApplicationException("URI was missing on RTSP request.");
                 }
-
-			    return rtspRequest;
     		}
 			catch(Exception excp)
 			{

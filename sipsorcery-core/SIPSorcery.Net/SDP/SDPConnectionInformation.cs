@@ -31,7 +31,7 @@ namespace SIPSorcery.Net
             return connectionInfo;
         }
 
-        public string ToString()
+        public override string ToString()
         {
             return "c=" + ConnectionNetworkType + " " + ConnectionAddressType + " " + ConnectionAddress + m_CRLF;
         }
