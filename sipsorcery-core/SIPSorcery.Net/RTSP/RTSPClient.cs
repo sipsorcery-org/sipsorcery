@@ -49,7 +49,7 @@ namespace SIPSorcery.Net
         public const int RTSP_PORT = 554;
         private const int MAX_FRAMES_QUEUE_LENGTH = 1000;
         private const int RTP_KEEP_ALIVE_INTERVAL = 30;     // The interval at which to send RTP keep-alive packets to keep the RTSP server from closing the connection.
-        private const int RTP_TIMEOUT_SECONDS = 60;         // If no RTP pakcets are received during this interval then assume the connection has failed.
+        private const int RTP_TIMEOUT_SECONDS = 15;         // If no RTP pakcets are received during this interval then assume the connection has failed.
 
         private static ILog logger = AssemblyStreamState.logger;
 
@@ -219,7 +219,7 @@ namespace SIPSorcery.Net
 
                 _lastCompleteFrameTimestamp = 0;
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.Error("Exception RTSPClient.RTPQueueFull. " + excp);
             }
@@ -268,22 +268,29 @@ namespace SIPSorcery.Net
         /// </summary>
         private void Teardown()
         {
-            if (_rtspStream != null && _rtspConnection.Connected)
+            try
             {
-                logger.Debug("RTSP client sending teardown request for " + _url + ".");
+                if (_rtspStream != null && _rtspConnection.Connected)
+                {
+                    logger.Debug("RTSP client sending teardown request for " + _url + ".");
 
-                RTSPRequest teardownRequest = new RTSPRequest(RTSPMethodsEnum.TEARDOWN, _url);
-                RTSPHeader teardownHeader = new RTSPHeader(_cseq++, _rtspSession.SessionID);
-                teardownRequest.Header = teardownHeader;
+                    RTSPRequest teardownRequest = new RTSPRequest(RTSPMethodsEnum.TEARDOWN, _url);
+                    RTSPHeader teardownHeader = new RTSPHeader(_cseq++, _rtspSession.SessionID);
+                    teardownRequest.Header = teardownHeader;
 
-                System.Diagnostics.Debug.WriteLine(teardownRequest.ToString());
+                    System.Diagnostics.Debug.WriteLine(teardownRequest.ToString());
 
-                var buffer = Encoding.UTF8.GetBytes(teardownRequest.ToString());
-                _rtspStream.Write(buffer, 0, buffer.Length);
+                    var buffer = Encoding.UTF8.GetBytes(teardownRequest.ToString());
+                    _rtspStream.Write(buffer, 0, buffer.Length);
+                }
+                else
+                {
+                    logger.Debug("RTSP client did not send teardown request for " + _url + ", the socket was closed.");
+                }
             }
-            else
+            catch(Exception excp)
             {
-                logger.Debug("RTSP client did not send teardown request for " + _url + ", the socket was closed.");
+                logger.Error("Exception RTSPClient.Teardown. " + excp);
             }
         }
 
@@ -308,12 +315,19 @@ namespace SIPSorcery.Net
                         _rtspSession.Close();
                     }
 
-                    if(_rtspStream != null)
+                    if (_rtspStream != null)
                     {
-                        _rtspStream.Close();
+                        try
+                        {
+                            _rtspStream.Close();
+                        }
+                        catch(Exception rtpStreamExcp)
+                        {
+                            logger.Error("Exception RTSPClient.Close closing RTP stream. " + rtpStreamExcp);
+                        }
                     }
 
-                    if(OnClosed != null)
+                    if (OnClosed != null)
                     {
                         OnClosed(this);
                     }
@@ -321,7 +335,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception RTSPClient.Disconnect. " + excp);
+                logger.Error("Exception RTSPClient.Close. " + excp);
             }
         }
 
@@ -401,6 +415,7 @@ namespace SIPSorcery.Net
 
                     if (DateTime.Now.Subtract(_lastRTPReceivedAt).TotalSeconds > RTP_TIMEOUT_SECONDS)
                     {
+                        logger.Warn("No RTP packets were receoved on RTSP session " + _rtspSession.SessionID + " for " + RTP_TIMEOUT_SECONDS + ". The session will now be closed.");
                         Close();
                     }
                     else
