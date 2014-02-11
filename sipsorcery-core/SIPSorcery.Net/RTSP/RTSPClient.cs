@@ -45,7 +45,6 @@ namespace SIPSorcery.Net
 {
     public class RTSPClient
     {
-        //public const int DNS_RESOLUTION_TIMEOUT = 2000;    // Timeout for resolving DNS hosts in milliseconds.
         public const int RTSP_PORT = 554;
         private const int MAX_FRAMES_QUEUE_LENGTH = 1000;
         private const int RTP_KEEP_ALIVE_INTERVAL = 30;     // The interval at which to send RTP keep-alive packets to keep the RTSP server from closing the connection.

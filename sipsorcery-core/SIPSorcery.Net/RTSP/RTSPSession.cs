@@ -491,9 +491,9 @@ namespace SIPSorcery.Net
         /// <summary>
         /// H264 frames need a two byte header when transmitted over RTP.
         /// </summary>
-        /// <param name="frame"></param>
-        /// <param name="frameSpacing"></param>
-        /// <param name="payloadType"></param>
+        /// <param name="frame">The H264 encoded frame to transmit.</param>
+        /// <param name="frameSpacing">The increment to add to the RTP timestamp for each new frame.</param>
+        /// <param name="payloadType">The payload type to set on the RTP packet.</param>
         public void SendH264Frame(byte[] frame, uint frameSpacing, int payloadType)
         {
             try
@@ -509,8 +509,6 @@ namespace SIPSorcery.Net
                 else
                 {
                     _timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + frameSpacing) % UInt32.MaxValue;
-                    //_timestamp = DateTimeToNptTimestamp32(DateTime.Now);
-                    //_timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + (uint)(RFC_2435_FREQUENCY_BASELINE / 10)) % UInt32.MaxValue;
 
                     //System.Diagnostics.Debug.WriteLine("Sending " + jpegBytes.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ", image dimensions " + jpegWidth + " x " + jpegHeight + ".");
 
@@ -550,21 +548,6 @@ namespace SIPSorcery.Net
 
                         _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
                     }
-
-                    //RTPPacket rtpPacket = new RTPPacket(frame.Length);
-                    //rtpPacket.Header.SyncSource = _syncSource;
-                    //rtpPacket.Header.SequenceNumber = _sequenceNumber++;
-                    //rtpPacket.Header.Timestamp = _timestamp;
-                    //rtpPacket.Header.MarkerBit = 1;
-                    //rtpPacket.Header.PayloadType = payloadType;
-                    //rtpPacket.Payload = new byte[frame.Length];
-                    //Array.Copy(frame, rtpPacket.Payload, frame.Length);
-
-                    //byte[] rtpBytes = rtpPacket.GetBytes();
-
-                    ////System.Diagnostics.Debug.WriteLine(" offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ".");
-
-                    //_rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
                 }
             }
             catch (Exception excp)
@@ -572,7 +555,6 @@ namespace SIPSorcery.Net
                 if (!_closed)
                 {
                     logger.Warn("Exception RTSPSession.SendRawFrame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
-                    //_rtpSocketError = SocketError.SocketError;
 
                     if (OnRTPSocketDisconnected != null)
                     {
