@@ -40,6 +40,7 @@ namespace SIPSorcery.Net
     public class RTPFrame
     {
         private const int JPEG_HEADER_LENGTH = 8;
+        private const int H264_HEADER_LENGTH = 2;
 
         public uint Timestamp;
         public bool HasMarker;
@@ -92,21 +93,23 @@ namespace SIPSorcery.Net
 
             if (HasMarker && FramePayload == null)
             {
-                FramePayload = IsComplete(_packets);
+                FramePayload = IsComplete(_packets, rtpPacket.Header.PayloadType);
             }
         }
 
-        private byte[] IsComplete(List<RTPPacket> framePackets)
+        private byte[] IsComplete(List<RTPPacket> framePackets, int payloadType)
         {
             // The frame has the marker bit set. Check that there are no missing sequence numbers.
+            int headerLength = (payloadType == (int)SDPMediaFormatsEnum.JPEG) ? JPEG_HEADER_LENGTH : H264_HEADER_LENGTH;
             uint previousSeqNum = 0;
             List<byte> payload = new List<byte>();
+
             foreach (var rtpPacket in framePackets.OrderBy(x => x.Header.SequenceNumber))
             {
                 if (previousSeqNum == 0)
                 {
                     previousSeqNum = rtpPacket.Header.SequenceNumber;
-                    payload.AddRange(rtpPacket.Payload.Skip(JPEG_HEADER_LENGTH));
+                    payload.AddRange(rtpPacket.Payload.Skip(headerLength));
                 }
                 else if (previousSeqNum != rtpPacket.Header.SequenceNumber - 1)
                 {
@@ -116,7 +119,7 @@ namespace SIPSorcery.Net
                 else
                 {
                     previousSeqNum = rtpPacket.Header.SequenceNumber;
-                    payload.AddRange(rtpPacket.Payload.Skip(JPEG_HEADER_LENGTH));
+                    payload.AddRange(rtpPacket.Payload.Skip(headerLength));
                 }
             }
 

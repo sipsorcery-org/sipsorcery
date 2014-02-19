@@ -295,6 +295,7 @@ namespace SIPSorcery.Net
                                 RTPPacket rtpPacket = new RTPPacket(buffer.Take(bytesRead).ToArray());
 
                                 //System.Diagnostics.Debug.WriteLine("RTPReceive ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
+
                                 lock (_packets)
                                 {
                                     if (_packets.Count > RTP_PACKETS_MAX_QUEUE_LENGTH)
@@ -500,17 +501,17 @@ namespace SIPSorcery.Net
             {
                 if (_closed)
                 {
-                    logger.Warn("SendRawFrame cannot be called on a closed session.");
+                    logger.Warn("SendH264Frame cannot be called on a closed session.");
                 }
                 else if (_rtpSocketError != SocketError.Success)
                 {
-                    logger.Warn("SendRawFrame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
+                    logger.Warn("SendH264Frame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
                 }
                 else
                 {
                     _timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + frameSpacing) % UInt32.MaxValue;
 
-                    //System.Diagnostics.Debug.WriteLine("Sending " + jpegBytes.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ", image dimensions " + jpegWidth + " x " + jpegHeight + ".");
+                    //System.Diagnostics.Debug.WriteLine("Sending " + frame.Length + " H264 encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ".");
 
                     for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
                     {
@@ -520,7 +521,7 @@ namespace SIPSorcery.Net
                         rtpPacket.Header.SyncSource = _syncSource;
                         rtpPacket.Header.SequenceNumber = _sequenceNumber++;
                         rtpPacket.Header.Timestamp = _timestamp;
-                        //rtpPacket.Header.MarkerBit = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? 0 : 1;
+                        rtpPacket.Header.MarkerBit = 0;
                         rtpPacket.Header.PayloadType = payloadType;
 
                         // Start RTP packet in frame 0x1c 0x89
@@ -536,6 +537,7 @@ namespace SIPSorcery.Net
                         else if ((index + 1) * RTP_MAX_PAYLOAD > frame.Length)
                         {
                             h264Header = new byte[] { 0x1c, 0x49 };
+                            rtpPacket.Header.MarkerBit = 1;
                         }
 
                         var h264Stream = frame.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength).ToList();
@@ -544,7 +546,7 @@ namespace SIPSorcery.Net
 
                         byte[] rtpBytes = rtpPacket.GetBytes();
 
-                        //System.Diagnostics.Debug.WriteLine(" offset " + (index * RTP_MAX_PAYLOAD) + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ".");
+                        //System.Diagnostics.Debug.WriteLine(" offset " + (index * RTP_MAX_PAYLOAD) + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header .MarkerBit + ".");
 
                         _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
                     }
@@ -554,7 +556,7 @@ namespace SIPSorcery.Net
             {
                 if (!_closed)
                 {
-                    logger.Warn("Exception RTSPSession.SendRawFrame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
+                    logger.Warn("Exception RTSPSession.SendH264Frame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
 
                     if (OnRTPSocketDisconnected != null)
                     {
