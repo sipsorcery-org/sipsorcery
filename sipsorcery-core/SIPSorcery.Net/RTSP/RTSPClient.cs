@@ -47,8 +47,9 @@ namespace SIPSorcery.Net
     {
         public const int RTSP_PORT = 554;
         private const int MAX_FRAMES_QUEUE_LENGTH = 1000;
-        private const int RTP_KEEP_ALIVE_INTERVAL = 30;     // The interval at which to send RTP keep-alive packets to keep the RTSP server from closing the connection.
-        private const int RTP_TIMEOUT_SECONDS = 15;         // If no RTP pakcets are received during this interval then assume the connection has failed.
+        private const int RTP_KEEP_ALIVE_INTERVAL = 30;         // The interval at which to send RTP keep-alive packets to keep the RTSP server from closing the connection.
+        private const int RTP_TIMEOUT_SECONDS = 15;             // If no RTP pakcets are received during this interval then assume the connection has failed.
+        private const int BANDWIDTH_CALCULATION_SECONDS = 5;    // The interval at which to do bandwidth calculations.
 
         private static ILog logger = AssemblyStreamState.logger;
 
@@ -61,6 +62,12 @@ namespace SIPSorcery.Net
         private uint _lastCompleteFrameTimestamp;
         private Action<string> _rtpTrackingAction;
         private DateTime _lastRTPReceivedAt;
+        private int _lastFrameSize;
+        private DateTime _lastBWCalcAt;
+        private int _bytesSinceLastBWCalc;
+        private int _framesSinceLastCalc;
+        private double _lastBWCalc;
+        private double _lastFrameRate;
         private ManualResetEvent _sendKeepAlivesMRE = new ManualResetEvent(false);
 
         public event Action<RTSPClient> OnSetupSuccess;
@@ -342,7 +349,10 @@ namespace SIPSorcery.Net
         {
             try
             {
+                Thread.CurrentThread.Name = "rtspclient-rtp";
+
                 _lastRTPReceivedAt = DateTime.Now;
+                _lastBWCalcAt = DateTime.Now;
 
                 while (!_isClosed)
                 {
@@ -353,10 +363,22 @@ namespace SIPSorcery.Net
                         if (rtpPacket != null)
                         {
                             _lastRTPReceivedAt = DateTime.Now;
+                            _bytesSinceLastBWCalc += RTPHeader.MIN_HEADER_LEN + rtpPacket.Payload.Length;
 
                             if (_rtpTrackingAction != null)
                             {
-                                string rtpTrackingText = String.Format("Rcvd At: {0}\r\nSeq Num: {1}\r\nTS: {2}", DateTime.Now.ToString("HH:mm:ss:fff"), rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp);
+                                double bwCalcSeconds = DateTime.Now.Subtract(_lastBWCalcAt).TotalSeconds;
+                                if(bwCalcSeconds > BANDWIDTH_CALCULATION_SECONDS)
+                                {
+                                    _lastBWCalc = _bytesSinceLastBWCalc * 8 / bwCalcSeconds;
+                                    _lastFrameRate = _framesSinceLastCalc / bwCalcSeconds;
+                                    _bytesSinceLastBWCalc = 0;
+                                    _framesSinceLastCalc = 0;
+                                    _lastBWCalcAt = DateTime.Now;
+                                }
+
+                                var abbrevURL = (_url.Length <= 50) ? _url : _url.Substring(0, 50);
+                                string rtpTrackingText = String.Format("Url: {0}\r\nRcvd At: {1}\r\nSeq Num: {2}\r\nTS: {3}\r\nPayoad: {4}\r\nFrame Size: {5}\r\nBW: {6}\r\nFrame Rate: {7}", abbrevURL, DateTime.Now.ToString("HH:mm:ss:fff"), rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, ((SDPMediaFormatsEnum)rtpPacket.Header.PayloadType).ToString(), _lastFrameSize + " bytes", _lastBWCalc.ToString("0.#") + "bps", _lastFrameRate.ToString("0.##") + "fps");
                                 _rtpTrackingAction(rtpTrackingText);
                             }
 
@@ -389,6 +411,9 @@ namespace SIPSorcery.Net
 
                                 if (frame.FramePayload != null)
                                 {
+                                    _lastFrameSize = frame.FramePayload.Length;
+                                    _framesSinceLastCalc++;
+
                                     // The frame is ready for handing over to the UI.
                                     byte[] imageBytes = frame.FramePayload;
 
@@ -405,7 +430,14 @@ namespace SIPSorcery.Net
 
                                     if (OnFrameReady != null)
                                     {
-                                        OnFrameReady(this, frame);
+                                        try
+                                        {
+                                            OnFrameReady(this, frame);
+                                        }
+                                        catch(Exception frameReadyExcp)
+                                        {
+                                            logger.Error("Exception RTSPClient.ProcessRTPPackets OnFrameReady. " + frameReadyExcp);
+                                        }
                                     }
                                 }
                             }
@@ -436,6 +468,8 @@ namespace SIPSorcery.Net
         {
             try
             {
+                Thread.CurrentThread.Name = "rtspclient-keepalive";
+
                 // Set the initial pause as half the keep-alive interval.
                 Thread.Sleep(RTP_KEEP_ALIVE_INTERVAL * 500);
 

@@ -187,6 +187,7 @@ namespace SIPSorcery.Net
                     // The potential ports have been found now try and use them.
                     _rtpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                     _rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
+
                     //_rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
                     //_rtpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.DontRoute, 1);
                     _rtpSocket.Bind(new IPEndPoint(IPAddress.Any, _rtpPort));
@@ -278,6 +279,8 @@ namespace SIPSorcery.Net
         {
             try
             {
+                Thread.CurrentThread.Name = "rtspsess-rtprecv";
+
                 byte[] buffer = new byte[2048];
 
                 while (!_closed)
@@ -441,9 +444,6 @@ namespace SIPSorcery.Net
 
                     //System.Diagnostics.Debug.WriteLine("Sending " + jpegBytes.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ", image dimensions " + jpegWidth + " x " + jpegHeight + ".");
 
-                    //Stopwatch sw = new Stopwatch();
-                    //sw.Start();
-
                     for (int index = 0; index * RTP_MAX_PAYLOAD < jpegBytes.Length; index++)
                     {
                         uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
@@ -467,7 +467,17 @@ namespace SIPSorcery.Net
 
                         //System.Diagnostics.Debug.WriteLine(" offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ".");
 
+                        Stopwatch sw = new Stopwatch();
+                        sw.Start();
+
                         _rtpSocket.SendTo(rtpBytes, _remoteEndPoint);
+
+                        sw.Stop();
+
+                        if(sw.ElapsedMilliseconds > 15)
+                        {
+                            System.Diagnostics.Debug.WriteLine(" SendJpegFrame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
+                        }
                     }
 
                     //sw.Stop();
