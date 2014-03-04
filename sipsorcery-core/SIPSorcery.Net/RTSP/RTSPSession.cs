@@ -476,7 +476,7 @@ namespace SIPSorcery.Net
 
                         if(sw.ElapsedMilliseconds > 15)
                         {
-                            System.Diagnostics.Debug.WriteLine(" SendJpegFrame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
+                            logger.Warn(" SendJpegFrame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
                         }
                     }
 
@@ -525,6 +525,7 @@ namespace SIPSorcery.Net
 
                     for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
                     {
+                        uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
                         int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
 
                         RTPPacket rtpPacket = new RTPPacket(payloadLength + H264_RTP_HEADER_LENGTH);
@@ -558,7 +559,17 @@ namespace SIPSorcery.Net
 
                         //System.Diagnostics.Debug.WriteLine(" offset " + (index * RTP_MAX_PAYLOAD) + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header .MarkerBit + ".");
 
+                        Stopwatch sw = new Stopwatch();
+                        sw.Start();
+
                         _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
+
+                        sw.Stop();
+
+                        if (sw.ElapsedMilliseconds > 15)
+                        {
+                            logger.Warn(" SendH264Frame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
+                        }
                     }
                 }
             }
