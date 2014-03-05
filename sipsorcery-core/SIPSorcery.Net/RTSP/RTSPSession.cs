@@ -53,8 +53,8 @@ namespace SIPSorcery.Net
         private const int MEDIA_PORT_START = 30000;             // Arbitrary port number to start allocating RTP and control ports from.
         private const int MEDIA_PORT_END = 40000;               // Arbitrary port number that RTP and control ports won't be allocated above.
         private const int RTP_PACKETS_MAX_QUEUE_LENGTH = 100;   // The maximum number of RTP packets that will be queued.
-        private const int RTP_RECEIVE_BUFFER_SIZE = 10000000;
-        private const int RTP_SEND_BUFFER_SIZE = 10000000;
+        private const int RTP_RECEIVE_BUFFER_SIZE = 100000000;
+        private const int RTP_SEND_BUFFER_SIZE = 100000000;
 
         private static DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
         private static DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -187,9 +187,8 @@ namespace SIPSorcery.Net
                     // The potential ports have been found now try and use them.
                     _rtpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                     _rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
-
-                    //_rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
-                    //_rtpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.DontRoute, 1);
+                    _rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+                    
                     _rtpSocket.Bind(new IPEndPoint(IPAddress.Any, _rtpPort));
 
                     _controlSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
