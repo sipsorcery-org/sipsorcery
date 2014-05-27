@@ -265,5 +265,23 @@ namespace SIPSorcery.SIP.App
         {
             throw new NotImplementedException("SIPTransferServerUserAgent SetDialPlanContextID");
         }
+
+        /// <summary>
+        /// Fired when a transfer is pending and the call leg that is going to be bridged hangs up before the transfer completes.
+        /// </summary>
+        public void PendingLegHungup()
+        {
+            try
+            {
+                if (CallCancelled != null)
+                {
+                    CallCancelled(this);
+                }
+            }
+            catch(Exception excp)
+            {
+                logger.Error("Exception PendingLegHungup. " + excp);
+            }
+        }
     }
 }

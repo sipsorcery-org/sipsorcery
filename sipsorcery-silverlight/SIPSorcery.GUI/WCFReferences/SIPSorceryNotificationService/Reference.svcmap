@@ -23,12 +23,12 @@
     <MetadataSource Address="http://localhost:8080/notificationspull.svc" Protocol="http" SourceId="1" />
   </MetadataSources>
   <Metadata>
-    <MetadataFile FileName="notificationspull.disco" MetadataType="Disco" ID="62157edf-7d7e-4e53-aeaa-01236c6ee540" SourceId="1" SourceUrl="http://suzannes-pc:8080/notificationspull.svc?disco" />
-    <MetadataFile FileName="notificationspull.wsdl" MetadataType="Wsdl" ID="28daff56-e8b6-435c-b511-b73199653f3c" SourceId="1" SourceUrl="http://suzannes-pc:8080/notificationspull.svc?wsdl=wsdl0" />
-    <MetadataFile FileName="SIPNotifierService11.wsdl" MetadataType="Wsdl" ID="b9c4cbaf-4400-43e0-8e4b-b83f01d2acb1" SourceId="1" SourceUrl="http://suzannes-pc:8080/notificationspull.svc?wsdl" />
-    <MetadataFile FileName="notificationspull.xsd" MetadataType="Schema" ID="7e7d668c-837d-4fb7-96e4-692ddab876a9" SourceId="1" SourceUrl="http://suzannes-pc:8080/notificationspull.svc?xsd=xsd2" />
-    <MetadataFile FileName="notificationspull1.xsd" MetadataType="Schema" ID="f7f85b7f-c2b1-434d-be3b-9dd62c11afc5" SourceId="1" SourceUrl="http://suzannes-pc:8080/notificationspull.svc?xsd=xsd1" />
-    <MetadataFile FileName="notificationspull2.xsd" MetadataType="Schema" ID="b9104eeb-4392-4ad6-b3a1-04724dae669a" SourceId="1" SourceUrl="http://suzannes-pc:8080/notificationspull.svc?xsd=xsd0" />
+    <MetadataFile FileName="notificationspull31.xsd" MetadataType="Schema" ID="fb3e0295-69c2-4a54-9b20-7236dcf6766a" SourceId="1" SourceUrl="http://owner-pc:8080/notificationspull.svc?xsd=xsd2" />
+    <MetadataFile FileName="notificationspull11.disco" MetadataType="Disco" ID="df7ede9a-eb52-4c2c-a866-f0ff416e904c" SourceId="1" SourceUrl="http://owner-pc:8080/notificationspull.svc?disco" />
+    <MetadataFile FileName="notificationspull11.wsdl" MetadataType="Wsdl" ID="f6457b0c-c9d5-4525-b93b-63c860845cdd" SourceId="1" SourceUrl="http://owner-pc:8080/notificationspull.svc?wsdl=wsdl0" />
+    <MetadataFile FileName="notificationspull32.xsd" MetadataType="Schema" ID="7bb7d0c1-3d8e-4356-9566-95cf4a9d8f53" SourceId="1" SourceUrl="http://owner-pc:8080/notificationspull.svc?xsd=xsd1" />
+    <MetadataFile FileName="notificationspull33.xsd" MetadataType="Schema" ID="de7f71a1-232d-49c9-b897-5595094d3de3" SourceId="1" SourceUrl="http://owner-pc:8080/notificationspull.svc?xsd=xsd0" />
+    <MetadataFile FileName="SIPNotifierService2.wsdl" MetadataType="Wsdl" ID="4b33d60b-f294-4190-a87b-dd547470dc41" SourceId="1" SourceUrl="http://owner-pc:8080/notificationspull.svc?wsdl" />
   </Metadata>
   <Extensions>
     <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />

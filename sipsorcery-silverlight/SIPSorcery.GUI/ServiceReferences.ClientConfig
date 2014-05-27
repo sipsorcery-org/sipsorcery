@@ -48,7 +48,7 @@
                 binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_IProvisioningService"
                 contract="SIPSorceryProvisioningClient.IProvisioningService"
                 name="BasicHttpBinding_IProvisioningService" />
-            <endpoint address="http://suzannes-pc:8080/notificationspull.svc"
+            <endpoint address="http://owner-pc:8080/notificationspull.svc"
                 binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_INotifications"
                 contract="SIPSorceryNotificationService.INotifications" name="BasicHttpBinding_INotifications" />
         </client>

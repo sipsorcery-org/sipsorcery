@@ -94,7 +94,7 @@ namespace SIPSorcery
                 m_riaContext.SIPDialogues.Clear();
                 var query = m_riaContext.GetSIPDialoguesQuery().OrderBy(x => x.Inserted).Skip(offset).Take(count);
                 query.IncludeTotalCount = true;
-                m_riaContext.Load(query, LoadBehavior.RefreshCurrent, GetSIPCallsComplete, null);
+                m_riaContext.Load<SIPDialogue>(query, LoadBehavior.RefreshCurrent, GetSIPCallsComplete, null);
             }
             else
             {
@@ -156,7 +156,7 @@ namespace SIPSorcery
                 m_riaContext.CDRs.Clear();
                 var query = m_riaContext.GetCDRsQuery().Where(x => x.AnsweredStatus != 401 && x.AnsweredStatus != 407).OrderByDescending(x => x.Created).Skip(offset).Take(count);
                 query.IncludeTotalCount = true;
-                m_riaContext.Load(query, LoadBehavior.RefreshCurrent, GetCDRsComplete, null);
+                m_riaContext.Load<CDR>(query, LoadBehavior.RefreshCurrent, GetCDRsComplete, null);
             }
             else
             {

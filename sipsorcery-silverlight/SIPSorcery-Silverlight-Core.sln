@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Net", "SIPSorcery.Net\SIPSorcery.Net.csproj", "{B9A3E915-302F-4433-8696-85368A5496B4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Persistence", "SIPSorcery.Persistence\SIPSorcery.Persistence.csproj", "{6ED5020C-A823-4EA6-B01C-C505CE80E970}"

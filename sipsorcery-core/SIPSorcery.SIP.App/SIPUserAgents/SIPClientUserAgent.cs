@@ -619,8 +619,9 @@ namespace SIPSorcery.SIP.App
                                     //    Direction = m_serverTransaction.CDR.CallDirection.ToString(),
                                     //    DialPlanContextID = m_sipCallDescriptor.DialPlanContextID.ToString()
                                     //};
-
+#if !SILVERLIGHT
                                     m_customerAccountDataLayer.UpdateRealTimeCallControlCDRID(originalCallTransaction.CDR.CDRId.ToString(), m_serverTransaction.CDR);
+#endif
 
                                     //m_serverTransaction.CDR.AccountCode = AccountCode;
                                     //m_serverTransaction.CDR.Rate = Rate;

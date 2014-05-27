@@ -78,6 +78,8 @@ namespace SIPSorcery.Servers
 
         private Dictionary<string, string> m_inDialogueTransactions = new Dictionary<string, string>();     // <Forwarded transaction id, Origin transaction id>.
 
+        public event Action<SIPDialogue> OnCallHungup;
+
         public static IPAddress PublicIPAddress;
 
         public SIPDialogueManager(
@@ -413,11 +415,21 @@ namespace SIPSorcery.Servers
                         if (orphanedDialogue != null)
                         {
                             HangupDialogue(orphanedDialogue, m_remoteHangupCause, true);
+
+                            if (OnCallHungup != null)
+                            {
+                                OnCallHungup(orphanedDialogue);
+                            }
                         }
                     }
                     else
                     {
                         logger.Warn("No bridge could be found for hungup call.");
+                    }
+
+                    if (OnCallHungup != null)
+                    {
+                        OnCallHungup(sipDialogue);
                     }
                 }
             }
@@ -454,6 +466,11 @@ namespace SIPSorcery.Servers
                 if (sendBye)
                 {
                     dialogue.Hangup(m_sipTransport, m_outboundProxy);
+
+                    if (OnCallHungup != null)
+                    {
+                        OnCallHungup(dialogue);
+                    }
                 }
 
                 m_sipDialoguePersistor.Delete(new SIPDialogueAsset(dialogue));

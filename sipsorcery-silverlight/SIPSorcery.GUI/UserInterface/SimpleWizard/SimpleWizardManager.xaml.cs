@@ -140,7 +140,7 @@ namespace SIPSorcery
 
                 var routesQuery = m_riaContext.GetSimpleWizardRulesQuery().Where(x => x.DialPlanID == m_dialPlan.ID && x.Direction == ruleDirection.ToString()).OrderBy(x => x.Priority).Skip(offset).Take(count);
                 routesQuery.IncludeTotalCount = true;
-                m_riaContext.Load(routesQuery, LoadBehavior.RefreshCurrent, RulesLoaded, panel);
+                m_riaContext.Load<SimpleWizardRule>(routesQuery, LoadBehavior.RefreshCurrent, RulesLoaded, panel);
             }
         }
 

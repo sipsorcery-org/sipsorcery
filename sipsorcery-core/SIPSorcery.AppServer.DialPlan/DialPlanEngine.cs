@@ -84,7 +84,7 @@ namespace SIPSorcery.AppServer.DialPlan
         public const string SCRIPT_CRMOBJECT_NAME = "crm";            // Access using $crm from the Ruby script.
         public const string SCRIPT_LOOKUPOBJECT_NAME = "lookup";      // Access using $lookup from the Ruby script.
         public const int ABSOLUTEMAX_SCRIPTPROCESSING_SECONDS = 300;  // The absolute maximum amount of seconds a script thread will be allowed to execute for.
-        public const int MAX_ALLOWED_SCRIPTSCOPES = 20;               // The maximum allowed number of scopes one if which is required for each simultaneously executing script.
+        public const int MAX_ALLOWED_SCRIPTSCOPES = 50;               // The maximum allowed number of scopes one if which is required for each simultaneously executing script.
         private const string RUBY_COMMON_COPY_EXTEN = ".tmp";
         private const int RUBY_COMMON_RELOAD_INTERVAL = 2;
 

@@ -81,13 +81,13 @@
           <Property Name="inprogressstatus" Type="int" />
           <Property Name="inprogressreason" Type="varchar" MaxLength="512" />
           <Property Name="ringduration" Type="int" />
+          <Property Name="answeredtime" Type="varchar" MaxLength="33" />
           <Property Name="answeredstatus" Type="int" />
           <Property Name="answeredreason" Type="varchar" MaxLength="512" />
           <Property Name="duration" Type="int" />
           <Property Name="hunguptime" Type="varchar" MaxLength="33" />
           <Property Name="hungupreason" Type="varchar" MaxLength="512" />
           <Property Name="answeredat" Type="datetime" />
-          <Property Name="answeredtime" Type="varchar" MaxLength="33" />
           <Property Name="dialplancontextid" Type="varchar" MaxLength="36" />
         </EntityType>
         <EntityType Name="customeraccount">
@@ -237,8 +237,8 @@
           <Property Name="isswitchboardenabled" Type="bit" Nullable="false" />
           <Property Name="dontmangleenabled" Type="bit" Nullable="false" />
           <Property Name="avatarurl" Type="varchar" MaxLength="1024" />
-          <Property Name="description" Type="varchar" MaxLength="1024" />
           <Property Name="accountcode" Type="varchar" MaxLength="36" />
+          <Property Name="description" Type="varchar" MaxLength="1024" />
         </EntityType>
         <EntityType Name="sipdialogues">
           <Key>
@@ -1491,7 +1491,7 @@
     </Options>
     <!-- Diagram content (shape and connector positions) -->
     <Diagrams>
-      <Diagram Name="SIPEntities" ZoomLevel="88">
+      <Diagram Name="SIPEntities" ZoomLevel="86">
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanLookup" Width="1.875" PointX="11.5" PointY="1" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanRoute" Width="1.875" PointX="18.375" PointY="0.75" Height="2.5571907552083331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialplanProvider" Width="2.25" PointX="11.625" PointY="3.875" Height="2.5571907552083317" />

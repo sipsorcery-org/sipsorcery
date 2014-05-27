@@ -423,7 +423,7 @@ create table WebCallback
 -- insert into sipdomains values ('5f971a0f-7876-4073-abe4-760a59bab940', 'sipsorcery.com', 'local;sipsorcery;sip.sipsorcery.com;sipsorcery.com:5060;sip.sipsorcery.com:5060;10.1.1.2;10.1.1.2:5060', null, '2010-02-09T13:01:21.3540000+00:00');
 -- insert into sipdomains values ('9822C7A7-5358-42DD-8905-DC7ABAE3EC3A', 'demo.sipsorcery.com', 'local;demo.sipsorcery.com:5060;199.230.56.92;199.230.56.92:5060', null, '2010-10-15T00:00:00.0000000+00:00');
 -- insert into sipdomains values ('9822C7A7-5358-42DD-8905-DC7ABAE3EC3A', 'sipsorcery.com', 'local;10.1.1.2;10.1.1.2:5060', null, '2010-10-15T00:00:00.0000000+00:00');
--- insert into customers (id, customerusername, customerpassword, emailaddress, adminid, maxexecutioncount, executioncount, emailaddressconfirmed, inserted, servicelevel) values ('AE246619-29ED-408C-A1C3-EA9E77C430A1', 'aaron', 'password', 'aaron@sipsorcery.com', '*', 5, 0, 1, '2010-10-15T00:00:00.0000000+00:00', 'Gold');
+-- insert into customers (id, customerusername, customerpassword, salt, emailaddress, adminid, maxexecutioncount, executioncount, emailaddressconfirmed, inserted, servicelevel) values ('AE246619-29ED-408C-A1C3-EA9E77C430A1', 'aaron', 'sqVNTkteh3nm06A3LQuFdjT3YGxi5xDv', '1388.r4R+dPdzniwUXdBmypuQWA==', 'aaron@sipsorcery.com', '*', 5, 0, 1, '2010-10-15T00:00:00.0000000+00:00', 'Gold');
 
 -- SIP Sorcery User Data DDL
 
@@ -438,9 +438,9 @@ create table dialplandata
 create index cdrs_created_index on cdr(created);
 create index cdrs_owner_index on cdr(owner);
 create index cdrs_inserted_index on cdr(inserted);
-create index cdrs_fromheader_index on cdr(fromheader);
+-- create index cdrs_fromheader_index on cdr(fromheader);
 create index providerbindings_nextregtime_index on sipproviderbindings(nextregistrationtime);
-create index regbindings_contact_index on sipregistrarbindings(contacturi);
+-- create index regbindings_contact_index on sipregistrarbindings(contacturi);
 create index customers_custid_index on customers(customerusername);
 create index regbindings_sipaccid_index on sipregistrarbindings(sipaccountid);
 

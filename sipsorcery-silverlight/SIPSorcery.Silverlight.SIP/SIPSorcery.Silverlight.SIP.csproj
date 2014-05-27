@@ -14,13 +14,13 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SIPSorcery.Silverlight.SIP</RootNamespace>
     <AssemblyName>SIPSorcery.Silverlight.SIP</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
     <SilverlightApplication>false</SilverlightApplication>
     <ValidateXaml>true</ValidateXaml>
     <ThrowErrorsInValidation>false</ThrowErrorsInValidation>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
-    <OldToolsVersion>3.5</OldToolsVersion>
+    <OldToolsVersion>4.0</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <TargetFrameworkIdentifier>Silverlight</TargetFrameworkIdentifier>

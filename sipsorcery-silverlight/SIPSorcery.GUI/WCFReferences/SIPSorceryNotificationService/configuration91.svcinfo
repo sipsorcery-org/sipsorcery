@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<SavedWcfConfigurationInformation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="9.1" CheckSum="ktYE0jcivThRaiwjPa+4XmhqjaM=">
+<SavedWcfConfigurationInformation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="9.1" CheckSum="TrFYNgfv9muSL2RJMVa4NqX4CK4=">
   <bindingConfigurations>
     <bindingConfiguration bindingType="basicHttpBinding" name="BasicHttpBinding_INotifications">
       <properties>
@@ -112,10 +112,10 @@
     </bindingConfiguration>
   </bindingConfigurations>
   <endpoints>
-    <endpoint name="BasicHttpBinding_INotifications" contract="SIPSorceryNotificationService.INotifications" bindingType="basicHttpBinding" address="http://suzannes-pc:8080/notificationspull.svc" bindingConfiguration="BasicHttpBinding_INotifications">
+    <endpoint name="BasicHttpBinding_INotifications" contract="SIPSorceryNotificationService.INotifications" bindingType="basicHttpBinding" address="http://owner-pc:8080/notificationspull.svc" bindingConfiguration="BasicHttpBinding_INotifications">
       <properties>
         <property path="/address" isComplexType="false" isExplicitlyDefined="true" clrType="System.Uri, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue>http://suzannes-pc:8080/notificationspull.svc</serializedValue>
+          <serializedValue>http://owner-pc:8080/notificationspull.svc</serializedValue>
         </property>
         <property path="/behaviorConfiguration" isComplexType="false" isExplicitlyDefined="false" clrType="System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue />

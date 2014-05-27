@@ -164,7 +164,7 @@ namespace SIPSorcery
 
                 var enumsQuery = m_riaContext.GetSIPDialplanLookupsQuery().Where(x => x.DialPlanID == m_dialPlan.ID && x.LookupType == (int)SIPDialPlanLookupTypes.ENUM).OrderBy(x => x.LookupKey).Skip(offset).Take(count);
                 enumsQuery.IncludeTotalCount = true;
-                m_riaContext.Load(enumsQuery, LoadBehavior.RefreshCurrent, ENUMsLoaded, null);
+                m_riaContext.Load<SIPDialplanLookup>(enumsQuery, LoadBehavior.RefreshCurrent, ENUMsLoaded, null);
             }
         }
 
@@ -242,9 +242,9 @@ namespace SIPSorcery
                 DisableSelectionChanges();
                 m_riaContext.SIPDialplanLookups.Clear();
 
-                var speedDialsQuery = m_riaContext.GetSIPDialplanLookupsQuery().Where(x => x.DialPlanID == m_dialPlan.ID && x.LookupType == (int)SIPDialPlanLookupTypes.SpeedDial).OrderBy(x => x.LookupKey).Skip(offset).Take(count);
+               var speedDialsQuery = m_riaContext.GetSIPDialplanLookupsQuery().Where(x => x.DialPlanID == m_dialPlan.ID && x.LookupType == (int)SIPDialPlanLookupTypes.SpeedDial).OrderBy(x => x.LookupKey).Skip(offset).Take(count);
                 speedDialsQuery.IncludeTotalCount = true;
-                m_riaContext.Load(speedDialsQuery, LoadBehavior.RefreshCurrent, SpeedDialsLoaded, null);
+                m_riaContext.Load<SIPDialplanLookup>(speedDialsQuery, LoadBehavior.RefreshCurrent, SpeedDialsLoaded, null);
             }
         }
 
@@ -324,7 +324,7 @@ namespace SIPSorcery
 
                 var cnamsQuery = m_riaContext.GetSIPDialplanLookupsQuery().Where(x => x.DialPlanID == m_dialPlan.ID && x.LookupType == (int)SIPDialPlanLookupTypes.CNAM).OrderBy(x => x.LookupKey).Skip(offset).Take(count);
                 cnamsQuery.IncludeTotalCount = true;
-                m_riaContext.Load(cnamsQuery, LoadBehavior.RefreshCurrent, CNAMsLoaded, null);
+                m_riaContext.Load<SIPDialplanLookup>(cnamsQuery, LoadBehavior.RefreshCurrent, CNAMsLoaded, null);
             }
         }
 
@@ -403,7 +403,7 @@ namespace SIPSorcery
 
                 var providersQuery = m_riaContext.GetSIPDialplanProvidersQuery().Where(x => x.DialPlanID == m_dialPlan.ID).OrderBy(x => x.ProviderName).Skip(offset).Take(count);
                 providersQuery.IncludeTotalCount = true;
-                m_riaContext.Load(providersQuery, LoadBehavior.RefreshCurrent, DialPlanProvidersLoaded, null);
+                m_riaContext.Load<SIPDialplanProvider>(providersQuery, LoadBehavior.RefreshCurrent, DialPlanProvidersLoaded, null);
             }
         }
 
@@ -497,7 +497,7 @@ namespace SIPSorcery
 
                 var routesQuery = m_riaContext.GetSIPDialplanRoutesQuery().Where(x => x.DialPlanID == m_dialPlan.ID).OrderBy(x => x.RouteName).Skip(offset).Take(count);
                 routesQuery.IncludeTotalCount = true;
-                m_riaContext.Load(routesQuery, LoadBehavior.RefreshCurrent, RoutesLoaded, null);
+                m_riaContext.Load<SIPDialplanRoute>(routesQuery, LoadBehavior.RefreshCurrent, RoutesLoaded, null);
             }
         }
 
@@ -590,7 +590,7 @@ namespace SIPSorcery
                 m_optionsDataForm.ItemsSource = null;
                 m_riaContext.SIPDialplanOptions.Clear();
 
-                m_riaContext.Load(m_riaContext.GetSIPDialplanOptionsQuery().Where(x => x.DialPlanID == m_dialPlan.ID), LoadBehavior.RefreshCurrent, OptionsLoaded, null);
+                m_riaContext.Load<SIPDialplanOption>(m_riaContext.GetSIPDialplanOptionsQuery().Where(x => x.DialPlanID == m_dialPlan.ID), LoadBehavior.RefreshCurrent, OptionsLoaded, null);
             }
         }
 

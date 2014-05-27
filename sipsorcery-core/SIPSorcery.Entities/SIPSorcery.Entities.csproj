@@ -233,7 +233,10 @@
       <Name>SIPSorcery.Sys</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="App.Config" />
+    <None Include="SIPSorceryEntities1.datasource" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>

@@ -5,8 +5,8 @@ using System.Text;
 
 namespace SIPSorcery.Entities
 {
-    public partial class SIPDialPlanLookup
+    public partial class SIPDialplanLookup
     {
-        
+
     }
 }

@@ -237,7 +237,7 @@ namespace SIPSorcery
 
                 if (sendServerLogout)
                 {
-                    m_riaContext.Load(m_riaContext.LogoutQuery(), LoadBehavior.RefreshCurrent, LogoutComplete, null);
+                    m_riaContext.Load<User>(m_riaContext.LogoutQuery(), LoadBehavior.RefreshCurrent, LogoutComplete, null);
                 }
 
                 m_userPage = null;

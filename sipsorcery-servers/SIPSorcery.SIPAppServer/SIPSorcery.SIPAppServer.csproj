@@ -98,9 +98,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Web.Services.dll</HintPath>
     </Reference>
-    <Reference Include="SIPSorcery.XMPP">
-      <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.XMPP.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>

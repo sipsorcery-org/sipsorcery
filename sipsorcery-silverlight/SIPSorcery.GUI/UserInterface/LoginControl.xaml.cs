@@ -65,7 +65,7 @@ namespace SIPSorcery
                 WriteLoginMessage("Attempting login...");
 
                 var query = m_riaContext.LoginQuery(username, password, true, impersonateUsername);
-                m_riaContext.Load(query, LoadBehavior.RefreshCurrent, LoginComplete, null);
+                m_riaContext.Load<User>(query, LoadBehavior.RefreshCurrent, LoginComplete, null);
             }
         }
 

@@ -75,6 +75,7 @@
     <Content Include="ClientBin\Debug\sipsorcery.xap" />
     <Content Include="ClientBin\sipsorcery.xap" />
     <Content Include="default.html" />
+    <Content Include="isalive.htm" />
     <Content Include="NotificationsPull.svc" />
     <Content Include="Silverlight.js" />
     <Content Include="Web.config">
@@ -127,7 +128,7 @@
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>2408</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>https://localhost/sipsorcery-silverlight</IISUrl>
+          <IISUrl>http://localhost/SIPSorcery.TestWeb</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>

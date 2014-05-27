@@ -38,6 +38,7 @@ using System.Net.Sockets;
 using System.Security;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using SIPSorcery.Net;
 using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
@@ -49,9 +50,10 @@ namespace SIPSorcery.AppServer.DialPlan
 {
     public class CallbackApp
     {
-        private const int MAXCALLBACK_DELAY_SECONDS = 15;       // The maximum seconds a callback method can be delayed for.
-        private const int MAXCALLBACK_RINGTIME_SECONDS = 30;   // Set ring time for calls being created by dial plan. There is nothing that can cancel the call.
-        
+        private const int MAXCALLBACK_DELAY_SECONDS = 15;           // The maximum seconds a callback method can be delayed for.
+        private const int MAXCALLBACK_RINGTIME_SECONDS = 30;        // Set ring time for calls being created by dial plan. There is nothing that can cancel the call.
+        private const int CHECK_FIRST_LEG_FOR_HANGUP_PERIOD = 1000; // The period to check whether the first call leg has been hungup while the second call leg is ringing.
+
         private string CRLF = SIPConstants.CRLF;
         //private static int m_maxRingTime = SIPTimings.MAX_RING_TIME;
 
@@ -102,6 +104,9 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <returns>The result of the call.</returns>
         public void Callback(string dest1, string dest2, int delaySeconds, int ringTimeoutLeg1, int ringTimeoutLeg2, string customHeadersCallLeg1, string customHeadersCallLeg2)
         {
+            var ts = new CancellationTokenSource();
+            CancellationToken ct = ts.Token;
+
             try
             {
                 if (delaySeconds > 0)
@@ -116,7 +121,8 @@ namespace SIPSorcery.AppServer.DialPlan
                 SIPEndPoint defaultUDPEP = m_sipTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp);
 
                 SIPRequest firstLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.GetIPEndPoint(), null);
-                m_firstLegDialogue = Dial(dest1, ringTimeoutLeg1, 0, firstLegDummyInviteRequest, SIPCallDescriptor.ParseCustomHeaders(customHeadersCallLeg1));
+                ForkCall firstLegCall = new ForkCall(m_sipTransport, Log_External, m_callManager.QueueNewCall, null, m_username, m_adminMemberId, m_outboundProxy, m_callManager, null);
+                m_firstLegDialogue = Dial(firstLegCall, dest1, ringTimeoutLeg1, 0, firstLegDummyInviteRequest, SIPCallDescriptor.ParseCustomHeaders(customHeadersCallLeg1));
                 if (m_firstLegDialogue == null)
                 {
                     Log("The first call leg to " + dest1 + " was unsuccessful.");
@@ -134,7 +140,44 @@ namespace SIPSorcery.AppServer.DialPlan
                 Log("Callback app commencing second leg to " + dest2 + ".");
 
                 SIPRequest secondLegDummyInviteRequest = GetCallbackInviteRequest(defaultUDPEP.GetIPEndPoint(), m_firstLegDialogue.RemoteSDP);
-                SIPDialogue secondLegDialogue = Dial(dest2, ringTimeoutLeg2, 0, secondLegDummyInviteRequest, SIPCallDescriptor.ParseCustomHeaders(customHeadersCallLeg2));
+                ForkCall secondLegCall = new ForkCall(m_sipTransport, Log_External, m_callManager.QueueNewCall, null, m_username, m_adminMemberId, m_outboundProxy, m_callManager, null);
+                
+                Task.Factory.StartNew(() =>
+                {
+                    while (true)
+                    {
+                        Thread.Sleep(CHECK_FIRST_LEG_FOR_HANGUP_PERIOD);
+
+                        Console.WriteLine("Checking if first call leg is still up...");
+
+                        if (ct.IsCancellationRequested)
+                        {
+                            Console.WriteLine("Checking first call leg task was cancelled.");
+                            break;
+                        }
+                        else
+                        {
+                            // Check that the first call leg hasn't been hung up.
+                            var dialog = m_sipDialoguePersistor.Get(m_firstLegDialogue.Id);
+                            if (dialog == null)
+                            {
+                                Console.WriteLine("First call leg has been hungup.");
+
+                                // The first call leg has been hungup while waiting for the second call.
+                                Log("The first call leg was hungup while the second call leg was waiting for an answer.");
+                                secondLegCall.CancelNotRequiredCallLegs(CallCancelCause.ClientCancelled);
+                                break;
+                            }
+                        }
+                    }
+
+                    Console.WriteLine("Checking first call leg task finished...");
+                }, ct);
+
+                SIPDialogue secondLegDialogue = Dial(secondLegCall, dest2, ringTimeoutLeg2, 0, secondLegDummyInviteRequest, SIPCallDescriptor.ParseCustomHeaders(customHeadersCallLeg2));
+
+                ts.Cancel();
+
                 if (secondLegDialogue == null)
                 {
                     Log("The second call leg to " + dest2 + " was unsuccessful.");
@@ -178,9 +221,18 @@ namespace SIPSorcery.AppServer.DialPlan
                 logger.Error("Exception CallbackApp. " + excp);
                 Log("Exception in Callback. " + excp);
             }
+            finally
+            {
+                if (!ts.IsCancellationRequested)
+                {
+                    ts.Cancel();
+                }
+            }
         }
 
+
         private SIPDialogue Dial(
+           ForkCall call,
           string data,
           int ringTimeout,
           int answeredCallLimit,
@@ -189,8 +241,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
             SIPDialogue answeredDialogue = null;
             ManualResetEvent waitForCallCompleted = new ManualResetEvent(false);
-
-            ForkCall call = new ForkCall(m_sipTransport, Log_External, m_callManager.QueueNewCall, null, m_username, m_adminMemberId, m_outboundProxy, m_callManager, null);
+            
             //call.CallProgress += (s, r, h, t, b) => { Log("Progress response of " + s + " received on CallBack Dial" + "."); };
             call.CallProgress += CallProgress;
             call.CallFailed += (s, r, h) => { waitForCallCompleted.Set(); };

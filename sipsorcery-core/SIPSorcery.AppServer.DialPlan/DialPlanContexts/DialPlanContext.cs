@@ -232,6 +232,7 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 if (m_sipServerUserAgent != null && !m_isAnswered)
                 {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call failed with a failure status of " + failureStatus + " and " + reasonPhrase + ".", Owner));
                     m_isAnswered = true;
                     if ((int)failureStatus >= 300 && (int)failureStatus <= 399)
                     {

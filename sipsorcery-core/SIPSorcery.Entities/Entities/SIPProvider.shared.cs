@@ -18,7 +18,7 @@ namespace SIPSorcery.Entities
         public const char CUSTOM_HEADERS_SEPARATOR = '|';
         public const int REGISTER_DEFAULT_EXPIRY = 3600;
         public const int REGISTER_MINIMUM_EXPIRY = 60;            // The minimum interval a registration will be accepted for. Anything less than this interval will use this minimum value.
-        public const int REGISTER_MAXIMUM_EXPIRY = 3600;
+        public const int REGISTER_MAXIMUM_EXPIRY = 86400;
         public const string DEFAULT_GV_CALLBACK_PATTERN = ".*";
 
         public static string ProhibitedServerPatterns;            // If set will be used as a regex pattern to prevent certain strings being used in the Provider Server and RegisterServer fields.

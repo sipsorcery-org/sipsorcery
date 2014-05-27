@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(MSBuildToolsVersion)' == '3.5'">
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
   </PropertyGroup>
@@ -14,7 +14,7 @@
     <ProjectGuid>{0E3DF5C2-6EF0-47D9-8004-BD073B12A9D2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <NoStdLib>true</NoStdLib>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
     <ProjectTypeGuids>{A1591282-1198-4647-A2B1-27E5FF5F6F3B};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <StartPageUrl>Default.html</StartPageUrl>
     <XapOutputs>true</XapOutputs>
@@ -30,7 +30,7 @@
     <ThrowErrorsInValidation>false</ThrowErrorsInValidation>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
-    <OldToolsVersion>3.5</OldToolsVersion>
+    <OldToolsVersion>4.0</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -78,11 +78,9 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="WCFReferences\SIPSorceryNotificationService\SIPNotifierService2.wsdl" />
     <Reference Include="mscorlib" />
-    <Reference Include="SIPSorcery.Entities.Client, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Entities.Client.dll</HintPath>
-    </Reference>
+    <Reference Include="SIPSorcery.Entities.Client, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL" />
     <Reference Include="SIPSorcery.Net, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Build\SIPSorcery.Net.dll</HintPath>
@@ -107,7 +105,7 @@
       <HintPath>..\Build\SIPSorcery.Sys.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations, Version=2.0.5.0, Culture=neutral, PublicKeyToken=ddd0da4d3e678217, processorArchitecture=MSIL" />
+    <Reference Include="System.ComponentModel.DataAnnotations, Version=5.0.5.0, Culture=neutral, PublicKeyToken=ddd0da4d3e678217, processorArchitecture=MSIL" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net" />
     <Reference Include="System.Runtime.Serialization" />
@@ -132,9 +130,13 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Page Include="UserInterface\About.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -142,8 +144,12 @@
     <Page Include="UserInterface\AssetManagers\DialPlanAddControl.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\DialPlanUpdateControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -152,8 +158,12 @@
     <Page Include="UserInterface\AssetManagers\DialPlanWizard.xaml">
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\SIPProviderDetailsControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -164,8 +174,12 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UIControls\AssetListMenuBar.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -176,14 +190,20 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\CallManager\SIPCallManager.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:MarkupCompilePass1</Generator>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\CreateAccountControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -194,8 +214,12 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\LoginControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -206,12 +230,18 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\NewAccountInviteControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\Page.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -222,8 +252,12 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\AssetManagers\SIPAccountManager.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -232,16 +266,24 @@
     <Page Include="UserInterface\SimpleWizard\SimpleWizardInRuleControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\SimpleWizard\SimpleWizardManager.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\SimpleWizard\SimpleWizardOutRuleControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserInterface\UserPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -337,25 +379,24 @@
     <WCFMetadata Include="WCFReferences\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull.disco" />
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull11.disco" />
     <Resource Include="Images\wizard-logo.png" />
     <Resource Include="Images\small_logo.png" />
-    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull.wsdl" />
-    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull.xsd">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull1.wsdl" />
-    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull2.xsd">
-      <SubType>Designer</SubType>
-    </None>
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull11.wsdl" />
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull3.xsd" />
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull31.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull32.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull33.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull4.xsd" />
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull5.xsd" />
     <None Include="WCFReferences\SIPSorceryNotificationService\SIPNotifierService1.wsdl" />
-    <None Include="WCFReferences\SIPSorceryNotificationService\SIPNotifierService11.wsdl" />
     <None Include="Properties\OutOfBrowserSettings.xml" />
     <Content Include="ServiceReferences.ClientConfig" />
     <None Include="WCFReferences\SIPSorceryNotificationService\notificationspull1.disco" />

@@ -102,6 +102,7 @@ namespace SIPSorcery.Servers
 
         private Dictionary<string, CallDispatcherProxy> m_dispatcherProxy = new Dictionary<string, CallDispatcherProxy>(); // [config name, proxy].
         private Dictionary<string, CallbackWaiter> m_waitingForCallbacks = new Dictionary<string, CallbackWaiter>();
+        private Dictionary<SIPDialogue, SIPTransferServerUserAgent> m_inProgressTransfers = new Dictionary<SIPDialogue, SIPTransferServerUserAgent>();
 
         public SIPCallManager(
             SIPTransport sipTransport,
@@ -140,6 +141,8 @@ namespace SIPSorcery.Servers
             m_monitorCalls = monitorCalls;
             m_pid = Process.GetCurrentProcess().Id;
             m_dailyCallLimit = dailyCallLimit;
+
+            m_sipDialogueManager.OnCallHungup += OnCallHungup;
         }
 
         public void Start()
@@ -642,6 +645,7 @@ namespace SIPSorcery.Servers
                             {
                                 SIPDialogue oppositeDialogue = m_sipDialogueManager.GetOppositeDialogue(replacesDialogue);
                                 uas = new SIPTransferServerUserAgent(Log_External, m_sipDialogueManager.DialogueTransfer, m_sipTransport, m_outboundProxy, replacesDialogue, oppositeDialogue, number, customer.CustomerUsername, customer.AdminId);
+                                m_inProgressTransfers.Add(oppositeDialogue, uas as SIPTransferServerUserAgent);
                             }
 
                             dialPlan.AuthorisedApps = customer.AuthorisedApps + ";" + dialPlan.AuthorisedApps;
@@ -688,7 +692,7 @@ namespace SIPSorcery.Servers
         }
 
         /// <summary>
-        /// Processes the callback action that is initiated by teh callmanager service. The callback method is typically initiated from
+        /// Processes the callback action that is initiated by the callmanager service. The callback method is typically initiated from
         /// a link on an authenticated web page and requires the user to be authenticated.
         /// </summary>
         /// <param name="username">The authenticated username of the user making the callback request.</param>
@@ -1172,6 +1176,25 @@ namespace SIPSorcery.Servers
             catch (Exception excp)
             {
                 logger.Error("Exception InitialiseDispatcherProxy. " + excp.Message);
+            }
+        }
+
+        private void OnCallHungup(SIPDialogue sipDialogue)
+        {
+            try
+            {
+                var transferEntry = m_inProgressTransfers.Where(x => x.Key.CallId == sipDialogue.CallId).FirstOrDefault();
+
+                if(transferEntry.Key != null)
+                {
+                    logger.Debug("A matching in progress transfer was found for a hungup dialogue.");
+                    transferEntry.Value.PendingLegHungup();
+                    m_inProgressTransfers.Remove(transferEntry.Key);
+                }
+            }
+            catch(Exception excp)
+            {
+                logger.Error("Exception SIPCallManager.OnCallHungup. " + excp);
             }
         }
     }
