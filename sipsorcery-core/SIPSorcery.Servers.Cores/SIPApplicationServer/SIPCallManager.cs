@@ -428,7 +428,7 @@ namespace SIPSorcery.Servers
                     SIPDialPlan dispatcherDialPlan = new SIPDialPlan(null, null, null, pseudoScript, SIPDialPlanScriptTypesEnum.Ruby);
                     dispatcherDialPlan.Id = Guid.Empty; // Prevents the increment and decrement on the execution counts.
                     DialPlanScriptContext scriptContext = new DialPlanScriptContext(
-                            null,
+                            Log_External,
                             m_sipTransport,
                             CreateDialogueBridge,
                             m_outboundProxy,
