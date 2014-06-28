@@ -184,7 +184,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\SIPSorcery.Entities\SIPSorcery.Entities.csproj">
       <Project>{8EB4E07E-76C8-445A-8252-5B392A9C12FB}</Project>
-      <Name>SIPSorcery.Entities %28SIPSorcery.Entities\SIPSorcery.Entities%29</Name>
+      <Name>SIPSorcery.Entities</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
       <Project>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</Project>
