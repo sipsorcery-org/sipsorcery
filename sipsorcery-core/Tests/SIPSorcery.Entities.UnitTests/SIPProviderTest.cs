@@ -46,20 +46,20 @@ namespace SIPSorcery.Entities.UnitTests
         ///<summary>
         ///Tests the metadata validation when a new SIP provider is valid.
         ///</summary>
-        [TestMethod()]
-        public void SIPProviderIsValidTest()
-        {
-            SIPProvider target = new SIPProvider()
-            {
-                Owner = "owner",
-                ProviderName = "test",
-                ProviderUsername = "user"
-            };
+        //[TestMethod()]
+        //public void SIPProviderIsValidTest()
+        //{
+        //    SIPProvider target = new SIPProvider()
+        //    {
+        //        Owner = "owner",
+        //        ProviderName = "test",
+        //        ProviderUsername = "user"
+        //    };
 
-            string validationResult = SIPProvider.Validate(target);
+        //    string validationResult = SIPProvider.Validate(target);
 
-            Assert.IsNull(validationResult);
-        }
+        //    Assert.IsNull(validationResult);
+        //}
 
         ///<summary>
         ///Tests the metadata validation when a new SIP provider is not given a name.

@@ -9,6 +9,7 @@ using SIPSorcery.CRM.SugarCRM;
 namespace SIPSorcery.CRM.UnitTests
 {
     [TestClass]
+    [Ignore] // Need password.
     public class SugarCRMUnitTest
     {
         private string m_username = "admin";

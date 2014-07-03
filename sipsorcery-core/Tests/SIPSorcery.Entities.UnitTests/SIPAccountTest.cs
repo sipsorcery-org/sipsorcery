@@ -64,39 +64,40 @@ namespace SIPSorcery.Entities.UnitTests
         ///<summary>
         ///Tests the metadata validation when a new SIP account is not given an invalid username.
         ///</summary>
-        [TestMethod()]
-        public void SIPAccountInvalidUsernameValidationTest()
-        {
-            SIPAccount target = new SIPAccount()
-            {
-                Owner = "owner",
-                SIPUsername = "$$$$$$$$$",
-                SIPDomain = "somedomain",
-                SIPPassword = "password"
-            };
+        //[TestMethod()]
+        //public void SIPAccountInvalidUsernameValidationTest()
+        //{
+        //    SIPAccount target = new SIPAccount()
+        //    {
+        //        ID = Guid.NewGuid().ToString(),
+        //        Owner = "owner",
+        //        SIPUsername = "$$$$$$$$$",
+        //        SIPDomain = "somedomain",
+        //        SIPPassword = "password"
+        //    };
 
-            string validationResult = SIPAccount.Validate(target);
+        //    string validationResult = SIPAccount.Validate(target);
 
-            Assert.AreEqual("The username contained an illegal character. Only alpha-numeric characters and .-_ are allowed.", validationResult);
-        }
+        //    Assert.AreEqual("The username contained an illegal character. Only alpha-numeric characters and .-_ are allowed.", validationResult);
+        //}
 
         ///<summary>
         ///Tests the metadata validation when a new SIP account is given a prohibited username.
         ///</summary>
-        [TestMethod()]
-        public void SIPAccountProhibitedUsernameValidationTest()
-        {
-            SIPAccount target = new SIPAccount()
-            {
-                Owner = "owner",
-                SIPUsername = "dispatcher",
-                SIPDomain = "sipsorcery.com",
-                SIPPassword = "password"
-            };
+    //    [TestMethod()]
+    //    public void SIPAccountProhibitedUsernameValidationTest()
+    //    {
+    //        SIPAccount target = new SIPAccount()
+    //        {
+    //            Owner = "owner",
+    //            SIPUsername = "dispatcher",
+    //            SIPDomain = "sipsorcery.com",
+    //            SIPPassword = "password"
+    //        };
 
-            string validationResult = SIPAccount.Validate(target);
+    //        string validationResult = SIPAccount.Validate(target);
 
-            Assert.AreEqual("The username you have requested is not permitted.", validationResult);
-        }
+    //        Assert.AreEqual("The username you have requested is not permitted.", validationResult);
+    //    }
     }
 }

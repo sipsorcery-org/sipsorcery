@@ -13,6 +13,7 @@ namespace SIPSorcery.Entities.UnitTests
     ///to contain all SIPEntitiesDomainServiceTest Unit Tests
     ///</summary>
     [TestClass()]
+    [Ignore]    // Template tests inserted by EF.
     public class SIPEntitiesDomainServiceTest
     {
         private static string m_testDatabaseFilename = "SIPEntitiesDomainServiceTest.mdb";

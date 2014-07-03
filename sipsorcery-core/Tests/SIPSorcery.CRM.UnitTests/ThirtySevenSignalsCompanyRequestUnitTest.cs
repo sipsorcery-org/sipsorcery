@@ -44,6 +44,7 @@ using SIPSorcery.CRM.ThirtySevenSignals;
 namespace SIPSorcery.CRM.UnitTests
 {
     [TestClass]
+    [Ignore] // Need authentication token.
     public class ThirtySevenSignalsCompanyRequestUnitTest
     {
         private string m_highriseURL = "https://x.highrisehq.com";

@@ -11,6 +11,7 @@ using log4net;
 namespace SIPSorcery.SIP.App.UnitTests
 {
     [TestClass]
+    [Ignore] // Only suitable to be run locally on developer machine.
     public class SIPDNSManagerUnitTest
     {
         public SIPDNSManagerUnitTest()
@@ -71,12 +72,12 @@ namespace SIPSorcery.SIP.App.UnitTests
         public void HostWithExplicitPortTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-            
+
             string host = "sip.blueface.ie:5060";
             int attempts = 0;
 
             SIPDNSLookupResult lookupResult = SIPDNSManager.ResolveSIPService(host);
-            
+
             while (lookupResult.Pending && attempts < 5)
             {
                 attempts++;
@@ -161,7 +162,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             //Assert.IsTrue(lookupResult.EndPointResults.Count > 0, "The number of lookup results returned was incorrect.");
         }
 
-       [TestMethod]
+        [TestMethod]
         public void HostWithNoNAPTRAndSRVTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -224,7 +225,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             Console.WriteLine("Resolved SIP end point " + lookupSIPEndPoint);
 
             //Assert.IsTrue(lookupSIPEndPoint.Protocol == SIPProtocolsEnum.udp, "The resolved protocol was not correct.");
-           // Assert.IsTrue(lookupSIPEndPoint.GetIPEndPoint().ToString() == "194.213.29.100:5060", "The resolved socket was not correct.");
+            // Assert.IsTrue(lookupSIPEndPoint.GetIPEndPoint().ToString() == "194.213.29.100:5060", "The resolved socket was not correct.");
         }
     }
 }
