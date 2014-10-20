@@ -57,9 +57,9 @@ namespace SIPSorcery.SoftPhone
         private IPAddress _defaultLocalAddress = SIPSoftPhoneState.DefaultLocalAddress;     // The default IPv4 address for the machine running the application.
         private int _defaultSIPUdpPort = SIPConstants.DEFAULT_SIP_PORT;                     // The default UDP SIP port.
 
-        private string m_sipUsername = ConfigurationManager.AppSettings["SIPUsername"];    // Get the SIP username from the config file.
-        private string m_sipPassword = ConfigurationManager.AppSettings["SIPPassword"];    // Get the SIP password from the config file.
-        private string m_sipServer = ConfigurationManager.AppSettings["SIPServer"];        // Get the SIP server from the config file.
+        private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
+        private string m_sipPassword = SIPSoftPhoneState.SIPPassword;    
+        private string m_sipServer = SIPSoftPhoneState.SIPServer;
         private string m_sipFromName = ConfigurationManager.AppSettings["SIPFromName"];    // Get the SIP From display name from the config file.
 
         private SIPTransport m_sipTransport;                                                // SIP transport layer.
@@ -72,6 +72,11 @@ namespace SIPSorcery.SoftPhone
         public event Action CallEnded;                  // Fires when an incoming or outgoing call is over.
         public event Action IncomingCall;               // Fires when an incoming call request is received.
         public event Action<string> StatusMessage;      // Fires when the SIP client has a staus message it wants to inform the UI about.
+
+        public SIPTransport SIPClientTransport
+        {
+            get { return m_sipTransport; }
+        }
 
         public SIPClient()
         {

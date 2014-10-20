@@ -25,7 +25,7 @@ namespace SIPSorcery
 {
     public partial class UserPage : UserControl
     {
-        private const string DEFAULT_HELP_URL = "http://www.sipsorcery.com/help";
+        private const string DEFAULT_HELP_URL = "http://www.sipsorcery.com/mainsite/help";
         private const string DEFAULT_HELP_OPTIONS = "width=600,height=500,scrollbars=1";
         private const int HELP_POPUP_WIDTH = 600;
         private const int HELP_POPUP_HEIGHT = 500;

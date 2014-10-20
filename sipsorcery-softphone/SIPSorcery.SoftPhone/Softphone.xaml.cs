@@ -32,6 +32,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -39,6 +40,8 @@ using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using SIPSorcery.SIP;
+using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -49,10 +52,15 @@ namespace SIPSorcery.SoftPhone
         private ILog logger = AppState.logger;
         private ILog _videoLogger = AppState.GetLogger("videodevice");
 
-        private SIPClient _sipClient;               // SIP calls.
-        private GingleClient _gingleClient;         // Google Voice calls.
-        private IVoIPClient _activeClient;          // The active client, either SIP or GV.
-        private SoftphoneSTUNClient _stunClient;    // STUN client to periodically check the public IP address.
+        private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
+        private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
+        private string m_sipServer = SIPSoftPhoneState.SIPServer;
+
+        private SIPClient _sipClient;                               // SIP calls.
+        private GingleClient _gingleClient;                         // Google Voice calls.
+        private IVoIPClient _activeClient;                          // The active client, either SIP or GV.
+        private SoftphoneSTUNClient _stunClient;                    // STUN client to periodically check the public IP address.
+        private SIPRegistrationUserAgent _sipRegistrationClient;   // Can be used to register with an external SIP provider if incoming calls are required.
 
         public SoftPhone()
         {
@@ -77,6 +85,23 @@ namespace SIPSorcery.SoftPhone
 
             // Lookup and periodically check the public IP address of the host machine.
             _stunClient = new SoftphoneSTUNClient();
+            
+            // Comment this out if you don't want the app to register with your SIP server.
+            _sipRegistrationClient = new SIPRegistrationUserAgent(
+                _sipClient.SIPClientTransport,
+                null,
+                null,
+                new SIPURI(m_sipUsername, m_sipServer, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
+                m_sipUsername,
+                m_sipPassword,
+                null,
+                m_sipServer,
+                new SIPURI(m_sipUsername, _sipClient.SIPClientTransport.GetDefaultSIPEndPoint().GetIPEndPoint().ToString(), null),
+                180,
+                null,
+                null,
+                (message) => { logger.Debug(message); });
+            _sipRegistrationClient.Start();
 
             //videoElement.NewVideoSample += new EventHandler<WPFMediaKit.DirectShow.MediaPlayers.VideoSampleArgs>(videoElement_NewVideoSample);
         }

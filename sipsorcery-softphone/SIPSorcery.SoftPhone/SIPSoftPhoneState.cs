@@ -54,6 +54,10 @@ namespace SIPSorcery.SoftPhone
         public static readonly XmlNode SIPSocketsNode;
         public static readonly string STUNServerHostname;
 
+        public static readonly string SIPUsername = ConfigurationManager.AppSettings["SIPUsername"];    // Get the SIP username from the config file.
+        public static readonly string SIPPassword = ConfigurationManager.AppSettings["SIPPassword"];    // Get the SIP password from the config file.
+        public static readonly string SIPServer = ConfigurationManager.AppSettings["SIPServer"];        // Get the SIP server from the config file.
+
         public static IPAddress DefaultLocalAddress;
 
         static SIPSoftPhoneState()
