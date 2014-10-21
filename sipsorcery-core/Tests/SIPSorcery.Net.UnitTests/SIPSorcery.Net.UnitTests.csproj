@@ -155,6 +155,7 @@
     <Compile Include="RTSP\RTSPRequestUnitTest.cs" />
     <Compile Include="RTSP\RTSPConnectionUnitTest.cs" />
     <Compile Include="SDPUnitTests.cs" />
+    <Compile Include="STUNv2UnitTest.cs" />
     <Compile Include="STUNUnitTest.cs" />
   </ItemGroup>
   <ItemGroup>

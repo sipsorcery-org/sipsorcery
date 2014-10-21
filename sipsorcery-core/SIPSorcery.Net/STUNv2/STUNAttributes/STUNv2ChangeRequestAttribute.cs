@@ -45,10 +45,15 @@ namespace SIPSorcery.Net
         public bool ChangeAddress = false;
         public bool ChangePort = false;
 
+        public override UInt16 PaddedLength
+        {
+            get { return CHANGEREQUEST_ATTRIBUTE_LENGTH; }
+        }
+
         private byte m_changeRequestByte;
 
         public STUNv2ChangeRequestAttribute(byte[] attributeValue)
-            : base(STUNv2AttributeTypesEnum.ChangeRequest, CHANGEREQUEST_ATTRIBUTE_LENGTH, attributeValue)
+            : base(STUNv2AttributeTypesEnum.ChangeRequest, attributeValue)
         {
             m_changeRequestByte = attributeValue[3];
 

@@ -2,6 +2,24 @@
 // Filename: STUNv2Attribute.cs
 //
 // Description: Implements STUN message attributes as defined in RFC5389.
+// 
+// 15.  STUN Attributes
+//
+//   After the STUN header are zero or more attributes.  Each attribute
+//   MUST be TLV encoded, with a 16-bit type, 16-bit length, and value.
+//   Each STUN attribute MUST end on a 32-bit boundary.  As mentioned
+//   above, all fields in an attribute are transmitted most significant
+//   bit first.
+//
+//       0                   1                   2                   3
+//       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//      |         Type                  |            Length             |
+//      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//      |                         Value (variable)                ....
+//      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//
+//                    Figure 4: Format of STUN Attributes
 //
 // History:
 // 26 Nov 2010	Aaron Clauson	Created.
@@ -9,7 +27,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006 Aaron Clauson (aaronc@blueface.ie), Blue Face Ltd, Dublin, Ireland (www.blueface.ie)
+// Copyright (c) 2006-2014 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery Pty Ltd, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -17,7 +35,7 @@
 //
 // Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
 // Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following 
-// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of Blue Face Ltd. 
+// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of SIP Sorcery Pty Ltd. 
 // nor the names of its contributors may be used to endorse or promote products derived from this software without specific 
 // prior written permission. 
 //
@@ -63,6 +81,9 @@ namespace SIPSorcery.Net
         Software = 0x8022,              // Added in RFC5389.
         AlternateServer = 0x8023,       // Added in RFC5389.
         FingerPrint = 0x8028,           // Added in RFC5389.
+
+        IceControlling = 0x802a,
+        Priority = 0x0024,
     }
 
     public class STUNv2AttributeTypes
@@ -78,13 +99,26 @@ namespace SIPSorcery.Net
         public const short STUNATTRIBUTE_HEADER_LENGTH = 4;
         
         public STUNv2AttributeTypesEnum AttributeType = STUNv2AttributeTypesEnum.Unknown;
-        public UInt16 Length;
         public byte[] Value;
 
-        public STUNv2Attribute(STUNv2AttributeTypesEnum attributeType, UInt16 length, byte[] value)
+        public virtual UInt16 PaddedLength
+        {
+            get 
+            {
+                if (Value != null)
+                {
+                    return Convert.ToUInt16((Value.Length % 4 == 0) ? Value.Length : Value.Length + (4 - (Value.Length % 4)));
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        }
+
+        public STUNv2Attribute(STUNv2AttributeTypesEnum attributeType, byte[] value)
         {
             AttributeType = attributeType;
-            Length = length;
             Value = value;
         }
 
@@ -110,7 +144,7 @@ namespace SIPSorcery.Net
                     if (stunAttributeLength > 0)
                     {
                         stunAttributeValue = new byte[stunAttributeLength];
-                        Buffer.BlockCopy(buffer, startIndex + 4, stunAttributeValue, 0, stunAttributeLength);
+                        Buffer.BlockCopy(buffer, startAttIndex + 4, stunAttributeValue, 0, stunAttributeLength);
                     }
 
                     STUNv2AttributeTypesEnum attributeType = STUNv2AttributeTypes.GetSTUNAttributeTypeForId(stunAttributeType);
@@ -126,12 +160,15 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        attribute = new STUNv2Attribute(attributeType, stunAttributeLength, stunAttributeValue);
+                        attribute = new STUNv2Attribute(attributeType, stunAttributeValue);
                     }
                             
                     attributes.Add(attribute);
 
-                    startAttIndex = startAttIndex + 4 + stunAttributeLength;
+                    // Attributes start on 32 bit word boundaries so where an attribute length is not a multiple of 4 it gets padded. 
+                    int padding = (stunAttributeLength % 4 != 0) ? 4 - (stunAttributeLength % 4) : 0;
+
+                    startAttIndex = startAttIndex + 4 + stunAttributeLength + padding;
                 }
 
                 return attributes;
@@ -147,29 +184,50 @@ namespace SIPSorcery.Net
             if (BitConverter.IsLittleEndian)
             {
                 Buffer.BlockCopy(BitConverter.GetBytes(Utility.ReverseEndian((ushort)AttributeType)), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(Utility.ReverseEndian(Length)), 0, buffer, startIndex + 2, 2);
+
+                if (Value != null && Value.Length > 0)
+                {
+                    Buffer.BlockCopy(BitConverter.GetBytes(Utility.ReverseEndian(Convert.ToUInt16(Value.Length))), 0, buffer, startIndex + 2, 2);
+                }
+                else
+                {
+                    buffer[startIndex + 2] = 0x00;
+                    buffer[startIndex + 3] = 0x00;
+                }
             }
             else
             {
                 Buffer.BlockCopy(BitConverter.GetBytes((ushort)AttributeType), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(Length), 0, buffer, startIndex + 2, 2);
+
+                if (Value != null && Value.Length > 0)
+                {
+                    Buffer.BlockCopy(BitConverter.GetBytes(Convert.ToUInt16(Value.Length)), 0, buffer, startIndex + 2, 2);
+                }
+                else
+                {
+                    buffer[startIndex + 2] = 0x00;
+                    buffer[startIndex + 3] = 0x00;
+                }
             }
 
-            if (BitConverter.IsLittleEndian)
+            if (Value != null && Value.Length > 0)
             {
-                Buffer.BlockCopy(Value, 0, buffer, startIndex + 4, Length);
-            }
-            else
-            {
-                Buffer.BlockCopy(Value, 0, buffer, startIndex + 4, Length);
+                if (BitConverter.IsLittleEndian)
+                {
+                    Buffer.BlockCopy(Value, 0, buffer, startIndex + 4, Value.Length);
+                }
+                else
+                {
+                    Buffer.BlockCopy(Value, 0, buffer, startIndex + 4, Value.Length);
+                }
             }
 
-            return STUNv2Attribute.STUNATTRIBUTE_HEADER_LENGTH + Length;
+            return STUNv2Attribute.STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
         }
 
         public new virtual string ToString()
         {
-            string attrDescrString = "STUNv2 Attribute: " + AttributeType.ToString() + ", length=" + Length + ".";
+            string attrDescrString = "STUNv2 Attribute: " + AttributeType.ToString() + ", length=" + PaddedLength + ".";
 
             return attrDescrString;
         }

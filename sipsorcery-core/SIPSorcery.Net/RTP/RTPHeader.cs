@@ -20,7 +20,7 @@
 //
 // (V)ersion (2 bits) = 2
 // (P)adding (1 bit) = Indicates whether the packet contains additional padding octets.
-// e(X)tension (1 bit) = If set he fixed header must be followed by exactly one header extension.
+// e(X)tension (1 bit) = If set the fixed header must be followed by exactly one header extension.
 // CSRC Count (CC) (4 bits) = Number of Contributing Source identifiers following fixed header.
 // (M)arker (1 bit) = Used by profiles to enable marks to be set in the data.
 // Payload Type (PT) (7 bits) = RTP payload type.
@@ -57,119 +57,152 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-	public class RTPHeader
-	{
-		public const int MIN_HEADER_LEN = 12;
+    public class RTPHeader
+    {
+        public const int MIN_HEADER_LEN = 12;
 
         //public readonly static DateTime ZeroTime = new DateTime(2007, 1, 1).ToUniversalTime();
 
-		public const int RTP_VERSION = 2;
+        public const int RTP_VERSION = 2;
 
-		public int Version = RTP_VERSION;						// 2 bits.
-		public int PaddingFlag = 0;								// 1 bit.
-		public int HeaderExtensionFlag = 0;						// 1 bit.
-		public int CSRCCount = 0;								// 4 bits
-		public int MarkerBit = 0;								// 1 bit.
-		public int PayloadType = (int)RTPPayloadTypesEnum.PCMU;	// 7 bits.
-		public UInt16 SequenceNumber;							// 16 bits.
-		public uint Timestamp;									// 32 bits.
-		public uint SyncSource;									// 32 bits.
-		public int[] CSRCList;									// 32 bits.
+        public int Version = RTP_VERSION;						// 2 bits.
+        public int PaddingFlag = 0;								// 1 bit.
+        public int HeaderExtensionFlag = 0;						// 1 bit.
+        public int CSRCCount = 0;								// 4 bits
+        public int MarkerBit = 0;								// 1 bit.
+        public int PayloadType = (int)RTPPayloadTypesEnum.PCMU;	// 7 bits.
+        public UInt16 SequenceNumber;							// 16 bits.
+        public uint Timestamp;									// 32 bits.
+        public uint SyncSource;									// 32 bits.
+        public int[] CSRCList;									// 32 bits.
+        public UInt16 ExtensionProfile;                         // 16 bits.
+        public UInt16 ExtensionLength;                          // 16 bits,  length of the header extensionsin 32 bit words.
+        public byte[] ExtensionPayload;
 
         public int Length
         {
-            get { return MIN_HEADER_LEN + CSRCCount * 4; }
+            get { return MIN_HEADER_LEN + (CSRCCount * 4) + ((HeaderExtensionFlag == 0) ? 0 : 4 + (ExtensionLength * 4)); }
         }
 
-		public RTPHeader()
-		{
+        public RTPHeader()
+        {
             SequenceNumber = Crypto.GetRandomUInt16();
             SyncSource = Crypto.GetRandomUInt();
             Timestamp = Crypto.GetRandomUInt();
-		}
+        }
 
-		/// <summary>
-		/// Extract and load the RTP header from an RTP packet.
-		/// </summary>
-		/// <param name="packet"></param>
-		public RTPHeader(byte[] packet)
-		{
-			if(packet.Length < MIN_HEADER_LEN)
-			{
-				throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTP header packet.");
-			}
+        /// <summary>
+        /// Extract and load the RTP header from an RTP packet.
+        /// </summary>
+        /// <param name="packet"></param>
+        public RTPHeader(byte[] packet)
+        {
+            if (packet.Length < MIN_HEADER_LEN)
+            {
+                throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTP header packet.");
+            }
 
-			UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
+            UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
 
-			if(BitConverter.IsLittleEndian)
-			{
-				firstWord = NetConvert.DoReverseEndian(firstWord);
-				SequenceNumber = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
-				Timestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet,4));
-				SyncSource = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet,8));
-			}
-			else
-			{
-				SequenceNumber = BitConverter.ToUInt16(packet, 2);
-				Timestamp = BitConverter.ToUInt32(packet,4);
-				SyncSource = BitConverter.ToUInt32(packet,8);
-			}
+            if (BitConverter.IsLittleEndian)
+            {
+                firstWord = NetConvert.DoReverseEndian(firstWord);
+                SequenceNumber = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
+                Timestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
+                SyncSource = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 8));
+            }
+            else
+            {
+                SequenceNumber = BitConverter.ToUInt16(packet, 2);
+                Timestamp = BitConverter.ToUInt32(packet, 4);
+                SyncSource = BitConverter.ToUInt32(packet, 8);
+            }
 
-			Version = firstWord >> 14;
-			PaddingFlag = (firstWord >> 13) & 0x1;
-			HeaderExtensionFlag = (firstWord >> 12) & 0x1;
-			CSRCCount = (firstWord >> 8) & 0xf;
-			MarkerBit = (firstWord >> 7) & 0x1;
-			PayloadType = firstWord & 0x7f;
-		}
+            Version = firstWord >> 14;
+            PaddingFlag = (firstWord >> 13) & 0x1;
+            HeaderExtensionFlag = (firstWord >> 12) & 0x1;
+            CSRCCount = (firstWord >> 8) & 0xf;
+            MarkerBit = (firstWord >> 7) & 0x1;
+            PayloadType = firstWord & 0x7f;
 
-		public byte[] GetHeader(UInt16 sequenceNumber, uint timestamp, uint syncSource)
-		{
-			SequenceNumber = sequenceNumber;
-			Timestamp = timestamp;
-			SyncSource = syncSource;
+            if (HeaderExtensionFlag == 1)
+            {
+                if (BitConverter.IsLittleEndian)
+                {
+                    ExtensionProfile = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 12 + 4 * CSRCCount));
+                    ExtensionLength = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 14 + 4 * CSRCCount));
+                }
+                else
+                {
+                    ExtensionProfile = BitConverter.ToUInt16(packet, 8 + 4 * CSRCCount);
+                    ExtensionLength = BitConverter.ToUInt16(packet, 10 + 4 * CSRCCount);
+                }
+            }
+        }
 
-			return GetBytes();
-		}
+        public byte[] GetHeader(UInt16 sequenceNumber, uint timestamp, uint syncSource)
+        {
+            SequenceNumber = sequenceNumber;
+            Timestamp = timestamp;
+            SyncSource = syncSource;
 
-		public byte[] GetBytes()
-		{
-			byte[] header = new byte[12];
+            return GetBytes();
+        }
 
-			UInt16 firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
+        public byte[] GetBytes()
+        {
+            byte[] header = new byte[Length];
 
-			if(BitConverter.IsLittleEndian)
-			{
-				Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 2);
-				Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SequenceNumber)), 0, header, 2, 2);
-				Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Timestamp)), 0, header, 4, 4);
-				Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SyncSource)), 0, header, 8, 4);	
-			}
-			else
-			{
-				Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 2);
-				Buffer.BlockCopy(BitConverter.GetBytes(SequenceNumber), 0, header, 2, 2);
-				Buffer.BlockCopy(BitConverter.GetBytes(Timestamp), 0, header, 4, 4);
-				Buffer.BlockCopy(BitConverter.GetBytes(SyncSource), 0, header, 8, 4);
-			}
+            UInt16 firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
 
-			return header;
-		}
+            if (BitConverter.IsLittleEndian)
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SequenceNumber)), 0, header, 2, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Timestamp)), 0, header, 4, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SyncSource)), 0, header, 8, 4);
 
-		
-		/*public static uint GetWallclockUTCStamp(DateTime time)
-		{
-			return Convert.ToUInt32(time.ToUniversalTime().Subtract(DateTime.Now.Date).TotalMilliseconds);
-		}
+                if (HeaderExtensionFlag == 1)
+                {
+                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtensionProfile)), 0, header, 12 + 4 * CSRCCount, 2);
+                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtensionLength)), 0, header, 14 + 4 * CSRCCount, 2);
+                }
+            }
+            else
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(SequenceNumber), 0, header, 2, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(Timestamp), 0, header, 4, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(SyncSource), 0, header, 8, 4);
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="timestamp"></param>
-		/// <returns>The timestamp as a UTC DateTime object.</returns>
-		public static DateTime GetWallclockUTCTimeFromStamp(uint timestamp)
-		{
+                if (HeaderExtensionFlag == 1)
+                {
+                    Buffer.BlockCopy(BitConverter.GetBytes(ExtensionProfile), 0, header, 12 + 4 * CSRCCount, 2);
+                    Buffer.BlockCopy(BitConverter.GetBytes(ExtensionLength), 0, header, 14 + 4 * CSRCCount, 2);
+                }
+            }
+
+            if (ExtensionLength > 0 && ExtensionPayload != null)
+            {
+                Buffer.BlockCopy(ExtensionPayload, 0, header, 16 + 4 * CSRCCount, ExtensionLength * 4);
+            }
+
+            return header;
+        }
+
+        /*public static uint GetWallclockUTCStamp(DateTime time)
+        {
+            return Convert.ToUInt32(time.ToUniversalTime().Subtract(DateTime.Now.Date).TotalMilliseconds);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="timestamp"></param>
+        /// <returns>The timestamp as a UTC DateTime object.</returns>
+        public static DateTime GetWallclockUTCTimeFromStamp(uint timestamp)
+        {
             return DateTime.Now.Date.AddMilliseconds(timestamp);
-		}*/
-	}
+        }*/
+    }
 }

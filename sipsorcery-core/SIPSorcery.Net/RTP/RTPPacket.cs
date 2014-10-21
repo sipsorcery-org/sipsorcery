@@ -40,12 +40,10 @@ namespace SIPSorcery.Net
 		public byte[] GetBytes()
 		{
 			byte[] header = Header.GetBytes();
-			byte[] payload = Payload;
-
-			byte[] packet = new byte[header.Length + payload.Length];
+            byte[] packet = new byte[header.Length + Payload.Length];
 			
 			Array.Copy(header, packet, header.Length);
-			Array.Copy(payload, 0, packet, header.Length, payload.Length);
+			Array.Copy(Payload, 0, packet, header.Length, Payload.Length);
 
 			return packet;
 		}
