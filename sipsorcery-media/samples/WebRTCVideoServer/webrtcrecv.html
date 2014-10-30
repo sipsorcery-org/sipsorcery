@@ -1,0 +1,120 @@
+ <script type="text/javascript">
+var pc_constraints = {
+  'optional': [
+    {'DtlsSrtpKeyAgreement': false},
+    {'RtpDataChannels': false},
+	{'iceTransports': 'udp'}
+  ]};
+  
+// Set up audio and video regardless of what devices are present.
+var sdpConstraints = {'mandatory': {
+  'OfferToReceiveAudio':false,
+  'OfferToReceiveVideo':true }};
+  
+var constraints = {video: true};  
+
+var ws;
+  
+pc = new webkitRTCPeerConnection(null, pc_constraints);
+pc.onicecandidate = handleIceCandidate;
+pc.onaddstream = handleRemoteStreamAdded;
+pc.onremovestream = handleRemoteStreamRemoved;
+pc.onsignalingstatechange = handleSignalingStateChange;
+pc.oniceconnectionstatechange = handleIceStateChange;
+  
+function handleIceCandidate(event) {
+  console.log('handleIceCandidate event: ', event);
+  if(event.candidate) {
+	console.log(parseCandidate(event.candidate.candidate));
+  }
+    console.log("ice gathering state " + pc.iceGatheringState);
+  if(pc.iceGatheringState == "complete") {
+    console.log("Sending offer SDP.");
+	ws.send(pc.localDescription.sdp);
+  }
+}
+
+function handleSignalingStateChange(event) {
+	console.log('handleSignalingStateChange ' + pc.signalingState + '. Event: ', event);
+}
+
+function setLocalSDP(sessionDescription) {
+  pc.setLocalDescription(sessionDescription, localDescriptionSuccess, showError); 
+}
+
+function localDescriptionSuccess(event) {
+console.log("Local description successfully set. " + event);
+}
+
+function remoteDescriptionSuccess(event) {
+console.log("Remote description successfully set. " + event);
+pc.createAnswer(setLocalSDP, showError, sdpConstraints);
+}
+
+function answerCreated(sessionDescription) {
+  pc.setLocalDescription(sessionDescription, null, showError);
+}
+
+function handleRemoteStreamAdded(event) {
+  console.log('Remote stream added.');
+ // reattachMediaStream(miniVideo, localVideo);
+  //attachMediaStream(document.querySelector('#localVideo'), event.stream);
+  document.querySelector("#remoteVideo").src = URL.createObjectURL(event.stream);
+  document.querySelector("#remoteVideo").play();
+  //remoteStream = event.stream;
+//  waitForRemoteVideo();
+}
+
+function handleRemoteStreamRemoved(event) {
+  console.log('Remote stream removed. Event: ', event);
+}
+
+function handleIceStateChange(event) {
+  console.log('ICE state changed, connection state ' + pc.iceConnectionState + ', gathering state ' + pc.iceGatheringState + '. Event: ', event);
+}
+
+function showError(error)
+{
+	console.log("ERROR: " + error);
+}
+
+function parseCandidate(text) {
+  var candidateStr = "candidate:";
+  var pos = text.indexOf(candidateStr) + candidateStr.length;
+  var fields = text.substr(pos).split(" ");
+  return {
+    "component": fields[1],
+    "type": fields[7],
+    "foundation": fields[0],
+    "protocol": fields[2],
+    "address": fields[4],
+    "port": fields[5],
+    "priority": fields[3]
+  };
+}
+
+function wsConnect() {
+	ws = new WebSocket("ws://localhost:8081/receiver");
+
+	ws.onopen = function () {
+		console.log("web socket onopen.");
+	};
+	ws.onmessage = function (evt) {
+		console.log("web socket onmessage: " + evt.data + ".");
+		pc.setRemoteDescription(new RTCSessionDescription({type: "offer", sdp: evt.data}), remoteDescriptionSuccess, showError);
+	};
+	ws.onclose = function () {
+		console.log("web socket closed.");
+	};
+};
+		
+ </script>
+  
+     <div>
+    <button onclick="wsConnect();">Click here to start</button>
+	</div>
+  
+  <video controls id="remoteVideo">
+ </video>
+
+ 

@@ -1,0 +1,14 @@
+// Create RTP stream.
+ffmpeg -f dshow -i video="Logitech QuickCam Pro 9000" -vcodec libx264 -f rtp rtp://10.1.1.2:1234
+ffmpeg -re -f dshow -i video="Logitech QuickCam Pro 9000" -vcodec vp8 -f rtp rtp://10.1.1.2:10001
+ffmpeg -re -f dshow -i video="Logitech QuickCam Pro 9000" -vcodec vp8 -f rtp "srtp://10.1.1.2:10001?srtp_out_suite=AES_CM_128_HMAC_SHA1_80&srtp_out_params=zIN6kIVR4DY5dpc5T2vBDvOC1X9VjPTegBx/6EnQ"
+
+ffmpeg -f dshow -framerate 30 -i video="Logitech QuickCam Pro 9000" -vcodec vp8 -vf scale=320x240 -f rtp rtp://10.1.1.2:10001
+
+ffmpeg -re -f dshow -framerate 30 -i video="Logitech QuickCam Pro 9000" -vcodec vp8 -s 640x480 -quality realtime -crf 50 -f rtp rtp://10.1.1.2:10001
+
+ffmpeg -re -f dshow -framerate 30 -i video="Logitech QuickCam Pro 9000" -vcodec vp8 -s 640x480 -quality realtime -crf 50 -b:v 500k -qmin 50 -qmax 60 -f rtp rtp://10.1.1.2:10001
+
+// Push from ffmpeg to RTSP server.
+ffmpeg -f dshow -i video="Logitech QuickCam Pro 9000" -vcodec libx264 -f rtsp rtsp://10.1.1.2:1234/live.sdp
+ffplay -rtsp_flags listen rtsp://10.1.1.2:1234/live.sdp
