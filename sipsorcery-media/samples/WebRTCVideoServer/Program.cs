@@ -204,12 +204,12 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                 {
                     try
                     {
-                        logger.Debug("ListenToReceiverWebRTCClient Receive.");
+                        //logger.Debug("ListenToReceiverWebRTCClient Receive.");
 
                         IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
                         byte[] buffer = localSocket.Receive(ref remoteEndPoint);
 
-                        logger.Debug(buffer.Length + " bytes read on Receiver Client media socket from " + remoteEndPoint.ToString() + ".");
+                        //logger.Debug(buffer.Length + " bytes read on Receiver Client media socket from " + remoteEndPoint.ToString() + ".");
 
                         if ((buffer[0] & 0x80) == 0)
                         {
