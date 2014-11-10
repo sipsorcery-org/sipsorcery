@@ -92,28 +92,40 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
             {
                 Console.WriteLine("WebRTC Test Media Server:");
 
-                _sourceSDPOffer = String.Format(_sourceSDPOffer, WEBRTC_LISTEN_PORT.ToString(), "10.1.1.2", _senderICEUser, _senderICEPassword, _sourceSRTPKey);
-                //_offerSDP = SDP.ParseSDPDescription(_sourceSDPOffer);
+                SIPSorceryMedia.VideoSampler videoSampler = new SIPSorceryMedia.VideoSampler();
+                videoSampler.Init();
+                videoSampler.SampleReady += (sampleCount) => { Console.WriteLine("Sample count {0}.", sampleCount); };
+                videoSampler.StartSampling();
 
-                SDPExchangeReceiver.SDPAnswerReceived += SDPExchangeReceiver_SDPAnswerReceived;
-                SDPExchangeReceiver.WebSocketOpened += SDPExchangeReceiver_WebSocketOpened;
+                while (true)
+                {
+                    videoSampler.GetSample();
+                    Console.WriteLine("Press any key to get the next sample...");
+                    Console.ReadKey();
+                }
+        
+                //_sourceSDPOffer = String.Format(_sourceSDPOffer, WEBRTC_LISTEN_PORT.ToString(), "10.1.1.2", _senderICEUser, _senderICEPassword, _sourceSRTPKey);
+                ////_offerSDP = SDP.ParseSDPDescription(_sourceSDPOffer);
 
-                _receiverWSS = new WebSocketServer(8081, false);
-                _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/receiver");
-                _receiverWSS.Start();
+                //SDPExchangeReceiver.SDPAnswerReceived += SDPExchangeReceiver_SDPAnswerReceived;
+                //SDPExchangeReceiver.WebSocketOpened += SDPExchangeReceiver_WebSocketOpened;
 
-                IPEndPoint receiverLocalEndPoint = new IPEndPoint(IPAddress.Parse("10.1.1.2"), WEBRTC_LISTEN_PORT);
-                _webRTCReceiverClient = new UdpClient(receiverLocalEndPoint);
+                //_receiverWSS = new WebSocketServer(8081, false);
+                //_receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/receiver");
+                //_receiverWSS.Start();
 
-                IPEndPoint rtpLocalEndPoint = new IPEndPoint(IPAddress.Parse("10.1.1.2"), 10001);
-                _rtpClient = new UdpClient(rtpLocalEndPoint);
+                //IPEndPoint receiverLocalEndPoint = new IPEndPoint(IPAddress.Parse("10.1.1.2"), WEBRTC_LISTEN_PORT);
+                //_webRTCReceiverClient = new UdpClient(receiverLocalEndPoint);
 
-                logger.Debug("Commencing listen to receiver WebRTC client on local socket " + receiverLocalEndPoint + ".");
-                ThreadPool.QueueUserWorkItem(delegate { ListenToReceiverWebRTCClient(_webRTCReceiverClient); });
+                //IPEndPoint rtpLocalEndPoint = new IPEndPoint(IPAddress.Parse("10.1.1.2"), 10001);
+                //_rtpClient = new UdpClient(rtpLocalEndPoint);
 
-                ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
+                //logger.Debug("Commencing listen to receiver WebRTC client on local socket " + receiverLocalEndPoint + ".");
+                //ThreadPool.QueueUserWorkItem(delegate { ListenToReceiverWebRTCClient(_webRTCReceiverClient); });
 
-                ThreadPool.QueueUserWorkItem(delegate { ICMPListen(IPAddress.Parse("10.1.1.2")); });
+                //ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
+
+                //ThreadPool.QueueUserWorkItem(delegate { ICMPListen(IPAddress.Parse("10.1.1.2")); });
 
                 ManualResetEvent dontStopEvent = new ManualResetEvent(false);
                 dontStopEvent.WaitOne();

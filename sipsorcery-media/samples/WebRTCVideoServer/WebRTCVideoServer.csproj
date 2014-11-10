@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -70,6 +71,12 @@
     <Content Include="ffmpeg.txt" />
     <Content Include="LICENSE_websocket-sharp.txt" />
     <Content Include="webrtcrecv.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MFStreamer\MFStreamer.vcxproj">
+      <Project>{925076e9-1d41-4c75-9e5e-556da204efc2}</Project>
+      <Name>MFStreamer</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
