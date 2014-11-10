@@ -244,6 +244,7 @@
     <Compile Include="RTSP\RTSPConnection.cs" />
     <Compile Include="RTSP\RTSPServer.cs" />
     <Compile Include="RTSP\RTSPSession.cs" />
+    <Compile Include="SDP\SDPICECandidate.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2XORAddressAttribute.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2AddressAttribute.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2Attribute.cs" />

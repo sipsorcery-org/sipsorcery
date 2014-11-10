@@ -46,9 +46,12 @@ namespace SIPSorcery.Net
 {
     public class RTSPSession
     {
+        public const int H264_RTP_HEADER_LENGTH = 2;
+        public const int JPEG_RTP_HEADER_LENGTH = 8;
+        public const int VP8_RTP_HEADER_LENGTH = 0;
+
         private const int RFC_2435_FREQUENCY_BASELINE = 90000;
         private const int RTP_MAX_PAYLOAD = 1400; //1452;
-        private const int H264_RTP_HEADER_LENGTH = 2;
         private const int RECEIVE_BUFFER_SIZE = 2048;
         private const int MEDIA_PORT_START = 30000;             // Arbitrary port number to start allocating RTP and control ports from.
         private const int MEDIA_PORT_END = 40000;               // Arbitrary port number that RTP and control ports won't be allocated above.
@@ -115,6 +118,15 @@ namespace SIPSorcery.Net
         {
             get { return _controlLastActivityAt; }
         }
+
+        private int _rtpPayloadHeaderLength = 0;    // Some RTP media types use a payload header to carry information about the encoded media. Typically this header needs to be stripped off before passing to a decoder.
+        public int RTPPayloadHeaderLength
+        {
+            get { return _rtpPayloadHeaderLength; }
+            set { _rtpPayloadHeaderLength = value; }
+        }
+
+        public bool DontTimeout { get; set; }           // If set to true means a server should not timeout this session even if no activity is received on the RTP socket.
 
         public bool IsClosed
         {
@@ -540,7 +552,13 @@ namespace SIPSorcery.Net
 
                         byte[] h264Header = new byte[] { 0x1c, 0x09 };
 
-                        if (index == 0)
+                        if (index == 0 && frame.Length < RTP_MAX_PAYLOAD)
+                        {
+                            // First and last RTP packet in the frame.
+                            h264Header = new byte[] { 0x1c, 0x49 };
+                            rtpPacket.Header.MarkerBit = 1;
+                        }
+                        else if (index == 0)
                         {
                             h264Header = new byte[] { 0x1c, 0x89 };
                         }
@@ -587,6 +605,83 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Sends a dynamically sized frame. The RTP marker bit will be set for the last transmitted packet in the frame.
+        /// </summary>
+        /// <param name="frame">The frame to transmit.</param>
+        /// <param name="frameSpacing">The increment to add to the RTP timestamp for each new frame.</param>
+        /// <param name="payloadType">The payload type to set on the RTP packet.</param>
+        public void SendDynamicFrame(byte[] frame, uint frameSpacing, int payloadType)
+        {
+            try
+            {
+                if (_closed)
+                {
+                    logger.Warn("SendDynamicFramecannot be called on a closed session.");
+                }
+                else if (_rtpSocketError != SocketError.Success)
+                {
+                    logger.Warn("SendDynamicFrame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
+                }
+                else
+                {
+                    _timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + frameSpacing) % UInt32.MaxValue;
+
+                    //System.Diagnostics.Debug.WriteLine("Sending " + frame.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ".");
+
+                    for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
+                    {
+                        uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
+                        int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
+
+                        RTPPacket rtpPacket = new RTPPacket(payloadLength);
+                        rtpPacket.Header.SyncSource = _syncSource;
+                        rtpPacket.Header.SequenceNumber = _sequenceNumber++;
+                        rtpPacket.Header.Timestamp = _timestamp;
+                        rtpPacket.Header.MarkerBit = 0;
+                        rtpPacket.Header.PayloadType = payloadType;
+
+                        if ((index + 1) * RTP_MAX_PAYLOAD > frame.Length)
+                        {
+                            // Last packet in the frame.
+                            rtpPacket.Header.MarkerBit = 1;
+                        }
+
+                        var dataStream = frame.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength).ToList();
+                        rtpPacket.Payload = dataStream.ToArray();
+
+                        byte[] rtpBytes = rtpPacket.GetBytes();
+
+                        //System.Diagnostics.Debug.WriteLine(" offset " + (index * RTP_MAX_PAYLOAD) + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header .MarkerBit + ".");
+
+                        Stopwatch sw = new Stopwatch();
+                        sw.Start();
+
+                        _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
+
+                        sw.Stop();
+
+                        if (sw.ElapsedMilliseconds > 15)
+                        {
+                            logger.Warn(" SendDynamicFrame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
+                        }
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                if (!_closed)
+                {
+                    logger.Warn("Exception RTSPSession.SendDynamicFrame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
+
+                    if (OnRTPSocketDisconnected != null)
+                    {
+                        OnRTPSocketDisconnected(_sessionID);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Sends a packet to the RTSP server on the RTP socket.
         /// </summary>
         public void SendRTPRaw(byte[] payload)
@@ -612,7 +707,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        private static uint DateTimeToNptTimestamp32(DateTime value) { return (uint)((DateTimeToNptTimestamp(value) >> 16) & 0xFFFFFFFF); }
+        public static uint DateTimeToNptTimestamp32(DateTime value) { return (uint)((DateTimeToNptTimestamp(value) >> 16) & 0xFFFFFFFF); }
 
         /// <summary>
         /// Converts specified DateTime value to long NPT time.

@@ -25,17 +25,24 @@ namespace WebRTCVideoServer
         public string ICEPassword;
         public bool STUNExchangeComplete;
         public DateTime LastSTUNMessageAt;
+        public uint SSRC;
+        public ushort SequenceNumber;
+        public uint LastTimestamp;
     }
 
     class Program
     {
         private const int WEBRTC_LISTEN_PORT = 49890;
         private const int EXPIRE_CLIENT_SECONDS = 3;
+        private const int RTP_MAX_PAYLOAD = 1400; //1452;
+        private const int TIMESTAMP_SPACING = 11520;
 
         private static ILog logger = AppState.logger;
 
         private static bool m_exit = false;
 
+        private static string _localIPAddress = "10.1.1.2";
+        private static string _clientIPAddress = "10.1.1.2";
         private static UdpClient _webRTCReceiverClient;
         private static UdpClient _rtpClient;
 
@@ -45,6 +52,7 @@ namespace WebRTCVideoServer
         private static SRTPManaged _newRTPReceiverSRTP;
         private static WebSocketServer _receiverWSS;
         private static List<WebRTCClient> _webRTCClients = new List<WebRTCClient>();
+        private static SIPSorceryMedia.VideoSampler _videoSampler;
 
         private static string _sourceSDPOffer = @"v=0
 o=- 2925822133501083390 2 IN IP4 127.0.0.1
@@ -92,40 +100,33 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
             {
                 Console.WriteLine("WebRTC Test Media Server:");
 
-                SIPSorceryMedia.VideoSampler videoSampler = new SIPSorceryMedia.VideoSampler();
-                videoSampler.Init();
-                videoSampler.SampleReady += (sampleCount) => { Console.WriteLine("Sample count {0}.", sampleCount); };
-                videoSampler.StartSampling();
+                _videoSampler = new SIPSorceryMedia.VideoSampler();
+                _videoSampler.Init();
 
-                while (true)
-                {
-                    videoSampler.GetSample();
-                    Console.WriteLine("Press any key to get the next sample...");
-                    Console.ReadKey();
-                }
-        
-                //_sourceSDPOffer = String.Format(_sourceSDPOffer, WEBRTC_LISTEN_PORT.ToString(), "10.1.1.2", _senderICEUser, _senderICEPassword, _sourceSRTPKey);
-                ////_offerSDP = SDP.ParseSDPDescription(_sourceSDPOffer);
+                _sourceSDPOffer = String.Format(_sourceSDPOffer, WEBRTC_LISTEN_PORT.ToString(), _localIPAddress, _senderICEUser, _senderICEPassword, _sourceSRTPKey);
+                //_offerSDP = SDP.ParseSDPDescription(_sourceSDPOffer);
 
-                //SDPExchangeReceiver.SDPAnswerReceived += SDPExchangeReceiver_SDPAnswerReceived;
-                //SDPExchangeReceiver.WebSocketOpened += SDPExchangeReceiver_WebSocketOpened;
+                SDPExchangeReceiver.SDPAnswerReceived += SDPExchangeReceiver_SDPAnswerReceived;
+                SDPExchangeReceiver.WebSocketOpened += SDPExchangeReceiver_WebSocketOpened;
 
-                //_receiverWSS = new WebSocketServer(8081, false);
-                //_receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/receiver");
-                //_receiverWSS.Start();
+                _receiverWSS = new WebSocketServer(8081, false);
+                _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/receiver");
+                _receiverWSS.Start();
 
-                //IPEndPoint receiverLocalEndPoint = new IPEndPoint(IPAddress.Parse("10.1.1.2"), WEBRTC_LISTEN_PORT);
-                //_webRTCReceiverClient = new UdpClient(receiverLocalEndPoint);
+                IPEndPoint receiverLocalEndPoint = new IPEndPoint(IPAddress.Parse(_localIPAddress), WEBRTC_LISTEN_PORT);
+                _webRTCReceiverClient = new UdpClient(receiverLocalEndPoint);
 
-                //IPEndPoint rtpLocalEndPoint = new IPEndPoint(IPAddress.Parse("10.1.1.2"), 10001);
-                //_rtpClient = new UdpClient(rtpLocalEndPoint);
+                IPEndPoint rtpLocalEndPoint = new IPEndPoint(IPAddress.Parse(_localIPAddress), 10001);
+                _rtpClient = new UdpClient(rtpLocalEndPoint);
 
-                //logger.Debug("Commencing listen to receiver WebRTC client on local socket " + receiverLocalEndPoint + ".");
-                //ThreadPool.QueueUserWorkItem(delegate { ListenToReceiverWebRTCClient(_webRTCReceiverClient); });
+                logger.Debug("Commencing listen to receiver WebRTC client on local socket " + receiverLocalEndPoint + ".");
+                ThreadPool.QueueUserWorkItem(delegate { ListenToReceiverWebRTCClient(_webRTCReceiverClient); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
 
-                //ThreadPool.QueueUserWorkItem(delegate { ICMPListen(IPAddress.Parse("10.1.1.2")); });
+                ThreadPool.QueueUserWorkItem(delegate { SendRTP(); });
+
+                //ThreadPool.QueueUserWorkItem(delegate { ICMPListen(IPAddress.Parse(_localIPAddress)); });
 
                 ManualResetEvent dontStopEvent = new ManualResetEvent(false);
                 dontStopEvent.WaitOne();
@@ -156,18 +157,29 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
 
                 //logger.Debug("ICE User: " + _answerSDP.IceUfrag + ".");
                 //logger.Debug("ICE Password: " + _answerSDP.IcePwd + ".");
-                logger.Debug("New WebRTC client SDP answer with port: " + answerSDP.Media.First().Port + ".");
+                var matchingCandidate = (from cand in answerSDP.IceCandidates where cand.NetworkAddress == _clientIPAddress select cand).FirstOrDefault();
 
-                var newWebRTCClient = new WebRTCClient()
+                if (matchingCandidate != null)
                 {
-                    SocketAddress = new IPEndPoint(IPAddress.Parse("10.1.1.2"), answerSDP.Media.First().Port),
-                    ICEUser = answerSDP.IceUfrag,
-                    ICEPassword = answerSDP.IcePwd
-                };
+                    logger.Debug("New WebRTC client SDP answer with socket: " + matchingCandidate.NetworkAddress + ":" + matchingCandidate.Port + ".");
 
-                lock (_webRTCClients)
+                    var newWebRTCClient = new WebRTCClient()
+                    {
+                        SocketAddress = new IPEndPoint(IPAddress.Parse(_clientIPAddress), matchingCandidate.Port),
+                        ICEUser = answerSDP.IceUfrag,
+                        ICEPassword = answerSDP.IcePwd,
+                        SSRC = Convert.ToUInt32(Crypto.GetRandomInt(10)),
+                        SequenceNumber = 1
+                    };
+
+                    lock (_webRTCClients)
+                    {
+                        _webRTCClients.Add(newWebRTCClient);
+                    }
+                }
+                else
                 {
-                    _webRTCClients.Add(newWebRTCClient);
+                    logger.Warn("No matching media offer was found.");
                 }
             }
             catch (Exception excp)
@@ -352,6 +364,84 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
             catch (Exception excp)
             {
                 logger.Error("Exception  RelayRTP. " + excp);
+            }
+        }
+
+        private static void SendRTP()
+        {
+            try
+            {
+                bool samplingStarted = false;
+                
+                while (true)
+                {
+                    if (_webRTCClients.Count != 0)
+                    {
+                        if(!samplingStarted)
+                        {
+                            samplingStarted = true;
+                            _videoSampler.StartSampling();
+                            _newRTPReceiverSRTP = new SRTPManaged(Convert.FromBase64String(_sourceSRTPKey));
+                        }
+
+                        var sample = _videoSampler.GetSample();
+                        if (sample != null)
+                        {
+                            Console.WriteLine("Got managed sample " + sample.Buffer.Length + ".");
+
+                            lock (_webRTCClients)
+                            {
+                                foreach (var client in _webRTCClients.Where(x => x.STUNExchangeComplete))
+                                {
+                                    try
+                                    {
+                                        logger.Debug("Sending RTP " + sample.Buffer.Length + " bytes to " + client.SocketAddress + ".");
+
+                                        client.LastTimestamp = (client.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : client.LastTimestamp + TIMESTAMP_SPACING;
+
+                                        for (int index = 0; index * RTP_MAX_PAYLOAD < sample.Buffer.Length; index++)
+                                        {
+                                            uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
+                                            int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < sample.Buffer.Length) ? RTP_MAX_PAYLOAD : sample.Buffer.Length - index * RTP_MAX_PAYLOAD;
+
+                                            RTPPacket rtpPacket = new RTPPacket(payloadLength + 10);
+                                            rtpPacket.Header.SyncSource = client.SSRC;
+                                            rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
+                                            rtpPacket.Header.Timestamp = client.LastTimestamp;
+                                            rtpPacket.Header.MarkerBit = 0;
+                                            rtpPacket.Header.PayloadType = 100;
+
+                                            if ((index + 1) * RTP_MAX_PAYLOAD > sample.Buffer.Length)
+                                            {
+                                                // Last packet in the frame.
+                                                rtpPacket.Header.MarkerBit = 1;
+                                            }
+
+                                            Buffer.BlockCopy(sample.Buffer, index * RTP_MAX_PAYLOAD, rtpPacket.Payload, 0, payloadLength);
+
+                                            var rtpBuffer = rtpPacket.GetBytes();
+                                            int rtperr = _newRTPReceiverSRTP.ProtectRTP(rtpBuffer, rtpBuffer.Length - 10);
+                                            if (rtperr != 0)
+                                            {
+                                                logger.Debug("New RTP packet protect result " + rtperr + ".");
+                                            }
+
+                                            _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
+                                        }
+                                    }
+                                    catch (Exception sendExcp)
+                                    {
+                                        logger.Error("SendRTP exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch(Exception excp)
+            {
+                Console.WriteLine("Exception SendRTP. " + excp);
             }
         }
     }

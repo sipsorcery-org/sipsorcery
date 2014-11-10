@@ -18,3 +18,6 @@ ffmpeg -re -f dshow -framerate 30 -i video="Logitech QuickCam Pro 9000" -vcodec 
 // Push from ffmpeg to RTSP server.
 ffmpeg -f dshow -i video="Logitech QuickCam Pro 9000" -vcodec libx264 -f rtsp rtsp://10.1.1.2:1234/live.sdp
 ffplay -rtsp_flags listen rtsp://10.1.1.2:1234/live.sdp
+
+// List direct show devices.
+ffmpeg -list_devices true -f dshow -i dummy

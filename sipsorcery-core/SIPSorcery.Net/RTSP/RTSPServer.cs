@@ -412,7 +412,8 @@ namespace SIPSorcery.Net
                         lock (m_rtspSessions)
                         {
                             var inactiveSessionQuery = from session in m_rtspSessions
-                                                      where (session.Value.RTPLastActivityAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
+                                                      where (session.Value.DontTimeout == false 
+                                                              && session.Value.RTPLastActivityAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
                                                                && session.Value.ControlLastActivityAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
                                                                && session.Value.StartedAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1))
                                                                || session.Value.IsClosed

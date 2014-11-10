@@ -109,6 +109,7 @@ namespace SIPSorcery.Net
         public const decimal SDP_PROTOCOL_VERSION = 0M;
         public const string ICE_UFRAG_ATTRIBUTE_PREFIX = "ice-ufrag";
         public const string ICE_PWD_ATTRIBUTE_PREFIX = "ice-pwd";
+        public const string ICE_CANDIDATE_ATTRIBUTE_PREFIX = "candidate";
 
         private static ILog logger = AppState.logger;
 
@@ -136,6 +137,7 @@ namespace SIPSorcery.Net
         public string[] OriginatorPhoneNumbers;		// Phone numbers for the person responsible for the session.
         public string IceUfrag;                     // If ICE is being used the username for the STUN requests.
         public string IcePwd;                       // If ICE is being used the password for the STUN requests.
+        public List<SDPICECandidate> IceCandidates;
 
         public SDPConnectionInformation Connection;
 
@@ -236,6 +238,15 @@ namespace SIPSorcery.Net
                             {
                                 sdp.ExtraAttributes.Add(sdpLine);
                             }
+                        }
+                        else if (sdpLine.Trim().StartsWith("a=" + ICE_CANDIDATE_ATTRIBUTE_PREFIX))
+                        {
+                            if(sdp.IceCandidates == null)
+                            {
+                                sdp.IceCandidates = new List<SDPICECandidate>();
+                            }
+
+                            sdp.IceCandidates.Add(SDPICECandidate.Parse(sdpLine.Substring(sdpLine.IndexOf(':') + 1)));
                         }
                         else
                         {
