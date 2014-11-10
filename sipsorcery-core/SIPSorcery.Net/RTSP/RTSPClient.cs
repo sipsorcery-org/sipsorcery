@@ -58,6 +58,7 @@ namespace SIPSorcery.Net
         private TcpClient _rtspConnection;
         private NetworkStream _rtspStream;
         private RTSPSession _rtspSession;
+        private int _rtpPayloadHeaderLength;
         private List<RTPFrame> _frames = new List<RTPFrame>();
         private uint _lastCompleteFrameTimestamp;
         private Action<string> _rtpTrackingAction;
@@ -86,6 +87,16 @@ namespace SIPSorcery.Net
         public RTSPClient(Action<string> rtpTrackingAction)
         {
             _rtpTrackingAction = rtpTrackingAction;
+        }
+
+        public void SetRTPPayloadHeaderLength(int rtpPayloadHeaderLength)
+        {
+            _rtpPayloadHeaderLength = rtpPayloadHeaderLength;
+
+            if(_rtspSession != null)
+            {
+                _rtspSession.RTPPayloadHeaderLength = rtpPayloadHeaderLength;
+            }
         }
 
         public string GetStreamDescription(string url)
@@ -156,6 +167,7 @@ namespace SIPSorcery.Net
             _rtspStream = _rtspConnection.GetStream();
 
             _rtspSession = new RTSPSession();
+            _rtspSession.RTPPayloadHeaderLength = _rtpPayloadHeaderLength;
             _rtspSession.ReservePorts();
             _rtspSession.OnRTPQueueFull += RTPQueueFull;
 
@@ -400,13 +412,13 @@ namespace SIPSorcery.Net
                                 if (frame == null)
                                 {
                                     frame = new RTPFrame() { Timestamp = rtpPacket.Header.Timestamp, HasMarker = rtpPacket.Header.MarkerBit == 1 };
-                                    frame.AddRTPPacket(rtpPacket);
+                                    frame.AddRTPPacket(rtpPacket, _rtspSession.RTPPayloadHeaderLength);
                                     _frames.Add(frame);
                                 }
                                 else
                                 {
                                     frame.HasMarker = rtpPacket.Header.MarkerBit == 1;
-                                    frame.AddRTPPacket(rtpPacket);
+                                    frame.AddRTPPacket(rtpPacket, _rtspSession.RTPPayloadHeaderLength);
                                 }
 
                                 if (frame.FramePayload != null)

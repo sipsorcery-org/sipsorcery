@@ -39,9 +39,6 @@ namespace SIPSorcery.Net
 {
     public class RTPFrame
     {
-        private const int JPEG_HEADER_LENGTH = 8;
-        private const int H264_HEADER_LENGTH = 2;
-
         public uint Timestamp;
         public bool HasMarker;
         public bool HasBeenProcessed;
@@ -87,20 +84,20 @@ namespace SIPSorcery.Net
         public RTPFrame()
         { }
 
-        public void AddRTPPacket(RTPPacket rtpPacket)
+        public void AddRTPPacket(RTPPacket rtpPacket, int payloadHeaderLength)
         {
             _packets.Add(rtpPacket);
 
             if (HasMarker && FramePayload == null)
             {
-                FramePayload = IsComplete(_packets, rtpPacket.Header.PayloadType);
+                FramePayload = IsComplete(_packets, payloadHeaderLength);
             }
         }
 
-        private byte[] IsComplete(List<RTPPacket> framePackets, int payloadType)
+        private byte[] IsComplete(List<RTPPacket> framePackets, int payloadHeaderLength)
         {
             // The frame has the marker bit set. Check that there are no missing sequence numbers.
-            int headerLength = (payloadType == (int)SDPMediaFormatsEnum.JPEG) ? JPEG_HEADER_LENGTH : H264_HEADER_LENGTH;
+            //int headerLength = (payloadType == (int)SDPMediaFormatsEnum.JPEG) ? JPEG_HEADER_LENGTH : H264_HEADER_LENGTH;
             uint previousSeqNum = 0;
             List<byte> payload = new List<byte>();
 
@@ -109,7 +106,7 @@ namespace SIPSorcery.Net
                 if (previousSeqNum == 0)
                 {
                     previousSeqNum = rtpPacket.Header.SequenceNumber;
-                    payload.AddRange(rtpPacket.Payload.Skip(headerLength));
+                    payload.AddRange(rtpPacket.Payload.Skip(payloadHeaderLength));
                 }
                 else if (previousSeqNum != rtpPacket.Header.SequenceNumber - 1)
                 {
@@ -119,7 +116,7 @@ namespace SIPSorcery.Net
                 else
                 {
                     previousSeqNum = rtpPacket.Header.SequenceNumber;
-                    payload.AddRange(rtpPacket.Payload.Skip(headerLength));
+                    payload.AddRange(rtpPacket.Payload.Skip(payloadHeaderLength));
                 }
             }
 
