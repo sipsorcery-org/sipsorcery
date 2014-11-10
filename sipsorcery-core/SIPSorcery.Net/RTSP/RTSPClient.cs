@@ -432,6 +432,7 @@ namespace SIPSorcery.Net
                                     {
                                         try
                                         {
+                                            System.Diagnostics.Debug.WriteLine("RTP frame ready for timestamp " + frame.Timestamp + ".");
                                             OnFrameReady(this, frame);
                                         }
                                         catch(Exception frameReadyExcp)

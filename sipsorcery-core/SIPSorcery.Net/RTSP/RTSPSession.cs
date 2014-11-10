@@ -540,7 +540,13 @@ namespace SIPSorcery.Net
 
                         byte[] h264Header = new byte[] { 0x1c, 0x09 };
 
-                        if (index == 0)
+                        if (index == 0 && frame.Length < RTP_MAX_PAYLOAD)
+                        {
+                            // First and last RTP packet in the frame.
+                            h264Header = new byte[] { 0x1c, 0x49 };
+                            rtpPacket.Header.MarkerBit = 1;
+                        }
+                        else if (index == 0)
                         {
                             h264Header = new byte[] { 0x1c, 0x89 };
                         }
