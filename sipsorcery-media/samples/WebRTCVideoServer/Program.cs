@@ -35,14 +35,14 @@ namespace WebRTCVideoServer
         private const int WEBRTC_LISTEN_PORT = 49890;
         private const int EXPIRE_CLIENT_SECONDS = 3;
         private const int RTP_MAX_PAYLOAD = 1400; //1452;
-        private const int TIMESTAMP_SPACING = 11520;
+        private const int TIMESTAMP_SPACING = 3000;
 
         private static ILog logger = AppState.logger;
 
         private static bool m_exit = false;
 
-        private static string _localIPAddress = "10.1.1.2";
-        private static string _clientIPAddress = "10.1.1.2";
+        private static string _localIPAddress = "192.168.33.116";
+        private static string _clientIPAddress = "192.168.33.108";
         private static UdpClient _webRTCReceiverClient;
         private static UdpClient _rtpClient;
 
@@ -52,7 +52,7 @@ namespace WebRTCVideoServer
         private static SRTPManaged _newRTPReceiverSRTP;
         private static WebSocketServer _receiverWSS;
         private static List<WebRTCClient> _webRTCClients = new List<WebRTCClient>();
-        private static SIPSorceryMedia.VideoSampler _videoSampler;
+        //private static SIPSorceryMedia.VideoSampler _videoSampler;
 
         private static string _sourceSDPOffer = @"v=0
 o=- 2925822133501083390 2 IN IP4 127.0.0.1
@@ -100,8 +100,8 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
             {
                 Console.WriteLine("WebRTC Test Media Server:");
 
-                _videoSampler = new SIPSorceryMedia.VideoSampler();
-                _videoSampler.Init();
+                //_videoSampler = new SIPSorceryMedia.VideoSampler();
+                //_videoSampler.Init();
 
                 _sourceSDPOffer = String.Format(_sourceSDPOffer, WEBRTC_LISTEN_PORT.ToString(), _localIPAddress, _senderICEUser, _senderICEPassword, _sourceSRTPKey);
                 //_offerSDP = SDP.ParseSDPDescription(_sourceSDPOffer);
@@ -124,7 +124,9 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
 
                 //ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
 
-                ThreadPool.QueueUserWorkItem(delegate { SendRTP(); });
+                //ThreadPool.QueueUserWorkItem(delegate { SendRTP(); });
+
+                ThreadPool.QueueUserWorkItem(delegate { SendRTPFromFile("framesSaved.txt"); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { ICMPListen(IPAddress.Parse(_localIPAddress)); });
 
@@ -310,20 +312,64 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 byte[] buffer = rtpClient.Receive(ref remoteEndPoint);
 
+                StreamWriter sw = new StreamWriter("frames.txt");
+                byte[] frame = new byte[1000000];
+                int framePosition = 0;
+                int sampleCount = 0;
+                DateTime lastReceiveTime = DateTime.Now;
+
                 while (buffer != null && buffer.Length > 0 && !m_exit)
                 {
+                    Console.WriteLine("Packet spacing " + DateTime.Now.Subtract(lastReceiveTime).TotalMilliseconds + "ms.");
+                    lastReceiveTime = DateTime.Now;
+
                     if (_webRTCClients.Count != 0)
                     {
-                        byte[] bufferWithAuth = new byte[buffer.Length + 10];
-                        Buffer.BlockCopy(buffer, 0, bufferWithAuth, 0, buffer.Length);
-                        RTPPacket rtpPacket = new RTPPacket(bufferWithAuth);
-                        rtpPacket.Header.PayloadType = 100;
+                        //byte[] bufferWithAuth = new byte[buffer.Length + 10];
+                        //Buffer.BlockCopy(buffer, 0, bufferWithAuth, 0, buffer.Length);
+                        RTPPacket triggerRTPPacket = new RTPPacket(buffer);
 
-                        var rtpBuffer = rtpPacket.GetBytes();
-                        int rtperr = _newRTPReceiverSRTP.ProtectRTP(rtpBuffer, rtpBuffer.Length - 10);
-                        if (rtperr != 0)
+                        if (sampleCount < 1000)
                         {
-                            logger.Debug("New RTP packet protect result " + rtperr + ".");
+                            sw.WriteLine(triggerRTPPacket.Header.Timestamp + "," + triggerRTPPacket.Header.MarkerBit + "," + Convert.ToBase64String(triggerRTPPacket.Payload));
+
+                            //if (triggerRTPPacket.Header.MarkerBit == 1)
+                            //{
+                            //    if (framePosition != 0)
+                            //    {
+                            //        // Previously incomplete frame is now complete.
+                            //        Buffer.BlockCopy(triggerRTPPacket.Payload, 0, frame, framePosition, triggerRTPPacket.Payload.Length);
+                            //        framePosition += triggerRTPPacket.Payload.Length;
+                            //        sw.WriteLine(Convert.ToBase64String(frame, 0, framePosition));
+                            //        framePosition = 0;
+                            //    }
+                            //    else
+                            //    {
+                            //        // This is a single packet frame.
+                            //        sw.WriteLine(Convert.ToBase64String(triggerRTPPacket.Payload));
+                            //    }
+                            //}
+                            //else
+                            //{
+                            //    Buffer.BlockCopy(triggerRTPPacket.Payload, 0, frame, framePosition, triggerRTPPacket.Payload.Length);
+
+                            //    if (framePosition == 0)
+                            //    {
+                            //        framePosition = triggerRTPPacket.Payload.Length - 1;
+                            //    }
+                            //    else
+                            //    {
+                            //        framePosition += triggerRTPPacket.Payload.Length;
+                            //    }
+                            //}
+
+                            sampleCount++;
+
+                            if (sampleCount == 1000)
+                            {
+                                Console.WriteLine("Sample collection complete.");
+                                sw.Close();
+                            }
                         }
 
                         lock (_webRTCClients)
@@ -332,7 +378,23 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                             {
                                 try
                                 {
-                                    logger.Debug("Sending RTP " + rtpBuffer.Length + " bytes to " + client.SocketAddress + ".");
+                                    RTPPacket rtpPacket = new RTPPacket(triggerRTPPacket.Payload.Length + 10);
+                                    rtpPacket.Header.SyncSource = client.SSRC;
+                                    rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
+                                    rtpPacket.Header.Timestamp = triggerRTPPacket.Header.Timestamp; // client.LastTimestamp;
+                                    rtpPacket.Header.MarkerBit = triggerRTPPacket.Header.MarkerBit;
+                                    rtpPacket.Header.PayloadType = 100;
+
+                                    Buffer.BlockCopy(triggerRTPPacket.Payload, 0, rtpPacket.Payload, 0, triggerRTPPacket.Payload.Length);
+
+                                    var rtpBuffer = rtpPacket.GetBytes();
+                                    int rtperr = _newRTPReceiverSRTP.ProtectRTP(rtpBuffer, rtpBuffer.Length - 10);
+                                    if (rtperr != 0)
+                                    {
+                                        logger.Debug("New RTP packet protect result " + rtperr + ".");
+                                    }
+
+                                    logger.Debug("Sending RTP " + rtpBuffer.Length + " bytes to " + client.SocketAddress + ", timestamp " + rtpPacket.Header.Timestamp + ", marker bit " + rtpPacket.Header.MarkerBit + ".");
                                     _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
                                 }
                                 catch (Exception sendExcp)
@@ -367,81 +429,179 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
             }
         }
 
-        private static void SendRTP()
+        //    private static void SendRTP()
+        //    {
+        //        try
+        //        {
+        //            bool samplingStarted = false;
+
+        //            while (true)
+        //            {
+        //                if (_webRTCClients.Count != 0)
+        //                {
+        //                    if(!samplingStarted)
+        //                    {
+        //                        samplingStarted = true;
+        //                        _videoSampler.StartSampling();
+        //                        _newRTPReceiverSRTP = new SRTPManaged(Convert.FromBase64String(_sourceSRTPKey));
+        //                    }
+
+        //                    var sample = _videoSampler.GetSample();
+        //                    if (sample != null)
+        //                    {
+        //                        Console.WriteLine("Got managed sample " + sample.Buffer.Length + ".");
+
+        //                        lock (_webRTCClients)
+        //                        {
+        //                            foreach (var client in _webRTCClients.Where(x => x.STUNExchangeComplete))
+        //                            {
+        //                                try
+        //                                {
+        //                                    logger.Debug("Sending RTP " + sample.Buffer.Length + " bytes to " + client.SocketAddress + ".");
+
+        //                                    client.LastTimestamp = (client.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : client.LastTimestamp + TIMESTAMP_SPACING;
+
+        //                                    for (int index = 0; index * RTP_MAX_PAYLOAD < sample.Buffer.Length; index++)
+        //                                    {
+        //                                        uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
+        //                                        int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < sample.Buffer.Length) ? RTP_MAX_PAYLOAD : sample.Buffer.Length - index * RTP_MAX_PAYLOAD;
+
+        //                                        RTPPacket rtpPacket = new RTPPacket(payloadLength + 10);
+        //                                        rtpPacket.Header.SyncSource = client.SSRC;
+        //                                        rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
+        //                                        rtpPacket.Header.Timestamp = client.LastTimestamp;
+        //                                        rtpPacket.Header.MarkerBit = 0;
+        //                                        rtpPacket.Header.PayloadType = 100;
+
+        //                                        if ((index + 1) * RTP_MAX_PAYLOAD > sample.Buffer.Length)
+        //                                        {
+        //                                            // Last packet in the frame.
+        //                                            rtpPacket.Header.MarkerBit = 1;
+        //                                        }
+
+        //                                        Buffer.BlockCopy(sample.Buffer, index * RTP_MAX_PAYLOAD, rtpPacket.Payload, 0, payloadLength);
+
+        //                                        var rtpBuffer = rtpPacket.GetBytes();
+        //                                        int rtperr = _newRTPReceiverSRTP.ProtectRTP(rtpBuffer, rtpBuffer.Length - 10);
+        //                                        if (rtperr != 0)
+        //                                        {
+        //                                            logger.Debug("New RTP packet protect result " + rtperr + ".");
+        //                                        }
+
+        //                                        _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
+        //                                    }
+        //                                }
+        //                                catch (Exception sendExcp)
+        //                                {
+        //                                    logger.Error("SendRTP exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
+        //                                }
+        //                            }
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
+        //        catch(Exception excp)
+        //        {
+        //            Console.WriteLine("Exception SendRTP. " + excp);
+        //        }
+        //    }
+
+        private static void SendRTPFromFile(string file)
         {
             try
             {
-                bool samplingStarted = false;
-                
+                StreamReader sr = new StreamReader(file);
+                List<string> samples = new List<string>();
+                while (!sr.EndOfStream)
+                {
+                    samples.Add(sr.ReadLine());
+                }
+                sr.Close();
+                logger.Debug(samples.Count + " encoded samples loaded.");
+
+                _newRTPReceiverSRTP = new SRTPManaged(Convert.FromBase64String(_sourceSRTPKey));
+                int sampleIndex = 0;
+
                 while (true)
                 {
                     if (_webRTCClients.Count != 0)
                     {
-                        if(!samplingStarted)
-                        {
-                            samplingStarted = true;
-                            _videoSampler.StartSampling();
-                            _newRTPReceiverSRTP = new SRTPManaged(Convert.FromBase64String(_sourceSRTPKey));
-                        }
+                        var sampleItem = samples[sampleIndex];
+                        string[] sampleFields = sampleItem.Split(',');
 
-                        var sample = _videoSampler.GetSample();
-                        if (sample != null)
-                        {
-                            Console.WriteLine("Got managed sample " + sample.Buffer.Length + ".");
+                        uint timestamp = Convert.ToUInt32(sampleFields[0]);
+                        int markerBit = Convert.ToInt32(sampleFields[1]);
+                        byte[] sample = Convert.FromBase64String(sampleFields[2]);
 
-                            lock (_webRTCClients)
+                        lock (_webRTCClients)
+                        {
+                            foreach (var client in _webRTCClients.Where(x => x.STUNExchangeComplete))
                             {
-                                foreach (var client in _webRTCClients.Where(x => x.STUNExchangeComplete))
+                                try
                                 {
-                                    try
+                                    if(client.LastTimestamp == 0)
                                     {
-                                        logger.Debug("Sending RTP " + sample.Buffer.Length + " bytes to " + client.SocketAddress + ".");
+                                        client.LastTimestamp = RTSPSession.DateTimeToNptTimestamp32(DateTime.Now);
+                                    }
+                                    
+                                    //for (int index = 0; index * RTP_MAX_PAYLOAD < sample.Length; index++)
+                                    //{
+                                    //    int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD) - 1;
+                                    //    int payloadLength = (offset + RTP_MAX_PAYLOAD < sample.Length - 1) ? RTP_MAX_PAYLOAD : sample.Length - 1 - offset;
 
-                                        client.LastTimestamp = (client.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : client.LastTimestamp + TIMESTAMP_SPACING;
+                                    RTPPacket rtpPacket = new RTPPacket(sample.Length + 10);
+                                        rtpPacket.Header.SyncSource = client.SSRC;
+                                        rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
+                                        rtpPacket.Header.Timestamp = client.LastTimestamp;
+                                        rtpPacket.Header.MarkerBit = markerBit;
+                                        rtpPacket.Header.PayloadType = 100;
 
-                                        for (int index = 0; index * RTP_MAX_PAYLOAD < sample.Buffer.Length; index++)
+                                        //if (offset + RTP_MAX_PAYLOAD > sample.Length - 1)
+                                        //{
+                                        //     Last packet in the frame.
+                                        //    rtpPacket.Header.MarkerBit = 1;
+                                        //}
+
+                                        Buffer.BlockCopy(sample, 0, rtpPacket.Payload, 0, sample.Length);
+
+                                        var rtpBuffer = rtpPacket.GetBytes();
+                                        int rtperr = _newRTPReceiverSRTP.ProtectRTP(rtpBuffer, rtpBuffer.Length - 10);
+                                        if (rtperr != 0)
                                         {
-                                            uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
-                                            int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < sample.Buffer.Length) ? RTP_MAX_PAYLOAD : sample.Buffer.Length - index * RTP_MAX_PAYLOAD;
-
-                                            RTPPacket rtpPacket = new RTPPacket(payloadLength + 10);
-                                            rtpPacket.Header.SyncSource = client.SSRC;
-                                            rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
-                                            rtpPacket.Header.Timestamp = client.LastTimestamp;
-                                            rtpPacket.Header.MarkerBit = 0;
-                                            rtpPacket.Header.PayloadType = 100;
-
-                                            if ((index + 1) * RTP_MAX_PAYLOAD > sample.Buffer.Length)
-                                            {
-                                                // Last packet in the frame.
-                                                rtpPacket.Header.MarkerBit = 1;
-                                            }
-
-                                            Buffer.BlockCopy(sample.Buffer, index * RTP_MAX_PAYLOAD, rtpPacket.Payload, 0, payloadLength);
-
-                                            var rtpBuffer = rtpPacket.GetBytes();
-                                            int rtperr = _newRTPReceiverSRTP.ProtectRTP(rtpBuffer, rtpBuffer.Length - 10);
-                                            if (rtperr != 0)
-                                            {
-                                                logger.Debug("New RTP packet protect result " + rtperr + ".");
-                                            }
-
-                                            _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
+                                            logger.Debug("New RTP packet protect result " + rtperr + ".");
                                         }
-                                    }
-                                    catch (Exception sendExcp)
+
+                                        logger.Debug("Sending RTP " + sample.Length + " bytes to " + client.SocketAddress + ", timestamp " + client.LastTimestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
+
+                                        _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
+
+                                    if(markerBit == 1)
                                     {
-                                        logger.Error("SendRTP exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
+                                        client.LastTimestamp += TIMESTAMP_SPACING;
                                     }
+                                    //}
+                                }
+                                catch (Exception sendExcp)
+                                {
+                                    logger.Error("SendRTPFromFile exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
                                 }
                             }
                         }
+
+                        sampleIndex++;
+                        if(sampleIndex >= samples.Count - 1)
+                        {
+                            sampleIndex = 0;
+                        }
+
+                        Thread.Sleep(30);
                     }
                 }
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
-                Console.WriteLine("Exception SendRTP. " + excp);
+                Console.WriteLine("Exception SendRTPFromFile. " + excp);
             }
         }
     }

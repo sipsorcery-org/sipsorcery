@@ -616,7 +616,7 @@ namespace SIPSorcery.Net
             {
                 if (_closed)
                 {
-                    logger.Warn("SendDynamicFramecannot be called on a closed session.");
+                    logger.Warn("SendDynamicFrame cannot be called on a closed session.");
                 }
                 else if (_rtpSocketError != SocketError.Success)
                 {

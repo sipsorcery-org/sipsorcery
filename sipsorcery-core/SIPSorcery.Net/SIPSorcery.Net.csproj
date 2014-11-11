@@ -241,6 +241,7 @@
   <ItemGroup>
     <Compile Include="RTP\RTPChannel.cs" />
     <Compile Include="RTP\RTPFrame.cs" />
+    <Compile Include="RTP\RTPVP8Header.cs" />
     <Compile Include="RTSP\RTSPConnection.cs" />
     <Compile Include="RTSP\RTSPServer.cs" />
     <Compile Include="RTSP\RTSPSession.cs" />
