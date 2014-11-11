@@ -149,6 +149,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RTP\RTPVP8HeaderUnitTest.cs" />
     <Compile Include="RTP\RTPHeaderUnitTest.cs" />
     <Compile Include="RTSP\RTSPTransportHeaderUnitTest.cs" />
     <Compile Include="RTSP\RTSPMessageUnitTest.cs" />
