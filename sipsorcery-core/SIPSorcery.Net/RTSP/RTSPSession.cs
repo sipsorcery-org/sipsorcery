@@ -610,17 +610,17 @@ namespace SIPSorcery.Net
         /// <param name="frame">The frame to transmit.</param>
         /// <param name="frameSpacing">The increment to add to the RTP timestamp for each new frame.</param>
         /// <param name="payloadType">The payload type to set on the RTP packet.</param>
-        public void SendDynamicFrame(byte[] frame, uint frameSpacing, int payloadType)
+        public void SendVP8Frame(byte[] frame, uint frameSpacing, int payloadType)
         {
             try
             {
                 if (_closed)
                 {
-                    logger.Warn("SendDynamicFrame cannot be called on a closed session.");
+                    logger.Warn("SendVP8Frame cannot be called on a closed session.");
                 }
                 else if (_rtpSocketError != SocketError.Success)
                 {
-                    logger.Warn("SendDynamicFrame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
+                    logger.Warn("SendVP8Frame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
                 }
                 else
                 {
@@ -630,10 +630,17 @@ namespace SIPSorcery.Net
 
                     for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
                     {
-                        uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
+                        RTPVP8Header vp8Header = new RTPVP8Header()
+                        {
+                            StartOfVP8Partition = (index == 0),
+                            FirstPartitionSize = frame.Length
+                        };
+                        byte[] vp8HeaderBytes = vp8Header.GetBytes();
+
+                        int offset = index * RTP_MAX_PAYLOAD;
                         int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
 
-                        RTPPacket rtpPacket = new RTPPacket(payloadLength);
+                        RTPPacket rtpPacket = new RTPPacket(payloadLength + vp8HeaderBytes.Length);
                         rtpPacket.Header.SyncSource = _syncSource;
                         rtpPacket.Header.SequenceNumber = _sequenceNumber++;
                         rtpPacket.Header.Timestamp = _timestamp;
@@ -646,8 +653,10 @@ namespace SIPSorcery.Net
                             rtpPacket.Header.MarkerBit = 1;
                         }
 
-                        var dataStream = frame.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength).ToList();
-                        rtpPacket.Payload = dataStream.ToArray();
+                        Buffer.BlockCopy(vp8HeaderBytes, 0, rtpPacket.Payload, 0, vp8HeaderBytes.Length);
+                        Buffer.BlockCopy(frame, offset, rtpPacket.Payload, vp8HeaderBytes.Length, payloadLength);
+                        //var dataStream = frame.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength).ToList();
+                        //rtpPacket.Payload = dataStream.ToArray();
 
                         byte[] rtpBytes = rtpPacket.GetBytes();
 
@@ -662,7 +671,7 @@ namespace SIPSorcery.Net
 
                         if (sw.ElapsedMilliseconds > 15)
                         {
-                            logger.Warn(" SendDynamicFrame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
+                            logger.Warn(" SendVP8Frame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
                         }
                     }
                 }
@@ -671,7 +680,7 @@ namespace SIPSorcery.Net
             {
                 if (!_closed)
                 {
-                    logger.Warn("Exception RTSPSession.SendDynamicFrame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
+                    logger.Warn("Exception RTSPSession.SendVP8Frame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
 
                     if (OnRTPSocketDisconnected != null)
                     {

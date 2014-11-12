@@ -107,7 +107,7 @@ HRESULT StartStreaming(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCod
 {
 	// Create an attribute store to hold the search criteria.
 	CHECK_HR(MFCreateAttributes(&videoConfig, 1), L"Error creating video configuation.");
-	CHECK_HR(MFCreateAttributes(&audioConfig, 1), L"Error creating audio configuation.");;
+	//CHECK_HR(MFCreateAttributes(&audioConfig, 1), L"Error creating audio configuation.");;
 
 	// Request video capture devices.
 	CHECK_HR(videoConfig->SetGUID(
@@ -115,30 +115,31 @@ HRESULT StartStreaming(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCod
 		MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID), L"Error initialising video configuration object.");
 
 	// Request audio capture devices.
-	CHECK_HR(audioConfig->SetGUID(
+	/*CHECK_HR(audioConfig->SetGUID(
 		MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE,
-		MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_GUID), L"Error initialising audio configuration object.");
+		MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_GUID), L"Error initialising audio configuration object.");*/
 
 	// Enumerate the devices,
 	CHECK_HR(MFEnumDeviceSources(videoConfig, &videoDevices, &videoDeviceCount), L"Error enumerating video devices.");
-	CHECK_HR(MFEnumDeviceSources(audioConfig, &audioDevices, &audioDeviceCount), L"Error enumerating audio devices.");
+	//CHECK_HR(MFEnumDeviceSources(audioConfig, &audioDevices, &audioDeviceCount), L"Error enumerating audio devices.");
 
-	printf("Video device Count: %i, Audio device count: %i.\n", videoDeviceCount, audioDeviceCount);
+	//printf("Video device Count: %i, Audio device count: %i.\n", videoDeviceCount, audioDeviceCount);
+	printf("Video device Count: %i.\n", videoDeviceCount);
 
 	CHECK_HR(videoDevices[0]->ActivateObject(IID_PPV_ARGS(&videoSource)), L"Error activating video device.");
-	CHECK_HR(audioDevices[0]->ActivateObject(IID_PPV_ARGS(&audioSource)), L"Error activating audio device.");
+	//CHECK_HR(audioDevices[0]->ActivateObject(IID_PPV_ARGS(&audioSource)), L"Error activating audio device.");
 
 	// Initialize the Media Foundation platform.
 	CHECK_HR(MFStartup(MF_VERSION), L"Error on Media Foundation startup.");
 
-	WCHAR *pwszFileName = L"sample.mp4";
-	IMFSinkWriter *pWriter;
+	/*WCHAR *pwszFileName = L"sample.mp4";
+	IMFSinkWriter *pWriter;*/
 
-	CHECK_HR(MFCreateSinkWriterFromURL(
+	/*CHECK_HR(MFCreateSinkWriterFromURL(
 		pwszFileName,
 		NULL,
 		NULL,
-		&pWriter), L"Error creating mp4 sink writer.");
+		&pWriter), L"Error creating mp4 sink writer.");*/
 
 	// Create the source readers.
 	CHECK_HR(MFCreateSourceReaderFromMediaSource(
@@ -148,10 +149,10 @@ HRESULT StartStreaming(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCod
 
 	//ListModes(videoReader);
 
-	CHECK_HR(MFCreateSourceReaderFromMediaSource(
+	/*CHECK_HR(MFCreateSourceReaderFromMediaSource(
 		audioSource,
 		audioConfig,
-		&audioReader), L"Error creating audio source reader.");
+		&audioReader), L"Error creating audio source reader.");*/
 
 	FindVideoMode(videoReader, MF_INPUT_FORMAT, WIDTH, HEIGHT, desiredInputVideoType);
 
@@ -167,17 +168,17 @@ HRESULT StartStreaming(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCod
 	/*printf("Press any key to continue...");
 	getchar();*/
 
-	audioReader->GetCurrentMediaType(
+	/*audioReader->GetCurrentMediaType(
 		(DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM,
-		&audioType);
+		&audioType);*/
 	//CMediaTypeTrace *audioTypeMediaTrace = new CMediaTypeTrace(audioType);
 	//printf("Audio input media type: %s.\n", audioTypeMediaTrace->GetString());
 
-	printf("Configuring H.264 sink.\n");
+	//printf("Configuring H.264 sink.\n");
 
 	// Set up the H.264 sink.
-	CHECK_HR(ConfigureEncoder(videoType, &videoStreamIndex, &audioStreamIndex, pWriter), L"Error configuring encoder.");
-	printf("Video stream index %i, audio stream index %i.\n", videoStreamIndex, audioStreamIndex);
+	/*CHECK_HR(ConfigureEncoder(videoType, &videoStreamIndex, &audioStreamIndex, pWriter), L"Error configuring encoder.");
+	printf("Video stream index %i, audio stream index %i.\n", videoStreamIndex, audioStreamIndex);*/
 
 	// Register the color converter DSP for this process, in the video 
 	// processor category. This will enable the sink writer to enumerate
@@ -195,12 +196,12 @@ HRESULT StartStreaming(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCod
 		), L"Error registering colour converter DSP.");
 
 	// Add the input types to the H.264 sink writer.
-	CHECK_HR(pWriter->SetInputMediaType(videoStreamIndex, videoType, NULL), L"Error setting the sink writer video input type.");
+	/*CHECK_HR(pWriter->SetInputMediaType(videoStreamIndex, videoType, NULL), L"Error setting the sink writer video input type.");
 	videoType->Release();
 	CHECK_HR(pWriter->SetInputMediaType(audioStreamIndex, audioType, NULL), L"Error setting the sink writer audio input type.");
-	audioType->Release();
+	audioType->Release();*/
 
-	CHECK_HR(pWriter->BeginWriting(), L"Failed to begin writing on the H.264 sink.");
+	//CHECK_HR(pWriter->BeginWriting(), L"Failed to begin writing on the H.264 sink.");
 
 	//InitializeCriticalSection(&critsec);
 }
