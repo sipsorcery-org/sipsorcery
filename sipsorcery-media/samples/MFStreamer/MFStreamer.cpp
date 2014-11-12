@@ -257,11 +257,11 @@ HRESULT GetSampleFromMFStreamer(/* out */ vpx_codec_cx_pkt_t *& vpkt)
 
 			const int status = vpx_img_set_rect(img, 0, 0, _vpxConfig.g_w, _vpxConfig.g_h);
 
-			__int64 stime, sdrtn;
-			videoSample->GetSampleTime(&stime);
-			videoSample->GetSampleDuration(&sdrtn);
-			const __int64 st = stime / 100000;  // scale to ms
-			const unsigned long sd = (unsigned long)(sdrtn + 9999) / 100000;  // scale to ms
+			//__int64 stime, sdrtn;
+			//videoSample->GetSampleTime(&stime);
+			//videoSample->GetSampleDuration(&sdrtn);
+			//const __int64 st = stime / 100000;  // scale to ms
+			//const unsigned long sd = (unsigned long)(sdrtn + 9999) / 100000;  // scale to ms
 			vpx_enc_frame_flags_t flags = 0;
 
 			if (vpx_codec_encode(&_vpxCodec, rawImage, _sampleCount, 1, flags, VPX_DL_REALTIME)) {
@@ -302,13 +302,13 @@ HRESULT GetSampleFromMFStreamer(/* out */ vpx_codec_cx_pkt_t *& vpkt)
 				vpx_img_free(rawImage);
 			}
 
-			return S_OK;
-
 			_sampleCount++;
 
-			delete videoSample;
-			delete pMediaBuffer;
-			delete imgBuff;
+			//delete videoSample;
+			//delete pMediaBuffer;
+			//delete imgBuff;
+
+			return S_OK;
 		}
 		else
 		{

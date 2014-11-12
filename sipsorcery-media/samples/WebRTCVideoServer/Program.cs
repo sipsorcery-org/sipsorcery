@@ -42,8 +42,8 @@ namespace WebRTCVideoServer
         private static bool m_exit = false;
 
         private static IPEndPoint _wiresharpEP = new IPEndPoint(IPAddress.Parse("10.1.1.1"), 10001);
-        private static string _localIPAddress = "192.168.33.116" ; //"10.1.1.2";
-        private static string _clientIPAddress = "192.168.33.108"; // "10.1.1.2";
+        private static string _localIPAddress = "10.1.1.2"; // "192.168.33.116" ;
+        private static string _clientIPAddress = "10.1.1.2"; // "192.168.33.108";
         private static UdpClient _webRTCReceiverClient;
         private static UdpClient _rtpClient;
 
@@ -324,6 +324,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                         //byte[] bufferWithAuth = new byte[buffer.Length + 10];
                         //Buffer.BlockCopy(buffer, 0, bufferWithAuth, 0, buffer.Length);
                         RTPPacket triggerRTPPacket = new RTPPacket(buffer);
+                        RTPVP8Header vp8Header = RTPVP8Header.GetVP8Header(triggerRTPPacket.Payload);
 
                         if (sampleCount < 1000)
                         {
@@ -387,6 +388,11 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
 
                                     _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, _wiresharpEP);
 
+                                    if(vp8Header.IsKeyFrame)
+                                    {
+                                        Console.WriteLine("key frame.");
+                                    }
+
                                     int rtperr = _newRTPReceiverSRTP.ProtectRTP(rtpBuffer, rtpBuffer.Length - 10);
                                     if (rtperr != 0)
                                     {
@@ -436,6 +442,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                 videoSampler.Init();
 
                 bool samplingStarted = false;
+                byte pictureID = 0x1;
 
                 while (true)
                 {
@@ -476,7 +483,8 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                                             {
                                                 StartOfVP8Partition = (index == 0),
                                                 IsKeyFrame = sample.IsKeyFrame,
-                                                FirstPartitionSize = sample.Buffer.Length
+                                                FirstPartitionSize = sample.Buffer.Length,
+                                                PictureID = pictureID
                                             };
                                             byte[] vp8HeaderBytes = vp8Header.GetBytes();
 
@@ -514,6 +522,13 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
 
                             sample.Buffer = null;
                             sample = null;
+
+                            pictureID++;
+
+                            if(pictureID > 127)
+                            {
+                                pictureID = 1;
+                            }
                         }
                     }
                 }
