@@ -146,6 +146,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void SIPCallIncoming()
         {
+            _activeClient = _sipClient;
             SetVisibility(m_uacGrid, Visibility.Collapsed);
             SetVisibility(m_uasGrid, Visibility.Visible);
         }
