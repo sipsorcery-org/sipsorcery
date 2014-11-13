@@ -21,7 +21,7 @@ const unsigned int WIDTH = 640;
 const unsigned int HEIGHT = 480; // 400;
 const unsigned int STRIDE = 1280;
 const vpx_img_fmt VIDEO_INPUT_FORMAT = VPX_IMG_FMT_I420; // VPX_IMG_FMT_RGB24; // VPX_IMG_FMT_YUY2;
-const GUID MF_INPUT_FORMAT = WMMEDIASUBTYPE_YUY2; // MFVideoFormat_RGB24; // MFVideoFormat_I420;
+const GUID MF_INPUT_FORMAT = MFVideoFormat_I420; // WMMEDIASUBTYPE_YUY2; // MFVideoFormat_RGB24; // MFVideoFormat_I420;
 
 IMFMediaSource *videoSource = NULL, *audioSource = NULL;
 UINT32 videoDeviceCount = 0, audioDeviceCount = 0;
@@ -343,8 +343,9 @@ HRESULT GetSampleFromMFStreamer2(/* out */ vpx_codec_cx_pkt_t *& vpkt)
 		DWORD buffCurrLen = 0;
 		DWORD buffMaxLen = 0;
 		pMediaBuffer->Lock(&imgBuff, &buffMaxLen, &buffCurrLen);
-		YUY2ToI420(WIDTH, HEIGHT, STRIDE, imgBuff, i420);
-		vpx_image_t* const img = vpx_img_wrap(rawImage, VIDEO_INPUT_FORMAT, _vpxConfig.g_w, _vpxConfig.g_h, 1, i420);
+		//YUY2ToI420(WIDTH, HEIGHT, STRIDE, imgBuff, i420);
+		//vpx_image_t* const img = vpx_img_wrap(rawImage, VIDEO_INPUT_FORMAT, _vpxConfig.g_w, _vpxConfig.g_h, 1, i420);
+		vpx_image_t* const img = vpx_img_wrap(rawImage, VIDEO_INPUT_FORMAT, _vpxConfig.g_w, _vpxConfig.g_h, 1, imgBuff);
 		const vpx_codec_cx_pkt_t * pkt;
 
 		//const int status = vpx_img_set_rect(img, 0, 0, _vpxConfig.g_w, _vpxConfig.g_h);

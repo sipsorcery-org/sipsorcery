@@ -42,8 +42,8 @@ namespace WebRTCVideoServer
         private static bool m_exit = false;
 
         private static IPEndPoint _wiresharpEP = new IPEndPoint(IPAddress.Parse("10.1.1.1"), 10001);
-        private static string _localIPAddress = "192.168.33.116"; //  "10.1.1.2"; 
-        private static string _clientIPAddress = "192.168.33.108"; // "10.1.1.2";
+        private static string _localIPAddress = "10.1.1.2";  // "192.168.33.116"; 
+        private static string _clientIPAddress = "10.1.1.2"; // "192.168.33.108";
         private static UdpClient _webRTCReceiverClient;
         private static UdpClient _rtpClient;
 
@@ -120,13 +120,13 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
 
                 //ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
 
-                //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
+                ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromRawRTPFile("rtpPackets.txt"); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromRawRTPFileNewVP8Header("rtpPackets.txt"); });
 
-                ThreadPool.QueueUserWorkItem(delegate { SendRTPFromVP8FramesFile("framesAndHeaders.txt"); });
+                //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromVP8FramesFile("framesAndHeaders.txt"); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { ICMPListen(IPAddress.Parse(_localIPAddress)); });
 
@@ -458,11 +458,11 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                         {
                             Console.WriteLine("Got managed sample " + sample.Buffer.Length + ", is key frame " + sample.IsKeyFrame + ", partition id " + sample.PartitionID + ".");
 
-                            if (sample.IsKeyFrame)
-                            {
-                                // Skip the first 3 bytes of the encoded frame.
-                                sample.Buffer = sample.Buffer.Skip(3).ToArray();
-                            }
+                            //if (sample.IsKeyFrame)
+                            //{
+                            //    // Skip the first 3 bytes of the encoded frame.
+                            //    sample.Buffer = sample.Buffer.Skip(3).ToArray();
+                            //}
 
                             lock (_webRTCClients)
                             {
@@ -477,22 +477,29 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                                             int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
                                             int payloadLength = (offset + RTP_MAX_PAYLOAD < sample.Buffer.Length) ? RTP_MAX_PAYLOAD : sample.Buffer.Length - offset;
 
-                                            RTPVP8Header vp8Header = new RTPVP8Header()
-                                            {
-                                                ExtendedControlBitsPresent = true,
-                                                IsPictureIDPresent = true,
-                                                ShowFrame = true,
-                                            };
+                                            //RTPVP8Header vp8Header = new RTPVP8Header()
+                                            //{
+                                            //    ExtendedControlBitsPresent = true,
+                                            //    IsPictureIDPresent = true,
+                                            //    ShowFrame = true,
+                                            //};
 
-                                            if (index == 0)
+                                            //if (index == 0)
+                                            //{
+                                            //    vp8Header.StartOfVP8Partition = true;
+                                            //    vp8Header.FirstPartitionSize = 0; // frameVP8Header.FirstPartitionSize;
+                                            //    vp8Header.IsKeyFrame = sample.IsKeyFrame;
+                                            //    vp8Header.PictureID = (sample.IsKeyFrame) ? (byte)0x00 : pictureID;
+                                            //}
+
+                                            //byte[] vp8HeaderBytes = vp8Header.GetBytes();
+
+                                            byte[] vp8HeaderBytes = new byte[] { 0x90, 0x80, pictureID };;
+
+                                            if(index != 0)
                                             {
-                                                vp8Header.StartOfVP8Partition = true;
-                                                vp8Header.FirstPartitionSize = 0; // frameVP8Header.FirstPartitionSize;
-                                                vp8Header.IsKeyFrame = sample.IsKeyFrame;
-                                                vp8Header.PictureID = (sample.IsKeyFrame) ? (byte)0x00 : pictureID;
+                                                vp8HeaderBytes[0] = 0x80;
                                             }
-
-                                            byte[] vp8HeaderBytes = vp8Header.GetBytes();
 
                                             RTPPacket rtpPacket = new RTPPacket(payloadLength + 10 + vp8HeaderBytes.Length);
                                             rtpPacket.Header.SyncSource = client.SSRC;
