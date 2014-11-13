@@ -88,12 +88,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\include\libvpx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include\libvpx;..\..\include\libswscale</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;vpxmdd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;vpxmdd.lib;swscale_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\libs</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

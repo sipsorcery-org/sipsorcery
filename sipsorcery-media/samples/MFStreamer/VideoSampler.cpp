@@ -14,15 +14,32 @@ namespace SIPSorceryMedia
 		InitMFStreamer();
 	}
 
-	void VideoSampler::StartSampling()
+	/*void VideoSampler::StartSampling()
 	{
 		StartMFStreamer();
-	}
+	}*/
 
 	VPXPacketManaged^ VideoSampler::GetSample()
 	{
+		/*vpx_codec_cx_pkt_t *pkt;
+		long res = GetSampleFromMFStreamer(pkt);*/
+
+		const vpx_codec_cx_pkt_t *pkt = GetSampleFromMFStreamer();
+
+		//if (res == 0)
+		if (pkt != NULL)
+		{
+			printf("Got native sample, data length %i.\n", pkt->data.frame.sz);
+			return gcnew VPXPacketManaged(pkt->data.frame.buf, pkt->data.frame.sz, pkt->data.frame.flags & VPX_FRAME_IS_KEY, pkt->data.frame.partition_id);
+
+			delete pkt;
+		}
+	}
+
+	VPXPacketManaged^ VideoSampler::GetSample2()
+	{
 		vpx_codec_cx_pkt_t *pkt;
-		long res = GetSampleFromMFStreamer(pkt);
+		long res = GetSampleFromMFStreamer2(pkt);
 
 		if (res == 0)
 		{

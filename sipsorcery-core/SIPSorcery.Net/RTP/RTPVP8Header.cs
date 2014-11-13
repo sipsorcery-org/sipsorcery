@@ -80,6 +80,7 @@ namespace SIPSorcery.Net
             if (vp8Header.StartOfVP8Partition)
             {
                 byte s0 = (byte)((rtpPayload[payloadHeaderStartIndex] >> 5) & 0x07);
+                vp8Header.ShowFrame = (byte)((rtpPayload[payloadHeaderStartIndex] >> 4) & 0x01) == 1;
                 vp8Header.IsKeyFrame = (rtpPayload[payloadHeaderStartIndex] & 0x01) == 0;
                 byte s1 = rtpPayload[payloadHeaderStartIndex + 1];
                 byte s2 = rtpPayload[payloadHeaderStartIndex + 2];
@@ -95,13 +96,15 @@ namespace SIPSorcery.Net
         {
             if (!StartOfVP8Partition)
             {
-                if (PictureID != 0)
+                if (IsPictureIDPresent)
                 {
+                    _length = 3;
                     return new byte[] { 0x80, 0x80, PictureID };
                 }
                 else
                 {
                     // No partition header on continuation packets.
+                    _length = 1;
                     return new byte[] { 0x00 };
                 }
             }
@@ -109,20 +112,23 @@ namespace SIPSorcery.Net
             {
                 byte[] payloadDescriptor = null;
 
-                if (PictureID != 0)
+                if (IsPictureIDPresent)
                 {
+                    _length = 3;
                     payloadDescriptor = new byte[] { 0x90, 0x80, PictureID };
                 }
                 else
                 {
+                    _length = 1;
                     payloadDescriptor = new byte[] { 0x10 };
                 }
 
                 byte s2 = (byte)(FirstPartitionSize / 2048);
                 byte s1 = (byte)((FirstPartitionSize - (s2 * 2048)) / 8);
-                byte s0 = (byte)(((FirstPartitionSize - (s2 * 2048) - (s1 * 8)) << 5) & 0xf0);
+                byte s0 = (byte)(((FirstPartitionSize - (s2 * 2048) - (s1 * 8)) << 5) & 0xe0);
 
-                byte firstBytePH = (byte)(s0 + ((IsKeyFrame) ? 0x00 : 0x01));
+                byte firstBytePH = (byte)(s0 + ((ShowFrame) ? 0x10 : 0x00));
+                firstBytePH = (byte)(firstBytePH + ((IsKeyFrame) ? 0x00 : 0x01));
 
                 byte[] payloadHeader = new byte[] { firstBytePH, s1, s2 };
 
@@ -130,6 +136,8 @@ namespace SIPSorcery.Net
 
                 Buffer.BlockCopy(payloadDescriptor, 0, vp8Header, 0, payloadDescriptor.Length);
                 Buffer.BlockCopy(payloadHeader, 0, vp8Header, payloadDescriptor.Length, payloadHeader.Length);
+
+                _length += 3;
 
                 return vp8Header;
             }

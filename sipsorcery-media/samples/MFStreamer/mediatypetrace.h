@@ -57,6 +57,7 @@ LPCSTR STRING_FROM_GUID( GUID Attr )
     INTERNAL_GUID_TO_STRING( MF_MT_PIXEL_ASPECT_RATIO, 6 );             // PIXEL_ASPECT_RATIO
     INTERNAL_GUID_TO_STRING( MF_MT_INTERLACE_MODE, 6 );                 // INTERLACE_MODE
     INTERNAL_GUID_TO_STRING( MF_MT_AVG_BITRATE, 6 );                    // AVG_BITRATE
+	INTERNAL_GUID_TO_STRING(MF_MT_DEFAULT_STRIDE, 6);					// STRIDE
 
     // Major type values
     INTERNAL_GUID_TO_STRING( MFMediaType_Default, 12 );                 // Default
@@ -92,8 +93,11 @@ LPCSTR STRING_FROM_GUID( GUID Attr )
     INTERNAL_GUID_TO_STRING( MFAudioFormat_MP3, 14 );                   // MP3
     INTERNAL_GUID_TO_STRING( MFAudioFormat_MPEG, 14 );                  // MPEG
 
-	// Media sub types
-	INTERNAL_GUID_TO_STRING( WMMEDIASUBTYPE_I420, 15 );                  // I420
+	// Video sub types
+	INTERNAL_GUID_TO_STRING( WMMEDIASUBTYPE_I420, 15 );                 // I420
+	INTERNAL_GUID_TO_STRING( MFVideoFormat_YV12, 14 );					// YV12
+	INTERNAL_GUID_TO_STRING( MFVideoFormat_IYUV, 14 );					// IYUV.
+	INTERNAL_GUID_TO_STRING( WMMEDIASUBTYPE_YUY2, 15);					// YUY2.
 
 done:    
     return pAttrStr;

@@ -42,8 +42,8 @@ namespace WebRTCVideoServer
         private static bool m_exit = false;
 
         private static IPEndPoint _wiresharpEP = new IPEndPoint(IPAddress.Parse("10.1.1.1"), 10001);
-        private static string _localIPAddress = "10.1.1.2"; // "192.168.33.116" ;
-        private static string _clientIPAddress = "10.1.1.2"; // "192.168.33.108";
+        private static string _localIPAddress = "192.168.33.116"; //  "10.1.1.2"; 
+        private static string _clientIPAddress = "192.168.33.108"; // "10.1.1.2";
         private static UdpClient _webRTCReceiverClient;
         private static UdpClient _rtpClient;
 
@@ -118,11 +118,15 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                 logger.Debug("Commencing listen to receiver WebRTC client on local socket " + receiverLocalEndPoint + ".");
                 ThreadPool.QueueUserWorkItem(delegate { ListenToReceiverWebRTCClient(_webRTCReceiverClient); });
 
-                ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
+                //ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
 
-                //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromFile("framesSaved.txt"); });
+                //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromRawRTPFile("rtpPackets.txt"); });
+
+                //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromRawRTPFileNewVP8Header("rtpPackets.txt"); });
+
+                ThreadPool.QueueUserWorkItem(delegate { SendRTPFromVP8FramesFile("framesAndHeaders.txt"); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { ICMPListen(IPAddress.Parse(_localIPAddress)); });
 
@@ -308,7 +312,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 byte[] buffer = rtpClient.Receive(ref remoteEndPoint);
 
-                StreamWriter sw = new StreamWriter("frames.txt");
+                StreamWriter sw = new StreamWriter("rtpPackets.txt");
                 byte[] frame = new byte[1000000];
                 int framePosition = 0;
                 int sampleCount = 0;
@@ -321,8 +325,6 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
 
                     if (_webRTCClients.Count != 0)
                     {
-                        //byte[] bufferWithAuth = new byte[buffer.Length + 10];
-                        //Buffer.BlockCopy(buffer, 0, bufferWithAuth, 0, buffer.Length);
                         RTPPacket triggerRTPPacket = new RTPPacket(buffer);
                         RTPVP8Header vp8Header = RTPVP8Header.GetVP8Header(triggerRTPPacket.Payload);
 
@@ -330,34 +332,31 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                         {
                             sw.WriteLine(triggerRTPPacket.Header.Timestamp + "," + triggerRTPPacket.Header.MarkerBit + "," + Convert.ToBase64String(triggerRTPPacket.Payload));
 
-                            //if (triggerRTPPacket.Header.MarkerBit == 1)
+                            //if (triggerRTPPacket.Header.MarkerBit == 1 && vp8Header.StartOfVP8Partition == true)
                             //{
-                            //    if (framePosition != 0)
-                            //    {
-                            //        // Previously incomplete frame is now complete.
-                            //        Buffer.BlockCopy(triggerRTPPacket.Payload, 0, frame, framePosition, triggerRTPPacket.Payload.Length);
-                            //        framePosition += triggerRTPPacket.Payload.Length;
-                            //        sw.WriteLine(Convert.ToBase64String(frame, 0, framePosition));
-                            //        framePosition = 0;
-                            //    }
-                            //    else
-                            //    {
-                            //        // This is a single packet frame.
-                            //        sw.WriteLine(Convert.ToBase64String(triggerRTPPacket.Payload));
-                            //    }
+                            //    // This is a single packet frame.
+                            //    sw.WriteLine(Convert.ToBase64String(vp8Header.GetBytes()) + "," + Convert.ToBase64String(triggerRTPPacket.Payload, vp8Header.Length, triggerRTPPacket.Payload.Length - vp8Header.Length));
+                            //}
+                            //else if (vp8Header.StartOfVP8Partition == true)
+                            //{
+                            //    // This is a first packet in a multi-packet frame.
+                            //    sw.Write(Convert.ToBase64String(vp8Header.GetBytes()) + ",");
+                            //    Buffer.BlockCopy(triggerRTPPacket.Payload, vp8Header.Length, frame, 0, triggerRTPPacket.Payload.Length - vp8Header.Length);
+                            //    framePosition = triggerRTPPacket.Payload.Length - vp8Header.Length;
+                            //}
+                            //else if (triggerRTPPacket.Header.MarkerBit == 1)
+                            //{
+                            //    // This is the last continuation frame.
+                            //    Buffer.BlockCopy(triggerRTPPacket.Payload, vp8Header.Length, frame, framePosition, triggerRTPPacket.Payload.Length - vp8Header.Length);
+                            //    framePosition += triggerRTPPacket.Payload.Length - vp8Header.Length;
+                            //    sw.WriteLine(Convert.ToBase64String(frame, 0, framePosition));
+                            //    framePosition = 0;
                             //}
                             //else
                             //{
-                            //    Buffer.BlockCopy(triggerRTPPacket.Payload, 0, frame, framePosition, triggerRTPPacket.Payload.Length);
-
-                            //    if (framePosition == 0)
-                            //    {
-                            //        framePosition = triggerRTPPacket.Payload.Length - 1;
-                            //    }
-                            //    else
-                            //    {
-                            //        framePosition += triggerRTPPacket.Payload.Length;
-                            //    }
+                            //    // This is a middle continuation packet
+                            //    Buffer.BlockCopy(triggerRTPPacket.Payload, vp8Header.Length, frame, framePosition, triggerRTPPacket.Payload.Length - vp8Header.Length);
+                            //    framePosition += triggerRTPPacket.Payload.Length - vp8Header.Length;
                             //}
 
                             sampleCount++;
@@ -386,9 +385,9 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
 
                                     var rtpBuffer = rtpPacket.GetBytes();
 
-                                    _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, _wiresharpEP);
+                                    _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length - 10, _wiresharpEP);
 
-                                    if(vp8Header.IsKeyFrame)
+                                    if (vp8Header.IsKeyFrame)
                                     {
                                         Console.WriteLine("key frame.");
                                     }
@@ -441,22 +440,21 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                 SIPSorceryMedia.VideoSampler videoSampler = new SIPSorceryMedia.VideoSampler();
                 videoSampler.Init();
 
-                bool samplingStarted = false;
+                _newRTPReceiverSRTP = new SRTPManaged(Convert.FromBase64String(_sourceSRTPKey));
+
                 byte pictureID = 0x1;
 
                 while (true)
                 {
                     if (_webRTCClients.Count != 0)
                     {
-                        if (!samplingStarted)
+                        //var sample = videoSampler.GetSample();
+                        var sample = videoSampler.GetSample2();
+                        if (sample == null)
                         {
-                            samplingStarted = true;
-                            videoSampler.StartSampling();
-                            _newRTPReceiverSRTP = new SRTPManaged(Convert.FromBase64String(_sourceSRTPKey));
+                            Console.WriteLine("Video sampler returned a null sample.");
                         }
-
-                        var sample = videoSampler.GetSample();
-                        if (sample != null)
+                        else
                         {
                             Console.WriteLine("Got managed sample " + sample.Buffer.Length + ", is key frame " + sample.IsKeyFrame + ", partition id " + sample.PartitionID + ".");
 
@@ -476,23 +474,31 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
 
                                         for (int index = 0; index * RTP_MAX_PAYLOAD < sample.Buffer.Length; index++)
                                         {
-                                            int offset = index * RTP_MAX_PAYLOAD;
-                                            int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < sample.Buffer.Length) ? RTP_MAX_PAYLOAD : sample.Buffer.Length - index * RTP_MAX_PAYLOAD;
+                                            int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
+                                            int payloadLength = (offset + RTP_MAX_PAYLOAD < sample.Buffer.Length) ? RTP_MAX_PAYLOAD : sample.Buffer.Length - offset;
 
                                             RTPVP8Header vp8Header = new RTPVP8Header()
                                             {
-                                                StartOfVP8Partition = (index == 0),
-                                                IsKeyFrame = sample.IsKeyFrame,
-                                                FirstPartitionSize = sample.Buffer.Length,
-                                                PictureID = pictureID
+                                                ExtendedControlBitsPresent = true,
+                                                IsPictureIDPresent = true,
+                                                ShowFrame = true,
                                             };
+
+                                            if (index == 0)
+                                            {
+                                                vp8Header.StartOfVP8Partition = true;
+                                                vp8Header.FirstPartitionSize = 0; // frameVP8Header.FirstPartitionSize;
+                                                vp8Header.IsKeyFrame = sample.IsKeyFrame;
+                                                vp8Header.PictureID = (sample.IsKeyFrame) ? (byte)0x00 : pictureID;
+                                            }
+
                                             byte[] vp8HeaderBytes = vp8Header.GetBytes();
 
                                             RTPPacket rtpPacket = new RTPPacket(payloadLength + 10 + vp8HeaderBytes.Length);
                                             rtpPacket.Header.SyncSource = client.SSRC;
                                             rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
                                             rtpPacket.Header.Timestamp = client.LastTimestamp;
-                                            rtpPacket.Header.MarkerBit = ((index + 1) * RTP_MAX_PAYLOAD >= sample.Buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
+                                            rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= sample.Buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
                                             rtpPacket.Header.PayloadType = 100;
 
                                             Buffer.BlockCopy(vp8HeaderBytes, 0, rtpPacket.Payload, 0, vp8HeaderBytes.Length);
@@ -525,7 +531,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
 
                             pictureID++;
 
-                            if(pictureID > 127)
+                            if (pictureID > 127)
                             {
                                 pictureID = 1;
                             }
@@ -539,7 +545,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
             }
         }
 
-        private static void SendRTPFromFile(string file)
+        private static void SendRTPFromRawRTPFile(string file)
         {
             try
             {
@@ -572,43 +578,43 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                             {
                                 try
                                 {
-                                    if(client.LastTimestamp == 0)
+                                    if (client.LastTimestamp == 0)
                                     {
                                         client.LastTimestamp = RTSPSession.DateTimeToNptTimestamp32(DateTime.Now);
                                     }
-                                    
+
                                     //for (int index = 0; index * RTP_MAX_PAYLOAD < sample.Length; index++)
                                     //{
                                     //    int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD) - 1;
                                     //    int payloadLength = (offset + RTP_MAX_PAYLOAD < sample.Length - 1) ? RTP_MAX_PAYLOAD : sample.Length - 1 - offset;
 
                                     RTPPacket rtpPacket = new RTPPacket(sample.Length + 10);
-                                        rtpPacket.Header.SyncSource = client.SSRC;
-                                        rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
-                                        rtpPacket.Header.Timestamp = client.LastTimestamp;
-                                        rtpPacket.Header.MarkerBit = markerBit;
-                                        rtpPacket.Header.PayloadType = 100;
+                                    rtpPacket.Header.SyncSource = client.SSRC;
+                                    rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
+                                    rtpPacket.Header.Timestamp = client.LastTimestamp;
+                                    rtpPacket.Header.MarkerBit = markerBit;
+                                    rtpPacket.Header.PayloadType = 100;
 
-                                        //if (offset + RTP_MAX_PAYLOAD > sample.Length - 1)
-                                        //{
-                                        //     Last packet in the frame.
-                                        //    rtpPacket.Header.MarkerBit = 1;
-                                        //}
+                                    //if (offset + RTP_MAX_PAYLOAD > sample.Length - 1)
+                                    //{
+                                    //     Last packet in the frame.
+                                    //    rtpPacket.Header.MarkerBit = 1;
+                                    //}
 
-                                        Buffer.BlockCopy(sample, 0, rtpPacket.Payload, 0, sample.Length);
+                                    Buffer.BlockCopy(sample, 0, rtpPacket.Payload, 0, sample.Length);
 
-                                        var rtpBuffer = rtpPacket.GetBytes();
-                                        int rtperr = _newRTPReceiverSRTP.ProtectRTP(rtpBuffer, rtpBuffer.Length - 10);
-                                        if (rtperr != 0)
-                                        {
-                                            logger.Debug("New RTP packet protect result " + rtperr + ".");
-                                        }
+                                    var rtpBuffer = rtpPacket.GetBytes();
+                                    int rtperr = _newRTPReceiverSRTP.ProtectRTP(rtpBuffer, rtpBuffer.Length - 10);
+                                    if (rtperr != 0)
+                                    {
+                                        logger.Debug("New RTP packet protect result " + rtperr + ".");
+                                    }
 
-                                        logger.Debug("Sending RTP " + sample.Length + " bytes to " + client.SocketAddress + ", timestamp " + client.LastTimestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
+                                    logger.Debug("Sending RTP " + sample.Length + " bytes to " + client.SocketAddress + ", timestamp " + client.LastTimestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
 
-                                        _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
+                                    _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
 
-                                    if(markerBit == 1)
+                                    if (markerBit == 1)
                                     {
                                         client.LastTimestamp += TIMESTAMP_SPACING;
                                     }
@@ -622,7 +628,238 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                         }
 
                         sampleIndex++;
-                        if(sampleIndex >= samples.Count - 1)
+                        if (sampleIndex >= samples.Count - 1)
+                        {
+                            sampleIndex = 0;
+                        }
+
+                        //Thread.Sleep(30);
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                Console.WriteLine("Exception SendRTPFromFile. " + excp);
+            }
+        }
+
+        private static void SendRTPFromRawRTPFileNewVP8Header(string file)
+        {
+            try
+            {
+                StreamReader sr = new StreamReader(file);
+                List<string> samples = new List<string>();
+                while (!sr.EndOfStream)
+                {
+                    samples.Add(sr.ReadLine());
+                }
+                sr.Close();
+                logger.Debug(samples.Count + " encoded samples loaded.");
+
+                _newRTPReceiverSRTP = new SRTPManaged(Convert.FromBase64String(_sourceSRTPKey));
+                int sampleIndex = 0;
+
+                while (true)
+                {
+                    if (_webRTCClients.Count != 0)
+                    {
+                        var sampleItem = samples[sampleIndex];
+                        string[] sampleFields = sampleItem.Split(',');
+
+                        //uint timestamp = Convert.ToUInt32(sampleFields[0]);
+                        int markerBit = Convert.ToInt32(sampleFields[1]);
+                        byte[] sample = Convert.FromBase64String(sampleFields[2]);
+
+                        lock (_webRTCClients)
+                        {
+                            foreach (var client in _webRTCClients.Where(x => x.STUNExchangeComplete))
+                            {
+                                try
+                                {
+                                    if (client.LastTimestamp == 0)
+                                    {
+                                        client.LastTimestamp = RTSPSession.DateTimeToNptTimestamp32(DateTime.Now);
+                                    }
+
+                                    RTPVP8Header origVP8Header = RTPVP8Header.GetVP8Header(sample);
+
+                                    if(origVP8Header.IsKeyFrame)
+                                    {
+                                        Console.WriteLine("Key frame");
+                                    }
+
+                                    RTPPacket rtpPacket = new RTPPacket(sample.Length + 10);
+                                    rtpPacket.Header.SyncSource = client.SSRC;
+                                    rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
+                                    rtpPacket.Header.Timestamp = client.LastTimestamp;
+                                    rtpPacket.Header.MarkerBit = markerBit;
+                                    rtpPacket.Header.PayloadType = 100;
+
+                                    if (origVP8Header.StartOfVP8Partition && markerBit == 1)
+                                    {
+                                        Console.WriteLine("My VP8 Header    : " + BitConverter.ToString(origVP8Header.GetBytes()) + ".");
+                                        Console.WriteLine("Sample VP8 Header: " + BitConverter.ToString(sample, 0, 6) + ".");
+
+                                        Buffer.BlockCopy(origVP8Header.GetBytes(), 0, rtpPacket.Payload, 0, origVP8Header.Length);
+                                        Buffer.BlockCopy(sample, origVP8Header.Length, rtpPacket.Payload, origVP8Header.Length, sample.Length - origVP8Header.Length);
+                                    }
+                                    else
+                                    {
+                                        Buffer.BlockCopy(sample, 0, rtpPacket.Payload, 0, sample.Length);
+                                    }
+
+                                    var rtpBuffer = rtpPacket.GetBytes();
+
+                                    _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length - 10, _wiresharpEP);
+
+                                    int rtperr = _newRTPReceiverSRTP.ProtectRTP(rtpBuffer, rtpBuffer.Length - 10);
+                                    if (rtperr != 0)
+                                    {
+                                        logger.Debug("New RTP packet protect result " + rtperr + ".");
+                                    }
+
+                                    logger.Debug("Sending RTP " + sample.Length + " bytes to " + client.SocketAddress + ", timestamp " + client.LastTimestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
+
+                                    _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
+
+                                    if (markerBit == 1)
+                                    {
+                                        client.LastTimestamp += TIMESTAMP_SPACING;
+                                    }
+                                    //}
+                                }
+                                catch (Exception sendExcp)
+                                {
+                                    logger.Error("SendRTPFromFile exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
+                                }
+                            }
+                        }
+
+                        sampleIndex++;
+                        if (sampleIndex >= samples.Count - 1)
+                        {
+                            sampleIndex = 0;
+                        }
+
+                        //Thread.Sleep(30);
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                Console.WriteLine("Exception SendRTPFromFile. " + excp);
+            }
+        }
+
+        private static void SendRTPFromVP8FramesFile(string file)
+        {
+            try
+            {
+                StreamReader sr = new StreamReader(file);
+                List<string> samples = new List<string>();
+                while (!sr.EndOfStream)
+                {
+                    string sample = sr.ReadLine();
+                    samples.Add(sample);
+
+                    //Console.WriteLine(sample);
+
+                    //string[] sampleFields = sample.Split(',');
+                    //RTPVP8Header frameVP8Header = RTPVP8Header.GetVP8Header(Convert.FromBase64String(sampleFields[0]));
+                    //byte[] rtpPaylaod = Convert.FromBase64String(sampleFields[1]);
+
+                    //Console.WriteLine((frameVP8Header.IsKeyFrame) ? "K" : "." + " " + frameVP8Header.FirstPartitionSize + " " + rtpPaylaod.Length + ".");
+                }
+                sr.Close();
+                logger.Debug(samples.Count + " encoded samples loaded.");
+
+                _newRTPReceiverSRTP = new SRTPManaged(Convert.FromBase64String(_sourceSRTPKey));
+                int sampleIndex = 0;
+
+                while (true)
+                {
+                    if (_webRTCClients.Count != 0)
+                    {
+                        var sampleItem = samples[sampleIndex];
+                        string[] sampleFields = sampleItem.Split(',');
+
+                        RTPVP8Header frameVP8Header = RTPVP8Header.GetVP8Header(Convert.FromBase64String(sampleFields[0]));
+                        byte[] sample = Convert.FromBase64String(sampleFields[1]);
+
+                        if(frameVP8Header.IsKeyFrame)
+                        {
+                            Console.WriteLine("Key frame.");
+                        }
+
+                        lock (_webRTCClients)
+                        {
+                            foreach (var client in _webRTCClients.Where(x => x.STUNExchangeComplete))
+                            {
+                                try
+                                {
+                                    if (client.LastTimestamp == 0)
+                                    {
+                                        client.LastTimestamp = RTSPSession.DateTimeToNptTimestamp32(DateTime.Now);
+                                    }
+
+                                    for (int index = 0; index * RTP_MAX_PAYLOAD < sample.Length; index++)
+                                    {
+                                        int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
+                                        int payloadLength = (offset + RTP_MAX_PAYLOAD < sample.Length) ? RTP_MAX_PAYLOAD : sample.Length - offset;
+
+                                        RTPVP8Header packetVP8Header = new RTPVP8Header()
+                                        {
+                                            ExtendedControlBitsPresent = true,
+                                            IsPictureIDPresent = true,
+                                            ShowFrame = true,
+                                        };
+
+                                        if(index == 0)
+                                        {
+                                            packetVP8Header.StartOfVP8Partition = true;
+                                            //packetVP8Header.FirstPartitionSize = frameVP8Header.FirstPartitionSize;
+                                            packetVP8Header.IsKeyFrame = frameVP8Header.IsKeyFrame;
+                                            packetVP8Header.PictureID = (frameVP8Header.IsKeyFrame) ? (byte)0x00 : frameVP8Header.PictureID;
+                                        }
+
+                                        byte[] vp8HeaderBytes = packetVP8Header.GetBytes();
+ 
+                                        RTPPacket rtpPacket = new RTPPacket(packetVP8Header.Length + payloadLength + 10);
+                                        rtpPacket.Header.SyncSource = client.SSRC;
+                                        rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
+                                        rtpPacket.Header.Timestamp = client.LastTimestamp;
+                                        rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= sample.Length) ? 1 : 0;
+                                        rtpPacket.Header.PayloadType = 100;
+
+                                        Buffer.BlockCopy(vp8HeaderBytes, 0, rtpPacket.Payload, 0, packetVP8Header.Length);
+                                        Buffer.BlockCopy(sample, offset, rtpPacket.Payload, packetVP8Header.Length, payloadLength);
+
+                                        var rtpBuffer = rtpPacket.GetBytes();
+
+                                        _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length - 10, _wiresharpEP);
+
+                                        int rtperr = _newRTPReceiverSRTP.ProtectRTP(rtpBuffer, rtpBuffer.Length - 10);
+                                        if (rtperr != 0)
+                                        {
+                                            logger.Debug("New RTP packet protect result " + rtperr + ".");
+                                        }
+
+                                        logger.Debug("Sending RTP " + sample.Length + " bytes to " + client.SocketAddress + ", timestamp " + client.LastTimestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
+
+                                        _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
+                                    }
+
+                                    client.LastTimestamp += TIMESTAMP_SPACING;
+                                }
+                                catch (Exception sendExcp)
+                                {
+                                    logger.Error("SendRTPFromVP8FramesFile exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
+                                }
+                            }
+                        }
+
+                        sampleIndex++;
+                        if (sampleIndex >= samples.Count - 1)
                         {
                             sampleIndex = 0;
                         }
@@ -633,7 +870,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
             }
             catch (Exception excp)
             {
-                Console.WriteLine("Exception SendRTPFromFile. " + excp);
+                Console.WriteLine("Exception SendRTPFromVP8FramesFile. " + excp);
             }
         }
     }

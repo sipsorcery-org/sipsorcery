@@ -21,3 +21,4 @@ ffplay -rtsp_flags listen rtsp://10.1.1.2:1234/live.sdp
 
 // List direct show devices.
 ffmpeg -list_devices true -f dshow -i dummy
+ffmpeg -f dshow -list_options true -i video="Integrated Camera"

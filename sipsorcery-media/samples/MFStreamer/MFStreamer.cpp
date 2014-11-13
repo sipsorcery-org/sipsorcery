@@ -2,6 +2,7 @@
 //
 
 #include "stdafx.h"
+#include "stddef.h"
 #include <mfapi.h>
 #include <mfplay.h>
 #include <mfreadwrite.h>
@@ -17,9 +18,10 @@
 #define CHECK_HR(hr, msg) if (HRHasFailed(hr, msg)) return hr;
 
 const unsigned int WIDTH = 640;
-const unsigned int HEIGHT = 400;
-const vpx_img_fmt VIDEO_INPUT_FORMAT = VPX_IMG_FMT_I420;
-const GUID MF_INPUT_FORMAT = MFVideoFormat_I420; // MFVideoFormat_RGB24;
+const unsigned int HEIGHT = 480; // 400;
+const unsigned int STRIDE = 1280;
+const vpx_img_fmt VIDEO_INPUT_FORMAT = VPX_IMG_FMT_I420; // VPX_IMG_FMT_RGB24; // VPX_IMG_FMT_YUY2;
+const GUID MF_INPUT_FORMAT = WMMEDIASUBTYPE_YUY2; // MFVideoFormat_RGB24; // MFVideoFormat_I420;
 
 IMFMediaSource *videoSource = NULL, *audioSource = NULL;
 UINT32 videoDeviceCount = 0, audioDeviceCount = 0;
@@ -51,6 +53,8 @@ void FindVideoMode(IMFSourceReader *pReader, const GUID mediaSubType, int width,
 HRESULT CopyAttribute(IMFAttributes *pSrc, IMFAttributes *pDest, const GUID& key);
 HRESULT ConfigureEncoder(IMFMediaType *pVideoType, DWORD *videoStreamIndex, DWORD *audioStreamIndex, IMFSinkWriter *pWriter);
 HRESULT InitVPXEncoder(vpx_codec_enc_cfg_t * cfg, vpx_codec_ctx_t * vpxCodec, unsigned int width, unsigned int height);
+int YUY2ToI420(int width, int height, int stride, BYTE *in, BYTE *out);
+HRESULT GetDefaultStride(IMFMediaType *pType, LONG *plStride);
 
 HRESULT InitMFStreamer()
 {
@@ -59,6 +63,116 @@ HRESULT InitMFStreamer()
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
 	CHECK_HR(InitVPXEncoder(&_vpxConfig, &_vpxCodec, WIDTH, HEIGHT), L"Failed to intialise the VPX encoder.\n");
+
+	// Create an attribute store to hold the search criteria.
+	CHECK_HR(MFCreateAttributes(&videoConfig, 1), L"Error creating video configuation.");
+	//CHECK_HR(MFCreateAttributes(&audioConfig, 1), L"Error creating audio configuation.");;
+
+	// Request video capture devices.
+	CHECK_HR(videoConfig->SetGUID(
+		MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE,
+		MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID), L"Error initialising video configuration object.");
+
+	// Request audio capture devices.
+	/*CHECK_HR(audioConfig->SetGUID(
+	MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE,
+	MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_GUID), L"Error initialising audio configuration object.");*/
+
+	// Enumerate the devices,
+	CHECK_HR(MFEnumDeviceSources(videoConfig, &videoDevices, &videoDeviceCount), L"Error enumerating video devices.");
+	//CHECK_HR(MFEnumDeviceSources(audioConfig, &audioDevices, &audioDeviceCount), L"Error enumerating audio devices.");
+
+	//printf("Video device Count: %i, Audio device count: %i.\n", videoDeviceCount, audioDeviceCount);
+	printf("Video device Count: %i.\n", videoDeviceCount);
+
+	CHECK_HR(videoDevices[0]->ActivateObject(IID_PPV_ARGS(&videoSource)), L"Error activating video device.");
+	//CHECK_HR(audioDevices[0]->ActivateObject(IID_PPV_ARGS(&audioSource)), L"Error activating audio device.");
+
+	// Initialize the Media Foundation platform.
+	CHECK_HR(MFStartup(MF_VERSION), L"Error on Media Foundation startup.");
+
+	/*WCHAR *pwszFileName = L"sample.mp4";
+	IMFSinkWriter *pWriter;*/
+
+	/*CHECK_HR(MFCreateSinkWriterFromURL(
+	pwszFileName,
+	NULL,
+	NULL,
+	&pWriter), L"Error creating mp4 sink writer.");*/
+
+	// Create the source readers.
+	CHECK_HR(MFCreateSourceReaderFromMediaSource(
+		videoSource,
+		videoConfig,
+		&videoReader), L"Error creating video source reader.");
+
+	//ListModes(videoReader);
+
+	/*CHECK_HR(MFCreateSourceReaderFromMediaSource(
+	audioSource,
+	audioConfig,
+	&audioReader), L"Error creating audio source reader.");*/
+
+	FindVideoMode(videoReader, MF_INPUT_FORMAT, WIDTH, HEIGHT, desiredInputVideoType);
+
+	if (desiredInputVideoType == NULL) {
+		printf("The specified media type could not be found for the MF video reader.\n");
+	}
+	else {
+		CHECK_HR(videoReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, NULL, desiredInputVideoType),
+			L"Error setting video reader media type.\n");
+
+		CHECK_HR(videoReader->GetCurrentMediaType(
+			(DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
+			&videoType), L"Error retrieving current media type from first video stream.");
+		CMediaTypeTrace *videoTypeMediaTrace = new CMediaTypeTrace(videoType);
+
+		printf("Video input media type: %s.\n", videoTypeMediaTrace->GetString());
+
+		LONG pStride = 0;
+		GetDefaultStride(videoType, &pStride);
+		printf("Stride %i.\n", pStride);
+			
+		/*printf("Press any key to continue...");
+		getchar();*/
+
+		/*audioReader->GetCurrentMediaType(
+		(DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM,
+		&audioType);*/
+		//CMediaTypeTrace *audioTypeMediaTrace = new CMediaTypeTrace(audioType);
+		//printf("Audio input media type: %s.\n", audioTypeMediaTrace->GetString());
+
+		//printf("Configuring H.264 sink.\n");
+
+		// Set up the H.264 sink.
+		/*CHECK_HR(ConfigureEncoder(videoType, &videoStreamIndex, &audioStreamIndex, pWriter), L"Error configuring encoder.");
+		printf("Video stream index %i, audio stream index %i.\n", videoStreamIndex, audioStreamIndex);*/
+
+		// Register the color converter DSP for this process, in the video 
+		// processor category. This will enable the sink writer to enumerate
+		// the color converter when the sink writer attempts to match the
+		// media types.
+		CHECK_HR(MFTRegisterLocalByCLSID(
+			__uuidof(CColorConvertDMO),
+			MFT_CATEGORY_VIDEO_PROCESSOR,
+			L"",
+			MFT_ENUM_FLAG_SYNCMFT,
+			0,
+			NULL,
+			0,
+			NULL
+			), L"Error registering colour converter DSP.");
+
+		// Add the input types to the H.264 sink writer.
+		/*CHECK_HR(pWriter->SetInputMediaType(videoStreamIndex, videoType, NULL), L"Error setting the sink writer video input type.");
+		videoType->Release();
+		CHECK_HR(pWriter->SetInputMediaType(audioStreamIndex, audioType, NULL), L"Error setting the sink writer audio input type.");
+		audioType->Release();*/
+
+		//CHECK_HR(pWriter->BeginWriting(), L"Failed to begin writing on the H.264 sink.");
+
+		//InitializeCriticalSection(&critsec);
+	}
 }
 
 HRESULT InitVPXEncoder(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCodec, unsigned int width, unsigned int height)
@@ -78,13 +192,14 @@ HRESULT InitVPXEncoder(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCod
 	}
 	else {
 
-		vpxConfig->rc_target_bitrate = width * height * vpxConfig->rc_target_bitrate;
 		vpxConfig->g_w = width;
 		vpxConfig->g_h = height;
 		vpxConfig->rc_target_bitrate = 500000;
 		vpxConfig->rc_min_quantizer = 50;
 		vpxConfig->rc_max_quantizer = 60;
-		
+		vpxConfig->g_pass = VPX_RC_ONE_PASS;
+		vpxConfig->rc_end_usage = VPX_CBR;
+
 		/* Initialize codec */
 		if (vpx_codec_enc_init(vpxCodec, (vpx_codec_vp8_cx()), vpxConfig, 0)) {
 			printf("Failed to initialize libvpx encoder.\n");
@@ -96,271 +211,181 @@ HRESULT InitVPXEncoder(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCod
 	}
 }
 
-void StartMFStreamer()
+const vpx_codec_cx_pkt_t * GetSampleFromMFStreamer()
 {
-	printf("StartMFStreamer.\n");
+	vpx_image_t          raw;
+	vpx_codec_err_t      res;
+	vpx_codec_iter_t iter = NULL;
+	const vpx_codec_cx_pkt_t *pkt;
+	IMFMediaBuffer * pMediaBuffer;
+	DWORD pMediaBufferLength;
+	DWORD buffCurrLen = 0;
+	DWORD buffMaxLen = 0;
 
-	StartStreaming(&_vpxConfig, &_vpxCodec);
+	// Initial read results in a null pSample??
+	videoReader->ReadSample(
+		MF_SOURCE_READER_ANY_STREAM,    // Stream index.
+		0,                              // Flags.
+		&streamIndex,                   // Receives the actual stream index. 
+		&flags,                         // Receives status flags.
+		&llVideoTimeStamp,              // Receives the time stamp.
+		&videoSample                    // Receives the sample or NULL.
+		);
+
+	if (!videoSample)
+	{
+		printf("GetSampleFromMFStreamer returned failed.\n");
+	}
+	else
+	{
+		videoSample->ConvertToContiguousBuffer(&pMediaBuffer);
+
+		if (!vpx_img_alloc(&raw, VIDEO_INPUT_FORMAT, WIDTH, HEIGHT, 1)) {
+			return NULL;
+		}
+		else {
+			pMediaBuffer->GetCurrentLength(&pMediaBufferLength);
+			pMediaBuffer->Lock(&raw.planes[0], &buffMaxLen, &buffCurrLen);
+
+			if (vpx_codec_encode(&_vpxCodec, &raw, _sampleCount, 1, 0, VPX_DL_REALTIME))      //VPX_DL_REALTIME             
+			{
+				vpx_img_free(&raw);
+				return NULL;
+			}
+			else
+			{
+				_sampleCount++;
+
+				while ((pkt = vpx_codec_get_cx_data(&_vpxCodec, &iter))) {
+					switch (pkt->kind) {
+					case VPX_CODEC_CX_FRAME_PKT:
+					{
+						//*frameSize = pkt->data.frame.sz;
+						if (pkt->data.frame.sz > 0)
+						{
+							vpx_codec_frame_flags_t flag = pkt->data.frame.flags;
+							//int flagInt = (int)flag;
+							//*frameType = flag;
+							bool key_frame = (pkt->data.frame.flags & VPX_FRAME_IS_KEY) ? true : false;
+							/*bool key_droppable = (pkt->data.frame.flags & VPX_FRAME_IS_DROPPABLE) ? true : false;
+							bool key_invisible = (pkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE) ? true : false;
+							bool key_fragment = (pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT) ? true : false;*/
+
+							/**frameType = VpxFrameType_None;
+							if (key_frame)
+							{
+							*frameType = VpxFrameType_KEY_Frame;
+							}
+							if (key_droppable)
+							{
+							*frameType = VpxFrameType_DROPPABLE;
+							}
+							if (key_invisible)
+							{
+							*frameType = VpxFrameType_INVISIBLE;
+							}
+							if (key_fragment)
+							{
+							*frameType = VpxFrameType_FRAGMENT;
+							}*/
+
+							//dataToReturn = (unsigned char *)malloc(pkt->data.frame.sz);
+							//memcpy(dataToReturn, pkt->data.frame.buf, pkt->data.frame.sz);
+							break;
+						}
+					}
+					default:
+						break;
+					}
+				}
+
+				vpx_img_free(&raw);
+				return pkt;
+				//return dataToReturn;
+			}
+		}
+	}
 }
 
-HRESULT StartStreaming(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCodec)
-{
-	// Create an attribute store to hold the search criteria.
-	CHECK_HR(MFCreateAttributes(&videoConfig, 1), L"Error creating video configuation.");
-	//CHECK_HR(MFCreateAttributes(&audioConfig, 1), L"Error creating audio configuation.");;
-
-	// Request video capture devices.
-	CHECK_HR(videoConfig->SetGUID(
-		MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE,
-		MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID), L"Error initialising video configuration object.");
-
-	// Request audio capture devices.
-	/*CHECK_HR(audioConfig->SetGUID(
-		MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE,
-		MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_GUID), L"Error initialising audio configuration object.");*/
-
-	// Enumerate the devices,
-	CHECK_HR(MFEnumDeviceSources(videoConfig, &videoDevices, &videoDeviceCount), L"Error enumerating video devices.");
-	//CHECK_HR(MFEnumDeviceSources(audioConfig, &audioDevices, &audioDeviceCount), L"Error enumerating audio devices.");
-
-	//printf("Video device Count: %i, Audio device count: %i.\n", videoDeviceCount, audioDeviceCount);
-	printf("Video device Count: %i.\n", videoDeviceCount);
-
-	CHECK_HR(videoDevices[0]->ActivateObject(IID_PPV_ARGS(&videoSource)), L"Error activating video device.");
-	//CHECK_HR(audioDevices[0]->ActivateObject(IID_PPV_ARGS(&audioSource)), L"Error activating audio device.");
-
-	// Initialize the Media Foundation platform.
-	CHECK_HR(MFStartup(MF_VERSION), L"Error on Media Foundation startup.");
-
-	/*WCHAR *pwszFileName = L"sample.mp4";
-	IMFSinkWriter *pWriter;*/
-
-	/*CHECK_HR(MFCreateSinkWriterFromURL(
-		pwszFileName,
-		NULL,
-		NULL,
-		&pWriter), L"Error creating mp4 sink writer.");*/
-
-	// Create the source readers.
-	CHECK_HR(MFCreateSourceReaderFromMediaSource(
-		videoSource,
-		videoConfig,
-		&videoReader), L"Error creating video source reader.");
-
-	//ListModes(videoReader);
-
-	/*CHECK_HR(MFCreateSourceReaderFromMediaSource(
-		audioSource,
-		audioConfig,
-		&audioReader), L"Error creating audio source reader.");*/
-
-	FindVideoMode(videoReader, MF_INPUT_FORMAT, WIDTH, HEIGHT, desiredInputVideoType);
-
-	CHECK_HR(videoReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, NULL, desiredInputVideoType),
-		L"Error setting video reader media type.\n");
-
-	CHECK_HR(videoReader->GetCurrentMediaType(
-		(DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
-		&videoType), L"Error retrieving current media type from first video stream.");
-	CMediaTypeTrace *videoTypeMediaTrace = new CMediaTypeTrace(videoType);
-	printf("Video input media type: %s.\n", videoTypeMediaTrace->GetString());
-
-	/*printf("Press any key to continue...");
-	getchar();*/
-
-	/*audioReader->GetCurrentMediaType(
-		(DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM,
-		&audioType);*/
-	//CMediaTypeTrace *audioTypeMediaTrace = new CMediaTypeTrace(audioType);
-	//printf("Audio input media type: %s.\n", audioTypeMediaTrace->GetString());
-
-	//printf("Configuring H.264 sink.\n");
-
-	// Set up the H.264 sink.
-	/*CHECK_HR(ConfigureEncoder(videoType, &videoStreamIndex, &audioStreamIndex, pWriter), L"Error configuring encoder.");
-	printf("Video stream index %i, audio stream index %i.\n", videoStreamIndex, audioStreamIndex);*/
-
-	// Register the color converter DSP for this process, in the video 
-	// processor category. This will enable the sink writer to enumerate
-	// the color converter when the sink writer attempts to match the
-	// media types.
-	CHECK_HR(MFTRegisterLocalByCLSID(
-		__uuidof(CColorConvertDMO),
-		MFT_CATEGORY_VIDEO_PROCESSOR,
-		L"",
-		MFT_ENUM_FLAG_SYNCMFT,
-		0,
-		NULL,
-		0,
-		NULL
-		), L"Error registering colour converter DSP.");
-
-	// Add the input types to the H.264 sink writer.
-	/*CHECK_HR(pWriter->SetInputMediaType(videoStreamIndex, videoType, NULL), L"Error setting the sink writer video input type.");
-	videoType->Release();
-	CHECK_HR(pWriter->SetInputMediaType(audioStreamIndex, audioType, NULL), L"Error setting the sink writer audio input type.");
-	audioType->Release();*/
-
-	//CHECK_HR(pWriter->BeginWriting(), L"Failed to begin writing on the H.264 sink.");
-
-	//InitializeCriticalSection(&critsec);
-}
-
-HRESULT GetSampleFromMFStreamer(/* out */ vpx_codec_cx_pkt_t *& vpkt)
+HRESULT GetSampleFromMFStreamer2(/* out */ vpx_codec_cx_pkt_t *& vpkt)
 {
 	printf("Get Sample...\n");
 
-		// Initial read results in a null pSample??
-		CHECK_HR(videoReader->ReadSample(
-			MF_SOURCE_READER_ANY_STREAM,    // Stream index.
-			0,                              // Flags.
-			&streamIndex,                   // Receives the actual stream index. 
-			&flags,                         // Receives status flags.
-			&llVideoTimeStamp,                   // Receives the time stamp.
-			&videoSample                        // Receives the sample or NULL.
-			), L"Error reading video sample.");
+	// Initial read results in a null pSample??
+	CHECK_HR(videoReader->ReadSample(
+		MF_SOURCE_READER_ANY_STREAM,    // Stream index.
+		0,                              // Flags.
+		&streamIndex,                   // Receives the actual stream index. 
+		&flags,                         // Receives status flags.
+		&llVideoTimeStamp,                   // Receives the time stamp.
+		&videoSample                        // Receives the sample or NULL.
+		), L"Error reading video sample.");
 
-		wprintf(L"Video stream %d (%I64d)\n", streamIndex, llVideoTimeStamp);
 
-		if (videoSample)
-		{
-			if (bFirstVideoSample)
-			{
-				llVideoBaseTime = llVideoTimeStamp;
-				bFirstVideoSample = FALSE;
-			}
+	if (!videoSample)
+	{
+		printf("Failed to get video sample from MF.\n");
+	}
+	else
+	{
+		DWORD nCurrBufferCount = 0;
+		CHECK_HR(videoSample->GetBufferCount(&nCurrBufferCount), L"Failed to get the buffer count from the video sample.\n");
 
-			// rebase the time stamp
-			llVideoTimeStamp -= llVideoBaseTime;
+		IMFMediaBuffer * pMediaBuffer;
+		CHECK_HR(videoSample->ConvertToContiguousBuffer(&pMediaBuffer), L"Failed to extract the video sample into a raw buffer.\n");
 
-			CHECK_HR(videoSample->SetSampleTime(llVideoTimeStamp), L"Set video sample time failed.\n");
-			//CHECK_HR(pWriter->WriteSample(videoStreamIndex, videoSample), L"Write video sample failed.\n");
+		DWORD nCurrLen = 0;
+		CHECK_HR(pMediaBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the video sample.\n");
 
-			//WriteSampleToBitmap(videoSample);
+		BYTE *i420 = new BYTE[4608000];
+		vpx_image_t * rawImage = vpx_img_alloc(NULL, VIDEO_INPUT_FORMAT, WIDTH, HEIGHT, 0);
+		byte *imgBuff;
+		DWORD buffCurrLen = 0;
+		DWORD buffMaxLen = 0;
+		pMediaBuffer->Lock(&imgBuff, &buffMaxLen, &buffCurrLen);
+		YUY2ToI420(WIDTH, HEIGHT, STRIDE, imgBuff, i420);
+		vpx_image_t* const img = vpx_img_wrap(rawImage, VIDEO_INPUT_FORMAT, _vpxConfig.g_w, _vpxConfig.g_h, 1, i420);
+		const vpx_codec_cx_pkt_t * pkt;
 
-			DWORD nCurrBufferCount = 0;
-			CHECK_HR(videoSample->GetBufferCount(&nCurrBufferCount), L"Failed to get the buffer count from the video sample.\n");
+		//const int status = vpx_img_set_rect(img, 0, 0, _vpxConfig.g_w, _vpxConfig.g_h);
 
-			IMFMediaBuffer * pMediaBuffer;
-			CHECK_HR(videoSample->ConvertToContiguousBuffer(&pMediaBuffer), L"Failed to extract the video sample into a raw buffer.\n");
+		vpx_enc_frame_flags_t flags = 0;
 
-			DWORD nCurrLen = 0;
-			CHECK_HR(pMediaBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the video sample.\n");
-
-			vpx_image_t * rawImage = vpx_img_alloc(NULL, VIDEO_INPUT_FORMAT, WIDTH, HEIGHT, 0);
-			byte *imgBuff;
-			DWORD buffCurrLen = 0;
-			DWORD buffMaxLen = 0;
-			pMediaBuffer->Lock(&imgBuff, &buffMaxLen, &buffCurrLen);
-			vpx_image_t* const img = vpx_img_wrap(rawImage, VIDEO_INPUT_FORMAT, _vpxConfig.g_w, _vpxConfig.g_h, 1, imgBuff);
-			const vpx_codec_cx_pkt_t * pkt;
-
-			const int status = vpx_img_set_rect(img, 0, 0, _vpxConfig.g_w, _vpxConfig.g_h);
-
-			//__int64 stime, sdrtn;
-			//videoSample->GetSampleTime(&stime);
-			//videoSample->GetSampleDuration(&sdrtn);
-			//const __int64 st = stime / 100000;  // scale to ms
-			//const unsigned long sd = (unsigned long)(sdrtn + 9999) / 100000;  // scale to ms
-			vpx_enc_frame_flags_t flags = 0;
-
-			if (vpx_codec_encode(&_vpxCodec, rawImage, _sampleCount, 1, flags, VPX_DL_REALTIME)) {
-				printf("VPX codec failed to encode the frame.\n");
-				return -1;
-			}
-			else {
-				vpx_codec_iter_t iter = NULL;
-				//const vpx_codec_cx_pkt_t *pkt;
-				int got_data = 0;
-				//vpkt = const_cast<vpx_codec_cx_pkt_t *>(vpx_codec_get_cx_data(&_vpxCodec, &iter));
-
-				int loopCount = 0;
-
-				while ((pkt = vpx_codec_get_cx_data(&_vpxCodec, &iter))) {
-					if (loopCount == 1)
-					{
-						printf("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-					}
-					//got_data = 1;
-					//switch (pkt->kind) {
-					//case VPX_CODEC_CX_FRAME_PKT:                                 
-					//	//write_ivf_frame_header(outfile, pkt);                  
-					//	(void)fwrite(pkt->data.frame.buf, 1, pkt->data.frame.sz, outfile);                                   
-					//	break;  
-					//default:
-					//	break;
-					//}
-
-					vpkt = const_cast<vpx_codec_cx_pkt_t *>(pkt);
-
-					printf("%s %i\n", vpkt->kind == VPX_CODEC_CX_FRAME_PKT && (vpkt->data.frame.flags & VPX_FRAME_IS_KEY) ? "K" : ".", vpkt->data.frame.sz);
-
-					loopCount++;
-				}
-
-				vpx_img_free(img);
-				vpx_img_free(rawImage);
-			}
-
-			_sampleCount++;
-
-			//delete videoSample;
-			//delete pMediaBuffer;
-			//delete imgBuff;
-
-			return S_OK;
-		}
-		else
-		{
+		if (vpx_codec_encode(&_vpxCodec, rawImage, _sampleCount, 1, flags, VPX_DL_REALTIME)) {
+			printf("VPX codec failed to encode the frame.\n");
 			return -1;
 		}
+		else {
+			vpx_codec_iter_t iter = NULL;
 
+			while ((pkt = vpx_codec_get_cx_data(&_vpxCodec, &iter))) {
+				switch (pkt->kind) {
+				case VPX_CODEC_CX_FRAME_PKT:
+					//write_ivf_frame_header(outfile, pkt);                  
+					//(void)fwrite(pkt->data.frame.buf, 1, pkt->data.frame.sz, outfile);                                   
+					vpkt = const_cast<vpx_codec_cx_pkt_t *>(pkt);
+					break;
+				default:
+					break;
+				}
 
-		// Audio sample
-		//CHECK_HR(audioReader->ReadSample(
-		//	MF_SOURCE_READER_ANY_STREAM,    // Stream index.
-		//	0,                              // Flags.
-		//	&streamIndex,                   // Receives the actual stream index. 
-		//	&flags,                         // Receives status flags.
-		//	&llAudioTimeStamp,              // Receives the time stamp.
-		//	&audioSample                    // Receives the sample or NULL.
-		//	), L"Error reading audio sample.");
+				printf("%s %i\n", vpkt->kind == VPX_CODEC_CX_FRAME_PKT && (vpkt->data.frame.flags & VPX_FRAME_IS_KEY) ? "K" : ".", vpkt->data.frame.sz);
+			}
 
-		//wprintf(L"Audio stream %d (%I64d)\n", streamIndex, llAudioTimeStamp);
+			vpx_img_free(img);
+			vpx_img_free(rawImage);
+		}
 
-		//if (audioSample)
-		//{
-		//	if (bFirstAudioSample)
-		//	{
-		//		llAudioBaseTime = llAudioTimeStamp;
-		//		bFirstAudioSample = FALSE;
-		//	}
+		_sampleCount++;
 
-		//	// rebase the time stamp
-		//	llAudioTimeStamp -= llAudioBaseTime;
+		pMediaBuffer->Unlock();
+		pMediaBuffer->Release();
 
-		//	CHECK_HR(audioSample->SetSampleTime(llAudioTimeStamp), L"Set audio psample time failed.\n");
-		//	CHECK_HR(pWriter->WriteSample(audioStreamIndex, audioSample), L"Write audio sample failed.\n");
-		//}
+		delete i420;
+		//delete imgBuff;
 
-
-	//printf("Finalising the capture.\n");
-
-	/*if (pWriter)
-	{
-	CHECK_HR(pWriter->Finalize(), L"Error finalising H.264 sink writer.");
-	}*/
-
-	// Shut down Media Foundation.
-	/*MFShutdown();
-
-	for (DWORD i = 0; i < videoDeviceCount; i++)
-	{
-		videoDevices[i]->Release();
+		return S_OK;
 	}
-	CoTaskMemFree(videoDevices);
-	*/
-	//return S_OK;
 }
 
 /*
@@ -383,8 +408,8 @@ void FindVideoMode(IMFSourceReader *pReader, const GUID mediaSubType, int width,
 		else if (SUCCEEDED(hr))
 		{
 			// Examine the media type. (Not shown.)
-			//CMediaTypeTrace *nativeTypeMediaTrace = new CMediaTypeTrace(pType);
-			//printf("Native media type: %s.\n", nativeTypeMediaTrace->GetString());
+			/*CMediaTypeTrace *nativeTypeMediaTrace = new CMediaTypeTrace(pType);
+			printf("Native media type: %s.\n", nativeTypeMediaTrace->GetString());*/
 
 			GUID videoSubType;
 			UINT32 pWidth = 0, pHeight = 0;
@@ -521,5 +546,83 @@ HRESULT CopyAttribute(IMFAttributes *pSrc, IMFAttributes *pDest, const GUID& key
 	}
 
 	PropVariantClear(&var);
+	return hr;
+}
+
+int YUY2ToI420(int width, int height, int stride, BYTE *in, BYTE *out)
+{
+
+	long pixels = width * height;
+	long macropixels = pixels / 2; // macropixel count
+	// new size will be w * h * 3/2 -> 12 bits per pixel 4:2:0
+
+	//long mpx_per_row = info.biWidth / 2;
+	long mpx_per_row = stride / 2;
+
+	// for each macropixel
+	for (int i = 0, ci = 0; i < macropixels; i++){ // ci is chroma index
+		// get macropixel address, order is Y0 U0 Y1 V0
+		BYTE *mpAddress = in + i * 4;
+
+		// copy luma data
+		out[i * 2] = mpAddress[0];
+		out[i * 2 + 1] = mpAddress[2];
+
+		// copy chroma data - we skip odd rows because of 4:2:0 sampling
+		long row_number = i / mpx_per_row;
+		if (row_number % 2 == 0) {
+			out[pixels + ci] = mpAddress[1]; // shift by Y vector
+			out[pixels + pixels / 4 + ci] = mpAddress[3]; // shift by Y and U vector
+			ci++;
+		}
+	}
+
+	return pixels * 12 / 8; // I420
+}
+
+HRESULT GetDefaultStride(IMFMediaType *pType, LONG *plStride)
+{
+	LONG lStride = 0;
+
+	// Try to get the default stride from the media type.
+	HRESULT hr = pType->GetUINT32(MF_MT_DEFAULT_STRIDE, (UINT32*)&lStride);
+	if (FAILED(hr))
+	{
+		// Attribute not set. Try to calculate the default stride.
+
+		GUID subtype = GUID_NULL;
+
+		UINT32 width = 0;
+		UINT32 height = 0;
+
+		// Get the subtype and the image size.
+		hr = pType->GetGUID(MF_MT_SUBTYPE, &subtype);
+		if (FAILED(hr))
+		{
+			goto done;
+		}
+
+		hr = MFGetAttributeSize(pType, MF_MT_FRAME_SIZE, &width, &height);
+		if (FAILED(hr))
+		{
+			goto done;
+		}
+
+		hr = MFGetStrideForBitmapInfoHeader(subtype.Data1, width, &lStride);
+		if (FAILED(hr))
+		{
+			goto done;
+		}
+
+		// Set the attribute for later reference.
+		(void)pType->SetUINT32(MF_MT_DEFAULT_STRIDE, UINT32(lStride));
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		*plStride = lStride;
+	}
+
+done:
 	return hr;
 }

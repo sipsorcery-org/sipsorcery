@@ -10,8 +10,9 @@ namespace SIPSorceryMedia
 		VideoSampler();
 		~VideoSampler();
 		void Init();
-		void StartSampling();
+		//void StartSampling();
 		VPXPacketManaged^ GetSample();
+		VPXPacketManaged^ GetSample2();
 	};
 }
 
