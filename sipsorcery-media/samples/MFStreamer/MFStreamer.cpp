@@ -5,6 +5,10 @@
 #include "stddef.h"
 #include <mfapi.h>
 #include <mfplay.h>
+#include <mfapi.h>
+#include <mftransform.h>
+#include <mferror.h>
+#include <mfobjects.h>
 #include <mfreadwrite.h>
 #include "errors.h"
 #include "wmcodecdsp.h"
@@ -21,7 +25,7 @@ const unsigned int WIDTH = 640;
 const unsigned int HEIGHT = 480; // 400;
 const unsigned int STRIDE = 1280;
 const vpx_img_fmt VIDEO_INPUT_FORMAT = VPX_IMG_FMT_I420; // VPX_IMG_FMT_RGB24; // VPX_IMG_FMT_YUY2;
-const GUID MF_INPUT_FORMAT = MFVideoFormat_I420; // WMMEDIASUBTYPE_YUY2; // MFVideoFormat_RGB24; // MFVideoFormat_I420;
+const GUID MF_INPUT_FORMAT = WMMEDIASUBTYPE_YUY2; // WMMEDIASUBTYPE_YUY2; // MFVideoFormat_RGB24; // MFVideoFormat_I420;
 
 IMFMediaSource *videoSource = NULL, *audioSource = NULL;
 UINT32 videoDeviceCount = 0, audioDeviceCount = 0;
@@ -34,13 +38,14 @@ DWORD videoStreamIndex, audioStreamIndex;
 
 vpx_codec_enc_cfg_t _vpxConfig;
 vpx_codec_ctx_t     _vpxCodec;
+vpx_image_t _rawImage;
 
 DWORD streamIndex, flags;
 LONGLONG llVideoTimeStamp, llAudioTimeStamp;
-IMFSample *videoSample = NULL, *audioSample = NULL;
+//IMFSample *videoSample = NULL, *audioSample = NULL;
 //CRITICAL_SECTION critsec;
 BOOL bFirstVideoSample = TRUE, bFirstAudioSample = TRUE;
-LONGLONG llVideoBaseTime = 0, llAudioBaseTime = 0;
+//LONGLONG llVideoBaseTime = 0, llAudioBaseTime = 0;
 int _sampleCount = 0;
 
 BOOL HRHasFailed(HRESULT hr, WCHAR* errtext);
@@ -191,6 +196,7 @@ HRESULT InitVPXEncoder(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCod
 		return -1;
 	}
 	else {
+		vpx_img_alloc(&_rawImage, VIDEO_INPUT_FORMAT, WIDTH, HEIGHT, 0);
 
 		vpxConfig->g_w = width;
 		vpxConfig->g_h = height;
@@ -199,6 +205,8 @@ HRESULT InitVPXEncoder(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCod
 		vpxConfig->rc_max_quantizer = 60;
 		vpxConfig->g_pass = VPX_RC_ONE_PASS;
 		vpxConfig->rc_end_usage = VPX_CBR;
+		vpxConfig->kf_min_dist = 50;
+		vpxConfig->kf_max_dist = 50;
 
 		/* Initialize codec */
 		if (vpx_codec_enc_init(vpxCodec, (vpx_codec_vp8_cx()), vpxConfig, 0)) {
@@ -211,105 +219,11 @@ HRESULT InitVPXEncoder(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCod
 	}
 }
 
-const vpx_codec_cx_pkt_t * GetSampleFromMFStreamer()
-{
-	vpx_image_t          raw;
-	vpx_codec_err_t      res;
-	vpx_codec_iter_t iter = NULL;
-	const vpx_codec_cx_pkt_t *pkt;
-	IMFMediaBuffer * pMediaBuffer;
-	DWORD pMediaBufferLength;
-	DWORD buffCurrLen = 0;
-	DWORD buffMaxLen = 0;
-
-	// Initial read results in a null pSample??
-	videoReader->ReadSample(
-		MF_SOURCE_READER_ANY_STREAM,    // Stream index.
-		0,                              // Flags.
-		&streamIndex,                   // Receives the actual stream index. 
-		&flags,                         // Receives status flags.
-		&llVideoTimeStamp,              // Receives the time stamp.
-		&videoSample                    // Receives the sample or NULL.
-		);
-
-	if (!videoSample)
-	{
-		printf("GetSampleFromMFStreamer returned failed.\n");
-	}
-	else
-	{
-		videoSample->ConvertToContiguousBuffer(&pMediaBuffer);
-
-		if (!vpx_img_alloc(&raw, VIDEO_INPUT_FORMAT, WIDTH, HEIGHT, 1)) {
-			return NULL;
-		}
-		else {
-			pMediaBuffer->GetCurrentLength(&pMediaBufferLength);
-			pMediaBuffer->Lock(&raw.planes[0], &buffMaxLen, &buffCurrLen);
-
-			if (vpx_codec_encode(&_vpxCodec, &raw, _sampleCount, 1, 0, VPX_DL_REALTIME))      //VPX_DL_REALTIME             
-			{
-				vpx_img_free(&raw);
-				return NULL;
-			}
-			else
-			{
-				_sampleCount++;
-
-				while ((pkt = vpx_codec_get_cx_data(&_vpxCodec, &iter))) {
-					switch (pkt->kind) {
-					case VPX_CODEC_CX_FRAME_PKT:
-					{
-						//*frameSize = pkt->data.frame.sz;
-						if (pkt->data.frame.sz > 0)
-						{
-							vpx_codec_frame_flags_t flag = pkt->data.frame.flags;
-							//int flagInt = (int)flag;
-							//*frameType = flag;
-							bool key_frame = (pkt->data.frame.flags & VPX_FRAME_IS_KEY) ? true : false;
-							/*bool key_droppable = (pkt->data.frame.flags & VPX_FRAME_IS_DROPPABLE) ? true : false;
-							bool key_invisible = (pkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE) ? true : false;
-							bool key_fragment = (pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT) ? true : false;*/
-
-							/**frameType = VpxFrameType_None;
-							if (key_frame)
-							{
-							*frameType = VpxFrameType_KEY_Frame;
-							}
-							if (key_droppable)
-							{
-							*frameType = VpxFrameType_DROPPABLE;
-							}
-							if (key_invisible)
-							{
-							*frameType = VpxFrameType_INVISIBLE;
-							}
-							if (key_fragment)
-							{
-							*frameType = VpxFrameType_FRAGMENT;
-							}*/
-
-							//dataToReturn = (unsigned char *)malloc(pkt->data.frame.sz);
-							//memcpy(dataToReturn, pkt->data.frame.buf, pkt->data.frame.sz);
-							break;
-						}
-					}
-					default:
-						break;
-					}
-				}
-
-				vpx_img_free(&raw);
-				return pkt;
-				//return dataToReturn;
-			}
-		}
-	}
-}
-
-HRESULT GetSampleFromMFStreamer2(/* out */ vpx_codec_cx_pkt_t *& vpkt)
+HRESULT GetSampleFromMFStreamer(/* out */ const vpx_codec_cx_pkt_t *& vpkt)
 {
 	printf("Get Sample...\n");
+
+	IMFSample *videoSample = NULL;
 
 	// Initial read results in a null pSample??
 	CHECK_HR(videoReader->ReadSample(
@@ -320,7 +234,6 @@ HRESULT GetSampleFromMFStreamer2(/* out */ vpx_codec_cx_pkt_t *& vpkt)
 		&llVideoTimeStamp,                   // Receives the time stamp.
 		&videoSample                        // Receives the sample or NULL.
 		), L"Error reading video sample.");
-
 
 	if (!videoSample)
 	{
@@ -338,21 +251,20 @@ HRESULT GetSampleFromMFStreamer2(/* out */ vpx_codec_cx_pkt_t *& vpkt)
 		CHECK_HR(pMediaBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the video sample.\n");
 
 		BYTE *i420 = new BYTE[4608000];
-		vpx_image_t * rawImage = vpx_img_alloc(NULL, VIDEO_INPUT_FORMAT, WIDTH, HEIGHT, 0);
 		byte *imgBuff;
+		//vpx_image_t * rawImage = vpx_img_alloc(NULL, VIDEO_INPUT_FORMAT, WIDTH, HEIGHT, 0);
+
 		DWORD buffCurrLen = 0;
 		DWORD buffMaxLen = 0;
 		pMediaBuffer->Lock(&imgBuff, &buffMaxLen, &buffCurrLen);
-		//YUY2ToI420(WIDTH, HEIGHT, STRIDE, imgBuff, i420);
-		//vpx_image_t* const img = vpx_img_wrap(rawImage, VIDEO_INPUT_FORMAT, _vpxConfig.g_w, _vpxConfig.g_h, 1, i420);
-		vpx_image_t* const img = vpx_img_wrap(rawImage, VIDEO_INPUT_FORMAT, _vpxConfig.g_w, _vpxConfig.g_h, 1, imgBuff);
+		YUY2ToI420(WIDTH, HEIGHT, STRIDE, imgBuff, i420);
+		vpx_image_t* img = vpx_img_wrap(&_rawImage, VIDEO_INPUT_FORMAT, _vpxConfig.g_w, _vpxConfig.g_h, 1, i420);
+		////vpx_image_t* const img = vpx_img_wrap(rawImage, VIDEO_INPUT_FORMAT, _vpxConfig.g_w, _vpxConfig.g_h, 1, imgBuff);
+		
 		const vpx_codec_cx_pkt_t * pkt;
-
-		//const int status = vpx_img_set_rect(img, 0, 0, _vpxConfig.g_w, _vpxConfig.g_h);
-
 		vpx_enc_frame_flags_t flags = 0;
-
-		if (vpx_codec_encode(&_vpxCodec, rawImage, _sampleCount, 1, flags, VPX_DL_REALTIME)) {
+		
+		if (vpx_codec_encode(&_vpxCodec, &_rawImage, _sampleCount, 1, flags, VPX_DL_REALTIME)) {
 			printf("VPX codec failed to encode the frame.\n");
 			return -1;
 		}
@@ -361,29 +273,27 @@ HRESULT GetSampleFromMFStreamer2(/* out */ vpx_codec_cx_pkt_t *& vpkt)
 
 			while ((pkt = vpx_codec_get_cx_data(&_vpxCodec, &iter))) {
 				switch (pkt->kind) {
-				case VPX_CODEC_CX_FRAME_PKT:
-					//write_ivf_frame_header(outfile, pkt);                  
-					//(void)fwrite(pkt->data.frame.buf, 1, pkt->data.frame.sz, outfile);                                   
-					vpkt = const_cast<vpx_codec_cx_pkt_t *>(pkt);
+				case VPX_CODEC_CX_FRAME_PKT:                                
+					vpkt = pkt; // const_cast<vpx_codec_cx_pkt_t **>(&pkt);
 					break;
 				default:
 					break;
 				}
 
-				printf("%s %i\n", vpkt->kind == VPX_CODEC_CX_FRAME_PKT && (vpkt->data.frame.flags & VPX_FRAME_IS_KEY) ? "K" : ".", vpkt->data.frame.sz);
+				printf("%s %i\n", pkt->kind == VPX_CODEC_CX_FRAME_PKT && (pkt->data.frame.flags & VPX_FRAME_IS_KEY) ? "K" : ".", pkt->data.frame.sz);
 			}
-
-			vpx_img_free(img);
-			vpx_img_free(rawImage);
 		}
 
 		_sampleCount++;
+
+		vpx_img_free(img);
 
 		pMediaBuffer->Unlock();
 		pMediaBuffer->Release();
 
 		delete i420;
-		//delete imgBuff;
+
+		videoSample->Release();
 
 		return S_OK;
 	}

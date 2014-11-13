@@ -630,12 +630,7 @@ namespace SIPSorcery.Net
 
                     for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
                     {
-                        RTPVP8Header vp8Header = new RTPVP8Header()
-                        {
-                            StartOfVP8Partition = (index == 0),
-                            FirstPartitionSize = frame.Length
-                        };
-                        byte[] vp8HeaderBytes = vp8Header.GetBytes();
+                        byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte [] { 0x00 };
 
                         int offset = index * RTP_MAX_PAYLOAD;
                         int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;

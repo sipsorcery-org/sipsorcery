@@ -3,7 +3,7 @@
 using namespace System;
 using namespace System::Runtime::InteropServices;
 
-VPXPacketManaged::VPXPacketManaged(void * buf, size_t sz, bool isKeyFrame, int partitionID)
+VPXPacketManaged::VPXPacketManaged(void * buf, size_t sz, bool isKeyFrame)
 {
 	Buffer = gcnew array<Byte>(sz);
 
@@ -11,5 +11,9 @@ VPXPacketManaged::VPXPacketManaged(void * buf, size_t sz, bool isKeyFrame, int p
 	Marshal::Copy((IntPtr)buf, Buffer, 0, sz);
 
 	IsKeyFrame = isKeyFrame;
-	PartitionID = partitionID;
+}
+
+VPXPacketManaged::~VPXPacketManaged()
+{
+	delete Buffer;
 }
