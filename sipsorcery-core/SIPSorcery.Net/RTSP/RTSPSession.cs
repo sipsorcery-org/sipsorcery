@@ -40,6 +40,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using SIPSorcery.Sys;
+using SIPSorceryRTP;
 using log4net;
 
 namespace SIPSorcery.Net
@@ -58,6 +59,7 @@ namespace SIPSorcery.Net
         private const int RTP_PACKETS_MAX_QUEUE_LENGTH = 100;   // The maximum number of RTP packets that will be queued.
         private const int RTP_RECEIVE_BUFFER_SIZE = 100000000;
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
+        private const int SRTP_SIGNATURE_LENGTH = 10;           // If SRTP is being used this many extra bytes need to be added to the RTP payload to hold the authentication signature.
 
         private static DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
         private static DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -74,6 +76,7 @@ namespace SIPSorcery.Net
         private byte[] _controlSocketBuffer;
         private bool _closed;
         private Queue<RTPPacket> _packets = new Queue<RTPPacket>();
+        private SRTPManaged _srtp;
 
         private IPEndPoint _remoteEndPoint;
         public IPEndPoint RemoteEndPoint
@@ -126,6 +129,12 @@ namespace SIPSorcery.Net
             set { _rtpPayloadHeaderLength = value; }
         }
 
+        private ICEState _iceState;
+        public ICEState ICEState
+        {
+            get { return _iceState; }
+        }
+
         public bool DontTimeout { get; set; }           // If set to true means a server should not timeout this session even if no activity is received on the RTP socket.
 
         public bool IsClosed
@@ -152,6 +161,17 @@ namespace SIPSorcery.Net
             _sessionID = sessionID;
             _remoteEndPoint = remoteEndPoint;
             _syncSource = Convert.ToUInt32(Crypto.GetRandomInt(0, 9999999));
+        }
+
+        public RTSPSession(string sessionID, IPEndPoint remoteEndPoint, ICEState iceState)
+            : this(sessionID, remoteEndPoint)
+        {
+            _iceState = iceState;
+
+            if(_iceState.SRTPKey != null)
+            {
+                _srtp = new SRTPManaged(Convert.FromBase64String(_iceState.SRTPKey));
+            }
         }
 
         /// <summary>
@@ -200,7 +220,7 @@ namespace SIPSorcery.Net
                     _rtpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                     _rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                     _rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
-                    
+
                     _rtpSocket.Bind(new IPEndPoint(IPAddress.Any, _rtpPort));
 
                     _controlSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -306,6 +326,65 @@ namespace SIPSorcery.Net
 
                             if (bytesRead > RTPHeader.MIN_HEADER_LEN)
                             {
+                                if ((buffer[0] & 0x80) == 0 && _iceState != null)
+                                {
+                                    try
+                                    {
+                                        STUNv2Message stunMessage = STUNv2Message.ParseSTUNMessage(buffer, buffer.Length);
+
+                                        //logger.Debug("STUN message received from Receiver Client @ " + stunMessage.Header.MessageType + ".");
+
+                                        if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingRequest)
+                                        {
+                                            //logger.Debug("Sending STUN response to Receiver Client @ " + remoteEndPoint + ".");
+
+                                            STUNv2Message stunResponse = new STUNv2Message(STUNv2MessageTypesEnum.BindingSuccessResponse);
+                                            stunResponse.Header.TransactionId = stunMessage.Header.TransactionId;
+                                            stunResponse.AddXORMappedAddressAttribute(_remoteEndPoint.Address, _remoteEndPoint.Port);
+                                            byte[] stunRespBytes = stunResponse.ToByteBuffer(_iceState.SenderPassword, true);
+                                            _rtpSocket.SendTo(stunRespBytes, _remoteEndPoint);
+
+                                            //logger.Debug("Sending Binding request to Receiver Client @ " + remoteEndPoint + ".");
+
+                                            STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
+                                            stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
+                                            stunRequest.AddUsernameAttribute(_iceState.ReceiverUser + ":" + _iceState.SenderUser);
+                                            stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
+                                            byte[] stunReqBytes = stunRequest.ToByteBuffer(_iceState.ReceiverPassword, true);
+                                            _rtpSocket.SendTo(stunReqBytes, _remoteEndPoint);
+
+                                            _iceState.LastSTUNMessageReceivedAt = DateTime.Now;
+                                        }
+                                        else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingSuccessResponse)
+                                        {
+                                            _iceState.IsSTUNExchanggeComplete = true;
+                                            logger.Debug("WebRTC client STUN exchange complete for " + _remoteEndPoint.ToString() + ".");
+                                        }
+                                        else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingErrorResponse)
+                                        {
+                                            logger.Warn("A STUN binding error response was received from " + _remoteEndPoint + ".");
+                                        }
+                                        else
+                                        {
+                                            logger.Warn("An unrecognised STUN request was received from " + _remoteEndPoint + ".");
+                                        }
+                                    }
+                                    catch (SocketException sockExcp)
+                                    {
+                                        logger.Debug("RTPSession.RTPReceive STUN processing (" + _remoteEndPoint + "). " + sockExcp.Message);
+                                        continue;
+                                    }
+                                    catch (Exception stunExcp)
+                                    {
+                                        logger.Warn("Exception RTPSession.RTPReceive STUN processing (" + _remoteEndPoint + "). " + stunExcp);
+                                        continue;
+                                    }
+                                }
+                                else
+                                {
+                                    logger.Debug("A non-STUN packet was received Receiver Client.");
+                                }
+
                                 RTPPacket rtpPacket = new RTPPacket(buffer.Take(bytesRead).ToArray());
 
                                 //System.Diagnostics.Debug.WriteLine("RTPReceive ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
@@ -485,7 +564,7 @@ namespace SIPSorcery.Net
 
                         sw.Stop();
 
-                        if(sw.ElapsedMilliseconds > 15)
+                        if (sw.ElapsedMilliseconds > 15)
                         {
                             logger.Warn(" SendJpegFrame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
                         }
@@ -630,12 +709,12 @@ namespace SIPSorcery.Net
 
                     for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
                     {
-                        byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte [] { 0x00 };
+                        byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
 
                         int offset = index * RTP_MAX_PAYLOAD;
                         int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
 
-                        RTPPacket rtpPacket = new RTPPacket(payloadLength + vp8HeaderBytes.Length);
+                        RTPPacket rtpPacket = new RTPPacket(payloadLength + vp8HeaderBytes.Length + ((_iceState.SRTPKey != null) ? SRTP_SIGNATURE_LENGTH : 0));
                         rtpPacket.Header.SyncSource = _syncSource;
                         rtpPacket.Header.SequenceNumber = _sequenceNumber++;
                         rtpPacket.Header.Timestamp = _timestamp;
@@ -654,6 +733,15 @@ namespace SIPSorcery.Net
                         //rtpPacket.Payload = dataStream.ToArray();
 
                         byte[] rtpBytes = rtpPacket.GetBytes();
+
+                        if (_iceState.SRTPKey != null && _srtp != null)
+                        {
+                            int rtperr = _srtp.ProtectRTP(rtpBytes, rtpBytes.Length - SRTP_SIGNATURE_LENGTH);
+                            if (rtperr != 0)
+                            {
+                                logger.Warn("An error was returned attempting to sign an SRTP packet for " + _remoteEndPoint + ", error code " + rtperr + ".");
+                            }
+                        }
 
                         //System.Diagnostics.Debug.WriteLine(" offset " + (index * RTP_MAX_PAYLOAD) + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header .MarkerBit + ".");
 
