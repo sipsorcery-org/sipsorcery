@@ -714,7 +714,7 @@ namespace SIPSorcery.Net
                         int offset = index * RTP_MAX_PAYLOAD;
                         int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
 
-                        RTPPacket rtpPacket = new RTPPacket(payloadLength + vp8HeaderBytes.Length + ((_iceState.SRTPKey != null) ? SRTP_SIGNATURE_LENGTH : 0));
+                        RTPPacket rtpPacket = new RTPPacket(payloadLength + vp8HeaderBytes.Length + ((_iceState != null && _iceState.SRTPKey != null) ? SRTP_SIGNATURE_LENGTH : 0));
                         rtpPacket.Header.SyncSource = _syncSource;
                         rtpPacket.Header.SequenceNumber = _sequenceNumber++;
                         rtpPacket.Header.Timestamp = _timestamp;
@@ -734,7 +734,7 @@ namespace SIPSorcery.Net
 
                         byte[] rtpBytes = rtpPacket.GetBytes();
 
-                        if (_iceState.SRTPKey != null && _srtp != null)
+                        if (_iceState != null && _iceState.SRTPKey != null && _srtp != null)
                         {
                             int rtperr = _srtp.ProtectRTP(rtpBytes, rtpBytes.Length - SRTP_SIGNATURE_LENGTH);
                             if (rtperr != 0)

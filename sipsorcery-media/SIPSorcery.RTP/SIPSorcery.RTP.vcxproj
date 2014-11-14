@@ -111,7 +111,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>srtp.lib;Ws2_32.lib;</AdditionalDependencies>
+      <AdditionalDependencies>srtp_64.lib;Ws2_32.lib;</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\libs</AdditionalLibraryDirectories>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
