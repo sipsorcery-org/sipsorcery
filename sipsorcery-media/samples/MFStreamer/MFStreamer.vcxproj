@@ -93,8 +93,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;vpxmdd.lib;swscale_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\libs</AdditionalLibraryDirectories>
+      <AdditionalDependencies>mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;vpxmdd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\libs\x86</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -104,13 +104,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>E:\Data\LiveMesh\Source\git\sipsorcery-public\sipsorcery-media\3rdparty\libvpx-v1.3.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;vpxmdd_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>E:\Data\LiveMesh\Source\git\sipsorcery-public\sipsorcery-media\libs</AdditionalLibraryDirectories>
+      <AdditionalDependencies>mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;vpxmdd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\libs\x64</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

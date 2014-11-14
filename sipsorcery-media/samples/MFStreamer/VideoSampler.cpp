@@ -21,7 +21,7 @@ namespace SIPSorceryMedia
 
 		if (res == 0 && pkt != NULL)
 		{
-			printf("Got native sample, data length %i.\n", pkt->data.frame.sz);
+			//printf("Got native sample, data length %i.\n", pkt->data.frame.sz);
 			return gcnew VPXPacketManaged(pkt->data.frame.buf, pkt->data.frame.sz, pkt->data.frame.flags & VPX_FRAME_IS_KEY);
 
 			delete pkt->data.frame.buf;
