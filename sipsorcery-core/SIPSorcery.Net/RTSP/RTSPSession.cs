@@ -709,7 +709,8 @@ namespace SIPSorcery.Net
 
                     for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
                     {
-                        byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
+                        byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x90, 0x80, (byte)(_sequenceNumber % 128) } : new byte[] { 0x80, 0x80, (byte)(_sequenceNumber % 128)};
+                        //byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
 
                         int offset = index * RTP_MAX_PAYLOAD;
                         int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
@@ -718,14 +719,8 @@ namespace SIPSorcery.Net
                         rtpPacket.Header.SyncSource = _syncSource;
                         rtpPacket.Header.SequenceNumber = _sequenceNumber++;
                         rtpPacket.Header.Timestamp = _timestamp;
-                        rtpPacket.Header.MarkerBit = 0;
+                        rtpPacket.Header.MarkerBit = (offset + payloadLength >= frame.Length) ? 1 : 0;
                         rtpPacket.Header.PayloadType = payloadType;
-
-                        if ((index + 1) * RTP_MAX_PAYLOAD > frame.Length)
-                        {
-                            // Last packet in the frame.
-                            rtpPacket.Header.MarkerBit = 1;
-                        }
 
                         Buffer.BlockCopy(vp8HeaderBytes, 0, rtpPacket.Payload, 0, vp8HeaderBytes.Length);
                         Buffer.BlockCopy(frame, offset, rtpPacket.Payload, vp8HeaderBytes.Length, payloadLength);
