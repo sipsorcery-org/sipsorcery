@@ -470,8 +470,8 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                                             int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
                                             int payloadLength = (offset + RTP_MAX_PAYLOAD < sample.Buffer.Length) ? RTP_MAX_PAYLOAD : sample.Buffer.Length - offset;
 
-                                            //byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x90, 0x80, pictureID } : new byte[] { 0x80, 0x80, pictureID };
-                                            byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10} : new byte[] { 0x00 };
+                                            byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x90, 0x80, pictureID } : new byte[] { 0x80, 0x80, pictureID };
+                                            //byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10} : new byte[] { 0x00 };
 
                                             RTPPacket rtpPacket = new RTPPacket(payloadLength + 10 + vp8HeaderBytes.Length);
                                             rtpPacket.Header.SyncSource = client.SSRC;
