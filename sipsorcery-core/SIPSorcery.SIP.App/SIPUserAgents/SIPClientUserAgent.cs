@@ -38,15 +38,15 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+
+#if !SILVERLIGHT && !MIN_BUILD
 using SIPSorcery.Entities;
+#endif
+
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorcery.SIP;
 using log4net;
-
-#if UNITTEST
-using NUnit.Framework;
-#endif
 
 namespace SIPSorcery.SIP.App
 {
@@ -86,7 +86,7 @@ namespace SIPSorcery.SIP.App
         private SIPEndPoint m_outboundProxy;                        // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
         private SIPDialogue m_sipDialogue;
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !MIN_BUILD
 
         private SIPSorcery.Entities.CustomerAccountDataLayer m_customerAccountDataLayer = new SIPSorcery.Entities.CustomerAccountDataLayer();
 
@@ -290,7 +290,7 @@ namespace SIPSorcery.SIP.App
 
                             m_serverTransaction.CDR.Updated();
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !MIN_BUILD
 
                             if (m_sipCallDescriptor.AccountCode != null)
                             {
@@ -619,7 +619,7 @@ namespace SIPSorcery.SIP.App
                                     //    Direction = m_serverTransaction.CDR.CallDirection.ToString(),
                                     //    DialPlanContextID = m_sipCallDescriptor.DialPlanContextID.ToString()
                                     //};
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !MIN_BUILD
                                     m_customerAccountDataLayer.UpdateRealTimeCallControlCDRID(originalCallTransaction.CDR.CDRId.ToString(), m_serverTransaction.CDR);
 #endif
 

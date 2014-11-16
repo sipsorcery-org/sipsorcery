@@ -46,7 +46,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
-using SIPSorcery.CRM;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -66,7 +65,7 @@ namespace SIPSorcery.SIP.App
         private const string CALLDIRECTION_IN_STRING = "<-";
         private const string CALLDIRECTION_OUT_STRING = "->";
 
-        private static readonly string m_topLevelAdminID = Customer.TOPLEVEL_ADMIN_ID;
+        private static readonly string m_topLevelAdminID = "*";
 
         public SIPMonitorServerTypesEnum ServerType;
         public SIPEndPoint DestinationEndPoint;
