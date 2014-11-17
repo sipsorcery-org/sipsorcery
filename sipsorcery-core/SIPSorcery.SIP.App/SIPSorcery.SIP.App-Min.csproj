@@ -72,7 +72,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x64\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;MIN_BUILD</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <CodeAnalysisLogFile>..\Build\SIPSorcery.SIP.App.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
@@ -123,7 +123,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x86\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;MIN_BUILD</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
     <CodeAnalysisLogFile>..\Build\SIPSorcery.SIP.App.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
@@ -219,6 +219,9 @@
     <Compile Include="Monitoring\SIPMonitorMachineEvent.cs" />
     <Compile Include="SilverlightPolicyServer.cs" />
     <Compile Include="SIPAppFunctionDelegates.cs" />
+    <Compile Include="SIPAssets\SIPAccount.cs" />
+    <Compile Include="SIPAssets\SIPDialogueAsset.cs" />
+    <Compile Include="SIPAssets\SIPRegistrarBinding.cs" />
     <Compile Include="SIPDNS\SIPDNSManager.cs" />
     <Compile Include="SIPNotifications\SIPPresenceEventSubscription.cs" />
     <Compile Include="SIPNotifications\SIPDialogEventSubscription.cs" />
@@ -243,6 +246,10 @@
     <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">
       <Project>{55898587-8456-40D4-BB88-C9FC8BD6BA9C}</Project>
       <Name>SIPSorcery.Net</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
+      <Project>{7194705f-5564-4040-bc8a-8fad806f5408}</Project>
+      <Name>SIPSorcery.Persistence</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
       <Project>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</Project>

@@ -42,10 +42,6 @@ using SIPSorcery.Sys;
 using Heijden.DNS;
 using log4net;
 
-#if UNITTEST
-using NUnit.Framework;
-#endif
-
 namespace SIPSorcery.SIP.App
 {
     /// <summary>
