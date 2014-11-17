@@ -284,7 +284,7 @@ HRESULT GetSampleFromMFStreamer(/* out */ const vpx_codec_cx_pkt_t *& vpkt)
 					break;
 				}
 
-				//printf("%s %i\n", pkt->kind == VPX_CODEC_CX_FRAME_PKT && (pkt->data.frame.flags & VPX_FRAME_IS_KEY) ? "K" : ".", pkt->data.frame.sz);
+				printf("%s %i\n", pkt->kind == VPX_CODEC_CX_FRAME_PKT && (pkt->data.frame.flags & VPX_FRAME_IS_KEY) ? "K" : ".", pkt->data.frame.sz);
 			}
 		}
 
