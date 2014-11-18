@@ -42,8 +42,8 @@ namespace WebRTCVideoServer
         private static bool m_exit = false;
 
         private static IPEndPoint _wiresharpEP = new IPEndPoint(IPAddress.Parse("10.1.1.1"), 10001);
-        private static string _localIPAddress = "192.168.33.116"; //"10.1.1.2";//"192.168.33.116"; //  ;
-        private static string _clientIPAddress = "192.168.33.108"; //"10.1.1.2"; // "192.168.33.108"; // ;
+        private static string _localIPAddress = "10.1.1.2"; //"10.1.1.2";//"192.168.33.116"; //  ;
+        private static string _clientIPAddress = "10.1.1.2"; //"10.1.1.2"; // "192.168.33.108"; // ;
         private static UdpClient _webRTCReceiverClient;
         private static UdpClient _rtpClient;
 
@@ -95,9 +95,9 @@ a=rtpmap:100 VP8/90000
                 logger.Debug("Commencing listen to receiver WebRTC client on local socket " + receiverLocalEndPoint + ".");
                 ThreadPool.QueueUserWorkItem(delegate { ListenToReceiverWebRTCClient(_webRTCReceiverClient); });
 
-                ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
+                //ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
 
-                //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
+                ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromRawRTPFile("rtpPackets.txt"); });
 
