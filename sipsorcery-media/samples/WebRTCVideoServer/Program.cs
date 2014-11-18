@@ -42,8 +42,8 @@ namespace WebRTCVideoServer
         private static bool m_exit = false;
 
         private static IPEndPoint _wiresharpEP = new IPEndPoint(IPAddress.Parse("10.1.1.1"), 10001);
-        private static string _localIPAddress = "10.1.1.2";//"192.168.33.116"; //  ;
-        private static string _clientIPAddress = "10.1.1.2"; // "192.168.33.108"; // ;
+        private static string _localIPAddress = "192.168.33.116"; //"10.1.1.2";//"192.168.33.116"; //  ;
+        private static string _clientIPAddress = "192.168.33.108"; //"10.1.1.2"; // "192.168.33.108"; // ;
         private static UdpClient _webRTCReceiverClient;
         private static UdpClient _rtpClient;
 
@@ -83,7 +83,7 @@ a=rtpmap:100 VP8/90000
                 SDPExchangeReceiver.WebSocketOpened += SDPExchangeReceiver_WebSocketOpened;
 
                 _receiverWSS = new WebSocketServer(8081, false);
-                _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/receiver");
+                _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/stream");
                 _receiverWSS.Start();
 
                 IPEndPoint receiverLocalEndPoint = new IPEndPoint(IPAddress.Parse(_localIPAddress), WEBRTC_LISTEN_PORT);
@@ -95,9 +95,9 @@ a=rtpmap:100 VP8/90000
                 logger.Debug("Commencing listen to receiver WebRTC client on local socket " + receiverLocalEndPoint + ".");
                 ThreadPool.QueueUserWorkItem(delegate { ListenToReceiverWebRTCClient(_webRTCReceiverClient); });
 
-                //ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
+                ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
 
-                ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
+                //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromRawRTPFile("rtpPackets.txt"); });
 
@@ -296,7 +296,8 @@ a=rtpmap:100 VP8/90000
 
                 while (buffer != null && buffer.Length > 0 && !m_exit)
                 {
-                    Console.WriteLine("Packet spacing " + DateTime.Now.Subtract(lastReceiveTime).TotalMilliseconds + "ms.");
+                    int packetSpacingMilli = Convert.ToInt32(DateTime.Now.Subtract(lastReceiveTime).TotalMilliseconds);
+                    Console.WriteLine("Packet spacing " + packetSpacingMilli + "ms.");
                     lastReceiveTime = DateTime.Now;
 
                     if (_webRTCClients.Count != 0)
@@ -350,10 +351,19 @@ a=rtpmap:100 VP8/90000
                             {
                                 try
                                 {
+                                    if(client.LastTimestamp == 0)
+                                    {
+                                        client.LastTimestamp = RTSPSession.DateTimeToNptTimestamp32(DateTime.Now);
+                                    }
+                                    else if(vp8Header.StartOfVP8Partition)
+                                    {
+                                        client.LastTimestamp += 11520;
+                                    }
+
                                     RTPPacket rtpPacket = new RTPPacket(triggerRTPPacket.Payload.Length + 10);
                                     rtpPacket.Header.SyncSource = client.SSRC;
                                     rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
-                                    rtpPacket.Header.Timestamp = triggerRTPPacket.Header.Timestamp; // client.LastTimestamp;
+                                    rtpPacket.Header.Timestamp = client.LastTimestamp; //triggerRTPPacket.Header.Timestamp; // client.LastTimestamp;
                                     rtpPacket.Header.MarkerBit = triggerRTPPacket.Header.MarkerBit;
                                     rtpPacket.Header.PayloadType = 100;
 
@@ -374,7 +384,7 @@ a=rtpmap:100 VP8/90000
                                         logger.Debug("New RTP packet protect result " + rtperr + ".");
                                     }
 
-                                    logger.Debug("Sending RTP " + rtpBuffer.Length + " bytes to " + client.SocketAddress + ", timestamp " + rtpPacket.Header.Timestamp + ", marker bit " + rtpPacket.Header.MarkerBit + ".");
+                                    logger.Debug("Sending RTP " + rtpBuffer.Length + " bytes to " + client.SocketAddress + ", timestamp " + rtpPacket.Header.Timestamp + ", trigger timestamp " + triggerRTPPacket.Header.Timestamp + ", marker bit " + rtpPacket.Header.MarkerBit + ".");
                                     _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
                                 }
                                 catch (Exception sendExcp)

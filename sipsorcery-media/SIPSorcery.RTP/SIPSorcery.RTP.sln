@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SIPSorcery.RTP", "SIPSorcery.RTP.vcxproj", "{60CC689C-2616-441C-A38A-E1B764C7C446}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SIPSorceryRTP", "SIPSorcery.RTP.vcxproj", "{60CC689C-2616-441C-A38A-E1B764C7C446}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

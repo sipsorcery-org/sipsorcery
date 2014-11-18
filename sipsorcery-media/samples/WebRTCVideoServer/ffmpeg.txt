@@ -12,6 +12,8 @@ ffmpeg -re -f dshow -framerate 30 -i video="Logitech QuickCam Pro 9000" -vcodec 
 
 ffmpeg -re -f dshow -framerate 30 -i video="Logitech QuickCam Pro 9000" -vcodec vp8 -s 640x400 -quality realtime -crf 50 -b:v 500k -qmin 50 -qmax 60 -f rtp rtp://10.1.1.2:10001
 
+ffmpeg -re -f dshow -framerate 30 -i video="FaceTime HD Camera (Built-in)" -vcodec vp8 -s 640x480 -quality realtime -crf 50 -b:v 500k -qmin 50 -qmax 60 -f rtp rtp://192.168.33.116:10001
+
 // Slightly better qaulity and only infrequent drops
 ffmpeg -re -f dshow -framerate 30 -i video="Logitech QuickCam Pro 9000" -vcodec vp8 -s 640x480 -quality realtime -crf 45 -b:v 500k -qmin 45 -qmax 60 -f rtp rtp://10.1.1.2:10001
 

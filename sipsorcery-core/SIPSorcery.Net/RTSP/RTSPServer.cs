@@ -340,20 +340,6 @@ namespace SIPSorcery.Net
             return rtspSession;
         }
 
-        public RTSPSession CreateRTSPSession(IPEndPoint remoteEndPoint, ICEState iceState)
-        {
-            var rtspSession = new RTSPSession(Guid.NewGuid().ToString(), remoteEndPoint, iceState);
-            rtspSession.ReservePorts();
-            rtspSession.OnRTPSocketDisconnected += RTPSocketDisconnected;
-
-            lock (m_rtspSessions)
-            {
-                m_rtspSessions.Add(rtspSession.SessionID, rtspSession);
-            }
-
-            return rtspSession;
-        }
-
         private void RTPSocketDisconnected(string sessionID)
         {
             logger.Debug("The RTP socket for RTSP session " + sessionID + " was disconnected.");
