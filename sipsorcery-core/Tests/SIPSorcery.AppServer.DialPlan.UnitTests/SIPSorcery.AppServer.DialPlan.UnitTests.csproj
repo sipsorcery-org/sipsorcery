@@ -173,11 +173,11 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\SIPSorcery.AppServer.DialPlan\SIPSorcery.AppServer.DialPlan.csproj">
-      <Project>{DC87DB52-5C99-4282-ABEA-F7EC81AC6D4C}</Project>
+      <Project>{dc87db52-5c99-4282-abea-f7ec81ac6d4c}</Project>
       <Name>SIPSorcery.AppServer.DialPlan</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\SIPSorcery.Entities\SIPSorcery.Entities.csproj">
-      <Project>{8EB4E07E-76C8-445A-8252-5B392A9C12FB}</Project>
+      <Project>{8eb4e07e-76c8-445a-8252-5b392a9c12fb}</Project>
       <Name>SIPSorcery.Entities</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">

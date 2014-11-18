@@ -40,7 +40,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>..\Build\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;MIN_BUILD</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -204,7 +204,6 @@
     <Reference Include="System.Data.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Drawing" />
     <Reference Include="System.Runtime.Serialization">
       <RequiredTargetFramework>3.0</RequiredTargetFramework>
     </Reference>
@@ -278,20 +277,12 @@
     <Compile Include="Switchboard\SwitchboardToken.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SIPSorcery.CRM\SIPSorcery.CRM.csproj">
-      <Project>{F951789F-1ABB-42E8-BB51-F028DC4824EF}</Project>
-      <Name>SIPSorcery.CRM</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Entities\SIPSorcery.Entities.csproj">
-      <Project>{8EB4E07E-76C8-445A-8252-5B392A9C12FB}</Project>
-      <Name>SIPSorcery.Entities</Name>
-    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">
       <Project>{55898587-8456-40D4-BB88-C9FC8BD6BA9C}</Project>
       <Name>SIPSorcery.Net</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
-      <Project>{7194705F-5564-4040-BC8A-8FAD806F5408}</Project>
+      <Project>{7194705f-5564-4040-bc8a-8fad806f5408}</Project>
       <Name>SIPSorcery.Persistence</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">

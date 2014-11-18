@@ -1,29 +1,29 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<edmx:Edmx Version="2.0" xmlns:edmx="http://schemas.microsoft.com/ado/2008/10/edmx">
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
   <!-- EF Runtime content -->
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-    <Schema Namespace="Entities.Store" Alias="Self" Provider="MySql.Data.MySqlClient" ProviderManifestToken="5.5" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/02/edm/ssdl">
+    <Schema Namespace="Entities.Store" Alias="Self" Provider="MySql.Data.MySqlClient" ProviderManifestToken="5.5" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
         <EntityContainer Name="EntitiesStoreContainer">
-          <EntitySet Name="cdr" EntityType="Entities.Store.cdr" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="customeraccount" EntityType="Entities.Store.customeraccount" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="customers" EntityType="Entities.Store.customers" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="rate" EntityType="Entities.Store.rate" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="rtcc" EntityType="Entities.Store.rtcc" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="simplewizardrule" EntityType="Entities.Store.simplewizardrule" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="sipaccounts" EntityType="Entities.Store.sipaccounts" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="sipdialogues" EntityType="Entities.Store.sipdialogues" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="sipdialplanlookups" EntityType="Entities.Store.sipdialplanlookups" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="sipdialplanoptions" EntityType="Entities.Store.sipdialplanoptions" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="sipdialplanproviders" EntityType="Entities.Store.sipdialplanproviders" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="sipdialplanroutes" EntityType="Entities.Store.sipdialplanroutes" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="sipdialplans" EntityType="Entities.Store.sipdialplans" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="sipdomains" EntityType="Entities.Store.sipdomains" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="sipproviderbindings" EntityType="Entities.Store.sipproviderbindings" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="sipproviders" EntityType="Entities.Store.sipproviders" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="sipregistrarbindings" EntityType="Entities.Store.sipregistrarbindings" store:Type="Tables" Schema="sipsorcery" />
-          <EntitySet Name="webcallback" EntityType="Entities.Store.webcallback" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="cdr" EntityType="Entities.Store.cdr" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="customeraccount" EntityType="Entities.Store.customeraccount" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="customers" EntityType="Entities.Store.customers" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="rate" EntityType="Entities.Store.rate" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="rtcc" EntityType="Entities.Store.rtcc" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="simplewizardrule" EntityType="Entities.Store.simplewizardrule" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="sipaccounts" EntityType="Entities.Store.sipaccounts" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="sipdialogues" EntityType="Entities.Store.sipdialogues" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="sipdialplanlookups" EntityType="Entities.Store.sipdialplanlookups" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="sipdialplanoptions" EntityType="Entities.Store.sipdialplanoptions" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="sipdialplanproviders" EntityType="Entities.Store.sipdialplanproviders" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="sipdialplanroutes" EntityType="Entities.Store.sipdialplanroutes" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="sipdialplans" EntityType="Entities.Store.sipdialplans" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="sipdomains" EntityType="Entities.Store.sipdomains" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="sipproviderbindings" EntityType="Entities.Store.sipproviderbindings" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="sipproviders" EntityType="Entities.Store.sipproviders" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="sipregistrarbindings" EntityType="Entities.Store.sipregistrarbindings" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="webcallback" EntityType="Entities.Store.webcallback" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
           <AssociationSet Name="rtcc_ibfk_1" Association="Entities.Store.rtcc_ibfk_1">
             <End Role="cdr" EntitySet="cdr" />
             <End Role="rtcc" EntitySet="rtcc" />
@@ -552,8 +552,8 @@
       </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
-      <Schema Namespace="SIPSorcery.Entities" Alias="Self" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
-        <EntityContainer Name="SIPSorceryEntities" annotation:LazyLoadingEnabled="false">
+      <Schema Namespace="SIPSorcery.Entities" Alias="Self" xmlns="http://schemas.microsoft.com/ado/2009/11/edm" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation">
+        <EntityContainer Name="SIPSorceryEntities" annotation:LazyLoadingEnabled="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation">
           <EntitySet Name="SIPDialplanLookups" EntityType="SIPSorcery.Entities.SIPDialplanLookup" />
           <EntitySet Name="SIPDialplanRoutes" EntityType="SIPSorcery.Entities.SIPDialplanRoute" />
           <EntitySet Name="SIPDialplanProviders" EntityType="SIPSorcery.Entities.SIPDialplanProvider" />
@@ -1086,7 +1086,7 @@
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
     <edmx:Mappings>
-      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2008/09/mapping/cs">
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
         <EntityContainerMapping StorageEntityContainer="EntitiesStoreContainer" CdmEntityContainer="SIPSorceryEntities">
         <EntitySetMapping Name="SIPDialplanLookups">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.SIPDialplanLookup">
@@ -1476,7 +1476,7 @@
     </edmx:Mappings>
   </edmx:Runtime>
   <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
-  <Designer xmlns="http://schemas.microsoft.com/ado/2008/10/edmx">
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
     <Connection>
       <DesignerInfoPropertySet>
         <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
@@ -1505,32 +1505,32 @@
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPProviderBinding" Width="2.125" PointX="8.875" PointY="7.75" Height="3.9033007812499996" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPProvider" Width="2" PointX="6.125" PointY="7.75" Height="6.0186165364583335" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPRegistrarBinding" Width="2" PointX="0.625" PointY="8.625" Height="3.9033007812499996" />
-        <AssociationConnector Association="SIPSorcery.Entities.sipdialplanlookups_ibfk_1" >
+        <AssociationConnector Association="SIPSorcery.Entities.sipdialplanlookups_ibfk_1">
           <ConnectorPoint PointX="15.25" PointY="2.4035953776041667" />
           <ConnectorPoint PointX="13.375" PointY="2.4035953776041667" />
         </AssociationConnector>
-        <AssociationConnector Association="SIPSorcery.Entities.sipdialplanoptions_ibfk_1" >
+        <AssociationConnector Association="SIPSorcery.Entities.sipdialplanoptions_ibfk_1">
           <ConnectorPoint PointX="17.25" PointY="4.8987532552083328" />
           <ConnectorPoint PointX="18.25" PointY="4.8987532552083328" />
         </AssociationConnector>
-        <AssociationConnector Association="SIPSorcery.Entities.sipdialplanproviders_ibfk_1" >
+        <AssociationConnector Association="SIPSorcery.Entities.sipdialplanproviders_ibfk_1">
           <ConnectorPoint PointX="15.25" PointY="5.0862532552083328" />
           <ConnectorPoint PointX="13.875" PointY="5.0862532552083328" />
         </AssociationConnector>
-        <AssociationConnector Association="SIPSorcery.Entities.sipdialplanroutes_ibfk_1" >
+        <AssociationConnector Association="SIPSorcery.Entities.sipdialplanroutes_ibfk_1">
           <ConnectorPoint PointX="17.25" PointY="2.2785953776041667" />
           <ConnectorPoint PointX="18.375" PointY="2.2785953776041667" />
         </AssociationConnector>
-        <AssociationConnector Association="SIPSorcery.Entities.sipregistrarbindings_ibfk_1" >
+        <AssociationConnector Association="SIPSorcery.Entities.sipregistrarbindings_ibfk_1">
           <ConnectorPoint PointX="3.375" PointY="10.639150390625" />
           <ConnectorPoint PointX="2.625" PointY="10.639150390625" />
         </AssociationConnector>
-        <AssociationConnector Association="SIPSorcery.Entities.sipproviderbindings_ibfk_2" >
+        <AssociationConnector Association="SIPSorcery.Entities.sipproviderbindings_ibfk_2">
           <ConnectorPoint PointX="8.125" PointY="9.701650390625" />
           <ConnectorPoint PointX="8.875" PointY="9.701650390625" />
         </AssociationConnector>
         <EntityTypeShape EntityType="SIPSorcery.Entities.SimpleWizardRule" Width="2.125" PointX="14.75" PointY="7.625" Height="4.6725065104166674" />
-        <AssociationConnector Association="SIPSorcery.Entities.simplewizardrule_ibfk_1" >
+        <AssociationConnector Association="SIPSorcery.Entities.simplewizardrule_ibfk_1">
           <ConnectorPoint PointX="16.0625" PointY="5.9225065104166656" />
           <ConnectorPoint PointX="16.0625" PointY="7.625" />
         </AssociationConnector>

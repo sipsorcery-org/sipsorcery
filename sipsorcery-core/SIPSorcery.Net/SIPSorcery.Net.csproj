@@ -230,7 +230,7 @@
       <HintPath>..\..\stable\log4net.dll</HintPath>
     </Reference>
     <Reference Include="SIPSorceryRTP">
-      <HintPath>..\..\sipsorcery-media\build\SIPSorceryRTP.dll</HintPath>
+      <HintPath>..\..\sipsorcery-media\build\x64\SIPSorceryRTP.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />

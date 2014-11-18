@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using SIPSorcery.CRM;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -10,7 +9,7 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPMonitorClientSession
     {
-        private static readonly string m_topLevelAdminId = Customer.TOPLEVEL_ADMIN_ID;
+        private static readonly string m_topLevelAdminId = "*";
         private static readonly string m_filterWildcard = SIPMonitorFilter.WILDCARD;
 
         private static ILog logger = AppState.logger;

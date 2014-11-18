@@ -22,7 +22,7 @@
 #define CHECK_HR(hr, msg) if (HRHasFailed(hr, msg)) return hr;
 
 const unsigned int WIDTH = 640;
-const unsigned int HEIGHT = 480; // 400;
+const unsigned int HEIGHT = 480; // 480; // 400;
 const unsigned int STRIDE = 1280;
 const vpx_img_fmt VIDEO_INPUT_FORMAT = VPX_IMG_FMT_I420; // VPX_IMG_FMT_RGB24; // VPX_IMG_FMT_YUY2;
 const GUID MF_INPUT_FORMAT = WMMEDIASUBTYPE_YUY2; // WMMEDIASUBTYPE_YUY2; // MFVideoFormat_RGB24; // MFVideoFormat_I420;
@@ -200,13 +200,17 @@ HRESULT InitVPXEncoder(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCod
 
 		vpxConfig->g_w = width;
 		vpxConfig->g_h = height;
-		vpxConfig->rc_target_bitrate = 500000;
-		vpxConfig->rc_min_quantizer = 50;
-		vpxConfig->rc_max_quantizer = 60;
+		vpxConfig->rc_target_bitrate = 5000; // in kbps.
+		vpxConfig->rc_min_quantizer = 20; // 50;
+		vpxConfig->rc_max_quantizer = 30; // 60;
 		vpxConfig->g_pass = VPX_RC_ONE_PASS;
 		vpxConfig->rc_end_usage = VPX_CBR;
-		vpxConfig->kf_min_dist = 50;
-		vpxConfig->kf_max_dist = 50;
+		//vpxConfig->kf_min_dist = 50;
+		//vpxConfig->kf_max_dist = 50;
+		//vpxConfig->kf_mode = VPX_KF_DISABLED;
+		vpxConfig->g_error_resilient = VPX_ERROR_RESILIENT_DEFAULT;
+		vpxConfig->g_lag_in_frames = 0;
+		vpxConfig->rc_resize_allowed = 0;
 
 		/* Initialize codec */
 		if (vpx_codec_enc_init(vpxCodec, (vpx_codec_vp8_cx()), vpxConfig, 0)) {
@@ -221,7 +225,7 @@ HRESULT InitVPXEncoder(vpx_codec_enc_cfg_t * vpxConfig, vpx_codec_ctx_t * vpxCod
 
 HRESULT GetSampleFromMFStreamer(/* out */ const vpx_codec_cx_pkt_t *& vpkt)
 {
-	printf("Get Sample...\n");
+	//printf("Get Sample...\n");
 
 	IMFSample *videoSample = NULL;
 
@@ -250,16 +254,16 @@ HRESULT GetSampleFromMFStreamer(/* out */ const vpx_codec_cx_pkt_t *& vpkt)
 		DWORD nCurrLen = 0;
 		CHECK_HR(pMediaBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the video sample.\n");
 
-		BYTE *i420 = new BYTE[4608000];
 		byte *imgBuff;
-		//vpx_image_t * rawImage = vpx_img_alloc(NULL, VIDEO_INPUT_FORMAT, WIDTH, HEIGHT, 0);
-
 		DWORD buffCurrLen = 0;
 		DWORD buffMaxLen = 0;
 		pMediaBuffer->Lock(&imgBuff, &buffMaxLen, &buffCurrLen);
+		
+		BYTE *i420 = new BYTE[4608000];
 		YUY2ToI420(WIDTH, HEIGHT, STRIDE, imgBuff, i420);
 		vpx_image_t* img = vpx_img_wrap(&_rawImage, VIDEO_INPUT_FORMAT, _vpxConfig.g_w, _vpxConfig.g_h, 1, i420);
-		////vpx_image_t* const img = vpx_img_wrap(rawImage, VIDEO_INPUT_FORMAT, _vpxConfig.g_w, _vpxConfig.g_h, 1, imgBuff);
+		
+		//vpx_image_t* const img = vpx_img_wrap(&_rawImage, VIDEO_INPUT_FORMAT, _vpxConfig.g_w, _vpxConfig.g_h, 1, imgBuff);
 		
 		const vpx_codec_cx_pkt_t * pkt;
 		vpx_enc_frame_flags_t flags = 0;

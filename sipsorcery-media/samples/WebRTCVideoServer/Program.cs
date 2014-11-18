@@ -42,8 +42,8 @@ namespace WebRTCVideoServer
         private static bool m_exit = false;
 
         private static IPEndPoint _wiresharpEP = new IPEndPoint(IPAddress.Parse("10.1.1.1"), 10001);
-        private static string _localIPAddress = "192.168.33.116"; //  "10.1.1.2";
-        private static string _clientIPAddress = "192.168.33.108"; // "10.1.1.2";
+        private static string _localIPAddress = "192.168.33.116"; //"10.1.1.2";//"192.168.33.116"; //  ;
+        private static string _clientIPAddress = "192.168.33.108"; //"10.1.1.2"; // "192.168.33.108"; // ;
         private static UdpClient _webRTCReceiverClient;
         private static UdpClient _rtpClient;
 
@@ -118,9 +118,9 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                 logger.Debug("Commencing listen to receiver WebRTC client on local socket " + receiverLocalEndPoint + ".");
                 ThreadPool.QueueUserWorkItem(delegate { ListenToReceiverWebRTCClient(_webRTCReceiverClient); });
 
-                //ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
+                ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
 
-                ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
+                //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromRawRTPFile("rtpPackets.txt"); });
 
@@ -320,7 +320,8 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
 
                 while (buffer != null && buffer.Length > 0 && !m_exit)
                 {
-                    Console.WriteLine("Packet spacing " + DateTime.Now.Subtract(lastReceiveTime).TotalMilliseconds + "ms.");
+                    int packetSpacingMilli = Convert.ToInt32(DateTime.Now.Subtract(lastReceiveTime).TotalMilliseconds);
+                    Console.WriteLine("Packet spacing " + packetSpacingMilli + "ms.");
                     lastReceiveTime = DateTime.Now;
 
                     if (_webRTCClients.Count != 0)
@@ -374,10 +375,19 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                             {
                                 try
                                 {
+                                    if(client.LastTimestamp == 0)
+                                    {
+                                        client.LastTimestamp = RTSPSession.DateTimeToNptTimestamp32(DateTime.Now);
+                                    }
+                                    else if(vp8Header.StartOfVP8Partition)
+                                    {
+                                        client.LastTimestamp += 11520;
+                                    }
+
                                     RTPPacket rtpPacket = new RTPPacket(triggerRTPPacket.Payload.Length + 10);
                                     rtpPacket.Header.SyncSource = client.SSRC;
                                     rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
-                                    rtpPacket.Header.Timestamp = triggerRTPPacket.Header.Timestamp; // client.LastTimestamp;
+                                    rtpPacket.Header.Timestamp = client.LastTimestamp; //triggerRTPPacket.Header.Timestamp; // client.LastTimestamp;
                                     rtpPacket.Header.MarkerBit = triggerRTPPacket.Header.MarkerBit;
                                     rtpPacket.Header.PayloadType = 100;
 
@@ -398,7 +408,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                                         logger.Debug("New RTP packet protect result " + rtperr + ".");
                                     }
 
-                                    logger.Debug("Sending RTP " + rtpBuffer.Length + " bytes to " + client.SocketAddress + ", timestamp " + rtpPacket.Header.Timestamp + ", marker bit " + rtpPacket.Header.MarkerBit + ".");
+                                    logger.Debug("Sending RTP " + rtpBuffer.Length + " bytes to " + client.SocketAddress + ", timestamp " + rtpPacket.Header.Timestamp + ", trigger timestamp " + triggerRTPPacket.Header.Timestamp + ", marker bit " + rtpPacket.Header.MarkerBit + ".");
                                     _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
                                 }
                                 catch (Exception sendExcp)
@@ -455,7 +465,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                         }
                         else
                         {
-                            Console.WriteLine("Got managed sample " + sample.Buffer.Length + ", is key frame " + sample.IsKeyFrame + ".");
+                            //Console.WriteLine("Got managed sample " + sample.Buffer.Length + ", is key frame " + sample.IsKeyFrame + ".");
 
                             lock (_webRTCClients)
                             {
@@ -463,6 +473,8 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                                 {
                                     try
                                     {
+                                        Console.WriteLine("Sending VP8 frame of " + sample.Buffer.Length + " bytes to " + client.SocketAddress + ".");
+
                                         client.LastTimestamp = (client.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : client.LastTimestamp + TIMESTAMP_SPACING;
 
                                         for (int index = 0; index * RTP_MAX_PAYLOAD < sample.Buffer.Length; index++)
@@ -470,8 +482,8 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                                             int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
                                             int payloadLength = (offset + RTP_MAX_PAYLOAD < sample.Buffer.Length) ? RTP_MAX_PAYLOAD : sample.Buffer.Length - offset;
 
-                                            byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x90, 0x80, pictureID } : new byte[] { 0x80, 0x80, pictureID };
-                                            //byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10} : new byte[] { 0x00 };
+                                            //byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x90, 0x80, pictureID } : new byte[] { 0x80, 0x80, pictureID };
+                                            byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10} : new byte[] { 0x00 };
 
                                             RTPPacket rtpPacket = new RTPPacket(payloadLength + 10 + vp8HeaderBytes.Length);
                                             rtpPacket.Header.SyncSource = client.SSRC;
