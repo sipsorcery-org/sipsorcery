@@ -64,7 +64,6 @@ m=video {0} RTP/SAVPF 100 116 117 96
 c=IN IP4 {1}
 a=rtcp:{0} IN IP4 {1}
 a=candidate:2675262800 1 udp 2122194687 {1} {0} typ host generation 0
-a=candidate:2675262800 2 udp 2122194687 {1} {0} typ host generation 0
 a=ice-ufrag:{2}
 a=ice-pwd:{3}
 a=ice-options:google-ice
@@ -118,9 +117,9 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                 logger.Debug("Commencing listen to receiver WebRTC client on local socket " + receiverLocalEndPoint + ".");
                 ThreadPool.QueueUserWorkItem(delegate { ListenToReceiverWebRTCClient(_webRTCReceiverClient); });
 
-                ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
+                //ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
 
-                //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
+                ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromRawRTPFile("rtpPackets.txt"); });
 
