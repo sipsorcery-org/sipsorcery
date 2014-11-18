@@ -42,8 +42,8 @@ namespace WebRTCVideoServer
         private static bool m_exit = false;
 
         private static IPEndPoint _wiresharpEP = new IPEndPoint(IPAddress.Parse("10.1.1.1"), 10001);
-        private static string _localIPAddress = "192.168.33.116"; //"10.1.1.2";//"192.168.33.116"; //  ;
-        private static string _clientIPAddress = "192.168.33.108"; //"10.1.1.2"; // "192.168.33.108"; // ;
+        private static string _localIPAddress = "10.1.1.2"; //"10.1.1.2";//"192.168.33.116"; //  ;
+        private static string _clientIPAddress = "10.1.1.2"; //"10.1.1.2"; // "192.168.33.108"; // ;
         private static UdpClient _webRTCReceiverClient;
         private static UdpClient _rtpClient;
 
@@ -58,39 +58,17 @@ namespace WebRTCVideoServer
 o=- 2925822133501083390 2 IN IP4 127.0.0.1
 s=-
 t=0 0
-a=group:BUNDLE video
-a=msid-semantic: WMS XHuZbE0oAGhvjMq7UHDMMEzLC0Jga3PZXtvW
-m=video {0} RTP/SAVPF 100 116 117 96
+m=video {0} RTP/SAVPF 100
 c=IN IP4 {1}
 a=rtcp:{0} IN IP4 {1}
 a=candidate:2675262800 1 udp 2122194687 {1} {0} typ host generation 0
 a=ice-ufrag:{2}
 a=ice-pwd:{3}
-a=ice-options:google-ice
 a=mid:video
-a=extmap:2 urn:ietf:params:rtp-hdrext:toffset
-a=extmap:3 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
-a=sendrecv
+a=sendonly
 a=rtcp-mux
 a=crypto:0 AES_CM_128_HMAC_SHA1_80 inline:{4}
 a=rtpmap:100 VP8/90000
-a=rtcp-fb:100 ccm fir
-a=rtcp-fb:100 nack
-a=rtcp-fb:100 nack pli
-a=rtcp-fb:100 goog-remb
-a=rtpmap:116 red/90000
-a=rtpmap:117 ulpfec/90000
-a=rtpmap:96 rtx/90000
-a=fmtp:96 apt=100
-a=ssrc-group:FID 1429654490 1191714373
-a=ssrc:1429654490 cname:IA+Ohn8PVyDVYiYx
-a=ssrc:1429654490 msid:XHuZbE0oAGhvjMq7UHDMMEzLC0Jga3PZXtvW 48a41820-a050-4ed9-9051-21fb2b97a287
-a=ssrc:1429654490 mslabel:XHuZbE0oAGhvjMq7UHDMMEzLC0Jga3PZXtvW
-a=ssrc:1429654490 label:48a41820-a050-4ed9-9051-21fb2b97a287
-a=ssrc:1191714373 cname:IA+Ohn8PVyDVYiYx
-a=ssrc:1191714373 msid:XHuZbE0oAGhvjMq7UHDMMEzLC0Jga3PZXtvW 48a41820-a050-4ed9-9051-21fb2b97a287
-a=ssrc:1191714373 mslabel:XHuZbE0oAGhvjMq7UHDMMEzLC0Jga3PZXtvW
-a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
 ";
 
         static void Main(string[] args)
@@ -240,6 +218,8 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
 
                             //logger.Debug("STUN message received from Receiver Client @ " + stunMessage.Header.MessageType + ".");
 
+                            var client = _webRTCClients.Where(x => x.SocketAddress.ToString() == remoteEndPoint.ToString()).SingleOrDefault();
+
                             if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingRequest)
                             {
                                 //logger.Debug("Sending STUN response to Receiver Client @ " + remoteEndPoint + ".");
@@ -251,9 +231,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                                 localSocket.Send(stunRespBytes, stunRespBytes.Length, remoteEndPoint);
 
                                 //logger.Debug("Sending Binding request to Receiver Client @ " + remoteEndPoint + ".");
-
-                                var client = _webRTCClients.Where(x => x.SocketAddress.ToString() == remoteEndPoint.ToString()).SingleOrDefault();
-                                if (client != null)
+                                if (client != null && !client.STUNExchangeComplete)
                                 {
                                     STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
                                     stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
@@ -267,7 +245,6 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                             }
                             else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingSuccessResponse)
                             {
-                                var client = _webRTCClients.Where(x => x.SocketAddress.ToString() == remoteEndPoint.ToString()).SingleOrDefault();
                                 if (client != null && client.STUNExchangeComplete == false)
                                 {
                                     client.STUNExchangeComplete = true;
@@ -482,7 +459,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                                             int payloadLength = (offset + RTP_MAX_PAYLOAD < sample.Buffer.Length) ? RTP_MAX_PAYLOAD : sample.Buffer.Length - offset;
 
                                             //byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x90, 0x80, pictureID } : new byte[] { 0x80, 0x80, pictureID };
-                                            byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10} : new byte[] { 0x00 };
+                                            byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
 
                                             RTPPacket rtpPacket = new RTPPacket(payloadLength + 10 + vp8HeaderBytes.Length);
                                             rtpPacket.Header.SyncSource = client.SSRC;
@@ -504,7 +481,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                                                 logger.Debug("New RTP packet protect result " + rtperr + ".");
                                             }
 
-                                            logger.Debug("Sending RTP, offset " + offset + ", frame bytes " + payloadLength + ", vp8 header bytes " + vp8HeaderBytes.Length + ", timestamp " + rtpPacket.Header.Timestamp + ", seq # " + rtpPacket.Header.SequenceNumber + " to " + client.SocketAddress + ".");
+                                            //logger.Debug("Sending RTP, offset " + offset + ", frame bytes " + payloadLength + ", vp8 header bytes " + vp8HeaderBytes.Length + ", timestamp " + rtpPacket.Header.Timestamp + ", seq # " + rtpPacket.Header.SequenceNumber + " to " + client.SocketAddress + ".");
 
                                             _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
                                         }
@@ -673,7 +650,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
 
                                     RTPVP8Header origVP8Header = RTPVP8Header.GetVP8Header(sample);
 
-                                    if(origVP8Header.IsKeyFrame)
+                                    if (origVP8Header.IsKeyFrame)
                                     {
                                         Console.WriteLine("Key frame");
                                     }
@@ -776,7 +753,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                         RTPVP8Header frameVP8Header = RTPVP8Header.GetVP8Header(Convert.FromBase64String(sampleFields[0]));
                         byte[] sample = Convert.FromBase64String(sampleFields[1]);
 
-                        if(frameVP8Header.IsKeyFrame)
+                        if (frameVP8Header.IsKeyFrame)
                         {
                             Console.WriteLine("Key frame.");
                         }
@@ -804,7 +781,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                                             ShowFrame = true,
                                         };
 
-                                        if(index == 0)
+                                        if (index == 0)
                                         {
                                             packetVP8Header.StartOfVP8Partition = true;
                                             //packetVP8Header.FirstPartitionSize = frameVP8Header.FirstPartitionSize;
@@ -813,7 +790,7 @@ a=ssrc:1191714373 label:48a41820-a050-4ed9-9051-21fb2b97a287
                                         }
 
                                         byte[] vp8HeaderBytes = packetVP8Header.GetBytes();
- 
+
                                         RTPPacket rtpPacket = new RTPPacket(packetVP8Header.Length + payloadLength + 10);
                                         rtpPacket.Header.SyncSource = client.SSRC;
                                         rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
