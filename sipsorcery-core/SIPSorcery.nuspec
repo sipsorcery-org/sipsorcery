@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>SIPSorcery</id>
+        <version>1.3</version>
+        <authors>Aaron Clauson</authors>
+        <owners>Aaron Clauson</owners>
+        <licenseUrl>https://sipsorcery.codeplex.com/license</licenseUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>The SIPSorcery package consists of a C# SIP protocol stack that implements all the required UDP, TCP and TLS transports as specified in RFC3261. 
+		There are also partial implementations of a number of related protocols: STUN, SDP, RTP and RTCP. The SIP functionality includes a number of user agents which
+		can be used to initiate and receive both calls and registrations.</description>
+      <summary>This is not an official package of SIPSorcery. Official versions can be found at http://sipsorcery.codeplex.com</summary>  
+      <copyright>Copyright (c) 2014, Aaron Clauson</copyright>
+        <language>en-US</language>
+        <tags>sip sipsorcery</tags>
+        <dependencies>
+            <group targetFramework=".NETFramework4.5">
+                <dependency id="log4net" version="2.0.3" />
+                <dependency id="MySql.Data" version="6.6.5" />
+                <dependency id="Npgsql" version="2.0.11" />
+            </group>
+        </dependencies>
+        <frameworkAssemblies>
+            <frameworkAssembly assemblyName="System" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.ComponentModel.DataAnnotations" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.Core" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.Data" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.Data.DataSetExtensions" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.Data.Entity" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.Runtime.Serialization" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.Transactions" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.Web" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.Xml" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.Data.Linq" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.ServiceModel" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.Configuration" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.ServiceModel.Web" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.Xml.Linq" targetFramework=".NETFramework4.5" />
+            <frameworkAssembly assemblyName="System.Web.ApplicationServices" targetFramework=".NETFramework4.5" />
+        </frameworkAssemblies>
+    </metadata>
+    <files>
+        <file src="Build\SIPSorcery.Net.dll" target="lib\net45\SIPSorcery.Net.dll" />
+        <file src="Build\SIPSorcery.Persistence.dll" target="lib\net45\SIPSorcery.Persistence.dll" />
+        <file src="Build\SIPSorcery.SIP.App.dll" target="lib\net45\SIPSorcery.SIP.App.dll" />
+        <file src="Build\SIPSorcery.SIP.Core.dll" target="lib\net45\SIPSorcery.SIP.Core.dll" />
+        <file src="Build\SIPSorcery.Sys.dll" target="lib\net45\SIPSorcery.Sys.dll" />
+    </files>
+</package>
