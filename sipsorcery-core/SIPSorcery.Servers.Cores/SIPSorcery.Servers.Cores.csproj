@@ -275,29 +275,13 @@
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <ProjectReference Include="..\SIPSorcery.AppServer.DialPlan\SIPSorcery.AppServer.DialPlan.csproj">
-      <Project>{DC87DB52-5C99-4282-ABEA-F7EC81AC6D4C}</Project>
-      <Name>SIPSorcery.AppServer.DialPlan</Name>
-    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Entities\SIPSorcery.Entities.csproj">
       <Project>{8EB4E07E-76C8-445A-8252-5B392A9C12FB}</Project>
       <Name>SIPSorcery.Entities</Name>
     </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">
-      <Project>{55898587-8456-40D4-BB88-C9FC8BD6BA9C}</Project>
-      <Name>SIPSorcery.Net</Name>
-    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
       <Project>{7194705F-5564-4040-BC8A-8FAD806F5408}</Project>
       <Name>SIPSorcery.Persistence</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
-      <Project>{339648E6-3B61-4A27-B4A2-38A8216B1D7E}</Project>
-      <Name>SIPSorcery.SIP.App</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.CRM\SIPSorcery.CRM.csproj">
-      <Project>{F951789F-1ABB-42E8-BB51-F028DC4824EF}</Project>
-      <Name>SIPSorcery.CRM</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
       <Project>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</Project>
@@ -306,10 +290,6 @@
     <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
       <Project>{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}</Project>
       <Name>SIPSorcery.Sys</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Web.Services\SIPSorcery.Web.Services.csproj">
-      <Project>{5D73FBAC-897F-4FEA-BAF9-61823545FE70}</Project>
-      <Name>SIPSorcery.Web.Services</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

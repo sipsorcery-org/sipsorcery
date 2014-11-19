@@ -82,14 +82,17 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>libs\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="SIPSorcery.Net">
-      <HintPath>..\..\..\sipsorcery-core\Build\SIPSorcery.Net.dll</HintPath>
+    <Reference Include="SIPSorcery.Net, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\sipsorcery-core\SIPSorcery.Net\bin\x64\Release\SIPSorcery.Net.dll</HintPath>
     </Reference>
-    <Reference Include="SIPSorcery.Sys">
-      <HintPath>..\..\..\sipsorcery-core\Build\SIPSorcery.Sys.dll</HintPath>
+    <Reference Include="SIPSorcery.Sys, Version=1.0.0.38441, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\sipsorcery-core\SIPSorcery.Net\bin\x64\Release\SIPSorcery.Sys.dll</HintPath>
     </Reference>
-    <Reference Include="SIPSorceryRTP">
-      <HintPath>..\..\build\x64\SIPSorceryRTP.dll</HintPath>
+    <Reference Include="SIPSorceryRTP, Version=1.0.5431.35861, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\sipsorcery-core\SIPSorcery.Net\bin\x64\Release\SIPSorceryRTP.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

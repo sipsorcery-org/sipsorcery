@@ -169,12 +169,6 @@
     <Compile Include="STUNv2UnitTest.cs" />
     <Compile Include="STUNUnitTest.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\SIPSorcery.Net\SIPSorcery.Net.csproj">
-      <Project>{55898587-8456-40D4-BB88-C9FC8BD6BA9C}</Project>
-      <Name>SIPSorcery.Net</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

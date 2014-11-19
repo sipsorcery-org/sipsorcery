@@ -298,7 +298,7 @@
   -->
   <PropertyGroup>
     <PostBuildEvent>REM Only want to build the nuget package if running on the myget.org build server.
-if defined nuget ( %25nuget%25 pack "..\..\..\..\sipsorcery.nuspec" -NoPackageAnalysis -OutputDirectory $buildArtifactsDirectory)</PostBuildEvent>
+if defined nuget ( %25nuget%25 pack "sipsorcery-core\sipsorcery.nuspec" -NoPackageAnalysis -OutputDirectory $buildArtifactsDirectory)</PostBuildEvent>
   </PropertyGroup>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
