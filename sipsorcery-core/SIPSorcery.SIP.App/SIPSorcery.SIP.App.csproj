@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SIPSorcery.SIP.App</RootNamespace>
     <AssemblyName>SIPSorcery.SIP.App</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -277,6 +277,10 @@
     <Compile Include="Switchboard\SwitchboardToken.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery.Entities\SIPSorcery.Entities.csproj">
+      <Project>{8eb4e07e-76c8-445a-8252-5b392a9c12fb}</Project>
+      <Name>SIPSorcery.Entities</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">
       <Project>{55898587-8456-40D4-BB88-C9FC8BD6BA9C}</Project>
       <Name>SIPSorcery.Net</Name>

@@ -561,7 +561,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -578,7 +578,7 @@ namespace SIPSorcery.Entities
             {
                 OnAdminMemberIDChanging(value);
                 ReportPropertyChanging("AdminMemberID");
-                _AdminMemberID = StructuralObject.SetValidValue(value, true, "AdminMemberID");
+                _AdminMemberID = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AdminMemberID");
                 OnAdminMemberIDChanged();
             }
@@ -602,7 +602,7 @@ namespace SIPSorcery.Entities
             {
                 OnAnsweredReasonChanging(value);
                 ReportPropertyChanging("AnsweredReason");
-                _AnsweredReason = StructuralObject.SetValidValue(value, true, "AnsweredReason");
+                _AnsweredReason = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AnsweredReason");
                 OnAnsweredReasonChanged();
             }
@@ -626,7 +626,7 @@ namespace SIPSorcery.Entities
             {
                 OnAnsweredStatusChanging(value);
                 ReportPropertyChanging("AnsweredStatus");
-                _AnsweredStatus = StructuralObject.SetValidValue(value, "AnsweredStatus");
+                _AnsweredStatus = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("AnsweredStatus");
                 OnAnsweredStatusChanged();
             }
@@ -650,7 +650,7 @@ namespace SIPSorcery.Entities
             {
                 OnAnsweredTimeChanging(value);
                 ReportPropertyChanging("AnsweredTime");
-                _AnsweredTime = StructuralObject.SetValidValue(value, true, "AnsweredTime");
+                _AnsweredTime = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AnsweredTime");
                 OnAnsweredTimeChanged();
             }
@@ -674,7 +674,7 @@ namespace SIPSorcery.Entities
             {
                 OnBridgeIDChanging(value);
                 ReportPropertyChanging("BridgeID");
-                _BridgeID = StructuralObject.SetValidValue(value, true, "BridgeID");
+                _BridgeID = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("BridgeID");
                 OnBridgeIDChanged();
             }
@@ -698,7 +698,7 @@ namespace SIPSorcery.Entities
             {
                 OnCallIDChanging(value);
                 ReportPropertyChanging("CallID");
-                _CallID = StructuralObject.SetValidValue(value, false, "CallID");
+                _CallID = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("CallID");
                 OnCallIDChanged();
             }
@@ -722,7 +722,7 @@ namespace SIPSorcery.Entities
             {
                 OnCreatedChanging(value);
                 ReportPropertyChanging("Created");
-                _Created = StructuralObject.SetValidValue(value, false, "Created");
+                _Created = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Created");
                 OnCreatedChanged();
             }
@@ -746,7 +746,7 @@ namespace SIPSorcery.Entities
             {
                 OnDirectionChanging(value);
                 ReportPropertyChanging("Direction");
-                _Direction = StructuralObject.SetValidValue(value, false, "Direction");
+                _Direction = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Direction");
                 OnDirectionChanged();
             }
@@ -770,7 +770,7 @@ namespace SIPSorcery.Entities
             {
                 OnDstChanging(value);
                 ReportPropertyChanging("Dst");
-                _Dst = StructuralObject.SetValidValue(value, true, "Dst");
+                _Dst = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("Dst");
                 OnDstChanged();
             }
@@ -794,7 +794,7 @@ namespace SIPSorcery.Entities
             {
                 OnDstHostChanging(value);
                 ReportPropertyChanging("DstHost");
-                _DstHost = StructuralObject.SetValidValue(value, false, "DstHost");
+                _DstHost = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("DstHost");
                 OnDstHostChanged();
             }
@@ -818,7 +818,7 @@ namespace SIPSorcery.Entities
             {
                 OnDstURIChanging(value);
                 ReportPropertyChanging("DstURI");
-                _DstURI = StructuralObject.SetValidValue(value, false, "DstURI");
+                _DstURI = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("DstURI");
                 OnDstURIChanged();
             }
@@ -842,7 +842,7 @@ namespace SIPSorcery.Entities
             {
                 OnDurationChanging(value);
                 ReportPropertyChanging("Duration");
-                _Duration = StructuralObject.SetValidValue(value, "Duration");
+                _Duration = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("Duration");
                 OnDurationChanged();
             }
@@ -866,7 +866,7 @@ namespace SIPSorcery.Entities
             {
                 OnFromHeaderChanging(value);
                 ReportPropertyChanging("FromHeader");
-                _FromHeader = StructuralObject.SetValidValue(value, true, "FromHeader");
+                _FromHeader = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("FromHeader");
                 OnFromHeaderChanged();
             }
@@ -890,7 +890,7 @@ namespace SIPSorcery.Entities
             {
                 OnFromNameChanging(value);
                 ReportPropertyChanging("FromName");
-                _FromName = StructuralObject.SetValidValue(value, true, "FromName");
+                _FromName = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("FromName");
                 OnFromNameChanged();
             }
@@ -914,7 +914,7 @@ namespace SIPSorcery.Entities
             {
                 OnFromUserChanging(value);
                 ReportPropertyChanging("FromUser");
-                _FromUser = StructuralObject.SetValidValue(value, true, "FromUser");
+                _FromUser = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("FromUser");
                 OnFromUserChanged();
             }
@@ -938,7 +938,7 @@ namespace SIPSorcery.Entities
             {
                 OnHungupReasonChanging(value);
                 ReportPropertyChanging("HungupReason");
-                _HungupReason = StructuralObject.SetValidValue(value, true, "HungupReason");
+                _HungupReason = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("HungupReason");
                 OnHungupReasonChanged();
             }
@@ -962,7 +962,7 @@ namespace SIPSorcery.Entities
             {
                 OnHungupTimeChanging(value);
                 ReportPropertyChanging("HungupTime");
-                _HungupTime = StructuralObject.SetValidValue(value, true, "HungupTime");
+                _HungupTime = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("HungupTime");
                 OnHungupTimeChanged();
             }
@@ -988,7 +988,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -1013,7 +1013,7 @@ namespace SIPSorcery.Entities
             {
                 OnInProgressReasonChanging(value);
                 ReportPropertyChanging("InProgressReason");
-                _InProgressReason = StructuralObject.SetValidValue(value, true, "InProgressReason");
+                _InProgressReason = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("InProgressReason");
                 OnInProgressReasonChanged();
             }
@@ -1037,7 +1037,7 @@ namespace SIPSorcery.Entities
             {
                 OnInProgressStatusChanging(value);
                 ReportPropertyChanging("InProgressStatus");
-                _InProgressStatus = StructuralObject.SetValidValue(value, "InProgressStatus");
+                _InProgressStatus = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("InProgressStatus");
                 OnInProgressStatusChanged();
             }
@@ -1061,7 +1061,7 @@ namespace SIPSorcery.Entities
             {
                 OnInProgressTimeChanging(value);
                 ReportPropertyChanging("InProgressTime");
-                _InProgressTime = StructuralObject.SetValidValue(value, true, "InProgressTime");
+                _InProgressTime = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("InProgressTime");
                 OnInProgressTimeChanged();
             }
@@ -1085,7 +1085,7 @@ namespace SIPSorcery.Entities
             {
                 OnInsertedChanging(value);
                 ReportPropertyChanging("Inserted");
-                _Inserted = StructuralObject.SetValidValue(value, false, "Inserted");
+                _Inserted = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Inserted");
                 OnInsertedChanged();
             }
@@ -1109,7 +1109,7 @@ namespace SIPSorcery.Entities
             {
                 OnLocalSocketChanging(value);
                 ReportPropertyChanging("LocalSocket");
-                _LocalSocket = StructuralObject.SetValidValue(value, false, "LocalSocket");
+                _LocalSocket = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("LocalSocket");
                 OnLocalSocketChanged();
             }
@@ -1133,7 +1133,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, true, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -1157,7 +1157,7 @@ namespace SIPSorcery.Entities
             {
                 OnRemoteSocketChanging(value);
                 ReportPropertyChanging("RemoteSocket");
-                _RemoteSocket = StructuralObject.SetValidValue(value, false, "RemoteSocket");
+                _RemoteSocket = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("RemoteSocket");
                 OnRemoteSocketChanged();
             }
@@ -1181,7 +1181,7 @@ namespace SIPSorcery.Entities
             {
                 OnRingDurationChanging(value);
                 ReportPropertyChanging("RingDuration");
-                _RingDuration = StructuralObject.SetValidValue(value, "RingDuration");
+                _RingDuration = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("RingDuration");
                 OnRingDurationChanged();
             }
@@ -1205,7 +1205,7 @@ namespace SIPSorcery.Entities
             {
                 OnAnsweredAtChanging(value);
                 ReportPropertyChanging("AnsweredAt");
-                _AnsweredAt = StructuralObject.SetValidValue(value, "AnsweredAt");
+                _AnsweredAt = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("AnsweredAt");
                 OnAnsweredAtChanged();
             }
@@ -1229,7 +1229,7 @@ namespace SIPSorcery.Entities
             {
                 OnDialPlanContextIDChanging(value);
                 ReportPropertyChanging("DialPlanContextID");
-                _DialPlanContextID = StructuralObject.SetValidValue(value, true, "DialPlanContextID");
+                _DialPlanContextID = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("DialPlanContextID");
                 OnDialPlanContextIDChanged();
             }
@@ -1240,6 +1240,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
         #region Navigation Properties
     
         /// <summary>
@@ -1313,7 +1314,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -1330,7 +1331,7 @@ namespace SIPSorcery.Entities
             {
                 OnActiveChanging(value);
                 ReportPropertyChanging("Active");
-                _Active = StructuralObject.SetValidValue(value, "Active");
+                _Active = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("Active");
                 OnActiveChanged();
             }
@@ -1354,7 +1355,7 @@ namespace SIPSorcery.Entities
             {
                 OnAdminIDChanging(value);
                 ReportPropertyChanging("AdminID");
-                _AdminID = StructuralObject.SetValidValue(value, true, "AdminID");
+                _AdminID = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AdminID");
                 OnAdminIDChanged();
             }
@@ -1378,7 +1379,7 @@ namespace SIPSorcery.Entities
             {
                 OnAdminMemberIDChanging(value);
                 ReportPropertyChanging("AdminMemberID");
-                _AdminMemberID = StructuralObject.SetValidValue(value, true, "AdminMemberID");
+                _AdminMemberID = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AdminMemberID");
                 OnAdminMemberIDChanged();
             }
@@ -1402,7 +1403,7 @@ namespace SIPSorcery.Entities
             {
                 OnAuthorisedAppsChanging(value);
                 ReportPropertyChanging("AuthorisedApps");
-                _AuthorisedApps = StructuralObject.SetValidValue(value, true, "AuthorisedApps");
+                _AuthorisedApps = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AuthorisedApps");
                 OnAuthorisedAppsChanged();
             }
@@ -1426,7 +1427,7 @@ namespace SIPSorcery.Entities
             {
                 OnCityChanging(value);
                 ReportPropertyChanging("City");
-                _City = StructuralObject.SetValidValue(value, true, "City");
+                _City = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("City");
                 OnCityChanged();
             }
@@ -1450,7 +1451,7 @@ namespace SIPSorcery.Entities
             {
                 OnCountryChanging(value);
                 ReportPropertyChanging("Country");
-                _Country = StructuralObject.SetValidValue(value, true, "Country");
+                _Country = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("Country");
                 OnCountryChanged();
             }
@@ -1474,7 +1475,7 @@ namespace SIPSorcery.Entities
             {
                 OnCreatedFromIPAddressChanging(value);
                 ReportPropertyChanging("CreatedFromIPAddress");
-                _CreatedFromIPAddress = StructuralObject.SetValidValue(value, true, "CreatedFromIPAddress");
+                _CreatedFromIPAddress = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("CreatedFromIPAddress");
                 OnCreatedFromIPAddressChanged();
             }
@@ -1498,7 +1499,7 @@ namespace SIPSorcery.Entities
             {
                 OnCustomerPasswordChanging(value);
                 ReportPropertyChanging("CustomerPassword");
-                _CustomerPassword = StructuralObject.SetValidValue(value, false, "CustomerPassword");
+                _CustomerPassword = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("CustomerPassword");
                 OnCustomerPasswordChanged();
             }
@@ -1522,7 +1523,7 @@ namespace SIPSorcery.Entities
             {
                 OnNameChanging(value);
                 ReportPropertyChanging("Name");
-                _Name = StructuralObject.SetValidValue(value, false, "Name");
+                _Name = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Name");
                 OnNameChanged();
             }
@@ -1546,7 +1547,7 @@ namespace SIPSorcery.Entities
             {
                 OnEmailAddressChanging(value);
                 ReportPropertyChanging("EmailAddress");
-                _EmailAddress = StructuralObject.SetValidValue(value, false, "EmailAddress");
+                _EmailAddress = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("EmailAddress");
                 OnEmailAddressChanged();
             }
@@ -1570,7 +1571,7 @@ namespace SIPSorcery.Entities
             {
                 OnEmailAddressConfirmedChanging(value);
                 ReportPropertyChanging("EmailAddressConfirmed");
-                _EmailAddressConfirmed = StructuralObject.SetValidValue(value, "EmailAddressConfirmed");
+                _EmailAddressConfirmed = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("EmailAddressConfirmed");
                 OnEmailAddressConfirmedChanged();
             }
@@ -1594,7 +1595,7 @@ namespace SIPSorcery.Entities
             {
                 OnExecutionCountChanging(value);
                 ReportPropertyChanging("ExecutionCount");
-                _ExecutionCount = StructuralObject.SetValidValue(value, "ExecutionCount");
+                _ExecutionCount = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("ExecutionCount");
                 OnExecutionCountChanged();
             }
@@ -1618,7 +1619,7 @@ namespace SIPSorcery.Entities
             {
                 OnFirstnameChanging(value);
                 ReportPropertyChanging("Firstname");
-                _Firstname = StructuralObject.SetValidValue(value, true, "Firstname");
+                _Firstname = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("Firstname");
                 OnFirstnameChanged();
             }
@@ -1644,7 +1645,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -1669,7 +1670,7 @@ namespace SIPSorcery.Entities
             {
                 OnInsertedChanging(value);
                 ReportPropertyChanging("Inserted");
-                _Inserted = StructuralObject.SetValidValue(value, false, "Inserted");
+                _Inserted = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Inserted");
                 OnInsertedChanged();
             }
@@ -1693,7 +1694,7 @@ namespace SIPSorcery.Entities
             {
                 OnInviteCodeChanging(value);
                 ReportPropertyChanging("InviteCode");
-                _InviteCode = StructuralObject.SetValidValue(value, true, "InviteCode");
+                _InviteCode = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("InviteCode");
                 OnInviteCodeChanged();
             }
@@ -1717,7 +1718,7 @@ namespace SIPSorcery.Entities
             {
                 OnLastnameChanging(value);
                 ReportPropertyChanging("Lastname");
-                _Lastname = StructuralObject.SetValidValue(value, true, "Lastname");
+                _Lastname = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("Lastname");
                 OnLastnameChanged();
             }
@@ -1741,7 +1742,7 @@ namespace SIPSorcery.Entities
             {
                 OnMaxExecutionCountChanging(value);
                 ReportPropertyChanging("MaxExecutionCount");
-                _MaxExecutionCount = StructuralObject.SetValidValue(value, "MaxExecutionCount");
+                _MaxExecutionCount = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("MaxExecutionCount");
                 OnMaxExecutionCountChanged();
             }
@@ -1765,7 +1766,7 @@ namespace SIPSorcery.Entities
             {
                 OnPasswordResetIDChanging(value);
                 ReportPropertyChanging("PasswordResetID");
-                _PasswordResetID = StructuralObject.SetValidValue(value, true, "PasswordResetID");
+                _PasswordResetID = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("PasswordResetID");
                 OnPasswordResetIDChanged();
             }
@@ -1789,7 +1790,7 @@ namespace SIPSorcery.Entities
             {
                 OnPasswordResetIDSetAtChanging(value);
                 ReportPropertyChanging("PasswordResetIDSetAt");
-                _PasswordResetIDSetAt = StructuralObject.SetValidValue(value, true, "PasswordResetIDSetAt");
+                _PasswordResetIDSetAt = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("PasswordResetIDSetAt");
                 OnPasswordResetIDSetAtChanged();
             }
@@ -1813,7 +1814,7 @@ namespace SIPSorcery.Entities
             {
                 OnSecurityAnswerChanging(value);
                 ReportPropertyChanging("SecurityAnswer");
-                _SecurityAnswer = StructuralObject.SetValidValue(value, true, "SecurityAnswer");
+                _SecurityAnswer = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("SecurityAnswer");
                 OnSecurityAnswerChanged();
             }
@@ -1837,7 +1838,7 @@ namespace SIPSorcery.Entities
             {
                 OnSecurityQuestionChanging(value);
                 ReportPropertyChanging("SecurityQuestion");
-                _SecurityQuestion = StructuralObject.SetValidValue(value, true, "SecurityQuestion");
+                _SecurityQuestion = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("SecurityQuestion");
                 OnSecurityQuestionChanged();
             }
@@ -1861,7 +1862,7 @@ namespace SIPSorcery.Entities
             {
                 OnSuspendedChanging(value);
                 ReportPropertyChanging("Suspended");
-                _Suspended = StructuralObject.SetValidValue(value, "Suspended");
+                _Suspended = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("Suspended");
                 OnSuspendedChanged();
             }
@@ -1885,7 +1886,7 @@ namespace SIPSorcery.Entities
             {
                 OnSuspendedReasonChanging(value);
                 ReportPropertyChanging("SuspendedReason");
-                _SuspendedReason = StructuralObject.SetValidValue(value, true, "SuspendedReason");
+                _SuspendedReason = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("SuspendedReason");
                 OnSuspendedReasonChanged();
             }
@@ -1909,7 +1910,7 @@ namespace SIPSorcery.Entities
             {
                 OnTimezoneChanging(value);
                 ReportPropertyChanging("Timezone");
-                _Timezone = StructuralObject.SetValidValue(value, true, "Timezone");
+                _Timezone = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("Timezone");
                 OnTimezoneChanged();
             }
@@ -1933,7 +1934,7 @@ namespace SIPSorcery.Entities
             {
                 OnWebSiteChanging(value);
                 ReportPropertyChanging("WebSite");
-                _WebSite = StructuralObject.SetValidValue(value, true, "WebSite");
+                _WebSite = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("WebSite");
                 OnWebSiteChanged();
             }
@@ -1957,7 +1958,7 @@ namespace SIPSorcery.Entities
             {
                 OnAPIKeyChanging(value);
                 ReportPropertyChanging("APIKey");
-                _APIKey = StructuralObject.SetValidValue(value, true, "APIKey");
+                _APIKey = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("APIKey");
                 OnAPIKeyChanged();
             }
@@ -1981,7 +1982,7 @@ namespace SIPSorcery.Entities
             {
                 OnServiceLevelChanging(value);
                 ReportPropertyChanging("ServiceLevel");
-                _ServiceLevel = StructuralObject.SetValidValue(value, false, "ServiceLevel");
+                _ServiceLevel = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("ServiceLevel");
                 OnServiceLevelChanged();
             }
@@ -2005,7 +2006,7 @@ namespace SIPSorcery.Entities
             {
                 OnusernamerecoveryidsetatChanging(value);
                 ReportPropertyChanging("usernamerecoveryidsetat");
-                _usernamerecoveryidsetat = StructuralObject.SetValidValue(value, true, "usernamerecoveryidsetat");
+                _usernamerecoveryidsetat = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("usernamerecoveryidsetat");
                 OnusernamerecoveryidsetatChanged();
             }
@@ -2029,7 +2030,7 @@ namespace SIPSorcery.Entities
             {
                 OnusernamerecoveryfailurecountChanging(value);
                 ReportPropertyChanging("usernamerecoveryfailurecount");
-                _usernamerecoveryfailurecount = StructuralObject.SetValidValue(value, "usernamerecoveryfailurecount");
+                _usernamerecoveryfailurecount = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("usernamerecoveryfailurecount");
                 OnusernamerecoveryfailurecountChanged();
             }
@@ -2053,7 +2054,7 @@ namespace SIPSorcery.Entities
             {
                 OnusernamerecoverylastattemptatChanging(value);
                 ReportPropertyChanging("usernamerecoverylastattemptat");
-                _usernamerecoverylastattemptat = StructuralObject.SetValidValue(value, true, "usernamerecoverylastattemptat");
+                _usernamerecoverylastattemptat = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("usernamerecoverylastattemptat");
                 OnusernamerecoverylastattemptatChanged();
             }
@@ -2077,7 +2078,7 @@ namespace SIPSorcery.Entities
             {
                 OnusernamerecoveryidChanging(value);
                 ReportPropertyChanging("usernamerecoveryid");
-                _usernamerecoveryid = StructuralObject.SetValidValue(value, true, "usernamerecoveryid");
+                _usernamerecoveryid = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("usernamerecoveryid");
                 OnusernamerecoveryidChanged();
             }
@@ -2101,7 +2102,7 @@ namespace SIPSorcery.Entities
             {
                 OnServiceRenewalDateChanging(value);
                 ReportPropertyChanging("ServiceRenewalDate");
-                _ServiceRenewalDate = StructuralObject.SetValidValue(value, true, "ServiceRenewalDate");
+                _ServiceRenewalDate = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ServiceRenewalDate");
                 OnServiceRenewalDateChanged();
             }
@@ -2125,7 +2126,7 @@ namespace SIPSorcery.Entities
             {
                 OnRTCCInternationalPrefixesChanging(value);
                 ReportPropertyChanging("RTCCInternationalPrefixes");
-                _RTCCInternationalPrefixes = StructuralObject.SetValidValue(value, true, "RTCCInternationalPrefixes");
+                _RTCCInternationalPrefixes = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("RTCCInternationalPrefixes");
                 OnRTCCInternationalPrefixesChanged();
             }
@@ -2149,7 +2150,7 @@ namespace SIPSorcery.Entities
             {
                 OnSaltChanging(value);
                 ReportPropertyChanging("Salt");
-                _Salt = StructuralObject.SetValidValue(value, false, "Salt");
+                _Salt = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Salt");
                 OnSaltChanged();
             }
@@ -2173,7 +2174,7 @@ namespace SIPSorcery.Entities
             {
                 OnFTPPrefixChanging(value);
                 ReportPropertyChanging("FTPPrefix");
-                _FTPPrefix = StructuralObject.SetValidValue(value, true, "FTPPrefix");
+                _FTPPrefix = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("FTPPrefix");
                 OnFTPPrefixChanged();
             }
@@ -2184,6 +2185,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
     }
     
     /// <summary>
@@ -2221,7 +2223,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -2240,7 +2242,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -2265,7 +2267,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -2289,7 +2291,7 @@ namespace SIPSorcery.Entities
             {
                 OnAccountCodeChanging(value);
                 ReportPropertyChanging("AccountCode");
-                _AccountCode = StructuralObject.SetValidValue(value, false, "AccountCode");
+                _AccountCode = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("AccountCode");
                 OnAccountCodeChanged();
             }
@@ -2313,7 +2315,7 @@ namespace SIPSorcery.Entities
             {
                 OnCreditChanging(value);
                 ReportPropertyChanging("Credit");
-                _Credit = StructuralObject.SetValidValue(value, "Credit");
+                _Credit = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("Credit");
                 OnCreditChanged();
             }
@@ -2337,7 +2339,7 @@ namespace SIPSorcery.Entities
             {
                 OnInsertedChanging(value);
                 ReportPropertyChanging("Inserted");
-                _Inserted = StructuralObject.SetValidValue(value, false, "Inserted");
+                _Inserted = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Inserted");
                 OnInsertedChanged();
             }
@@ -2361,7 +2363,7 @@ namespace SIPSorcery.Entities
             {
                 OnAccountNumberChanging(value);
                 ReportPropertyChanging("AccountNumber");
-                _AccountNumber = StructuralObject.SetValidValue(value, true, "AccountNumber");
+                _AccountNumber = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AccountNumber");
                 OnAccountNumberChanged();
             }
@@ -2385,7 +2387,7 @@ namespace SIPSorcery.Entities
             {
                 OnAccountNameChanging(value);
                 ReportPropertyChanging("AccountName");
-                _AccountName = StructuralObject.SetValidValue(value, false, "AccountName");
+                _AccountName = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("AccountName");
                 OnAccountNameChanged();
             }
@@ -2409,7 +2411,7 @@ namespace SIPSorcery.Entities
             {
                 OnPINChanging(value);
                 ReportPropertyChanging("PIN");
-                _PIN = StructuralObject.SetValidValue(value, "PIN");
+                _PIN = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("PIN");
                 OnPINChanged();
             }
@@ -2433,7 +2435,7 @@ namespace SIPSorcery.Entities
             {
                 OnRatePlanChanging(value);
                 ReportPropertyChanging("RatePlan");
-                _RatePlan = StructuralObject.SetValidValue(value, "RatePlan");
+                _RatePlan = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("RatePlan");
                 OnRatePlanChanged();
             }
@@ -2444,6 +2446,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
     }
     
     /// <summary>
@@ -2485,7 +2488,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -2504,7 +2507,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -2529,7 +2532,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -2553,7 +2556,7 @@ namespace SIPSorcery.Entities
             {
                 OnDescriptionChanging(value);
                 ReportPropertyChanging("Description");
-                _Description = StructuralObject.SetValidValue(value, false, "Description");
+                _Description = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Description");
                 OnDescriptionChanged();
             }
@@ -2577,7 +2580,7 @@ namespace SIPSorcery.Entities
             {
                 OnPrefixChanging(value);
                 ReportPropertyChanging("Prefix");
-                _Prefix = StructuralObject.SetValidValue(value, false, "Prefix");
+                _Prefix = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Prefix");
                 OnPrefixChanged();
             }
@@ -2601,7 +2604,7 @@ namespace SIPSorcery.Entities
             {
                 OnRate1Changing(value);
                 ReportPropertyChanging("Rate1");
-                _Rate1 = StructuralObject.SetValidValue(value, "Rate1");
+                _Rate1 = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("Rate1");
                 OnRate1Changed();
             }
@@ -2625,7 +2628,7 @@ namespace SIPSorcery.Entities
             {
                 OnRateCodeChanging(value);
                 ReportPropertyChanging("RateCode");
-                _RateCode = StructuralObject.SetValidValue(value, true, "RateCode");
+                _RateCode = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("RateCode");
                 OnRateCodeChanged();
             }
@@ -2649,7 +2652,7 @@ namespace SIPSorcery.Entities
             {
                 OnInsertedChanging(value);
                 ReportPropertyChanging("Inserted");
-                _Inserted = StructuralObject.SetValidValue(value, false, "Inserted");
+                _Inserted = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Inserted");
                 OnInsertedChanged();
             }
@@ -2673,7 +2676,7 @@ namespace SIPSorcery.Entities
             {
                 OnSetupCostChanging(value);
                 ReportPropertyChanging("SetupCost");
-                _SetupCost = StructuralObject.SetValidValue(value, "SetupCost");
+                _SetupCost = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("SetupCost");
                 OnSetupCostChanged();
             }
@@ -2697,7 +2700,7 @@ namespace SIPSorcery.Entities
             {
                 OnIncrementSecondsChanging(value);
                 ReportPropertyChanging("IncrementSeconds");
-                _IncrementSeconds = StructuralObject.SetValidValue(value, "IncrementSeconds");
+                _IncrementSeconds = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("IncrementSeconds");
                 OnIncrementSecondsChanged();
             }
@@ -2721,7 +2724,7 @@ namespace SIPSorcery.Entities
             {
                 OnRatePlanChanging(value);
                 ReportPropertyChanging("RatePlan");
-                _RatePlan = StructuralObject.SetValidValue(value, "RatePlan");
+                _RatePlan = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("RatePlan");
                 OnRatePlanChanged();
             }
@@ -2732,6 +2735,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
     }
     
     /// <summary>
@@ -2767,7 +2771,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -2786,7 +2790,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -2811,7 +2815,7 @@ namespace SIPSorcery.Entities
             {
                 OnCDRIDChanging(value);
                 ReportPropertyChanging("CDRID");
-                _CDRID = StructuralObject.SetValidValue(value, false, "CDRID");
+                _CDRID = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("CDRID");
                 OnCDRIDChanged();
             }
@@ -2835,7 +2839,7 @@ namespace SIPSorcery.Entities
             {
                 OnAccountCodeChanging(value);
                 ReportPropertyChanging("AccountCode");
-                _AccountCode = StructuralObject.SetValidValue(value, true, "AccountCode");
+                _AccountCode = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AccountCode");
                 OnAccountCodeChanged();
             }
@@ -2859,7 +2863,7 @@ namespace SIPSorcery.Entities
             {
                 OnSecondsReservedChanging(value);
                 ReportPropertyChanging("SecondsReserved");
-                _SecondsReserved = StructuralObject.SetValidValue(value, "SecondsReserved");
+                _SecondsReserved = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("SecondsReserved");
                 OnSecondsReservedChanged();
             }
@@ -2883,7 +2887,7 @@ namespace SIPSorcery.Entities
             {
                 OnCostChanging(value);
                 ReportPropertyChanging("Cost");
-                _Cost = StructuralObject.SetValidValue(value, "Cost");
+                _Cost = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("Cost");
                 OnCostChanged();
             }
@@ -2907,7 +2911,7 @@ namespace SIPSorcery.Entities
             {
                 OnRateChanging(value);
                 ReportPropertyChanging("Rate");
-                _Rate = StructuralObject.SetValidValue(value, "Rate");
+                _Rate = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("Rate");
                 OnRateChanged();
             }
@@ -2931,7 +2935,7 @@ namespace SIPSorcery.Entities
             {
                 OnReservationErrorChanging(value);
                 ReportPropertyChanging("ReservationError");
-                _ReservationError = StructuralObject.SetValidValue(value, true, "ReservationError");
+                _ReservationError = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ReservationError");
                 OnReservationErrorChanged();
             }
@@ -2955,7 +2959,7 @@ namespace SIPSorcery.Entities
             {
                 OnReconciliationResultChanging(value);
                 ReportPropertyChanging("ReconciliationResult");
-                _ReconciliationResult = StructuralObject.SetValidValue(value, true, "ReconciliationResult");
+                _ReconciliationResult = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ReconciliationResult");
                 OnReconciliationResultChanged();
             }
@@ -2979,7 +2983,7 @@ namespace SIPSorcery.Entities
             {
                 OnIsHangingUpChanging(value);
                 ReportPropertyChanging("IsHangingUp");
-                _IsHangingUp = StructuralObject.SetValidValue(value, "IsHangingUp");
+                _IsHangingUp = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("IsHangingUp");
                 OnIsHangingUpChanged();
             }
@@ -3003,7 +3007,7 @@ namespace SIPSorcery.Entities
             {
                 OnPostReconciliationBalanceChanging(value);
                 ReportPropertyChanging("PostReconciliationBalance");
-                _PostReconciliationBalance = StructuralObject.SetValidValue(value, "PostReconciliationBalance");
+                _PostReconciliationBalance = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("PostReconciliationBalance");
                 OnPostReconciliationBalanceChanged();
             }
@@ -3027,7 +3031,7 @@ namespace SIPSorcery.Entities
             {
                 OnSetupCostChanging(value);
                 ReportPropertyChanging("SetupCost");
-                _SetupCost = StructuralObject.SetValidValue(value, "SetupCost");
+                _SetupCost = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("SetupCost");
                 OnSetupCostChanged();
             }
@@ -3051,7 +3055,7 @@ namespace SIPSorcery.Entities
             {
                 OnIncrementSecondsChanging(value);
                 ReportPropertyChanging("IncrementSeconds");
-                _IncrementSeconds = StructuralObject.SetValidValue(value, "IncrementSeconds");
+                _IncrementSeconds = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("IncrementSeconds");
                 OnIncrementSecondsChanged();
             }
@@ -3075,7 +3079,7 @@ namespace SIPSorcery.Entities
             {
                 OnInsertedChanging(value);
                 ReportPropertyChanging("Inserted");
-                _Inserted = StructuralObject.SetValidValue(value, "Inserted");
+                _Inserted = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("Inserted");
                 OnInsertedChanged();
             }
@@ -3086,6 +3090,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
         #region Navigation Properties
     
         /// <summary>
@@ -3167,7 +3172,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -3186,7 +3191,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -3211,7 +3216,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -3235,7 +3240,7 @@ namespace SIPSorcery.Entities
             {
                 OnDialPlanIDChanging(value);
                 ReportPropertyChanging("DialPlanID");
-                _DialPlanID = StructuralObject.SetValidValue(value, false, "DialPlanID");
+                _DialPlanID = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("DialPlanID");
                 OnDialPlanIDChanged();
             }
@@ -3259,7 +3264,7 @@ namespace SIPSorcery.Entities
             {
                 OnDirectionChanging(value);
                 ReportPropertyChanging("Direction");
-                _Direction = StructuralObject.SetValidValue(value, false, "Direction");
+                _Direction = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Direction");
                 OnDirectionChanged();
             }
@@ -3283,7 +3288,7 @@ namespace SIPSorcery.Entities
             {
                 OnPriorityChanging(value);
                 ReportPropertyChanging("Priority");
-                _Priority = StructuralObject.SetValidValue(value, "Priority");
+                _Priority = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("Priority");
                 OnPriorityChanged();
             }
@@ -3307,7 +3312,7 @@ namespace SIPSorcery.Entities
             {
                 OnDescriptionChanging(value);
                 ReportPropertyChanging("Description");
-                _Description = StructuralObject.SetValidValue(value, true, "Description");
+                _Description = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("Description");
                 OnDescriptionChanged();
             }
@@ -3331,7 +3336,7 @@ namespace SIPSorcery.Entities
             {
                 OnToSIPAccountChanging(value);
                 ReportPropertyChanging("ToSIPAccount");
-                _ToSIPAccount = StructuralObject.SetValidValue(value, true, "ToSIPAccount");
+                _ToSIPAccount = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ToSIPAccount");
                 OnToSIPAccountChanged();
             }
@@ -3355,7 +3360,7 @@ namespace SIPSorcery.Entities
             {
                 OnToProviderChanging(value);
                 ReportPropertyChanging("ToProvider");
-                _ToProvider = StructuralObject.SetValidValue(value, true, "ToProvider");
+                _ToProvider = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ToProvider");
                 OnToProviderChanged();
             }
@@ -3379,7 +3384,7 @@ namespace SIPSorcery.Entities
             {
                 OnPatternChanging(value);
                 ReportPropertyChanging("Pattern");
-                _Pattern = StructuralObject.SetValidValue(value, true, "Pattern");
+                _Pattern = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("Pattern");
                 OnPatternChanged();
             }
@@ -3403,7 +3408,7 @@ namespace SIPSorcery.Entities
             {
                 OnCommandChanging(value);
                 ReportPropertyChanging("Command");
-                _Command = StructuralObject.SetValidValue(value, false, "Command");
+                _Command = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Command");
                 OnCommandChanged();
             }
@@ -3427,7 +3432,7 @@ namespace SIPSorcery.Entities
             {
                 OnCommandParameter1Changing(value);
                 ReportPropertyChanging("CommandParameter1");
-                _CommandParameter1 = StructuralObject.SetValidValue(value, false, "CommandParameter1");
+                _CommandParameter1 = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("CommandParameter1");
                 OnCommandParameter1Changed();
             }
@@ -3451,7 +3456,7 @@ namespace SIPSorcery.Entities
             {
                 OnCommandParameter2Changing(value);
                 ReportPropertyChanging("CommandParameter2");
-                _CommandParameter2 = StructuralObject.SetValidValue(value, true, "CommandParameter2");
+                _CommandParameter2 = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("CommandParameter2");
                 OnCommandParameter2Changed();
             }
@@ -3475,7 +3480,7 @@ namespace SIPSorcery.Entities
             {
                 OnCommandParameter3Changing(value);
                 ReportPropertyChanging("CommandParameter3");
-                _CommandParameter3 = StructuralObject.SetValidValue(value, true, "CommandParameter3");
+                _CommandParameter3 = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("CommandParameter3");
                 OnCommandParameter3Changed();
             }
@@ -3499,7 +3504,7 @@ namespace SIPSorcery.Entities
             {
                 OnTimePatternChanging(value);
                 ReportPropertyChanging("TimePattern");
-                _TimePattern = StructuralObject.SetValidValue(value, true, "TimePattern");
+                _TimePattern = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("TimePattern");
                 OnTimePatternChanged();
             }
@@ -3523,7 +3528,7 @@ namespace SIPSorcery.Entities
             {
                 OnPatternTypeChanging(value);
                 ReportPropertyChanging("PatternType");
-                _PatternType = StructuralObject.SetValidValue(value, true, "PatternType");
+                _PatternType = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("PatternType");
                 OnPatternTypeChanged();
             }
@@ -3547,7 +3552,7 @@ namespace SIPSorcery.Entities
             {
                 OnToMatchParameterChanging(value);
                 ReportPropertyChanging("ToMatchParameter");
-                _ToMatchParameter = StructuralObject.SetValidValue(value, true, "ToMatchParameter");
+                _ToMatchParameter = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ToMatchParameter");
                 OnToMatchParameterChanged();
             }
@@ -3571,7 +3576,7 @@ namespace SIPSorcery.Entities
             {
                 OnToMatchTypeChanging(value);
                 ReportPropertyChanging("ToMatchType");
-                _ToMatchType = StructuralObject.SetValidValue(value, true, "ToMatchType");
+                _ToMatchType = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ToMatchType");
                 OnToMatchTypeChanged();
             }
@@ -3595,7 +3600,7 @@ namespace SIPSorcery.Entities
             {
                 OnIsDisabledChanging(value);
                 ReportPropertyChanging("IsDisabled");
-                _IsDisabled = StructuralObject.SetValidValue(value, "IsDisabled");
+                _IsDisabled = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("IsDisabled");
                 OnIsDisabledChanged();
             }
@@ -3619,7 +3624,7 @@ namespace SIPSorcery.Entities
             {
                 OnCommandParameter4Changing(value);
                 ReportPropertyChanging("CommandParameter4");
-                _CommandParameter4 = StructuralObject.SetValidValue(value, true, "CommandParameter4");
+                _CommandParameter4 = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("CommandParameter4");
                 OnCommandParameter4Changed();
             }
@@ -3630,6 +3635,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
         #region Navigation Properties
     
         /// <summary>
@@ -3719,7 +3725,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -3736,7 +3742,7 @@ namespace SIPSorcery.Entities
             {
                 OnAdminDisabledReasonChanging(value);
                 ReportPropertyChanging("AdminDisabledReason");
-                _AdminDisabledReason = StructuralObject.SetValidValue(value, true, "AdminDisabledReason");
+                _AdminDisabledReason = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AdminDisabledReason");
                 OnAdminDisabledReasonChanged();
             }
@@ -3760,7 +3766,7 @@ namespace SIPSorcery.Entities
             {
                 OnAdminMemberIDChanging(value);
                 ReportPropertyChanging("AdminMemberID");
-                _AdminMemberID = StructuralObject.SetValidValue(value, true, "AdminMemberID");
+                _AdminMemberID = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AdminMemberID");
                 OnAdminMemberIDChanged();
             }
@@ -3784,7 +3790,7 @@ namespace SIPSorcery.Entities
             {
                 OnDontMangleEnabledChanging(value);
                 ReportPropertyChanging("DontMangleEnabled");
-                _DontMangleEnabled = StructuralObject.SetValidValue(value, "DontMangleEnabled");
+                _DontMangleEnabled = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("DontMangleEnabled");
                 OnDontMangleEnabledChanged();
             }
@@ -3810,7 +3816,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -3835,7 +3841,7 @@ namespace SIPSorcery.Entities
             {
                 OnInDialPlanNameChanging(value);
                 ReportPropertyChanging("InDialPlanName");
-                _InDialPlanName = StructuralObject.SetValidValue(value, true, "InDialPlanName");
+                _InDialPlanName = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("InDialPlanName");
                 OnInDialPlanNameChanged();
             }
@@ -3859,7 +3865,7 @@ namespace SIPSorcery.Entities
             {
                 OnInsertedChanging(value);
                 ReportPropertyChanging("Inserted");
-                _Inserted = StructuralObject.SetValidValue(value, false, "Inserted");
+                _Inserted = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Inserted");
                 OnInsertedChanged();
             }
@@ -3883,7 +3889,7 @@ namespace SIPSorcery.Entities
             {
                 OnIPAddressACLChanging(value);
                 ReportPropertyChanging("IPAddressACL");
-                _IPAddressACL = StructuralObject.SetValidValue(value, true, "IPAddressACL");
+                _IPAddressACL = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("IPAddressACL");
                 OnIPAddressACLChanged();
             }
@@ -3907,7 +3913,7 @@ namespace SIPSorcery.Entities
             {
                 OnIsAdminDisabledChanging(value);
                 ReportPropertyChanging("IsAdminDisabled");
-                _IsAdminDisabled = StructuralObject.SetValidValue(value, "IsAdminDisabled");
+                _IsAdminDisabled = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("IsAdminDisabled");
                 OnIsAdminDisabledChanged();
             }
@@ -3931,7 +3937,7 @@ namespace SIPSorcery.Entities
             {
                 OnIsIncomingOnlyChanging(value);
                 ReportPropertyChanging("IsIncomingOnly");
-                _IsIncomingOnly = StructuralObject.SetValidValue(value, "IsIncomingOnly");
+                _IsIncomingOnly = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("IsIncomingOnly");
                 OnIsIncomingOnlyChanged();
             }
@@ -3955,7 +3961,7 @@ namespace SIPSorcery.Entities
             {
                 OnIsSwitchboardEnabledChanging(value);
                 ReportPropertyChanging("IsSwitchboardEnabled");
-                _IsSwitchboardEnabled = StructuralObject.SetValidValue(value, "IsSwitchboardEnabled");
+                _IsSwitchboardEnabled = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("IsSwitchboardEnabled");
                 OnIsSwitchboardEnabledChanged();
             }
@@ -3979,7 +3985,7 @@ namespace SIPSorcery.Entities
             {
                 OnIsUserDisabledChanging(value);
                 ReportPropertyChanging("IsUserDisabled");
-                _IsUserDisabled = StructuralObject.SetValidValue(value, "IsUserDisabled");
+                _IsUserDisabled = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("IsUserDisabled");
                 OnIsUserDisabledChanged();
             }
@@ -4003,7 +4009,7 @@ namespace SIPSorcery.Entities
             {
                 OnNetworkIDChanging(value);
                 ReportPropertyChanging("NetworkID");
-                _NetworkID = StructuralObject.SetValidValue(value, true, "NetworkID");
+                _NetworkID = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("NetworkID");
                 OnNetworkIDChanged();
             }
@@ -4027,7 +4033,7 @@ namespace SIPSorcery.Entities
             {
                 OnOutDialPlanNameChanging(value);
                 ReportPropertyChanging("OutDialPlanName");
-                _OutDialPlanName = StructuralObject.SetValidValue(value, true, "OutDialPlanName");
+                _OutDialPlanName = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("OutDialPlanName");
                 OnOutDialPlanNameChanged();
             }
@@ -4051,7 +4057,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -4075,7 +4081,7 @@ namespace SIPSorcery.Entities
             {
                 OnSendNATKeepAlivesChanging(value);
                 ReportPropertyChanging("SendNATKeepAlives");
-                _SendNATKeepAlives = StructuralObject.SetValidValue(value, "SendNATKeepAlives");
+                _SendNATKeepAlives = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("SendNATKeepAlives");
                 OnSendNATKeepAlivesChanged();
             }
@@ -4099,7 +4105,7 @@ namespace SIPSorcery.Entities
             {
                 OnSIPDomainChanging(value);
                 ReportPropertyChanging("SIPDomain");
-                _SIPDomain = StructuralObject.SetValidValue(value, false, "SIPDomain");
+                _SIPDomain = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("SIPDomain");
                 OnSIPDomainChanged();
             }
@@ -4123,7 +4129,7 @@ namespace SIPSorcery.Entities
             {
                 OnSIPPasswordChanging(value);
                 ReportPropertyChanging("SIPPassword");
-                _SIPPassword = StructuralObject.SetValidValue(value, false, "SIPPassword");
+                _SIPPassword = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("SIPPassword");
                 OnSIPPasswordChanged();
             }
@@ -4147,7 +4153,7 @@ namespace SIPSorcery.Entities
             {
                 OnSIPUsernameChanging(value);
                 ReportPropertyChanging("SIPUsername");
-                _SIPUsername = StructuralObject.SetValidValue(value, false, "SIPUsername");
+                _SIPUsername = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("SIPUsername");
                 OnSIPUsernameChanged();
             }
@@ -4171,7 +4177,7 @@ namespace SIPSorcery.Entities
             {
                 OnAvatarURLChanging(value);
                 ReportPropertyChanging("AvatarURL");
-                _AvatarURL = StructuralObject.SetValidValue(value, true, "AvatarURL");
+                _AvatarURL = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AvatarURL");
                 OnAvatarURLChanged();
             }
@@ -4195,7 +4201,7 @@ namespace SIPSorcery.Entities
             {
                 OnDescriptionChanging(value);
                 ReportPropertyChanging("Description");
-                _Description = StructuralObject.SetValidValue(value, true, "Description");
+                _Description = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("Description");
                 OnDescriptionChanged();
             }
@@ -4219,7 +4225,7 @@ namespace SIPSorcery.Entities
             {
                 OnAccountCodeChanging(value);
                 ReportPropertyChanging("AccountCode");
-                _AccountCode = StructuralObject.SetValidValue(value, true, "AccountCode");
+                _AccountCode = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AccountCode");
                 OnAccountCodeChanged();
             }
@@ -4230,6 +4236,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
         #region Navigation Properties
     
         /// <summary>
@@ -4305,7 +4312,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -4322,7 +4329,7 @@ namespace SIPSorcery.Entities
             {
                 OnAdminMemberIDChanging(value);
                 ReportPropertyChanging("AdminMemberID");
-                _AdminMemberID = StructuralObject.SetValidValue(value, true, "AdminMemberID");
+                _AdminMemberID = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AdminMemberID");
                 OnAdminMemberIDChanged();
             }
@@ -4346,7 +4353,7 @@ namespace SIPSorcery.Entities
             {
                 OnBridgeIDChanging(value);
                 ReportPropertyChanging("BridgeID");
-                _BridgeID = StructuralObject.SetValidValue(value, false, "BridgeID");
+                _BridgeID = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("BridgeID");
                 OnBridgeIDChanged();
             }
@@ -4370,7 +4377,7 @@ namespace SIPSorcery.Entities
             {
                 OnCallDurationLimitChanging(value);
                 ReportPropertyChanging("CallDurationLimit");
-                _CallDurationLimit = StructuralObject.SetValidValue(value, "CallDurationLimit");
+                _CallDurationLimit = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("CallDurationLimit");
                 OnCallDurationLimitChanged();
             }
@@ -4394,7 +4401,7 @@ namespace SIPSorcery.Entities
             {
                 OnCallIDChanging(value);
                 ReportPropertyChanging("CallID");
-                _CallID = StructuralObject.SetValidValue(value, false, "CallID");
+                _CallID = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("CallID");
                 OnCallIDChanged();
             }
@@ -4418,7 +4425,7 @@ namespace SIPSorcery.Entities
             {
                 OnCDRIDChanging(value);
                 ReportPropertyChanging("CDRID");
-                _CDRID = StructuralObject.SetValidValue(value, false, "CDRID");
+                _CDRID = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("CDRID");
                 OnCDRIDChanged();
             }
@@ -4442,7 +4449,7 @@ namespace SIPSorcery.Entities
             {
                 OnCSeqChanging(value);
                 ReportPropertyChanging("CSeq");
-                _CSeq = StructuralObject.SetValidValue(value, "CSeq");
+                _CSeq = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("CSeq");
                 OnCSeqChanged();
             }
@@ -4466,7 +4473,7 @@ namespace SIPSorcery.Entities
             {
                 OnDirectionChanging(value);
                 ReportPropertyChanging("Direction");
-                _Direction = StructuralObject.SetValidValue(value, false, "Direction");
+                _Direction = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Direction");
                 OnDirectionChanged();
             }
@@ -4490,7 +4497,7 @@ namespace SIPSorcery.Entities
             {
                 OnHangupAtChanging(value);
                 ReportPropertyChanging("HangupAt");
-                _HangupAt = StructuralObject.SetValidValue(value, true, "HangupAt");
+                _HangupAt = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("HangupAt");
                 OnHangupAtChanged();
             }
@@ -4516,7 +4523,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -4541,7 +4548,7 @@ namespace SIPSorcery.Entities
             {
                 OnInsertedChanging(value);
                 ReportPropertyChanging("Inserted");
-                _Inserted = StructuralObject.SetValidValue(value, false, "Inserted");
+                _Inserted = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Inserted");
                 OnInsertedChanged();
             }
@@ -4565,7 +4572,7 @@ namespace SIPSorcery.Entities
             {
                 OnLocalTagChanging(value);
                 ReportPropertyChanging("LocalTag");
-                _LocalTag = StructuralObject.SetValidValue(value, false, "LocalTag");
+                _LocalTag = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("LocalTag");
                 OnLocalTagChanged();
             }
@@ -4589,7 +4596,7 @@ namespace SIPSorcery.Entities
             {
                 OnLocalUserFieldChanging(value);
                 ReportPropertyChanging("LocalUserField");
-                _LocalUserField = StructuralObject.SetValidValue(value, false, "LocalUserField");
+                _LocalUserField = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("LocalUserField");
                 OnLocalUserFieldChanged();
             }
@@ -4613,7 +4620,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -4637,7 +4644,7 @@ namespace SIPSorcery.Entities
             {
                 OnProxySIPSocketChanging(value);
                 ReportPropertyChanging("ProxySIPSocket");
-                _ProxySIPSocket = StructuralObject.SetValidValue(value, true, "ProxySIPSocket");
+                _ProxySIPSocket = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ProxySIPSocket");
                 OnProxySIPSocketChanged();
             }
@@ -4661,7 +4668,7 @@ namespace SIPSorcery.Entities
             {
                 OnRemoteSDPChanging(value);
                 ReportPropertyChanging("RemoteSDP");
-                _RemoteSDP = StructuralObject.SetValidValue(value, true, "RemoteSDP");
+                _RemoteSDP = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("RemoteSDP");
                 OnRemoteSDPChanged();
             }
@@ -4685,7 +4692,7 @@ namespace SIPSorcery.Entities
             {
                 OnRemoteTagChanging(value);
                 ReportPropertyChanging("RemoteTag");
-                _RemoteTag = StructuralObject.SetValidValue(value, false, "RemoteTag");
+                _RemoteTag = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("RemoteTag");
                 OnRemoteTagChanged();
             }
@@ -4709,7 +4716,7 @@ namespace SIPSorcery.Entities
             {
                 OnRemoteTargetChanging(value);
                 ReportPropertyChanging("RemoteTarget");
-                _RemoteTarget = StructuralObject.SetValidValue(value, false, "RemoteTarget");
+                _RemoteTarget = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("RemoteTarget");
                 OnRemoteTargetChanged();
             }
@@ -4733,7 +4740,7 @@ namespace SIPSorcery.Entities
             {
                 OnRemoteUserFieldChanging(value);
                 ReportPropertyChanging("RemoteUserField");
-                _RemoteUserField = StructuralObject.SetValidValue(value, false, "RemoteUserField");
+                _RemoteUserField = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("RemoteUserField");
                 OnRemoteUserFieldChanged();
             }
@@ -4757,7 +4764,7 @@ namespace SIPSorcery.Entities
             {
                 OnRouteSetChanging(value);
                 ReportPropertyChanging("RouteSet");
-                _RouteSet = StructuralObject.SetValidValue(value, true, "RouteSet");
+                _RouteSet = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("RouteSet");
                 OnRouteSetChanged();
             }
@@ -4781,7 +4788,7 @@ namespace SIPSorcery.Entities
             {
                 OnSDPChanging(value);
                 ReportPropertyChanging("SDP");
-                _SDP = StructuralObject.SetValidValue(value, true, "SDP");
+                _SDP = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("SDP");
                 OnSDPChanged();
             }
@@ -4805,7 +4812,7 @@ namespace SIPSorcery.Entities
             {
                 OnTransferModeChanging(value);
                 ReportPropertyChanging("TransferMode");
-                _TransferMode = StructuralObject.SetValidValue(value, true, "TransferMode");
+                _TransferMode = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("TransferMode");
                 OnTransferModeChanged();
             }
@@ -4829,7 +4836,7 @@ namespace SIPSorcery.Entities
             {
                 OnSwitchboardCallerDescriptionChanging(value);
                 ReportPropertyChanging("SwitchboardCallerDescription");
-                _SwitchboardCallerDescription = StructuralObject.SetValidValue(value, true, "SwitchboardCallerDescription");
+                _SwitchboardCallerDescription = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("SwitchboardCallerDescription");
                 OnSwitchboardCallerDescriptionChanged();
             }
@@ -4853,7 +4860,7 @@ namespace SIPSorcery.Entities
             {
                 OnSwitchboardDescriptionChanging(value);
                 ReportPropertyChanging("SwitchboardDescription");
-                _SwitchboardDescription = StructuralObject.SetValidValue(value, true, "SwitchboardDescription");
+                _SwitchboardDescription = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("SwitchboardDescription");
                 OnSwitchboardDescriptionChanged();
             }
@@ -4877,7 +4884,7 @@ namespace SIPSorcery.Entities
             {
                 OnSwitchboardLineNameChanging(value);
                 ReportPropertyChanging("SwitchboardLineName");
-                _SwitchboardLineName = StructuralObject.SetValidValue(value, true, "SwitchboardLineName");
+                _SwitchboardLineName = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("SwitchboardLineName");
                 OnSwitchboardLineNameChanged();
             }
@@ -4901,7 +4908,7 @@ namespace SIPSorcery.Entities
             {
                 OnCRMPersonNameChanging(value);
                 ReportPropertyChanging("CRMPersonName");
-                _CRMPersonName = StructuralObject.SetValidValue(value, true, "CRMPersonName");
+                _CRMPersonName = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("CRMPersonName");
                 OnCRMPersonNameChanged();
             }
@@ -4925,7 +4932,7 @@ namespace SIPSorcery.Entities
             {
                 OnCRMCompanyNameChanging(value);
                 ReportPropertyChanging("CRMCompanyName");
-                _CRMCompanyName = StructuralObject.SetValidValue(value, true, "CRMCompanyName");
+                _CRMCompanyName = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("CRMCompanyName");
                 OnCRMCompanyNameChanged();
             }
@@ -4949,7 +4956,7 @@ namespace SIPSorcery.Entities
             {
                 OnCRMPictureURLChanging(value);
                 ReportPropertyChanging("CRMPictureURL");
-                _CRMPictureURL = StructuralObject.SetValidValue(value, true, "CRMPictureURL");
+                _CRMPictureURL = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("CRMPictureURL");
                 OnCRMPictureURLChanged();
             }
@@ -4973,7 +4980,7 @@ namespace SIPSorcery.Entities
             {
                 OnSwitchboardOwnerChanging(value);
                 ReportPropertyChanging("SwitchboardOwner");
-                _SwitchboardOwner = StructuralObject.SetValidValue(value, true, "SwitchboardOwner");
+                _SwitchboardOwner = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("SwitchboardOwner");
                 OnSwitchboardOwnerChanged();
             }
@@ -4984,6 +4991,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
     }
     
     /// <summary>
@@ -5027,7 +5035,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -5044,7 +5052,7 @@ namespace SIPSorcery.Entities
             {
                 OnAdminMemberIdChanging(value);
                 ReportPropertyChanging("AdminMemberId");
-                _AdminMemberId = StructuralObject.SetValidValue(value, true, "AdminMemberId");
+                _AdminMemberId = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AdminMemberId");
                 OnAdminMemberIdChanged();
             }
@@ -5068,7 +5076,7 @@ namespace SIPSorcery.Entities
             {
                 OnAuthorisedAppsChanging(value);
                 ReportPropertyChanging("AuthorisedApps");
-                _AuthorisedApps = StructuralObject.SetValidValue(value, true, "AuthorisedApps");
+                _AuthorisedApps = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AuthorisedApps");
                 OnAuthorisedAppsChanged();
             }
@@ -5092,7 +5100,7 @@ namespace SIPSorcery.Entities
             {
                 OnDialPlanNameChanging(value);
                 ReportPropertyChanging("DialPlanName");
-                _DialPlanName = StructuralObject.SetValidValue(value, false, "DialPlanName");
+                _DialPlanName = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("DialPlanName");
                 OnDialPlanNameChanged();
             }
@@ -5116,7 +5124,7 @@ namespace SIPSorcery.Entities
             {
                 OnDialPlanScriptChanging(value);
                 ReportPropertyChanging("DialPlanScript");
-                _DialPlanScript = StructuralObject.SetValidValue(value, true, "DialPlanScript");
+                _DialPlanScript = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("DialPlanScript");
                 OnDialPlanScriptChanged();
             }
@@ -5140,7 +5148,7 @@ namespace SIPSorcery.Entities
             {
                 OnExecutionCountChanging(value);
                 ReportPropertyChanging("ExecutionCount");
-                _ExecutionCount = StructuralObject.SetValidValue(value, "ExecutionCount");
+                _ExecutionCount = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("ExecutionCount");
                 OnExecutionCountChanged();
             }
@@ -5166,7 +5174,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -5191,7 +5199,7 @@ namespace SIPSorcery.Entities
             {
                 OnInsertedChanging(value);
                 ReportPropertyChanging("Inserted");
-                _Inserted = StructuralObject.SetValidValue(value, false, "Inserted");
+                _Inserted = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Inserted");
                 OnInsertedChanged();
             }
@@ -5215,7 +5223,7 @@ namespace SIPSorcery.Entities
             {
                 OnLastUpdateChanging(value);
                 ReportPropertyChanging("LastUpdate");
-                _LastUpdate = StructuralObject.SetValidValue(value, false, "LastUpdate");
+                _LastUpdate = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("LastUpdate");
                 OnLastUpdateChanged();
             }
@@ -5239,7 +5247,7 @@ namespace SIPSorcery.Entities
             {
                 OnMaxExecutionCountChanging(value);
                 ReportPropertyChanging("MaxExecutionCount");
-                _MaxExecutionCount = StructuralObject.SetValidValue(value, "MaxExecutionCount");
+                _MaxExecutionCount = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("MaxExecutionCount");
                 OnMaxExecutionCountChanged();
             }
@@ -5263,7 +5271,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -5287,7 +5295,7 @@ namespace SIPSorcery.Entities
             {
                 OnScriptTypeDescriptionChanging(value);
                 ReportPropertyChanging("ScriptTypeDescription");
-                _ScriptTypeDescription = StructuralObject.SetValidValue(value, false, "ScriptTypeDescription");
+                _ScriptTypeDescription = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("ScriptTypeDescription");
                 OnScriptTypeDescriptionChanged();
             }
@@ -5311,7 +5319,7 @@ namespace SIPSorcery.Entities
             {
                 OnTraceEmailAddressChanging(value);
                 ReportPropertyChanging("TraceEmailAddress");
-                _TraceEmailAddress = StructuralObject.SetValidValue(value, true, "TraceEmailAddress");
+                _TraceEmailAddress = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("TraceEmailAddress");
                 OnTraceEmailAddressChanged();
             }
@@ -5335,7 +5343,7 @@ namespace SIPSorcery.Entities
             {
                 OnAcceptNonInviteChanging(value);
                 ReportPropertyChanging("AcceptNonInvite");
-                _AcceptNonInvite = StructuralObject.SetValidValue(value, "AcceptNonInvite");
+                _AcceptNonInvite = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("AcceptNonInvite");
                 OnAcceptNonInviteChanged();
             }
@@ -5359,7 +5367,7 @@ namespace SIPSorcery.Entities
             {
                 OnIsReadOnlyChanging(value);
                 ReportPropertyChanging("IsReadOnly");
-                _IsReadOnly = StructuralObject.SetValidValue(value, "IsReadOnly");
+                _IsReadOnly = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("IsReadOnly");
                 OnIsReadOnlyChanged();
             }
@@ -5370,6 +5378,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
         #region Navigation Properties
     
         /// <summary>
@@ -5517,7 +5526,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -5534,7 +5543,7 @@ namespace SIPSorcery.Entities
             {
                 OnDescriptionChanging(value);
                 ReportPropertyChanging("Description");
-                _Description = StructuralObject.SetValidValue(value, true, "Description");
+                _Description = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("Description");
                 OnDescriptionChanged();
             }
@@ -5560,7 +5569,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -5585,7 +5594,7 @@ namespace SIPSorcery.Entities
             {
                 OnLookupKeyChanging(value);
                 ReportPropertyChanging("LookupKey");
-                _LookupKey = StructuralObject.SetValidValue(value, false, "LookupKey");
+                _LookupKey = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("LookupKey");
                 OnLookupKeyChanged();
             }
@@ -5609,7 +5618,7 @@ namespace SIPSorcery.Entities
             {
                 OnLookupTypeChanging(value);
                 ReportPropertyChanging("LookupType");
-                _LookupType = StructuralObject.SetValidValue(value, "LookupType");
+                _LookupType = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("LookupType");
                 OnLookupTypeChanged();
             }
@@ -5633,7 +5642,7 @@ namespace SIPSorcery.Entities
             {
                 OnLookupValueChanging(value);
                 ReportPropertyChanging("LookupValue");
-                _LookupValue = StructuralObject.SetValidValue(value, true, "LookupValue");
+                _LookupValue = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("LookupValue");
                 OnLookupValueChanged();
             }
@@ -5657,7 +5666,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -5681,7 +5690,7 @@ namespace SIPSorcery.Entities
             {
                 OnDialPlanIDChanging(value);
                 ReportPropertyChanging("DialPlanID");
-                _DialPlanID = StructuralObject.SetValidValue(value, false, "DialPlanID");
+                _DialPlanID = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("DialPlanID");
                 OnDialPlanIDChanged();
             }
@@ -5692,6 +5701,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
         #region Navigation Properties
     
         /// <summary>
@@ -5765,7 +5775,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -5782,7 +5792,7 @@ namespace SIPSorcery.Entities
             {
                 OnAllowedCountryCodesChanging(value);
                 ReportPropertyChanging("AllowedCountryCodes");
-                _AllowedCountryCodes = StructuralObject.SetValidValue(value, true, "AllowedCountryCodes");
+                _AllowedCountryCodes = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AllowedCountryCodes");
                 OnAllowedCountryCodesChanged();
             }
@@ -5806,7 +5816,7 @@ namespace SIPSorcery.Entities
             {
                 OnAreaCodeChanging(value);
                 ReportPropertyChanging("AreaCode");
-                _AreaCode = StructuralObject.SetValidValue(value, "AreaCode");
+                _AreaCode = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("AreaCode");
                 OnAreaCodeChanged();
             }
@@ -5830,7 +5840,7 @@ namespace SIPSorcery.Entities
             {
                 OnCountryCodeChanging(value);
                 ReportPropertyChanging("CountryCode");
-                _CountryCode = StructuralObject.SetValidValue(value, "CountryCode");
+                _CountryCode = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("CountryCode");
                 OnCountryCodeChanged();
             }
@@ -5854,7 +5864,7 @@ namespace SIPSorcery.Entities
             {
                 OnENUMServersChanging(value);
                 ReportPropertyChanging("ENUMServers");
-                _ENUMServers = StructuralObject.SetValidValue(value, true, "ENUMServers");
+                _ENUMServers = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ENUMServers");
                 OnENUMServersChanged();
             }
@@ -5878,7 +5888,7 @@ namespace SIPSorcery.Entities
             {
                 OnExcludedPrefixesChanging(value);
                 ReportPropertyChanging("ExcludedPrefixes");
-                _ExcludedPrefixes = StructuralObject.SetValidValue(value, true, "ExcludedPrefixes");
+                _ExcludedPrefixes = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ExcludedPrefixes");
                 OnExcludedPrefixesChanged();
             }
@@ -5904,7 +5914,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -5929,7 +5939,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -5953,7 +5963,7 @@ namespace SIPSorcery.Entities
             {
                 OnTimezoneChanging(value);
                 ReportPropertyChanging("Timezone");
-                _Timezone = StructuralObject.SetValidValue(value, true, "Timezone");
+                _Timezone = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("Timezone");
                 OnTimezoneChanged();
             }
@@ -5977,7 +5987,7 @@ namespace SIPSorcery.Entities
             {
                 OnWhitepagesKeyChanging(value);
                 ReportPropertyChanging("WhitepagesKey");
-                _WhitepagesKey = StructuralObject.SetValidValue(value, true, "WhitepagesKey");
+                _WhitepagesKey = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("WhitepagesKey");
                 OnWhitepagesKeyChanged();
             }
@@ -6001,7 +6011,7 @@ namespace SIPSorcery.Entities
             {
                 OnEnableSafeguardsChanging(value);
                 ReportPropertyChanging("EnableSafeguards");
-                _EnableSafeguards = StructuralObject.SetValidValue(value, "EnableSafeguards");
+                _EnableSafeguards = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("EnableSafeguards");
                 OnEnableSafeguardsChanged();
             }
@@ -6025,7 +6035,7 @@ namespace SIPSorcery.Entities
             {
                 OnDialPlanIDChanging(value);
                 ReportPropertyChanging("DialPlanID");
-                _DialPlanID = StructuralObject.SetValidValue(value, false, "DialPlanID");
+                _DialPlanID = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("DialPlanID");
                 OnDialPlanIDChanged();
             }
@@ -6036,6 +6046,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
         #region Navigation Properties
     
         /// <summary>
@@ -6111,7 +6122,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -6130,7 +6141,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -6155,7 +6166,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -6179,7 +6190,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderDescriptionChanging(value);
                 ReportPropertyChanging("ProviderDescription");
-                _ProviderDescription = StructuralObject.SetValidValue(value, true, "ProviderDescription");
+                _ProviderDescription = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ProviderDescription");
                 OnProviderDescriptionChanged();
             }
@@ -6203,7 +6214,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderDialStringChanging(value);
                 ReportPropertyChanging("ProviderDialString");
-                _ProviderDialString = StructuralObject.SetValidValue(value, false, "ProviderDialString");
+                _ProviderDialString = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("ProviderDialString");
                 OnProviderDialStringChanged();
             }
@@ -6227,7 +6238,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderNameChanging(value);
                 ReportPropertyChanging("ProviderName");
-                _ProviderName = StructuralObject.SetValidValue(value, false, "ProviderName");
+                _ProviderName = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("ProviderName");
                 OnProviderNameChanged();
             }
@@ -6251,7 +6262,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderPrefixChanging(value);
                 ReportPropertyChanging("ProviderPrefix");
-                _ProviderPrefix = StructuralObject.SetValidValue(value, true, "ProviderPrefix");
+                _ProviderPrefix = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ProviderPrefix");
                 OnProviderPrefixChanged();
             }
@@ -6275,7 +6286,7 @@ namespace SIPSorcery.Entities
             {
                 OnDialPlanIDChanging(value);
                 ReportPropertyChanging("DialPlanID");
-                _DialPlanID = StructuralObject.SetValidValue(value, false, "DialPlanID");
+                _DialPlanID = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("DialPlanID");
                 OnDialPlanIDChanged();
             }
@@ -6286,6 +6297,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
         #region Navigation Properties
     
         /// <summary>
@@ -6363,7 +6375,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -6382,7 +6394,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -6407,7 +6419,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -6431,7 +6443,7 @@ namespace SIPSorcery.Entities
             {
                 OnRouteDescriptionChanging(value);
                 ReportPropertyChanging("RouteDescription");
-                _RouteDescription = StructuralObject.SetValidValue(value, true, "RouteDescription");
+                _RouteDescription = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("RouteDescription");
                 OnRouteDescriptionChanged();
             }
@@ -6455,7 +6467,7 @@ namespace SIPSorcery.Entities
             {
                 OnRouteDestinationChanging(value);
                 ReportPropertyChanging("RouteDestination");
-                _RouteDestination = StructuralObject.SetValidValue(value, false, "RouteDestination");
+                _RouteDestination = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("RouteDestination");
                 OnRouteDestinationChanged();
             }
@@ -6479,7 +6491,7 @@ namespace SIPSorcery.Entities
             {
                 OnRouteNameChanging(value);
                 ReportPropertyChanging("RouteName");
-                _RouteName = StructuralObject.SetValidValue(value, false, "RouteName");
+                _RouteName = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("RouteName");
                 OnRouteNameChanged();
             }
@@ -6503,7 +6515,7 @@ namespace SIPSorcery.Entities
             {
                 OnRoutePatternChanging(value);
                 ReportPropertyChanging("RoutePattern");
-                _RoutePattern = StructuralObject.SetValidValue(value, false, "RoutePattern");
+                _RoutePattern = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("RoutePattern");
                 OnRoutePatternChanged();
             }
@@ -6527,7 +6539,7 @@ namespace SIPSorcery.Entities
             {
                 OnDialPlanIDChanging(value);
                 ReportPropertyChanging("DialPlanID");
-                _DialPlanID = StructuralObject.SetValidValue(value, false, "DialPlanID");
+                _DialPlanID = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("DialPlanID");
                 OnDialPlanIDChanged();
             }
@@ -6538,6 +6550,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
         #region Navigation Properties
     
         /// <summary>
@@ -6609,7 +6622,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -6626,7 +6639,7 @@ namespace SIPSorcery.Entities
             {
                 OnAliasListChanging(value);
                 ReportPropertyChanging("AliasList");
-                _AliasList = StructuralObject.SetValidValue(value, true, "AliasList");
+                _AliasList = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AliasList");
                 OnAliasListChanged();
             }
@@ -6650,7 +6663,7 @@ namespace SIPSorcery.Entities
             {
                 OnDomainChanging(value);
                 ReportPropertyChanging("Domain");
-                _Domain = StructuralObject.SetValidValue(value, false, "Domain");
+                _Domain = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Domain");
                 OnDomainChanged();
             }
@@ -6676,7 +6689,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -6701,7 +6714,7 @@ namespace SIPSorcery.Entities
             {
                 OnInsertedChanging(value);
                 ReportPropertyChanging("Inserted");
-                _Inserted = StructuralObject.SetValidValue(value, false, "Inserted");
+                _Inserted = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Inserted");
                 OnInsertedChanged();
             }
@@ -6725,7 +6738,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, true, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -6736,6 +6749,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
     }
     
     /// <summary>
@@ -6781,7 +6795,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -6798,7 +6812,7 @@ namespace SIPSorcery.Entities
             {
                 OnAdminMemberIDChanging(value);
                 ReportPropertyChanging("AdminMemberID");
-                _AdminMemberID = StructuralObject.SetValidValue(value, true, "AdminMemberID");
+                _AdminMemberID = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AdminMemberID");
                 OnAdminMemberIDChanged();
             }
@@ -6822,7 +6836,7 @@ namespace SIPSorcery.Entities
             {
                 OnCustomHeadersChanging(value);
                 ReportPropertyChanging("CustomHeaders");
-                _CustomHeaders = StructuralObject.SetValidValue(value, true, "CustomHeaders");
+                _CustomHeaders = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("CustomHeaders");
                 OnCustomHeadersChanged();
             }
@@ -6846,7 +6860,7 @@ namespace SIPSorcery.Entities
             {
                 OnGVCallbackNumberChanging(value);
                 ReportPropertyChanging("GVCallbackNumber");
-                _GVCallbackNumber = StructuralObject.SetValidValue(value, true, "GVCallbackNumber");
+                _GVCallbackNumber = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("GVCallbackNumber");
                 OnGVCallbackNumberChanged();
             }
@@ -6870,7 +6884,7 @@ namespace SIPSorcery.Entities
             {
                 OnGVCallbackPatternChanging(value);
                 ReportPropertyChanging("GVCallbackPattern");
-                _GVCallbackPattern = StructuralObject.SetValidValue(value, true, "GVCallbackPattern");
+                _GVCallbackPattern = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("GVCallbackPattern");
                 OnGVCallbackPatternChanged();
             }
@@ -6894,7 +6908,7 @@ namespace SIPSorcery.Entities
             {
                 OnGVCallbackTypeChanging(value);
                 ReportPropertyChanging("GVCallbackType");
-                _GVCallbackType = StructuralObject.SetValidValue(value, true, "GVCallbackType");
+                _GVCallbackType = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("GVCallbackType");
                 OnGVCallbackTypeChanged();
             }
@@ -6920,7 +6934,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -6945,7 +6959,7 @@ namespace SIPSorcery.Entities
             {
                 OnInsertedChanging(value);
                 ReportPropertyChanging("Inserted");
-                _Inserted = StructuralObject.SetValidValue(value, false, "Inserted");
+                _Inserted = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Inserted");
                 OnInsertedChanged();
             }
@@ -6969,7 +6983,7 @@ namespace SIPSorcery.Entities
             {
                 OnLastUpdateChanging(value);
                 ReportPropertyChanging("LastUpdate");
-                _LastUpdate = StructuralObject.SetValidValue(value, false, "LastUpdate");
+                _LastUpdate = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("LastUpdate");
                 OnLastUpdateChanged();
             }
@@ -6993,7 +7007,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -7017,7 +7031,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderAuthUsernameChanging(value);
                 ReportPropertyChanging("ProviderAuthUsername");
-                _ProviderAuthUsername = StructuralObject.SetValidValue(value, true, "ProviderAuthUsername");
+                _ProviderAuthUsername = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ProviderAuthUsername");
                 OnProviderAuthUsernameChanged();
             }
@@ -7041,7 +7055,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderFromChanging(value);
                 ReportPropertyChanging("ProviderFrom");
-                _ProviderFrom = StructuralObject.SetValidValue(value, true, "ProviderFrom");
+                _ProviderFrom = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ProviderFrom");
                 OnProviderFromChanged();
             }
@@ -7065,7 +7079,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderNameChanging(value);
                 ReportPropertyChanging("ProviderName");
-                _ProviderName = StructuralObject.SetValidValue(value, false, "ProviderName");
+                _ProviderName = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("ProviderName");
                 OnProviderNameChanged();
             }
@@ -7089,7 +7103,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderOutboundProxyChanging(value);
                 ReportPropertyChanging("ProviderOutboundProxy");
-                _ProviderOutboundProxy = StructuralObject.SetValidValue(value, true, "ProviderOutboundProxy");
+                _ProviderOutboundProxy = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ProviderOutboundProxy");
                 OnProviderOutboundProxyChanged();
             }
@@ -7113,7 +7127,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderPasswordChanging(value);
                 ReportPropertyChanging("ProviderPassword");
-                _ProviderPassword = StructuralObject.SetValidValue(value, true, "ProviderPassword");
+                _ProviderPassword = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ProviderPassword");
                 OnProviderPasswordChanged();
             }
@@ -7137,7 +7151,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderServerChanging(value);
                 ReportPropertyChanging("ProviderServer");
-                _ProviderServer = StructuralObject.SetValidValue(value, true, "ProviderServer");
+                _ProviderServer = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ProviderServer");
                 OnProviderServerChanged();
             }
@@ -7161,7 +7175,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderTypeChanging(value);
                 ReportPropertyChanging("ProviderType");
-                _ProviderType = StructuralObject.SetValidValue(value, false, "ProviderType");
+                _ProviderType = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("ProviderType");
                 OnProviderTypeChanged();
             }
@@ -7185,7 +7199,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderUsernameChanging(value);
                 ReportPropertyChanging("ProviderUsername");
-                _ProviderUsername = StructuralObject.SetValidValue(value, false, "ProviderUsername");
+                _ProviderUsername = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("ProviderUsername");
                 OnProviderUsernameChanged();
             }
@@ -7209,7 +7223,7 @@ namespace SIPSorcery.Entities
             {
                 OnRegisterAdminEnabledChanging(value);
                 ReportPropertyChanging("RegisterAdminEnabled");
-                _RegisterAdminEnabled = StructuralObject.SetValidValue(value, "RegisterAdminEnabled");
+                _RegisterAdminEnabled = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("RegisterAdminEnabled");
                 OnRegisterAdminEnabledChanged();
             }
@@ -7233,7 +7247,7 @@ namespace SIPSorcery.Entities
             {
                 OnRegisterContactChanging(value);
                 ReportPropertyChanging("RegisterContact");
-                _RegisterContact = StructuralObject.SetValidValue(value, true, "RegisterContact");
+                _RegisterContact = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("RegisterContact");
                 OnRegisterContactChanged();
             }
@@ -7257,7 +7271,7 @@ namespace SIPSorcery.Entities
             {
                 OnRegisterDisabledReasonChanging(value);
                 ReportPropertyChanging("RegisterDisabledReason");
-                _RegisterDisabledReason = StructuralObject.SetValidValue(value, true, "RegisterDisabledReason");
+                _RegisterDisabledReason = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("RegisterDisabledReason");
                 OnRegisterDisabledReasonChanged();
             }
@@ -7281,7 +7295,7 @@ namespace SIPSorcery.Entities
             {
                 OnRegisterEnabledChanging(value);
                 ReportPropertyChanging("RegisterEnabled");
-                _RegisterEnabled = StructuralObject.SetValidValue(value, "RegisterEnabled");
+                _RegisterEnabled = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("RegisterEnabled");
                 OnRegisterEnabledChanged();
             }
@@ -7305,7 +7319,7 @@ namespace SIPSorcery.Entities
             {
                 OnRegisterExpiryChanging(value);
                 ReportPropertyChanging("RegisterExpiry");
-                _RegisterExpiry = StructuralObject.SetValidValue(value, "RegisterExpiry");
+                _RegisterExpiry = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("RegisterExpiry");
                 OnRegisterExpiryChanged();
             }
@@ -7329,7 +7343,7 @@ namespace SIPSorcery.Entities
             {
                 OnRegisterRealmChanging(value);
                 ReportPropertyChanging("RegisterRealm");
-                _RegisterRealm = StructuralObject.SetValidValue(value, true, "RegisterRealm");
+                _RegisterRealm = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("RegisterRealm");
                 OnRegisterRealmChanged();
             }
@@ -7353,7 +7367,7 @@ namespace SIPSorcery.Entities
             {
                 OnRegisterServerChanging(value);
                 ReportPropertyChanging("RegisterServer");
-                _RegisterServer = StructuralObject.SetValidValue(value, true, "RegisterServer");
+                _RegisterServer = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("RegisterServer");
                 OnRegisterServerChanged();
             }
@@ -7377,7 +7391,7 @@ namespace SIPSorcery.Entities
             {
                 OnIsReadOnlyChanging(value);
                 ReportPropertyChanging("IsReadOnly");
-                _IsReadOnly = StructuralObject.SetValidValue(value, "IsReadOnly");
+                _IsReadOnly = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("IsReadOnly");
                 OnIsReadOnlyChanged();
             }
@@ -7401,7 +7415,7 @@ namespace SIPSorcery.Entities
             {
                 OnSendMWISubscribeChanging(value);
                 ReportPropertyChanging("SendMWISubscribe");
-                _SendMWISubscribe = StructuralObject.SetValidValue(value, "SendMWISubscribe");
+                _SendMWISubscribe = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("SendMWISubscribe");
                 OnSendMWISubscribeChanged();
             }
@@ -7412,6 +7426,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
         #region Navigation Properties
     
         /// <summary>
@@ -7479,7 +7494,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -7496,7 +7511,7 @@ namespace SIPSorcery.Entities
             {
                 OnAdminMemberIDChanging(value);
                 ReportPropertyChanging("AdminMemberID");
-                _AdminMemberID = StructuralObject.SetValidValue(value, true, "AdminMemberID");
+                _AdminMemberID = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AdminMemberID");
                 OnAdminMemberIDChanged();
             }
@@ -7520,7 +7535,7 @@ namespace SIPSorcery.Entities
             {
                 OnBindingExpiryChanging(value);
                 ReportPropertyChanging("BindingExpiry");
-                _BindingExpiry = StructuralObject.SetValidValue(value, "BindingExpiry");
+                _BindingExpiry = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("BindingExpiry");
                 OnBindingExpiryChanged();
             }
@@ -7544,7 +7559,7 @@ namespace SIPSorcery.Entities
             {
                 OnBindingURIChanging(value);
                 ReportPropertyChanging("BindingURI");
-                _BindingURI = StructuralObject.SetValidValue(value, false, "BindingURI");
+                _BindingURI = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("BindingURI");
                 OnBindingURIChanged();
             }
@@ -7568,7 +7583,7 @@ namespace SIPSorcery.Entities
             {
                 OnCSeqChanging(value);
                 ReportPropertyChanging("CSeq");
-                _CSeq = StructuralObject.SetValidValue(value, "CSeq");
+                _CSeq = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("CSeq");
                 OnCSeqChanged();
             }
@@ -7594,7 +7609,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -7619,7 +7634,7 @@ namespace SIPSorcery.Entities
             {
                 OnIsRegisteredChanging(value);
                 ReportPropertyChanging("IsRegistered");
-                _IsRegistered = StructuralObject.SetValidValue(value, "IsRegistered");
+                _IsRegistered = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("IsRegistered");
                 OnIsRegisteredChanged();
             }
@@ -7643,7 +7658,7 @@ namespace SIPSorcery.Entities
             {
                 OnLastRegisterAttemptChanging(value);
                 ReportPropertyChanging("LastRegisterAttempt");
-                _LastRegisterAttempt = StructuralObject.SetValidValue(value, true, "LastRegisterAttempt");
+                _LastRegisterAttempt = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("LastRegisterAttempt");
                 OnLastRegisterAttemptChanged();
             }
@@ -7667,7 +7682,7 @@ namespace SIPSorcery.Entities
             {
                 OnLastRegisterTimeChanging(value);
                 ReportPropertyChanging("LastRegisterTime");
-                _LastRegisterTime = StructuralObject.SetValidValue(value, true, "LastRegisterTime");
+                _LastRegisterTime = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("LastRegisterTime");
                 OnLastRegisterTimeChanged();
             }
@@ -7691,7 +7706,7 @@ namespace SIPSorcery.Entities
             {
                 OnNextRegistrationTimeChanging(value);
                 ReportPropertyChanging("NextRegistrationTime");
-                _NextRegistrationTime = StructuralObject.SetValidValue(value, false, "NextRegistrationTime");
+                _NextRegistrationTime = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("NextRegistrationTime");
                 OnNextRegistrationTimeChanged();
             }
@@ -7715,7 +7730,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -7739,7 +7754,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderIDChanging(value);
                 ReportPropertyChanging("ProviderID");
-                _ProviderID = StructuralObject.SetValidValue(value, false, "ProviderID");
+                _ProviderID = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("ProviderID");
                 OnProviderIDChanged();
             }
@@ -7763,7 +7778,7 @@ namespace SIPSorcery.Entities
             {
                 OnProviderNameChanging(value);
                 ReportPropertyChanging("ProviderName");
-                _ProviderName = StructuralObject.SetValidValue(value, false, "ProviderName");
+                _ProviderName = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("ProviderName");
                 OnProviderNameChanged();
             }
@@ -7787,7 +7802,7 @@ namespace SIPSorcery.Entities
             {
                 OnRegistrarSIPSocketChanging(value);
                 ReportPropertyChanging("RegistrarSIPSocket");
-                _RegistrarSIPSocket = StructuralObject.SetValidValue(value, true, "RegistrarSIPSocket");
+                _RegistrarSIPSocket = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("RegistrarSIPSocket");
                 OnRegistrarSIPSocketChanged();
             }
@@ -7811,7 +7826,7 @@ namespace SIPSorcery.Entities
             {
                 OnRegistrationFailureMessageChanging(value);
                 ReportPropertyChanging("RegistrationFailureMessage");
-                _RegistrationFailureMessage = StructuralObject.SetValidValue(value, true, "RegistrationFailureMessage");
+                _RegistrationFailureMessage = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("RegistrationFailureMessage");
                 OnRegistrationFailureMessageChanged();
             }
@@ -7822,6 +7837,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
         #region Navigation Properties
     
         /// <summary>
@@ -7907,7 +7923,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -7924,7 +7940,7 @@ namespace SIPSorcery.Entities
             {
                 OnAdminMemberIDChanging(value);
                 ReportPropertyChanging("AdminMemberID");
-                _AdminMemberID = StructuralObject.SetValidValue(value, true, "AdminMemberID");
+                _AdminMemberID = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("AdminMemberID");
                 OnAdminMemberIDChanged();
             }
@@ -7948,7 +7964,7 @@ namespace SIPSorcery.Entities
             {
                 OnContactURIChanging(value);
                 ReportPropertyChanging("ContactURI");
-                _ContactURI = StructuralObject.SetValidValue(value, false, "ContactURI");
+                _ContactURI = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("ContactURI");
                 OnContactURIChanged();
             }
@@ -7972,7 +7988,7 @@ namespace SIPSorcery.Entities
             {
                 OnExpiryChanging(value);
                 ReportPropertyChanging("Expiry");
-                _Expiry = StructuralObject.SetValidValue(value, "Expiry");
+                _Expiry = StructuralObject.SetValidValue(value);
                 ReportPropertyChanged("Expiry");
                 OnExpiryChanged();
             }
@@ -7996,7 +8012,7 @@ namespace SIPSorcery.Entities
             {
                 OnExpiryTimeChanging(value);
                 ReportPropertyChanging("ExpiryTime");
-                _ExpiryTime = StructuralObject.SetValidValue(value, false, "ExpiryTime");
+                _ExpiryTime = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("ExpiryTime");
                 OnExpiryTimeChanged();
             }
@@ -8022,7 +8038,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -8047,7 +8063,7 @@ namespace SIPSorcery.Entities
             {
                 OnLastUpdateChanging(value);
                 ReportPropertyChanging("LastUpdate");
-                _LastUpdate = StructuralObject.SetValidValue(value, false, "LastUpdate");
+                _LastUpdate = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("LastUpdate");
                 OnLastUpdateChanged();
             }
@@ -8071,7 +8087,7 @@ namespace SIPSorcery.Entities
             {
                 OnMangledContactURIChanging(value);
                 ReportPropertyChanging("MangledContactURI");
-                _MangledContactURI = StructuralObject.SetValidValue(value, true, "MangledContactURI");
+                _MangledContactURI = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("MangledContactURI");
                 OnMangledContactURIChanged();
             }
@@ -8095,7 +8111,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -8119,7 +8135,7 @@ namespace SIPSorcery.Entities
             {
                 OnProxySIPSocketChanging(value);
                 ReportPropertyChanging("ProxySIPSocket");
-                _ProxySIPSocket = StructuralObject.SetValidValue(value, true, "ProxySIPSocket");
+                _ProxySIPSocket = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("ProxySIPSocket");
                 OnProxySIPSocketChanged();
             }
@@ -8143,7 +8159,7 @@ namespace SIPSorcery.Entities
             {
                 OnRegistrarSIPSocketChanging(value);
                 ReportPropertyChanging("RegistrarSIPSocket");
-                _RegistrarSIPSocket = StructuralObject.SetValidValue(value, false, "RegistrarSIPSocket");
+                _RegistrarSIPSocket = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("RegistrarSIPSocket");
                 OnRegistrarSIPSocketChanged();
             }
@@ -8167,7 +8183,7 @@ namespace SIPSorcery.Entities
             {
                 OnRemoteSIPSocketChanging(value);
                 ReportPropertyChanging("RemoteSIPSocket");
-                _RemoteSIPSocket = StructuralObject.SetValidValue(value, false, "RemoteSIPSocket");
+                _RemoteSIPSocket = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("RemoteSIPSocket");
                 OnRemoteSIPSocketChanged();
             }
@@ -8191,7 +8207,7 @@ namespace SIPSorcery.Entities
             {
                 OnSIPAccountIDChanging(value);
                 ReportPropertyChanging("SIPAccountID");
-                _SIPAccountID = StructuralObject.SetValidValue(value, false, "SIPAccountID");
+                _SIPAccountID = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("SIPAccountID");
                 OnSIPAccountIDChanged();
             }
@@ -8215,7 +8231,7 @@ namespace SIPSorcery.Entities
             {
                 OnSIPAccountNameChanging(value);
                 ReportPropertyChanging("SIPAccountName");
-                _SIPAccountName = StructuralObject.SetValidValue(value, false, "SIPAccountName");
+                _SIPAccountName = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("SIPAccountName");
                 OnSIPAccountNameChanged();
             }
@@ -8239,7 +8255,7 @@ namespace SIPSorcery.Entities
             {
                 OnUserAgentChanging(value);
                 ReportPropertyChanging("UserAgent");
-                _UserAgent = StructuralObject.SetValidValue(value, true, "UserAgent");
+                _UserAgent = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("UserAgent");
                 OnUserAgentChanged();
             }
@@ -8250,6 +8266,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
         #region Navigation Properties
     
         /// <summary>
@@ -8325,7 +8342,7 @@ namespace SIPSorcery.Entities
 
         #endregion
 
-        #region Simple Properties
+        #region Primitive Properties
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -8344,7 +8361,7 @@ namespace SIPSorcery.Entities
                 {
                     OnIDChanging(value);
                     ReportPropertyChanging("ID");
-                    _ID = StructuralObject.SetValidValue(value, false, "ID");
+                    _ID = StructuralObject.SetValidValue(value, false);
                     ReportPropertyChanged("ID");
                     OnIDChanged();
                 }
@@ -8369,7 +8386,7 @@ namespace SIPSorcery.Entities
             {
                 OnOwnerChanging(value);
                 ReportPropertyChanging("Owner");
-                _Owner = StructuralObject.SetValidValue(value, false, "Owner");
+                _Owner = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Owner");
                 OnOwnerChanged();
             }
@@ -8393,7 +8410,7 @@ namespace SIPSorcery.Entities
             {
                 OnDialString1Changing(value);
                 ReportPropertyChanging("DialString1");
-                _DialString1 = StructuralObject.SetValidValue(value, false, "DialString1");
+                _DialString1 = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("DialString1");
                 OnDialString1Changed();
             }
@@ -8417,7 +8434,7 @@ namespace SIPSorcery.Entities
             {
                 OnDialString2Changing(value);
                 ReportPropertyChanging("DialString2");
-                _DialString2 = StructuralObject.SetValidValue(value, false, "DialString2");
+                _DialString2 = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("DialString2");
                 OnDialString2Changed();
             }
@@ -8441,7 +8458,7 @@ namespace SIPSorcery.Entities
             {
                 OnDescriptionChanging(value);
                 ReportPropertyChanging("Description");
-                _Description = StructuralObject.SetValidValue(value, true, "Description");
+                _Description = StructuralObject.SetValidValue(value, true);
                 ReportPropertyChanged("Description");
                 OnDescriptionChanged();
             }
@@ -8465,7 +8482,7 @@ namespace SIPSorcery.Entities
             {
                 OnInsertedChanging(value);
                 ReportPropertyChanging("Inserted");
-                _Inserted = StructuralObject.SetValidValue(value, false, "Inserted");
+                _Inserted = StructuralObject.SetValidValue(value, false);
                 ReportPropertyChanged("Inserted");
                 OnInsertedChanged();
             }
@@ -8476,8 +8493,10 @@ namespace SIPSorcery.Entities
 
         #endregion
 
+    
     }
 
     #endregion
 
+    
 }
