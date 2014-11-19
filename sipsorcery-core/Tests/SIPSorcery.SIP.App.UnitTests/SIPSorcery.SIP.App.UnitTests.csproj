@@ -180,6 +180,10 @@
     <Compile Include="SIPDNSManagerUnitTest.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\SIPSorcery.Net\SIPSorcery.Net.csproj">
+      <Project>{55898587-8456-40d4-bb88-c9fc8bd6ba9c}</Project>
+      <Name>SIPSorcery.Net</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
       <Project>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</Project>
       <Name>SIPSorcery.SIP.Core</Name>
