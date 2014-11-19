@@ -40,8 +40,11 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using SIPSorcery.Sys;
-using SIPSorceryRTP;
 using log4net;
+
+#if SRTP
+using SIPSorceryRTP;
+#endif
 
 namespace SIPSorcery.Net
 {
@@ -76,7 +79,10 @@ namespace SIPSorcery.Net
         private byte[] _controlSocketBuffer;
         private bool _closed;
         private Queue<RTPPacket> _packets = new Queue<RTPPacket>();
+
+#if SRTP
         private SRTPManaged _srtp;
+#endif
 
         private IPEndPoint _remoteEndPoint;
         public IPEndPoint RemoteEndPoint
@@ -171,7 +177,7 @@ namespace SIPSorcery.Net
 
                 if (_iceState != null && _iceState.SRTPKey != null)
                 {
-                    _srtp = new SRTPManaged(Convert.FromBase64String(_iceState.SRTPKey));
+                   // _srtp = new SRTPManaged(Convert.FromBase64String(_iceState.SRTPKey));
                 }
             }
             catch (Exception excp)
@@ -694,6 +700,8 @@ namespace SIPSorcery.Net
             }
         }
 
+#if SRTP
+
         /// <summary>
         /// Sends a dynamically sized frame. The RTP marker bit will be set for the last transmitted packet in the frame.
         /// </summary>
@@ -735,8 +743,6 @@ namespace SIPSorcery.Net
 
                         Buffer.BlockCopy(vp8HeaderBytes, 0, rtpPacket.Payload, 0, vp8HeaderBytes.Length);
                         Buffer.BlockCopy(frame, offset, rtpPacket.Payload, vp8HeaderBytes.Length, payloadLength);
-                        //var dataStream = frame.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength).ToList();
-                        //rtpPacket.Payload = dataStream.ToArray();
 
                         byte[] rtpBytes = rtpPacket.GetBytes();
 
@@ -778,6 +784,8 @@ namespace SIPSorcery.Net
                 }
             }
         }
+
+#endif
 
         /// <summary>
         /// Sends a packet to the RTSP server on the RTP socket.

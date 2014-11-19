@@ -4,14 +4,14 @@
     <ProjectType>Local</ProjectType>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</ProjectGuid>
+    <ProjectGuid>{55898587-8456-40D4-BB88-C9FC8BD6BA9C}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ApplicationIcon>
     </ApplicationIcon>
     <AssemblyKeyContainerName>
     </AssemblyKeyContainerName>
-    <AssemblyName>SIPSorcery.SIP.Core</AssemblyName>
+    <AssemblyName>SIPSorcery.Net</AssemblyName>
     <AssemblyOriginatorKeyFile>
     </AssemblyOriginatorKeyFile>
     <DefaultClientScript>JScript</DefaultClientScript>
@@ -19,7 +19,7 @@
     <DefaultTargetSchema>IE50</DefaultTargetSchema>
     <DelaySign>false</DelaySign>
     <OutputType>Library</OutputType>
-    <RootNamespace>SIPSorcery.SIP</RootNamespace>
+    <RootNamespace>SIPSorcery.Net</RootNamespace>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <StartupObject>
     </StartupObject>
@@ -28,7 +28,7 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -55,7 +55,7 @@
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
-    <DefineConstants>DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
@@ -70,7 +70,6 @@
     <WarningLevel>4</WarningLevel>
     <DebugType>full</DebugType>
     <ErrorReport>prompt</ErrorReport>
-    <RunCodeAnalysis>false</RunCodeAnalysis>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -100,12 +99,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debugx64|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Debugx64\</OutputPath>
-    <DefineConstants>DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <BaseAddress>285212672</BaseAddress>
     <FileAlignment>4096</FileAlignment>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <CodeAnalysisLogFile>..\Build\SIPSorcery.SIP.Core.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisLogFile>..\Build\SIPSorcery.Net.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
     <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
     <ErrorReport>prompt</ErrorReport>
@@ -117,30 +116,29 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x64\Debug\</OutputPath>
-    <DefineConstants>DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;SRTP</DefineConstants>
     <BaseAddress>285212672</BaseAddress>
     <FileAlignment>4096</FileAlignment>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
-    <CodeAnalysisLogFile>..\Build\SIPSorcery.SIP.Core.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisLogFile>..\Build\SIPSorcery.Net.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
     <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
-    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
-    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\x64\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;SRTP</DefineConstants>
     <BaseAddress>285212672</BaseAddress>
     <Optimize>true</Optimize>
     <FileAlignment>4096</FileAlignment>
     <PlatformTarget>x64</PlatformTarget>
-    <CodeAnalysisLogFile>bin\Release\SIPSorcery.SIP.Core.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisLogFile>bin\Release\SIPSorcery.Net.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
     <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
     <ErrorReport>prompt</ErrorReport>
@@ -149,43 +147,40 @@
     <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
-    <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debugx64|x64'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x64\Debugx64\</OutputPath>
-    <DefineConstants>DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <BaseAddress>285212672</BaseAddress>
     <FileAlignment>4096</FileAlignment>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
-    <CodeAnalysisLogFile>..\Build\SIPSorcery.SIP.Core.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisLogFile>..\Build\SIPSorcery.Net.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
     <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
-    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
-    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
-    <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x86\Debug\</OutputPath>
-    <DefineConstants>DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <BaseAddress>285212672</BaseAddress>
     <FileAlignment>4096</FileAlignment>
     <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <CodeAnalysisLogFile>..\Build\SIPSorcery.SIP.Core.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <PlatformTarget>x86</PlatformTarget>
+    <CodeAnalysisLogFile>..\Build\SIPSorcery.Net.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
     <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
+    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
     <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
@@ -198,7 +193,7 @@
     <Optimize>true</Optimize>
     <FileAlignment>4096</FileAlignment>
     <PlatformTarget>x86</PlatformTarget>
-    <CodeAnalysisLogFile>bin\Release\SIPSorcery.SIP.Core.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisLogFile>bin\Release\SIPSorcery.Net.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
     <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
     <ErrorReport>prompt</ErrorReport>
@@ -213,20 +208,20 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debugx64|x86'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x86\Debugx64\</OutputPath>
-    <DefineConstants>DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <BaseAddress>285212672</BaseAddress>
     <FileAlignment>4096</FileAlignment>
     <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
-    <CodeAnalysisLogFile>..\Build\SIPSorcery.SIP.Core.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisLogFile>..\Build\SIPSorcery.Net.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
     <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
-    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
+    <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
@@ -234,109 +229,112 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="System">
-      <Name>System</Name>
+    <Reference Include="SIPSorceryRTP">
+      <HintPath>..\..\sipsorcery-media\build\x64\SIPSorceryRTP.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data">
       <Name>System.Data</Name>
     </Reference>
-    <Reference Include="System.Runtime.Serialization">
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.ServiceModel">
       <RequiredTargetFramework>3.0</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Xml">
-      <Name>System.XML</Name>
+    <Reference Include="System.ServiceModel.Web">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblyState.cs">
+    <Compile Include="ICE\ICEState.cs" />
+    <Compile Include="RTP\RTPChannel.cs" />
+    <Compile Include="RTP\RTPFrame.cs" />
+    <Compile Include="RTP\RTPVP8Header.cs" />
+    <Compile Include="RTSP\RTSPConnection.cs" />
+    <Compile Include="RTSP\RTSPServer.cs" />
+    <Compile Include="RTSP\RTSPSession.cs" />
+    <Compile Include="SDP\SDPICECandidate.cs" />
+    <Compile Include="STUNv2\STUNAttributes\STUNv2XORAddressAttribute.cs" />
+    <Compile Include="STUNv2\STUNAttributes\STUNv2AddressAttribute.cs" />
+    <Compile Include="STUNv2\STUNAttributes\STUNv2Attribute.cs" />
+    <Compile Include="STUNv2\STUNAttributes\STUNv2ChangeRequestAttribute.cs" />
+    <Compile Include="STUNv2\STUNv2Header.cs" />
+    <Compile Include="STUNv2\STUNv2Message.cs" />
+    <Compile Include="DNS\DNSManager.cs" />
+    <Compile Include="DNS\DNSRequest.cs" />
+    <Compile Include="DNS\DNSResponse.cs" />
+    <Compile Include="DNS\Header.cs" />
+    <Compile Include="DNS\Question.cs" />
+    <Compile Include="DNS\Records\Record.cs" />
+    <Compile Include="DNS\Records\RecordA.cs" />
+    <Compile Include="DNS\Records\RecordAAAA.cs" />
+    <Compile Include="DNS\Records\RecordCNAME.cs" />
+    <Compile Include="DNS\Records\RecordHINFO.cs" />
+    <Compile Include="DNS\Records\RecordMB.cs" />
+    <Compile Include="DNS\Records\RecordMD.cs" />
+    <Compile Include="DNS\Records\RecordMF.cs" />
+    <Compile Include="DNS\Records\RecordMG.cs" />
+    <Compile Include="DNS\Records\RecordMINFO.cs" />
+    <Compile Include="DNS\Records\RecordMR.cs" />
+    <Compile Include="DNS\Records\RecordMX.cs" />
+    <Compile Include="DNS\Records\RecordNAPTR.cs" />
+    <Compile Include="DNS\Records\RecordNS.cs" />
+    <Compile Include="DNS\Records\RecordNULL.cs" />
+    <Compile Include="DNS\Records\RecordPTR.cs" />
+    <Compile Include="DNS\Records\RecordReader.cs" />
+    <Compile Include="DNS\Records\RecordSOA.cs" />
+    <Compile Include="DNS\Records\RecordSRV.cs" />
+    <Compile Include="DNS\Records\RecordTXT.cs" />
+    <Compile Include="DNS\Records\RecordUnknown.cs" />
+    <Compile Include="DNS\Records\RecordWKS.cs" />
+    <Compile Include="DNS\Resolver.cs" />
+    <Compile Include="DNS\RR.cs" />
+    <Compile Include="DNS\Structs.cs" />
+    <Compile Include="ICMP\ICMP.cs" />
+    <Compile Include="ICMP\ICMPListener.cs" />
+    <Compile Include="RTCP\RTCP.cs" />
+    <Compile Include="RTCP\RTCPHeader.cs" />
+    <Compile Include="RTCP\RTCPPacket.cs" />
+    <Compile Include="RTCP\RTCPReportHeader.cs" />
+    <Compile Include="RTCP\RTCPReportPacket.cs" />
+    <Compile Include="RTP\RTPHeader.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="AssemblyInfo.cs">
+    <Compile Include="RTP\RTPPacket.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DNS\SIPDNSConstants.cs" />
-    <Compile Include="DNS\SIPDNSLookupResult.cs" />
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="SIPAuthorisation\SIPAuthorisationDigest.cs">
+    <Compile Include="RTP\RTPPayloadTypes.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="SIPCDR\SIPCDR.cs" />
-    <Compile Include="SIPEvents\Presence\SIPEventPresenceTuple.cs" />
-    <Compile Include="SIPEvents\SIPEvent.cs" />
-    <Compile Include="SIPEvents\Dialog\SIPEventDialog.cs" />
-    <Compile Include="SIPEvents\Dialog\SIPEventDialogInfo.cs" />
-    <Compile Include="SIPEvents\Dialog\SIPEventDialogParticipant.cs" />
-    <Compile Include="SIPEvents\SIPEventPackages.cs" />
-    <Compile Include="SIPEvents\Presence\SIPEventPresence.cs" />
-    <Compile Include="SIPFunctionDelegates.cs" />
-    <Compile Include="SIPTransactions\SIPNonInviteTransaction.cs" />
-    <Compile Include="SIPTransactions\SIPCancelTransaction.cs" />
-    <Compile Include="SIPTransactions\SIPTransaction.cs">
+    <Compile Include="RTP\RTPSink.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="SIPTransactions\SIPTransactionEngine.cs" />
-    <Compile Include="SIPTransactions\UACInviteTransaction.cs" />
-    <Compile Include="SIPTransactions\UASInviteTransaction.cs" />
-    <Compile Include="SIPTransportConfig.cs" />
-    <Compile Include="SIP\Channels\SIPConnection.cs" />
-    <Compile Include="SIP\Channels\SIPTLSChannel.cs" />
-    <Compile Include="SIP\Channels\SIPChannel.cs" />
-    <Compile Include="SIP\Channels\SIPTCPChannel.cs" />
-    <Compile Include="SIP\SIPEndPoint.cs" />
-    <Compile Include="SIP\SIPParameterlessURI.cs" />
-    <Compile Include="SIP\SIPReplacesParameter.cs" />
-    <Compile Include="SIP\SIPTransport.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="SIP\SIPDialogue.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="SIP\Channels\SIPUDPChannel.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="SIP\SIPConstants.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="SIP\SIPHeader.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="SIP\SIPMessage.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="SIP\SIPParameters.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="SIP\SIPRequest.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="SIP\SIPResponse.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="SIP\SIPURI.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="SIP\SIPUserAgentsRolesEnum.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="SIP\SIPUserField.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="SIP\SIPValidationException.cs" />
-    <Compile Include="Utilities.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
-      <Project>{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}</Project>
-      <Name>SIPSorcery.Sys</Name>
-    </ProjectReference>
+    <Compile Include="RTSP\AssemblyStreamState.cs" />
+    <Compile Include="RTSP\RTSPClient.cs" />
+    <Compile Include="RTSP\RTSPContants.cs" />
+    <Compile Include="RTSP\RTSPHeader.cs" />
+    <Compile Include="RTSP\RTSPMessage.cs" />
+    <Compile Include="RTSP\RTSPRequest.cs" />
+    <Compile Include="RTSP\RTSPResponse.cs" />
+    <Compile Include="RTSP\RTSPURL.cs" />
+    <Compile Include="SDP\SDP.cs" />
+    <Compile Include="SDP\SDPConnectionInformation.cs" />
+    <Compile Include="SDP\SDPMediaAnnouncement.cs" />
+    <Compile Include="SDP\SDPMediaFormat.cs" />
+    <Compile Include="SDP\SDPMediaTypes.cs" />
+    <Compile Include="STUN\Program.cs" />
+    <Compile Include="STUN\STUNAppState.cs" />
+    <Compile Include="STUN\STUNAttribute.cs" />
+    <Compile Include="STUN\STUNClient.cs" />
+    <Compile Include="STUN\STUNHeader.cs" />
+    <Compile Include="STUN\STUNListener.cs" />
+    <Compile Include="STUN\STUNMessage.cs" />
+    <Compile Include="STUN\STUNServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -361,17 +359,13 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
+    <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
+      <Project>{6d8dbb7d-8937-4cc4-9703-561f776f9dbd}</Project>
+      <Name>SIPSorcery.Sys</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
     <None Include="packages.config" />
-    <None Include="SIPEvents\Presence\PIDFSchema.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="SIPEvents\Dialog\EventDialogSchema.xsd">
-      <SubType>Designer</SubType>
-    </None>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
