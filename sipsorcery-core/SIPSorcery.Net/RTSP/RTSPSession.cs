@@ -574,17 +574,17 @@ namespace SIPSorcery.Net
 
                         //System.Diagnostics.Debug.WriteLine(" offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ".");
 
-                        Stopwatch sw = new Stopwatch();
-                        sw.Start();
+                        //Stopwatch sw = new Stopwatch();
+                        //sw.Start();
 
                         _rtpSocket.SendTo(rtpBytes, _remoteEndPoint);
 
-                        sw.Stop();
+                        //sw.Stop();
 
-                        if (sw.ElapsedMilliseconds > 15)
-                        {
-                            logger.Warn(" SendJpegFrame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
-                        }
+                        //if (sw.ElapsedMilliseconds > 15)
+                        //{
+                        //    logger.Warn(" SendJpegFrame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
+                        //}
                     }
 
                     //sw.Stop();
@@ -672,17 +672,17 @@ namespace SIPSorcery.Net
 
                         //System.Diagnostics.Debug.WriteLine(" offset " + (index * RTP_MAX_PAYLOAD) + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header .MarkerBit + ".");
 
-                        Stopwatch sw = new Stopwatch();
-                        sw.Start();
+                        //Stopwatch sw = new Stopwatch();
+                        //sw.Start();
 
                         _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
 
-                        sw.Stop();
+                        //sw.Stop();
 
-                        if (sw.ElapsedMilliseconds > 15)
-                        {
-                            logger.Warn(" SendH264Frame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
-                        }
+                        //if (sw.ElapsedMilliseconds > 15)
+                        //{
+                        //    logger.Warn(" SendH264Frame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
+                        //}
                     }
                 }
             }
@@ -757,17 +757,17 @@ namespace SIPSorcery.Net
 
                         //System.Diagnostics.Debug.WriteLine(" offset " + (index * RTP_MAX_PAYLOAD) + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header .MarkerBit + ".");
 
-                        Stopwatch sw = new Stopwatch();
-                        sw.Start();
+                        //Stopwatch sw = new Stopwatch();
+                        //sw.Start();
 
                         _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
 
-                        sw.Stop();
+                        //sw.Stop();
 
-                        if (sw.ElapsedMilliseconds > 15)
-                        {
-                            logger.Warn(" SendVP8Frame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
-                        }
+                        //if (sw.ElapsedMilliseconds > 15)
+                        //{
+                        //    logger.Warn(" SendVP8Frame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
+                        //}
                     }
                 }
             }
