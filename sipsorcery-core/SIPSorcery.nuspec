@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>SIPSorcery</id>
-        <version>1.3</version>
+        <version>1.3.1</version>
         <authors>Aaron Clauson</authors>
         <owners>Aaron Clauson</owners>
         <licenseUrl>https://sipsorcery.codeplex.com/license</licenseUrl>
@@ -10,7 +10,7 @@
         <description>The SIPSorcery package consists of a C# SIP protocol stack that implements all the required UDP, TCP and TLS transports as specified in RFC3261. 
 		There are also partial implementations of a number of related protocols: STUN, SDP, RTP and RTCP. The SIP functionality includes a number of user agents which
 		can be used to initiate and receive both calls and registrations.</description>
-      <summary>This is not an official package of SIPSorcery. Official versions can be found at http://sipsorcery.codeplex.com</summary>  
+      <summary>This is the official package of SIPSorcery. Full source code can be found at http://sipsorcery.codeplex.com.</summary>  
       <copyright>Copyright (c) 2014, Aaron Clauson</copyright>
         <language>en-US</language>
         <tags>sip sipsorcery</tags>

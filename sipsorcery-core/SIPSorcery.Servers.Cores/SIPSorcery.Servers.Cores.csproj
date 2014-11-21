@@ -222,6 +222,22 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery.AppServer.DialPlan\SIPSorcery.AppServer.DialPlan.csproj">
+      <Project>{dc87db52-5c99-4282-abea-f7ec81ac6d4c}</Project>
+      <Name>SIPSorcery.AppServer.DialPlan</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.CRM\SIPSorcery.CRM.csproj">
+      <Project>{f951789f-1abb-42e8-bb51-f028dc4824ef}</Project>
+      <Name>SIPSorcery.CRM</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">
+      <Project>{55898587-8456-40d4-bb88-c9fc8bd6ba9c}</Project>
+      <Name>SIPSorcery.Net</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Web.Services\SIPSorcery.Web.Services.csproj">
+      <Project>{5d73fbac-897f-4fea-baf9-61823545fe70}</Project>
+      <Name>SIPSorcery.Web.Services</Name>
+    </ProjectReference>
     <Reference Include="Accessibility" />
     <Reference Include="IronPython, Version=1.0.60816.1877, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -282,6 +298,10 @@
     <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
       <Project>{7194705F-5564-4040-BC8A-8FAD806F5408}</Project>
       <Name>SIPSorcery.Persistence</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
+      <Project>{339648e6-3b61-4a27-b4a2-38a8216b1d7e}</Project>
+      <Name>SIPSorcery.SIP.App</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
       <Project>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</Project>
