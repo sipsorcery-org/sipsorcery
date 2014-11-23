@@ -29,8 +29,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: AssemblyTitle("SIPSorcery.SIP.Core")]
-[assembly: AssemblyDescription("Library")]
-[assembly: AssemblyCompany("Blue Face")]
-[assembly: AssemblyProduct("SIPv2 Stack")]
-[assembly: AssemblyCopyright("Aaron Clauson")]		
-[assembly: AssemblyVersion("0.2.0.*")]
+[assembly: AssemblyDescription("Implementation of SIP protocol.")]
+[assembly: AssemblyCompany("SIP Sorcery PTY LTD")]
+[assembly: AssemblyCopyright("Aaron Clauson")]
+[assembly: AssemblyVersion("1.3.1.*")]

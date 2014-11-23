@@ -2,7 +2,8 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: AssemblyTitle("SIPSorcery.Sys")]
-[assembly: AssemblyDescription("Handles configuration and state information for processes.")]
+[assembly: AssemblyDescription("Handles application configuration and state. Provides utility functions.")]
+[assembly: AssemblyCompany("SIP Sorcery PTY LTD")]
 [assembly: AssemblyCopyright("Aaron Clauson")]	
-[assembly: AssemblyVersion("1.0.0.*")]
+[assembly: AssemblyVersion("1.3.1.*")]
 

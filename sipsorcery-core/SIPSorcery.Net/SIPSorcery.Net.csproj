@@ -248,6 +248,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ICE\ICEState.cs" />
     <Compile Include="RTP\RTPChannel.cs" />
     <Compile Include="RTP\RTPFrame.cs" />

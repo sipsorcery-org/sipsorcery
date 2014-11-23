@@ -240,7 +240,6 @@
     <Compile Include="SIPUserAgents\SIPCallDescriptor.cs" />
     <Compile Include="SIPUserAgents\SIPClientUserAgent.cs" />
     <Compile Include="SIPUserAgents\SIPTransferServerUserAgent.cs" />
-    <Compile Include="Switchboard\SwitchboardToken.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">

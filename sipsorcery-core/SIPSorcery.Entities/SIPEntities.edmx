@@ -1499,7 +1499,7 @@
         <EntityTypeShape EntityType="SIPSorcery.Entities.CDR" Width="1.75" PointX="3.625" PointY="0.5" Height="7.3647265625" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.Customer" PointX="0.625" PointY="0.5" Width="2.625" Height="7.7493294270833335" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPAccount" Width="2.125" PointX="3.375" PointY="8.75" Height="4.8648079427083335" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialogue" Width="2.75" PointX="8.25" PointY="0.75" Height="6.4032194010416656" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialogue" Width="2.75" PointX="8" PointY="0.5" Height="6.4032194010416656" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDialPlan" Width="2" PointX="15.25" PointY="1.25" Height="4.8648079427083326" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPDomain" Width="1.5" PointX="11.5" PointY="6.75" Height="1.9802864583333317" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SIPProviderBinding" Width="2.125" PointX="8.875" PointY="7.75" Height="3.9033007812499996" />

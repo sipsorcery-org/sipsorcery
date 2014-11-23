@@ -28,8 +28,8 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-[assembly: AssemblyTitle("SIPSorcery.SIP.App")]
+[assembly: AssemblyTitle("SIPSorcery.SIP.Net")]
+[assembly: AssemblyDescription("Helper classes for SIP related protocols.")]
 [assembly: AssemblyCompany("SIP Sorcery PTY LTD")]
-[assembly: AssemblyDescription("Application layer classes that provide common use casses for SIP protocol.")]
-[assembly: AssemblyCopyright("Aaron Clauson")]		
+[assembly: AssemblyCopyright("Aaron Clauson")]
 [assembly: AssemblyVersion("1.3.1.*")]
