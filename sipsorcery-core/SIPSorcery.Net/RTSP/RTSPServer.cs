@@ -415,7 +415,8 @@ namespace SIPSorcery.Net
                                                       where (session.Value.DontTimeout == false 
                                                               && session.Value.RTPLastActivityAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
                                                                && session.Value.ControlLastActivityAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
-                                                               && session.Value.StartedAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1))
+                                                               && session.Value.StartedAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
+                                                               && session.Value.CreatedAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1))
                                                                || session.Value.IsClosed
                                                       select session.Key;
 

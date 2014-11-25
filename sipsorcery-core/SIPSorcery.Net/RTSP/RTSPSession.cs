@@ -104,6 +104,12 @@ namespace SIPSorcery.Net
             get { return _rtpPort; }
         }
 
+        private DateTime _createdAt;
+        public DateTime CreatedAt
+        {
+            get { return _createdAt; }
+        }
+
         private DateTime _startedAt;
         public DateTime StartedAt
         {
@@ -160,9 +166,12 @@ namespace SIPSorcery.Net
         public event Action<string> OnControlSocketDisconnected;
 
         public RTSPSession()
-        { }
+        {
+            _createdAt = DateTime.Now;
+        }
 
-        public RTSPSession(string sessionID, IPEndPoint remoteEndPoint)
+        public RTSPSession(string sessionID, IPEndPoint remoteEndPoint) 
+            : this()
         {
             _sessionID = sessionID;
             _remoteEndPoint = remoteEndPoint;
