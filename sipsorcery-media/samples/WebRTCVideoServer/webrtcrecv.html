@@ -94,7 +94,7 @@ function parseCandidate(text) {
 }
 
 function wsConnect() {
-	ws = new WebSocket("ws://localhost:8081/receiver");
+	ws = new WebSocket("ws://10.1.1.2:8081/receiver");
 
 	ws.onopen = function () {
 		console.log("web socket onopen.");

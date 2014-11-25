@@ -1,14 +1,5 @@
 // ============================================================================
-// FileName: AssemblyState.cs
-//
-// Description:
-//  Holds application configuration information.
-//
-// Author(s):
-//	Aaron Clauson
-//
-// History:
-// 22 May 2005	Aaron Clauson	Created.
+// FileName: AssemblyInfo.cs
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -34,34 +25,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // ============================================================================
 
-using System;
-using System.Collections.Specialized;
-using System.Configuration;
-using System.IO;
-using System.Text.RegularExpressions;
-using System.Xml;
-using SIPSorcery.Sys;
-using log4net;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 
-namespace SIPSorcery.SIP
-{
-	public class AssemblyState
-	{
-		public const string LOGGER_NAME = "sipsorcery.sip";
-
-		public static ILog logger = null;
-
-        static AssemblyState()
-		{
-			try
-			{
-				// Configure logging.
-				logger = AppState.GetLogger(LOGGER_NAME);
-			}
-			catch(Exception excp)
-			{
-                Console.WriteLine("Exception AssemblyState. " + excp.Message);
-			}
-		}
-	}
-}
+[assembly: AssemblyTitle("SIPSorcery.SIP.Net")]
+[assembly: AssemblyDescription("Helper classes for SIP related protocols.")]
+[assembly: AssemblyCompany("SIP Sorcery PTY LTD")]
+[assembly: AssemblyCopyright("Aaron Clauson")]
+[assembly: AssemblyVersion("1.3.1.*")]

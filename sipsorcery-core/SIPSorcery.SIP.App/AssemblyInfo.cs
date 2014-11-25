@@ -4,7 +4,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006 Aaron Clauson (aaronc@blueface.ie), Blue Face Ltd, Dublin, Ireland (www.blueface.ie)
+// Copyright (c) 2006 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -12,7 +12,7 @@
 //
 // Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
 // Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following 
-// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of Blue Face Ltd. 
+// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of SIP Sorcery PTY LTD. 
 // nor the names of its contributors may be used to endorse or promote products derived from this software without specific 
 // prior written permission. 
 //
@@ -29,8 +29,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: AssemblyTitle("SIPSorcery.SIP.App")]
-[assembly: AssemblyDescription("Library")]
-[assembly: AssemblyCompany("Blue Face")]
-[assembly: AssemblyProduct("VoIP Network Library that provides some application layer functionality based on the SIP stack in VoIP.Net.")]
+[assembly: AssemblyCompany("SIP Sorcery PTY LTD")]
+[assembly: AssemblyDescription("Application layer classes that provide common use casses for SIP protocol.")]
 [assembly: AssemblyCopyright("Aaron Clauson")]		
-[assembly: AssemblyVersion("0.2.0.1")]
+[assembly: AssemblyVersion("1.3.1.*")]
