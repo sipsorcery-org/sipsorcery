@@ -52,7 +52,7 @@ namespace SIPSorcery.Net
     {
         public const int H264_RTP_HEADER_LENGTH = 2;
         public const int JPEG_RTP_HEADER_LENGTH = 8;
-        public const int VP8_RTP_HEADER_LENGTH = 0;
+        public const int VP8_RTP_HEADER_LENGTH = 3;
 
         private const int RFC_2435_FREQUENCY_BASELINE = 90000;
         private const int RTP_MAX_PAYLOAD = 1400; //1452;
@@ -737,13 +737,12 @@ namespace SIPSorcery.Net
 
                     for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
                     {
-                        byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x90, 0x80, (byte)(_sequenceNumber % 128) } : new byte[] { 0x80, 0x80, (byte)(_sequenceNumber % 128) };
-                        //byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
+                        byte[] vp8HeaderBytes = (index == 0) ? new byte[VP8_RTP_HEADER_LENGTH] { 0x90, 0x80, (byte)(_sequenceNumber % 128) } : new byte[VP8_RTP_HEADER_LENGTH] { 0x80, 0x80, (byte)(_sequenceNumber % 128) };
 
                         int offset = index * RTP_MAX_PAYLOAD;
                         int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
 
-                        RTPPacket rtpPacket = new RTPPacket(payloadLength + vp8HeaderBytes.Length + ((_srtp != null) ? SRTP_SIGNATURE_LENGTH : 0));
+                        RTPPacket rtpPacket = new RTPPacket(payloadLength + VP8_RTP_HEADER_LENGTH + ((_srtp != null) ? SRTP_SIGNATURE_LENGTH : 0));
                         rtpPacket.Header.SyncSource = _syncSource;
                         rtpPacket.Header.SequenceNumber = _sequenceNumber++;
                         rtpPacket.Header.Timestamp = _timestamp;
