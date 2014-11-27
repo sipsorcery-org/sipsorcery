@@ -380,8 +380,11 @@ namespace SIPSorcery.Net
                                             }
                                             else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingSuccessResponse)
                                             {
-                                                _iceState.IsSTUNExchanggeComplete = true;
-                                                System.Diagnostics.Debug.WriteLine("WebRTC client STUN exchange complete for " + _remoteEndPoint.ToString() + ".");
+                                                if (!_iceState.IsSTUNExchanggeComplete)
+                                                {
+                                                    _iceState.IsSTUNExchanggeComplete = true;
+                                                    logger.Debug("WebRTC client STUN exchange complete for " + _remoteEndPoint.ToString() + ".");
+                                                }
                                             }
                                             else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingErrorResponse)
                                             {
