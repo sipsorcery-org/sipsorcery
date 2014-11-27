@@ -184,10 +184,12 @@ namespace SIPSorcery.Net
             {
                 _iceState = iceState;
 
+#if SRTP
                 if (_iceState != null && _iceState.SRTPKey != null)
                 {
-                   // _srtp = new SRTPManaged(Convert.FromBase64String(_iceState.SRTPKey));
+                   _srtp = new SRTPManaged(Convert.FromBase64String(_iceState.SRTPKey));
                 }
+#endif
             }
             catch (Exception excp)
             {
@@ -380,9 +382,9 @@ namespace SIPSorcery.Net
                                             }
                                             else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingSuccessResponse)
                                             {
-                                                if (!_iceState.IsSTUNExchanggeComplete)
+                                                if (!_iceState.IsSTUNExchangeComplete)
                                                 {
-                                                    _iceState.IsSTUNExchanggeComplete = true;
+                                                    _iceState.IsSTUNExchangeComplete = true;
                                                     logger.Debug("WebRTC client STUN exchange complete for " + _remoteEndPoint.ToString() + ".");
                                                 }
                                             }
