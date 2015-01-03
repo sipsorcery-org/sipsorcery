@@ -106,5 +106,38 @@ namespace SIPSorcery.Net.UnitTests
             Assert.IsTrue(sdp.IceUfrag == "8hhY", "The ICE username was not parsed correctly.");
             Assert.IsTrue(sdp.IcePwd == "asd88fgpdd777uzjYhagZg", "The ICE password was not parsed correctly.");
         }
+
+
+        /// <summary>
+        /// Test that an SDP payload with multiple media announcements (in this test audio and video) are correctly
+        /// parsed.
+        /// </summary>
+        [TestMethod]
+        public void ParseMultipleMediaAnnouncementsUnitTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr = "v=0" + m_CRLF +
+                "o=- 13064410510996677 3 IN IP4 10.1.1.2" + m_CRLF +
+                "s=Bria 4 release 4.1.1 stamp 74246" + m_CRLF +
+                "c=IN IP4 10.1.1.2" + m_CRLF +
+                "b=AS:2064" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "m=audio 49290 RTP/AVP 0" + m_CRLF +
+                "a=sendrecv" + m_CRLF +
+                "m=video 56674 RTP/AVP 96" + m_CRLF +
+                "b=TIAS:2000000" + m_CRLF +
+                "a=rtpmap:96 VP8/90000" + m_CRLF +
+                "a=sendrecv" + m_CRLF +
+                "a=rtcp-fb:* nack pli";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Debug.WriteLine(sdp.ToString());
+
+            Assert.AreEqual(2, sdp.Media.Count);
+            Assert.AreEqual(49290, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault().Port);
+            Assert.AreEqual(56674, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault().Port);
+        }
     }
 }

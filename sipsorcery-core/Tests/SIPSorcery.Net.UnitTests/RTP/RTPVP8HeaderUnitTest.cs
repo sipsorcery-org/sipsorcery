@@ -70,5 +70,35 @@ namespace SIPSorcery.Net.UnitTests.RTP
 
             Assert.AreEqual(rtpVP8Header.FirstPartitionSize, mirroredHeader.FirstPartitionSize);
         }
+
+        /// <summary>
+        /// Tests that the VP8 header is correctly parsed when a two byte picure ID is used.
+        /// </summary>
+        [TestMethod]
+        public void CheckLengthForTwoBytePicutreIDTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            byte[] rawHeader = new byte[] { 0x80, 0x80, 0x80, 0x01};
+
+            var vp8Header = RTPVP8Header.GetVP8Header(rawHeader);
+
+            Assert.AreEqual(4, vp8Header.PayloadDescriptorLength);
+        }
+
+        /// <summary>
+        /// Tests that the VP8 header is correctly parsed when a single byte picure ID is used.
+        /// </summary>
+        [TestMethod]
+        public void CheckLengthForSingleBytePicutreIDTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            byte[] rawHeader = new byte[] { 0x80, 0x80, 0x7F };
+
+            var vp8Header = RTPVP8Header.GetVP8Header(rawHeader);
+
+            Assert.AreEqual(3, vp8Header.PayloadDescriptorLength);
+        }
     }
 }

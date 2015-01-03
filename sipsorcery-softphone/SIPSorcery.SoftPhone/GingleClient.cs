@@ -142,7 +142,7 @@ namespace SIPSorcery.SoftPhone
             STUNMessage initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
             initMessage.AddUsernameAttribute(xmppSDP.IceUfrag + m_localSTUNUFrag);
             byte[] stunMessageBytes = initMessage.ToByteBuffer();
-            _audioChannel.SendRTPRaw(stunMessageBytes, stunMessageBytes.Length);
+            //_audioChannel.SendRTPRaw(stunMessageBytes, stunMessageBytes.Length);
         }
 
         /// <summary>

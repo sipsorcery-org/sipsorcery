@@ -31,7 +31,7 @@ namespace SIPSorcery.Net
         public bool StartOfVP8Partition;            // Should be set when the first payload octet is the start of a new VP8 partition.
         public byte PartitionIndex;                 // Denotes the VP8 partition index that the first payload octet of the packet belongs to.
         public bool IsPictureIDPresent;
-        public byte PictureID;
+        public ushort PictureID;
 
         // Payload Header Fields.
         public int FirstPartitionSize;              // The size of the first partition in bytes is calculated from the 19 bits in Size0, SIze1 & Size2 as: size = Size0 + (8 x Size1) + (2048 8 Size2).
@@ -45,10 +45,14 @@ namespace SIPSorcery.Net
             get { return _length;  }
         }
 
-        public RTPVP8Header()
+        private int _payloadDescriptorLength;
+        public int PayloadDescriptorLength
         {
-
+            get { return _payloadDescriptorLength; }
         }
+
+        public RTPVP8Header()
+        { }
 
         public static RTPVP8Header GetVP8Header(byte[] rtpPayload)
         {
@@ -60,7 +64,7 @@ namespace SIPSorcery.Net
             vp8Header.StartOfVP8Partition = ((rtpPayload[0] >> 4) & 0x01) == 1;
             vp8Header._length = 1;
             
-            // Is second byye being used.
+            // Is second byte being used.
             if(vp8Header.ExtendedControlBitsPresent)
             {
                 vp8Header.IsPictureIDPresent = ((rtpPayload[1] >> 7) & 0x01) == 1;
@@ -68,13 +72,26 @@ namespace SIPSorcery.Net
                 payloadHeaderStartIndex = 2;
             }
 
-            // Is third byte being used.
+            // Is the picture ID being used.
             if(vp8Header.IsPictureIDPresent)
             {
-                vp8Header.PictureID = rtpPayload[2];
-                vp8Header._length = 3;
-                payloadHeaderStartIndex = 3;
+                if (((rtpPayload[2] >> 7) & 0x01) == 1)
+                {
+                    // The Picure ID is using two bytes.
+                    vp8Header._length = 4;
+                    payloadHeaderStartIndex = 4;
+                    vp8Header.PictureID = BitConverter.ToUInt16(rtpPayload, 2);
+                }
+                else
+                {
+                    // The picture ID is using one byte.
+                    vp8Header.PictureID = rtpPayload[2];
+                    vp8Header._length = 3;
+                    payloadHeaderStartIndex = 3;
+                }
             }
+
+            vp8Header._payloadDescriptorLength = payloadHeaderStartIndex;
 
             // Payload header only on first packet in frame.
             if (vp8Header.StartOfVP8Partition)
@@ -98,13 +115,25 @@ namespace SIPSorcery.Net
             {
                 if (IsPictureIDPresent)
                 {
-                    _length = 3;
-                    return new byte[] { 0x80, 0x80, PictureID };
+                    if (PictureID > 127)
+                    {
+                        _length = 4;
+                        _payloadDescriptorLength = 4;
+                        byte[] pictureIDBytes = BitConverter.GetBytes(PictureID);
+                        return new byte[] { 0x90, 0x80, pictureIDBytes[1], pictureIDBytes[0] };
+                    }
+                    else
+                    {
+                        _length = 3;
+                        _payloadDescriptorLength = 3;
+                        return new byte[] { 0x90, 0x80, (byte)PictureID};
+                    }
                 }
                 else
                 {
                     // No partition header on continuation packets.
                     _length = 1;
+                    _payloadDescriptorLength = 1;
                     return new byte[] { 0x00 };
                 }
             }
@@ -114,12 +143,24 @@ namespace SIPSorcery.Net
 
                 if (IsPictureIDPresent)
                 {
-                    _length = 3;
-                    payloadDescriptor = new byte[] { 0x90, 0x80, PictureID };
+                    if (PictureID > 127)
+                    {
+                        _length = 4;
+                        _payloadDescriptorLength = 4;
+                        byte[] pictureIDBytes = BitConverter.GetBytes(PictureID);
+                        payloadDescriptor = new byte[] { 0x90, 0x80, pictureIDBytes[1], pictureIDBytes[0] };
+                    }
+                    else
+                    {
+                        _length = 3;
+                        _payloadDescriptorLength = 3;
+                        payloadDescriptor = new byte[] { 0x90, 0x80, (byte)PictureID };
+                    }
                 }
                 else
                 {
                     _length = 1;
+                    _payloadDescriptorLength = 1;
                     payloadDescriptor = new byte[] { 0x10 };
                 }
 

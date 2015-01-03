@@ -206,7 +206,12 @@ namespace SIPSorcery.SIP.App
                         }
                     }
 
-                    if (m_serverEndPoint != null)
+                    if (m_callCancelled)
+                    {
+                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Call was cancelled during DNS resolution of " + callURI.Host, Owner));
+                        FireCallFailed(this, "Cancelled by caller");
+                    }
+                    else if (m_serverEndPoint != null)
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Switching to " + SIPURI.ParseSIPURI(m_sipCallDescriptor.Uri).CanonicalAddress + " via " + m_serverEndPoint + ".", Owner));
 
@@ -420,13 +425,22 @@ namespace SIPSorcery.SIP.App
             }
             catch (ApplicationException appExcp)
             {
-                m_serverTransaction.CancelCall(appExcp.Message);
+                if (m_serverTransaction != null)
+                {
+                    m_serverTransaction.CancelCall(appExcp.Message);
+                }
+
                 FireCallFailed(this, appExcp.Message);
             }
             catch (Exception excp)
             {
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Exception UserAgentClient Call. " + excp.Message, Owner));
-                m_serverTransaction.CancelCall("Unknown exception");
+
+                if (m_serverTransaction != null)
+                {
+                    m_serverTransaction.CancelCall("Unknown exception");
+                }
+
                 FireCallFailed(this, excp.Message);
             }
         }
@@ -697,8 +711,11 @@ namespace SIPSorcery.SIP.App
                                             if (IPSocket.IsPrivateAddress(remoteUASAddress.ToString()) && m_sipCallDescriptor.MangleIPAddress != null)
                                             {
                                                 // If the response has arrived here on a private IP address then it must be
-                                                // for an local version install and an incoming call that needs it's response mangled.
-                                                publicIPAddress = m_sipCallDescriptor.MangleIPAddress.ToString();
+                                                // for a local version install and an incoming call that needs it's response mangled.
+                                                if(!IPSocket.IsPrivateAddress(m_sipCallDescriptor.MangleIPAddress.ToString()))
+                                                {
+                                                    publicIPAddress = m_sipCallDescriptor.MangleIPAddress.ToString();
+                                                }
                                             }
                                             else
                                             {

@@ -89,7 +89,7 @@ namespace SIPSorcery.SoftPhone
             int port = FreePort.FindNextAvailableUDPPort(DEFAULT_START_RTP_PORT);
             _rtpEndPoint = new IPEndPoint(_defaultLocalAddress, port);
             m_rtpChannel = new RTPChannel(_rtpEndPoint);
-            m_rtpChannel.SampleReceived += RTPChannelSampleReceived;
+            m_rtpChannel.OnFrameReady += RTPChannelSampleReceived;
 
             _audioLogger.Debug("RTP channel endpoint " + _rtpEndPoint.ToString());
         }
@@ -109,7 +109,7 @@ namespace SIPSorcery.SoftPhone
 
             var sdp = new SDP()
             {
-                SessionId = Crypto.GetRandomString(6),
+                SessionId = Crypto.GetRandomInt(6).ToString(),
                 Address = rtpIPAddress.ToString(),
                 SessionName = "sipsorcery",
                 Timing = "0 0",
@@ -132,10 +132,10 @@ namespace SIPSorcery.SoftPhone
         /// Allows an arbitrary block of bytes to be sent on the RTP channel. This is mainly used for the Gingle
         /// client which needs to send a STUN binding request to the Google Voice gateway.
         /// </summary>
-        public void SendRTPRaw(byte[] buffer, int length)
-        {
-            m_rtpChannel.SendRaw(buffer, length);
-        }
+        //public void SendRTPRaw(byte[] buffer, int length)
+        //{
+        //    m_rtpChannel.SendRaw(buffer, length);
+        //}
 
         /// <summary>
         /// Sets the remote end point for the RTP channel. This will be set from the SDP packet received from the remote
@@ -145,24 +145,23 @@ namespace SIPSorcery.SoftPhone
         public void SetRemoteRTPEndPoint(IPEndPoint remoteEndPoint)
         {
             _audioLogger.Debug("Remote RTP end point set as " + remoteEndPoint + ".");
-            m_rtpChannel.SetRemoteEndPoint(remoteEndPoint);
+            //m_rtpChannel.SetRemoteEndPoint(remoteEndPoint);
             m_waveInEvent.StartRecording();
             m_recordingStarted = true;
             _lastInputSampleReceivedAt = DateTime.Now;
         }
 
         /// <summary>
-        /// Event handler for receiving an RTP packet from the remote end of the VoIP call.
+        /// Event handler for receiving an RTP frmae from the remote end of the VoIP call.
         /// </summary>
-        /// <param name="rtpPacket">The full RTP packet received.</param>
-        /// <param name="payloadOffset">The position in the packet where the payload (audio portion) starts.</param>
-        private void RTPChannelSampleReceived(byte[] rtpPacket, int payloadOffset)
+        /// <param name="rtpFrame">The RTP frame received.</param>
+        private void RTPChannelSampleReceived(RTPFrame rtpFrame)
         {
-            if (rtpPacket != null)
+            if (rtpFrame != null && rtpFrame.FramePayload != null)
             {
-                for (int index = payloadOffset; index < rtpPacket.Length; index++)
+                for (int index = 0; index < rtpFrame.FramePayload.Length; index++)
                 {
-                    short pcm = MuLawDecoder.MuLawToLinearSample(rtpPacket[index]);
+                    short pcm = MuLawDecoder.MuLawToLinearSample(rtpFrame.FramePayload[index]);
                     byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
                     m_waveProvider.AddSamples(pcmSample, 0, 2);
                 }
@@ -190,7 +189,7 @@ namespace SIPSorcery.SoftPhone
                 sample[sampleIndex++] = ulawByte;
             }
 
-            m_rtpChannel.Send(sample, Convert.ToUInt32(sample.Length));
+            m_rtpChannel.SendRTPRaw(sample);
         }
 
         /// <summary>

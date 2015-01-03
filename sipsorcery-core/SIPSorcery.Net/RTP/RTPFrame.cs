@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+﻿ //-----------------------------------------------------------------------------
 // Filename: RTPFrame.cs
 //
 // Description: Represents a series of RTP packets that combine together to make a single media frame.
@@ -83,6 +83,19 @@ namespace SIPSorcery.Net
 
         public RTPFrame()
         { }
+
+        /// <summary>
+        /// Audio frames are generally contained within a single RTP packet. This method is a shortcut
+        /// to construct a frame from a single RTP pakcet.
+        /// </summary>
+        public static RTPFrame MakeSinglePacketFrame(RTPPacket rtpPacket)
+        {
+            RTPFrame frame = new RTPFrame();
+            frame.FramePayload = rtpPacket.Payload;
+            frame.Timestamp = rtpPacket.Header.Timestamp;
+
+            return frame;
+        }
 
         public void AddRTPPacket(RTPPacket rtpPacket, int payloadHeaderLength)
         {
