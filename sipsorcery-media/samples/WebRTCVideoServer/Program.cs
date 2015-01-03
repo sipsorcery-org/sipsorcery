@@ -97,7 +97,7 @@ a=rtpmap:100 VP8/90000
 
                 //ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
 
-                ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
+                //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromRawRTPFile("rtpPackets.txt"); });
 
@@ -106,6 +106,8 @@ a=rtpmap:100 VP8/90000
                 //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromVP8FramesFile("framesAndHeaders.txt"); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { ICMPListen(IPAddress.Parse(_localIPAddress)); });
+
+                ThreadPool.QueueUserWorkItem(delegate { CaptureVP8SamplesToFile("vp8sample", 1000); });
 
                 ManualResetEvent dontStopEvent = new ManualResetEvent(false);
                 dontStopEvent.WaitOne();
@@ -351,11 +353,11 @@ a=rtpmap:100 VP8/90000
                             {
                                 try
                                 {
-                                    if(client.LastTimestamp == 0)
+                                    if (client.LastTimestamp == 0)
                                     {
                                         client.LastTimestamp = RTSPSession.DateTimeToNptTimestamp32(DateTime.Now);
                                     }
-                                    else if(vp8Header.StartOfVP8Partition)
+                                    else if (vp8Header.StartOfVP8Partition)
                                     {
                                         client.LastTimestamp += 11520;
                                     }
@@ -839,6 +841,35 @@ a=rtpmap:100 VP8/90000
             {
                 Console.WriteLine("Exception SendRTPFromVP8FramesFile. " + excp);
             }
+        }
+
+        private static void CaptureVP8SamplesToFile(string filename, int sampleCount)
+        {
+            SIPSorceryMedia.VideoSampler videoSampler = new SIPSorceryMedia.VideoSampler();
+            videoSampler.Init();
+
+            int samples = 0;
+
+            using (StreamWriter sw = new StreamWriter(filename))
+            {
+                while (samples < sampleCount)
+                {
+                    var sample = videoSampler.GetSample();
+                    if (sample == null)
+                    {
+                        Console.WriteLine("Video sampler returned a null sample.");
+                    }
+                    else
+                    {
+                        sw.WriteLine(Convert.ToBase64String(sample.Buffer));
+                        Console.WriteLine(samples + " samples capture.");
+                    }
+
+                    samples++;
+                }
+            }
+
+            Console.WriteLine("Sample capture complete.");
         }
     }
 

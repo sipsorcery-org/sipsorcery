@@ -24,3 +24,8 @@ ffplay -rtsp_flags listen rtsp://10.1.1.2:1234/live.sdp
 // List direct show devices.
 ffmpeg -list_devices true -f dshow -i dummy
 ffmpeg -f dshow -list_options true -i video="Integrated Camera"
+
+// Webcam to Wowza
+ffmpeg -re -f dshow -framerate 30 -i video="FaceTime HD Camera (Built-in)" -vcodec libx264 -s 640x480 -quality realtime -crf 45 -b:v 500k -qmin 45 -qmax 60 -f rtsp rtsp://54.151.185.219:1935/live/vlc
+ffmpeg -re -f dshow -framerate 30 -i video="FaceTime HD Camera (Built-in)" -vcodec libx264 -s 640x480 -quality realtime -crf 45 -b:v 500k -qmin 45 -qmax 60 -f flv rtmp://54.151.185.219:1935/live/vlc
+

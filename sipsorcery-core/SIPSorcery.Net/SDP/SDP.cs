@@ -161,7 +161,7 @@ namespace SIPSorcery.Net
                 if (sdpDescription != null && sdpDescription.Trim().Length > 0)
                 {
                     SDP sdp = new SDP();
-                    SDPMediaAnnouncement media = new SDPMediaAnnouncement();
+                    SDPMediaAnnouncement activeAnnouncement = null;
 
                     string[] sdpLines = Regex.Split(sdpDescription, CRLF);
 
@@ -201,10 +201,14 @@ namespace SIPSorcery.Net
                             Match mediaMatch = Regex.Match(sdpLine.Substring(2).Trim(), @"(?<type>\w+)\s+(?<port>\d+)\s+(?<transport>\S+)\s+(?<formats>.*)$");
                             if (mediaMatch.Success)
                             {
-                                media.Media = SDPMediaTypes.GetSDPMediaType(mediaMatch.Result("${type}"));
-                                Int32.TryParse(mediaMatch.Result("${port}"), out media.Port);
-                                media.Transport = mediaMatch.Result("${transport}");
-                                media.ParseMediaFormats(mediaMatch.Result("${formats}"));
+                                SDPMediaAnnouncement announcement = new SDPMediaAnnouncement();
+                                announcement.Media = SDPMediaTypes.GetSDPMediaType(mediaMatch.Result("${type}"));
+                                Int32.TryParse(mediaMatch.Result("${port}"), out announcement.Port);
+                                announcement.Transport = mediaMatch.Result("${transport}");
+                                announcement.ParseMediaFormats(mediaMatch.Result("${formats}"));
+                                sdp.Media.Add(announcement);
+
+                                activeAnnouncement = announcement;
                             }
                             else
                             {
@@ -221,22 +225,29 @@ namespace SIPSorcery.Net
                         }
                         else if (sdpLine.Trim().StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX))
                         {
-                            Match formatAttributeMatch = Regex.Match(sdpLine.Trim(), SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
-                            if (formatAttributeMatch.Success)
+                            if (activeAnnouncement != null)
                             {
-                                int formatID;
-                                if (Int32.TryParse(formatAttributeMatch.Result("${id}"), out formatID))
+                                Match formatAttributeMatch = Regex.Match(sdpLine.Trim(), SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
+                                if (formatAttributeMatch.Success)
                                 {
-                                    media.AddFormatAttribute(formatID, formatAttributeMatch.Result("${attribute}"));
+                                    int formatID;
+                                    if (Int32.TryParse(formatAttributeMatch.Result("${id}"), out formatID))
+                                    {
+                                        activeAnnouncement.AddFormatAttribute(formatID, formatAttributeMatch.Result("${attribute}"));
+                                    }
+                                    else
+                                    {
+                                        logger.Warn("Invalid media format attribute in SDP: " + sdpLine);
+                                    }
                                 }
                                 else
                                 {
-                                    logger.Warn("Invalid media format attribute in SDP: " + sdpLine);
+                                    sdp.ExtraAttributes.Add(sdpLine);
                                 }
                             }
                             else
                             {
-                                sdp.ExtraAttributes.Add(sdpLine);
+                                logger.Warn("There was no active media announcement for a media format attribute, ignoring.");
                             }
                         }
                         else if (sdpLine.Trim().StartsWith("a=" + ICE_CANDIDATE_ATTRIBUTE_PREFIX))
@@ -254,7 +265,6 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                    sdp.Media.Add(media);
                     return sdp;
                 }
                 else

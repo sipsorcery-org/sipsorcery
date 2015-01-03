@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0B7CB4A2-B101-473E-B5A8-3B746A232647}"
 	ProjectSection(SolutionItems) = preProject
@@ -63,8 +63,8 @@ Global
 		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|x64.ActiveCfg = Release|x64
 		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|x64.Build.0 = Release|x64
-		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|x86.ActiveCfg = Release|x86
-		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|x86.Build.0 = Release|x86
+		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|x86.ActiveCfg = Release|Any CPU
+		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|x86.Build.0 = Release|Any CPU
 		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -87,8 +87,8 @@ Global
 		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Release|x64.ActiveCfg = Release|x64
 		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Release|x64.Build.0 = Release|x64
-		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Release|x86.ActiveCfg = Release|x86
-		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Release|x86.Build.0 = Release|x86
+		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Release|x86.ActiveCfg = Release|Any CPU
+		{01D01BC6-231F-4FD6-BADF-51C509AB495F}.Release|x86.Build.0 = Release|Any CPU
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
