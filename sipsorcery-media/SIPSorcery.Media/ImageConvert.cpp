@@ -4,7 +4,12 @@
 namespace SIPSorceryMedia {
 
 	ImageConvert::ImageConvert()
+	{ }
+
+	ImageConvert::~ImageConvert()
 	{
+		sws_freeContext(_swsContextRGBToYUV);
+		sws_freeContext(_swsContextYUVToRGB);
 	}
 
 	//int ImageConvert::ConvertRGBtoYUV(unsigned char* bmp, AVPixelFormat rgbSourceFormat, int width, int height, AVPixelFormat yuvOutputFormat, /* out */ array<Byte> ^% buffer)
@@ -14,9 +19,9 @@ namespace SIPSorceryMedia {
 		AVPixelFormat yuvOutputFormat = AV_PIX_FMT_YUV420P;
 
 		//SwsContext* swsContext = sws_getContext(width, height, AV_PIX_FMT_RGB24, width, height, AV_PIX_FMT_YUV420P, SWS_BILINEAR, NULL, NULL, NULL);
-		if (_swsContextRGBToYUV == NULL) {
-			_swsContextRGBToYUV = sws_getContext(width, height, rgbSourceFormat, width, height, yuvOutputFormat, SWS_BILINEAR, NULL, NULL, NULL);
-		}
+		//if (_swsContextRGBToYUV == NULL) {
+		_swsContextRGBToYUV = sws_getCachedContext(_swsContextRGBToYUV, width, height, rgbSourceFormat, width, height, yuvOutputFormat, SWS_BILINEAR, NULL, NULL, NULL);
+		//}
 
 		if (!_swsContextRGBToYUV) {
 			fprintf(stderr, "Could not initialize the conversion context in ImageConvert::ConvertRGBtoYUV.\n");
@@ -54,9 +59,9 @@ namespace SIPSorceryMedia {
 		AVPixelFormat yuvSourceFormat = AV_PIX_FMT_YUV420P;
 		AVPixelFormat rgbOutputFormat = AV_PIX_FMT_BGR24;
 
-		if (_swsContextYUVToRGB == NULL) {
-			_swsContextYUVToRGB = sws_getContext(width, height, yuvSourceFormat, width, height, rgbOutputFormat, SWS_BILINEAR, NULL, NULL, NULL);
-		}
+		//if (_swsContextYUVToRGB == NULL) {
+		_swsContextYUVToRGB = sws_getCachedContext(_swsContextYUVToRGB, width, height, yuvSourceFormat, width, height, rgbOutputFormat, SWS_BILINEAR, NULL, NULL, NULL);
+		//}
 
 		if (!_swsContextYUVToRGB) {
 			fprintf(stderr, "Could not initialize the conversion context in ImageConvert::ConvertRGBtoYUV.\n");

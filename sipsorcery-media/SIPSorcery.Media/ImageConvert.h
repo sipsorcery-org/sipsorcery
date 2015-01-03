@@ -19,6 +19,7 @@ namespace SIPSorceryMedia {
 	{
 	public:
 		ImageConvert();
+		~ImageConvert();
 		//int ConvertRGBtoYUV(unsigned char* bmp, AVPixelFormat rgbSourceFormat, int width, int height, AVPixelFormat yuvOutputFormat, /* out */ array<Byte> ^% buffer);
 		int ConvertRGBtoYUV(unsigned char* bmp, int width, int height, /* out */ array<Byte> ^% buffer);
 		int ConvertYUVToRGB(unsigned char* bmp, int width, int height, /* out */ array<Byte> ^% buffer);
@@ -27,6 +28,4 @@ namespace SIPSorceryMedia {
 		SwsContext* _swsContextRGBToYUV = NULL;
 		SwsContext* _swsContextYUVToRGB = NULL;
 	};
-
-
 }

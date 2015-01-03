@@ -176,7 +176,7 @@ namespace SIPSorcery.SoftPhone
                         OnLocalVideoError("A sample could not be acquired from the local webcam. Check that it is not already in use.");
                         break;
                     }
-                    else if(result != 0)
+                    else if (result != 0)
                     {
                         logger.Warn("A sample could not be acquired from the local webcam. Check that it is not already in use. Error code: " + result);
                         OnLocalVideoError("A sample could not be acquired from the local webcam. Check that it is not already in use. Error code: " + result);
@@ -224,7 +224,6 @@ namespace SIPSorcery.SoftPhone
 
                 videoSampler.Stop();
                 vpxEncoder.Dispose();
-
             }, cancellationToken);
         }
 
