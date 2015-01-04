@@ -220,7 +220,7 @@ namespace SIPSorcery.SIP
         /// Attempts to find the Content-Length header is a SIP header and extract it.
         /// </summary>
         /// <param name="buffer">The buffer to search in.</param>
-        /// <param name="start">The position in the buffer to start the serach from.</param>
+        /// <param name="start">The position in the buffer to start the search from.</param>
         /// <param name="end">The position in the buffer to stop the search at.</param>
         /// <returns></returns>
         public static int GetContentLength(byte[] buffer, int start, int end)
