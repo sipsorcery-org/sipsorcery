@@ -1,5 +1,3 @@
-#include "stdafx.h"
-
 using namespace System;
 using namespace System::Reflection;
 using namespace System::Runtime::CompilerServices;
@@ -16,7 +14,7 @@ using namespace System::Security::Permissions;
 [assembly:AssemblyConfigurationAttribute(L"")];
 [assembly:AssemblyCompanyAttribute(L"")];
 [assembly:AssemblyProductAttribute(L"SIPSorceryMedia")];
-[assembly:AssemblyCopyrightAttribute(L"Copyright (c) Aaron Clauson 2014")];
+[assembly:AssemblyCopyrightAttribute(L"Copyright (c) Aaron Clauson 2015")];
 [assembly:AssemblyTrademarkAttribute(L"")];
 [assembly:AssemblyCultureAttribute(L"")];
 

@@ -1,7 +1,5 @@
-#include "stdafx.h"
 #include <iostream>
 #include <msclr/marshal_cppstd.h>
-#include "stdafx.h"
 #include "SRTPManaged.h"
 
 using namespace System;

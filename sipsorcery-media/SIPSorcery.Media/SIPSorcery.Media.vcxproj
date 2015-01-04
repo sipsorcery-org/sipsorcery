@@ -113,7 +113,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>srtp.lib;Ws2_32.lib;vpxmdd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
+<AdditionalDependencies>srtp.lib;Ws2_32.lib;vpxmdd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\libs\x64</AdditionalLibraryDirectories>
       <TargetMachine>MachineX64</TargetMachine>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
@@ -146,7 +146,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>srtp.lib;Ws2_32.lib;</AdditionalDependencies>
+<AdditionalDependencies>srtp.lib;Ws2_32.lib;vpxmdd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\libs\x64</AdditionalLibraryDirectories>
       <TargetMachine>MachineX64</TargetMachine>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
@@ -162,7 +162,6 @@
     <ClInclude Include="MFVideoSampler.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SRTPManaged.h" />
-    <ClInclude Include="Stdafx.h" />
     <ClInclude Include="VPXEncoder.h" />
   </ItemGroup>
   <ItemGroup>
@@ -170,12 +169,6 @@
     <ClCompile Include="ImageConvert.cpp" />
     <ClCompile Include="MFVideoSampler.cpp" />
     <ClCompile Include="SRTPManaged.cpp" />
-    <ClCompile Include="Stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="VPXEncoder.cpp" />
   </ItemGroup>
   <ItemGroup>
