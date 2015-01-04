@@ -23,20 +23,6 @@ namespace SIPSorcery.SIP.Core.UnitTests
             log4net.Config.BasicConfigurator.Configure();
         }
 
-        private TestContext testContextInstance;
-
-        public TestContext TestContext
-        {
-            get
-            {
-                return testContextInstance;
-            }
-            set
-            {
-                testContextInstance = value;
-            }
-        }
-
         [TestMethod]
         public void SampleTest()
         {
