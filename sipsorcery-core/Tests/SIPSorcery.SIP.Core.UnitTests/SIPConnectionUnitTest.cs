@@ -13,6 +13,7 @@ namespace SIPSorcery.SIP.Core.UnitTests
     /// Summary description for SIPConnectionUnitTest
     /// </summary>
     [TestClass]
+    [DeploymentItem("App.config")]
     public class SIPConnectionUnitTest
     {
         private string CRLF = SIPConstants.CRLF;
@@ -66,9 +67,12 @@ Max-Forwards: 69
 Event: dialog
 
 ";
+
             byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
             int contentLength = SIPConnection.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
+
+            Console.WriteLine("Content-Length " + contentLength + ".");
 
             Assert.IsTrue(contentLength == 2393, "The content length was parsed incorrectly.");
         }
@@ -100,6 +104,8 @@ Event: dialog
 
             int contentLength = SIPConnection.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
+            Console.WriteLine("Content-Length " + contentLength + ".");
+
             Assert.IsTrue(contentLength == 2393, "The content length was parsed incorrectly.");
         }
 
@@ -129,6 +135,8 @@ Event: dialog
             byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
             int contentLength = SIPConnection.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
+
+            Console.WriteLine("Content-Length " + contentLength + ".");
 
             Assert.IsTrue(contentLength == 2393, "The content length was parsed incorrectly.");
         }
@@ -695,7 +703,7 @@ Event: dialog
         }
 
         /// <summary>
-        /// Tests that the Content-Length is correctly parsed when a compact header form is used.
+        /// Tests that the Content-Length is correctly parsed when the SIP Contact header has mixed case.
         /// </summary>
         [TestMethod]
         public void ContentLengthParseWhenMixedCaseTest()
