@@ -608,30 +608,29 @@ CRLF + CRLF +
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
-@"            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0
-Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport
-To: <sip:aaron@10.1.1.5>
-From: <sip:switchboard@10.1.1.5>;tag=1902440575
-Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a
-CSeq: 3 SUBSCRIBE
-Contact: <sip:10.1.1.5:62647;transport=tcp>
-Max-Forwards: 70
-Expires: 600
-Content-Length: 15
-Content-Type: text/text
-Event: dialog
-
-includesdp=true       
-
- 
- SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0
-Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport
-To: <sip:aaron@10.1.1.5>
-From: <sip:switchboard@10.1.1.5>;tag=1902440575
-Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a
-CSeq: 3 SUBSCRIBE
-
-SUBSCRIBE sip:aaron@10.1.1";
+@"            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
+"Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport" + CRLF +
+"To: <sip:aaron@10.1.1.5>" + CRLF +
+"From: <sip:switchboard@10.1.1.5>;tag=1902440575" + CRLF +
+"Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a" + CRLF +
+"CSeq: 3 SUBSCRIBE" + CRLF +
+"Contact: <sip:10.1.1.5:62647;transport=tcp>" + CRLF +
+"Max-Forwards: 70" + CRLF +
+"Expires: 600" + CRLF +
+"Content-Length: 15" + CRLF +
+"Content-Type: text/text" + CRLF +
+"Event: dialog" +
+CRLF + CRLF +
+"includesdp=true       " +
+CRLF +
+" SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
+"Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport" + CRLF +
+"To: <sip:aaron@10.1.1.5>" + CRLF +
+"From: <sip:switchboard@10.1.1.5>;tag=1902440575" + CRLF +
+"Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a" + CRLF +
+"CSeq: 3 SUBSCRIBE" + CRLF
++ CRLF + 
+"SUBSCRIBE sip:aaron@10.1.1";
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
@@ -648,7 +647,7 @@ SUBSCRIBE sip:aaron@10.1.1";
 
             Assert.IsTrue(result, "The result from processing the socket read should have been true.");
             Assert.IsTrue(sipMessages == 2, "The number of SIP messages parsed was incorrect.");
-            Assert.IsTrue(testConnection.SocketBufferEndPosition == 26, "The receive buffer end position was incorrect.");
+            Assert.AreEqual(26, testConnection.SocketBufferEndPosition, "The receive buffer end position was incorrect.");
             Assert.IsTrue(remainingBytes == "SUBSCRIBE sip:aaron@10.1.1", "The leftover bytes in the socket buffer were incorrect.");
         }
 
@@ -661,20 +660,19 @@ SUBSCRIBE sip:aaron@10.1.1";
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
-@"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0
-Via: SIP/2.0/TCP 10.1.1.5:4506;branch=z9hG4bKa4d17f991015b1d8b788f2ac54d66ec66811226a;rport
-Via: SIP/2.0/UDP 127.0.0.1:5060;branch=z9hG4bKc2224b79f5af4c4a9b1cd649890c6497;rport
-Via: SIP/2.0/UDP 127.0.0.1:5003;branch=z9hG4bK0495dc29b7eb40008779a75c3734c4c5;rport=5003;received=127.0.0.1
-To: <sip:10.1.1.5:62647;transport=tcp>;tag=1892981968
-From: <sip:127.0.0.1:5003>;tag=1555449860
-Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a
-CSeq: 4 NOTIFY
-CONTENT-LENGTH: 2393
-Contact: <sip:127.0.0.1:5003>
-Max-Forwards: 69
-Event: dialog
+@"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
+"Via: SIP/2.0/TCP 10.1.1.5:4506;branch=z9hG4bKa4d17f991015b1d8b788f2ac54d66ec66811226a;rport" + CRLF +
+"Via: SIP/2.0/UDP 127.0.0.1:5060;branch=z9hG4bKc2224b79f5af4c4a9b1cd649890c6497;rport" + CRLF +
+"Via: SIP/2.0/UDP 127.0.0.1:5003;branch=z9hG4bK0495dc29b7eb40008779a75c3734c4c5;rport=5003;received=127.0.0.1" + CRLF +
+"To: <sip:10.1.1.5:62647;transport=tcp>;tag=1892981968" + CRLF +
+"From: <sip:127.0.0.1:5003>;tag=1555449860" + CRLF +
+"Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a" + CRLF +
+"CSeq: 4 NOTIFY" + CRLF +
+"CONTENT-LENGTH: 2393" + CRLF +
+"Contact: <sip:127.0.0.1:5003>" + CRLF +
+"Max-Forwards: 69" + CRLF +
+"Event: dialog" + CRLF + CRLF;
 
-";
             byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
             int contentLength = SIPConnection.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
@@ -691,20 +689,19 @@ Event: dialog
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
-@"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0
-Via: SIP/2.0/TCP 10.1.1.5:4506;branch=z9hG4bKa4d17f991015b1d8b788f2ac54d66ec66811226a;rport
-Via: SIP/2.0/UDP 127.0.0.1:5060;branch=z9hG4bKc2224b79f5af4c4a9b1cd649890c6497;rport
-Via: SIP/2.0/UDP 127.0.0.1:5003;branch=z9hG4bK0495dc29b7eb40008779a75c3734c4c5;rport=5003;received=127.0.0.1
-To: <sip:10.1.1.5:62647;transport=tcp>;tag=1892981968
-From: <sip:127.0.0.1:5003>;tag=1555449860
-Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a
-CSeq: 4 NOTIFY
-CoNtENT-LengTH: 2393
-Contact: <sip:127.0.0.1:5003>
-Max-Forwards: 69
-Event: dialog
+@"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
+"Via: SIP/2.0/TCP 10.1.1.5:4506;branch=z9hG4bKa4d17f991015b1d8b788f2ac54d66ec66811226a;rport" + CRLF +
+"Via: SIP/2.0/UDP 127.0.0.1:5060;branch=z9hG4bKc2224b79f5af4c4a9b1cd649890c6497;rport" + CRLF +
+"Via: SIP/2.0/UDP 127.0.0.1:5003;branch=z9hG4bK0495dc29b7eb40008779a75c3734c4c5;rport=5003;received=127.0.0.1" + CRLF +
+"To: <sip:10.1.1.5:62647;transport=tcp>;tag=1892981968" + CRLF +
+"From: <sip:127.0.0.1:5003>;tag=1555449860" + CRLF +
+"Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a" + CRLF +
+"CSeq: 4 NOTIFY" + CRLF +
+"CoNtENT-LengTH: 2393" + CRLF +
+"Contact: <sip:127.0.0.1:5003>" + CRLF +
+"Max-Forwards: 69" + CRLF +
+"Event: dialog" + CRLF + CRLF;
 
-";
             byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
             int contentLength = SIPConnection.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
