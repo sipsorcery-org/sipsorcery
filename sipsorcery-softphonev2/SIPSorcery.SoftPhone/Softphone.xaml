@@ -4,7 +4,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     x:Class="SIPSorcery.SoftPhone.SoftPhone"
-    Title="SIPSorcery SoftPhone" Width="676" Background="#FF808080" HorizontalAlignment="Left"  mc:Ignorable="d" Closing="Window_Closing" Icon="favicon.ico" MinHeight="500" Height="472.667" MinWidth="664" Loaded="OnWindowLoaded">
+    Title="SIPSorcery SoftPhone" Width="676" Background="#FF808080" HorizontalAlignment="Left"  mc:Ignorable="d" Closing="Window_Closing" Icon="favicon.ico" MinHeight="435" Height="435" MinWidth="676" Loaded="OnWindowLoaded">
     <StackPanel>
         
 		<Border x:Name="_statusBorder" BorderBrush="#FF807FC3" BorderThickness="2" Margin="2" CornerRadius="3" VerticalAlignment="Top" Height="32" Background="#FFCCD0EA">

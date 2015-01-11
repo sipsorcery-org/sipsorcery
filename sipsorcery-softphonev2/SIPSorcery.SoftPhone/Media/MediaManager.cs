@@ -52,21 +52,15 @@ namespace SIPSorcery.SoftPhone
 {
     public class MediaManager
     {
-        private const int DEFAULT_START_RTP_PORT = 10000;
-        private const int RTP_MAX_PAYLOAD = 1400; //1452;
-        private const int TIMESTAMP_SPACING = 3000;
-
         private ILog logger = AppState.logger;
 
         private RTPManager _rtpManager;
         private AudioChannel _audioChannel;
-        //private MFVideoSampler _videoSampler;
         private VPXEncoder _vpxDecoder;
         private ImageConvert _imageConverter;
 
         private Task _localVideoSamplingTask;
         private CancellationTokenSource _localVideoSamplingCancelTokenSource;
-        //private VideoMode _localVideoMode;
         private bool _stop = false;
         private int _encodingSample = 1;
 
@@ -317,6 +311,21 @@ namespace SIPSorcery.SoftPhone
             {
                 logger.Error("Exception Media Manager Close. " + excp);
             }
+        }
+
+        /// <summary>
+        /// This method gets the media manager to pass local media samples to the RTP channel and then 
+        /// receive them back as the remote video stream. This tests that the codec and RTP packetisation
+        /// is working.
+        /// </summary>
+        public void RunLoopbackTest()
+        {
+            _rtpManager = new RTPManager(false, true);
+            _rtpManager.OnRemoteVideoSampleReady += EncodedVideoSampleReceived;
+            _rtpManager.OnRemoteAudioSampleReady += RemoteAudioSampleReceived;
+
+            var sdp = _rtpManager.GetSDP(false);
+            _rtpManager.SetRemoteSDP(sdp);
         }
     }
 }

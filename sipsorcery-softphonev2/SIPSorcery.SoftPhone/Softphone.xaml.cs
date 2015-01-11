@@ -54,6 +54,8 @@ namespace SIPSorcery.SoftPhone
 {
     public partial class SoftPhone : Window
     {
+        private const string VIDEO_LOOPBACK_CALL_DESTINATION = "loop";     // If this destination is called a video loopback call will be attempted.
+
         // Currently only supporting this mode(s) from local web cams. Extra work to convert other formats to bitmaps that can be displayed by WPF.
         private static readonly List<MFVideoSubTypesEnum> _supportedVideoModes = new List<MFVideoSubTypesEnum>() { MFVideoSubTypesEnum.MFVideoFormat_RGB24 };
 
@@ -118,7 +120,7 @@ namespace SIPSorcery.SoftPhone
             //    (message) => { logger.Debug(message); });
             //_sipRegistrationClient.Start();
 
-            
+
         }
 
         private void OnWindowLoaded(object sender, System.Windows.RoutedEventArgs e)
@@ -130,20 +132,6 @@ namespace SIPSorcery.SoftPhone
                 _mediaManager.OnLocalVideoSampleReady += LocalVideoSampleReady;
                 _mediaManager.OnRemoteVideoSampleReady += RemoteVideoSampleReady;
                 _mediaManager.OnLocalVideoError += LocalVideoError;
-
-                // Run a loopback test:
-                // Local Video -> Local RTP Sender -> Local RTP Receiver -> Remote Video Window
-
-                //RTPManager dummySenderRTPManager = new RTPManager();
-                //_mediaManager.OnLocalVideoEncodedSampleReady += dummySenderRTPManager.LocalVideoSampleReady;
-
-                //RTPManager dummyReceiverRTPManager = new RTPManager();
-                //dummyReceiverRTPManager.OnRemoteVideoSampleReady += _mediaManager.EncodedVideoSampleReceived;
-
-                //dummySenderRTPManager.SetRemoteRTPEndPoints(null, dummyReceiverRTPManager.LocalRTPEndPoint);
-                //dummyReceiverRTPManager.SetRemoteRTPEndPoints(null, dummySenderRTPManager.LocalRTPEndPoint);
-
-                // End loopback test.
 
                 if (_localVideoDevices.Items.Count == 0)
                 {
@@ -266,6 +254,23 @@ namespace SIPSorcery.SoftPhone
             {
                 SetStatusText(m_signallingStatus, "No call destination was specified.");
             }
+            else if (m_uriEntryTextBox.Text == VIDEO_LOOPBACK_CALL_DESTINATION)
+            {
+                if (_localVideoMode == null)
+                {
+                    LocalVideoError("Please start the local video and try again.");
+                }
+                else
+                {
+                    SetStatusText(m_signallingStatus, "Running video loopback test...");
+
+                    m_callButton.Visibility = Visibility.Collapsed;
+                    m_cancelButton.Visibility = Visibility.Collapsed;
+                    m_byeButton.Visibility = Visibility.Visible;
+
+                    _mediaManager.RunLoopbackTest();
+                }
+            }
             else
             {
                 SetStatusText(m_signallingStatus, "calling " + m_uriEntryTextBox.Text + ".");
@@ -306,7 +311,17 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void ByeButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _activeClient.Hangup();
+            if (_activeClient != null)
+            {
+                _activeClient.Hangup();
+            }
+            else
+            {
+                // If no active client then it must be a loopback test that's ending.
+                _mediaManager.EndCall();
+                SetStatusText(m_signallingStatus, "Ready");
+            }
+
             ResetToCallStartState();
         }
 
@@ -386,9 +401,9 @@ namespace SIPSorcery.SoftPhone
 
         private void RemoteVideoSampleReady(byte[] sample, int width, int height)
         {
-            if (_remoteWriteableBitmap == null)
+            this.Dispatcher.BeginInvoke(new Action(() =>
             {
-                this.Dispatcher.BeginInvoke(new Action(() =>
+                if (_remoteWriteableBitmap == null || _remoteWriteableBitmap.Width != width || _remoteWriteableBitmap.Height != height)
                 {
                     _remoteWriteableBitmap = new WriteableBitmap(
                         width,
@@ -400,13 +415,9 @@ namespace SIPSorcery.SoftPhone
 
                     _remoteVideo.Source = _remoteWriteableBitmap;
                     _remoteBitmapFullRectangle = new Int32Rect(0, 0, Convert.ToInt32(_remoteWriteableBitmap.Width), Convert.ToInt32(_remoteWriteableBitmap.Height));
+                }
 
-                }), System.Windows.Threading.DispatcherPriority.Normal);
-            }
-
-            if (sample != null && sample.Length > 0)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
+                if (sample != null && sample.Length > 0)
                 {
                     // Reserve the back buffer for updates.
                     _remoteWriteableBitmap.Lock();
@@ -418,9 +429,8 @@ namespace SIPSorcery.SoftPhone
 
                     // Release the back buffer and make it available for display.
                     _remoteWriteableBitmap.Unlock();
-
-                }), System.Windows.Threading.DispatcherPriority.Normal);
-            }
+                }
+            }), System.Windows.Threading.DispatcherPriority.Normal);
         }
 
         private void LocalVideoError(string error)
