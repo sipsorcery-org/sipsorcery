@@ -22,10 +22,10 @@
 #define CHECK_HR(hr, msg) if (HRHasFailed(hr, msg)) return hr;
 
 const unsigned int WIDTH = 640;
-const unsigned int HEIGHT = 400; // 480; // 400;
+const unsigned int HEIGHT = 480; // 480; // 400;
 const unsigned int STRIDE = 1280;
 const vpx_img_fmt VIDEO_INPUT_FORMAT = VPX_IMG_FMT_I420; // VPX_IMG_FMT_RGB24; // VPX_IMG_FMT_YUY2;
-const GUID MF_INPUT_FORMAT = MFVideoFormat_I420; // WMMEDIASUBTYPE_YUY2; // MFVideoFormat_RGB24; // MFVideoFormat_I420;
+const GUID MF_INPUT_FORMAT = MFVideoFormat_RGB24; // WMMEDIASUBTYPE_YUY2; // MFVideoFormat_RGB24; // MFVideoFormat_I420;
 
 IMFMediaSource *videoSource = NULL, *audioSource = NULL;
 UINT32 videoDeviceCount = 0, audioDeviceCount = 0;

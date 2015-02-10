@@ -702,5 +702,97 @@ namespace SIPSorcery.Web.Services
                 return new JSONResult<List<CDRJSON>>() { Success = false, Error = excp.Message };
             }
         }
+
+        public JSONResult<bool> DBWrite(string key, string value)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                if (customer.CustomerServiceLevel == CustomerServiceLevels.Free)
+                {
+                    return new JSONResult<bool>() { Success = false, Error = "Your service level of " + customer.CustomerServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method." };
+                }
+                else
+                {
+                    m_service.DBWrite(customer.Name, key, value);
+
+                    return new JSONResult<bool>() { Success = true, Result = true };
+                }
+            }
+            catch(Exception excp)
+            {
+                return new JSONResult<bool>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<bool> DBDelete(string key)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                if (customer.CustomerServiceLevel == CustomerServiceLevels.Free)
+                {
+                    return new JSONResult<bool>() { Success = false, Error = "Your service level of " + customer.CustomerServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method." };
+                }
+                else
+                {
+                    m_service.DBDelete(customer.Name, key);
+
+                    return new JSONResult<bool>() { Success = true, Result = true };
+                }
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<bool>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<string> DBRead(string key)
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                if (customer.CustomerServiceLevel == CustomerServiceLevels.Free)
+                {
+                    return new JSONResult<string>() { Success = false, Error = "Your service level of " + customer.CustomerServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method." };
+                }
+                else
+                {
+                    string keyValue = m_service.DBRead(customer.Name, key);
+
+                    return new JSONResult<string>() { Success = true, Result = keyValue };
+                }
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<string>() { Success = false, Error = excp.Message };
+            }
+        }
+
+        public JSONResult<List<string>> DBGetKeys()
+        {
+            try
+            {
+                var customer = AuthoriseRequest();
+
+                if (customer.CustomerServiceLevel == CustomerServiceLevels.Free)
+                {
+                    return new JSONResult<List<string>>() { Success = false, Error = "Your service level of " + customer.CustomerServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " method." };
+                }
+                else
+                {
+                    var keyList = m_service.DBGetKeys(customer.Name);
+
+                    return new JSONResult<List<string>>() { Success = true, Result = keyList };
+                }
+            }
+            catch (Exception excp)
+            {
+                return new JSONResult<List<string>>() { Success = false, Error = excp.Message };
+            }
+        }
     }
 }

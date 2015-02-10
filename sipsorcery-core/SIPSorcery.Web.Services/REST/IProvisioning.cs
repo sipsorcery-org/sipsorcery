@@ -165,5 +165,21 @@ namespace SIPSorcery.Web.Services
         [OperationContract]
         [WebGet(UriTemplate = "cdr/get?where={where}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
         JSONResult<List<CDRJSON>> GetCDRs(string where, int offset, int count);
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", UriTemplate = "keyvalue/write", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json, BodyStyle = WebMessageBodyStyle.WrappedRequest)]
+        JSONResult<bool> DBWrite(string key, string value);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "keyvalue/delete?key={key}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<bool> DBDelete(string key);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "keyvalue/read?key={key}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<string> DBRead(string key);
+
+        [OperationContract]
+        [WebGet(UriTemplate = "keyvalue/getkeys", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<List<string>> DBGetKeys();
     }
 }

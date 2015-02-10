@@ -377,48 +377,64 @@ namespace SIPSorcery.SoftPhone
 
         }
 
-        private void LocalVideoSampleReady(byte[] sample)
+        private void LocalVideoSampleReady(byte[] sample, int width, int height)
         {
             if (sample != null && sample.Length > 0)
             {
-                //BitmapDecoder bmpDecoder = BitmapDecoder.Create(new MemoryStream(sample), BitmapCreateOptions.None, BitmapCacheOption.None);
-                this.Dispatcher.BeginInvoke(new Action(() =>
+                if (sample != null && sample.Length > 0)
                 {
-                    // Reserve the back buffer for updates.
-                    _localWriteableBitmap.Lock();
+                    this.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        if (_localWriteableBitmap == null || _localWriteableBitmap.Width != width || _localWriteableBitmap.Height != height)
+                        {
+                            _localWriteableBitmap = new WriteableBitmap(
+                                width,
+                                height,
+                                96,
+                                96,
+                                PixelFormats.Bgr24, //PixelFormats.Bgr32,
+                                null);
 
-                    Marshal.Copy(sample, 0, _localWriteableBitmap.BackBuffer, sample.Length);
+                            _localVideo.Source = _localWriteableBitmap;
+                            _localBitmapFullRectangle = new Int32Rect(0, 0, Convert.ToInt32(_localWriteableBitmap.Width), Convert.ToInt32(_localWriteableBitmap.Height));
+                        }
 
-                    // Specify the area of the bitmap that changed.
-                    _localWriteableBitmap.AddDirtyRect(_localBitmapFullRectangle);
+                        // Reserve the back buffer for updates.
+                        _localWriteableBitmap.Lock();
 
-                    // Release the back buffer and make it available for display.
-                    _localWriteableBitmap.Unlock();
+                        Marshal.Copy(sample, 0, _localWriteableBitmap.BackBuffer, sample.Length);
 
-                }), System.Windows.Threading.DispatcherPriority.Normal);
+                        // Specify the area of the bitmap that changed.
+                        _localWriteableBitmap.AddDirtyRect(_localBitmapFullRectangle);
+
+                        // Release the back buffer and make it available for display.
+                        _localWriteableBitmap.Unlock();
+
+                    }), System.Windows.Threading.DispatcherPriority.Normal);
+                }
             }
         }
 
         private void RemoteVideoSampleReady(byte[] sample, int width, int height)
         {
-            this.Dispatcher.BeginInvoke(new Action(() =>
+            if (sample != null && sample.Length > 0)
             {
-                if (_remoteWriteableBitmap == null || _remoteWriteableBitmap.Width != width || _remoteWriteableBitmap.Height != height)
+                this.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    _remoteWriteableBitmap = new WriteableBitmap(
-                        width,
-                        height,
-                        96,
-                        96,
-                        PixelFormats.Bgr24,
-                        null);
+                    if (_remoteWriteableBitmap == null || _remoteWriteableBitmap.Width != width || _remoteWriteableBitmap.Height != height)
+                    {
+                        _remoteWriteableBitmap = new WriteableBitmap(
+                            width,
+                            height,
+                            96,
+                            96,
+                            PixelFormats.Bgr24,
+                            null);
 
-                    _remoteVideo.Source = _remoteWriteableBitmap;
-                    _remoteBitmapFullRectangle = new Int32Rect(0, 0, Convert.ToInt32(_remoteWriteableBitmap.Width), Convert.ToInt32(_remoteWriteableBitmap.Height));
-                }
+                        _remoteVideo.Source = _remoteWriteableBitmap;
+                        _remoteBitmapFullRectangle = new Int32Rect(0, 0, Convert.ToInt32(_remoteWriteableBitmap.Width), Convert.ToInt32(_remoteWriteableBitmap.Height));
+                    }
 
-                if (sample != null && sample.Length > 0)
-                {
                     // Reserve the back buffer for updates.
                     _remoteWriteableBitmap.Lock();
 
@@ -429,8 +445,8 @@ namespace SIPSorcery.SoftPhone
 
                     // Release the back buffer and make it available for display.
                     _remoteWriteableBitmap.Unlock();
-                }
-            }), System.Windows.Threading.DispatcherPriority.Normal);
+                }), System.Windows.Threading.DispatcherPriority.Normal);
+            }
         }
 
         private void LocalVideoError(string error)
@@ -482,17 +498,6 @@ namespace SIPSorcery.SoftPhone
                 _startLocalVideoButton.IsEnabled = false;
                 _stopLocalVideoButton.IsEnabled = true;
                 _localVideoDevices.IsEnabled = false;
-
-                _localWriteableBitmap = new WriteableBitmap(
-                    Convert.ToInt32(_localVideoMode.Width),
-                     Convert.ToInt32(_localVideoMode.Height),
-                    96,
-                    96,
-                    PixelFormats.Bgr24,
-                    null);
-
-                _localVideo.Source = _localWriteableBitmap;
-                _localBitmapFullRectangle = new Int32Rect(0, 0, Convert.ToInt32(_localWriteableBitmap.Width), Convert.ToInt32(_localWriteableBitmap.Height));
 
                 _mediaManager.StartLocalVideo(_localVideoMode);
             }

@@ -97,7 +97,7 @@ a=rtpmap:100 VP8/90000
 
                 //ThreadPool.QueueUserWorkItem(delegate { RelayRTP(_rtpClient); });
 
-                //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
+                ThreadPool.QueueUserWorkItem(delegate { SendRTPFromCamera(); });
 
                 //ThreadPool.QueueUserWorkItem(delegate { SendRTPFromRawRTPFile("rtpPackets.txt"); });
 
@@ -107,7 +107,7 @@ a=rtpmap:100 VP8/90000
 
                 //ThreadPool.QueueUserWorkItem(delegate { ICMPListen(IPAddress.Parse(_localIPAddress)); });
 
-                ThreadPool.QueueUserWorkItem(delegate { CaptureVP8SamplesToFile("vp8sample", 1000); });
+                //ThreadPool.QueueUserWorkItem(delegate { CaptureVP8SamplesToFile("vp8sample", 1000); });
 
                 ManualResetEvent dontStopEvent = new ManualResetEvent(false);
                 dontStopEvent.WaitOne();

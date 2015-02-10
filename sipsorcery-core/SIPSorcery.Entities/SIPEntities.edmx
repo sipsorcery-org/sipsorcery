@@ -4,26 +4,27 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-    <Schema Namespace="Entities.Store" Alias="Self" Provider="MySql.Data.MySqlClient" ProviderManifestToken="5.5" xmlns="http://schemas.microsoft.com/ado/2009/02/edm/ssdl">
+    <Schema Namespace="Entities.Store" Alias="Self" Provider="MySql.Data.MySqlClient" ProviderManifestToken="5.5" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/02/edm/ssdl">
         <EntityContainer Name="EntitiesStoreContainer">
-          <EntitySet Name="cdr" EntityType="Entities.Store.cdr" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="customeraccount" EntityType="Entities.Store.customeraccount" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="customers" EntityType="Entities.Store.customers" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="rate" EntityType="Entities.Store.rate" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="rtcc" EntityType="Entities.Store.rtcc" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="simplewizardrule" EntityType="Entities.Store.simplewizardrule" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="sipaccounts" EntityType="Entities.Store.sipaccounts" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="sipdialogues" EntityType="Entities.Store.sipdialogues" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="sipdialplanlookups" EntityType="Entities.Store.sipdialplanlookups" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="sipdialplanoptions" EntityType="Entities.Store.sipdialplanoptions" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="sipdialplanproviders" EntityType="Entities.Store.sipdialplanproviders" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="sipdialplanroutes" EntityType="Entities.Store.sipdialplanroutes" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="sipdialplans" EntityType="Entities.Store.sipdialplans" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="sipdomains" EntityType="Entities.Store.sipdomains" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="sipproviderbindings" EntityType="Entities.Store.sipproviderbindings" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="sipproviders" EntityType="Entities.Store.sipproviders" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="sipregistrarbindings" EntityType="Entities.Store.sipregistrarbindings" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
-          <EntitySet Name="webcallback" EntityType="Entities.Store.webcallback" store:Type="Tables" Schema="sipsorcery" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" />
+          <EntitySet Name="cdr" EntityType="Entities.Store.cdr" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="customeraccount" EntityType="Entities.Store.customeraccount" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="customers" EntityType="Entities.Store.customers" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="dialplandata" EntityType="Entities.Store.dialplandata" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="rate" EntityType="Entities.Store.rate" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="rtcc" EntityType="Entities.Store.rtcc" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="simplewizardrule" EntityType="Entities.Store.simplewizardrule" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="sipaccounts" EntityType="Entities.Store.sipaccounts" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="sipdialogues" EntityType="Entities.Store.sipdialogues" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="sipdialplanlookups" EntityType="Entities.Store.sipdialplanlookups" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="sipdialplanoptions" EntityType="Entities.Store.sipdialplanoptions" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="sipdialplanproviders" EntityType="Entities.Store.sipdialplanproviders" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="sipdialplanroutes" EntityType="Entities.Store.sipdialplanroutes" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="sipdialplans" EntityType="Entities.Store.sipdialplans" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="sipdomains" EntityType="Entities.Store.sipdomains" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="sipproviderbindings" EntityType="Entities.Store.sipproviderbindings" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="sipproviders" EntityType="Entities.Store.sipproviders" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="sipregistrarbindings" EntityType="Entities.Store.sipregistrarbindings" store:Type="Tables" Schema="sipsorcery" />
+          <EntitySet Name="webcallback" EntityType="Entities.Store.webcallback" store:Type="Tables" Schema="sipsorcery" />
           <AssociationSet Name="rtcc_ibfk_1" Association="Entities.Store.rtcc_ibfk_1">
             <End Role="cdr" EntitySet="cdr" />
             <End Role="rtcc" EntitySet="rtcc" />
@@ -156,6 +157,15 @@
           <Property Name="RTCCInternationalPrefixes" Type="varchar" MaxLength="32" />
           <Property Name="Salt" Type="varchar" Nullable="false" MaxLength="64" />
           <Property Name="FTPPrefix" Type="varchar" MaxLength="8" />
+        </EntityType>
+        <EntityType Name="dialplandata">
+          <Key>
+            <PropertyRef Name="dataowner" />
+            <PropertyRef Name="datakey" />
+          </Key>
+          <Property Name="dataowner" Type="varchar" Nullable="false" MaxLength="32" />
+          <Property Name="datakey" Type="varchar" Nullable="false" MaxLength="64" />
+          <Property Name="datavalue" Type="varchar" Nullable="false" MaxLength="10000" />
         </EntityType>
         <EntityType Name="rate">
           <Key>
@@ -604,6 +614,7 @@
             <End Role="CDR" EntitySet="CDRs" />
             <End Role="RTCC" EntitySet="RTCCs1" />
           </AssociationSet>
+          <EntitySet Name="DialPlanData" EntityType="SIPSorcery.Entities.DialPlanDataEntry" />
         </EntityContainer>
         <EntityType Name="SIPDialplanLookup">
           <Key>
@@ -1082,6 +1093,15 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <EntityType Name="DialPlanDataEntry">
+          <Key>
+            <PropertyRef Name="DataOwner" />
+            <PropertyRef Name="DataKey" />
+          </Key>
+          <Property Type="String" Name="DataOwner" Nullable="false" MaxLength="32" FixedLength="false" Unicode="false" />
+          <Property Type="String" Name="DataKey" Nullable="false" MaxLength="64" FixedLength="false" Unicode="false" />
+          <Property Type="String" Name="DataValue" Nullable="false" MaxLength="10000" FixedLength="false" Unicode="false" />
+        </EntityType>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -1471,6 +1491,15 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
+          <EntitySetMapping Name="DialPlanData">
+            <EntityTypeMapping TypeName="SIPSorcery.Entities.DialPlanDataEntry">
+              <MappingFragment StoreEntitySet="dialplandata">
+                <ScalarProperty Name="DataValue" ColumnName="datavalue" />
+                <ScalarProperty Name="DataKey" ColumnName="datakey" />
+                <ScalarProperty Name="DataOwner" ColumnName="dataowner" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
         </EntityContainerMapping>
       </Mapping>
     </edmx:Mappings>
@@ -1539,6 +1568,7 @@
         <EntityTypeShape EntityType="SIPSorcery.Entities.Rate" Width="1.75" PointX="5.75" PointY="14.25" Height="2.0002864583333331" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.RTCC" Width="2" PointX="5.75" PointY="0.5" />
         <AssociationConnector Association="SIPSorcery.Entities.rtcc_ibfk_1" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.DialPlanDataEntry" Width="1.5" PointX="9.375" PointY="12.75" Height="1.5956835937500031" />
       </Diagram>
     </Diagrams>
   </Designer>

@@ -365,6 +365,22 @@ namespace SIPSorcery.Entities
             }
         }
         private ObjectSet<RTCC> _RTCCs1;
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        public ObjectSet<DialPlanDataEntry> DialPlanData
+        {
+            get
+            {
+                if ((_DialPlanData == null))
+                {
+                    _DialPlanData = base.CreateObjectSet<DialPlanDataEntry>("DialPlanData");
+                }
+                return _DialPlanData;
+            }
+        }
+        private ObjectSet<DialPlanDataEntry> _DialPlanData;
 
         #endregion
 
@@ -512,6 +528,14 @@ namespace SIPSorcery.Entities
         public void AddToRTCCs1(RTCC rTCC)
         {
             base.AddObject("RTCCs1", rTCC);
+        }
+    
+        /// <summary>
+        /// Deprecated Method for adding a new object to the DialPlanData EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
+        /// </summary>
+        public void AddToDialPlanData(DialPlanDataEntry dialPlanDataEntry)
+        {
+            base.AddObject("DialPlanData", dialPlanDataEntry);
         }
 
         #endregion
@@ -2443,6 +2467,118 @@ namespace SIPSorcery.Entities
         private global::System.Int32 _RatePlan;
         partial void OnRatePlanChanging(global::System.Int32 value);
         partial void OnRatePlanChanged();
+
+        #endregion
+
+    
+    }
+    
+    /// <summary>
+    /// No Metadata Documentation available.
+    /// </summary>
+    [EdmEntityTypeAttribute(NamespaceName="SIPSorcery.Entities", Name="DialPlanDataEntry")]
+    [Serializable()]
+    [DataContractAttribute(IsReference=true)]
+    public partial class DialPlanDataEntry : EntityObject
+    {
+        #region Factory Method
+    
+        /// <summary>
+        /// Create a new DialPlanDataEntry object.
+        /// </summary>
+        /// <param name="dataOwner">Initial value of the DataOwner property.</param>
+        /// <param name="dataKey">Initial value of the DataKey property.</param>
+        /// <param name="dataValue">Initial value of the DataValue property.</param>
+        public static DialPlanDataEntry CreateDialPlanDataEntry(global::System.String dataOwner, global::System.String dataKey, global::System.String dataValue)
+        {
+            DialPlanDataEntry dialPlanDataEntry = new DialPlanDataEntry();
+            dialPlanDataEntry.DataOwner = dataOwner;
+            dialPlanDataEntry.DataKey = dataKey;
+            dialPlanDataEntry.DataValue = dataValue;
+            return dialPlanDataEntry;
+        }
+
+        #endregion
+
+        #region Primitive Properties
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String DataOwner
+        {
+            get
+            {
+                return _DataOwner;
+            }
+            set
+            {
+                if (_DataOwner != value)
+                {
+                    OnDataOwnerChanging(value);
+                    ReportPropertyChanging("DataOwner");
+                    _DataOwner = StructuralObject.SetValidValue(value, false);
+                    ReportPropertyChanged("DataOwner");
+                    OnDataOwnerChanged();
+                }
+            }
+        }
+        private global::System.String _DataOwner;
+        partial void OnDataOwnerChanging(global::System.String value);
+        partial void OnDataOwnerChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String DataKey
+        {
+            get
+            {
+                return _DataKey;
+            }
+            set
+            {
+                if (_DataKey != value)
+                {
+                    OnDataKeyChanging(value);
+                    ReportPropertyChanging("DataKey");
+                    _DataKey = StructuralObject.SetValidValue(value, false);
+                    ReportPropertyChanged("DataKey");
+                    OnDataKeyChanged();
+                }
+            }
+        }
+        private global::System.String _DataKey;
+        partial void OnDataKeyChanging(global::System.String value);
+        partial void OnDataKeyChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.String DataValue
+        {
+            get
+            {
+                return _DataValue;
+            }
+            set
+            {
+                OnDataValueChanging(value);
+                ReportPropertyChanging("DataValue");
+                _DataValue = StructuralObject.SetValidValue(value, false);
+                ReportPropertyChanged("DataValue");
+                OnDataValueChanged();
+            }
+        }
+        private global::System.String _DataValue;
+        partial void OnDataValueChanging(global::System.String value);
+        partial void OnDataValueChanged();
 
         #endregion
 

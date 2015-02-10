@@ -350,6 +350,19 @@ namespace SIPSorcery.SoftPhone
 
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
+                if(sipResponse.Header.ContentType != _sdpMimeContentType)
+                {
+                    // Payload not SDP, I don't understand :(.
+                    StatusMessage("Call was hungup as the answer response content type was not recognised: " + sipResponse.Header.ContentType + ". :(");
+                    Hangup();
+                }
+                else if(sipResponse.Body.IsNullOrBlank())
+                {
+                    // They said SDP but didn't give me any :(.
+                    StatusMessage("Call was hungup as the answer response had an empty SDP payload. :(");
+                    Hangup();
+                }
+
                 SDP sdpAnswer = SDP.ParseSDPDescription(sipResponse.Body);
                 _mediaManager.SetRemoteSDP(sdpAnswer);
                 CallAnswer();

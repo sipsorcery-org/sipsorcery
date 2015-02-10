@@ -1119,7 +1119,7 @@ namespace SIPSorcery.Entities
 
                 string newDialPlanName = existingAccount.DialPlanName + " Copy";
 
-                if(sipSorceryEntities.SIPDialPlans.Any(x => x.DialPlanName.ToLower() == newDialPlanName.ToLower() && x.Owner.ToLower() == authUser.ToLower()))
+                if (sipSorceryEntities.SIPDialPlans.Any(x => x.DialPlanName.ToLower() == newDialPlanName.ToLower() && x.Owner.ToLower() == authUser.ToLower()))
                 {
                     int attempts = 2;
                     string newNameAttempt = newDialPlanName + " " + attempts.ToString();
@@ -1388,7 +1388,7 @@ namespace SIPSorcery.Entities
                 if (where != null)
                 {
                     // The CDR entity uses Direction where the JSON uses CallDirection.
-                    where = Regex.Replace(where, "calldirection", "Direction", RegexOptions.IgnoreCase);  
+                    where = Regex.Replace(where, "calldirection", "Direction", RegexOptions.IgnoreCase);
 
                     query = query.Where(DynamicExpression.ParseLambda<CDR, bool>(where));
                 }
@@ -1413,7 +1413,7 @@ namespace SIPSorcery.Entities
                 if (where != null)
                 {
                     // The CDR entity uses Direction where the JSON uses CallDirection.
-                    where = Regex.Replace(where, "calldirection", "Direction", RegexOptions.IgnoreCase);  
+                    where = Regex.Replace(where, "calldirection", "Direction", RegexOptions.IgnoreCase);
 
                     query = query.Where(DynamicExpression.ParseLambda<CDR, bool>(where));
                 }
@@ -1733,6 +1733,69 @@ namespace SIPSorcery.Entities
 
                 sipSorceryEntities.Rates.DeleteObject(existingRate);
                 sipSorceryEntities.SaveChanges();
+            }
+        }
+
+        #endregion
+
+        #region Key-Value Store.
+
+        public void DBWrite(string authUsername, string key, string value)
+        {
+            using (var entities = new SIPSorceryEntities())
+            {
+                var existingEntry = entities.DialPlanData.Where(x => x.DataOwner == authUsername && x.DataKey == key).SingleOrDefault();
+
+                if (existingEntry != null)
+                {
+                    existingEntry.DataValue = value;
+                }
+                else
+                {
+                    var newEntry = new DialPlanDataEntry() { DataOwner = authUsername, DataKey = key, DataValue = value };
+                    entities.AddToDialPlanData(newEntry);
+                }
+
+                entities.SaveChanges();
+            }
+        }
+
+        public void DBDelete(string authUsername, string key)
+        {
+            using (var entities = new SIPSorceryEntities())
+            {
+                var existingEntry = entities.DialPlanData.Where(x => x.DataOwner == authUsername && x.DataKey == key).SingleOrDefault();
+
+                if (existingEntry != null)
+                {
+                    entities.DeleteObject(existingEntry);
+                    entities.SaveChanges();
+                }
+            }
+        }
+
+        public string DBRead(string authUsername, string key)
+        {
+            using (var entities = new SIPSorceryEntities())
+            {
+                var existingEntry = entities.DialPlanData.Where(x => x.DataOwner == authUsername && x.DataKey == key).SingleOrDefault();
+
+                if (existingEntry != null)
+                {
+                    return existingEntry.DataValue;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
+        public List<string> DBGetKeys(string authUsername)
+        {
+            using (var entities = new SIPSorceryEntities())
+            {
+                return (from entry in entities.DialPlanData where entry.DataOwner == authUsername select entry.DataKey).ToList();
             }
         }
 
