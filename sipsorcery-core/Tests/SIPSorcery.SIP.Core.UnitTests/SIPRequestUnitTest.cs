@@ -1048,5 +1048,30 @@ namespace SIPSorcery.SIP.Core.UnitTests
 
             Console.WriteLine(inviteReq.ToString());
         }
+
+        [TestMethod]
+        public void ParseACKWithDomainNameInViaTest()
+        {
+            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sipMsg =
+                "ACK sip:67.222.131.147 SIP/2.0" + m_CRLF +
+                "Via: SIP/2.0/UDP 1234.s1.minisipserver.com;branch=z9hG4bK-MSS-508bd56b768a2403;rport" + m_CRLF +
+                "To: \"300\" <sip:300@sipsorcery.com>;tag=XPGJDZQUZD" + m_CRLF +
+                "From: \"user\" <sip:aaronminisip@sipsorcery.com>;tag=c76ba46e" + m_CRLF +
+                "Call-ID: A0D069D5C4FF31D9A627957CMSS33C800AB." + m_CRLF +
+                "CSeq: 2 ACK" + m_CRLF +
+                "Max-Forwards: 70" + m_CRLF +
+                "User-Agent: miniSIPServer Cloud" + m_CRLF +
+                "Proxy-Authorization: Digest username=\"user\",realm=\"sipsorcery.com\",nonce=\"13046264131868153844\",uri=\"sip:300@sipsorcery.com\",response=\"7b3b69c82a8ca80e5d6c58d4be652a79\",opaque=\"\",algorithm=MD5" + m_CRLF +
+                "Content-Length: 0" + m_CRLF + m_CRLF;
+
+            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest ackReq = SIPRequest.ParseSIPRequest(sipMessage);
+
+            Console.WriteLine(ackReq.ToString());
+
+            Console.WriteLine("-----------------------------------------");
+        }
     }
 }

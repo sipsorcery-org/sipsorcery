@@ -184,6 +184,7 @@
     <Compile Include="SIPHeaderUnitTest.cs" />
     <Compile Include="SIPRequestUnitTest.cs" />
     <Compile Include="SIPURIUnitTest.cs" />
+    <Compile Include="SIPEndPointTest.cs" />
     <Compile Include="SIPUserFieldUnitTest.cs" />
     <Compile Include="SIPViaHeaderUnitTest.cs" />
     <Compile Include="TortureTests.cs" />

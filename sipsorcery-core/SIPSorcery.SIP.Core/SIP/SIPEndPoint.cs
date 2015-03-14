@@ -7,10 +7,6 @@ using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
 using log4net;
 
-#if UNITTEST
-using NUnit.Framework;
-#endif
-
 namespace SIPSorcery.SIP
 {
     /// <summary>
@@ -140,9 +136,9 @@ namespace SIPSorcery.SIP
 
                 return new SIPEndPoint(protocol, IPAddress.Parse(ipAddress), port);
             }
-            catch (Exception excp)
+            catch //(Exception excp)
             {
-                logger.Error("Exception ParseSIPEndPoint (sipEndPointStr=" + sipEndPointStr + "). " + excp.Message);
+                //logger.Error("Exception ParseSIPEndPoint (sipEndPointStr=" + sipEndPointStr + "). " + excp.Message);
                 throw;
             }
         }
@@ -222,169 +218,5 @@ namespace SIPSorcery.SIP
         {
             return new IPEndPoint(Address, Port);
         }
-
-        #region Unit testing.
-
-        #if UNITTEST
-
-        [TestFixture]
-        public class SIPEndPointUnitTest {
-            [TestFixtureSetUp]
-            public void Init() { }
-
-            [TestFixtureTearDown]
-            public void Dispose() { }
-
-            [Test]
-            public void SampleTest() {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-                Assert.IsTrue(true, "True was false.");
-            }
-
-            [Test]
-            public void AllFieldsParseTest() {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                string sipEndPointStr = "sips:10.0.0.100:5060;lr;transport=tcp;";
-                SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
-
-                Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
-
-                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.tls, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
-
-                Assert.IsTrue(true, "True was false.");
-            }
-
-            [Test]
-            public void HostOnlyParseTest() {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                string sipEndPointStr = "10.0.0.100";
-                SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
-
-                Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
-
-                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
-
-                Assert.IsTrue(true, "True was false.");
-            }
-
-            [Test]
-            public void HostAndSchemeParseTest() {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                string sipEndPointStr = "sip:10.0.0.100";
-                SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
-
-                Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
-
-                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
-
-                Assert.IsTrue(true, "True was false.");
-            }
-
-            [Test]
-            public void HostAndPortParseTest() {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                string sipEndPointStr = "10.0.0.100:5065";
-                SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
-
-                Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
-
-                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Port == 5065, "The SIPEndPoint port was incorrectly parsed.");
-
-                Assert.IsTrue(true, "True was false.");
-            }
-
-            [Test]
-            public void HostAndTransportParseTest() {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                string sipEndPointStr = "10.0.0.100;transport=tcp";
-                SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
-
-                Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
-
-                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.tcp, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
-
-                Assert.IsTrue(true, "True was false.");
-            }
-
-            [Test]
-            public void SchemeHostPortParseTest() {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                string sipEndPointStr = "sips:10.0.0.100:5063";
-                SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
-
-                Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
-
-                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.tls, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Port == 5063, "The SIPEndPoint port was incorrectly parsed.");
-
-                Assert.IsTrue(true, "True was false.");
-            }
-
-            [Test]
-            public void SchemeHostTransportParseTest() {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                string sipEndPointStr = "sip:10.0.0.100:5063;lr;tag=123;transport=tcp;tag2=abcd";
-                SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
-
-                Console.WriteLine("SIPEndPoint=" + sipEndPoint.ToString() + ".");
-
-                Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.tcp, "The SIPEndPoint protocol was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
-                Assert.IsTrue(sipEndPoint.Port == 5063, "The SIPEndPoint port was incorrectly parsed.");
-
-                Assert.IsTrue(true, "True was false.");
-            }
-
-            [Test]
-            public void EqualityTestNoPostHostTest() {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                SIPEndPoint sipEP1 = SIPEndPoint.ParseSIPEndPoint("10.0.0.100");
-                SIPEndPoint sipEP2 = SIPEndPoint.ParseSIPEndPoint("10.0.0.100:5060");
-
-                Assert.IsTrue(sipEP1 == sipEP2, "The SIP end points should have been detected as equal.");
-            }
-
-            [Test]
-            public void EqualityTestTLSHostTest() {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                SIPEndPoint sipEP1 = SIPEndPoint.ParseSIPEndPoint("sips:10.0.0.100");
-                SIPEndPoint sipEP2 = SIPEndPoint.ParseSIPEndPoint("10.0.0.100:5061;transport=tls");
-
-                Assert.IsTrue(sipEP1 == sipEP2, "The SIP end points should have been detected as equal.");
-            }
-
-            [Test]
-            public void EqualityTestRouteTest() {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                SIPEndPoint sipEP1 = SIPEndPoint.ParseSIPEndPoint("sip:10.0.0.100;lr");
-                SIPEndPoint sipEP2 = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Parse("10.0.0.100"), 5060));
-                Assert.IsTrue(sipEP1 == sipEP2, "The SIP end points should have been detected as equal.");
-            }
-        }
-
-        #endif
-
-        #endregion
     }
 }

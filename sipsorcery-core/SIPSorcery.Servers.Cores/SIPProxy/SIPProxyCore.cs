@@ -157,8 +157,8 @@ namespace SIPSorcery.Servers
                 foreach (SIPViaHeader viaHeader in sipRequest.Header.Vias.Via)
                 {
                     //if (viaHeader.Branch == proxyBranch)
-                    SIPEndPoint sentFromEndPoint = SIPEndPoint.ParseSIPEndPoint(viaHeader.Transport + ":" + viaHeader.ContactAddress);
-                    if(m_sipTransport.IsLocalSIPEndPoint(sentFromEndPoint))
+                    SIPEndPoint sentFromEndPoint = SIPEndPoint.TryParse(viaHeader.Transport + ":" + viaHeader.ContactAddress);
+                    if (sentFromEndPoint != null && m_sipTransport.IsLocalSIPEndPoint(sentFromEndPoint))
                     {
                         loopedViaCount++;
                     }
