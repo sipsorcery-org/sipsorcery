@@ -5,11 +5,12 @@
 // 
 // History:
 // 12 Dec 2014	Aaron Clauson	Refactored from MediaManager.
+// 10 Feb 2015  Aaron Clauson   Switched from using internal RTP channel to use http://net7mma.codeplex.com/.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006-2014 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
+// Copyright (c) 2006-2015 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -36,11 +37,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using SIPSorceryMedia;
 using SIPSorcery.Net;
-using System.Runtime.InteropServices;
 using SIPSorcery.Sys;
 using SIPSorcery.Sys.Net;
 using log4net;
@@ -54,7 +55,8 @@ namespace SIPSorcery.SoftPhone
         private const int RTP_MAX_PAYLOAD = 1400;
         private const int VP8_TIMESTAMP_SPACING = 3000;
         private const int VIDEO_PAYLOAD_TYPE = 96;
-
+        private const string SDP_TRANSPORT = "RTP/AVP";
+        
         private IPAddress _defaultLocalAddress = SIPSoftPhoneState.DefaultLocalAddress;
 
         private ILog logger = AppState.logger;
@@ -178,7 +180,6 @@ namespace SIPSorcery.SoftPhone
             if (OnRemoteAudioSampleReady != null)
             {
                 //System.Diagnostics.Debug.WriteLine("Remote audio frame received " + frame.FramePayload.Length + " bytes.");
-
                 OnRemoteAudioSampleReady(frame.FramePayload, frame.FramePayload.Length);
             }
         }
@@ -203,7 +204,7 @@ namespace SIPSorcery.SoftPhone
 
             var audioAnnouncement = sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
             if (audioAnnouncement != null)
-            { 
+            {
                 remoteAudioPort = audioAnnouncement.Port;
             }
 
@@ -220,7 +221,7 @@ namespace SIPSorcery.SoftPhone
                 _rtpAudioChannel.RemoteEndPoint = _remoteAudioEP;
                 _rtpAudioChannel.Start();
             }
-            
+
             if (remoteVideoPort != 0)
             {
                 _remoteVideoEP = new IPEndPoint(remoteRTPIPAddress, remoteVideoPort);
@@ -228,8 +229,8 @@ namespace SIPSorcery.SoftPhone
                 _rtpVideoChannel.RemoteEndPoint = new IPEndPoint(remoteRTPIPAddress, remoteVideoPort);
                 _rtpVideoChannel.Start();
             }
-            
-            if(remoteAudioPort == 0 && remoteVideoPort == 0)
+
+            if (remoteAudioPort == 0 && remoteVideoPort == 0)
             {
                 logger.Warn("No audio or video end point could be extracted from the remote SDP.");
             }
@@ -266,7 +267,6 @@ namespace SIPSorcery.SoftPhone
                 logger.Debug("RTP Manager closing.");
 
                 _stop = true;
-
 
                 if (_rtpAudioChannel != null)
                 {

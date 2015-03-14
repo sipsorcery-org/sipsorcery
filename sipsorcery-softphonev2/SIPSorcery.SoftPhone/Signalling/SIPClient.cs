@@ -245,6 +245,7 @@ namespace SIPSorcery.SoftPhone
 
             // Get the SDP requesting that the public IP address be used if the host on the call destination is not a private IP address.
             SDP sdp = _mediaManager.GetSDP(!(IPSocket.IsIPAddress(callURI.Host) && IPSocket.IsPrivateAddress(callURI.Host)));
+            System.Diagnostics.Debug.WriteLine(sdp.ToString());
             SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, sdp.ToString(), null);
             m_uac.Call(callDescriptor);
         }
@@ -282,7 +283,6 @@ namespace SIPSorcery.SoftPhone
             _mediaManager.SetRemoteSDP(sdpAnswer);
 
             SDP sdp = _mediaManager.GetSDP(false);
-
             m_uas.Answer(_sdpMimeContentType, sdp.ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
         }
 
@@ -364,6 +364,7 @@ namespace SIPSorcery.SoftPhone
                 }
 
                 SDP sdpAnswer = SDP.ParseSDPDescription(sipResponse.Body);
+                System.Diagnostics.Debug.WriteLine(sipResponse.Body);
                 _mediaManager.SetRemoteSDP(sdpAnswer);
                 CallAnswer();
             }

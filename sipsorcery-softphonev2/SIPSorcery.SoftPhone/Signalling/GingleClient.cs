@@ -117,7 +117,7 @@ namespace SIPSorcery.SoftPhone
                 m_xmppCall.Hungup += Hangup;
 
                 // Create the SDP packet to send to GV. Customise it with the ICE credentials that GV require.
-                SDP xmppSDP = _rtpManager.GetSDP(true);
+                SDP xmppSDP = null; //  _rtpManager.GetSDP(true);
                 xmppSDP.IcePwd = Crypto.GetRandomString(12);
                 m_localSTUNUFrag = Crypto.GetRandomString(8);
                 xmppSDP.IceUfrag = m_localSTUNUFrag;

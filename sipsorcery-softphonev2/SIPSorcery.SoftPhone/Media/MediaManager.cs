@@ -95,6 +95,7 @@ namespace SIPSorcery.SoftPhone
             _audioChannel.SampleReady += AudioChannelSampleReady;
 
             _rtpManager = new RTPManager(true, true);
+            _rtpManager = new RTPManager(true, false);
             _rtpManager.OnRemoteVideoSampleReady += EncodedVideoSampleReceived;
             _rtpManager.OnRemoteAudioSampleReady += RemoteAudioSampleReceived;
 
