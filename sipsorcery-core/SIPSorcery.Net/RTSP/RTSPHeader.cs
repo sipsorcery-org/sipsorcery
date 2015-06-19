@@ -64,8 +64,9 @@ namespace SIPSorcery.Net
         public const string MULTICAST_RTP_PORT_FIELD_NAME = "port";
         public const string CLIENT_RTP_PORT_FIELD_NAME = "client_port";
         public const string SERVER_RTP_PORT_FIELD_NAME = "server_port";
+        public const string MODE_FIELD_NAME = "mode";
 
-        private const string DEFAULT_TRANSPORT_SPECIFIER = "RTP/AVP";
+        private const string DEFAULT_TRANSPORT_SPECIFIER = "RTP/AVP/UDP";
         private const string DEFAULT_BROADCAST_TYPE = "unicast";
 
         private static ILog logger = AppState.logger;
@@ -79,6 +80,7 @@ namespace SIPSorcery.Net
         public string MulticastRTPPortRange;// e.g. port=3456-3457.
         public string ClientRTPPortRange;   // e.g. client_port=3456-3457.
         public string ServerRTPPortRange;   // e.g. server_port=3456-3457.
+        public string Mode;
 
         public RTSPTransportHeader()
         {
@@ -117,6 +119,9 @@ namespace SIPSorcery.Net
                             break;
                         case SOURCE_FIELD_NAME:
                             transportHeader.Source = fieldValue.Trim();
+                            break;
+                        case MODE_FIELD_NAME:
+                            transportHeader.Mode = fieldValue.Trim();
                             break;
                         default:
                             logger.Warn("An RTSP Transport header parameter was not recognised. " + field);
@@ -193,6 +198,11 @@ namespace SIPSorcery.Net
             if (ServerRTPPortRange.NotNullOrBlank())
             {
                 transportHeader += String.Format(";{0}={1}", SERVER_RTP_PORT_FIELD_NAME, ServerRTPPortRange);
+            }
+
+            if(Mode.NotNullOrBlank())
+            {
+                transportHeader += String.Format(";{0}={1}", MODE_FIELD_NAME, Mode);
             }
 
             return transportHeader;

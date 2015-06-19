@@ -31,6 +31,19 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
+// Timestamp Note from http://www.cs.columbia.edu/~hgs/rtp/faq.html#timestamp-computed:
+// Practically speaking, how is the timestamp computed?
+// For audio, the timestamp is incremented by the packetization interval times the sampling rate. For example, for audio packets 
+// containing 20 ms of audio sampled at 8,000 Hz, the timestamp for each block of audio increases by 160, even if the block is not 
+// sent due to silence suppression. Also, note that the actual sampling rate will differ slightly from this nominal rate, but the 
+// sender typically has no reliable way to measure this divergence.
+// For video, time clock rate is fixed at 90 kHz. The timestamps generated depend on whether the application can determine the 
+// frame number or not. If it can or it can be sure that it is transmitting every frame with a fixed frame rate, the timestamp is 
+// governed by the nominal frame rate. Thus, for a 30 f/s video, timestamps would increase by 3,000 for each frame, for a 25 f/s 
+// video by 3,600 for each frame. If a frame is transmitted as several RTP packets, these packets would all bear the same timestamp. 
+// If the frame number cannot be determined or if frames are sampled aperiodically, as is typically the case for software codecs, 
+// the timestamp has to be computed from the system clock (e.g., gettimeofday()).
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -55,14 +68,18 @@ namespace SIPSorcery.Net
         public const int VP8_RTP_HEADER_LENGTH = 3;
 
         private const int RFC_2435_FREQUENCY_BASELINE = 90000;
-        private const int RTP_MAX_PAYLOAD = 1400; //1452;
+        private const int RTP_MAX_PAYLOAD = 1400; 
         private const int RECEIVE_BUFFER_SIZE = 2048;
         private const int MEDIA_PORT_START = 30000;             // Arbitrary port number to start allocating RTP and control ports from.
         private const int MEDIA_PORT_END = 40000;               // Arbitrary port number that RTP and control ports won't be allocated above.
-        private const int RTP_PACKETS_MAX_QUEUE_LENGTH = 100;   // The maximum number of RTP packets that will be queued.
+        private const int RTP_PACKETS_MAX_QUEUE_LENGTH = 1000;   // The maximum number of RTP packets that will be queued.
         private const int RTP_RECEIVE_BUFFER_SIZE = 100000000;
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
         private const int SRTP_SIGNATURE_LENGTH = 10;           // If SRTP is being used this many extra bytes need to be added to the RTP payload to hold the authentication signature.
+        private const double DEFAULT_INITAL_FRAME_RATE = 10.0;  // Set the default initial frame rate to 10 frames per second.
+        private const int INITIAL_FRAME_RATE_CALCULATION_SECONDS = 10;  // Do an initial frame rate calculation after this many seconds.
+        private const int FRAME_RATE_CALCULATION_SECONDS = 60;          // Re-calculate the frame rate with this period in seconds.
+        private const int MINIMUM_SAMPLES_FOR_FRAME_RATE = 20;          // The minimum number of samples before a new frame rate calculation will be made.
 
         private static DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
         private static DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -79,6 +96,11 @@ namespace SIPSorcery.Net
         private byte[] _controlSocketBuffer;
         private bool _closed;
         private Queue<RTPPacket> _packets = new Queue<RTPPacket>();
+        private double _frameRate = DEFAULT_INITAL_FRAME_RATE;              // The most recently calculated frame rate.
+        private bool _isInitialFrameRateCalculation = true;
+        private int _frameRateSampleCount;                                  // Counts the packets since the frame rate calculation.
+        private DateTime _lastFrameRateCalculationAt = DateTime.MinValue;   // Time the frame rate was last calculated.
+        private uint _timestampStep = Convert.ToUInt32(1 / DEFAULT_INITAL_FRAME_RATE * RFC_2435_FREQUENCY_BASELINE);    // The step that will be applied to the RTP timestamp. It gets re-calculated when the frame rate is adjusted.
 
 #if SRTP
         private SRTPManaged _srtp;
@@ -417,7 +439,7 @@ namespace SIPSorcery.Net
                                 {
                                     RTPPacket rtpPacket = new RTPPacket(buffer.Take(bytesRead).ToArray());
 
-                                    System.Diagnostics.Debug.WriteLine("RTPReceive ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
+                                    //System.Diagnostics.Debug.WriteLine("RTPReceive ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
 
                                     lock (_packets)
                                     {
@@ -542,12 +564,11 @@ namespace SIPSorcery.Net
         /// It's intended as a quick convenient way to send something like a test pattern image over an RTSP connection. More than likely it won't be suitable when a high
         /// quality image is required since the header used in this method does not support quantization tables.
         /// </summary>
-        /// <param name="jpegBytes">The raw encoded bytes of teh JPEG image to transmit.</param>
+        /// <param name="jpegBytes">The raw encoded bytes of the JPEG image to transmit.</param>
         /// <param name="jpegQuality">The encoder quality of the JPEG image.</param>
         /// <param name="jpegWidth">The width of the JPEG image.</param>
         /// <param name="jpegHeight">The height of the JPEG image.</param>
-        /// <param name="framesPerSecond">The rate at which the JPEG frames are being transmitted at. used to calculate the timestamp.</param>
-        public void SendJpegFrame(byte[] jpegBytes, int jpegQuality, int jpegWidth, int jpegHeight, int framesPerSecond)
+        public void SendJpegFrame(byte[] jpegBytes, int jpegQuality, int jpegWidth, int jpegHeight)
         {
             try
             {
@@ -561,7 +582,11 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    _timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + (uint)(RFC_2435_FREQUENCY_BASELINE / framesPerSecond)) % UInt32.MaxValue;
+                    //_timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + (uint)(RFC_2435_FREQUENCY_BASELINE / DEFAULT_INITAL_FRAME_RATE)) % UInt32.MaxValue;
+
+                    RecalculateTimestampStep();
+
+                    _timestamp += _timestampStep;
 
                     //System.Diagnostics.Debug.WriteLine("Sending " + jpegBytes.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ", image dimensions " + jpegWidth + " x " + jpegHeight + ".");
 
@@ -624,9 +649,8 @@ namespace SIPSorcery.Net
         /// H264 frames need a two byte header when transmitted over RTP.
         /// </summary>
         /// <param name="frame">The H264 encoded frame to transmit.</param>
-        /// <param name="frameSpacing">The increment to add to the RTP timestamp for each new frame.</param>
         /// <param name="payloadType">The payload type to set on the RTP packet.</param>
-        public void SendH264Frame(byte[] frame, uint frameSpacing, int payloadType)
+        public void SendH264Frame(byte[] frame, int payloadType)
         {
             try
             {
@@ -640,7 +664,9 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    _timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + frameSpacing) % UInt32.MaxValue;
+                    RecalculateTimestampStep();
+
+                    _timestamp += _timestampStep;
 
                     //System.Diagnostics.Debug.WriteLine("Sending " + frame.Length + " H264 encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ".");
 
@@ -689,7 +715,11 @@ namespace SIPSorcery.Net
                         //Stopwatch sw = new Stopwatch();
                         //sw.Start();
 
-                        _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
+                        //_rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None,  _remoteEndPoint);
+                        SocketAsyncEventArgs socketSendArgs = new SocketAsyncEventArgs();
+                        socketSendArgs.SetBuffer(rtpBytes, 0, rtpBytes.Length);
+                        socketSendArgs.RemoteEndPoint = _remoteEndPoint;
+                        _rtpSocket.SendToAsync(socketSendArgs);
 
                         //sw.Stop();
 
@@ -720,9 +750,8 @@ namespace SIPSorcery.Net
         /// Sends a dynamically sized frame. The RTP marker bit will be set for the last transmitted packet in the frame.
         /// </summary>
         /// <param name="frame">The frame to transmit.</param>
-        /// <param name="frameSpacing">The increment to add to the RTP timestamp for each new frame.</param>
         /// <param name="payloadType">The payload type to set on the RTP packet.</param>
-        public void SendVP8Frame(byte[] frame, uint frameSpacing, int payloadType)
+        public void SendVP8Frame(byte[] frame, int payloadType)
         {
             try
             {
@@ -736,7 +765,9 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    _timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + frameSpacing) % UInt32.MaxValue;
+                    RecalculateTimestampStep();
+
+                    _timestamp += _timestampStep;
 
                     //System.Diagnostics.Debug.WriteLine("Sending " + frame.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ".");
 
@@ -773,7 +804,12 @@ namespace SIPSorcery.Net
                         //Stopwatch sw = new Stopwatch();
                         //sw.Start();
 
-                        _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
+                       // _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
+
+                        SocketAsyncEventArgs socketSendArgs = new SocketAsyncEventArgs();
+                        socketSendArgs.SetBuffer(rtpBytes, 0, rtpBytes.Length);
+                        socketSendArgs.RemoteEndPoint = _remoteEndPoint;
+                        _rtpSocket.SendToAsync(socketSendArgs);
 
                         //sw.Stop();
 
@@ -809,7 +845,12 @@ namespace SIPSorcery.Net
             {
                 if (!_closed && _rtpSocket != null && _remoteEndPoint != null && _rtpSocketError == SocketError.Success)
                 {
-                    _rtpSocket.SendTo(payload, _remoteEndPoint);
+                    //_rtpSocket.SendTo(payload, _remoteEndPoint);
+
+                    SocketAsyncEventArgs socketSendArgs = new SocketAsyncEventArgs();
+                    socketSendArgs.SetBuffer(payload, 0, payload.Length);
+                    socketSendArgs.RemoteEndPoint = _remoteEndPoint;
+                    _rtpSocket.SendToAsync(socketSendArgs);
                 }
             }
             catch (Exception excp)
@@ -823,6 +864,29 @@ namespace SIPSorcery.Net
                         OnRTPSocketDisconnected(_sessionID);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Recalculates the step that should be applied to the RTP timestamp based on the frame rate of the incoming samples.
+        /// </summary>
+        private void RecalculateTimestampStep()
+        {
+            _frameRateSampleCount++;
+
+            if (_lastFrameRateCalculationAt == DateTime.MinValue)
+            {
+                _lastFrameRateCalculationAt = DateTime.Now;
+                _timestamp = DateTimeToNptTimestamp32(DateTime.Now);
+            }
+            else if (_frameRateSampleCount > MINIMUM_SAMPLES_FOR_FRAME_RATE && DateTime.Now.Subtract(_lastFrameRateCalculationAt).TotalSeconds > ((_isInitialFrameRateCalculation) ? INITIAL_FRAME_RATE_CALCULATION_SECONDS : FRAME_RATE_CALCULATION_SECONDS))
+            {
+                // Re-calculate the frame rate.
+                _isInitialFrameRateCalculation = false;
+                _frameRate = _frameRateSampleCount / DateTime.Now.Subtract(_lastFrameRateCalculationAt).TotalSeconds;
+                _timestampStep = Convert.ToUInt32((1 / _frameRate) * RFC_2435_FREQUENCY_BASELINE);
+                _frameRateSampleCount = 0;
+                _lastFrameRateCalculationAt = DateTime.Now;
             }
         }
 

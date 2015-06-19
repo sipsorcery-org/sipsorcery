@@ -43,7 +43,13 @@ namespace SIPSorcery.Net
         public bool HasMarker;
         public bool HasBeenProcessed;
 
-        public byte[] FramePayload { get; private set; }
+        private List<RTPPacket> _packets = new List<RTPPacket>();
+        //public byte[] FramePayload { get; private set; }
+
+        public List<RTPPacket> FramePackets
+        {
+            get { return _packets; }
+        }
 
         public uint StartSequenceNumber
         {
@@ -79,8 +85,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        private List<RTPPacket> _packets = new List<RTPPacket>();
-
         public RTPFrame()
         { }
 
@@ -91,46 +95,66 @@ namespace SIPSorcery.Net
         public static RTPFrame MakeSinglePacketFrame(RTPPacket rtpPacket)
         {
             RTPFrame frame = new RTPFrame();
-            frame.FramePayload = rtpPacket.Payload;
+            //frame.FramePayload = rtpPacket.Payload;
             frame.Timestamp = rtpPacket.Header.Timestamp;
 
             return frame;
         }
 
-        public void AddRTPPacket(RTPPacket rtpPacket, int payloadHeaderLength)
+        public void AddRTPPacket(RTPPacket rtpPacket)
         {
             _packets.Add(rtpPacket);
 
-            if (HasMarker && FramePayload == null)
-            {
-                FramePayload = IsComplete(_packets, payloadHeaderLength);
-            }
+            //if (HasMarker && FramePayload == null)
+            //{
+            //    FramePayload = IsComplete(_packets, payloadHeaderLength);
+            //}
         }
 
-        private byte[] IsComplete(List<RTPPacket> framePackets, int payloadHeaderLength)
+        public bool IsComplete()
         {
-            // The frame has the marker bit set. Check that there are no missing sequence numbers.
-            //int headerLength = (payloadType == (int)SDPMediaFormatsEnum.JPEG) ? JPEG_HEADER_LENGTH : H264_HEADER_LENGTH;
-            uint previousSeqNum = 0;
-            List<byte> payload = new List<byte>();
+            if(!HasMarker)
+            {
+                return false;
+            }
 
-            foreach (var rtpPacket in framePackets.OrderBy(x => x.Header.SequenceNumber))
+            // The frame has the marker bit set. Check that there are no missing sequence numbers.
+            uint previousSeqNum = 0;
+
+            foreach (var rtpPacket in _packets.OrderBy(x => x.Header.SequenceNumber))
             {
                 if (previousSeqNum == 0)
                 {
                     previousSeqNum = rtpPacket.Header.SequenceNumber;
-                    payload.AddRange(rtpPacket.Payload.Skip(payloadHeaderLength));
+                    //payload.AddRange(rtpPacket.Payload.Skip(payloadHeaderLength));
+                    //payloadPackets.Add(rtpPacket);
                 }
                 else if (previousSeqNum != rtpPacket.Header.SequenceNumber - 1)
                 {
                     // Missing packet.
-                    return null;
+                    return false;
                 }
                 else
                 {
                     previousSeqNum = rtpPacket.Header.SequenceNumber;
-                    payload.AddRange(rtpPacket.Payload.Skip(payloadHeaderLength));
+                    //payload.AddRange(rtpPacket.Payload.Skip(payloadHeaderLength));
+                    //payloadPackets.Add(rtpPacket);
                 }
+            }
+
+            //return payload.ToArray();
+
+            //return Mjpeg.ProcessMjpegFrame(payloadPackets);
+            return true;
+        }
+
+        public byte[] GetFramePayload(int payloadHeaderLength)
+        {
+            List<byte> payload = new List<byte>();
+
+            foreach (var rtpPacket in _packets.OrderBy(x => x.Header.SequenceNumber))
+            {
+                payload.AddRange(rtpPacket.Payload.Skip(payloadHeaderLength));
             }
 
             return payload.ToArray();
