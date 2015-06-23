@@ -65,6 +65,7 @@ namespace SIPSorcery.Servers
         private SIPDialogueManager m_sipDialogueManager;
         private int m_reserveDueSeconds = 15;           // A reservation is due when there is only this many seconds remaining on the call.
         private int m_reservationAmountSeconds = 60;    // The amount of seconds to reserve on each reservation request.
+        private CustomerDataLayer _customerDataLayer = new CustomerDataLayer();
         private CustomerAccountDataLayer m_customerAccountDataLayer = new CustomerAccountDataLayer();
 
         private bool m_exit;
@@ -236,7 +237,19 @@ namespace SIPSorcery.Servers
 
                                     logger.Debug("Reconciliation starting for CDR " + rtcc.cdr.ID + ", owner " + rtcc.cdr.Owner + ", destination " + rtcc.cdr.Dst + ", duration " + rtcc.cdr.Duration + ", rate " + rtcc.Rate + ", setup cost " + 
                                         rtcc.SetupCost +", increment seconds " + rtcc.IncrementSeconds + " and reserved credit of " + rtcc.Cost + ".");
-                                    m_customerAccountDataLayer.ReturnUnusedCredit(rtcc.ID);
+                                    
+                                    decimal callCost = m_customerAccountDataLayer.ReturnUnusedCredit(rtcc.ID);
+
+                                    if (callCost > Decimal.Zero)
+                                    {
+                                        // Check whether a reconciliation callback needs to be made for this customer account.
+                                        var customer = _customerDataLayer.GetForName(rtcc.cdr.Owner);
+
+                                        if(customer.RTCCReconciliationURL.NotNullOrBlank())
+                                        {
+                                            // Send an async HTTP GET request to the specified URL.
+                                        }
+                                    }
                                 }
                             }
                         }

@@ -365,13 +365,16 @@ namespace SIPSorcery.Entities
         }
 
         /// <summary>
-        /// This method should be called once a billable call has been completed. It will calcualte the final cost of the call and return
+        /// This method should be called once a billable call has been completed. It will calculate the final cost of the call and return
         /// any usused credit back to the customer account.
         /// </summary>
         /// <param name="cdrID">The ID of the CDR the credit is being returned for.</param>
-        public void ReturnUnusedCredit(string rtccID)
+        /// <returns>The total cost of the completed call.</returns>
+        public decimal ReturnUnusedCredit(string rtccID)
         {
             logger.Debug("ReturnUnusedCredit for RTCC ID " + rtccID + ".");
+
+            decimal actualCallCost = Decimal.Zero;
 
             using (var db = new SIPSorceryEntities())
             {
@@ -434,7 +437,7 @@ namespace SIPSorcery.Entities
                                 //int rtccIncrement = (from cust in db.Customers where cust.Name.ToLower() == callCDR.Owner.ToLower() select cust.RTCCBillingIncrement).Single();
                                 int rtccIncrement = (rtcc.IncrementSeconds <= 0) ? DEFAULT_INCREMENT_SECONDS : rtcc.IncrementSeconds;
 
-                                decimal actualCallCost = 0;
+
                                 int billableDuration = (callCDR.Duration.Value % rtccIncrement == 0) ? callCDR.Duration.Value : (callCDR.Duration.Value / rtccIncrement + 1) * rtccIncrement;
 
                                 if (billableDuration > 0)
@@ -507,6 +510,8 @@ namespace SIPSorcery.Entities
                     trans.Complete();
                 }
             }
+
+            return actualCallCost;
         }
 
         /// <summary>

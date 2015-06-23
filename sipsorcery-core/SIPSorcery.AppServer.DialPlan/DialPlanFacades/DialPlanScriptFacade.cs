@@ -48,6 +48,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web;
 using SIPSorcery.Net;
 using SIPSorcery.Persistence;
@@ -63,9 +64,10 @@ using agsXMPP.protocol.client;
 using GaDotNet.Common.Data;
 using GaDotNet.Common.Helpers;
 using GaDotNet.Common;
-using Google.GData.Client;
-using Google.GData.Contacts;
-using Google.GData.Extensions;
+//using Google.Apis.Auth.OAuth2;
+//using Google.GData.Client;
+//using Google.GData.Contacts;
+//using Google.GData.Extensions;
 
 namespace SIPSorcery.AppServer.DialPlan
 {
@@ -2205,48 +2207,77 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public string GoogleContactLookup(string username, string password, string lookup)
         {
-            try
-            {
-                Log("Starting Google Contact Lookup for " + lookup + ".");
+            Log("WARNING: Sorry the GoogleContactLookup is no longer available due to changes in the way Google authenitcates user accounts.");
 
-                ContactsService service = new ContactsService("sipsorcery-lookup");
-                ((GDataRequestFactory)service.RequestFactory).KeepAlive = false;
-
-                service.setUserCredentials(username, password);
-                var result = service.QueryClientLoginToken();
-
-                var query = new ContactsQuery(ContactsQuery.CreateContactsUri("default"));
-                query.ExtraParameters = "q=" + lookup + "&max-results=1";
-
-                ContactsFeed feed = service.Query(query);
-
-                if (feed != null && feed.Entries != null && feed.Entries.Count > 0)
-                {
-                    var entry = feed.Entries.First() as ContactEntry;
-
-                    if (entry.Name != null && entry.Name.FullName.NotNullOrBlank())
-                    {
-                        Log("Result found Google Contact Lookup for " + lookup + " of " + entry.Name.FullName + ".");
-                        return entry.Name.FullName;
-                    }
-                    else
-                    {
-                        Log("A result was found Google Contact Lookup for " + lookup + " but the FullName field was empty.");
-                        return null;
-                    }
-                }
-                else
-                {
-                    Log("No result was found with a Google Contact Lookup for " + lookup + ".");
-                    return null;
-                }
-            }
-            catch (Exception excp)
-            {
-                Log("Exception in GoogleContactLookup. " + excp.Message);
-                return null;
-            }
+            return null;
         }
+
+        //public string GoogleContactLookup(string username, string password, string lookup)
+        //{
+        //    try
+        //    {
+        //        Log("Starting Google Contact Lookup for " + lookup + ".");
+
+        //        //return GoogleContactLookupAysnc(username).Result;
+
+        //        ContactsService service = new ContactsService("sipsorcery-lookup");
+
+        //        ((GDataRequestFactory)service.RequestFactory).KeepAlive = false;
+
+        //        service.setUserCredentials(username, password);
+        //        var result = service.QueryClientLoginToken();
+
+        //        Log("Google contact authentication result " + result + ".");
+
+        //        var query = new ContactsQuery(ContactsQuery.CreateContactsUri("default"));
+        //        query.ExtraParameters = "q=" + lookup + "&max-results=1";
+
+        //        ContactsFeed feed = service.Query(query);
+
+        //        if (feed != null && feed.Entries != null && feed.Entries.Count > 0)
+        //        {
+        //            var entry = feed.Entries.First() as ContactEntry;
+
+        //            if (entry.Name != null && entry.Name.FullName.NotNullOrBlank())
+        //            {
+        //                Log("Result found Google Contact Lookup for " + lookup + " of " + entry.Name.FullName + ".");
+        //                return entry.Name.FullName;
+        //            }
+        //            else
+        //            {
+        //                Log("A result was found Google Contact Lookup for " + lookup + " but the FullName field was empty.");
+        //                return null;
+        //            }
+        //        }
+        //        else
+        //        {
+        //            Log("No result was found with a Google Contact Lookup for " + lookup + ".");
+        //            return null;
+        //        }
+        //    }
+        //    catch (Exception excp)
+        //    {
+        //        Log("Exception in GoogleContactLookup. " + excp.Message);
+        //        return null;
+        //    }
+        //}
+
+        //private async Task<string> GoogleContactLookupAysnc(string username)
+        //{
+        //    ServiceAccountCredential.Initializer("").
+
+        //    UserCredential credential;
+
+        //    using (var stream = new FileStream("client_secrets.json", FileMode.Open, FileAccess.Read))
+        //    {
+        //        credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+        //            GoogleClientSecrets.Load(stream).Secrets,
+        //            new[] { ContactsService.GContactService },
+        //            username, CancellationToken.None);
+        //    }
+
+        //    return "";
+        //}
 
         /// <summary>
         /// Gets the balance for a customer account record.

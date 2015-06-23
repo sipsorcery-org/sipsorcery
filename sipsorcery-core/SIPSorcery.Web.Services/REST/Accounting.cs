@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: Accountinging.cs
+// Filename: Accounting.cs
 //
 // Description: Provides a REST/JSON service implementation for accounting services and 
 // customer account management.
@@ -90,7 +90,7 @@ namespace SIPSorcery.Web.Services
             }
             catch (Exception excp)
             {
-                logger.Error("Exception Provisioning.AuthoriseRequest. " + excp.Message);
+                logger.Error("Exception Accounting.AuthoriseRequest. " + excp.Message);
                 throw;
             }
         }

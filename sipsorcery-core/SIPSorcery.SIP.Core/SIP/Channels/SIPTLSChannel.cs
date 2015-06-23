@@ -104,7 +104,7 @@ namespace SIPSorcery.SIP
            }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTLSChannel Initialise. " + excp.Message);
+                logger.Error("Exception SIPTLSChannel Initialise. " + excp);
                 throw;
             }
         }
@@ -150,7 +150,7 @@ namespace SIPSorcery.SIP
                     }
                     catch (Exception e)
                     {
-                        logger.Error("SIPTLSChannel AuthenticationException. " + e.Message);
+                        logger.Error("SIPTLSChannel Accept Connection Exception. " + e);
                         //sslStream.Close();
                         //tcpClient.Close();
                     }
@@ -160,7 +160,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTLSChannel Listen. " + excp.Message);
+                logger.Error("Exception SIPTLSChannel Listen. " + excp);
                 //throw excp;
             }
         }
@@ -179,11 +179,13 @@ namespace SIPSorcery.SIP
                         sipTLSConnection.SIPStream.BeginRead(sipTLSConnection.SocketBuffer, sipTLSConnection.SocketBufferEndPosition, MaxSIPTCPMessageSize - sipTLSConnection.SocketBufferEndPosition, new AsyncCallback(ReceiveCallback), sipTLSConnection);
                     }
                 }
-                catch (SocketException)  // Occurs if the remote end gets disconnected.
-                { }
+                catch (SocketException sockExcp)  // Occurs if the remote end gets disconnected.
+                {
+                    logger.Warn("SocketException SIPTLSChannel ReceiveCallback. " + sockExcp);
+                }
                 catch (Exception excp)
                 {
-                    logger.Warn("Exception SIPTLSChannel ReceiveCallback. " + excp.Message);
+                    logger.Warn("Exception SIPTLSChannel ReceiveCallback. " + excp);
                     SIPTLSSocketDisconnected(sipTLSConnection.RemoteEndPoint);
                 }
             }
@@ -272,7 +274,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception (" + excp.GetType().ToString() + ") SIPTLSChannel Send (sendto=>" + dstEndPoint + "). " + excp.Message);
+                logger.Error("Exception (" + excp.GetType().ToString() + ") SIPTLSChannel Send (sendto=>" + dstEndPoint + "). " + excp);
                 throw excp;
             }
         }
@@ -286,7 +288,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception EndSend. " + excp.Message);
+                logger.Error("Exception EndSend. " + excp);
             }
         }
 
@@ -329,7 +331,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTLSChannel EndConnect. " + excp.Message);
+                logger.Error("Exception SIPTLSChannel EndConnect. " + excp);
             }
         }
 
@@ -361,7 +363,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTLSClientDisconnected. " + excp.Message);
+                logger.Error("Exception SIPTLSClientDisconnected. " + excp);
             }
         }
 
