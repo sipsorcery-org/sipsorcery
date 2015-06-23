@@ -604,22 +604,22 @@ namespace SIPSorcery.Net
                                 if (frame == null)
                                 {
                                     frame = new RTPFrame() { Timestamp = rtpPacket.Header.Timestamp, HasMarker = rtpPacket.Header.MarkerBit == 1 };
-                                    frame.AddRTPPacket(rtpPacket, frameHeaderLength);
+                                    frame.AddRTPPacket(rtpPacket);
                                     _frames.Add(frame);
                                 }
                                 else
                                 {
                                     frame.HasMarker = rtpPacket.Header.MarkerBit == 1;
-                                    frame.AddRTPPacket(rtpPacket, frameHeaderLength);
+                                    frame.AddRTPPacket(rtpPacket);
                                 }
 
-                                if (frame.FramePayload != null)
+                                if (frame.IsComplete())
                                 {
-                                    _lastFrameSize = frame.FramePayload.Length;
-                                    _framesSinceLastCalc++;
-
                                     // The frame is ready for handing over to the UI.
-                                    byte[] imageBytes = frame.FramePayload;
+                                    byte[] imageBytes = frame.GetFramePayload(frameHeaderLength);
+
+                                    _lastFrameSize = imageBytes.Length;
+                                    _framesSinceLastCalc++;
 
                                     _lastCompleteFrameTimestamp = rtpPacket.Header.Timestamp;
                                     //System.Diagnostics.Debug.WriteLine("Frame ready " + frame.Timestamp + ", sequence numbers " + frame.StartSequenceNumber + " to " + frame.EndSequenceNumber + ",  payload length " + imageBytes.Length + ".");

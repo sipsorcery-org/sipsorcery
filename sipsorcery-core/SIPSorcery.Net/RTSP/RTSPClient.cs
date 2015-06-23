@@ -412,23 +412,23 @@ namespace SIPSorcery.Net
                                 if (frame == null)
                                 {
                                     frame = new RTPFrame() { Timestamp = rtpPacket.Header.Timestamp, HasMarker = rtpPacket.Header.MarkerBit == 1 };
-                                    frame.AddRTPPacket(rtpPacket, _rtspSession.RTPPayloadHeaderLength);
+                                    frame.AddRTPPacket(rtpPacket);
                                     _frames.Add(frame);
                                 }
                                 else
                                 {
                                     frame.HasMarker = rtpPacket.Header.MarkerBit == 1;
-                                    frame.AddRTPPacket(rtpPacket, _rtspSession.RTPPayloadHeaderLength);
+                                    frame.AddRTPPacket(rtpPacket);
                                 }
 
-                                if (frame.FramePayload != null)
+                                if (frame.IsComplete())
                                 {
-                                    _lastFrameSize = frame.FramePayload.Length;
-                                    _framesSinceLastCalc++;
-
                                     // The frame is ready for handing over to the UI.
-                                    byte[] imageBytes = frame.FramePayload;
+                                    byte[] imageBytes = frame.GetFramePayload(_rtspSession.RTPPayloadHeaderLength);
 
+                                    _lastFrameSize = imageBytes.Length;
+                                    _framesSinceLastCalc++;
+                                    
                                     _lastCompleteFrameTimestamp = rtpPacket.Header.Timestamp;
                                     //System.Diagnostics.Debug.WriteLine("Frame ready " + frame.Timestamp + ", sequence numbers " + frame.StartSequenceNumber + " to " + frame.EndSequenceNumber + ",  payload length " + imageBytes.Length + ".");
                                     _frames.Remove(frame);
@@ -444,7 +444,7 @@ namespace SIPSorcery.Net
                                     {
                                         try
                                         {
-                                            System.Diagnostics.Debug.WriteLine("RTP frame ready for timestamp " + frame.Timestamp + ".");
+                                            //System.Diagnostics.Debug.WriteLine("RTP frame ready for timestamp " + frame.Timestamp + ".");
                                             OnFrameReady(this, frame);
                                         }
                                         catch(Exception frameReadyExcp)
@@ -459,7 +459,7 @@ namespace SIPSorcery.Net
 
                     if (DateTime.Now.Subtract(_lastRTPReceivedAt).TotalSeconds > RTP_TIMEOUT_SECONDS)
                     {
-                        logger.Warn("No RTP packets were receoved on RTSP session " + _rtspSession.SessionID + " for " + RTP_TIMEOUT_SECONDS + ". The session will now be closed.");
+                        logger.Warn("No RTP packets were received on RTSP session " + _rtspSession.SessionID + " for " + RTP_TIMEOUT_SECONDS + ". The session will now be closed.");
                         Close();
                     }
                     else
@@ -489,6 +489,36 @@ namespace SIPSorcery.Net
                 while (!_isClosed)
                 {
                     _rtspSession.SendRTPRaw(new byte[] { 0x00, 0x00, 0x00, 0x00 });
+
+                    // Also send an OPTIONS request on the RTSP connection to prevent the remote server from timing it out.
+                    RTSPRequest optionsRequest = new RTSPRequest(RTSPMethodsEnum.OPTIONS, _url);
+                    RTSPHeader optionsHeader = new RTSPHeader(_cseq++, _rtspSession.SessionID);
+                    optionsRequest.Header = optionsHeader;
+
+                    System.Diagnostics.Debug.WriteLine(optionsRequest.ToString());
+
+                    var rtspRequestBuffer = Encoding.UTF8.GetBytes(optionsRequest.ToString());
+                    _rtspStream.Write(rtspRequestBuffer, 0, rtspRequestBuffer.Length);
+
+                    var buffer = new byte[2048];
+                    var bytesRead = _rtspStream.Read(buffer, 0, 2048);
+
+                    if (bytesRead > 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+
+                        var rtspMessage = RTSPMessage.ParseRTSPMessage(buffer, null, null);
+
+                        if (rtspMessage.RTSPMessageType == RTSPMessageTypesEnum.Response)
+                        {
+                            var optionsResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
+                            //logger.Debug("RTSP Response received for OPTIONS keep-alive request: " + optionsResponse.StatusCode + " " + optionsResponse.Status + " " + optionsResponse.ReasonPhrase + ".");
+                        }
+                    }
+                    else
+                    {
+                        logger.Warn("Zero bytes were read from the RTSP client socket in response to an OPTIONS keep-alive request.");
+                    }
 
                     _sendKeepAlivesMRE.Reset();
                     _sendKeepAlivesMRE.WaitOne(RTP_KEEP_ALIVE_INTERVAL * 1000);
