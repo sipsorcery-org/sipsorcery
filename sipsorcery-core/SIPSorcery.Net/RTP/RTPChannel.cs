@@ -42,7 +42,7 @@ using SIPSorcery.Sys;
 using log4net;
 
 #if SRTP
-using SIPSorceryRTP;
+using SIPSorceryMedia;
 #endif
 
 namespace SIPSorcery.Net

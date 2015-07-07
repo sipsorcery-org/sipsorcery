@@ -229,9 +229,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="SIPSorceryRTP">
-      <HintPath>..\..\sipsorcery-media\build\x64\SIPSorceryRTP.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core">
@@ -360,13 +357,17 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\sipsorcery-media\SIPSorcery.Media\SIPSorcery.Media.vcxproj">
+      <Project>{60cc689c-2616-441c-a38a-e1b764c7c446}</Project>
+      <Name>SIPSorceryMedia</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
       <Project>{6d8dbb7d-8937-4cc4-9703-561f776f9dbd}</Project>
       <Name>SIPSorcery.Sys</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

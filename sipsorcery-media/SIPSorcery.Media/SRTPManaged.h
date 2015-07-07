@@ -10,6 +10,7 @@ namespace SIPSorceryMedia {
 	public ref class SRTPManaged {
 		public:
 			SRTPManaged(cli::array<System::Byte>^ key);
+			~SRTPManaged();
 			int ProtectRTP(cli::array<System::Byte>^ buffer, int length);
 			int UnprotectRTP(cli::array<System::Byte>^ buffer, int length);
 

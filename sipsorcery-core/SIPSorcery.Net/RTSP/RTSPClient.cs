@@ -48,7 +48,7 @@ namespace SIPSorcery.Net
         public const int RTSP_PORT = 554;
         private const int MAX_FRAMES_QUEUE_LENGTH = 1000;
         private const int RTP_KEEP_ALIVE_INTERVAL = 30;         // The interval at which to send RTP keep-alive packets to keep the RTSP server from closing the connection.
-        private const int RTP_TIMEOUT_SECONDS = 15;             // If no RTP pakcets are received during this interval then assume the connection has failed.
+        private const int RTP_TIMEOUT_SECONDS = 15;             // If no RTP packets are received during this interval then assume the connection has failed.
         private const int BANDWIDTH_CALCULATION_SECONDS = 5;    // The interval at which to do bandwidth calculations.
 
         private static ILog logger = AssemblyStreamState.logger;
