@@ -146,7 +146,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>srtp.lib;Ws2_32.lib;vpxmdd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
+      <AdditionalDependencies>srtp.lib;Ws2_32.lib;vpxmd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\libs\x64</AdditionalLibraryDirectories>
       <TargetMachine>MachineX64</TargetMachine>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>

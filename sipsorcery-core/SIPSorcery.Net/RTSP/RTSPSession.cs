@@ -56,7 +56,7 @@ using SIPSorcery.Sys;
 using log4net;
 
 #if SRTP
-using SIPSorceryRTP;
+using SIPSorceryMedia;
 #endif
 
 namespace SIPSorcery.Net
@@ -87,6 +87,7 @@ namespace SIPSorcery.Net
 
         private static ILog logger = AppState.logger;
 
+        private static int _nextMediaPort = MEDIA_PORT_START;
         private static Mutex _allocatePortsMutex = new Mutex();
 
         private Socket _rtpSocket;
@@ -226,7 +227,13 @@ namespace SIPSorcery.Net
         {
             lock (_allocatePortsMutex)
             {
-                var inUseUDPPorts = (from p in System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners() where p.Port >= MEDIA_PORT_START select p.Port).OrderBy(x => x).ToList();
+                if(_nextMediaPort >= MEDIA_PORT_END)
+                {
+                    // The media port range has been used go back to the start. Some connections have most likely been closed.
+                    _nextMediaPort = MEDIA_PORT_START;
+                }
+
+                var inUseUDPPorts = (from p in System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners() where p.Port >= _nextMediaPort select p.Port).OrderBy(x => x).ToList();
 
                 _rtpPort = 0;
                 _controlPort = 0;
@@ -234,7 +241,7 @@ namespace SIPSorcery.Net
                 if (inUseUDPPorts.Count > 0)
                 {
                     // Find the first two available for the RTP socket.
-                    for (int index = MEDIA_PORT_START; index <= MEDIA_PORT_END; index++)
+                    for (int index = _nextMediaPort; index <= MEDIA_PORT_END; index++)
                     {
                         if (!inUseUDPPorts.Contains(index))
                         {
@@ -363,7 +370,21 @@ namespace SIPSorcery.Net
                 {
                     try
                     {
-                        int bytesRead = _rtpSocket.Receive(buffer);
+                        EndPoint remoteEP = (EndPoint) new IPEndPoint(IPAddress.Any, 0);
+
+                        //int bytesRead = _rtpSocket.Receive(buffer);
+                        int bytesRead = _rtpSocket.ReceiveFrom(buffer, ref remoteEP);
+
+                        IPEndPoint remoteIPEndPoint = remoteEP as IPEndPoint;
+
+                        //logger.Debug("RTPReceive from " + remoteEP + ".");
+
+                        //if (((IPEndPoint)remoteEP).Address.ToString() != _remoteEndPoint.Address.ToString())
+                        //{
+                        //    var oldEndPoint = _remoteEndPoint;
+                        //    _remoteEndPoint = remoteEP as IPEndPoint;
+                        //    logger.Warn("RtspSession " + _sessionID + " switched to new remote endpoint at " + _remoteEndPoint + " (old end point " + oldEndPoint + ").");
+                        //}
 
                         if (bytesRead > 0)
                         {
@@ -387,9 +408,9 @@ namespace SIPSorcery.Net
 
                                                 STUNv2Message stunResponse = new STUNv2Message(STUNv2MessageTypesEnum.BindingSuccessResponse);
                                                 stunResponse.Header.TransactionId = stunMessage.Header.TransactionId;
-                                                stunResponse.AddXORMappedAddressAttribute(_remoteEndPoint.Address, _remoteEndPoint.Port);
+                                                stunResponse.AddXORMappedAddressAttribute(remoteIPEndPoint.Address, remoteIPEndPoint.Port);
                                                 byte[] stunRespBytes = stunResponse.ToByteBuffer(_iceState.SenderPassword, true);
-                                                _rtpSocket.SendTo(stunRespBytes, _remoteEndPoint);
+                                                _rtpSocket.SendTo(stunRespBytes, remoteIPEndPoint);
 
                                                 //logger.Debug("Sending Binding request to Receiver Client @ " + remoteEndPoint + ".");
 
@@ -398,7 +419,7 @@ namespace SIPSorcery.Net
                                                 stunRequest.AddUsernameAttribute(_iceState.ReceiverUser + ":" + _iceState.SenderUser);
                                                 stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
                                                 byte[] stunReqBytes = stunRequest.ToByteBuffer(_iceState.ReceiverPassword, true);
-                                                _rtpSocket.SendTo(stunReqBytes, _remoteEndPoint);
+                                                _rtpSocket.SendTo(stunReqBytes, remoteIPEndPoint);
 
                                                 _iceState.LastSTUNMessageReceivedAt = DateTime.Now;
                                             }
@@ -407,32 +428,34 @@ namespace SIPSorcery.Net
                                                 if (!_iceState.IsSTUNExchangeComplete)
                                                 {
                                                     _iceState.IsSTUNExchangeComplete = true;
-                                                    logger.Debug("WebRTC client STUN exchange complete for " + _remoteEndPoint.ToString() + ".");
+                                                    logger.Debug("WebRTC client STUN exchange complete for " + remoteIPEndPoint.ToString() + " and ICE ufrag " + _iceState.ReceiverUser + ".");
+
+                                                    _remoteEndPoint = remoteIPEndPoint;
                                                 }
                                             }
                                             else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingErrorResponse)
                                             {
-                                                logger.Warn("A STUN binding error response was received from " + _remoteEndPoint + ".");
+                                                logger.Warn("A STUN binding error response was received from " + remoteIPEndPoint + ".");
                                             }
                                             else
                                             {
-                                                logger.Warn("An unrecognised STUN request was received from " + _remoteEndPoint + ".");
+                                                logger.Warn("An unrecognised STUN request was received from " + remoteIPEndPoint + ".");
                                             }
                                         }
                                         catch (SocketException sockExcp)
                                         {
-                                            logger.Debug("RTPSession.RTPReceive STUN processing (" + _remoteEndPoint + "). " + sockExcp.Message);
+                                            logger.Debug("RTPSession.RTPReceive STUN processing (" + remoteIPEndPoint + "). " + sockExcp.Message);
                                             continue;
                                         }
                                         catch (Exception stunExcp)
                                         {
-                                            logger.Warn("Exception RTPSession.RTPReceive STUN processing (" + _remoteEndPoint + "). " + stunExcp);
+                                            logger.Warn("Exception RTPSession.RTPReceive STUN processing (" + remoteIPEndPoint + "). " + stunExcp);
                                             continue;
                                         }
                                     }
                                     else
                                     {
-                                        logger.Warn("A STUN reponse was received on RTP socket from " + _remoteEndPoint + " but no ICE state was set.");
+                                        //logger.Warn("A STUN reponse was received on RTP socket from " + remoteIPEndPoint + " but no ICE state was set.");
                                     }
                                 }
                                 else
@@ -465,7 +488,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.Warn("Zero bytes read from RTSPSession RTP socket for session ID " + SessionID + " and " + _remoteEndPoint + ".");
+                            logger.Warn("Zero bytes read from RTSPSession RTP socket for session ID " + SessionID + " and " + remoteIPEndPoint + ".");
                             break;
                         }
                     }
@@ -716,10 +739,12 @@ namespace SIPSorcery.Net
                         //sw.Start();
 
                         //_rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None,  _remoteEndPoint);
-                        SocketAsyncEventArgs socketSendArgs = new SocketAsyncEventArgs();
-                        socketSendArgs.SetBuffer(rtpBytes, 0, rtpBytes.Length);
-                        socketSendArgs.RemoteEndPoint = _remoteEndPoint;
-                        _rtpSocket.SendToAsync(socketSendArgs);
+                        //SocketAsyncEventArgs socketSendArgs = new SocketAsyncEventArgs();
+                        //socketSendArgs.SetBuffer(rtpBytes, 0, rtpBytes.Length);
+                        //socketSendArgs.RemoteEndPoint = _remoteEndPoint;
+                        //_rtpSocket.SendToAsync(socketSendArgs);
+
+                        _rtpSocket.BeginSendTo(rtpBytes, 0, rtpBytes.Length, SocketFlags.None, _remoteEndPoint, null, null);
 
                         //sw.Stop();
 
@@ -806,11 +831,12 @@ namespace SIPSorcery.Net
 
                        // _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
 
-                        SocketAsyncEventArgs socketSendArgs = new SocketAsyncEventArgs();
-                        socketSendArgs.SetBuffer(rtpBytes, 0, rtpBytes.Length);
-                        socketSendArgs.RemoteEndPoint = _remoteEndPoint;
-                        _rtpSocket.SendToAsync(socketSendArgs);
+                        //SocketAsyncEventArgs socketSendArgs = new SocketAsyncEventArgs();
+                        //socketSendArgs.SetBuffer(rtpBytes, 0, rtpBytes.Length);
+                        //socketSendArgs.RemoteEndPoint = _remoteEndPoint;
+                        //_rtpSocket.SendToAsync(socketSendArgs);
 
+                        _rtpSocket.BeginSendTo(rtpBytes, 0, rtpBytes.Length, SocketFlags.None, _remoteEndPoint, null, null);
                         //sw.Stop();
 
                         //if (sw.ElapsedMilliseconds > 15)
@@ -847,10 +873,12 @@ namespace SIPSorcery.Net
                 {
                     //_rtpSocket.SendTo(payload, _remoteEndPoint);
 
-                    SocketAsyncEventArgs socketSendArgs = new SocketAsyncEventArgs();
-                    socketSendArgs.SetBuffer(payload, 0, payload.Length);
-                    socketSendArgs.RemoteEndPoint = _remoteEndPoint;
-                    _rtpSocket.SendToAsync(socketSendArgs);
+                    //SocketAsyncEventArgs socketSendArgs = new SocketAsyncEventArgs();
+                    //socketSendArgs.SetBuffer(payload, 0, payload.Length);
+                    //socketSendArgs.RemoteEndPoint = _remoteEndPoint;
+                    //_rtpSocket.SendToAsync(socketSendArgs);
+
+                    _rtpSocket.BeginSendTo(payload, 0, payload.Length, SocketFlags.None, _remoteEndPoint, SendRtpCallback, _rtpSocket);
                 }
             }
             catch (Exception excp)
@@ -858,6 +886,26 @@ namespace SIPSorcery.Net
                 if (!_closed)
                 {
                     logger.Error("Exception RTSPSession.SendRTPRaw attempting to send to " + _remoteEndPoint + ". " + excp);
+
+                    if (OnRTPSocketDisconnected != null)
+                    {
+                        OnRTPSocketDisconnected(_sessionID);
+                    }
+                }
+            }
+        }
+
+        private void SendRtpCallback(IAsyncResult ar)
+        {
+            try
+            {
+                _rtpSocket.EndSend(ar);
+            }
+            catch(Exception excp)
+            {
+                if (!_closed)
+                {
+                    logger.Error("Exception RTSPSession.SendRtpCallback attempting to send to " + _remoteEndPoint + ". " + excp);
 
                     if (OnRTPSocketDisconnected != null)
                     {

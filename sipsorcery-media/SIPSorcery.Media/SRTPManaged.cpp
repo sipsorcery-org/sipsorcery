@@ -39,7 +39,11 @@ namespace SIPSorceryMedia {
 		unsigned char* pby = p;
 		char* pch = reinterpret_cast<char*>(pby);
 
-		return srtp_unprotect(*_session, pch, &length);
+		err_status_t result = srtp_unprotect(*_session, pch, &length);
+
+		//free(pch);
+
+		return result;
 	}
 
 	int SRTPManaged::ProtectRTP(cli::array<System::Byte>^ buffer, int length)
@@ -48,6 +52,23 @@ namespace SIPSorceryMedia {
 		unsigned char* pby = p;
 		char* pch = reinterpret_cast<char*>(pby);
 
-		return srtp_protect(*_session, pch, &length);
+		err_status_t result = srtp_protect(*_session, pch, &length);
+
+		//free(pch);
+
+		return result;
+	}
+
+	SRTPManaged::~SRTPManaged()
+	{
+		if (_session)
+		{
+			delete _session;
+		}
+
+		if (_policy)
+		{
+			free(_policy);
+		}
 	}
 }

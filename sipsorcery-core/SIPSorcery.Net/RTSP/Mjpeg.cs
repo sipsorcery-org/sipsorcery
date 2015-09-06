@@ -50,11 +50,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SIPSorcery.Sys;
+using log4net;
 
 namespace SIPSorcery.Net
 {
     public class Mjpeg
     {
+        private static ILog logger = AppState.logger;
+
         public sealed class Tags
         {
             static Tags() { }
@@ -484,6 +487,11 @@ namespace SIPSorcery.Net
                     Width =  (uint)(packet.Payload[offset++] * 8); // This should have been 128 or > and the standard would have worked for all resolutions
                     Height = (uint)(packet.Payload[offset++] * 8);// Now in certain highres profiles you will need an OnVif extension before the RtpJpeg Header
                     //It is worth noting Rtp does not care what you send and more tags such as comments and or higher resolution pictures may be sent and these values will simply be ignored.
+
+                    if(Width == 0 || Height == 0)
+                    {
+                        logger.WarnFormat("ProcessMjpegFrame could not determine either the width or height of the jpeg frame (width={0}, height={1}).", Width, Height);
+                    }
 
                     //Restart Interval 64 - 127
                     if (Type > 63 && Type < 128)

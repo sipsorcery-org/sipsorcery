@@ -76,7 +76,7 @@ namespace SIPSorcery.Net
         public uint SyncSource;									// 32 bits.
         public int[] CSRCList;									// 32 bits.
         public UInt16 ExtensionProfile;                         // 16 bits.
-        public UInt16 ExtensionLength;                          // 16 bits,  length of the header extensionsin 32 bit words.
+        public UInt16 ExtensionLength;                          // 16 bits,  length of the header extensions in 32 bit words.
         public byte[] ExtensionPayload;
 
         public int Length
