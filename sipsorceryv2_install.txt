@@ -1,0 +1,68 @@
+SIPSorcery Local Instance Install Instructions:
+
+Quick Start:
+------------
+
+1. Set up MySQL database,
+2. Edit proxy script.
+3. Edit appservers.txt,
+4. Eidt sipsorcery-allinone.exe.config,
+5. Start application with: sipsorcery-allineone.exe -c
+6. If everything is working the application can be installed as a Windows service using: installutil sipsorcery-allinone.exe
+
+MySQL Database:
+---------------
+
+The only supported persistence store for sipsorcery local is a MySQL database.
+
+Create a new MySQL database called sipsorceryv2. The required schema is in the file sipsorceryv2_schema.sql.
+
+Once the schema is installed two records need to be added to the database before sipsorcery local can use it.
+
+THe first insert is to create a domain that the sipsorcery local instance will recognise as its own. This does not need to be a internet resolvable hostname but if
+you are going to register clients with your sipsorcery local instance you should make the domain whatever you intend to put ins as the SIP server for those devices.
+The domain name can be an IP address. You can also set an alias list of ';' separated strings that will be treated the same way as the amin domain name.
+
+insert into sipdomains values (UUID(), 'yourdomain.com', 'local;yourdomain;sip.yourdomain.com;yourdomain.com:5060;sip.yourdomain.com:5060;10.1.1.2;10.1.1.2:5060', null, '2010-02-09T13:01:21.3540000+00:00');
+
+The second insert is to create a user record so you can login to a sipsorcery local client. Put your own values in for "your_username" and "your@email.address.com". The password in the 
+insert below is "password".
+
+insert into customers (id, customerusername, customerpassword, salt, emailaddress, adminid, maxexecutioncount, executioncount, emailaddressconfirmed, inserted, servicelevel) values (uuid(), 'your_username', 'sqVNTkteh3nm06A3LQuFdjT3YGxi5xDv', '1388.r4R+dPdzniwUXdBmypuQWA==', 'your@email.address.com', '*', 5, 0, 1, '2010-10-15T00:00:00.0000000+00:00', 'Gold');
+
+Proxy Script:
+-------------
+
+THe sipsorcery local application runs a SIP proxy which is controlled by the proxyscript.py python script file.
+
+At the top of that file the "10.1.1.2" IP address fields need to be replaced with whatever IP address the sipsorcery local instance is running on.
+
+Also replace the "10." on line 27 to match the local IP address.
+
+Application Servers:
+--------------------
+
+The sipsorcery local proxy locates the SIP application servers by using the appservers.txt. For a local instance there will only be a single application server and 
+the single line in the file needs to have "10.1.1.2" replaced with the local IP address of the machine running the local instance. 
+
+Main application configuration file:
+------------------------------------
+
+The main sipsorcery local configuration file is sipsorcery-allinone.exe.config. The ssettings that need to be changed in that file are:
+
+For the two settings below you will need to adjust depending on your MySQL server details.
+
+    <add key="UserDataDBConnStr" value="Database=sipsorceryv2;Data Source=localhost;User Id=root;Password=password" /> 
+	<add key="PersistenceConnStr" value="Database=sipsorceryv2;Data Source=localhost;User Id=root;Password=password" />
+	
+THe outbound proxy for the SIP application server needs to be set. Replace 10.1.1.2 with the IP address of the local machine.	
+	
+	 <OutboundProxy value="udp:10.1.1.2:5060" />
+	 
+Running:
+--------
+
+The application can be run as a console application with the command below. In console mode all log messages including dial plan traces are displayed on the console.
+
+sipsorcery-allineone.exe -c
+

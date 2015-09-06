@@ -39,6 +39,7 @@ create table customers
  RTCCInternationalPrefixes varchar(32) null,
  Salt varchar(64) not null,
  FTPPrefix varchar(8) null,						-- A random prefix that allows FTP uploads to a common directory to be associated with a customer account.
+ RtccReconciliationURL varchar(1024) DEFAULT NULL
  Primary Key(id),
  Unique(customerusername)
 );
