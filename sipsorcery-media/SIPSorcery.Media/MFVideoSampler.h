@@ -17,6 +17,8 @@
 #include <mmdeviceapi.h>
 #include <Audioclient.h>
 
+#include "VideoSubTypes.h"
+
 using namespace System;
 using namespace System::Collections::Generic;
 using namespace System::Runtime::InteropServices;
@@ -46,14 +48,15 @@ extern "C" {
 namespace SIPSorceryMedia {
 
 	/* Used to describe the modes of the attached video devices. */
-	public ref class VideoMode 
+	public ref class VideoMode
 	{
-		public:
-			String ^ DeviceFriendlyName;
-			int DeviceIndex;
-			UInt32 Width;
-			UInt32 Height;
-			Guid VideoSubType;
+	public:
+		String ^ DeviceFriendlyName;
+		int DeviceIndex;
+		UInt32 Width;
+		UInt32 Height;
+		Guid VideoSubType;
+		String ^ VideoSubTypeFriendlyName;
 	};
 
 	public ref class MFVideoSampler
@@ -63,9 +66,8 @@ namespace SIPSorceryMedia {
 
 		MFVideoSampler();
 		~MFVideoSampler();
-		//BOOL Init(int width, int height, const GUID MF_INPUT_FORMAT);
 		HRESULT GetVideoDevices(/* out */ List<VideoMode^> ^% devices);
-		HRESULT Init(int videoDeviceIndex, UInt32 width, UInt32 height);
+		HRESULT Init(int videoDeviceIndex, VideoSubTypesEnum videoSubType, UInt32 width, UInt32 height);
 		HRESULT InitFromFile();
 		HRESULT FindVideoMode(IMFSourceReader *pReader, const GUID mediaSubType, UInt32 width, UInt32 height, /* out */ IMFMediaType *&foundpType);
 		HRESULT GetSample(/* out */ array<Byte> ^% buffer);
@@ -84,7 +86,7 @@ namespace SIPSorceryMedia {
 		property int Height {
 			int get() { return _height; }
 		}
-		
+
 	private:
 
 		static BOOL _isInitialised = false;
@@ -180,6 +182,7 @@ namespace SIPSorceryMedia {
 			INTERNAL_GUID_TO_STRING(MFMediaType_Protected, 12);               // Protected
 
 			// Minor video type values
+			// https://msdn.microsoft.com/en-us/library/windows/desktop/aa370819(v=vs.85).aspx
 			INTERNAL_GUID_TO_STRING(MFVideoFormat_Base, 14);                  // Base
 			INTERNAL_GUID_TO_STRING(MFVideoFormat_MP43, 14);                  // MP43
 			INTERNAL_GUID_TO_STRING(MFVideoFormat_WMV1, 14);                  // WMV1
@@ -187,7 +190,9 @@ namespace SIPSorceryMedia {
 			INTERNAL_GUID_TO_STRING(MFVideoFormat_WMV3, 14);                  // WMV3
 			INTERNAL_GUID_TO_STRING(MFVideoFormat_MPG1, 14);                  // MPG1
 			INTERNAL_GUID_TO_STRING(MFVideoFormat_MPG2, 14);                  // MPG2
-			INTERNAL_GUID_TO_STRING(MFVideoFormat_RGB24, 14);					// RGB24
+			INTERNAL_GUID_TO_STRING(MFVideoFormat_RGB24, 14);				  // RGB24
+			INTERNAL_GUID_TO_STRING(MFVideoFormat_YUY2, 14);				  // YUY2
+			INTERNAL_GUID_TO_STRING(MFVideoFormat_I420, 14);				  // I420
 
 			// Minor audio type values
 			INTERNAL_GUID_TO_STRING(MFAudioFormat_Base, 14);                  // Base

@@ -24,6 +24,7 @@
     <Keyword>ManagedCProj</Keyword>
     <RootNamespace>SIPSorceryMedia</RootNamespace>
     <ProjectName>SIPSorceryMedia</ProjectName>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -90,7 +91,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\include\libsrtp\crypto</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include\libsrtp\crypto;..\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -105,7 +106,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\include;..\include\libsrtp\crypto</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include;..\..\..\openssl\inc32;..\..\..\libvpx</AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
       <CallingConvention>
       </CallingConvention>
@@ -113,8 +114,8 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>srtp.lib;Ws2_32.lib;vpxmdd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libs\x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>advapi32.lib;user32.lib;gdi32.lib;ssleay32.lib;libeay32.lib;srtp.lib;Ws2_32.lib;vpxmdd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libs\x64;..\..\..\openssl\build-vc14-64\lib;..\..\..\libsrtp\$(Platform)\$(Configuration);..\..\..\libvpx\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
       <TargetMachine>MachineX64</TargetMachine>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
@@ -158,21 +159,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DtlsManaged.h" />
     <ClInclude Include="ImageConvert.h" />
     <ClInclude Include="MFVideoSampler.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="SRTPManaged.h" />
+    <ClInclude Include="VideoSubTypes.h" />
     <ClInclude Include="VPXEncoder.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />
+    <ClCompile Include="DtlsManaged.cpp" />
     <ClCompile Include="ImageConvert.cpp" />
     <ClCompile Include="MFVideoSampler.cpp" />
     <ClCompile Include="SRTPManaged.cpp" />
     <ClCompile Include="VPXEncoder.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="LICENSE_libsrtp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

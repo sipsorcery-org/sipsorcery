@@ -63,6 +63,7 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\x64\Release\</OutputPath>
@@ -82,17 +83,13 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>libs\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="SIPSorcery.Net, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SIPSorcery.Net, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\sipsorcery-core\SIPSorcery.Net\bin\x64\Release\SIPSorcery.Net.dll</HintPath>
+      <HintPath>..\..\..\sipsorcery-core\Build\SIPSorcery.Net.dll</HintPath>
     </Reference>
-    <Reference Include="SIPSorcery.Sys, Version=1.0.0.38441, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SIPSorcery.Sys, Version=1.3.1.22271, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\sipsorcery-core\SIPSorcery.Net\bin\x64\Release\SIPSorcery.Sys.dll</HintPath>
-    </Reference>
-    <Reference Include="SIPSorceryRTP, Version=1.0.5431.35861, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\sipsorcery-core\SIPSorcery.Net\bin\x64\Release\SIPSorceryRTP.dll</HintPath>
+      <HintPath>..\..\..\sipsorcery-core\Build\SIPSorcery.Sys.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -114,13 +111,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ffmpeg.txt" />
-    <Content Include="LICENSE_websocket-sharp.txt" />
     <Content Include="webrtcrecv.html" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MFStreamer\MFStreamer.vcxproj">
-      <Project>{925076e9-1d41-4c75-9e5e-556da204efc2}</Project>
-      <Name>MFStreamer</Name>
+    <ProjectReference Include="..\..\SIPSorcery.Media\SIPSorcery.Media.vcxproj">
+      <Project>{60cc689c-2616-441c-a38a-e1b764c7c446}</Project>
+      <Name>SIPSorceryMedia</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

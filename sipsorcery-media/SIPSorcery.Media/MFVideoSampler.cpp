@@ -9,6 +9,20 @@ namespace SIPSorceryMedia {
 			_isInitialised = true;
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			MFStartup(MF_VERSION);
+
+			// Register the color converter DSP for this process, in the video 
+			// processor category. This will enable the sink writer to enumerate
+			// the color converter when the sink writer attempts to match the
+			// media types.
+			MFTRegisterLocalByCLSID(
+				__uuidof(CColorConvertDMO),
+				MFT_CATEGORY_VIDEO_PROCESSOR,
+				L"",
+				MFT_ENUM_FLAG_SYNCMFT,
+				0,
+				NULL,
+				0,
+				NULL);
 		}
 	}
 
@@ -54,6 +68,8 @@ namespace SIPSorceryMedia {
 
 			videoDevices[index]->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME, &deviceFriendlyName, NULL);
 
+			//Console::WriteLine("Video device[{0}] name: {1}.", index, Marshal::PtrToStringUni((IntPtr)deviceFriendlyName));
+
 			// Request video capture device.
 			CHECK_HR(videoDevices[index]->ActivateObject(IID_PPV_ARGS(&videoSource)), L"Error activating video device.");
 
@@ -89,6 +105,7 @@ namespace SIPSorceryMedia {
 					videoMode->Width = pWidth;
 					videoMode->Height = pHeight;
 					videoMode->VideoSubType = FromGUID(videoSubType);
+					videoMode->VideoSubTypeFriendlyName = gcnew System::String(STRING_FROM_GUID(videoSubType));
 					devices->Add(videoMode);
 
 					//devices->Add(Marshal::PtrToStringUni((IntPtr)deviceFriendlyName));
@@ -102,9 +119,9 @@ namespace SIPSorceryMedia {
 		return S_OK;
 	}
 
-	HRESULT MFVideoSampler::Init(int videoDeviceIndex, UInt32 width, UInt32 height)
+	HRESULT MFVideoSampler::Init(int videoDeviceIndex, VideoSubTypesEnum videoSubType, UInt32 width, UInt32 height)
 	{
-		const GUID MF_INPUT_FORMAT = MFVideoFormat_RGB24;
+		const GUID MF_INPUT_FORMAT = VideoSubTypesHelper::GetGuidForVideoSubType(videoSubType); //WMMEDIASUBTYPE_YUY2; // MFVideoFormat_YUY2; // MFVideoFormat_RGB24; //WMMEDIASUBTYPE_YUY2
 		IMFMediaSource *videoSource = NULL;
 		UINT32 videoDeviceCount = 0;
 		IMFAttributes *videoConfig = NULL;
@@ -167,21 +184,6 @@ namespace SIPSorceryMedia {
 				LONG lFrameStride;
 				MFGetAttributeSize(videoType, MF_MT_FRAME_SIZE, &nWidth, &nHeight);
 				videoType->GetUINT32(MF_MT_DEFAULT_STRIDE, (UINT32*)&lFrameStride);*/
-
-				// Register the color converter DSP for this process, in the video 
-				// processor category. This will enable the sink writer to enumerate
-				// the color converter when the sink writer attempts to match the
-				// media types.
-				CHECK_HR(MFTRegisterLocalByCLSID(
-					__uuidof(CColorConvertDMO),
-					MFT_CATEGORY_VIDEO_PROCESSOR,
-					L"",
-					MFT_ENUM_FLAG_SYNCMFT,
-					0,
-					NULL,
-					0,
-					NULL
-					), L"Error registering colour converter DSP.");
 			}
 
 			videoConfig->Release();

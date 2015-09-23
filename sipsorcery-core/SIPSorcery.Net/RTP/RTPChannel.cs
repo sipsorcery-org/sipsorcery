@@ -41,10 +41,6 @@ using System.Threading;
 using SIPSorcery.Sys;
 using log4net;
 
-#if SRTP
-using SIPSorceryMedia;
-#endif
-
 namespace SIPSorcery.Net
 {
     public enum FrameTypesEnum
@@ -93,10 +89,6 @@ namespace SIPSorcery.Net
         private byte[] _controlSocketBuffer;
         private bool _isClosed;
         private Queue<RTPPacket> _packets = new Queue<RTPPacket>();
-
-#if SRTP
-        private SRTPManaged _srtp;
-#endif
 
         private IPEndPoint _remoteEndPoint;
         public IPEndPoint RemoteEndPoint
@@ -205,12 +197,10 @@ namespace SIPSorcery.Net
             {
                 _iceState = iceState;
 
-#if SRTP
-                if (_iceState != null && _iceState.SRTPKey != null)
-                {
-                   _srtp = new SRTPManaged(Convert.FromBase64String(_iceState.SRTPKey));
-                }
-#endif
+                //if (_iceState != null && _iceState.SRTPKey != null)
+                //{
+                //   _srtp = new SRTPManaged(Convert.FromBase64String(_iceState.SRTPKey), true);
+                //}
             }
             catch (Exception excp)
             {
@@ -992,18 +982,14 @@ namespace SIPSorcery.Net
 
                         byte[] rtpBytes = rtpPacket.GetBytes();
 
-#if SRTP
-
-                        if (_srtp != null)
-                        {
-                            int rtperr = _srtp.ProtectRTP(rtpBytes, rtpBytes.Length - SRTP_SIGNATURE_LENGTH);
-                            if (rtperr != 0)
-                            {
-                                logger.Warn("An error was returned attempting to sign an SRTP packet for " + _remoteEndPoint + ", error code " + rtperr + ".");
-                            }
-                        }
-
-#endif
+                        //if (_srtp != null)
+                        //{
+                        //    int rtperr = _srtp.ProtectRTP(rtpBytes, rtpBytes.Length - SRTP_SIGNATURE_LENGTH);
+                        //    if (rtperr != 0)
+                        //    {
+                        //        logger.Warn("An error was returned attempting to sign an SRTP packet for " + _remoteEndPoint + ", error code " + rtperr + ".");
+                        //    }
+                        //}
 
                         //System.Diagnostics.Debug.WriteLine(" offset " + (index * RTP_MAX_PAYLOAD) + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header .MarkerBit + ".");
 

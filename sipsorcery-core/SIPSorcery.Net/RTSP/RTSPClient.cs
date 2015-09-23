@@ -93,7 +93,7 @@ namespace SIPSorcery.Net
         {
             _rtpPayloadHeaderLength = rtpPayloadHeaderLength;
 
-            if(_rtspSession != null)
+            if (_rtspSession != null)
             {
                 _rtspSession.RTPPayloadHeaderLength = rtpPayloadHeaderLength;
             }
@@ -160,66 +160,83 @@ namespace SIPSorcery.Net
         {
             _url = url;
 
-            string hostname = Regex.Match(url, @"rtsp://(?<hostname>\S+?)/").Result("${hostname}");
+            Match urlMatch = Regex.Match(url, @"rtsp://(?<hostname>\S+?)/", RegexOptions.IgnoreCase);
 
-            logger.Debug("RTSP Client Connecting to " + hostname + ".");
-            _rtspConnection = new TcpClient(hostname, RTSP_PORT);
-            _rtspStream = _rtspConnection.GetStream();
-
-            _rtspSession = new RTSPSession();
-            _rtspSession.RTPPayloadHeaderLength = _rtpPayloadHeaderLength;
-            _rtspSession.ReservePorts();
-            _rtspSession.OnRTPQueueFull += RTPQueueFull;
-
-            RTSPRequest rtspRequest = new RTSPRequest(RTSPMethodsEnum.SETUP, url);
-            RTSPHeader rtspHeader = new RTSPHeader(_cseq++, null);
-            rtspHeader.Transport = new RTSPTransportHeader() { ClientRTPPortRange = _rtspSession.RTPPort + "-" + _rtspSession.ControlPort };
-            rtspRequest.Header = rtspHeader;
-            string rtspReqStr = rtspRequest.ToString();
-
-            RTSPMessage rtspMessage = null;
-
-            System.Diagnostics.Debug.WriteLine(rtspReqStr);
-
-            byte[] rtspRequestBuffer = Encoding.UTF8.GetBytes(rtspReqStr);
-            _rtspStream.Write(rtspRequestBuffer, 0, rtspRequestBuffer.Length);
-
-            byte[] buffer = new byte[2048];
-            int bytesRead = _rtspStream.Read(buffer, 0, 2048);
-
-            if (bytesRead > 0)
+            if (!urlMatch.Success)
             {
-                System.Diagnostics.Debug.WriteLine(Encoding.UTF8.GetString(buffer, 0, bytesRead));
-
-                rtspMessage = RTSPMessage.ParseRTSPMessage(buffer, null, null);
-
-                if (rtspMessage.RTSPMessageType == RTSPMessageTypesEnum.Response)
-                {
-                    var setupResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
-
-                    if (setupResponse.Status == RTSPResponseStatusCodesEnum.OK)
-                    {
-                        _rtspSession.SessionID = setupResponse.Header.Session;
-                        _rtspSession.RemoteEndPoint = new IPEndPoint((_rtspConnection.Client.RemoteEndPoint as IPEndPoint).Address, setupResponse.Header.Transport.GetServerRTPPort());
-                        _rtspSession.Start();
-
-                        logger.Debug("RTSP Response received to SETUP: " + setupResponse.Status + ", session ID " + _rtspSession.SessionID + ", server RTP endpoint " + _rtspSession.RemoteEndPoint + ".");
-
-                        if (OnSetupSuccess != null)
-                        {
-                            OnSetupSuccess(this);
-                        }
-                    }
-                    else
-                    {
-                        logger.Warn("RTSP Response received to SETUP: " + setupResponse.Status + ".");
-                        throw new ApplicationException("An error response of " + setupResponse.Status + " was received for an RTSP setup request.");
-                    }
-                }
+                throw new ApplicationException("The URL provided to the RTSP client was not recognised, " + url + ".");
             }
             else
             {
-                throw new ApplicationException("Zero bytes were read from the RTSP client socket in response to a SETUP request.");
+                string hostname = urlMatch.Result("${hostname}");
+                int port = RTSP_PORT;
+
+                if (hostname.Contains(':'))
+                {
+                    port = SIPSorcery.Sys.IPSocket.ParsePortFromSocket(hostname);
+                    hostname = SIPSorcery.Sys.IPSocket.ParseHostFromSocket(hostname);
+                }
+
+                logger.Debug("RTSP client connecting to " + hostname + ", port " + port + ".");
+
+                _rtspConnection = new TcpClient(hostname, port);
+                _rtspStream = _rtspConnection.GetStream();
+
+                _rtspSession = new RTSPSession();
+                _rtspSession.RTPPayloadHeaderLength = _rtpPayloadHeaderLength;
+                _rtspSession.ReservePorts();
+                _rtspSession.OnRTPQueueFull += RTPQueueFull;
+
+                RTSPRequest rtspRequest = new RTSPRequest(RTSPMethodsEnum.SETUP, url);
+                RTSPHeader rtspHeader = new RTSPHeader(_cseq++, null);
+                rtspHeader.Transport = new RTSPTransportHeader() { ClientRTPPortRange = _rtspSession.RTPPort + "-" + _rtspSession.ControlPort };
+                rtspRequest.Header = rtspHeader;
+                string rtspReqStr = rtspRequest.ToString();
+
+                RTSPMessage rtspMessage = null;
+
+                System.Diagnostics.Debug.WriteLine(rtspReqStr);
+
+                byte[] rtspRequestBuffer = Encoding.UTF8.GetBytes(rtspReqStr);
+                _rtspStream.Write(rtspRequestBuffer, 0, rtspRequestBuffer.Length);
+
+                byte[] buffer = new byte[2048];
+                int bytesRead = _rtspStream.Read(buffer, 0, 2048);
+
+                if (bytesRead > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+
+                    rtspMessage = RTSPMessage.ParseRTSPMessage(buffer, null, null);
+
+                    if (rtspMessage.RTSPMessageType == RTSPMessageTypesEnum.Response)
+                    {
+                        var setupResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
+
+                        if (setupResponse.Status == RTSPResponseStatusCodesEnum.OK)
+                        {
+                            _rtspSession.SessionID = setupResponse.Header.Session;
+                            _rtspSession.RemoteEndPoint = new IPEndPoint((_rtspConnection.Client.RemoteEndPoint as IPEndPoint).Address, setupResponse.Header.Transport.GetServerRTPPort());
+                            _rtspSession.Start();
+
+                            logger.Debug("RTSP Response received to SETUP: " + setupResponse.Status + ", session ID " + _rtspSession.SessionID + ", server RTP endpoint " + _rtspSession.RemoteEndPoint + ".");
+
+                            if (OnSetupSuccess != null)
+                            {
+                                OnSetupSuccess(this);
+                            }
+                        }
+                        else
+                        {
+                            logger.Warn("RTSP Response received to SETUP: " + setupResponse.Status + ".");
+                            throw new ApplicationException("An error response of " + setupResponse.Status + " was received for an RTSP setup request.");
+                        }
+                    }
+                }
+                else
+                {
+                    throw new ApplicationException("Zero bytes were read from the RTSP client socket in response to a SETUP request.");
+                }
             }
         }
 
@@ -306,7 +323,7 @@ namespace SIPSorcery.Net
                     logger.Debug("RTSP client did not send teardown request for " + _url + ", the socket was closed.");
                 }
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.Error("Exception RTSPClient.Teardown. " + excp);
             }
@@ -339,7 +356,7 @@ namespace SIPSorcery.Net
                         {
                             _rtspStream.Close();
                         }
-                        catch(Exception rtpStreamExcp)
+                        catch (Exception rtpStreamExcp)
                         {
                             logger.Error("Exception RTSPClient.Close closing RTP stream. " + rtpStreamExcp);
                         }
@@ -380,7 +397,7 @@ namespace SIPSorcery.Net
                             if (_rtpTrackingAction != null)
                             {
                                 double bwCalcSeconds = DateTime.Now.Subtract(_lastBWCalcAt).TotalSeconds;
-                                if(bwCalcSeconds > BANDWIDTH_CALCULATION_SECONDS)
+                                if (bwCalcSeconds > BANDWIDTH_CALCULATION_SECONDS)
                                 {
                                     _lastBWCalc = _bytesSinceLastBWCalc * 8 / bwCalcSeconds;
                                     _lastFrameRate = _framesSinceLastCalc / bwCalcSeconds;
@@ -417,7 +434,7 @@ namespace SIPSorcery.Net
                                 }
                                 else
                                 {
-                                    frame.HasMarker = rtpPacket.Header.MarkerBit == 1;
+                                    frame.HasMarker = (rtpPacket.Header.MarkerBit == 1);
                                     frame.AddRTPPacket(rtpPacket);
                                 }
 
@@ -428,15 +445,17 @@ namespace SIPSorcery.Net
 
                                     _lastFrameSize = imageBytes.Length;
                                     _framesSinceLastCalc++;
-                                    
+
                                     _lastCompleteFrameTimestamp = rtpPacket.Header.Timestamp;
                                     //System.Diagnostics.Debug.WriteLine("Frame ready " + frame.Timestamp + ", sequence numbers " + frame.StartSequenceNumber + " to " + frame.EndSequenceNumber + ",  payload length " + imageBytes.Length + ".");
+                                    //logger.Debug("Frame ready " + frame.Timestamp + ", sequence numbers " + frame.StartSequenceNumber + " to " + frame.EndSequenceNumber + ",  payload length " + imageBytes.Length + ".");
                                     _frames.Remove(frame);
 
                                     // Also remove any earlier frames as we don't care about anything that's earlier than the current complete frame.
                                     foreach (var oldFrame in _frames.Where(x => x.Timestamp <= rtpPacket.Header.Timestamp).ToList())
                                     {
                                         System.Diagnostics.Debug.WriteLine("Discarding old frame for timestamp " + oldFrame.Timestamp + ".");
+                                        logger.Warn("Discarding old frame for timestamp " + oldFrame.Timestamp + ".");
                                         _frames.Remove(oldFrame);
                                     }
 
@@ -444,10 +463,18 @@ namespace SIPSorcery.Net
                                     {
                                         try
                                         {
-                                            //System.Diagnostics.Debug.WriteLine("RTP frame ready for timestamp " + frame.Timestamp + ".");
-                                            OnFrameReady(this, frame);
+                                            //if (frame.FramePackets.Count == 1)
+                                            //{
+                                            //    // REMOVE.
+                                            //    logger.Warn("Discarding frame as there should have been more than 1 RTP packets.");
+                                            //}
+                                            //else
+                                            //{
+                                                //System.Diagnostics.Debug.WriteLine("RTP frame ready for timestamp " + frame.Timestamp + ".");
+                                                OnFrameReady(this, frame);
+                                            //}
                                         }
-                                        catch(Exception frameReadyExcp)
+                                        catch (Exception frameReadyExcp)
                                         {
                                             logger.Error("Exception RTSPClient.ProcessRTPPackets OnFrameReady. " + frameReadyExcp);
                                         }

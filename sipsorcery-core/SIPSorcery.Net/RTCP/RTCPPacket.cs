@@ -103,6 +103,36 @@ namespace SIPSorcery.Net
             Buffer.BlockCopy(packet, RTCPHeader.HEADER_BYTES_LENGTH + SENDERINFO_BYTES_LENGTH, Reports, 0, Reports.Length);
 		}
 
+        public byte[] GetBytes()
+        {
+            byte[] payload = new byte[SENDERINFO_BYTES_LENGTH];
+
+            if (BitConverter.IsLittleEndian)
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SenderSyncSource)), 0, payload, 0, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(NTPTimestamp)), 0, payload, 4, 8);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(RTPTimestamp)), 0, payload, 12, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SenderPacketCount)), 0, payload, 16, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SenderOctetCount)), 0, payload, 20, 4);
+            }
+            else
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes(SenderSyncSource), 0, payload, 0, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(NTPTimestamp), 0, payload, 4, 8);
+                Buffer.BlockCopy(BitConverter.GetBytes(RTPTimestamp), 0, payload, 12, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(SenderPacketCount), 0, payload, 16, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(SenderOctetCount), 0, payload, 20, 4);
+            }
+
+            Header.Length = Convert.ToUInt16(payload.Length);
+            byte[] header = Header.GetBytes();
+            byte[] packet = new byte[header.Length + payload.Length];
+            Array.Copy(header, packet, header.Length);
+            Array.Copy(payload, 0, packet, header.Length, payload.Length);
+
+            return packet;
+        }
+
 		public byte[] GetBytes(byte[] reports)
 		{
             Reports = reports;

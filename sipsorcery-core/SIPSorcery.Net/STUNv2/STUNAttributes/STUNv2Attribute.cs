@@ -84,6 +84,8 @@ namespace SIPSorcery.Net
 
         IceControlling = 0x802a,
         Priority = 0x0024,
+
+        UseCandidate = 0x0025,          // Added in RFC5245.
     }
 
     public class STUNv2AttributeTypes
@@ -97,6 +99,8 @@ namespace SIPSorcery.Net
     public class STUNv2Attribute
 	{
         public const short STUNATTRIBUTE_HEADER_LENGTH = 4;
+
+        private static ILog logger = STUNAppState.logger;
         
         public STUNv2AttributeTypesEnum AttributeType = STUNv2AttributeTypesEnum.Unknown;
         public byte[] Value;
@@ -143,8 +147,15 @@ namespace SIPSorcery.Net
 
                     if (stunAttributeLength > 0)
                     {
-                        stunAttributeValue = new byte[stunAttributeLength];
-                        Buffer.BlockCopy(buffer, startAttIndex + 4, stunAttributeValue, 0, stunAttributeLength);
+                        if (stunAttributeLength + startIndex + 4 > endIndex)
+                        {
+                            logger.Warn("The attribute lenght on a STUN parameter was greater than the available number of bytes.");
+                        }
+                        else
+                        {
+                            stunAttributeValue = new byte[stunAttributeLength];
+                            Buffer.BlockCopy(buffer, startAttIndex + 4, stunAttributeValue, 0, stunAttributeLength);
+                        }
                     }
 
                     STUNv2AttributeTypesEnum attributeType = STUNv2AttributeTypes.GetSTUNAttributeTypeForId(stunAttributeType);

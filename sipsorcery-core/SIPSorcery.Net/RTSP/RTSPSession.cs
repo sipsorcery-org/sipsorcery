@@ -46,18 +46,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using SIPSorcery.Sys;
 using log4net;
-
-#if SRTP
-using SIPSorceryMedia;
-#endif
 
 namespace SIPSorcery.Net
 {
@@ -103,9 +97,6 @@ namespace SIPSorcery.Net
         private DateTime _lastFrameRateCalculationAt = DateTime.MinValue;   // Time the frame rate was last calculated.
         private uint _timestampStep = Convert.ToUInt32(1 / DEFAULT_INITAL_FRAME_RATE * RFC_2435_FREQUENCY_BASELINE);    // The step that will be applied to the RTP timestamp. It gets re-calculated when the frame rate is adjusted.
 
-#if SRTP
-        private SRTPManaged _srtp;
-#endif
 
         private IPEndPoint _remoteEndPoint;
         public IPEndPoint RemoteEndPoint
@@ -207,12 +198,10 @@ namespace SIPSorcery.Net
             {
                 _iceState = iceState;
 
-#if SRTP
-                if (_iceState != null && _iceState.SRTPKey != null)
-                {
-                   _srtp = new SRTPManaged(Convert.FromBase64String(_iceState.SRTPKey));
-                }
-#endif
+                //if (_iceState != null && _iceState.SRTPKey != null)
+                //{
+                //   _srtp = new SRTPManaged(Convert.FromBase64String(_iceState.SRTPKey));
+                //}
             }
             catch (Exception excp)
             {
@@ -435,11 +424,11 @@ namespace SIPSorcery.Net
                                             }
                                             else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingErrorResponse)
                                             {
-                                                logger.Warn("A STUN binding error response was received from " + remoteIPEndPoint + ".");
+                                                //logger.Warn("A STUN binding error response was received from " + remoteIPEndPoint + ".");
                                             }
                                             else
                                             {
-                                                logger.Warn("An unrecognised STUN request was received from " + remoteIPEndPoint + ".");
+                                                //logger.Warn("An unrecognised STUN request was received from " + remoteIPEndPoint + ".");
                                             }
                                         }
                                         catch (SocketException sockExcp)
@@ -463,6 +452,7 @@ namespace SIPSorcery.Net
                                     RTPPacket rtpPacket = new RTPPacket(buffer.Take(bytesRead).ToArray());
 
                                     //System.Diagnostics.Debug.WriteLine("RTPReceive ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
+                                    //logger.Debug("RTPReceive remote " + remoteIPEndPoint + ", ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", bytes " + bytesRead + ", marker " + rtpPacket.Header.MarkerBit + ".");
 
                                     lock (_packets)
                                     {
@@ -603,6 +593,10 @@ namespace SIPSorcery.Net
                 {
                     logger.Warn("SendJpegFrame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
                 }
+                else if (_remoteEndPoint == null)
+                {
+                    logger.Warn("SendJpegFrame frame not sent as remote end point is not yet set.");
+                }
                 else
                 {
                     //_timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + (uint)(RFC_2435_FREQUENCY_BASELINE / DEFAULT_INITAL_FRAME_RATE)) % UInt32.MaxValue;
@@ -684,6 +678,10 @@ namespace SIPSorcery.Net
                 else if (_rtpSocketError != SocketError.Success)
                 {
                     logger.Warn("SendH264Frame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
+                }
+                else if (_remoteEndPoint == null)
+                {
+                    logger.Warn("SendH264Frame frame not sent as remote end point is not yet set.");
                 }
                 else
                 {
@@ -769,8 +767,6 @@ namespace SIPSorcery.Net
             }
         }
 
-#if SRTP
-
         /// <summary>
         /// Sends a dynamically sized frame. The RTP marker bit will be set for the last transmitted packet in the frame.
         /// </summary>
@@ -788,6 +784,10 @@ namespace SIPSorcery.Net
                 {
                     logger.Warn("SendVP8Frame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
                 }
+                else if(_remoteEndPoint == null)
+                {
+                    logger.Warn("SendVP8Frame frame not sent as remote end point is not yet set.");
+                }
                 else
                 {
                     RecalculateTimestampStep();
@@ -803,7 +803,8 @@ namespace SIPSorcery.Net
                         int offset = index * RTP_MAX_PAYLOAD;
                         int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
 
-                        RTPPacket rtpPacket = new RTPPacket(payloadLength + VP8_RTP_HEADER_LENGTH + ((_srtp != null) ? SRTP_SIGNATURE_LENGTH : 0));
+                        //RTPPacket rtpPacket = new RTPPacket(payloadLength + VP8_RTP_HEADER_LENGTH + ((_srtp != null) ? SRTP_SIGNATURE_LENGTH : 0));
+                        RTPPacket rtpPacket = new RTPPacket(payloadLength + VP8_RTP_HEADER_LENGTH);
                         rtpPacket.Header.SyncSource = _syncSource;
                         rtpPacket.Header.SequenceNumber = _sequenceNumber++;
                         rtpPacket.Header.Timestamp = _timestamp;
@@ -815,14 +816,14 @@ namespace SIPSorcery.Net
 
                         byte[] rtpBytes = rtpPacket.GetBytes();
 
-                        if (_srtp != null)
-                        {
-                            int rtperr = _srtp.ProtectRTP(rtpBytes, rtpBytes.Length - SRTP_SIGNATURE_LENGTH);
-                            if (rtperr != 0)
-                            {
-                                logger.Warn("An error was returned attempting to sign an SRTP packet for " + _remoteEndPoint + ", error code " + rtperr + ".");
-                            }
-                        }
+                        //if (_srtp != null)
+                        //{
+                        //    int rtperr = _srtp.ProtectRTP(rtpBytes, rtpBytes.Length - SRTP_SIGNATURE_LENGTH);
+                        //    if (rtperr != 0)
+                        //    {
+                        //        logger.Warn("An error was returned attempting to sign an SRTP packet for " + _remoteEndPoint + ", error code " + rtperr + ".");
+                        //    }
+                        //}
 
                         //System.Diagnostics.Debug.WriteLine(" offset " + (index * RTP_MAX_PAYLOAD) + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header .MarkerBit + ".");
 
@@ -859,8 +860,6 @@ namespace SIPSorcery.Net
                 }
             }
         }
-
-#endif
 
         /// <summary>
         /// Sends a packet to the RTSP server on the RTP socket.
