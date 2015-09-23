@@ -2206,6 +2206,30 @@ namespace SIPSorcery.Entities
         private global::System.String _FTPPrefix;
         partial void OnFTPPrefixChanging(global::System.String value);
         partial void OnFTPPrefixChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String RTCCReconciliationURL
+        {
+            get
+            {
+                return _RTCCReconciliationURL;
+            }
+            set
+            {
+                OnRTCCReconciliationURLChanging(value);
+                ReportPropertyChanging("RTCCReconciliationURL");
+                _RTCCReconciliationURL = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("RTCCReconciliationURL");
+                OnRTCCReconciliationURLChanged();
+            }
+        }
+        private global::System.String _RTCCReconciliationURL;
+        partial void OnRTCCReconciliationURLChanging(global::System.String value);
+        partial void OnRTCCReconciliationURLChanged();
 
         #endregion
 

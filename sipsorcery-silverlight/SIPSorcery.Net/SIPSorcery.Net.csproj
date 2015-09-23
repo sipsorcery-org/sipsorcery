@@ -79,6 +79,9 @@
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\SDP\SDPConnectionInformation.cs">
       <Link>SDP\SDPConnectionInformation.cs</Link>
     </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\SDP\SDPICECandidate.cs">
+      <Link>SDP\SDPICECandidate.cs</Link>
+    </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\SDP\SDPMediaAnnouncement.cs">
       <Link>SDP\SDPMediaAnnouncement.cs</Link>
     </Compile>

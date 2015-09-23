@@ -46,6 +46,28 @@ namespace SIPSorcery.Entities
         private static ILog logger = AppState.logger;
 
         /// <summary>
+        /// Retrieves the customer record that matches the specified name (name in this the username).
+        /// </summary>
+        /// <param name="name">THe name of the customer to try and retrieve.</param>
+        /// <returns>If found the customer record otherwise null.</returns>
+        public Customer GetForName(string name)
+        {
+            if(name.IsNullOrBlank())
+            {
+                return null;
+            }
+
+            using (var db = new SIPSorceryEntities())
+            {
+                string lowerName = name.Trim().ToLower();
+
+                return (from cu in db.Customers
+                        where cu.Name.ToLower() == lowerName
+                        select cu).SingleOrDefault();
+            }
+        }
+
+        /// <summary>
         /// Attempts to retrieve a customer record based on the FTP prefix.
         /// </summary>
         /// <param name="ftpPrefix">The FTP prefix to retrieve the customer for.</param>

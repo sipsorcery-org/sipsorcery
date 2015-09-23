@@ -181,18 +181,6 @@
     <Reference Include="GaDotNet.Common">
       <HintPath>..\..\stable\GaDotNet.Common.dll</HintPath>
     </Reference>
-    <Reference Include="Google.GData.Client, Version=2.1.0.0, Culture=neutral, PublicKeyToken=04a59ca9b0273830, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\Google.GData.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="Google.GData.Contacts, Version=2.1.0.0, Culture=neutral, PublicKeyToken=7e065189dd4b982f, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\Google.GData.Contacts.dll</HintPath>
-    </Reference>
-    <Reference Include="Google.GData.Extensions, Version=2.1.0.0, Culture=neutral, PublicKeyToken=0b4c5df2ebf20876, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\stable\Google.GData.Extensions.dll</HintPath>
-    </Reference>
     <Reference Include="IronRuby, Version=0.9.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\IronRuby.dll</HintPath>
@@ -219,6 +207,7 @@
       <Aliases>global</Aliases>
     </Reference>
     <Reference Include="System.Data.Entity" />
+    <Reference Include="System.Net" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq">
@@ -303,6 +292,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
