@@ -114,8 +114,20 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 SDPExchangeReceiver.SDPAnswerReceived += SDPExchangeReceiver_SDPAnswerReceived;
                 SDPExchangeReceiver.WebSocketOpened += SDPExchangeReceiver_WebSocketOpened;
 
-                _receiverWSS = new WebSocketServer(8081, false);
-                _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/stream");
+                //var httpsv = new HttpServer(8001, true);
+                //httpsv.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration()
+                //httpsv.AddWebSocketService<Echo>("/Echo");
+
+                //var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2("test.p12");
+                //Console.WriteLine("WSS Certificate CN: " + wssCertificate.Subject + ", have key " + wssCertificate.HasPrivateKey + ".");
+
+                 _receiverWSS = new WebSocketServer(8081);
+                //_receiverWSS = new WebSocketServer(8081, true);
+                //_receiverWSS.Log.Level = LogLevel.Debug;
+                //_receiverWSS.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate);
+                //_receiverWSS.Certificate = new System.Security.Cryptography.X509Certificates.X509Certificate2("test.p12");
+                //_receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/stream");
+                 _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/stream");
                 _receiverWSS.Start();
 
                 //DtlsManaged dtls = new DtlsManaged();
@@ -710,7 +722,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                                             //    //int rtperr = client.SrtpContext.ProtectRTP(rtcpBuffer, rtcpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
                                             //}
 
-                                            Console.WriteLine("Sending VP8 frame of " + encodedBuffer.Length + " bytes to " + client.SocketAddress + ".");
+                                            //Console.WriteLine("Sending VP8 frame of " + encodedBuffer.Length + " bytes to " + client.SocketAddress + ".");
 
                                             client.LastTimestamp = (client.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : client.LastTimestamp + TIMESTAMP_SPACING;
 
@@ -843,7 +855,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                                         logger.Debug("New RTP packet protect result " + rtperr + ".");
                                     }
 
-                                    logger.Debug("Sending RTP " + sample.Length + " bytes to " + client.SocketAddress + ", timestamp " + client.LastTimestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
+                                    //logger.Debug("Sending RTP " + sample.Length + " bytes to " + client.SocketAddress + ", timestamp " + client.LastTimestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
 
                                     _webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
 
@@ -1146,11 +1158,13 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         protected override void OnMessage(MessageEventArgs e)
         {
+            IgnoreExtensions = true;
             SDPAnswerReceived(e.Data);
         }
 
         protected override void OnOpen()
         {
+            IgnoreExtensions = true;
             base.OnOpen();
             WebSocketOpened();
         }
