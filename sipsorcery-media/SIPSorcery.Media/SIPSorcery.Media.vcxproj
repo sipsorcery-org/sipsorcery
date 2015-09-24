@@ -106,7 +106,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\include;..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include;..\..\..\openssl\inc32;..\..\..\libvpx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include;..\..\..\build\openssl\vs12-64\include;..\..\..\libvpx</AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
       <CallingConvention>
       </CallingConvention>
@@ -115,7 +115,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>advapi32.lib;user32.lib;gdi32.lib;ssleay32.lib;libeay32.lib;srtp.lib;Ws2_32.lib;vpxmdd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libs\x64;..\..\..\openssl\build-vc14-64\lib;..\..\..\libsrtp\$(Platform)\$(Configuration);..\..\..\libvpx\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\libs\x64;..\..\..\build\openssl\vs12-64\lib;..\..\..\build\srtp\vs12-64\$(Configuration);..\..\..\build\vpx\vs12-64\$(Configuration)</AdditionalLibraryDirectories>
       <TargetMachine>MachineX64</TargetMachine>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
@@ -139,7 +139,7 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\include;..\include\libsrtp\crypto</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include;..\..\..\build\openssl\vs12-64\include;..\..\..\libvpx</AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
       <CallingConvention>
       </CallingConvention>
@@ -147,8 +147,8 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>srtp.lib;Ws2_32.lib;vpxmd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libs\x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>advapi32.lib;user32.lib;gdi32.lib;ssleay32.lib;libeay32.lib;srtp.lib;Ws2_32.lib;vpxmd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libs\x64;..\..\..\build\openssl\vs12-64\lib;..\..\..\build\srtp\vs12-64\$(Configuration);..\..\..\build\vpx\vs12-64\$(Configuration)</AdditionalLibraryDirectories>
       <TargetMachine>MachineX64</TargetMachine>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>

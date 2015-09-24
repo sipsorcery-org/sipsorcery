@@ -62,14 +62,13 @@ namespace SIPSorcery.Net
         public const int VP8_RTP_HEADER_LENGTH = 3;
 
         private const int RFC_2435_FREQUENCY_BASELINE = 90000;
-        private const int RTP_MAX_PAYLOAD = 1400; 
+        private const int RTP_MAX_PAYLOAD = 1400;
         private const int RECEIVE_BUFFER_SIZE = 2048;
         private const int MEDIA_PORT_START = 30000;             // Arbitrary port number to start allocating RTP and control ports from.
         private const int MEDIA_PORT_END = 40000;               // Arbitrary port number that RTP and control ports won't be allocated above.
         private const int RTP_PACKETS_MAX_QUEUE_LENGTH = 1000;   // The maximum number of RTP packets that will be queued.
         private const int RTP_RECEIVE_BUFFER_SIZE = 100000000;
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
-        private const int SRTP_SIGNATURE_LENGTH = 10;           // If SRTP is being used this many extra bytes need to be added to the RTP payload to hold the authentication signature.
         private const double DEFAULT_INITAL_FRAME_RATE = 10.0;  // Set the default initial frame rate to 10 frames per second.
         private const int INITIAL_FRAME_RATE_CALCULATION_SECONDS = 10;  // Do an initial frame rate calculation after this many seconds.
         private const int FRAME_RATE_CALCULATION_SECONDS = 60;          // Re-calculate the frame rate with this period in seconds.
@@ -179,12 +178,16 @@ namespace SIPSorcery.Net
         public event Action<string, byte[]> OnControlDataReceived;
         public event Action<string> OnControlSocketDisconnected;
 
+        // Hooks for DTLS and SRTP.
+        public Action<byte[], int, Action<byte[]>> OnDtlsReceive;   // [buffer, length, Raw send callback method] Handler for any DTLS packets received.                
+        public Func<byte[], byte[]> RtpProtect;                     // [out encrypted buffer, in buffer] Set this for SRTP protection of RTP packets.
+
         public RTSPSession()
         {
             _createdAt = DateTime.Now;
         }
 
-        public RTSPSession(string sessionID, IPEndPoint remoteEndPoint) 
+        public RTSPSession(string sessionID, IPEndPoint remoteEndPoint)
             : this()
         {
             _sessionID = sessionID;
@@ -216,7 +219,7 @@ namespace SIPSorcery.Net
         {
             lock (_allocatePortsMutex)
             {
-                if(_nextMediaPort >= MEDIA_PORT_END)
+                if (_nextMediaPort >= MEDIA_PORT_END)
                 {
                     // The media port range has been used go back to the start. Some connections have most likely been closed.
                     _nextMediaPort = MEDIA_PORT_START;
@@ -359,7 +362,7 @@ namespace SIPSorcery.Net
                 {
                     try
                     {
-                        EndPoint remoteEP = (EndPoint) new IPEndPoint(IPAddress.Any, 0);
+                        EndPoint remoteEP = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
 
                         //int bytesRead = _rtpSocket.Receive(buffer);
                         int bytesRead = _rtpSocket.ReceiveFrom(buffer, ref remoteEP);
@@ -377,12 +380,32 @@ namespace SIPSorcery.Net
 
                         if (bytesRead > 0)
                         {
-                            _rtpLastActivityAt = DateTime.Now;
+                            //_rtpLastActivityAt = DateTime.Now;
 
                             if (bytesRead > RTPHeader.MIN_HEADER_LEN)
                             {
-                                if ((buffer[0] & 0x80) == 0)
+                                if ((buffer[0] >= 20) && (buffer[0] <= 64))
                                 {
+                                    // DTLS.
+                                    if(OnDtlsReceive != null)
+                                    {
+                                        try
+                                        {
+                                            OnDtlsReceive(buffer, bytesRead, SendRTPRaw);
+                                        }
+                                        catch(Exception dtlsExcp)
+                                        {
+                                            logger.Error("Exception RTSPSession.RTPReceive DTLS. " + dtlsExcp);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        logger.Warn("RTSPSession.RTPReceive received a DTLS packet from " + _remoteEndPoint + "but bo DTLS handler has been set.");
+                                    }
+                                }
+                                else if ((buffer[0] == 0) || (buffer[0] == 1))
+                                {
+                                    // STUN.
                                     if (_iceState != null)
                                     {
                                         try
@@ -407,6 +430,7 @@ namespace SIPSorcery.Net
                                                 stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
                                                 stunRequest.AddUsernameAttribute(_iceState.ReceiverUser + ":" + _iceState.SenderUser);
                                                 stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
+                                                stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
                                                 byte[] stunReqBytes = stunRequest.ToByteBuffer(_iceState.ReceiverPassword, true);
                                                 _rtpSocket.SendTo(stunReqBytes, remoteIPEndPoint);
 
@@ -447,33 +471,46 @@ namespace SIPSorcery.Net
                                         //logger.Warn("A STUN reponse was received on RTP socket from " + remoteIPEndPoint + " but no ICE state was set.");
                                     }
                                 }
-                                else
+                                else if ((buffer[0] >= 128) && (buffer[0] <= 191))
                                 {
-                                    RTPPacket rtpPacket = new RTPPacket(buffer.Take(bytesRead).ToArray());
-
-                                    //System.Diagnostics.Debug.WriteLine("RTPReceive ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
-                                    //logger.Debug("RTPReceive remote " + remoteIPEndPoint + ", ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", bytes " + bytesRead + ", marker " + rtpPacket.Header.MarkerBit + ".");
-
-                                    lock (_packets)
+                                    if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
                                     {
-                                        if (_packets.Count > RTP_PACKETS_MAX_QUEUE_LENGTH)
+                                        // RTCP packet.
+                                    }
+                                    else
+                                    {
+                                        // RTP Packet.
+
+                                        RTPPacket rtpPacket = new RTPPacket(buffer.Take(bytesRead).ToArray());
+
+                                        //System.Diagnostics.Debug.WriteLine("RTPReceive ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
+                                        //logger.Debug("RTPReceive remote " + remoteIPEndPoint + ", ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", bytes " + bytesRead + ", marker " + rtpPacket.Header.MarkerBit + ".");
+
+                                        lock (_packets)
                                         {
-                                            System.Diagnostics.Debug.WriteLine("RTSPSession.RTPReceive packets queue full, clearing.");
-                                            logger.Warn("RTSPSession.RTPReceive packets queue full, clearing.");
-
-                                            _packets.Clear();
-
-                                            if (OnRTPQueueFull != null)
+                                            if (_packets.Count > RTP_PACKETS_MAX_QUEUE_LENGTH)
                                             {
-                                                OnRTPQueueFull();
+                                                System.Diagnostics.Debug.WriteLine("RTSPSession.RTPReceive packets queue full, clearing.");
+                                                logger.Warn("RTSPSession.RTPReceive packets queue full, clearing.");
+
+                                                _packets.Clear();
+
+                                                if (OnRTPQueueFull != null)
+                                                {
+                                                    OnRTPQueueFull();
+                                                }
                                             }
-                                        }
-                                        else
-                                        {
-                                            _packets.Enqueue(rtpPacket);
+                                            else
+                                            {
+                                                _packets.Enqueue(rtpPacket);
+                                            }
                                         }
                                     }
                                 }
+                            }
+                            else
+                            {
+                                logger.Warn("RTSPSession.RTPReceive an unrecognised packet was received for session ID " + SessionID + " and " + remoteIPEndPoint + ".");
                             }
                         }
                         else
@@ -784,7 +821,7 @@ namespace SIPSorcery.Net
                 {
                     logger.Warn("SendVP8Frame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
                 }
-                else if(_remoteEndPoint == null)
+                else if (_remoteEndPoint == null)
                 {
                     logger.Warn("SendVP8Frame frame not sent as remote end point is not yet set.");
                 }
@@ -816,21 +853,17 @@ namespace SIPSorcery.Net
 
                         byte[] rtpBytes = rtpPacket.GetBytes();
 
-                        //if (_srtp != null)
-                        //{
-                        //    int rtperr = _srtp.ProtectRTP(rtpBytes, rtpBytes.Length - SRTP_SIGNATURE_LENGTH);
-                        //    if (rtperr != 0)
-                        //    {
-                        //        logger.Warn("An error was returned attempting to sign an SRTP packet for " + _remoteEndPoint + ", error code " + rtperr + ".");
-                        //    }
-                        //}
+                        if (RtpProtect != null)
+                        {
+                            rtpBytes = RtpProtect(rtpBytes);
+                        }
 
                         //System.Diagnostics.Debug.WriteLine(" offset " + (index * RTP_MAX_PAYLOAD) + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header .MarkerBit + ".");
 
                         //Stopwatch sw = new Stopwatch();
                         //sw.Start();
 
-                       // _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
+                        // _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
 
                         //SocketAsyncEventArgs socketSendArgs = new SocketAsyncEventArgs();
                         //socketSendArgs.SetBuffer(rtpBytes, 0, rtpBytes.Length);
@@ -900,7 +933,7 @@ namespace SIPSorcery.Net
             {
                 _rtpSocket.EndSend(ar);
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 if (!_closed)
                 {

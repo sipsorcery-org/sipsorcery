@@ -46,6 +46,6 @@ namespace SIPSorcery.Net
         public string ReceiverPassword;
         public DateTime LastSTUNMessageReceivedAt;
         public bool IsSTUNExchangeComplete;
-        public string SRTPKey;
+        //public string SRTPKey;
     }
 }
