@@ -69,21 +69,21 @@ namespace WebRTCVideoServer
         private static WebSocketServer _receiverWSS;
         private static ConcurrentBag<WebRTCClient> _webRTCClients = new ConcurrentBag<WebRTCClient>();
 
-//        private static string _sourceSDPOffer = @"v=0
-//o=- 2925822133501083390 2 IN IP4 127.0.0.1
-//s=-
-//t=0 0
-//m=video {0} RTP/SAVPF 100
-//c=IN IP4 {1}
-//a=candidate:0 1 udp 2122194687 {1} {0} typ host
-//a=ice-ufrag:{2}
-//a=ice-pwd:{3}
-//a=mid:video
-//a=sendrecv
-//a=rtcp-mux
-//a=crypto:0 AES_CM_128_HMAC_SHA1_80 inline:{4}
-//a=rtpmap:100 VP8/90000
-//";
+        //        private static string _sourceSDPOffer = @"v=0
+        //o=- 2925822133501083390 2 IN IP4 127.0.0.1
+        //s=-
+        //t=0 0
+        //m=video {0} RTP/SAVPF 100
+        //c=IN IP4 {1}
+        //a=candidate:0 1 udp 2122194687 {1} {0} typ host
+        //a=ice-ufrag:{2}
+        //a=ice-pwd:{3}
+        //a=mid:video
+        //a=sendrecv
+        //a=rtcp-mux
+        //a=crypto:0 AES_CM_128_HMAC_SHA1_80 inline:{4}
+        //a=rtpmap:100 VP8/90000
+        //";
 
         private static string _sourceSDPOffer = @"v=0
 o=- 2925822133501083390 2 IN IP4 127.0.0.1
@@ -118,16 +118,23 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 //httpsv.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration()
                 //httpsv.AddWebSocketService<Echo>("/Echo");
 
-                //var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2("test.p12");
-                //Console.WriteLine("WSS Certificate CN: " + wssCertificate.Subject + ", have key " + wssCertificate.HasPrivateKey + ".");
+                var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2("test.p12");
+                Console.WriteLine("WSS Certificate CN: " + wssCertificate.Subject + ", have key " + wssCertificate.HasPrivateKey + ", Expires " + wssCertificate.GetExpirationDateString() + ".");
 
-                 _receiverWSS = new WebSocketServer(8081);
-                //_receiverWSS = new WebSocketServer(8081, true);
-                //_receiverWSS.Log.Level = LogLevel.Debug;
-                //_receiverWSS.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate);
+                //_receiverWSS = new WebSocketServer(8081);
+                _receiverWSS = new WebSocketServer(8081, true);
+                _receiverWSS.Log.Level = LogLevel.Debug;
+                _receiverWSS.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate, false,    
+                     System.Security.Authentication.SslProtocols.Tls,
+                    false);
                 //_receiverWSS.Certificate = new System.Security.Cryptography.X509Certificates.X509Certificate2("test.p12");
                 //_receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/stream");
-                 _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/stream");
+                _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/stream",
+                    () => new SDPExchangeReceiver()
+                    {
+                        IgnoreExtensions = true,
+
+                    });
                 _receiverWSS.Start();
 
                 //DtlsManaged dtls = new DtlsManaged();
@@ -196,57 +203,65 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                 if (matchingCandidate != null)
                 {
-                    logger.Debug("New WebRTC client SDP answer with socket: " + matchingCandidate.NetworkAddress + ":" + matchingCandidate.Port + ".");
-
-                    // Look for an a=ssrc attribute.
-                    uint ssrc = 0;
-                    string ssrcAttribute = answerSDP.ExtraAttributes.Where(x => x.StartsWith("a=ssrc")).FirstOrDefault();
-                    if(ssrcAttribute != null)
+                    if (_webRTCClients.Any(x => x.SocketAddress.Address.ToString() == matchingCandidate.NetworkAddress && x.SocketAddress.Port == matchingCandidate.Port))
                     {
-                        var ssrcMatch = Regex.Match(ssrcAttribute, @"^a=ssrc:(?<ssrc>\d+) ");
-                        if(ssrcMatch.Success)
+                        logger.Warn("A WebRTC client entry already exists for " + matchingCandidate.NetworkAddress + ":" + matchingCandidate.Port + ", ignoring.");
+                    }
+                    else
+                    {
+                        logger.Debug("New WebRTC client SDP answer with socket: " + matchingCandidate.NetworkAddress + ":" + matchingCandidate.Port + ".");
+
+                        // Look for an a=ssrc attribute.
+                        uint ssrc = 0;
+                        string ssrcAttribute = answerSDP.ExtraAttributes.Where(x => x.StartsWith("a=ssrc")).FirstOrDefault();
+                        if (ssrcAttribute != null)
                         {
-                            if(UInt32.TryParse(ssrcMatch.Result("${ssrc}"), out ssrc))
+                            var ssrcMatch = Regex.Match(ssrcAttribute, @"^a=ssrc:(?<ssrc>\d+) ");
+                            if (ssrcMatch.Success)
                             {
-                                logger.Debug("ssrc found for SDP answer " + ssrc + ".");
+                                if (UInt32.TryParse(ssrcMatch.Result("${ssrc}"), out ssrc))
+                                {
+                                    logger.Debug("ssrc found for SDP answer " + ssrc + ".");
+                                }
                             }
                         }
-                    }
 
-                    // Look for a=crypto attribute.
-                    string receiveSrtpKey = null;
-                    string cryptoAttribute = answerSDP.ExtraAttributes.Where(x => x.StartsWith("a=crypto")).FirstOrDefault();
-                    if (cryptoAttribute != null)
-                    {
-                        var cryptoMatch = Regex.Match(cryptoAttribute, @"^a=crypto:.*?inline:(?<key>\S+)$");
-
-                        if(cryptoMatch.Success)
+                        // Look for a=crypto attribute.
+                        string receiveSrtpKey = null;
+                        string cryptoAttribute = answerSDP.ExtraAttributes.Where(x => x.StartsWith("a=crypto")).FirstOrDefault();
+                        if (cryptoAttribute != null)
                         {
-                            receiveSrtpKey = cryptoMatch.Result("${key}");
+                            var cryptoMatch = Regex.Match(cryptoAttribute, @"^a=crypto:.*?inline:(?<key>\S+)$");
+
+                            if (cryptoMatch.Success)
+                            {
+                                receiveSrtpKey = cryptoMatch.Result("${key}");
+                            }
                         }
-                    }
 
-                    var newWebRTCClient = new WebRTCClient()
-                    {
-                        SocketAddress = new IPEndPoint(IPAddress.Parse(_clientIPAddress), matchingCandidate.Port),
-                        ICEUser = answerSDP.IceUfrag,
-                        ICEPassword = answerSDP.IcePwd,
-                        SSRC = Convert.ToUInt32(Crypto.GetRandomInt(10)),
-                        //SSRC = (ssrc != 0) ? ssrc : Convert.ToUInt32(Crypto.GetRandomInt(10)),
-                        //SSRC = 2889419400,
-                        SequenceNumber = 1,
-                        SrtpReceiveContext = (receiveSrtpKey != null) ? new SRTPManaged(Convert.FromBase64String(receiveSrtpKey), false) : null
-                    };
+                        var newWebRTCClient = new WebRTCClient()
+                        {
+                            SocketAddress = new IPEndPoint(IPAddress.Parse(_clientIPAddress), matchingCandidate.Port),
+                            ICEUser = answerSDP.IceUfrag,
+                            ICEPassword = answerSDP.IcePwd,
+                            SSRC = Convert.ToUInt32(Crypto.GetRandomInt(10)),
+                            //SSRC = (ssrc != 0) ? ssrc : Convert.ToUInt32(Crypto.GetRandomInt(10)),
+                            //SSRC = 2889419400,
+                            SequenceNumber = 1,
+                            SrtpReceiveContext = (receiveSrtpKey != null) ? new SRTPManaged(Convert.FromBase64String(receiveSrtpKey), false) : null
+                        };
 
-                    lock (_webRTCClients)
-                    {
-                        _webRTCClients.Add(newWebRTCClient);
+                        lock (_webRTCClients)
+                        {
+                            _webRTCClients.Add(newWebRTCClient);
+                        }
                     }
                 }
                 else
                 {
                     logger.Warn("No matching media offer was found.");
                 }
+
             }
             catch (Exception excp)
             {
@@ -425,7 +440,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                             var client = _webRTCClients.Where(x => x.SocketAddress.ToString() == remoteEndPoint.ToString()).SingleOrDefault();
 
-                            if(client != null)
+                            if (client != null)
                             {
                                 client.LastSTUNReceiveAt = DateTime.Now;
                             }
@@ -484,7 +499,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                             var client = _webRTCClients.Where(x => x.SocketAddress.ToString() == remoteEndPoint.ToString()).SingleOrDefault();
 
-                            if(client != null)
+                            if (client != null)
                             {
                                 if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
                                 {
@@ -1158,13 +1173,11 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         protected override void OnMessage(MessageEventArgs e)
         {
-            IgnoreExtensions = true;
             SDPAnswerReceived(e.Data);
         }
 
         protected override void OnOpen()
         {
-            IgnoreExtensions = true;
             base.OnOpen();
             WebSocketOpened();
         }
