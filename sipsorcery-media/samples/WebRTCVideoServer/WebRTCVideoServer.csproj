@@ -98,6 +98,10 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="websocket-sharp, Version=1.0.2.36589, Culture=neutral, PublicKeyToken=5660b08a1845a91e, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>packages\WebSocketSharp.1.0.3-rc9\lib\websocket-sharp.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
@@ -105,19 +109,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="test.p12">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ffmpeg.txt" />
     <Content Include="webrtcrecv.html" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\..\..\github\websocket-sharp\websocket-sharp\websocket-sharp.csproj">
-      <Project>{b357bac7-529e-4d81-a0d2-71041b19c8de}</Project>
-      <Name>websocket-sharp</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\SIPSorcery.Media\SIPSorcery.Media.vcxproj">
       <Project>{60cc689c-2616-441c-a38a-e1b764c7c446}</Project>
       <Name>SIPSorceryMedia</Name>

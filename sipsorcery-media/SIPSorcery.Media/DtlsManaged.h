@@ -30,6 +30,7 @@ namespace SIPSorceryMedia {
 		int Write(cli::array<System::Byte>^ buffer, int bufferLength);
 		int Read(cli::array<System::Byte>^ buffer, int bufferLength);
 		bool IsHandshakeComplete();
+		int GetState();
 
 		property SSL* Ssl {
 			SSL* get() {

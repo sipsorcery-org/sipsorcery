@@ -232,6 +232,14 @@ namespace SIPSorceryMedia {
 		return _k->ssl->in_handshake == 0;
 	}
 
+	int DtlsManaged::GetState()
+	{
+		// Dump any openssl errors.
+		ERR_print_errors_fp(stderr);
+
+		return _k->ssl->state;
+	}
+
 	//int krx_ssl_handle_traffic(krx* from, krx* to) {
 
 	//	// Did SSL write something into the out buffer
