@@ -200,11 +200,6 @@ namespace SIPSorcery.Net
             try
             {
                 _iceState = iceState;
-
-                //if (_iceState != null && _iceState.SRTPKey != null)
-                //{
-                //   _srtp = new SRTPManaged(Convert.FromBase64String(_iceState.SRTPKey));
-                //}
             }
             catch (Exception excp)
             {
@@ -380,7 +375,7 @@ namespace SIPSorcery.Net
 
                         if (bytesRead > 0)
                         {
-                            //_rtpLastActivityAt = DateTime.Now;
+                            _rtpLastActivityAt = DateTime.Now;
 
                             if (bytesRead > RTPHeader.MIN_HEADER_LEN)
                             {

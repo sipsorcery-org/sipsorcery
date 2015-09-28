@@ -1,10 +1,23 @@
- <script type="text/javascript">
+<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="js/adapter.js"></script>
+
+<script type="text/javascript">
 var pc_constraints = {
   'optional': [
-    {'DtlsSrtpKeyAgreement': false},
+    {'DtlsSrtpKeyAgreement': true},
     {'RtpDataChannels': false},
 	{'iceTransports': 'udp'}
   ]};
+  
+ var offerOptions = {
+  offerToReceiveAudio: 0,
+  offerToReceiveVideo: 1
+};
+
+ var media_constraints = {
+    audio: false,
+    video: true
+}; 
   
 // Set up audio and video regardless of what devices are present.
 var sdpConstraints = {'mandatory': {
@@ -13,15 +26,11 @@ var sdpConstraints = {'mandatory': {
   
 var constraints = {video: true};  
 
+var count = 0;
 var ws;
-  
-pc = new webkitRTCPeerConnection(null, pc_constraints);
-pc.onicecandidate = handleIceCandidate;
-pc.onaddstream = handleRemoteStreamAdded;
-pc.onremovestream = handleRemoteStreamRemoved;
-pc.onsignalingstatechange = handleSignalingStateChange;
-pc.oniceconnectionstatechange = handleIceStateChange;
-  
+var pc;
+var servers = null;
+ 
 function handleIceCandidate(event) {
   console.log('handleIceCandidate event: ', event);
   if(event.candidate) {
@@ -57,12 +66,15 @@ function answerCreated(sessionDescription) {
 
 function handleRemoteStreamAdded(event) {
   console.log('Remote stream added.');
- // reattachMediaStream(miniVideo, localVideo);
-  //attachMediaStream(document.querySelector('#localVideo'), event.stream);
-  document.querySelector("#remoteVideo").src = URL.createObjectURL(event.stream);
+  
+  //if(document.querySelector("#remoteVideo").src != null) {
+//	console.log("Removing existing stream.");
+  //	document.querySelector("#remoteVideo").pause();
+	//document.querySelector("#remoteVideo").src = null;
+  //}
+  //document.querySelector("#remoteVideo").src = //URL.createObjectURL(event.stream);
+  attachMediaStream(document.querySelector("#remoteVideo"), event.stream);
   document.querySelector("#remoteVideo").play();
-  //remoteStream = event.stream;
-//  waitForRemoteVideo();
 }
 
 function handleRemoteStreamRemoved(event) {
@@ -94,27 +106,152 @@ function parseCandidate(text) {
 }
 
 function wsConnect() {
-	ws = new WebSocket("ws://10.1.1.2:8081/receiver");
+
+	//if(pc != null) {
+	//	console.log("Closing peer connection.");
+	//	pc.close();
+	//}
+
+			pc = new RTCPeerConnection(null, pc_constraints);
+		//pc = new webkitRTCPeerConnection(null, pc_constraints);
+		pc.onicecandidate = handleIceCandidate;
+		pc.onaddstream = handleRemoteStreamAdded;
+		pc.onremovestream = handleRemoteStreamRemoved;
+		pc.onsignalingstatechange = handleSignalingStateChange;
+		pc.oniceconnectionstatechange = handleIceStateChange;
+	
+	getUserMedia(media_constraints, attachMediaSuccessCallback, attachMediaErrorCallback);
+	
+     //src = null;
+	//ws = new WebSocket("wss://192.168.33.116:8081/stream?path=0.hivpx");
+	//if(count % 2 == 0) {
+	//	src = "wss://192.168.33.128:8081/stream?path=0.lovpx";
+	//}
+	//else {
+	//	src = "wss://192.168.33.128:8081/stream?path=0.hivpx";
+	//}
+	//console.log("Web socket source: " + src + ".");
+	//ws = new WebSocket(src)
+	
+	count++;
+};
+
+// Attach media handlers and setters.
+
+function attachMediaSuccessCallback(stream) {
+  console.log("Attach media success callback.");
+  //window.stream = stream; // make stream available to console
+  
+   var videoTracks = stream.getVideoTracks();
+  console.log('Using video device: ' + videoTracks[0].label);
+  
+  pc.addStream(stream);
+  
+  attachMediaStream(document.querySelector('#localVideo'), stream);
+  
+  //pc.createOffer(setLocalSDP, onCreateSessionDescriptionError, offerOptions);
+  
+    //ws = new WebSocket("ws://192.168.33.117:8081/stream?path=0.hivpx");
+	ws = new WebSocket("wss://aaron-pc.q.in:8081/stream?path=0.hivpx");
 
 	ws.onopen = function () {
 		console.log("web socket onopen.");
 	};
+		
 	ws.onmessage = function (evt) {
 		console.log("web socket onmessage: " + evt.data + ".");
 		pc.setRemoteDescription(new RTCSessionDescription({type: "offer", sdp: evt.data}), remoteDescriptionSuccess, showError);
 	};
+	
 	ws.onclose = function () {
 		console.log("web socket closed.");
 	};
-};
-		
+}
+
+function attachMediaErrorCallback(error) {
+  console.log('Error attaching media: ', error);
+}	
+
+function onCreateSessionDescriptionError(error) {
+  trace('Failed to create session description: ' + error.toString());
+}
+
+function onCreateOfferSuccess(desc) {
+  trace('Offer from pc\n' + desc.sdp);
+  trace('pc setLocalDescription start');
+  pc.setLocalDescription(desc, function() {
+    onSetLocalSuccess(pc);
+  }, onSetSessionDescriptionError);
+}
+
+function onSetLocalSuccess(pc) {
+  trace(' setLocalDescription complete');
+}
+
+function onSetRemoteSuccess(pc) {
+  trace(' setRemoteDescription complete');
+  pc.createAnswer(onCreateAnswerSuccess, onCreateSessionDescriptionError);
+}
+
+function onCreateAnswerSuccess(desc) {
+  trace('Answer from pc:\n' + desc.sdp);
+  trace('pc setLocalDescription start');
+  pc.setLocalDescription(desc, function() {
+    onSetLocalSuccess(pc);
+  }, onSetSessionDescriptionError);
+}
+
+
+function onSetSessionDescriptionError(error) {
+  trace('Failed to set session description: ' + error.toString());
+}
+	
+function onIceCandidate(pc, event) {
+  if (event.candidate) {
+    pc.addIceCandidate(new RTCIceCandidate(event.candidate),
+        function() {
+          onAddIceCandidateSuccess(pc);
+        },
+        function(err) {
+          onAddIceCandidateError(pc, err);
+        }
+    );
+    trace(' ICE candidate: \n' + event.candidate.candidate);
+  }
+}
+
+function onAddIceCandidateSuccess(pc) {
+  trace(' addIceCandidate success ' + pc.iceGatheringState);
+  
+	if(pc.iceGatheringState == "complete") {
+    console.log("Sending offer SDP.");
+	//ws.send(pc.localDescription.sdp);
+	trace(pc.localDescription.sdp);
+  }
+}
+
+function onAddIceCandidateError(pc, error) {
+  trace(' failed to add ICE Candidate: ' + error.toString());
+}
+
+function onIceStateChange(pc, event) {
+	trace(' ICE state change ', event);
+  if (pc) {
+    trace(' ICE state: ' + pc.iceConnectionState);
+    console.log('ICE state change event: ', event);
+  }
+}
+	
  </script>
   
      <div>
-    <button onclick="wsConnect();">Click here to start</button>
+    <button style="width: 300px; height: 200px;" onclick="wsConnect();">Click here to start</button>
 	</div>
   
-  <video controls id="remoteVideo">
+ <video controls autoplay='true' id="localVideo">
+ </video>
+  
+  <video controls autoplay='true' id="remoteVideo">
  </video>
 
  
