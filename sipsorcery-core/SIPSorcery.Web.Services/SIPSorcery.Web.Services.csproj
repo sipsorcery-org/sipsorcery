@@ -202,7 +202,6 @@
   <ItemGroup>
     <Content Include="Notifications\SIPNotifierService.svc" />
     <Content Include="Provisioning\SIPProvisioningWebService.svc" />
-    <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CallDispatcher\ICallDispatcherService.cs" />
@@ -282,17 +281,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="web.Debug.config">
-      <DependentUpon>web.config</DependentUpon>
-    </None>
-    <None Include="web.Debugx64.config">
-      <DependentUpon>web.config</DependentUpon>
-    </None>
-    <None Include="web.Release.config">
-      <DependentUpon>web.config</DependentUpon>
-    </None>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

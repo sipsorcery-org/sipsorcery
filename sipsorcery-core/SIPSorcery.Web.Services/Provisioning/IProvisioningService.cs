@@ -25,7 +25,8 @@ namespace SIPSorcery.Web.Services {
         [OperationContract] List<SIPDomain> GetSIPDomains(string filterExpression, int offset, int count);
         [OperationContract] int GetSIPAccountsCount(string whereExpression);
         [OperationContract] List<SIPAccount> GetSIPAccounts(string whereExpression, int offset, int count);
-        [OperationContract] string AddSIPAccount(SIPSorcery.Entities.SIPAccount sipAccount);
+        //[OperationContract] string AddSIPAccount(SIPSorcery.Entities.SIPAccount sipAccount);
+        [OperationContract] SIPAccount AddSIPAccount(SIPAccount sipAccount);
         [OperationContract] SIPAccount UpdateSIPAccount(SIPAccount sipAccount);
         [OperationContract] SIPAccount DeleteSIPAccount(SIPAccount sipAccount);
         [OperationContract] int GetSIPRegistrarBindingsCount(string whereExpression);

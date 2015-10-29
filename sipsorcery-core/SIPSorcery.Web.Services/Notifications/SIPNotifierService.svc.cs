@@ -90,6 +90,11 @@ namespace SIPSorcery.Web.Services
 
             if (notificationHeader != null)
             {
+                if(subject == "ControlClient")
+                {
+                    subject = "Console";
+                }
+
                 return SubscribeForAddress(subject, filter, notificationHeader.Address);
             }
             else
