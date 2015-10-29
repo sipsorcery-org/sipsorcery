@@ -7,8 +7,8 @@
     <ProjectGuid>{D451FCC6-9A7D-470F-832C-0FB69359C2ED}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SIPSorcery.Persistence_Min</RootNamespace>
-    <AssemblyName>SIPSorcery.Persistence-Min</AssemblyName>
+    <RootNamespace>SIPSorcery.Persistence</RootNamespace>
+    <AssemblyName>SIPSorcery.Persistence</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
