@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>SIPSorcery</id>
-        <version>1.3.1</version>
+        <version>1.4.0</version>
         <authors>Aaron Clauson</authors>
         <owners>Aaron Clauson</owners>
         <licenseUrl>https://sipsorcery.codeplex.com/license</licenseUrl>
@@ -11,16 +11,14 @@
 		There are also partial implementations of a number of related protocols: STUN, SDP, RTP and RTCP. The SIP functionality includes a number of user agents which
 		can be used to initiate and receive both calls and registrations.</description>
       <summary>This is the official package of SIPSorcery. Full source code can be found at http://sipsorcery.codeplex.com.</summary>  
-      <copyright>Copyright (c) 2014, Aaron Clauson</copyright>
+      <copyright>Copyright (c) 5, Aaron Clauson</copyright>
         <language>en-US</language>
 		<projectUrl>https://sipsorcery.codeplex.com/</projectUrl>
 		<iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
         <tags>sip sipsorcery</tags>
         <dependencies>
             <group targetFramework=".NETFramework4">
-                <dependency id="log4net" version="1.2.13" />
-                <dependency id="MySql.Data" version="6.6.4" />
-                <dependency id="Npgsql" version="2.0.1.0" />
+                <dependency id="log4net" version="2.0.3" />
             </group>
         </dependencies>
         <frameworkAssemblies>
