@@ -2,7 +2,7 @@
 // FileName: StatelessProxyScriptHelper.cs
 //
 // Description:
-// A class that contains helper methods for use in a stateless prxoy runtime script.
+// A class that contains helper methods for use in a stateless proxy runtime script.
 //
 // Author(s):
 // Aaron Clauson
@@ -10,7 +10,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006-2011 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery Ltd, Australia (www.sipsorcery.com)
+// Copyright (c) 2006-2015 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery Ltd, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 

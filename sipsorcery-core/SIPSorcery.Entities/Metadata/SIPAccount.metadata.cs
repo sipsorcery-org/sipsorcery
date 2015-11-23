@@ -37,8 +37,8 @@ namespace SIPSorcery.Entities
             [StringLength(SIPAccount.PASSWORD_MAX_LENGTH, MinimumLength = SIPAccount.PASSWORD_MIN_LENGTH, ErrorMessage = SIPAccount.PASSWORD_LENGTH_ERROR_MESSAGE)]
             public string SIPPassword;
 
-            [Required(ErrorMessage = "A domain must be specified for the SIP account.")]
-            public string SIPDomain;
+            //[Required(ErrorMessage = "A domain must be specified for the SIP account.")]
+            //public string SIPDomain;
         }
     }
 }

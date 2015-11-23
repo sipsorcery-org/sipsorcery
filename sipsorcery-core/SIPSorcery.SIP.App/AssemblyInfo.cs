@@ -32,4 +32,4 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyCompany("SIP Sorcery PTY LTD")]
 [assembly: AssemblyDescription("Application layer classes that provide common use casses for SIP protocol.")]
 [assembly: AssemblyCopyright("Aaron Clauson")]		
-[assembly: AssemblyVersion("1.3.1.*")]
+[assembly: AssemblyVersion("1.4.0.*")]

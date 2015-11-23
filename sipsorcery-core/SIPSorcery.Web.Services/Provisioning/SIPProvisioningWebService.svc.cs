@@ -489,13 +489,14 @@ namespace SIPSorcery.Web.Services
             return m_service.InsertSIPAccount(customer.CustomerUsername, sipAccount);
         }
 
-        public string AddSIPAccount(SIPSorcery.Entities.SIPAccount sipAccount)
+        //public string AddSIPAccount(SIPSorcery.Entities.SIPAccount sipAccount)
+        public SIPAccount AddSIPAccount(SIPAccount sipAccount)
         {
             Customer customer = AuthoriseRequest();
             sipAccount.Owner = customer.CustomerUsername;
 
-            //string validationError = SIPAccount.ValidateAndClean(sipAccount);
-            string validationError = SIPSorcery.Entities.SIPAccount.Validate(sipAccount);
+            //string validationError = SIPSorcery.Entities.SIPAccount.Validate(sipAccount);
+            string validationError = SIPAccount.ValidateAndClean(sipAccount);
             if (validationError != null)
             {
                 logger.Warn("Validation error in AddSIPAccount for customer " + customer.CustomerUsername + ". " + validationError);
@@ -503,8 +504,8 @@ namespace SIPSorcery.Web.Services
             }
             else
             {
-                //return SIPAccountPersistor.Add(sipAccount);
-                return m_service.InsertSIPAccount(customer.CustomerUsername, sipAccount);
+                return SIPAccountPersistor.Add(sipAccount);
+                //return m_service.InsertSIPAccount(customer.CustomerUsername, sipAccount);
             }
         }
 
