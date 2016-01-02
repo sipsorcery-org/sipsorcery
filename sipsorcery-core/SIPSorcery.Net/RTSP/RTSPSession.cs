@@ -818,7 +818,7 @@ namespace SIPSorcery.Net
                 }
                 else if (_remoteEndPoint == null)
                 {
-                    logger.Warn("SendVP8Frame frame not sent as remote end point is not yet set.");
+                   // logger.Warn("SendVP8Frame frame not sent as remote end point is not yet set.");
                 }
                 else
                 {
