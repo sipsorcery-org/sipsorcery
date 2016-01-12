@@ -73,6 +73,7 @@ namespace SIPSorcery.Net
         private const int INITIAL_FRAME_RATE_CALCULATION_SECONDS = 10;  // Do an initial frame rate calculation after this many seconds.
         private const int FRAME_RATE_CALCULATION_SECONDS = 60;          // Re-calculate the frame rate with this period in seconds.
         private const int MINIMUM_SAMPLES_FOR_FRAME_RATE = 20;          // The minimum number of samples before a new frame rate calculation will be made.
+        private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 3;   // The maximum number of re-attempts that will be made when trying to bind the RTP port.
 
         private static DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
         private static DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -255,17 +256,40 @@ namespace SIPSorcery.Net
 
                 if (_rtpPort != 0 && _controlPort != 0)
                 {
-                    // The potential ports have been found now try and use them.
-                    _rtpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                    _rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
-                    _rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+                    bool bindSuccess = false;
 
-                    _rtpSocket.Bind(new IPEndPoint(IPAddress.Any, _rtpPort));
+                    for (int bindAttempts = 0; bindAttempts < MAXIMUM_RTP_PORT_BIND_ATTEMPTS; bindAttempts++)
+                    {
+                        try
+                        {
+                            // The potential ports have been found now try and use them.
+                            _rtpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                            _rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
+                            _rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
 
-                    _controlSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                    _controlSocket.Bind(new IPEndPoint(IPAddress.Any, _controlPort));
+                            _rtpSocket.Bind(new IPEndPoint(IPAddress.Any, _rtpPort));
 
-                    logger.Debug("RTSP session " + _sessionID + " allocated RTP port of " + _rtpPort + " and control port of " + _controlPort + ".");
+                            _controlSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                            _controlSocket.Bind(new IPEndPoint(IPAddress.Any, _controlPort));
+
+                            logger.Debug("RTSP session " + _sessionID + " allocated RTP port of " + _rtpPort + " and control port of " + _controlPort + ".");
+
+                            bindSuccess = true;
+                        }
+                        catch(System.Net.Sockets.SocketException)
+                        {
+                            logger.Warn("RTSP session " + _sessionID + " failed to bind to RTP port " + _rtpPort + " and/or control port of " + _controlPort + ", attempt " + bindAttempts + ".");
+
+                            // Jump up the port range in case there is an OS/network issue closing/cleaning up already used ports.
+                            _rtpPort += 100;
+                            _controlPort += 100;
+                        }
+                    }
+
+                    if(!bindSuccess)
+                    {
+                        throw new ApplicationException("An RTSP session could not bind to the RTP and/or control ports within the range of " + MEDIA_PORT_START + " to " + MEDIA_PORT_END + ".");
+                    }
                 }
                 else
                 {
