@@ -258,7 +258,7 @@ namespace SIPSorcery.Net
                 {
                     bool bindSuccess = false;
 
-                    for (int bindAttempts = 0; bindAttempts < MAXIMUM_RTP_PORT_BIND_ATTEMPTS; bindAttempts++)
+                    for (int bindAttempts = 0; bindAttempts <= MAXIMUM_RTP_PORT_BIND_ATTEMPTS; bindAttempts++)
                     {
                         try
                         {
@@ -275,10 +275,12 @@ namespace SIPSorcery.Net
                             logger.Debug("RTSP session " + _sessionID + " allocated RTP port of " + _rtpPort + " and control port of " + _controlPort + ".");
 
                             bindSuccess = true;
+
+                            break;
                         }
-                        catch(System.Net.Sockets.SocketException)
+                        catch(System.Net.Sockets.SocketException sockExcp)
                         {
-                            logger.Warn("RTSP session " + _sessionID + " failed to bind to RTP port " + _rtpPort + " and/or control port of " + _controlPort + ", attempt " + bindAttempts + ".");
+                            logger.Warn("RTSP session " + _sessionID + " failed to bind to RTP port " + _rtpPort + " and/or control port of " + _controlPort + ", attempt " + bindAttempts + ". " + sockExcp);
 
                             // Jump up the port range in case there is an OS/network issue closing/cleaning up already used ports.
                             _rtpPort += 100;
