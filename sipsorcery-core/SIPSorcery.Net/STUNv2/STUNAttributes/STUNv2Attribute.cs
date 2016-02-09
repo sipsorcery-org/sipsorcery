@@ -74,7 +74,7 @@ namespace SIPSorcery.Net
         ErrorCode = 0x0009,
         UnknownAttributes = 0x000A,
         ReflectedFrom = 0x000B,         // Not used in RFC5389.
-        Realm = 0x0014,             
+        Realm = 0x0014,
         Nonce = 0x0015,
         XORMappedAddress = 0x0020,
 
@@ -86,6 +86,17 @@ namespace SIPSorcery.Net
         Priority = 0x0024,
 
         UseCandidate = 0x0025,          // Added in RFC5245.
+
+        // New attributes defined in TURN (RFC5766).
+        ChannelNumber = 0x000C,
+        Lifetime = 0x000D,
+        XORPeerAddress = 0x0012,
+        Data = 0x0013,
+        XORRelayedAddress = 0x0016,
+        EvenPort = 0x0018,
+        RequestedTransport = 0x0019,
+        DontFragment = 0x001A,
+        ReservationToken = 0x0022,
     }
 
     public class STUNv2AttributeTypes
@@ -95,19 +106,19 @@ namespace SIPSorcery.Net
             return (STUNv2AttributeTypesEnum)Enum.Parse(typeof(STUNv2AttributeTypesEnum), stunAttributeTypeId.ToString(), true);
         }
     }
-    
+
     public class STUNv2Attribute
-	{
+    {
         public const short STUNATTRIBUTE_HEADER_LENGTH = 4;
 
         private static ILog logger = STUNAppState.logger;
-        
+
         public STUNv2AttributeTypesEnum AttributeType = STUNv2AttributeTypesEnum.Unknown;
         public byte[] Value;
 
         public virtual UInt16 PaddedLength
         {
-            get 
+            get
             {
                 if (Value != null)
                 {
@@ -120,17 +131,51 @@ namespace SIPSorcery.Net
             }
         }
 
+        public STUNv2Attribute(STUNv2AttributeTypesEnum attributeType, byte value)
+        {
+            AttributeType = attributeType;
+            Value = new byte[] { value };
+        }
+
         public STUNv2Attribute(STUNv2AttributeTypesEnum attributeType, byte[] value)
         {
             AttributeType = attributeType;
             Value = value;
         }
 
+        public STUNv2Attribute(STUNv2AttributeTypesEnum attributeType, ushort value)
+        {
+            AttributeType = attributeType;
+
+            if (BitConverter.IsLittleEndian)
+            {
+                Value = BitConverter.GetBytes(Utility.ReverseEndian(value));
+            }
+            else
+            {
+                Value = BitConverter.GetBytes(value);
+            }
+        }
+
+        public STUNv2Attribute(STUNv2AttributeTypesEnum attributeType, int value)
+        {
+            AttributeType = attributeType;
+
+            if (BitConverter.IsLittleEndian)
+            {
+                Value = BitConverter.GetBytes(Utility.ReverseEndian(Convert.ToUInt32(value)));
+            }
+            else
+            {
+                Value = BitConverter.GetBytes(value);
+            }
+        }
+
         public static List<STUNv2Attribute> ParseMessageAttributes(byte[] buffer, int startIndex, int endIndex)
         {
             if (buffer != null && buffer.Length > startIndex && buffer.Length >= endIndex)
             {
-                List<STUNv2Attribute> attributes = new List<STUNv2Attribute>();   
+                List<STUNv2Attribute> attributes = new List<STUNv2Attribute>();
                 int startAttIndex = startIndex;
 
                 while (startAttIndex < endIndex)
@@ -149,7 +194,7 @@ namespace SIPSorcery.Net
                     {
                         if (stunAttributeLength + startIndex + 4 > endIndex)
                         {
-                            logger.Warn("The attribute lenght on a STUN parameter was greater than the available number of bytes.");
+                            logger.Warn("The attribute length on a STUN parameter was greater than the available number of bytes.");
                         }
                         else
                         {
@@ -169,11 +214,19 @@ namespace SIPSorcery.Net
                     {
                         attribute = new STUNv2AddressAttribute(stunAttributeValue);
                     }
+                    else if (attributeType == STUNv2AttributeTypesEnum.ErrorCode)
+                    {
+                        attribute = new STUNv2ErrorCodeAttribute(stunAttributeValue);
+                    }
+                    else if (attributeType == STUNv2AttributeTypesEnum.XORMappedAddress || attributeType == STUNv2AttributeTypesEnum.XORPeerAddress || attributeType == STUNv2AttributeTypesEnum.XORRelayedAddress)
+                    {
+                        attribute = new STUNv2XORAddressAttribute(attributeType, stunAttributeValue);
+                    }
                     else
                     {
                         attribute = new STUNv2Attribute(attributeType, stunAttributeValue);
                     }
-                            
+
                     attributes.Add(attribute);
 
                     // Attributes start on 32 bit word boundaries so where an attribute length is not a multiple of 4 it gets padded. 
@@ -223,14 +276,7 @@ namespace SIPSorcery.Net
 
             if (Value != null && Value.Length > 0)
             {
-                if (BitConverter.IsLittleEndian)
-                {
-                    Buffer.BlockCopy(Value, 0, buffer, startIndex + 4, Value.Length);
-                }
-                else
-                {
-                    Buffer.BlockCopy(Value, 0, buffer, startIndex + 4, Value.Length);
-                }
+                Buffer.BlockCopy(Value, 0, buffer, startIndex + 4, Value.Length);
             }
 
             return STUNv2Attribute.STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
@@ -242,5 +288,5 @@ namespace SIPSorcery.Net
 
             return attrDescrString;
         }
-	}
+    }
 }

@@ -15,13 +15,11 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
-
-#if UNITTEST
-using NUnit.Framework;
-#endif
+using System.Threading;
 
 namespace SIPSorcery.Sys
 {
@@ -35,12 +33,119 @@ namespace SIPSorcery.Sys
 	{
         public const int UDP_PORT_START = 1025;
         public const int UDP_PORT_END = 65535;
+        private const int RTP_RECEIVE_BUFFER_SIZE = 100000000;
+        private const int RTP_SEND_BUFFER_SIZE = 100000000;
+        private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 5;               // The maximum number of re-attempts that will be made when trying to bind the RTP port.
 
         public static PlatformEnum Platform = PlatformEnum.Windows;
+
+        private static Mutex _allocatePortsMutex = new Mutex();
 
         public static UdpClient CreateRandomUDPListener(IPAddress localAddress, out IPEndPoint localEndPoint)
         {
             return CreateRandomUDPListener(localAddress, UDP_PORT_START, UDP_PORT_END, null, out localEndPoint);
+        }
+
+        public static void CreateRtpSocket(IPAddress localAddress, int startPort, int endPort, bool createControlSocket, out Socket rtpSocket, out Socket controlSocket)
+        {
+            rtpSocket = null;
+            controlSocket = null;
+
+            lock (_allocatePortsMutex)
+            {
+                //if (_nextMediaPort >= MEDIA_PORT_END)
+                //{
+                //    // The media port range has been used go back to the start. Some connections have most likely been closed.
+                //    _nextMediaPort = MEDIA_PORT_START;
+                //}
+
+                var inUseUDPPorts = (from p in System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners() where p.Port >= startPort  && p.Port <= endPort select p.Port).OrderBy(x => x).ToList();
+
+                // Make the RTP port start on an even port. Some legacy systems require the RTP port to be an even port number.
+                if(startPort % 2 != 0)
+                {
+                    startPort += 1;
+                }
+
+                int rtpPort = startPort;
+                int controlPort = rtpPort + 1;
+
+                if (inUseUDPPorts.Count > 0)
+                {
+                    // Find the first two available for the RTP socket.
+                    for (int index = startPort; index <= endPort; index += 2)
+                    {
+                        if (!inUseUDPPorts.Contains(index))
+                        {
+                            rtpPort = index;
+
+                            if (!createControlSocket)
+                            {
+                                break;
+                            }
+                            else if (!inUseUDPPorts.Contains(index + 1))
+                            {
+                                controlPort = index + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    rtpPort = startPort;
+
+                    if (createControlSocket)
+                    {
+                        controlPort = rtpPort + 1;
+                    }
+                }
+
+                if (rtpPort != 0)
+                {
+                    bool bindSuccess = false;
+
+                    for (int bindAttempts = 0; bindAttempts <= MAXIMUM_RTP_PORT_BIND_ATTEMPTS; bindAttempts++)
+                    {
+                        try
+                        {
+                            // The potential ports have been found now try and use them.
+                            rtpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                            rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
+                            rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+
+                            rtpSocket.Bind(new IPEndPoint(localAddress, rtpPort));
+
+                            if (controlPort != 0)
+                            {
+                                controlSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                                controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
+                            }
+
+                            bindSuccess = true;
+
+                            break;
+                        }
+                        catch (System.Net.Sockets.SocketException)
+                        {
+                            Console.WriteLine("Failed to bind to RTP port " + rtpPort + " and/or control port of " + controlPort + ", attempt " + bindAttempts + ".");
+
+                            // Increment the port range in case there is an OS/network issue closing/cleaning up already used ports.
+                            rtpPort += 2;
+                            controlPort += (controlPort != 0) ? 100 : 2;
+                        }
+                    }
+
+                    if (!bindSuccess)
+                    {
+                        throw new ApplicationException("An RTP socket could be created due to a failure to bind to the RTP and/or control ports within the range of " + startPort + " to " + endPort + ".");
+                    }
+                }
+                else
+                {
+                    throw new ApplicationException("An RTP socket could be created due to a failure to allocate an RTP and/or control ports within the range of " + startPort + " to " + endPort + ".");
+                }
+            }
         }
 
         public static UdpClient CreateRandomUDPListener(IPAddress localAddress, int start, int end, ArrayList inUsePorts, out IPEndPoint localEndPoint)
@@ -124,19 +229,18 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
-        /// Attempts to get the local IP address that is being used with the deault gatewya and is therefore the one being used
+        /// Attempts to get the local IP address that is being used with the default gateway and is therefore the one being used
         /// to connect to the internet.
         /// </summary>
         /// <param name="defaultGateway"></param>
         /// <returns></returns>
         public static IPAddress GetDefaultIPAddress(IPAddress defaultGateway)
         {
-
             try
             {
                 string[] gatewayOctets = Regex.Split(defaultGateway.ToString(), @"\.");
 
-                IPHostEntry hostEntry = Dns.Resolve(Dns.GetHostName());
+                IPHostEntry hostEntry = Dns.GetHostEntry(Dns.GetHostName()); 
 
                 ArrayList possibleMatches = new ArrayList();
                 foreach (IPAddress localAddress in hostEntry.AddressList)
@@ -215,42 +319,5 @@ namespace SIPSorcery.Sys
             osProcess.WaitForExit();
             return osProcess.StandardOutput.ReadToEnd();
         }
-
-		#region Unit tests.
-
-		#if UNITTEST
-
-		[TestFixture]
-		public class OSServicesUnitTest
-		{		
-			[TestFixtureSetUp]
-			public void Init()
-			{			
-				// Redirect the logger to the console for unit testing.
-				//Log.ConfigureUnitTestLogging();
-				//logger.Info("BackupFileUnitTest: Test Logger.");
-			}
-
-			[TestFixtureTearDown]
-			public void Dispose()
-			{			
-				
-			}
-
-			/// <summary>
-			/// Test calling the operating system "route print" command.
-			/// </summary>
-			[Test]
-			public void TestCallRoute()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-				
-				Assert.IsNotNull(CallRoute(), "The 'route print' command did not return anything.");
-			}
-		}
-
-		#endif
-
-		#endregion
 	}
 }

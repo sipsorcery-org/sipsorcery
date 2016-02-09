@@ -326,9 +326,9 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="remoteEndPoint">The remote end point of the RTSP client that requested the RTSP session be set up.</param>
         /// <returns>An RTSP session object.</returns>
-        public RTSPSession CreateRTSPSession(IPEndPoint remoteEndPoint)
+        public RTSPSession CreateRTSPSession(IPEndPoint remoteEndPoint, IPEndPoint rtcpRemoteEndPoint)
         {
-            var rtspSession = new RTSPSession(Guid.NewGuid().ToString(), remoteEndPoint);
+            var rtspSession = new RTSPSession(Guid.NewGuid().ToString(), remoteEndPoint, rtcpRemoteEndPoint);
             rtspSession.ReservePorts();
             rtspSession.OnRTPSocketDisconnected += RTPSocketDisconnected;
 

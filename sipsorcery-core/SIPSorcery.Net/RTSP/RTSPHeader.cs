@@ -154,6 +154,27 @@ namespace SIPSorcery.Net
             return 0;
         }
 
+        /// <summary>
+        /// Attempts to determine the client RTCP port based on the transport header attributes.
+        /// </summary>
+        /// <returns>The client port that RTCP packets should be sent to. If the port cannot be determined then 0.</returns>
+        public int GetClientRtcpPort()
+        {
+            if (ClientRTPPortRange.NotNullOrBlank())
+            {
+                int clientRTCPPort = 0;
+
+                var fields = ClientRTPPortRange.Split('-');
+
+                if (fields.Length > 1 && Int32.TryParse(fields[1], out clientRTCPPort))
+                {
+                    return clientRTCPPort;
+                }
+            }
+
+            return 0;
+        }
+
 
         /// <summary>
         /// Attempts to determine the server RTP port based on the transport header attributes.
@@ -170,6 +191,27 @@ namespace SIPSorcery.Net
                 if (Int32.TryParse(fields[0], out serverRTPPort))
                 {
                     return serverRTPPort;
+                }
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Attempts to determine the server Rtcp port based on the transport header attributes.
+        /// </summary>
+        /// <returns>The server port that RTCP packets should be sent to. If the port cannot be determined then 0.</returns>
+        public int GetServerRtcpPort()
+        {
+            if (ServerRTPPortRange.NotNullOrBlank())
+            {
+                int serverRtcpPort = 0;
+
+                var fields = ServerRTPPortRange.Split('-');
+
+                if (fields.Length > 0 && Int32.TryParse(fields[1], out serverRtcpPort))
+                {
+                    return serverRtcpPort;
                 }
             }
 

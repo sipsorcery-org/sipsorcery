@@ -376,7 +376,7 @@ namespace SIPSorcery.Net
                                                 STUNv2Message stunResponse = new STUNv2Message(STUNv2MessageTypesEnum.BindingSuccessResponse);
                                                 stunResponse.Header.TransactionId = stunMessage.Header.TransactionId;
                                                 stunResponse.AddXORMappedAddressAttribute(_remoteEndPoint.Address, _remoteEndPoint.Port);
-                                                byte[] stunRespBytes = stunResponse.ToByteBuffer(_iceState.SenderPassword, true);
+                                                byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(_iceState.SenderPassword, true);
                                                 _rtpSocket.SendTo(stunRespBytes, _remoteEndPoint);
 
                                                 //logger.Debug("Sending Binding request to Receiver Client @ " + remoteEndPoint + ".");
@@ -385,7 +385,7 @@ namespace SIPSorcery.Net
                                                 stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
                                                 stunRequest.AddUsernameAttribute(_iceState.ReceiverUser + ":" + _iceState.SenderUser);
                                                 stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
-                                                byte[] stunReqBytes = stunRequest.ToByteBuffer(_iceState.ReceiverPassword, true);
+                                                byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(_iceState.ReceiverPassword, true);
                                                 _rtpSocket.SendTo(stunReqBytes, _remoteEndPoint);
 
                                                 _iceState.LastSTUNMessageReceivedAt = DateTime.Now;

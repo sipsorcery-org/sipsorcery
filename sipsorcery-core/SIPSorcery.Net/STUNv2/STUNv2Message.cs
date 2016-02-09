@@ -89,7 +89,7 @@ namespace SIPSorcery.Net
 
         public void AddXORMappedAddressAttribute(IPAddress remoteAddress, int remotePort)
         {
-            STUNv2XORAddressAttribute xorAddressAttribute = new STUNv2XORAddressAttribute(remotePort, remoteAddress);
+            STUNv2XORAddressAttribute xorAddressAttribute = new STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum.XORMappedAddress, remotePort, remoteAddress);
             Attributes.Add(xorAddressAttribute);
         }
 
@@ -111,7 +111,12 @@ namespace SIPSorcery.Net
             return null;
         }
 
-        public byte[] ToByteBuffer(string messageIntegrityKey, bool addFingerprint)
+        public byte[] ToByteBufferStringKey(string messageIntegrityKey, bool addFingerprint)
+        {
+            return ToByteBuffer(messageIntegrityKey.NotNullOrBlank() ? System.Text.Encoding.UTF8.GetBytes(messageIntegrityKey) : null, addFingerprint);
+        }
+
+        public byte[] ToByteBuffer(byte[] messageIntegrityKey, bool addFingerprint)
         {
             UInt16 attributesLength = 0;
             foreach (STUNv2Attribute attribute in Attributes)
@@ -119,7 +124,7 @@ namespace SIPSorcery.Net
                 attributesLength += Convert.ToUInt16(STUNv2Attribute.STUNATTRIBUTE_HEADER_LENGTH + attribute.PaddedLength);
             }
 
-            if(messageIntegrityKey.NotNullOrBlank())
+            if(messageIntegrityKey != null)
             {
                 attributesLength += STUNv2Attribute.STUNATTRIBUTE_HEADER_LENGTH + MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH;
             }
@@ -149,11 +154,11 @@ namespace SIPSorcery.Net
                 attributeIndex += attr.ToByteBuffer(buffer, attributeIndex);
             }
 
-            if (messageIntegrityKey.NotNullOrBlank())
+            if (messageIntegrityKey != null)
             {
                 var integrityAttibtue = new STUNv2Attribute(STUNv2AttributeTypesEnum.MessageIntegrity, new byte[MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH]);
 
-                HMACSHA1 hmacSHA = new HMACSHA1(System.Text.Encoding.UTF8.GetBytes(messageIntegrityKey), true);
+                HMACSHA1 hmacSHA = new HMACSHA1(messageIntegrityKey, true);
                 byte[] hmac = hmacSHA.ComputeHash(buffer, 0, attributeIndex);
                
                 integrityAttibtue.Value = hmac;

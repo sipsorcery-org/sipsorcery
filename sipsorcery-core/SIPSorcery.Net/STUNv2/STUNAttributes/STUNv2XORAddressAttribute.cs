@@ -55,25 +55,27 @@ namespace SIPSorcery.Net
             get { return ADDRESS_ATTRIBUTE_LENGTH; }
         }
 
-        public STUNv2XORAddressAttribute(byte[] attributeValue)
-            : base(STUNv2AttributeTypesEnum.XORMappedAddress, attributeValue)
+        public STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum attributeType, byte[] attributeValue)
+            : base(attributeType, attributeValue)
         {
             if (BitConverter.IsLittleEndian)
             {
-                Port = Utility.ReverseEndian(BitConverter.ToUInt16(attributeValue, 0)) ^ (UInt16)(STUNv2Header.MAGIC_COOKIE >> 16);
-                UInt32 address = Utility.ReverseEndian(BitConverter.ToUInt32(attributeValue, 2)) ^ STUNv2Header.MAGIC_COOKIE;
-                Address = new IPAddress(BitConverter.GetBytes(Utility.ReverseEndian(address)));
+                Port = Utility.ReverseEndian(BitConverter.ToUInt16(attributeValue, 2)) ^ (UInt16)(STUNv2Header.MAGIC_COOKIE >> 16);
+                UInt32 address = Utility.ReverseEndian(BitConverter.ToUInt32(attributeValue, 4)) ^ STUNv2Header.MAGIC_COOKIE;
+                //Address = new IPAddress(BitConverter.GetBytes(address));
+                Address = new IPAddress(Utility.ReverseEndian(address));
             }
             else
             {
-                Port = BitConverter.ToUInt16(attributeValue, 0) ^ (UInt16)(STUNv2Header.MAGIC_COOKIE >> 16);
-                UInt32 address = BitConverter.ToUInt32(attributeValue, 2) ^ STUNv2Header.MAGIC_COOKIE;
-                Address = new IPAddress(BitConverter.GetBytes(Utility.ReverseEndian(address)));
+                Port = BitConverter.ToUInt16(attributeValue, 2) ^ (UInt16)(STUNv2Header.MAGIC_COOKIE >> 16);
+                UInt32 address = BitConverter.ToUInt32(attributeValue, 4) ^ STUNv2Header.MAGIC_COOKIE;
+                //Address = new IPAddress(BitConverter.GetBytes(address));
+                Address = new IPAddress(address);
             }
         }
 
-        public STUNv2XORAddressAttribute(int port, IPAddress address)
-            : base(STUNv2AttributeTypesEnum.XORMappedAddress, null)
+        public STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum attributeType, int port, IPAddress address)
+            : base(attributeType, null)
         {
             Port = port;
             Address = address;
@@ -104,7 +106,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                UInt16 xorPort = Convert.ToUInt16(Utility.ReverseEndian(Convert.ToUInt16(Port)) ^ (STUNv2Header.MAGIC_COOKIE >> 16));
+                UInt16 xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (STUNv2Header.MAGIC_COOKIE >> 16));
                 UInt32 xorAddress = BitConverter.ToUInt32(Address.GetAddressBytes(), 0) ^ STUNv2Header.MAGIC_COOKIE;
                 Buffer.BlockCopy(BitConverter.GetBytes(xorPort), 0, buffer, startIndex + 6, 2);
                 Buffer.BlockCopy(BitConverter.GetBytes(xorAddress), 0, buffer, startIndex + 8, 4);

@@ -69,11 +69,12 @@ namespace SIPSorcery.Net
         private const int RTP_PACKETS_MAX_QUEUE_LENGTH = 1000;   // The maximum number of RTP packets that will be queued.
         private const int RTP_RECEIVE_BUFFER_SIZE = 100000000;
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
-        private const double DEFAULT_INITAL_FRAME_RATE = 10.0;  // Set the default initial frame rate to 10 frames per second.
-        private const int INITIAL_FRAME_RATE_CALCULATION_SECONDS = 10;  // Do an initial frame rate calculation after this many seconds.
-        private const int FRAME_RATE_CALCULATION_SECONDS = 60;          // Re-calculate the frame rate with this period in seconds.
-        private const int MINIMUM_SAMPLES_FOR_FRAME_RATE = 20;          // The minimum number of samples before a new frame rate calculation will be made.
-        private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 3;   // The maximum number of re-attempts that will be made when trying to bind the RTP port.
+        //private const double DEFAULT_INITAL_FRAME_RATE = 10.0;            // Set the default initial frame rate to 10 frames per second.
+        //private const int INITIAL_FRAME_RATE_CALCULATION_SECONDS = 10;    // Do an initial frame rate calculation after this many seconds.
+        //private const int FRAME_RATE_CALCULATION_SECONDS = 60;            // Re-calculate the frame rate with this period in seconds.
+        //private const int MINIMUM_SAMPLES_FOR_FRAME_RATE = 20;            // The minimum number of samples before a new frame rate calculation will be made.
+        private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 3;               // The maximum number of re-attempts that will be made when trying to bind the RTP port.
+        private const int RTCP_SENDER_REPORT_INTERVAL_SECONDS = 5;          // Interval at which to send RTCP sender reports.
 
         private static DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
         private static DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -91,18 +92,24 @@ namespace SIPSorcery.Net
         private byte[] _controlSocketBuffer;
         private bool _closed;
         private Queue<RTPPacket> _packets = new Queue<RTPPacket>();
-        private double _frameRate = DEFAULT_INITAL_FRAME_RATE;              // The most recently calculated frame rate.
-        private bool _isInitialFrameRateCalculation = true;
-        private int _frameRateSampleCount;                                  // Counts the packets since the frame rate calculation.
-        private DateTime _lastFrameRateCalculationAt = DateTime.MinValue;   // Time the frame rate was last calculated.
-        private uint _timestampStep = Convert.ToUInt32(1 / DEFAULT_INITAL_FRAME_RATE * RFC_2435_FREQUENCY_BASELINE);    // The step that will be applied to the RTP timestamp. It gets re-calculated when the frame rate is adjusted.
-
+        //private double _frameRate = DEFAULT_INITAL_FRAME_RATE;              // The most recently calculated frame rate.
+        //private bool _isInitialFrameRateCalculation = true;
+        //private int _frameRateSampleCount;                                  // Counts the packets since the frame rate calculation.
+        //private DateTime _lastFrameRateCalculationAt = DateTime.MinValue;   // Time the frame rate was last calculated.
+        //private uint _timestampStep = Convert.ToUInt32(1 / DEFAULT_INITAL_FRAME_RATE * RFC_2435_FREQUENCY_BASELINE);    // The step that will be applied to the RTP timestamp. It gets re-calculated when the frame rate is adjusted.
 
         private IPEndPoint _remoteEndPoint;
         public IPEndPoint RemoteEndPoint
         {
             get { return _remoteEndPoint; }
             set { _remoteEndPoint = value; }
+        }
+
+        private IPEndPoint _rtcpRemoteEndPoint;
+        public IPEndPoint RtcpRemoteEndPoint
+        {
+            get { return _rtcpRemoteEndPoint; }
+            set { _rtcpRemoteEndPoint = value; }
         }
 
         private string _sessionID;
@@ -173,6 +180,11 @@ namespace SIPSorcery.Net
         private uint _timestamp = 0;
         private uint _syncSource = 0;
 
+        // RTCP fields.
+        private uint _senderPacketCount = 0;
+        private uint _senderOctetCount = 0;
+        private DateTime _senderLastSentAt = DateTime.MinValue;
+
         //public event Action<string, byte[]> OnRTPDataReceived;
         public event Action OnRTPQueueFull;                         // Occurs if the RTP queue fills up and needs to be purged.
         public event Action<string> OnRTPSocketDisconnected;
@@ -188,11 +200,12 @@ namespace SIPSorcery.Net
             _createdAt = DateTime.Now;
         }
 
-        public RTSPSession(string sessionID, IPEndPoint remoteEndPoint)
+        public RTSPSession(string sessionID, IPEndPoint remoteEndPoint, IPEndPoint rtcpRemoteEndPoint)
             : this()
         {
             _sessionID = sessionID;
             _remoteEndPoint = remoteEndPoint;
+            _rtcpRemoteEndPoint = rtcpRemoteEndPoint;
             _syncSource = Convert.ToUInt32(Crypto.GetRandomInt(0, 9999999));
         }
 
@@ -442,7 +455,7 @@ namespace SIPSorcery.Net
                                                 STUNv2Message stunResponse = new STUNv2Message(STUNv2MessageTypesEnum.BindingSuccessResponse);
                                                 stunResponse.Header.TransactionId = stunMessage.Header.TransactionId;
                                                 stunResponse.AddXORMappedAddressAttribute(remoteIPEndPoint.Address, remoteIPEndPoint.Port);
-                                                byte[] stunRespBytes = stunResponse.ToByteBuffer(_iceState.SenderPassword, true);
+                                                byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(_iceState.SenderPassword, true);
                                                 _rtpSocket.SendTo(stunRespBytes, remoteIPEndPoint);
 
                                                 //logger.Debug("Sending Binding request to Receiver Client @ " + remoteEndPoint + ".");
@@ -452,7 +465,7 @@ namespace SIPSorcery.Net
                                                 stunRequest.AddUsernameAttribute(_iceState.ReceiverUser + ":" + _iceState.SenderUser);
                                                 stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
                                                 stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
-                                                byte[] stunReqBytes = stunRequest.ToByteBuffer(_iceState.ReceiverPassword, true);
+                                                byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(_iceState.ReceiverPassword, true);
                                                 _rtpSocket.SendTo(stunReqBytes, remoteIPEndPoint);
 
                                                 _iceState.LastSTUNMessageReceivedAt = DateTime.Now;
@@ -659,9 +672,13 @@ namespace SIPSorcery.Net
                 {
                     //_timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + (uint)(RFC_2435_FREQUENCY_BASELINE / DEFAULT_INITAL_FRAME_RATE)) % UInt32.MaxValue;
 
-                    RecalculateTimestampStep();
+                    //RecalculateTimestampStep();
 
-                    _timestamp += _timestampStep;
+                    //_timestamp += _timestampStep;
+
+                    //_timestamp = DateTimeToNptTimestamp32(DateTime.Now);
+
+                    _timestamp = DateTimeToNptTimestamp90K(DateTime.Now);
 
                     //System.Diagnostics.Debug.WriteLine("Sending " + jpegBytes.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ", image dimensions " + jpegWidth + " x " + jpegHeight + ".");
 
@@ -743,11 +760,25 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    RecalculateTimestampStep();
+                    //RecalculateTimestampStep();
 
-                    _timestamp += _timestampStep;
+                    //_timestamp += _timestampStep;
 
-                    //System.Diagnostics.Debug.WriteLine("Sending " + frame.Length + " H264 encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ".");
+                    //_timestamp = DateTimeToNptTimestamp32(DateTime.Now);
+
+                    DateTime packetTimestamp = DateTime.Now;
+                    _timestamp = DateTimeToNptTimestamp90K(packetTimestamp);
+
+                    _senderPacketCount++;
+                    _senderOctetCount += (uint)frame.Length;
+
+                    if(_rtcpRemoteEndPoint != null && DateTime.Now.Subtract(_senderLastSentAt).TotalSeconds > RTCP_SENDER_REPORT_INTERVAL_SECONDS)
+                    {
+                        Console.WriteLine(packetTimestamp.ToUniversalTime().ToString("hh:mm:ss:fff"));
+                        SendRtcpSenderReport(DateTimeToNptTimestamp(packetTimestamp), _timestamp);
+                    }
+
+                    Console.WriteLine("Sending " + frame.Length + " H264 encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ".");
 
                     for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
                     {
@@ -848,11 +879,13 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    RecalculateTimestampStep();
+                    //RecalculateTimestampStep();
 
-                    _timestamp += _timestampStep;
+                    //_timestamp += _timestampStep;
 
-                    //System.Diagnostics.Debug.WriteLine("Sending " + frame.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ".");
+                    _timestamp = DateTimeToNptTimestamp90K(DateTime.Now);
+
+                    System.Diagnostics.Debug.WriteLine("Sending " + frame.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ".");
 
                     for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
                     {
@@ -948,6 +981,25 @@ namespace SIPSorcery.Net
             }
         }
 
+        private void SendRtcpSenderReport(ulong ntpTimestamp, uint rtpTimestamp)
+        {
+            try
+            {
+                Console.WriteLine("Sending RTCP sender report to remote, ntp timestamp " + ntpTimestamp + ", rtp timestamp " + rtpTimestamp + ", packet count " + _senderPacketCount + ".");
+
+                RTCPPacket senderReport = new RTCPPacket(_syncSource, ntpTimestamp, rtpTimestamp, _senderPacketCount, _senderOctetCount);
+                var bytes = senderReport.GetBytes();
+
+                _controlSocket.BeginSendTo(bytes, 0, bytes.Length, SocketFlags.None, _rtcpRemoteEndPoint, SendRtcpCallback, _controlSocket);
+
+                _senderLastSentAt = DateTime.Now;
+            }
+            catch(Exception excp)
+            {
+                logger.Error("Exception SendRtcpSenderReport. " + excp);
+            }
+        }
+
         private void SendRtpCallback(IAsyncResult ar)
         {
             try
@@ -968,28 +1020,48 @@ namespace SIPSorcery.Net
             }
         }
 
+        private void SendRtcpCallback(IAsyncResult ar)
+        {
+            try
+            {
+                _controlSocket.EndSend(ar);
+            }
+            catch (Exception excp)
+            {
+                if (!_closed)
+                {
+                    logger.Error("Exception RTSPSession.SendRtcpCallback attempting to send to " + _rtcpRemoteEndPoint + ". " + excp);
+
+                    //if (OnRTPSocketDisconnected != null)
+                    //{
+                    //    OnRTPSocketDisconnected(_sessionID);
+                    //}
+                }
+            }
+        }
+
         /// <summary>
         /// Recalculates the step that should be applied to the RTP timestamp based on the frame rate of the incoming samples.
         /// </summary>
-        private void RecalculateTimestampStep()
-        {
-            _frameRateSampleCount++;
+        //private void RecalculateTimestampStep()
+        //{
+        //    _frameRateSampleCount++;
 
-            if (_lastFrameRateCalculationAt == DateTime.MinValue)
-            {
-                _lastFrameRateCalculationAt = DateTime.Now;
-                _timestamp = DateTimeToNptTimestamp32(DateTime.Now);
-            }
-            else if (_frameRateSampleCount > MINIMUM_SAMPLES_FOR_FRAME_RATE && DateTime.Now.Subtract(_lastFrameRateCalculationAt).TotalSeconds > ((_isInitialFrameRateCalculation) ? INITIAL_FRAME_RATE_CALCULATION_SECONDS : FRAME_RATE_CALCULATION_SECONDS))
-            {
-                // Re-calculate the frame rate.
-                _isInitialFrameRateCalculation = false;
-                _frameRate = _frameRateSampleCount / DateTime.Now.Subtract(_lastFrameRateCalculationAt).TotalSeconds;
-                _timestampStep = Convert.ToUInt32((1 / _frameRate) * RFC_2435_FREQUENCY_BASELINE);
-                _frameRateSampleCount = 0;
-                _lastFrameRateCalculationAt = DateTime.Now;
-            }
-        }
+        //    if (_lastFrameRateCalculationAt == DateTime.MinValue)
+        //    {
+        //        _lastFrameRateCalculationAt = DateTime.Now;
+        //        _timestamp = DateTimeToNptTimestamp32(DateTime.Now);
+        //    }
+        //    else if (_frameRateSampleCount > MINIMUM_SAMPLES_FOR_FRAME_RATE && DateTime.Now.Subtract(_lastFrameRateCalculationAt).TotalSeconds > ((_isInitialFrameRateCalculation) ? INITIAL_FRAME_RATE_CALCULATION_SECONDS : FRAME_RATE_CALCULATION_SECONDS))
+        //    {
+        //        // Re-calculate the frame rate.
+        //        _isInitialFrameRateCalculation = false;
+        //        _frameRate = _frameRateSampleCount / DateTime.Now.Subtract(_lastFrameRateCalculationAt).TotalSeconds;
+        //        _timestampStep = Convert.ToUInt32((1 / _frameRate) * RFC_2435_FREQUENCY_BASELINE);
+        //        _frameRateSampleCount = 0;
+        //        _lastFrameRateCalculationAt = DateTime.Now;
+        //    }
+        //}
 
         public static uint DateTimeToNptTimestamp32(DateTime value) { return (uint)((DateTimeToNptTimestamp(value) >> 16) & 0xFFFFFFFF); }
 
@@ -1011,11 +1083,42 @@ namespace SIPSorcery.Net
         /// </notes>
         private static ulong DateTimeToNptTimestamp(DateTime value)
         {
+            //DateTime baseDate = value >= UtcEpoch2036 ? UtcEpoch2036 : UtcEpoch1900;
+
+            //TimeSpan elapsedTime = value > baseDate ? value.ToUniversalTime() - baseDate.ToUniversalTime() : baseDate.ToUniversalTime() - value.ToUniversalTime();
+
+            //long elapsedTicks = elapsedTime.Ticks;
+
+            //long integerPart = elapsedTicks / TimeSpan.TicksPerSecond;
+            //long fractionPart = elapsedTicks - integerPart;
+
+            //ulong ntpTS = (ulong)(integerPart & 0xFFFF0000 | fractionPart);
+
+            //Console.WriteLine("NTP timestamp: int=" + integerPart + ", fraction=" + fractionPart + ", ntp ts=" + ntpTS + ".");
+
+            //return ntpTS;
+
+            //return ((ulong)(elapsedTime.TotalSeconds / 1) << 32) | ((uint)(elapsedTime.TotalSeconds) << 32 & 0x0000FFFF);
+
             DateTime baseDate = value >= UtcEpoch2036 ? UtcEpoch2036 : UtcEpoch1900;
 
             TimeSpan elapsedTime = value > baseDate ? value.ToUniversalTime() - baseDate.ToUniversalTime() : baseDate.ToUniversalTime() - value.ToUniversalTime();
 
-            return ((ulong)(elapsedTime.Ticks / TimeSpan.TicksPerSecond) << 32) | (uint)(elapsedTime.Ticks / TimeSpan.TicksPerSecond * 0x100000000L);
+            long ticks = elapsedTime.Ticks;
+
+            //return (ulong)(elapsedTime.Ticks / TimeSpan.TicksPerSecond << 32) | (ulong)(elapsedTime.Ticks % TimeSpan.TicksPerSecond * 0xFFFFL);
+            return (ulong)(elapsedTime.Ticks / TimeSpan.TicksPerSecond << 32) | (ulong)(elapsedTime.Ticks % TimeSpan.TicksPerSecond);
+        }
+
+        private static uint DateTimeToNptTimestamp90K(DateTime value)
+        {
+            DateTime baseDate = value >= UtcEpoch2036 ? UtcEpoch2036 : UtcEpoch1900;
+
+            TimeSpan elapsedTime = value > baseDate ? value.ToUniversalTime() - baseDate.ToUniversalTime() : baseDate.ToUniversalTime() - value.ToUniversalTime();
+
+            var ticks90k = elapsedTime.TotalMilliseconds * 90;
+
+            return (uint)(ticks90k % UInt32.MaxValue);
         }
 
         /// <summary>

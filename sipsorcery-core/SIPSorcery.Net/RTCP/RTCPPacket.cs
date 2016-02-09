@@ -124,7 +124,7 @@ namespace SIPSorcery.Net
                 Buffer.BlockCopy(BitConverter.GetBytes(SenderOctetCount), 0, payload, 20, 4);
             }
 
-            Header.Length = Convert.ToUInt16(payload.Length);
+            Header.Length = Convert.ToUInt16(payload.Length / 4);
             byte[] header = Header.GetBytes();
             byte[] packet = new byte[header.Length + payload.Length];
             Array.Copy(header, packet, header.Length);
@@ -157,7 +157,7 @@ namespace SIPSorcery.Net
 
             Buffer.BlockCopy(reports, 0, payload, 24, reports.Length);
 
-            Header.Length = Convert.ToUInt16(payload.Length);
+            Header.Length = Convert.ToUInt16(payload.Length / 4);
             byte[] header = Header.GetBytes();
             byte[] packet = new byte[header.Length + payload.Length];
             Array.Copy(header, packet, header.Length);

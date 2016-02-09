@@ -225,8 +225,8 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net, Version=1.2.14.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\WindowsClients\QikDetekt\packages\log4net.2.0.4\lib\net40-full\log4net.dll</HintPath>
+    <Reference Include="log4net">
+      <HintPath>..\..\sipsorcery-media\samples\WebRTCVideoServer\packages\log4net.2.0.5\lib\net40-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -258,6 +258,7 @@
     <Compile Include="RTSP\RTSPServer.cs" />
     <Compile Include="RTSP\RTSPSession.cs" />
     <Compile Include="SDP\SDPICECandidate.cs" />
+    <Compile Include="STUNv2\STUNAttributes\STUNv2ErrorCodeAttribute.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2XORAddressAttribute.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2AddressAttribute.cs" />
     <Compile Include="STUNv2\STUNAttributes\STUNv2Attribute.cs" />
@@ -373,11 +374,4 @@
     <PostBuildEvent>
     </PostBuildEvent>
   </PropertyGroup>
-  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-  </Target>
 </Project>

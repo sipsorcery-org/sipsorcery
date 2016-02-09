@@ -2,7 +2,7 @@
 // FileName: PasswordHash.cs
 //
 // Description:
-// This class deals with sotring and verfying password hashes.
+// This class deals with storing and verfying password hashes.
 //
 // Author(s):
 // Aaron Clauson
