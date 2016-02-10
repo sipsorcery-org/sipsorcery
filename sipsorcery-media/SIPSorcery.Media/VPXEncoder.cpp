@@ -147,7 +147,7 @@ namespace SIPSorceryMedia {
 				outBuffer = gcnew array<Byte>(outputSize);
 				Marshal::Copy((IntPtr)bufferOut, outBuffer, 0, outputSize);
 
-				delete bufferOut;
+				free(bufferOut);
 			}
 		}
 
