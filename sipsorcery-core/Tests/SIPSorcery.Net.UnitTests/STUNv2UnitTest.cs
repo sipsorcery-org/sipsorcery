@@ -108,7 +108,7 @@ namespace SIPSorcery.SIP.Core.UnitTests
 
             byte[] stunAttribute = new byte[]{0xe0, 0xda, 0xe1, 0xba, 0x85, 0x3f};
 
-            STUNv2XORAddressAttribute xorAddressAttribute = new STUNv2XORAddressAttribute(stunAttribute);
+            STUNv2XORAddressAttribute xorAddressAttribute = new STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum.XORMappedAddress, stunAttribute);
 
             Assert.AreEqual(49608, xorAddressAttribute.Port);
             Assert.AreEqual("192.168.33.125", xorAddressAttribute.Address.ToString());
@@ -122,7 +122,7 @@ namespace SIPSorcery.SIP.Core.UnitTests
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            STUNv2XORAddressAttribute xorAddressAttribute = new STUNv2XORAddressAttribute(49608, IPAddress.Parse("192.168.33.125"));
+            STUNv2XORAddressAttribute xorAddressAttribute = new STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum.XORMappedAddress, 49608, IPAddress.Parse("192.168.33.125"));
 
             byte[] buffer = new byte[12];
             xorAddressAttribute.ToByteBuffer(buffer, 0);
@@ -189,7 +189,7 @@ namespace SIPSorcery.SIP.Core.UnitTests
             stunMessage.Attributes.Remove(stunMessage.Attributes.Where(x => x.AttributeType == STUNv2AttributeTypesEnum.MessageIntegrity).Single());
             stunMessage.Attributes.Remove(stunMessage.Attributes.Where(x => x.AttributeType == STUNv2AttributeTypesEnum.FingerPrint).Single());
 
-            byte[] buffer = stunMessage.ToByteBuffer("r89XhWC9k2kW4Pns75vmwHIa", true);
+            byte[] buffer = stunMessage.ToByteBufferStringKey("r89XhWC9k2kW4Pns75vmwHIa", true);
 
             Assert.AreEqual(BitConverter.ToString(stunReq), BitConverter.ToString(buffer));
         }
