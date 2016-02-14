@@ -210,6 +210,7 @@
     <Compile Include="Enums\SimpleWizardRuleTypes.shared.cs" />
     <Compile Include="Enums\CustomerServiceLevels.shared.cs" />
     <Compile Include="Enums\SIPDialPlanLookupTypes.shared.cs" />
+    <Compile Include="Metadata\MyRegularExpressionAttribute.cs" />
     <Compile Include="Metadata\Rate.metadata.cs" />
     <Compile Include="Metadata\WebCallback.metadata.cs" />
     <Compile Include="Metadata\VoxalotMigration.metadata.cs" />

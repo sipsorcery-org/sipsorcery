@@ -20,19 +20,19 @@ namespace SIPSorcery.Entities
             public string Owner;
 
             [Required(ErrorMessage = "A provider name must be specified.")]
-            [RegularExpression(@"[^\.]+", ErrorMessage = "Provider names cannot contain a full stop '.' in order to avoid ambiguity with DNS host names, please remove the '.'.")]
+            [MyRegularExpressionAttribute(@"[^\.]+", ErrorMessage = "Provider names cannot contain a full stop '.' in order to avoid ambiguity with DNS host names, please remove the '.'.")]
             public string ProviderName;
 
             [Required(ErrorMessage = "A username must be specified for the provider.")]
             public string ProviderUsername;
 
-            [RegularExpression(@".+\..+", ErrorMessage = "The provider server should contain at least one '.' to be recognised as a valid hostname or IP address.")]
+            [MyRegularExpressionAttribute(@".+\..+", ErrorMessage = "The provider server should contain at least one '.' to be recognised as a valid hostname or IP address.")]
             public string ProviderServer;
 
-            [RegularExpression(@".+@.+\..+", ErrorMessage = "The register contact should be of the form user@server.com.")]
+            [MyRegularExpressionAttribute(@".+@.+\..+", ErrorMessage = "The register contact should be of the form user@server.com.")]
             public string RegisterContact;
 
-            [RegularExpression(@".+\..+", ErrorMessage = "The register server should contain at least one '.' to be recognised as a valid hostname or IP address.")]
+            [MyRegularExpressionAttribute(@".+\..+", ErrorMessage = "The register server should contain at least one '.' to be recognised as a valid hostname or IP address.")]
             public string RegisterServer;
         }
     }

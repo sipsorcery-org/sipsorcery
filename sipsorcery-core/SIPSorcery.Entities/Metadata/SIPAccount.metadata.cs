@@ -30,7 +30,7 @@ namespace SIPSorcery.Entities
 
             [Required(ErrorMessage = "A username must be specified for the SIP account.")]
             [StringLength(SIPAccount.USERNAME_MAX_LENGTH, MinimumLength = SIPAccount.USERNAME_MIN_LENGTH, ErrorMessage = SIPAccount.USERNAME_LENGTH_ERROR_MESSAGE)]
-            [RegularExpression(@"[a-zA-Z0-9_\-\.]+", ErrorMessage = "The username contained an illegal character. Only alpha-numeric characters and .-_ are allowed.")]
+            [MyRegularExpressionAttribute(@"[a-zA-Z0-9_\-\.]+", ErrorMessage = "The username contained an illegal character. Only alpha-numeric characters and .-_ are allowed.")]
             public string SIPUsername;
 
             [Required(ErrorMessage = "A password must be specified for the SIP account.")]

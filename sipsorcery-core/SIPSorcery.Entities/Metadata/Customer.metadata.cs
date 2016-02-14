@@ -21,8 +21,7 @@ namespace SIPSorcery.Entities
             //[Key]
             [Required(ErrorMessage = "Please choose a username.")]
             [StringLength(32, MinimumLength = 5, ErrorMessage = "The username is an invalid length. The minimum length required is 5 characters and the maximum length allowed is 32 characters.")]
-            [RegularExpression(@"[a-zA-Z0-9_\-]*", ErrorMessage = "The username contained an illegal character. Only characters a-zA-Z0-9_- are permitted.")]
-            //[Editable(false, AllowInitialValue = true)]
+            [MyRegularExpressionAttribute(@"[a-zA-Z0-9_\-]*", ErrorMessage = "The username contained an illegal character. Only characters a-zA-Z0-9_- are permitted.")]            
             public string Name;
 
             [Required(ErrorMessage = "A password must be specified.")]
@@ -34,7 +33,7 @@ namespace SIPSorcery.Entities
 
             [Required(ErrorMessage = "Please enter your email address. A confirmation email will be sent to this address before your account is activated.")]
             [StringLength(255, ErrorMessage = "The email address is too long. The maximum length allowed is 255 characters.")]
-            [RegularExpression(AppState.EMAIL_VALIDATION_REGEX, ErrorMessage = "The value was not recognised as a valid email address.")]
+            [MyRegularExpressionAttribute(AppState.EMAIL_VALIDATION_REGEX, ErrorMessage = "The value was not recognised as a valid email address.")]
             public string EmailAddress;
 
             [Required(ErrorMessage = "Please enter your first name.")]
