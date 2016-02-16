@@ -442,3 +442,12 @@ create index providerbindings_nextregtime_index on sipproviderbindings(nextregis
 -- create index regbindings_contact_index on sipregistrarbindings(contacturi);
 create index customers_custid_index on customers(customerusername);
 create index regbindings_sipaccid_index on sipregistrarbindings(sipaccountid);
+
+DELIMITER $$
+drop function IF EXISTS AddSeconds$$
+create function AddSeconds(theDate datetime, seconds int)
+RETURNS datetime
+DETERMINISTIC
+begin
+ return DATE_ADD(theDate, INTERVAL seconds SECOND);
+end$$

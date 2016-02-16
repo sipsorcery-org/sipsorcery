@@ -27,6 +27,6 @@
 		<file src="build\release_x64\avutil-54.dll" target="lib\net45\avutil-54.dll" />
 		<file src="build\release_x64\libeay32.dll" target="lib\net45\libeay32.dll" />
 		<file src="build\release_x64\ssleay32.dll" target="lib\net45\ssleay32.dll" />
-		<file src="build\release_x64\swscale-3" target="lib\net45\swscale-3" />
+		<file src="build\release_x64\swscale-3.dll" target="lib\net45\swscale-3.dll" />
     </files>
 </package>
