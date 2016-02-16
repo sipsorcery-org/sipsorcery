@@ -19,14 +19,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIP.Core", "SIPS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Net", "SIPSorcery.Net\SIPSorcery.Net.csproj", "{55898587-8456-40D4-BB88-C9FC8BD6BA9C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{7A7542D2-F245-465E-B95B-83A22621CC0D}"
-	ProjectSection(SolutionItems) = preProject
-		.nuget\NuGet.Config = .nuget\NuGet.Config
-		.nuget\NuGet.exe = .nuget\NuGet.exe
-		.nuget\NuGet.targets = .nuget\NuGet.targets
-		.nuget\packages.config = .nuget\packages.config
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIP.App-Min", "SIPSorcery.SIP.App\SIPSorcery.SIP.App-Min.csproj", "{339648E6-3B61-4A27-B4A2-38A8216B1D7E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Persistence-Min", "SIPSorcery.Persistence\SIPSorcery.Persistence-Min.csproj", "{D451FCC6-9A7D-470F-832C-0FB69359C2ED}"
