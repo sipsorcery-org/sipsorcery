@@ -1,5 +1,8 @@
 SIPSorcery Local Instance Install Instructions:
 
+Author: Aaron Clauson
+Last Updated: 16 Feb 2016
+
 Quick Start:
 ------------
 
@@ -15,7 +18,7 @@ MySQL Database:
 
 The only supported persistence store for sipsorcery local is a MySQL database.
 
-Create a new MySQL database called sipsorceryv2. The required schema is in the file sipsorceryv2_schema.sql.
+Create a new MySQL database called sipsorceryv2. The required schema is in the file sipsorcery-servers\SQL\sipsorceryv2_mysql.sql.
 
 Once the schema is installed two records need to be added to the database before sipsorcery local can use it.
 
@@ -64,5 +67,5 @@ Running:
 
 The application can be run as a console application with the command below. In console mode all log messages including dial plan traces are displayed on the console.
 
-sipsorcery-allineone.exe -c
+sipsorcery-allinone.exe -c
 
