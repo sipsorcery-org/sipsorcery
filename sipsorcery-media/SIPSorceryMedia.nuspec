@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>SIPSorceryMedia</id>
+        <version>1.1.0</version>
+        <authors>Aaron Clauson</authors>
+        <owners>Aaron Clauson</owners>
+        <licenseUrl>https://sipsorcery.codeplex.com/license</licenseUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>The SIPSorcery package for media functions.</description>
+      <summary>This is the official package for SIPSorceryMedia. Full source code can be found at http://sipsorcery.codeplex.com.</summary>  
+      <copyright>Copyright (c) 2105, Aaron Clauson</copyright>
+        <language>en-US</language>
+		<projectUrl>https://sipsorcery.codeplex.com/</projectUrl>
+		<iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
+        <tags>sip sipsorcery</tags>
+        <frameworkAssemblies>
+            <frameworkAssembly assemblyName="System" targetFramework=".NETFramework45" />
+			<frameworkAssembly assemblyName="System.Data" targetFramework=".NETFramework45" />
+			<frameworkAssembly assemblyName="System.Xml" targetFramework=".NETFramework45" />
+        </frameworkAssemblies>
+    </metadata>
+    <files>
+        <file src="sipsorcery-media\build\release_x64\SIPSorceryMedia.dll" target="lib\net45\SIPSorceryMedia.dll" />
+		<file src="sipsorcery-media\build\release_x64\avcodec-56.dll" target="lib\net45\avcodec-56.dll" />
+		<file src="sipsorcery-media\build\release_x64\avformat-56.dll" target="lib\net45\avformat-56.dll" />
+		<file src="sipsorcery-media\build\release_x64\avutil-54.dll" target="lib\net45\avutil-54.dll" />
+		<file src="sipsorcery-media\build\release_x64\libeay32.dll" target="lib\net45\libeay32.dll" />
+		<file src="sipsorcery-media\build\release_x64\ssleay32.dll" target="lib\net45\ssleay32.dll" />
+		<file src="sipsorcery-media\build\release_x64\swscale-3" target="lib\net45\swscale-3" />
+    </files>
+</package>
