@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCVideoServer", "WebRTCVideoServer.csproj", "{6886EF9D-7FF7-4712-9AB3-54BD85CEE232}"
 EndProject
@@ -199,8 +199,8 @@ Global
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|Mixed Platforms.Build.0 = Debug|x86
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|Win32.ActiveCfg = Debug|x86
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|Win32.Build.0 = Debug|x86
-		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|x64.Build.0 = Debug|Any CPU
+		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|x64.ActiveCfg = Debug|x64
+		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|x64.Build.0 = Debug|x64
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|x86.ActiveCfg = Debug|x86
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug|x86.Build.0 = Debug|x86
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debugx64|Any CPU.ActiveCfg = Debugx64|Any CPU

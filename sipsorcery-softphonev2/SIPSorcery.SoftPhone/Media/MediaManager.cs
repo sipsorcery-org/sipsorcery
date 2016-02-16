@@ -149,7 +149,7 @@ namespace SIPSorcery.SoftPhone
             }
 
             var videoSampler = new MFVideoSampler();
-            videoSampler.Init(videoMode.DeviceIndex, videoMode.Width, videoMode.Height);
+            videoSampler.Init(videoMode.DeviceIndex, VideoSubTypesEnum.RGB24, videoMode.Width, videoMode.Height);
             //videoSampler.InitFromFile();
             //_audioChannel = new AudioChannel();
 

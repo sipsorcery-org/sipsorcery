@@ -180,7 +180,8 @@ namespace SIPSorcery.SoftPhone
             if (OnRemoteAudioSampleReady != null)
             {
                 //System.Diagnostics.Debug.WriteLine("Remote audio frame received " + frame.FramePayload.Length + " bytes.");
-                OnRemoteAudioSampleReady(frame.FramePayload, frame.FramePayload.Length);
+                var payload = frame.GetFramePayload(0);
+                OnRemoteAudioSampleReady(payload, payload.Length);
             }
         }
 
@@ -189,8 +190,8 @@ namespace SIPSorcery.SoftPhone
             if (OnRemoteVideoSampleReady != null)
             {
                 //System.Diagnostics.Debug.WriteLine("Remote video frame received " + frame.FramePayload.Length + " bytes.");
-
-                OnRemoteVideoSampleReady(frame.FramePayload, frame.FramePayload.Length);
+                var payload = frame.GetFramePayload(0);
+                OnRemoteVideoSampleReady(payload, payload.Length);
             }
         }
 
