@@ -1081,7 +1081,7 @@ namespace SIPSorcery.Net
         /// bits of the integer part and the high 16 bits of the fractional part.
         /// The high 16 bits of the integer part must be determined independently.
         /// </notes>
-        private static ulong DateTimeToNptTimestamp(DateTime value)
+        public static ulong DateTimeToNptTimestamp(DateTime value)
         {
             //DateTime baseDate = value >= UtcEpoch2036 ? UtcEpoch2036 : UtcEpoch1900;
 
@@ -1110,7 +1110,7 @@ namespace SIPSorcery.Net
             return (ulong)(elapsedTime.Ticks / TimeSpan.TicksPerSecond << 32) | (ulong)(elapsedTime.Ticks % TimeSpan.TicksPerSecond);
         }
 
-        private static uint DateTimeToNptTimestamp90K(DateTime value)
+        public static uint DateTimeToNptTimestamp90K(DateTime value)
         {
             DateTime baseDate = value >= UtcEpoch2036 ? UtcEpoch2036 : UtcEpoch1900;
 

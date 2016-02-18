@@ -20,6 +20,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
+using log4net;
 
 namespace SIPSorcery.Sys
 {
@@ -36,6 +37,8 @@ namespace SIPSorcery.Sys
         private const int RTP_RECEIVE_BUFFER_SIZE = 100000000;
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
         private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 5;               // The maximum number of re-attempts that will be made when trying to bind the RTP port.
+
+        private static ILog logger = AppState.logger;
 
         public static PlatformEnum Platform = PlatformEnum.Windows;
 
@@ -68,7 +71,7 @@ namespace SIPSorcery.Sys
                 }
 
                 int rtpPort = startPort;
-                int controlPort = rtpPort + 1;
+                int controlPort = (createControlSocket == true) ? rtpPort + 1 : 0;
 
                 if (inUseUDPPorts.Count > 0)
                 {
@@ -120,6 +123,12 @@ namespace SIPSorcery.Sys
                             {
                                 controlSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                                 controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
+
+                                logger.Debug("Successfully bound RTP socket " + localAddress + ":" + rtpPort + " and control socket " + localAddress + ":" + controlPort + ".");
+                            }
+                            else
+                            {
+                                logger.Debug("Successfully bound RTP socket " + localAddress + ":" + rtpPort + ".");
                             }
 
                             bindSuccess = true;
@@ -128,7 +137,7 @@ namespace SIPSorcery.Sys
                         }
                         catch (System.Net.Sockets.SocketException)
                         {
-                            Console.WriteLine("Failed to bind to RTP port " + rtpPort + " and/or control port of " + controlPort + ", attempt " + bindAttempts + ".");
+                            logger.Warn("Failed to bind on address " + localAddress + " to RTP port " + rtpPort + " and/or control port of " + controlPort + ", attempt " + bindAttempts + ".");
 
                             // Increment the port range in case there is an OS/network issue closing/cleaning up already used ports.
                             rtpPort += 2;
@@ -138,12 +147,12 @@ namespace SIPSorcery.Sys
 
                     if (!bindSuccess)
                     {
-                        throw new ApplicationException("An RTP socket could be created due to a failure to bind to the RTP and/or control ports within the range of " + startPort + " to " + endPort + ".");
+                        throw new ApplicationException("An RTP socket could be created due to a failure to bind on address " + localAddress + " to the RTP and/or control ports within the range of " + startPort + " to " + endPort + ".");
                     }
                 }
                 else
                 {
-                    throw new ApplicationException("An RTP socket could be created due to a failure to allocate an RTP and/or control ports within the range of " + startPort + " to " + endPort + ".");
+                    throw new ApplicationException("An RTP socket could be created due to a failure to allocate on address " + localAddress + " and an RTP and/or control ports within the range " + startPort + " to " + endPort + ".");
                 }
             }
         }

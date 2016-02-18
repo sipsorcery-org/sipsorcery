@@ -137,11 +137,11 @@ namespace SIPSorcery.Net
             }
         }
 
-        public STUNv2Attribute(STUNv2AttributeTypesEnum attributeType, byte value)
-        {
-            AttributeType = attributeType;
-            Value = new byte[] { value };
-        }
+        //public STUNv2Attribute(STUNv2AttributeTypesEnum attributeType, byte value)
+        //{
+        //    AttributeType = attributeType;
+        //    Value = new byte[] { value };
+        //}
 
         public STUNv2Attribute(STUNv2AttributeTypesEnum attributeType, byte[] value)
         {
