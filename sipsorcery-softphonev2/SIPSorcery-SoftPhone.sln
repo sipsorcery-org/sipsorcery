@@ -1,20 +1,26 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SoftPhone", "SIPSorcery.SoftPhone\SIPSorcery.SoftPhone.csproj", "{45ECFC1D-26F4-453C-B840-1B877B14F3CF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Debug|Any CPU.Build.0 = Debug|x64
+		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Debug|x64.ActiveCfg = Debug|x64
+		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Debug|x64.Build.0 = Debug|x64
 		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Release|x64.ActiveCfg = Release|x64
+		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

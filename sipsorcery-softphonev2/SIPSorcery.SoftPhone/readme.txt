@@ -1,6 +1,6 @@
 Readme for SIPSorcery Softphone
 
-Date: 30 mar 2012
+Date: 18 Feb 2016
 Author: Aaron Clauson
 URL: http://sipsorcery.codeplex.com/
 
@@ -37,10 +37,6 @@ This STUN server setting needs to be a public STUN server so that the applicatio
 determine its public IP. If it can't then there will almost certainly be audio issues
 on some calls.
 
-GoogleVoiceUsername and GoogleVoicePassword - The same details you use to login to the 
-Google Voice web site. They will allow VoIP calls to be placed through Google Voice's
-XMPP gateway.
-
 SIPUsername - The username for your SIP account.
 SIPPassword - The password for your SIP account.
 SIPServer - The host of your SIP server.
@@ -52,11 +48,10 @@ and if the node is left commented then default values will be used.
 Calling:
 --------
 
-The softphone supports two types of calls SIP and Google Voice. For Google Voice and
-authenticated SIP calls simple check the desired radio button, enter the destination number 
-in the text box and click the Call button.
+The softphone supports SIP calls. For authenticated SIP calls check the desired radio button,
+enter the destination number in the text box and click the Call button.
 
 It's also possible to place anonymous SIP calls that won't use any preset SIP account information.
 To place an anonymous SIP call check the SIP radio button and then enter a SIP address in the 
 text box, e.g. music@iptel.org. The softphone will identify that it's a full SIP address and place
-a call to it directly using anonymous details. 
+a call to it directly. 

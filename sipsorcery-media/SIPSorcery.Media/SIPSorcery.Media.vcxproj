@@ -174,6 +174,16 @@
     <ClCompile Include="SRTPManaged.cpp" />
     <ClCompile Include="VPXEncoder.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\libs\x64\avcodec-56.dll">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Document</FileType>
+    </None>
+    <None Include="..\libs\x64\avformat-56.dll" />
+    <None Include="..\libs\x64\avutil-54.dll" />
+    <None Include="..\libs\x64\swresample-1.dll" />
+    <None Include="..\libs\x64\swscale-3.dll" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

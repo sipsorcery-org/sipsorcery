@@ -66,7 +66,7 @@ namespace SIPSorcery.SoftPhone
         private string m_sipServer = SIPSoftPhoneState.SIPServer;
 
         private SIPClient _sipClient;                               // SIP calls.
-        private GingleClient _gingleClient;                         // Google Voice calls.
+        //private GingleClient _gingleClient;                         // Google Voice calls.
         private IVoIPClient _activeClient;                          // The active client, either SIP or GV.
         private SoftphoneSTUNClient _stunClient;                    // STUN client to periodically check the public IP address.
         private SIPRegistrationUserAgent _sipRegistrationClient;    // Can be used to register with an external SIP provider if incoming calls are required.
@@ -96,9 +96,9 @@ namespace SIPSorcery.SoftPhone
             _sipClient.StatusMessage += (message) => { SetStatusText(m_signallingStatus, message); };
 
             // Set up the Gingle client.
-            _gingleClient = new GingleClient();
-            _gingleClient.CallEnded += ResetToCallStartState;
-            _gingleClient.StatusMessage += (message) => { SetStatusText(m_signallingStatus, message); };
+            //_gingleClient = new GingleClient();
+            //_gingleClient.CallEnded += ResetToCallStartState;
+            //_gingleClient.StatusMessage += (message) => { SetStatusText(m_signallingStatus, message); };
 
             // Lookup and periodically check the public IP address of the host machine.
             _stunClient = new SoftphoneSTUNClient();
@@ -119,8 +119,6 @@ namespace SIPSorcery.SoftPhone
             //    null,
             //    (message) => { logger.Debug(message); });
             //_sipRegistrationClient.Start();
-
-
         }
 
         private void OnWindowLoaded(object sender, System.Windows.RoutedEventArgs e)
@@ -149,10 +147,10 @@ namespace SIPSorcery.SoftPhone
             _sipClient.Shutdown();
             _stunClient.Stop();
 
-            if (_gingleClient != null)
-            {
-                _gingleClient.Shutdown();
-            }
+            //if (_gingleClient != null)
+            //{
+            //    _gingleClient.Shutdown();
+            //}
         }
 
         /// <summary>
