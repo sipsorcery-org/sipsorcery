@@ -62,7 +62,7 @@ namespace SIPSorcery.Sys
                 //    _nextMediaPort = MEDIA_PORT_START;
                 //}
 
-                var inUseUDPPorts = (from p in System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners() where p.Port >= startPort  && p.Port <= endPort select p.Port).OrderBy(x => x).ToList();
+                var inUseUDPPorts = (from p in System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners() where p.Port >= startPort && p.Port <= endPort && p.Address.ToString() == localAddress.ToString() select p.Port).OrderBy(x => x).ToList();
 
                 // Make the RTP port start on an even port. Some legacy systems require the RTP port to be an even port number.
                 if(startPort % 2 != 0)
@@ -137,11 +137,18 @@ namespace SIPSorcery.Sys
                         }
                         catch (System.Net.Sockets.SocketException)
                         {
-                            logger.Warn("Failed to bind on address " + localAddress + " to RTP port " + rtpPort + " and/or control port of " + controlPort + ", attempt " + bindAttempts + ".");
+                            if (controlPort != 0)
+                            {
+                                logger.Warn("Failed to bind on address " + localAddress + " to RTP port " + rtpPort + " and/or control port of " + controlPort + ", attempt " + bindAttempts + ".");
+                            }
+                            else
+                            {
+                                logger.Warn("Failed to bind on address " + localAddress + " to RTP port " + rtpPort + ", attempt " + bindAttempts + ".");
+                            }
 
                             // Increment the port range in case there is an OS/network issue closing/cleaning up already used ports.
                             rtpPort += 2;
-                            controlPort += (controlPort != 0) ? 100 : 2;
+                            controlPort += (controlPort != 0) ? 2 : 0;
                         }
                     }
 
