@@ -195,6 +195,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 _receiverWSS.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate, false,
                      System.Security.Authentication.SslProtocols.Tls,
                     false);
+
                 //_receiverWSS.Certificate = new System.Security.Cryptography.X509Certificates.X509Certificate2("test.p12");
                 //_receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/stream");
                 _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/stream",
@@ -1205,7 +1206,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                                 fixed (byte* p = sampleBuffer)
                                 {
                                     byte[] convertedFrame = null;
-                                    colorConverter.ConvertToI420(p, _webcamVideoSubType, Convert.ToInt32(_webcamWidth), Convert.ToInt32(_webcamHeight), ref convertedFrame);
+                                    //colorConverter.ConvertToI420(p, _webcamVideoSubType, Convert.ToInt32(_webcamWidth), Convert.ToInt32(_webcamHeight), ref convertedFrame);
+                                    colorConverter.ConvertRGBtoYUV(p, _webcamVideoSubType, Convert.ToInt32(_webcamWidth), Convert.ToInt32(_webcamHeight), VideoSubTypesEnum.I420, ref convertedFrame);
 
                                     //int encodeResult = vpxEncoder.Encode(p, sampleBuffer.Length, 1, ref encodedBuffer);
                                     fixed (byte* q = convertedFrame)
@@ -1700,7 +1702,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                             fixed (byte* p = sampleBuffer)
                             {
                                 byte[] convertedFrame = null;
-                                colorConverter.ConvertToI420(p, VideoSubTypesEnum.RGB24, testPattern.Width, testPattern.Height, ref convertedFrame);
+                                //colorConverter.ConvertToI420(p, VideoSubTypesEnum.RGB24, testPattern.Width, testPattern.Height, ref convertedFrame);
+                                colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB24, testPattern.Width, testPattern.Height, VideoSubTypesEnum.I420, ref convertedFrame);
 
                                 //int encodeResult = vpxEncoder.Encode(p, sampleBuffer.Length, 1, ref encodedBuffer);
                                 fixed (byte* q = convertedFrame)

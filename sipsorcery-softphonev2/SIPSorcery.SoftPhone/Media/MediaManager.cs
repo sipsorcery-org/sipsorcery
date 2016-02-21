@@ -95,7 +95,6 @@ namespace SIPSorcery.SoftPhone
             _audioChannel.SampleReady += AudioChannelSampleReady;
 
             _rtpManager = new RTPManager(true, true);
-            _rtpManager = new RTPManager(true, false);
             _rtpManager.OnRemoteVideoSampleReady += EncodedVideoSampleReceived;
             _rtpManager.OnRemoteAudioSampleReady += RemoteAudioSampleReceived;
 
@@ -202,7 +201,8 @@ namespace SIPSorcery.SoftPhone
 
                             unsafe
                             {
-                                _imageConverter.ConvertRGBtoYUV((byte*)rawSamplePtr, Convert.ToInt32(videoMode.Width), Convert.ToInt32(videoMode.Height), ref yuv);
+                                _imageConverter.ConvertRGBtoYUV((byte*)rawSamplePtr, VideoSubTypesEnum.RGB24, Convert.ToInt32(videoMode.Width), Convert.ToInt32(videoMode.Height), VideoSubTypesEnum.I420, ref yuv);
+                                //_imageConverter.ConvertToI420((byte*)rawSamplePtr, VideoSubTypesEnum.RGB24, Convert.ToInt32(videoMode.Width), Convert.ToInt32(videoMode.Height), ref yuv);
                             }
 
                             Marshal.FreeHGlobal(rawSamplePtr);
@@ -219,6 +219,7 @@ namespace SIPSorcery.SoftPhone
 
                             Marshal.FreeHGlobal(yuvPtr);
 
+                            //if(encodedBuffer )
                             _rtpManager.LocalVideoSampleReady(encodedBuffer);
                         }
                     }
@@ -293,7 +294,7 @@ namespace SIPSorcery.SoftPhone
 
                 unsafe
                 {
-                    _imageConverter.ConvertYUVToRGB((byte*)decodedSamplePtr, Convert.ToInt32(decodedImgWidth), Convert.ToInt32(decodedImgHeight), ref bmp);
+                    _imageConverter.ConvertYUVToRGB((byte*)decodedSamplePtr, VideoSubTypesEnum.I420, Convert.ToInt32(decodedImgWidth), Convert.ToInt32(decodedImgHeight), VideoSubTypesEnum.RGB24, ref bmp);
                 }
 
                 Marshal.FreeHGlobal(decodedSamplePtr);
@@ -355,13 +356,12 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// This method gets the media manager to pass local media samples to the RTP channel and then 
         /// receive them back as the remote video stream. This tests that the codec and RTP packetisation
-        /// is working.
+        /// are working.
         /// </summary>
         public void RunLoopbackTest()
         {
             _rtpManager = new RTPManager(false, true);
             _rtpManager.OnRemoteVideoSampleReady += EncodedVideoSampleReceived;
-            _rtpManager.OnRemoteAudioSampleReady += RemoteAudioSampleReceived;
 
             var sdp = _rtpManager.GetSDP(false);
             _rtpManager.SetRemoteSDP(sdp);

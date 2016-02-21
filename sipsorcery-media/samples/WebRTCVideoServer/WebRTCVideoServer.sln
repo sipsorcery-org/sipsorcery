@@ -85,6 +85,7 @@ Global
 		{6886EF9D-7FF7-4712-9AB3-54BD85CEE232}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{6886EF9D-7FF7-4712-9AB3-54BD85CEE232}.Release|Win32.ActiveCfg = Release|Any CPU
 		{6886EF9D-7FF7-4712-9AB3-54BD85CEE232}.Release|x64.ActiveCfg = Release|Any CPU
+		{6886EF9D-7FF7-4712-9AB3-54BD85CEE232}.Release|x64.Build.0 = Release|Any CPU
 		{6886EF9D-7FF7-4712-9AB3-54BD85CEE232}.Release|x86.ActiveCfg = Release|x86
 		{6886EF9D-7FF7-4712-9AB3-54BD85CEE232}.Release|x86.Build.0 = Release|x86
 		{60CC689C-2616-441C-A38A-E1B764C7C446}.Debug_Ubuntu|Any CPU.ActiveCfg = Debug|Win32
@@ -179,8 +180,8 @@ Global
 		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|Mixed Platforms.Build.0 = Release|x86
 		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|Win32.ActiveCfg = Release|x86
 		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|Win32.Build.0 = Release|x86
-		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|x64.ActiveCfg = Release|x64
-		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|x64.Build.0 = Release|x64
+		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|x64.ActiveCfg = Release|Any CPU
+		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|x64.Build.0 = Release|Any CPU
 		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|x86.ActiveCfg = Release|x86
 		{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}.Release|x86.Build.0 = Release|x86
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Debug_Ubuntu|Any CPU.ActiveCfg = Debugx64|Any CPU
@@ -229,8 +230,8 @@ Global
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Release|Mixed Platforms.Build.0 = Release|x86
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Release|Win32.ActiveCfg = Release|x86
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Release|Win32.Build.0 = Release|x86
-		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Release|x64.ActiveCfg = Release|x64
-		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Release|x64.Build.0 = Release|x64
+		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Release|x64.ActiveCfg = Release|Any CPU
+		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Release|x64.Build.0 = Release|Any CPU
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Release|x86.ActiveCfg = Release|x86
 		{55898587-8456-40D4-BB88-C9FC8BD6BA9C}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection

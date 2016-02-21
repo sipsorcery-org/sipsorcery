@@ -5,7 +5,7 @@
 // 
 // History:
 // 12 Dec 2014	Aaron Clauson	Refactored from MediaManager.
-// 10 Feb 2015  Aaron Clauson   Switched from using internal RTP channel to use http://net7mma.codeplex.com/.
+// 10 Feb 2015  Aaron Clauson   Switched from using internal RTP channel to use http://net7mma.codeplex.com/ (and then back again).
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -66,7 +66,6 @@ namespace SIPSorcery.SoftPhone
         private RTPChannel _rtpAudioChannel;            // Manages the UDP connection that RTP video packets will be sent back and forth on.
         private bool _stop = false;
 
-        private static IPEndPoint _wiresharkEP = new IPEndPoint(IPAddress.Parse("10.1.1.3"), 10001);
         private IPEndPoint _remoteAudioEP;
         private IPEndPoint _remoteVideoEP;
 
@@ -179,8 +178,8 @@ namespace SIPSorcery.SoftPhone
         {
             if (OnRemoteAudioSampleReady != null)
             {
-                //System.Diagnostics.Debug.WriteLine("Remote audio frame received " + frame.FramePayload.Length + " bytes.");
-                var payload = frame.GetFramePayload(0);
+                var payload = frame.GetFramePayload();
+                //System.Diagnostics.Debug.WriteLine("Remote audio frame received " + payload.Length + " bytes.");
                 OnRemoteAudioSampleReady(payload, payload.Length);
             }
         }
@@ -190,7 +189,7 @@ namespace SIPSorcery.SoftPhone
             if (OnRemoteVideoSampleReady != null)
             {
                 //System.Diagnostics.Debug.WriteLine("Remote video frame received " + frame.FramePayload.Length + " bytes.");
-                var payload = frame.GetFramePayload(0);
+                var payload = frame.GetFramePayload();
                 OnRemoteVideoSampleReady(payload, payload.Length);
             }
         }

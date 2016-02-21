@@ -148,10 +148,11 @@ namespace SIPSorceryMedia {
 				Marshal::Copy((IntPtr)bufferOut, outBuffer, 0, outputSize);
 
 				free(bufferOut);
+				
+				vpx_img_free(img);
+				img = nullptr; 
 			}
 		}
-
-		vpx_img_free(img);
 
 		return 0;
 	}

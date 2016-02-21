@@ -42,9 +42,9 @@ namespace SIPSorcery.Net
         public uint Timestamp;
         public bool HasMarker;
         public bool HasBeenProcessed;
+        public int FrameHeaderLength = 0;   // Some media types, such as VP8 video, have a header at the start of each RTP data payload. It needs to be stripped.
 
         private List<RTPPacket> _packets = new List<RTPPacket>();
-        //public byte[] FramePayload { get; private set; }
 
         public List<RTPPacket> FramePackets
         {
@@ -90,12 +90,12 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// Audio frames are generally contained within a single RTP packet. This method is a shortcut
-        /// to construct a frame from a single RTP pakcet.
+        /// to construct a frame from a single RTP packet.
         /// </summary>
         public static RTPFrame MakeSinglePacketFrame(RTPPacket rtpPacket)
         {
             RTPFrame frame = new RTPFrame();
-            //frame.FramePayload = rtpPacket.Payload;
+            frame.AddRTPPacket(rtpPacket);
             frame.Timestamp = rtpPacket.Header.Timestamp;
 
             return frame;
@@ -148,13 +148,13 @@ namespace SIPSorcery.Net
             return true;
         }
 
-        public byte[] GetFramePayload(int payloadHeaderLength)
+        public byte[] GetFramePayload()
         {
             List<byte> payload = new List<byte>();
 
             foreach (var rtpPacket in _packets.OrderBy(x => x.Header.SequenceNumber))
             {
-                payload.AddRange(rtpPacket.Payload.Skip(payloadHeaderLength));
+                payload.AddRange(rtpPacket.Payload.Skip(FrameHeaderLength));
             }
 
             return payload.ToArray();

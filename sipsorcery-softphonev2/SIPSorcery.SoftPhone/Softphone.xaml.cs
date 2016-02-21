@@ -95,15 +95,10 @@ namespace SIPSorcery.SoftPhone
             _sipClient.CallEnded += ResetToCallStartState;
             _sipClient.StatusMessage += (message) => { SetStatusText(m_signallingStatus, message); };
 
-            // Set up the Gingle client.
-            //_gingleClient = new GingleClient();
-            //_gingleClient.CallEnded += ResetToCallStartState;
-            //_gingleClient.StatusMessage += (message) => { SetStatusText(m_signallingStatus, message); };
-
             // Lookup and periodically check the public IP address of the host machine.
             _stunClient = new SoftphoneSTUNClient();
 
-            // Comment this out if you don't want the app to register with your SIP server.
+            // Uncomment this if you want the app to register with your SIP server.
             //_sipRegistrationClient = new SIPRegistrationUserAgent(
             //    _sipClient.SIPClientTransport,
             //    null,
@@ -146,11 +141,6 @@ namespace SIPSorcery.SoftPhone
             _mediaManager.Close();
             _sipClient.Shutdown();
             _stunClient.Stop();
-
-            //if (_gingleClient != null)
-            //{
-            //    _gingleClient.Shutdown();
-            //}
         }
 
         /// <summary>
@@ -279,19 +269,9 @@ namespace SIPSorcery.SoftPhone
 
                 string destination = m_uriEntryTextBox.Text;
 
-                // Use Google Voice or the SIP client to place the call depending on the destination prefix.
-                //if (m_googleVoiceRadioButton.IsChecked.GetValueOrDefault())
-                //{
-                //    // Google Voice call.
-                //    _activeClient = _gingleClient;
-                //    ThreadPool.QueueUserWorkItem(delegate { _gingleClient.Call(_mediaManager, destination); });
-                //}
-                //else
-                //{
                 // SIP call.
                 _activeClient = _sipClient;
                 ThreadPool.QueueUserWorkItem(delegate { _sipClient.Call(_mediaManager, destination); });
-                //}
             }
         }
 

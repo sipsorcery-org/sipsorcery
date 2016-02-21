@@ -593,7 +593,7 @@ namespace SIPSorcery.Net
 
                                 if (frame == null)
                                 {
-                                    frame = new RTPFrame() { Timestamp = rtpPacket.Header.Timestamp, HasMarker = rtpPacket.Header.MarkerBit == 1 };
+                                    frame = new RTPFrame() { Timestamp = rtpPacket.Header.Timestamp, HasMarker = rtpPacket.Header.MarkerBit == 1, FrameHeaderLength = frameHeaderLength };
                                     frame.AddRTPPacket(rtpPacket);
                                     _frames.Add(frame);
                                 }
@@ -606,7 +606,7 @@ namespace SIPSorcery.Net
                                 if (frame.IsComplete())
                                 {
                                     // The frame is ready for handing over to the UI.
-                                    byte[] imageBytes = frame.GetFramePayload(frameHeaderLength);
+                                    byte[] imageBytes = frame.GetFramePayload();
 
                                     _lastFrameSize = imageBytes.Length;
                                     _framesSinceLastCalc++;

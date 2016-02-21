@@ -2,16 +2,16 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>SIPSorceryMedia</id>
-        <version>1.1.6</version>
+        <version>1.1.7</version>
         <authors>Aaron Clauson</authors>
         <owners>Aaron Clauson</owners>
-        <licenseUrl>https://sipsorcery.codeplex.com/license</licenseUrl>
+        <licenseUrl>https://github.com/sipsorcery/sipsorcery/blob/master/LICENSE.md</licenseUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>The SIPSorcery package for media functions.</description>
-      <summary>This is the official package for SIPSorceryMedia. Full source code can be found at http://sipsorcery.codeplex.com.</summary>  
+      <summary>This is the official package for SIPSorceryMedia. Full source code can be found at https://github.com/sipsorcery/sipsorcery.</summary>  
       <copyright>Copyright (c) 2016, Aaron Clauson</copyright>
         <language>en-US</language>
-		<projectUrl>https://sipsorcery.codeplex.com/</projectUrl>
+		<projectUrl>https://github.com/sipsorcery/sipsorcery</projectUrl>
 		<iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
         <tags>sip sipsorcery</tags>
         <references>
@@ -19,8 +19,8 @@
         </references>
     </metadata>
     <files>
+	    <file src="SIPSorcery.Media\x64\Release\SIPSorceryMedia.dll" target="lib\net45\SIPSorceryMedia.dll" />
 		<file src="build\release_x64\SIPSorceryMedia.targets" target="build\SIPSorceryMedia.targets" />
-        <file src="build\release_x64\SIPSorceryMedia.dll" target="lib\net45\SIPSorceryMedia.dll" />
 		<file src="build\release_x64\avcodec-56.dll" target="build\x64\avcodec-56.dll" />
 		<file src="build\release_x64\avformat-56.dll" target="build\x64\avformat-56.dll" />
 		<file src="build\release_x64\avutil-54.dll" target="build\x64\avutil-54.dll" />
