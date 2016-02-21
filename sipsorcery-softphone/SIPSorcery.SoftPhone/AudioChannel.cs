@@ -159,13 +159,18 @@ namespace SIPSorcery.SoftPhone
         /// <param name="rtpFrame">The RTP frame received.</param>
         private void RTPChannelSampleReceived(RTPFrame rtpFrame)
         {
-            if (rtpFrame != null && rtpFrame.FramePayload != null)
+            if (rtpFrame != null)
             {
-                for (int index = 0; index < rtpFrame.FramePayload.Length; index++)
+                var framePayload = rtpFrame.GetFramePayload();
+
+                if (framePayload != null)
                 {
-                    short pcm = MuLawDecoder.MuLawToLinearSample(rtpFrame.FramePayload[index]);
-                    byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
-                    m_waveProvider.AddSamples(pcmSample, 0, 2);
+                    for (int index = 0; index < framePayload.Length; index++)
+                    {
+                        short pcm = MuLawDecoder.MuLawToLinearSample(framePayload[index]);
+                        byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
+                        m_waveProvider.AddSamples(pcmSample, 0, 2);
+                    }
                 }
             }
         }
