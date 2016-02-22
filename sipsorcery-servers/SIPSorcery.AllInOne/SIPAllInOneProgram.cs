@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Configuration.Install;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -48,7 +50,74 @@ namespace SIPSorcery.SIPAppServer
                     throw new ApplicationException("The SIP Application Service cannot start with no persistence settings specified.");
                 }
 
-                if (args != null && args.Length > 0)
+                SIPAllInOneDaemon daemon = null;
+
+                if (args != null && args.Length == 1 && args[0] == "-i")
+                {
+                    try
+                    {
+                        using (AssemblyInstaller inst = new AssemblyInstaller(typeof(MainConsole).Assembly, args))
+                        {
+                            IDictionary state = new Hashtable();
+                            inst.UseNewContext = true;
+                            try
+                            {
+                                //if (undo)
+                                //{
+                                //    inst.Uninstall(state);
+                                //}
+                                //else
+                                //{
+                                inst.Install(state);
+                                inst.Commit(state);
+                                //}
+                            }
+                            catch
+                            {
+                                try
+                                {
+                                    inst.Rollback(state);
+                                }
+                                catch { }
+                                throw;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine(ex.Message);
+                    }
+                }
+                else if (args != null && args.Length == 1 && args[0] == "-u")
+                {
+                    try
+                    {
+                        using (AssemblyInstaller inst = new AssemblyInstaller(typeof(MainConsole).Assembly, args))
+                        {
+                            IDictionary state = new Hashtable();
+                            inst.UseNewContext = true;
+                            try
+                            {
+
+                                inst.Uninstall(state);
+                            }
+                            catch
+                            {
+                                try
+                                {
+                                    inst.Rollback(state);
+                                }
+                                catch { }
+                                throw;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine(ex.Message);
+                    }
+                }
+                else if (args != null && args.Length == 1 && args[0].StartsWith("-c") || System.Environment.UserInteractive == true)
                 {
                     isConsole = true;
                     Console.WriteLine("SIP App Server starting");
@@ -57,24 +126,31 @@ namespace SIPSorcery.SIPAppServer
                     string sipSocket = null;
                     string callManagerSvcAddress = null;
 
-                    foreach (string arg in args) {
-                        if (arg.StartsWith("-sip:")) {
-                            sipSocket = arg.Substring(5);
-                        }
-                        else if (arg.StartsWith("-cms:")) {
-                            callManagerSvcAddress = arg.Substring(5);
-                        }
-                        else if (arg.StartsWith("-hangupcalls:")) {
-                            monitorCalls = Convert.ToBoolean(arg.Substring(13));
+                    if (args != null && args.Length > 0)
+                    {
+                        foreach (string arg in args)
+                        {
+                            if (arg.StartsWith("-sip:"))
+                            {
+                                sipSocket = arg.Substring(5);
+                            }
+                            else if (arg.StartsWith("-cms:"))
+                            {
+                                callManagerSvcAddress = arg.Substring(5);
+                            }
+                            else if (arg.StartsWith("-hangupcalls:"))
+                            {
+                                monitorCalls = Convert.ToBoolean(arg.Substring(13));
+                            }
                         }
                     }
 
-                    SIPAllInOneDaemon daemon = null;
-
-                    if (sipSocket.IsNullOrBlank() || callManagerSvcAddress.IsNullOrBlank()) {
+                    if (sipSocket.IsNullOrBlank() || callManagerSvcAddress.IsNullOrBlank())
+                    {
                         daemon = new SIPAllInOneDaemon(m_serverStorageType, m_serverStorageConnStr);
                     }
-                    else {
+                    else
+                    {
                         daemon = new SIPAllInOneDaemon(m_serverStorageType, m_serverStorageConnStr, SIPEndPoint.ParseSIPEndPoint(sipSocket), callManagerSvcAddress, monitorCalls);
                     }
 
@@ -87,7 +163,7 @@ namespace SIPSorcery.SIPAppServer
                 {
                     logger.Debug("SIP App Server Windows Service Starting...");
                     System.ServiceProcess.ServiceBase[] ServicesToRun;
-                    SIPAllInOneDaemon daemon = new SIPAllInOneDaemon(m_serverStorageType, m_serverStorageConnStr);
+                    daemon = new SIPAllInOneDaemon(m_serverStorageType, m_serverStorageConnStr);
                     ServicesToRun = new System.ServiceProcess.ServiceBase[] { new Service(daemon) };
                     System.ServiceProcess.ServiceBase.Run(ServicesToRun);
                 }

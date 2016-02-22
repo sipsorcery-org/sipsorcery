@@ -163,3 +163,5 @@ node_modules
 bower_components
 /sipsorcery-core/Build
 /sipsorcery-silverlight/Build
+
+*/.vs/*
