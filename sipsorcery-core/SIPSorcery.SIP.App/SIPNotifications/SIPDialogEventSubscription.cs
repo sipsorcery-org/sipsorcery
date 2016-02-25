@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using SIPSorcery.Persistence;
 
 namespace SIPSorcery.SIP.App
 {

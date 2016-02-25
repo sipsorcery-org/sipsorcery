@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SIPSorcery.CRM</RootNamespace>
     <AssemblyName>SIPSorcery.CRM</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -224,6 +224,10 @@
       <Project>{7194705F-5564-4040-BC8A-8FAD806F5408}</Project>
       <Name>SIPSorcery.Persistence</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
+      <Project>{339648e6-3b61-4a27-b4a2-38a8216b1d7e}</Project>
+      <Name>SIPSorcery.SIP.App</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
       <Project>{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}</Project>
       <Name>SIPSorcery.Sys</Name>
@@ -255,7 +259,6 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="Service References\SugarCRM\item.xsd">
       <SubType>Designer</SubType>
     </None>

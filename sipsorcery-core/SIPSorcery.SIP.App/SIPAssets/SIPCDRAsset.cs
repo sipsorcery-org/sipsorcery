@@ -1,22 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Xml;
 using SIPSorcery.Sys;
-using SIPSorcery.Persistence;
 
 #if !SILVERLIGHT
 using System.Data;
-using System.Data.Linq;
 using System.Data.Linq.Mapping;
-using System.Xml.Linq;
 #endif
 
 namespace SIPSorcery.SIP.App
 {
-
     [Table(Name = "cdr")]
     public class SIPCDRAsset : ISIPAsset
     {
@@ -454,10 +446,10 @@ namespace SIPSorcery.SIP.App
             m_sipCDR.DialPlanContextID = (!(cdrRow["dialplancontextid"] as string).IsNullOrBlank()) ? new Guid(cdrRow["dialplancontextid"] as string) : Guid.Empty;
         }
 
-        public Dictionary<Guid, object> Load(XmlDocument dom)
-        {
-            return SIPAssetXMLPersistor<SIPCDRAsset>.LoadAssetsFromXMLRecordSet(dom);
-        }
+        //public Dictionary<Guid, object> Load(XmlDocument dom)
+        //{
+        //    return SIPAssetXMLPersistor<SIPCDRAsset>.LoadAssetsFromXMLRecordSet(dom);
+        //}
 
 #endif
 

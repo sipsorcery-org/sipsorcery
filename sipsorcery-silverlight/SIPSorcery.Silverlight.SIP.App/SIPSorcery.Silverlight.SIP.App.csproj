@@ -66,10 +66,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="SIPSorcery.Entities.Client, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Entities.Client.dll</HintPath>
-    </Reference>
     <Reference Include="System.ComponentModel.DataAnnotations, Version=5.0.5.0, Culture=neutral, PublicKeyToken=ddd0da4d3e678217, processorArchitecture=MSIL" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
@@ -101,8 +97,14 @@
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\Monitoring\SIPMonitorMachineEvent.cs">
       <Link>Monitoring\SIPMonitorMachineEvent.cs</Link>
     </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\Persistence\PersitenceDelegates.cs">
+      <Link>Persistence\PersitenceDelegates.cs</Link>
+    </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAppFunctionDelegates.cs">
       <Link>SIPAppFunctionDelegates.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\ISIPAsset.cs">
+      <Link>SIPAssets\ISIPAsset.cs</Link>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPAssets\SIPAccount.cs">
       <Link>SIPAssets\SIPAccount.cs</Link>
@@ -112,10 +114,6 @@
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPPacketMangler.cs">
       <Link>SIPPacketMangler.cs</Link>
-    </Compile>
-    <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPProviderTweaks\SIPProviderMagicJack.cs">
-      <Link>SIPProviderTweaks\SIPProviderMagicJack.cs</Link>
-      <SubType>Code</SubType>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.SIP.App\SIPRequestAuthoriser\SIPRequestAuthenticationResult.cs">
       <Link>SIPRequestAuthoriser\SIPRequestAuthenticationResult.cs</Link>
@@ -147,14 +145,6 @@
     <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj">
       <Project>{B9A3E915-302F-4433-8696-85368A5496B4}</Project>
       <Name>SIPSorcery.Net</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
-      <Project>{6ED5020C-A823-4EA6-B01C-C505CE80E970}</Project>
-      <Name>SIPSorcery.Persistence</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Silverlight.CRM\SIPSorcery.Silverlight.CRM.csproj">
-      <Project>{FDC64126-97E7-4076-910B-E842F730CF3E}</Project>
-      <Name>SIPSorcery.Silverlight.CRM</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Silverlight.SIP\SIPSorcery.Silverlight.SIP.csproj">
       <Project>{F996B6D4-3731-44A5-A35A-A6CE4010BC64}</Project>

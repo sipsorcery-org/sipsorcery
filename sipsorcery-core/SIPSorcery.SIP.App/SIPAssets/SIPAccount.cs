@@ -36,24 +36,15 @@
 // ============================================================================
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Xml;
-using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
 using log4net;
 
 #if !SILVERLIGHT
 using System.Data;
-using System.Data.Linq;
 using System.Data.Linq.Mapping;
-#endif
-
-#if UNITTEST
-using NUnit.Framework;
 #endif
 
 namespace SIPSorcery.SIP.App
@@ -80,7 +71,7 @@ namespace SIPSorcery.SIP.App
         // Only non-printable non-alphanumeric ASCII characters missing are ; \ and space. The semi-colon isn't accepted by 
         // Netgears and the space has the potential to create too much confusion with the users and \ with the system.
         public static readonly char[] NONAPLPHANUM_ALLOWED_PASSWORD_CHARS = new char[]{'!','"','$','%','&','(',')','*',
-										   '+',',','.','/',':','<','=','>','?','@','[',']','^','_','`','{','|','}','~'};
+                                           '+',',','.','/',':','<','=','>','?','@','[',']','^','_','`','{','|','}','~'};
         public static readonly string USERNAME_ALLOWED_CHARS = @"a-zA-Z0-9_\-\.";
 
         private static ILog logger = AppState.logger;
@@ -144,12 +135,12 @@ namespace SIPSorcery.SIP.App
         [DataMember]
         public string SIPDomain
         {
-            get { return m_sipDomain; } 
-            set 
+            get { return m_sipDomain; }
+            set
             {
                 m_sipDomain = value;
-                NotifyPropertyChanged("SIPDomain"); 
-            } 
+                NotifyPropertyChanged("SIPDomain");
+            }
         }
 
         private bool m_sendNATKeepAlives;
@@ -274,7 +265,8 @@ namespace SIPSorcery.SIP.App
         private DateTimeOffset m_inserted;
         [Column(Name = "inserted", DbType = "datetimeoffset", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public DateTimeOffset Inserted {
+        public DateTimeOffset Inserted
+        {
             get { return m_inserted; }
             set { m_inserted = value.ToUniversalTime(); }
         }
@@ -344,7 +336,8 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public DateTimeOffset InsertedLocal {
+        public DateTimeOffset InsertedLocal
+        {
             get { return Inserted.AddMinutes(TimeZoneOffsetMinutes); }
         }
 
@@ -359,11 +352,13 @@ namespace SIPSorcery.SIP.App
 
 #if !SILVERLIGHT
 
-        public SIPAccount(DataRow sipAccountRow) {
+        public SIPAccount(DataRow sipAccountRow)
+        {
             Load(sipAccountRow);
         }
 
-        public DataTable GetTable() {
+        public DataTable GetTable()
+        {
             DataTable table = new DataTable();
             table.Columns.Add(new DataColumn("id", typeof(String)));
             table.Columns.Add(new DataColumn("sipusername", typeof(String)));
@@ -389,8 +384,10 @@ namespace SIPSorcery.SIP.App
             return table;
         }
 
-        public void Load(DataRow sipAccountRow) {
-            try {
+        public void Load(DataRow sipAccountRow)
+        {
+            try
+            {
                 m_id = (sipAccountRow.Table.Columns.Contains("id") && sipAccountRow["id"].ToString().Trim().Length > 0) ? new Guid(sipAccountRow["id"] as string) : Guid.NewGuid();
                 m_sipUsername = sipAccountRow["sipusername"] as string;
                 m_sipPassword = sipAccountRow["sippassword"] as string;
@@ -413,15 +410,16 @@ namespace SIPSorcery.SIP.App
                 m_accountCode = (sipAccountRow.Table.Columns.Contains("accountcode") && sipAccountRow["accountcode"] != null) ? sipAccountRow["accountcode"] as string : null;
                 m_description = (sipAccountRow.Table.Columns.Contains("description") && sipAccountRow["description"] != null) ? sipAccountRow["description"] as string : null;
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPAccount Load. " + excp);
                 throw excp;
             }
         }
 
-        public Dictionary<Guid, object> Load(XmlDocument dom) {
-            return SIPAssetXMLPersistor<SIPAccount>.LoadAssetsFromXMLRecordSet(dom);
-        }
+        //        public Dictionary<Guid, object> Load(XmlDocument dom) {
+        //            return SIPAssetXMLPersistor<SIPAccount>.LoadAssetsFromXMLRecordSet(dom);
+        //        }
 
 #endif
 
@@ -444,40 +442,51 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public static string ValidateAndClean(SIPAccount sipAccount) {
+        public static string ValidateAndClean(SIPAccount sipAccount)
+        {
 
-            if (sipAccount.Owner.IsNullOrBlank()) {
+            if (sipAccount.Owner.IsNullOrBlank())
+            {
                 return "The owner must be specified when creating a new SIP account.";
             }
-            if (sipAccount.SIPUsername.IsNullOrBlank()) {
+            if (sipAccount.SIPUsername.IsNullOrBlank())
+            {
                 return "The username must be specified when creating a new SIP account.";
             }
-            if (sipAccount.SIPDomain.IsNullOrBlank()) {
+            if (sipAccount.SIPDomain.IsNullOrBlank())
+            {
                 return "The domain must be specified when creating a new SIP account.";
             }
-            else if (sipAccount.SIPUsername.Length < USERNAME_MIN_LENGTH) {
+            else if (sipAccount.SIPUsername.Length < USERNAME_MIN_LENGTH)
+            {
                 return "The username must be at least " + USERNAME_MIN_LENGTH + " characters long.";
             }
-            else if (Regex.Match(sipAccount.SIPUsername, BANNED_SIPACCOUNT_NAMES).Success) {
+            else if (Regex.Match(sipAccount.SIPUsername, BANNED_SIPACCOUNT_NAMES).Success)
+            {
                 return "The username you have requested is not permitted.";
             }
-            else if (Regex.Match(sipAccount.SIPUsername, "[^" + USERNAME_ALLOWED_CHARS + "]").Success) {
+            else if (Regex.Match(sipAccount.SIPUsername, "[^" + USERNAME_ALLOWED_CHARS + "]").Success)
+            {
                 return "The username had an invalid character, characters permitted are alpha-numeric and .-_.";
             }
             else if (sipAccount.SIPUsername.Contains(".") &&
-                (sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".") + 1).Trim().Length >= USERNAME_MIN_LENGTH && 
+                (sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".") + 1).Trim().Length >= USERNAME_MIN_LENGTH &&
                 sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".") + 1).Trim() != sipAccount.Owner))
             {
-               return "You are not permitted to create this username. Only user " + sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".") + 1).Trim() + " can create SIP accounts ending in " + sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".")).Trim() + ".";
+                return "You are not permitted to create this username. Only user " + sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".") + 1).Trim() + " can create SIP accounts ending in " + sipAccount.SIPUsername.Substring(sipAccount.SIPUsername.LastIndexOf(".")).Trim() + ".";
             }
-            else if (!sipAccount.IsIncomingOnly || !sipAccount.SIPPassword.IsNullOrBlank()) {
-                if (sipAccount.SIPPassword.IsNullOrBlank()) {
+            else if (!sipAccount.IsIncomingOnly || !sipAccount.SIPPassword.IsNullOrBlank())
+            {
+                if (sipAccount.SIPPassword.IsNullOrBlank())
+                {
                     return "A password must be specified.";
                 }
-                else if (sipAccount.SIPPassword.Length < PASSWORD_MIN_LENGTH || sipAccount.SIPPassword.Length > PASSWORD_MAX_LENGTH) {
+                else if (sipAccount.SIPPassword.Length < PASSWORD_MIN_LENGTH || sipAccount.SIPPassword.Length > PASSWORD_MAX_LENGTH)
+                {
                     return "The password field must be at least " + PASSWORD_MIN_LENGTH + " characters and no more than " + PASSWORD_MAX_LENGTH + " characters.";
                 }
-                else {
+                else
+                {
                     #region Check the password illegal characters.
 
                     char[] passwordChars = sipAccount.SIPPassword.ToCharArray();
@@ -485,23 +494,30 @@ namespace SIPSorcery.SIP.App
                     bool illegalCharFound = false;
                     char illegalChar = ' ';
 
-                    foreach (char passwordChar in passwordChars) {
-                        if (Regex.Match(passwordChar.ToString(), "[a-zA-Z0-9]").Success) {
+                    foreach (char passwordChar in passwordChars)
+                    {
+                        if (Regex.Match(passwordChar.ToString(), "[a-zA-Z0-9]").Success)
+                        {
                             continue;
                         }
-                        else {
+                        else
+                        {
                             bool validChar = false;
-                            foreach (char allowedChar in NONAPLPHANUM_ALLOWED_PASSWORD_CHARS) {
-                                if (allowedChar == passwordChar) {
+                            foreach (char allowedChar in NONAPLPHANUM_ALLOWED_PASSWORD_CHARS)
+                            {
+                                if (allowedChar == passwordChar)
+                                {
                                     validChar = true;
                                     break;
                                 }
                             }
 
-                            if (validChar) {
+                            if (validChar)
+                            {
                                 continue;
                             }
-                            else {
+                            else
+                            {
                                 illegalCharFound = true;
                                 illegalChar = passwordChar;
                                 break;
@@ -511,7 +527,8 @@ namespace SIPSorcery.SIP.App
 
                     #endregion
 
-                    if (illegalCharFound) {
+                    if (illegalCharFound)
+                    {
                         return "Your password has an invalid character " + illegalChar + " it can only contain a to Z, 0 to 9 and characters in this set " + SafeXML.MakeSafeXML(new String(NONAPLPHANUM_ALLOWED_PASSWORD_CHARS)) + ".";
                     }
                 }
@@ -521,7 +538,7 @@ namespace SIPSorcery.SIP.App
             sipAccount.SIPUsername = sipAccount.SIPUsername.Trim();
             sipAccount.SIPPassword = (sipAccount.SIPPassword.IsNullOrBlank()) ? null : sipAccount.SIPPassword.Trim();
             sipAccount.SIPDomain = sipAccount.SIPDomain.Trim();
-            
+
             return null;
         }
 
@@ -560,11 +577,13 @@ namespace SIPSorcery.SIP.App
             return sipAccountXML;
         }
 
-        public string GetXMLElementName() {
+        public string GetXMLElementName()
+        {
             return XML_ELEMENT_NAME;
         }
 
-        public string GetXMLDocumentElementName() {
+        public string GetXMLDocumentElementName()
+        {
             return XML_DOCUMENT_ELEMENT_NAME;
         }
 
@@ -574,6 +593,6 @@ namespace SIPSorcery.SIP.App
             {
                 PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
-        }  
+        }
     }
 }

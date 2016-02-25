@@ -33,15 +33,9 @@
 // ============================================================================
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Net;
 using System.ServiceModel;
-using System.ServiceModel.Channels;
-using System.Text;
 using System.Threading;
 using System.Xml;
 using SIPSorcery.SIP;
@@ -49,7 +43,6 @@ using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using SIPSorcery.Web.Services;
 using log4net;
-using Microsoft.Scripting.Hosting;
 
 namespace SIPSorcery.Servers
 {

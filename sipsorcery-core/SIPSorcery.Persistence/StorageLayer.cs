@@ -204,100 +204,100 @@ namespace SIPSorcery.Persistence
             }
 		}
 
-		public int StoreLargeObject(Stream largeObjectStream)
-		{
-			return StoreLargeObject(m_storageType, m_dbConnStr, largeObjectStream);
-		}
+		//public int StoreLargeObject(Stream largeObjectStream)
+		//{
+		//	return StoreLargeObject(m_storageType, m_dbConnStr, largeObjectStream);
+		//}
 		
-		public int StoreLargeObject(StorageTypes storageType, string dbConnString, Stream largeObjectStream)
-		{
-			try
-			{
-				if(storageType == StorageTypes.Postgresql)
-				{
-					NpgsqlConnection connPgsql = new NpgsqlConnection(dbConnString);
-					connPgsql.Open();
+		//public int StoreLargeObject(StorageTypes storageType, string dbConnString, Stream largeObjectStream)
+		//{
+		//	try
+		//	{
+		//		if(storageType == StorageTypes.Postgresql)
+		//		{
+		//			NpgsqlConnection connPgsql = new NpgsqlConnection(dbConnString);
+		//			connPgsql.Open();
 
-					NpgsqlTransaction t = connPgsql.BeginTransaction();
+		//			NpgsqlTransaction t = connPgsql.BeginTransaction();
 				
-					LargeObjectManager lbm = new LargeObjectManager(connPgsql);
+		//			LargeObjectManager lbm = new LargeObjectManager(connPgsql);
 
-					int noid = lbm.Create(LargeObjectManager.READWRITE);
-					LargeObject lo =  lbm.Open(noid, LargeObjectManager.READWRITE);
+		//			int noid = lbm.Create(LargeObjectManager.READWRITE);
+		//			LargeObject lo =  lbm.Open(noid, LargeObjectManager.READWRITE);
 
-					long offset = 0;
+		//			long offset = 0;
 
-					while(offset < largeObjectStream.Length)
-					{
-						long bytesToWrite = (largeObjectStream.Length - offset > 1024) ? 1024 : largeObjectStream.Length - offset;
+		//			while(offset < largeObjectStream.Length)
+		//			{
+		//				long bytesToWrite = (largeObjectStream.Length - offset > 1024) ? 1024 : largeObjectStream.Length - offset;
 						
-						byte[] buf = new byte[bytesToWrite];
-						largeObjectStream.Read(buf, 0, (int)bytesToWrite);
+		//				byte[] buf = new byte[bytesToWrite];
+		//				largeObjectStream.Read(buf, 0, (int)bytesToWrite);
 
-						lo.Write(buf);
-						offset += bytesToWrite;
-					}
+		//				lo.Write(buf);
+		//				offset += bytesToWrite;
+		//			}
 
-					lo.Close();
-					t.Commit();
+		//			lo.Close();
+		//			t.Commit();
 					
-					// If using the Npgsql pooling close the connection to place it back in the pool.
-					connPgsql.Close();
+		//			// If using the Npgsql pooling close the connection to place it back in the pool.
+		//			connPgsql.Close();
 
-					return noid;
-				}
-				else
-				{
-					throw new ApplicationException("Not supported in StorageLayer.StoreLargeObject");
-				}
-			}
-			catch(Exception excp)
-			{
-				logger.Error("Exception StoreLargeObject. " + excp.Message);
-				throw excp;
-			}
-		}
+		//			return noid;
+		//		}
+		//		else
+		//		{
+		//			throw new ApplicationException("Not supported in StorageLayer.StoreLargeObject");
+		//		}
+		//	}
+		//	catch(Exception excp)
+		//	{
+		//		logger.Error("Exception StoreLargeObject. " + excp.Message);
+		//		throw excp;
+		//	}
+		//}
 	
-		public byte[] GetLargeObject(int largeObjectId)
-		{
-			return GetLargeObject(m_storageType, m_dbConnStr, largeObjectId);
-		}
+		//public byte[] GetLargeObject(int largeObjectId)
+		//{
+		//	return GetLargeObject(m_storageType, m_dbConnStr, largeObjectId);
+		//}
 	
-		public byte[] GetLargeObject(StorageTypes storageType, string dbConnString, int largeObjectId)
-		{
-			try
-			{
-				if(storageType == StorageTypes.Postgresql)
-				{
-					NpgsqlConnection connPgsql = new NpgsqlConnection(dbConnString);
-					connPgsql.Open();
+		//public byte[] GetLargeObject(StorageTypes storageType, string dbConnString, int largeObjectId)
+		//{
+		//	try
+		//	{
+		//		if(storageType == StorageTypes.Postgresql)
+		//		{
+		//			NpgsqlConnection connPgsql = new NpgsqlConnection(dbConnString);
+		//			connPgsql.Open();
 
-					NpgsqlTransaction t = connPgsql.BeginTransaction();
+		//			NpgsqlTransaction t = connPgsql.BeginTransaction();
 
-					LargeObjectManager lbm = new LargeObjectManager(connPgsql);
-					LargeObject lo =  lbm.Open(largeObjectId, LargeObjectManager.READWRITE);
+		//			LargeObjectManager lbm = new LargeObjectManager(connPgsql);
+		//			LargeObject lo =  lbm.Open(largeObjectId, LargeObjectManager.READWRITE);
         
-					byte[] buffer = lo.Read(lo.Size());
+		//			byte[] buffer = lo.Read(lo.Size());
 
-					lo.Close();
-					t.Commit();
+		//			lo.Close();
+		//			t.Commit();
 
-					// If using the Npgsql pooling close the connection to place it back in the pool.
-					connPgsql.Close();
+		//			// If using the Npgsql pooling close the connection to place it back in the pool.
+		//			connPgsql.Close();
 
-					return buffer;
-				}
-				else
-				{
-					throw new ApplicationException("Not supported in StorageLayer.StoreLargeObject");
-				}
-			}
-			catch(Exception excp)
-			{
-				logger.Error("Exception StoreLargeObject. " + excp.Message);
-				throw excp;
-			}
-		}
+		//			return buffer;
+		//		}
+		//		else
+		//		{
+		//			throw new ApplicationException("Not supported in StorageLayer.StoreLargeObject");
+		//		}
+		//	}
+		//	catch(Exception excp)
+		//	{
+		//		logger.Error("Exception StoreLargeObject. " + excp.Message);
+		//		throw excp;
+		//	}
+		//}
 
         public void StoreByteA(string query, byte[] buffer)
         {

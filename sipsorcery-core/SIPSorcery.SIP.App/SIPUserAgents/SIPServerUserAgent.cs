@@ -31,21 +31,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Net;
-using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using SIPSorcery.Persistence;
-using SIPSorcery.SIP;
 using SIPSorcery.Sys;
 using log4net;
-
-#if UNITTEST
-using NUnit.Framework;
-#endif
 
 namespace SIPSorcery.SIP.App
 {

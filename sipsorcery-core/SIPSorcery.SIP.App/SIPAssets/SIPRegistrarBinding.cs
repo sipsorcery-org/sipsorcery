@@ -35,28 +35,16 @@
 // ============================================================================
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Net;
-using System.Net.Sockets;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Xml;
-using System.Xml.Serialization;
-using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
 using log4net;
 
 #if !SILVERLIGHT
 using System.Data;
-using System.Data.Linq;
 using System.Data.Linq.Mapping;
-#endif
-
-#if UNITTEST
-using NUnit.Framework;
 #endif
 
 namespace SIPSorcery.SIP.App
@@ -384,10 +372,10 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public Dictionary<Guid, object> Load(XmlDocument dom)
-        {
-            return SIPAssetXMLPersistor<SIPRegistrarBinding>.LoadAssetsFromXMLRecordSet(dom);
-        }
+        //public Dictionary<Guid, object> Load(XmlDocument dom)
+        //{
+        //    return SIPAssetXMLPersistor<SIPRegistrarBinding>.LoadAssetsFromXMLRecordSet(dom);
+        //}
 
 #endif
 

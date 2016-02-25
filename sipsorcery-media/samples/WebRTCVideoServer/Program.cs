@@ -186,7 +186,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 //httpsv.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration()
                 //httpsv.AddWebSocketService<Echo>("/Echo");
 
-                var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2("aaron-pc.p12");
+                //var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2("aaron-pc.p12");
+                var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2("wildcard_sipsorcery.p12", "");
                 Console.WriteLine("WSS Certificate CN: " + wssCertificate.Subject + ", have key " + wssCertificate.HasPrivateKey + ", Expires " + wssCertificate.GetExpirationDateString() + ".");
 
                 //_receiverWSS = new WebSocketServer(8081);
@@ -563,46 +564,31 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                                     iceCandidate.LastSTUNSendAt = DateTime.Now;
                                 }
-
-                                //if(client.IsDtlsNegotiationComplete)
-                                //{
-                                //    // Send RTCP report.
-                                //    RTCPPacket rtcp = new RTCPPacket(client.SSRC, 0, 0, 0, 0);
-                                //    RTCPReport rtcpResport = new RTCPReport(Guid.NewGuid(), 0, client.SocketAddress);
-                                //    var rtcpBuffer = rtcp.GetBytes(rtcpResport.GetBytes());
-                                //    var rtcpProtectedBuffer = new byte[rtcpBuffer.Length + SRTP_AUTH_KEY_LENGTH];
-                                //    Buffer.BlockCopy(rtcpBuffer, 0, rtcpProtectedBuffer, 0, rtcpBuffer.Length);
-                                //    int rtperr = client.SrtpContext.ProtectRTP(rtcpBuffer, rtcpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
-
-                                //    if (rtperr != 0)
-                                //    {
-                                //        logger.Debug("RTCP packet protect result " + rtperr + ".");
-                                //    }
-                                //    else
-                                //    {
-                                //        localSocket.Send(rtcpProtectedBuffer, rtcpProtectedBuffer.Length, client.SocketAddress);
-                                //    }
-                                //}
                             }
                             else
                             {
                                 // The RTP socket is not yet available which means the connection negotation is still ongoing. Once the ICE credentials are available send the binding request to all remote candidates.
                                 foreach (var iceCandidate in peer.LocalIceCandidates.Where(x => DateTime.Now.Subtract(x.LastSTUNSendAt).TotalSeconds > STUN_CONNECTIVITY_CHECK_SECONDS))
                                 {
-                                    foreach (var remoteIceCandidate in peer.RemoteIceCandidates)
+                                    foreach (var remoteIceCandidate in peer.RemoteIceCandidates.Where(x => x.Transport == "udp" && x.NetworkAddress.NotNullOrBlank()))
                                     {
-                                        if (remoteIceCandidate.NetworkAddress != "192.168.33.118")
+                                        IPAddress candidateAddress = null;
+
+                                        if (IPAddress.TryParse(remoteIceCandidate.NetworkAddress, out candidateAddress))
                                         {
-                                            STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
-                                            stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
-                                            stunRequest.AddUsernameAttribute(peer.RemoteIceUser + ":" + peer.LocalIceUser);
-                                            stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
-                                            stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
-                                            byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(peer.RemoteIcePassword, true);
+                                            if (candidateAddress.AddressFamily == AddressFamily.InterNetwork)
+                                            {
+                                                STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
+                                                stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
+                                                stunRequest.AddUsernameAttribute(peer.RemoteIceUser + ":" + peer.LocalIceUser);
+                                                stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
+                                                stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
+                                                byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(peer.RemoteIcePassword, true);
 
-                                            iceCandidate.LocalRtpSocket.SendTo(stunReqBytes, new IPEndPoint(IPAddress.Parse(remoteIceCandidate.NetworkAddress), remoteIceCandidate.Port));
+                                                iceCandidate.LocalRtpSocket.SendTo(stunReqBytes, new IPEndPoint(IPAddress.Parse(remoteIceCandidate.NetworkAddress), remoteIceCandidate.Port));
 
-                                            iceCandidate.LastSTUNSendAt = DateTime.Now;
+                                                iceCandidate.LastSTUNSendAt = DateTime.Now;
+                                            }
                                         }
                                     }
                                 }
@@ -1803,6 +1789,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                             encodedBuffer = null;
                             //sampleBuffer = null;
                         }
+
+                        Thread.Sleep(100);
                     }
                 }
             }

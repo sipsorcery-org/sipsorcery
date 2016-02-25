@@ -158,7 +158,7 @@ namespace SIPSorcery.Servers
                             else
                             {
                                 bool switchboardAccountsOnly = subscribeRequest.Body == SIPPresenceEventSubscription.SWITCHBOARD_FILTER;
-                                SIPPresenceEventSubscription subscription = new SIPPresenceEventSubscription(MonitorLogEvent_External, sessionID, resourceURI, canonicalResourceURI, monitorFilter, subscribeDialogue, expiry, m_sipAssetPersistor, GetSIPRegistrarBindingsCount_External, switchboardAccountsOnly);
+                                SIPPresenceEventSubscription subscription = new SIPPresenceEventSubscription(MonitorLogEvent_External, sessionID, resourceURI, canonicalResourceURI, monitorFilter, subscribeDialogue, expiry, m_sipAssetPersistor.Get, m_sipAssetPersistor.GetProperty, GetSIPRegistrarBindingsCount_External, switchboardAccountsOnly);
                                 m_subscriptions.Add(sessionID, subscription);
                                 MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "New presence subscription created for " + resourceURI.ToString() + ", expiry " + expiry + "s.", owner));
                             }

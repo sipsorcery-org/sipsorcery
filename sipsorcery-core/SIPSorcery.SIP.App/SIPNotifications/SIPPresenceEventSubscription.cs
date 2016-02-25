@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using SIPSorcery.Persistence;
 
 namespace SIPSorcery.SIP.App
 {
@@ -17,7 +16,9 @@ namespace SIPSorcery.SIP.App
         private SIPEventPresence Presence;
 
         private SIPAssetCountDelegate<SIPRegistrarBinding> GetSIPRegistrarBindingsCount_External;
-        private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
+        private SIPAssetGetListDelegate<SIPAccount> GetSIPAccounts_External;
+        //private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
+        private SIPAssetGetPropertyByIdDelegate<SIPAccount> GetSipAccountProperty_External;
 
         private bool m_switchboardSIPAccountsOnly;      // If true means this subscription should only generate notifications for SIP accounts that are switchboard enabled.
 
@@ -44,13 +45,17 @@ namespace SIPSorcery.SIP.App
             string filter,
             SIPDialogue subscriptionDialogue,
             int expiry,
-            SIPAssetPersistor<SIPAccount> sipAccountPersistor,
+            //SIPAssetPersistor<SIPAccount> sipAccountPersistor,
+            SIPAssetGetListDelegate<SIPAccount> getSipAccountsExternal,
+            SIPAssetGetPropertyByIdDelegate<SIPAccount> getSipAccountPropertyExternal,
             SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount,
             bool switchboardSIPAccountsOnly
             )
             : base(log, sessionID, resourceURI, canonincalResourceURI, filter, subscriptionDialogue, expiry)
         {
-            m_sipAccountPersistor = sipAccountPersistor;
+            //m_sipAccountPersistor = sipAccountPersistor;
+            GetSIPAccounts_External = getSipAccountsExternal;
+            GetSipAccountProperty_External = getSipAccountPropertyExternal;
             GetSIPRegistrarBindingsCount_External = getBindingsCount;
             Presence = new SIPEventPresence(resourceURI);
             m_switchboardSIPAccountsOnly = switchboardSIPAccountsOnly;
@@ -66,22 +71,26 @@ namespace SIPSorcery.SIP.App
                 {
                     if (m_switchboardSIPAccountsOnly)
                     {
-                        sipAccounts = m_sipAccountPersistor.Get(s => s.Owner == SubscriptionDialogue.Owner && s.IsSwitchboardEnabled, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                        //sipAccounts = m_sipAccountPersistor.Get(s => s.Owner == SubscriptionDialogue.Owner && s.IsSwitchboardEnabled, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                        sipAccounts = GetSIPAccounts_External(s => s.Owner == SubscriptionDialogue.Owner && s.IsSwitchboardEnabled, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
                     }
                     else
                     {
-                        sipAccounts = m_sipAccountPersistor.Get(s => s.Owner == SubscriptionDialogue.Owner, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                        //sipAccounts = m_sipAccountPersistor.Get(s => s.Owner == SubscriptionDialogue.Owner, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                        sipAccounts = GetSIPAccounts_External(s => s.Owner == SubscriptionDialogue.Owner, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
                     }
                 }
                 else
                 {
                     if (m_switchboardSIPAccountsOnly)
                     {
-                        sipAccounts = m_sipAccountPersistor.Get(s => s.SIPUsername == CanonicalResourceURI.User && s.SIPDomain == CanonicalResourceURI.Host && s.IsSwitchboardEnabled, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                        //sipAccounts = m_sipAccountPersistor.Get(s => s.SIPUsername == CanonicalResourceURI.User && s.SIPDomain == CanonicalResourceURI.Host && s.IsSwitchboardEnabled, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                        sipAccounts = GetSIPAccounts_External(s => s.SIPUsername == CanonicalResourceURI.User && s.SIPDomain == CanonicalResourceURI.Host && s.IsSwitchboardEnabled, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
                     }
                     else
                     {
-                        sipAccounts = m_sipAccountPersistor.Get(s => s.SIPUsername == CanonicalResourceURI.User && s.SIPDomain == CanonicalResourceURI.Host, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                        //sipAccounts = m_sipAccountPersistor.Get(s => s.SIPUsername == CanonicalResourceURI.User && s.SIPDomain == CanonicalResourceURI.Host, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
+                        sipAccounts = GetSIPAccounts_External(s => s.SIPUsername == CanonicalResourceURI.User && s.SIPDomain == CanonicalResourceURI.Host, "SIPUsername", 0, MAX_SIPACCOUNTS_TO_RETRIEVE);
                     }
                 }
 
@@ -137,10 +146,13 @@ namespace SIPSorcery.SIP.App
                 {
                     // Need to check whether the SIP account is switchboard enabled before forwarding the notification.
                     Guid sipAccountID = new Guid(machineEvent.ResourceID);
-                    sendNotificationForEvent = Convert.ToBoolean(m_sipAccountPersistor.GetProperty(sipAccountID, "IsSwitchboardEnabled"));
+                    //sendNotificationForEvent = Convert.ToBoolean(m_sipAccountPersistor.GetProperty(sipAccountID, "IsSwitchboardEnabled"));
+                    sendNotificationForEvent = Convert.ToBoolean(GetSipAccountProperty_External(sipAccountID, "IsSwitchboardEnabled"));
+                    
                     if (sendNotificationForEvent)
                     {
-                        avatarURL = m_sipAccountPersistor.GetProperty(sipAccountID, "AvatarURL") as string;
+                        //avatarURL = m_sipAccountPersistor.GetProperty(sipAccountID, "AvatarURL") as string;
+                        avatarURL = GetSipAccountProperty_External(sipAccountID, "AvatarURL") as string;
                     }
                 }
 

@@ -80,7 +80,9 @@
   <ItemGroup>
     <None Include="WCFReferences\SIPSorceryNotificationService\SIPNotifierService2.wsdl" />
     <Reference Include="mscorlib" />
-    <Reference Include="SIPSorcery.Entities.Client, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL" />
+    <Reference Include="SIPSorcery.Entities.Client, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\sipsorcery-core\SIPSorcery.Entities.Client\Bin\Release\SIPSorcery.Entities.Client.dll</HintPath>
+    </Reference>
     <Reference Include="SIPSorcery.Net, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Build\SIPSorcery.Net.dll</HintPath>

@@ -5,5 +5,5 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyDescription("Handles application configuration and state. Provides utility functions.")]
 [assembly: AssemblyCompany("SIP Sorcery PTY LTD")]
 [assembly: AssemblyCopyright("Aaron Clauson")]	
-[assembly: AssemblyVersion("1.4.0.*")]
+[assembly: AssemblyVersion("1.5.0.*")]
 

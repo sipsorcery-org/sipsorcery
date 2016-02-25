@@ -91,24 +91,20 @@
       <HintPath>..\packages\NAudio.1.7.3\lib\net35\NAudio.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.Net, Version=1.4.0.37388, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.4.1\lib\net4\SIPSorcery.Net.dll</HintPath>
+    <Reference Include="SIPSorcery.Net, Version=1.5.0.40414, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SIPSorcery.1.5.0\lib\net4\SIPSorcery.Net.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.Persistence, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.4.1\lib\net4\SIPSorcery.Persistence.dll</HintPath>
+    <Reference Include="SIPSorcery.SIP.App, Version=1.5.0.40414, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SIPSorcery.1.5.0\lib\net4\SIPSorcery.SIP.App.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.SIP.App, Version=1.4.0.39606, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.4.1\lib\net4\SIPSorcery.SIP.App.dll</HintPath>
+    <Reference Include="SIPSorcery.SIP.Core, Version=1.5.0.40414, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SIPSorcery.1.5.0\lib\net4\SIPSorcery.SIP.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.SIP.Core, Version=1.4.0.39604, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.4.1\lib\net4\SIPSorcery.SIP.Core.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="SIPSorcery.Sys, Version=1.4.0.37388, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.4.1\lib\net4\SIPSorcery.Sys.dll</HintPath>
+    <Reference Include="SIPSorcery.Sys, Version=1.5.0.40413, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SIPSorcery.1.5.0\lib\net4\SIPSorcery.Sys.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="SIPSorceryMedia, Version=1.1.5895.39785, Culture=neutral, processorArchitecture=AMD64">

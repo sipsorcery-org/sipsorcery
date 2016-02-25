@@ -32,4 +32,4 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyDescription("Implementation of SIP protocol.")]
 [assembly: AssemblyCompany("SIP Sorcery PTY LTD")]
 [assembly: AssemblyCopyright("Aaron Clauson")]
-[assembly: AssemblyVersion("1.4.0.*")]
+[assembly: AssemblyVersion("1.5.0.*")]

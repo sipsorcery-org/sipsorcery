@@ -35,25 +35,15 @@
 // ============================================================================
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Net;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Xml;
-using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
 using log4net;
 
 #if !SILVERLIGHT
 using System.Data;
-using System.Data.Linq;
 using System.Data.Linq.Mapping;
-#endif
-
-#if UNITTEST
-using NUnit.Framework;
 #endif
 
 namespace SIPSorcery.SIP.App
@@ -615,16 +605,16 @@ namespace SIPSorcery.SIP.App
                 m_registerExpiry = (providerRow.Table.Columns.Contains("registerexpiry") && providerRow["registerexpiry"] != DBNull.Value && providerRow["registerexpiry"] != null) ? Convert.ToInt32(providerRow["registerexpiry"]) : REGISTER_DEFAULT_EXPIRY;
                 m_registerServer = (providerRow.Table.Columns.Contains("registerserver") && providerRow["registerserver"] != null) ? SIPURI.ParseSIPURIRelaxed(providerRow["registerserver"] as string) : null;
                 m_registerRealm = (providerRow.Table.Columns.Contains("registerrealm") && providerRow["registerrealm"] != null) ? providerRow["registerrealm"] as string : null;
-                m_registerEnabled = (providerRow.Table.Columns.Contains("registerenabled") && providerRow["registerenabled"] != DBNull.Value && providerRow["registerenabled"] != null) ? StorageLayer.ConvertToBoolean(providerRow["registerenabled"]) : false;
-                m_registerAdminEnabled = (providerRow.Table.Columns.Contains("registeradminenabled") && providerRow["registeradminenabled"] != DBNull.Value && providerRow["registeradminenabled"] != null) ? StorageLayer.ConvertToBoolean(providerRow["registeradminenabled"]) : true;
+                m_registerEnabled = (providerRow.Table.Columns.Contains("registerenabled") && providerRow["registerenabled"] != DBNull.Value && providerRow["registerenabled"] != null) ? Convert.ToBoolean(providerRow["registerenabled"]) : false;
+                m_registerAdminEnabled = (providerRow.Table.Columns.Contains("registeradminenabled") && providerRow["registeradminenabled"] != DBNull.Value && providerRow["registeradminenabled"] != null) ? Convert.ToBoolean(providerRow["registeradminenabled"]) : true;
                 m_registerDisabledReason = (providerRow.Table.Columns.Contains("registerdisabledreason") && providerRow["registerdisabledreason"] != DBNull.Value && providerRow["registerdisabledreason"] != null) ? providerRow["registerdisabledreason"] as string : null;
                 m_gvCallbackNumber = (providerRow.Table.Columns.Contains("gvcallbacknumber") && providerRow["gvcallbacknumber"] != null) ? providerRow["gvcallbacknumber"] as string : null;
                 m_gvCallbackPattern = (providerRow.Table.Columns.Contains("gvcallbackpattern") && providerRow["gvcallbackpattern"] != null) ? providerRow["gvcallbackpattern"] as string : null;
                 m_gvCallbackType = (providerRow.Table.Columns.Contains("gvcallbacktype") && providerRow["gvcallbacktype"] != DBNull.Value && providerRow["gvcallbacktype"] != null && (providerRow["gvcallbacktype"] as string).NotNullOrBlank()) ? (GoogleVoiceCallbackTypes)Enum.Parse(typeof(GoogleVoiceCallbackTypes), providerRow["gvcallbacktype"] as string, true) : (GoogleVoiceCallbackTypes?)null;
                 LastUpdate = (providerRow.Table.Columns.Contains("lastupdate") && providerRow["lastupdate"] != DBNull.Value && providerRow["lastupdate"] != null) ? DateTimeOffset.Parse(providerRow["lastupdate"] as string) : DateTimeOffset.UtcNow;
                 Inserted = (providerRow.Table.Columns.Contains("inserted") && providerRow["inserted"] != DBNull.Value && providerRow["inserted"] != null) ? DateTimeOffset.Parse(providerRow["inserted"] as string) : DateTimeOffset.UtcNow;
-                m_isReadOnly = (providerRow.Table.Columns.Contains("isreadonly") && providerRow["isreadonly"] != DBNull.Value && providerRow["isreadonly"] != null) ? StorageLayer.ConvertToBoolean(providerRow["isreadonly"]) : false;
-                m_sendMWISubscribe = (providerRow.Table.Columns.Contains("sendmwisubscribe") && providerRow["sendmwisubscribe"] != DBNull.Value && providerRow["sendmwisubscribe"] != null) ? StorageLayer.ConvertToBoolean(providerRow["sendmwisubscribe"]) : false;
+                m_isReadOnly = (providerRow.Table.Columns.Contains("isreadonly") && providerRow["isreadonly"] != DBNull.Value && providerRow["isreadonly"] != null) ? Convert.ToBoolean(providerRow["isreadonly"]) : false;
+                m_sendMWISubscribe = (providerRow.Table.Columns.Contains("sendmwisubscribe") && providerRow["sendmwisubscribe"] != DBNull.Value && providerRow["sendmwisubscribe"] != null) ? Convert.ToBoolean(providerRow["sendmwisubscribe"]) : false;
 
                 if (m_registerContact == null && m_registerEnabled)
                 {
@@ -640,10 +630,10 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public Dictionary<Guid, object> Load(XmlDocument dom)
-        {
-            return SIPAssetXMLPersistor<SIPProvider>.LoadAssetsFromXMLRecordSet(dom);
-        }
+        //public Dictionary<Guid, object> Load(XmlDocument dom)
+        //{
+        //    return SIPAssetXMLPersistor<SIPProvider>.LoadAssetsFromXMLRecordSet(dom);
+        //}
 
 #endif
 

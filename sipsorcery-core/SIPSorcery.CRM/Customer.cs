@@ -36,12 +36,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
+using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
-using SIPSorcery.Persistence;
 using log4net;
 
 #if !SILVERLIGHT
@@ -287,9 +285,9 @@ namespace SIPSorcery.CRM
             }
         }
 
-        public Dictionary<Guid, object> Load(XmlDocument dom) {
-            return SIPAssetXMLPersistor<Customer>.LoadAssetsFromXMLRecordSet(dom);
-        }
+        //public Dictionary<Guid, object> Load(XmlDocument dom) {
+        //    return SIPAssetXMLPersistor<Customer>.LoadAssetsFromXMLRecordSet(dom);
+        //}
 
 #endif
 

@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>SIPSorcery</id>
-        <version>1.4.1</version>
+        <version>1.5.1</version>
         <authors>Aaron Clauson</authors>
         <owners>Aaron Clauson</owners>
         <licenseUrl>https://github.com/sipsorcery/sipsorcery/blob/master/LICENSE.md</licenseUrl>
@@ -18,7 +18,7 @@
         <tags>sip sipsorcery</tags>
         <dependencies>
             <group targetFramework=".NETFramework4">
-                <dependency id="log4net" version="2.0.3" />
+                <dependency id="log4net" version="2.0.5" />
             </group>
         </dependencies>
         <frameworkAssemblies>
@@ -27,7 +27,6 @@
             <frameworkAssembly assemblyName="System.Core" targetFramework=".NETFramework4" />
             <frameworkAssembly assemblyName="System.Data" targetFramework=".NETFramework4" />
             <frameworkAssembly assemblyName="System.Data.DataSetExtensions" targetFramework=".NETFramework4" />
-            <frameworkAssembly assemblyName="System.Data.Entity" targetFramework=".NETFramework4" />
             <frameworkAssembly assemblyName="System.Runtime.Serialization" targetFramework=".NETFramework4" />
             <frameworkAssembly assemblyName="System.Transactions" targetFramework=".NETFramework4" />
             <frameworkAssembly assemblyName="System.Web" targetFramework=".NETFramework4" />
@@ -41,10 +40,9 @@
         </frameworkAssemblies>
     </metadata>
     <files>
-        <file src="SIPSorcery.SIP.App\bin\Release\SIPSorcery.Net.dll" target="lib\net4\SIPSorcery.Net.dll" />
-        <file src="SIPSorcery.SIP.App\bin\Release\SIPSorcery.Persistence.dll" target="lib\net4\SIPSorcery.Persistence.dll" />
-        <file src="SIPSorcery.SIP.App\bin\Release\SIPSorcery.SIP.App.dll" target="lib\net4\SIPSorcery.SIP.App.dll" />
-        <file src="SIPSorcery.SIP.App\bin\Release\SIPSorcery.SIP.Core.dll" target="lib\net4\SIPSorcery.SIP.Core.dll" />
-        <file src="SIPSorcery.SIP.App\bin\Release\SIPSorcery.Sys.dll" target="lib\net4\SIPSorcery.Sys.dll" />
+        <file src="SIPSorcery.SIP.App\bin\Release\SIPSorcery.Net.dll" target="lib\net46\SIPSorcery.Net.dll" />
+        <file src="SIPSorcery.SIP.App\bin\Release\SIPSorcery.SIP.App.dll" target="lib\net46\SIPSorcery.SIP.App.dll" />
+        <file src="SIPSorcery.SIP.App\bin\Release\SIPSorcery.SIP.Core.dll" target="lib\net46\SIPSorcery.SIP.Core.dll" />
+        <file src="SIPSorcery.SIP.App\bin\Release\SIPSorcery.Sys.dll" target="lib\net46\SIPSorcery.Sys.dll" />
     </files>
 </package>

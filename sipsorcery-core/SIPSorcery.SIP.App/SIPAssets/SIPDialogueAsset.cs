@@ -6,7 +6,6 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using SIPSorcery.Sys;
-using SIPSorcery.Persistence;
 
 #if !SILVERLIGHT
 using System.Data;
@@ -17,7 +16,7 @@ using System.Data.Linq.Mapping;
 namespace SIPSorcery.SIP.App
 {
     [Table(Name = "sipdialogues")]
-    public class SIPDialogueAsset : ISIPAsset
+    public class SIPDialogueAsset: ISIPAsset
     {
         public const string XML_DOCUMENT_ELEMENT_NAME = "sipdialogues";
         public const string XML_ELEMENT_NAME = "sipdialogue";
@@ -342,10 +341,10 @@ namespace SIPSorcery.SIP.App
             SIPDialogue.CRMPictureURL = (row["crmpictureurl"] != null && row["crmpictureurl"] != DBNull.Value) ? row["crmpictureurl"] as string : null;
         }
 
-        public Dictionary<Guid, object> Load(XmlDocument dom)
-        {
-            return SIPAssetXMLPersistor<SIPDialogueAsset>.LoadAssetsFromXMLRecordSet(dom);
-        }
+        //public Dictionary<Guid, object> Load(XmlDocument dom)
+        //{
+        //    return SIPAssetXMLPersistor<SIPDialogueAsset>.LoadAssetsFromXMLRecordSet(dom);
+        //}
 
 #endif
 
@@ -417,8 +416,8 @@ namespace SIPSorcery.SIP.App
                  "  <direction>" + Direction + "</direction>" + m_newLine +
                  "  <sdp>" + SafeXML.MakeSafeXML(SDP) + "</sdp>" + m_newLine +
                  "  <remotesdp>" + SafeXML.MakeSafeXML(RemoteSDP) + "</remotesdp>" + m_newLine +
-                //"  <switchboardcallerdescription>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardCallerDescription) + "</switchboardcallerdescription>" + m_newLine +
-                //"  <switchboarddescription>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardDescription) + "</switchboarddescription>" + m_newLine +
+                 //"  <switchboardcallerdescription>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardCallerDescription) + "</switchboardcallerdescription>" + m_newLine +
+                 //"  <switchboarddescription>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardDescription) + "</switchboarddescription>" + m_newLine +
                  "  <switchboardowner>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardOwner) + "</switchboardowner>" + m_newLine +
                  "  <switchboardlinename>" + SafeXML.MakeSafeXML(SIPDialogue.SwitchboardLineName) + "</switchboardlinename>" + m_newLine +
                  "  <crmpersonname>" + SafeXML.MakeSafeXML(SIPDialogue.CRMPersonName) + "</crmpersonname>" + m_newLine +

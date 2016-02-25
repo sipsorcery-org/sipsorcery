@@ -165,3 +165,4 @@ bower_components
 /sipsorcery-silverlight/Build
 
 */.vs/*
+/sipsorcery-servers/build

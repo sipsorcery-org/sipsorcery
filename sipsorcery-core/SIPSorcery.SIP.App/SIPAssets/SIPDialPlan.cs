@@ -36,17 +36,10 @@
 // ============================================================================
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Net;
-using System.Net.Sockets;
 using System.Runtime.Serialization;
-using System.Text.RegularExpressions;
-using System.Threading;
 using System.Xml;
-using System.Xml.Serialization;
-using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -54,10 +47,6 @@ using log4net;
 using System.Data;
 using System.Data.Linq;
 using System.Data.Linq.Mapping;
-#endif
-
-#if UNITTEST
-using NUnit.Framework;
 #endif
 
 namespace SIPSorcery.SIP.App
@@ -261,11 +250,13 @@ namespace SIPSorcery.SIP.App
 
 #if !SILVERLIGHT
 
-        public SIPDialPlan(DataRow dialPlanRow) {
+        public SIPDialPlan(DataRow dialPlanRow)
+        {
             Load(dialPlanRow);
         }
 
-        public DataTable GetTable() {
+        public DataTable GetTable()
+        {
             DataTable table = new DataTable();
             table.Columns.Add(new DataColumn("id", typeof(String)));
             table.Columns.Add(new DataColumn("owner", typeof(String)));
@@ -284,8 +275,10 @@ namespace SIPSorcery.SIP.App
             return table;
         }
 
-        public void Load(DataRow dialPlanRow) {
-            try {
+        public void Load(DataRow dialPlanRow)
+        {
+            try
+            {
                 m_id = (dialPlanRow.Table.Columns.Contains("id") && dialPlanRow["id"] != null) ? new Guid(dialPlanRow["id"] as string) : Guid.NewGuid();
                 m_owner = dialPlanRow["owner"] as string;
                 AdminMemberId = (dialPlanRow.Table.Columns.Contains("adminmemberid") && dialPlanRow["adminmemberid"] != null) ? dialPlanRow["adminmemberid"] as string : null;
@@ -296,20 +289,22 @@ namespace SIPSorcery.SIP.App
                 m_maxExecutionCount = (dialPlanRow.Table.Columns.Contains("maxexecutioncount") && dialPlanRow["maxexecutioncount"] != null) ? Convert.ToInt32(dialPlanRow["maxexecutioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
                 m_executionCount = (dialPlanRow.Table.Columns.Contains("executioncount") && dialPlanRow["executioncount"] != null) ? Convert.ToInt32(dialPlanRow["executioncount"]) : DEFAULT_MAXIMUM_EXECUTION_COUNT;
                 m_authorisedApps = (dialPlanRow.Table.Columns.Contains("authorisedapps") && dialPlanRow["authorisedapps"] != null) ? dialPlanRow["authorisedapps"] as string : null;
-                Inserted = (dialPlanRow.Table.Columns.Contains("inserted")&& dialPlanRow["inserted"] != null && dialPlanRow["inserted"] != DBNull.Value) ? DateTimeOffset.Parse(dialPlanRow["inserted"] as string) : DateTimeOffset.UtcNow;
+                Inserted = (dialPlanRow.Table.Columns.Contains("inserted") && dialPlanRow["inserted"] != null && dialPlanRow["inserted"] != DBNull.Value) ? DateTimeOffset.Parse(dialPlanRow["inserted"] as string) : DateTimeOffset.UtcNow;
                 LastUpdate = (dialPlanRow.Table.Columns.Contains("lastupdate") && dialPlanRow["lastupdate"] != null && dialPlanRow["lastupdate"] != DBNull.Value) ? DateTimeOffset.Parse(dialPlanRow["lastupdate"] as string) : DateTimeOffset.UtcNow;
                 m_acceptNonInvite = (dialPlanRow.Table.Columns.Contains("acceptnoninvite") && dialPlanRow["acceptnoninvite"] != null && dialPlanRow["acceptnoninvite"] != DBNull.Value) ? Convert.ToBoolean(dialPlanRow["acceptnoninvite"]) : false;
-                m_isReadOnly = (dialPlanRow.Table.Columns.Contains("isreadonly") && dialPlanRow["isreadonly"] != DBNull.Value && dialPlanRow["isreadonly"] != null) ? StorageLayer.ConvertToBoolean(dialPlanRow["isreadonly"]) : false;
+                m_isReadOnly = (dialPlanRow.Table.Columns.Contains("isreadonly") && dialPlanRow["isreadonly"] != DBNull.Value && dialPlanRow["isreadonly"] != null) ? Convert.ToBoolean(dialPlanRow["isreadonly"]) : false;
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception DialPlan Load. " + excp);
                 throw excp;
             }
         }
 
-        public Dictionary<Guid, object> Load(XmlDocument dom) {
-            return SIPAssetXMLPersistor<SIPDialPlan>.LoadAssetsFromXMLRecordSet(dom);
-        }
+        //public Dictionary<Guid, object> Load(XmlDocument dom)
+        //{
+        //    return SIPAssetXMLPersistor<SIPDialPlan>.LoadAssetsFromXMLRecordSet(dom);
+        //}
 
 #endif
 
@@ -344,11 +339,13 @@ namespace SIPSorcery.SIP.App
             return dialPlanXML;
         }
 
-        public string GetXMLElementName() {
+        public string GetXMLElementName()
+        {
             return XML_ELEMENT_NAME;
         }
 
-        public string GetXMLDocumentElementName() {
+        public string GetXMLDocumentElementName()
+        {
             return XML_DOCUMENT_ELEMENT_NAME;
         }
 

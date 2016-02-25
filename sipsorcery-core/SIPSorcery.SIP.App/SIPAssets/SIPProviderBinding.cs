@@ -38,22 +38,13 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Net;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Xml;
-using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
 using log4net;
 
 #if !SILVERLIGHT
 using System.Data;
-using System.Data.Linq;
 using System.Data.Linq.Mapping;
-#endif
-
-#if UNITTEST
-using NUnit.Framework;
 #endif
 
 namespace SIPSorcery.SIP.App
@@ -133,10 +124,12 @@ namespace SIPSorcery.SIP.App
             get { return m_lastRegisterTime; }
             set
             {
-                if (value != null) {
+                if (value != null)
+                {
                     m_lastRegisterTime = value.Value.ToUniversalTime();
                 }
-                else {
+                else
+                {
                     m_lastRegisterTime = null;
                 }
                 NotifyPropertyChanged("LastRegisterTime");
@@ -145,11 +138,14 @@ namespace SIPSorcery.SIP.App
 
         public DateTimeOffset? LastRegisterTimeLocal
         {
-            get {
-                if (LastRegisterTime != null) {
+            get
+            {
+                if (LastRegisterTime != null)
+                {
                     return LastRegisterTime.Value.AddMinutes(TimeZoneOffsetMinutes);
                 }
-                else {
+                else
+                {
                     return null;
                 }
             }
@@ -158,13 +154,17 @@ namespace SIPSorcery.SIP.App
         private DateTimeOffset? m_lastRegisterAttempt = null;
         [DataMember]
         [Column(Name = "lastregisterattempt", DbType = "datetimeoffset", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
-        public DateTimeOffset? LastRegisterAttempt {
+        public DateTimeOffset? LastRegisterAttempt
+        {
             get { return m_lastRegisterAttempt; }
-            set {
-                if (value != null) {
+            set
+            {
+                if (value != null)
+                {
                     m_lastRegisterAttempt = value.Value.ToUniversalTime();
                 }
-                else {
+                else
+                {
                     m_lastRegisterAttempt = null;
                 }
                 NotifyPropertyChanged("LastRegisterAttempt");
@@ -173,11 +173,14 @@ namespace SIPSorcery.SIP.App
 
         public DateTimeOffset? LastRegisterAttemptLocal
         {
-            get {
-                if (LastRegisterAttempt != null) {
+            get
+            {
+                if (LastRegisterAttempt != null)
+                {
                     return LastRegisterAttempt.Value.AddMinutes(TimeZoneOffsetMinutes);
                 }
-                else {
+                else
+                {
                     return null;
                 }
             }
@@ -189,7 +192,8 @@ namespace SIPSorcery.SIP.App
         public DateTimeOffset NextRegistrationTime
         {
             get { return m_nextRegistrationTime; }
-            set {
+            set
+            {
                 m_nextRegistrationTime = value.ToUniversalTime();
                 NotifyPropertyChanged("NextRegistrationTime");
             }
@@ -197,7 +201,7 @@ namespace SIPSorcery.SIP.App
 
         public DateTimeOffset NextRegistrationTimeLocal
         {
-            get {return NextRegistrationTime.AddMinutes(TimeZoneOffsetMinutes); }
+            get { return NextRegistrationTime.AddMinutes(TimeZoneOffsetMinutes); }
         }
 
         private bool m_isRegistered;
@@ -229,21 +233,24 @@ namespace SIPSorcery.SIP.App
         private SIPURI m_bindingURI; // When registered this holds the binding being maintained by the agent, it's derived from the RegisterContact field but can have an additional parameter added.
         [Column(Name = "bindinguri", DbType = "varchar(256)", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
         [DataMember]
-        public string BindingURI {
+        public string BindingURI
+        {
             get { return (m_bindingURI != null) ? m_bindingURI.ToString() : null; }
             set { m_bindingURI = (!value.IsNullOrBlank()) ? SIPURI.ParseSIPURI(value) : null; }
         }
 
-        public SIPURI BindingSIPURI {
+        public SIPURI BindingSIPURI
+        {
             get { return m_bindingURI; }
             set { m_bindingURI = value; }
         }
 
         [DataMember]
         [Column(Name = "registrarsipsocket", DbType = "varchar(256)", CanBeNull = true, UpdateCheck = UpdateCheck.Never)]
-        public string RegistrarSIPSocket {
+        public string RegistrarSIPSocket
+        {
             get { return (RegistrarSIPEndPoint != null) ? RegistrarSIPEndPoint.ToString() : null; }
-            set { RegistrarSIPEndPoint = (!value.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(value) : null;}
+            set { RegistrarSIPEndPoint = (!value.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(value) : null; }
         }
 
         [Column(Name = "cseq", DbType = "int", CanBeNull = false, UpdateCheck = UpdateCheck.Never)]
@@ -272,19 +279,21 @@ namespace SIPSorcery.SIP.App
         {
             SetProviderFields(sipProvider);
 
-            m_id = Guid.NewGuid();           
+            m_id = Guid.NewGuid();
 
             // All set, let the Registration Agent know the binding is ready to be processed.
             NextRegistrationTime = DateTimeOffset.UtcNow;
         }
-        
+
 #if !SILVERLIGHT
 
-        public SIPProviderBinding(DataRow bindingRow) {
+        public SIPProviderBinding(DataRow bindingRow)
+        {
             Load(bindingRow);
         }
 
-        public DataTable GetTable() {
+        public DataTable GetTable()
+        {
             DataTable table = new DataTable();
             table.Columns.Add(new DataColumn("id", typeof(String)));
             table.Columns.Add(new DataColumn("providerid", typeof(String)));
@@ -303,8 +312,10 @@ namespace SIPSorcery.SIP.App
             return table;
         }
 
-        public void Load(DataRow bindingRow) {
-            try {
+        public void Load(DataRow bindingRow)
+        {
+            try
+            {
                 m_id = (bindingRow.Table.Columns.Contains("id") && bindingRow["id"] != DBNull.Value && bindingRow["id"] != null) ? new Guid(bindingRow["id"] as string) : Guid.NewGuid();
                 m_providerId = new Guid(bindingRow["providerid"] as string);
                 ProviderName = bindingRow["providername"] as string;
@@ -312,54 +323,65 @@ namespace SIPSorcery.SIP.App
                 AdminMemberId = bindingRow["adminmemberid"] as string;
                 m_isRegistered = (bindingRow.Table.Columns.Contains("isregistered") && bindingRow["isregistered"] != DBNull.Value && bindingRow["isregistered"] != null) ? Convert.ToBoolean(bindingRow["isregistered"]) : false;
 
-                if (bindingRow.Table.Columns.Contains("bindinguri") && bindingRow["bindinguri"] != DBNull.Value && bindingRow["bindinguri"] != null && !bindingRow["bindinguri"].ToString().IsNullOrBlank()) {
+                if (bindingRow.Table.Columns.Contains("bindinguri") && bindingRow["bindinguri"] != DBNull.Value && bindingRow["bindinguri"] != null && !bindingRow["bindinguri"].ToString().IsNullOrBlank())
+                {
                     m_bindingURI = SIPURI.ParseSIPURI(bindingRow["bindinguri"] as string);
                 }
-                else {
+                else
+                {
                     logger.Warn("Could not load BindingURI for SIPProviderBinding with id=" + m_id + ".");
                 }
 
-                if (bindingRow.Table.Columns.Contains("bindingexpiry") && bindingRow["bindingexpiry"] != DBNull.Value && bindingRow["bindingexpiry"] != null) {
+                if (bindingRow.Table.Columns.Contains("bindingexpiry") && bindingRow["bindingexpiry"] != DBNull.Value && bindingRow["bindingexpiry"] != null)
+                {
                     m_bindingExpiry = Convert.ToInt32(bindingRow["bindingexpiry"]);
                 }
 
-                if (bindingRow.Table.Columns.Contains("cseq") && bindingRow["cseq"] != DBNull.Value && bindingRow["cseq"] != null && bindingRow["cseq"].ToString().Length > 0) {
+                if (bindingRow.Table.Columns.Contains("cseq") && bindingRow["cseq"] != DBNull.Value && bindingRow["cseq"] != null && bindingRow["cseq"].ToString().Length > 0)
+                {
                     CSeq = Convert.ToInt32(bindingRow["cseq"]);
                 }
 
-                if (bindingRow.Table.Columns.Contains("lastregistertime") && bindingRow["lastregistertime"] != DBNull.Value && bindingRow["lastregistertime"] != null && !(bindingRow["lastregistertime"] as string).IsNullOrBlank()) {
+                if (bindingRow.Table.Columns.Contains("lastregistertime") && bindingRow["lastregistertime"] != DBNull.Value && bindingRow["lastregistertime"] != null && !(bindingRow["lastregistertime"] as string).IsNullOrBlank())
+                {
                     LastRegisterTime = DateTimeOffset.Parse(bindingRow["lastregistertime"] as string);
                 }
 
-                if (bindingRow.Table.Columns.Contains("lastregisterattempt") && bindingRow["lastregisterattempt"] != DBNull.Value && bindingRow["lastregisterattempt"] != null && !(bindingRow["lastregisterattempt"] as string).IsNullOrBlank()) {
+                if (bindingRow.Table.Columns.Contains("lastregisterattempt") && bindingRow["lastregisterattempt"] != DBNull.Value && bindingRow["lastregisterattempt"] != null && !(bindingRow["lastregisterattempt"] as string).IsNullOrBlank())
+                {
                     LastRegisterAttempt = DateTimeOffset.Parse(bindingRow["lastregisterattempt"] as string);
                 }
 
-                if (bindingRow.Table.Columns.Contains("nextregistrationtime") && bindingRow["nextregistrationtime"] != DBNull.Value && bindingRow["nextregistrationtime"] != null && !(bindingRow["nextregistrationtime"] as string).IsNullOrBlank()) {
+                if (bindingRow.Table.Columns.Contains("nextregistrationtime") && bindingRow["nextregistrationtime"] != DBNull.Value && bindingRow["nextregistrationtime"] != null && !(bindingRow["nextregistrationtime"] as string).IsNullOrBlank())
+                {
                     NextRegistrationTime = DateTimeOffset.Parse(bindingRow["nextregistrationtime"] as string);
                 }
 
-                if (bindingRow.Table.Columns.Contains("registrarsipsocket") && bindingRow["registrarsipsocket"] != DBNull.Value && bindingRow["registrarsipsocket"] != null && bindingRow["registrarsipsocket"].ToString().Length > 0) {
+                if (bindingRow.Table.Columns.Contains("registrarsipsocket") && bindingRow["registrarsipsocket"] != DBNull.Value && bindingRow["registrarsipsocket"] != null && bindingRow["registrarsipsocket"].ToString().Length > 0)
+                {
                     RegistrarSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(bindingRow["registrarsipsocket"] as string);
                 }
 
-                m_registrationFailureMessage = bindingRow["registrationfailuremessage"] as string; 
+                m_registrationFailureMessage = bindingRow["registrationfailuremessage"] as string;
 
                 //logger.Debug(" loaded SIPProviderBinding for " + Owner + " and " + ProviderName + " and binding " + BindingURI.ToString() + ".");
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPProviderBinding Load. " + excp.Message);
                 throw excp;
             }
         }
 
-        public Dictionary<Guid, object> Load(XmlDocument dom) {
-            return SIPAssetXMLPersistor<SIPProviderBinding>.LoadAssetsFromXMLRecordSet(dom);
-        }
+        //public Dictionary<Guid, object> Load(XmlDocument dom)
+        //{
+        //    return SIPAssetXMLPersistor<SIPProviderBinding>.LoadAssetsFromXMLRecordSet(dom);
+        //}
 
 #endif
 
-        public void SetProviderFields(SIPProvider sipProvider) {
+        public void SetProviderFields(SIPProvider sipProvider)
+        {
 
             m_providerId = sipProvider.Id;
             m_owner = sipProvider.Owner;
@@ -372,25 +394,31 @@ namespace SIPSorcery.SIP.App
             ProviderOutboundProxy = sipProvider.ProviderOutboundProxy;
             SendMWISubscribe = sipProvider.SendMWISubscribe;
 
-            if (sipProvider.RegisterEnabled) {
+            if (sipProvider.RegisterEnabled)
+            {
                 BindingExpiry = sipProvider.RegisterExpiry;
             }
-            else {
+            else
+            {
                 BindingExpiry = 0;
             }
 
             string bindingId = null;
-            if (m_bindingURI != null && m_bindingURI.Parameters.Has(REGAGENT_CONTACT_ID_KEY)) {
+            if (m_bindingURI != null && m_bindingURI.Parameters.Has(REGAGENT_CONTACT_ID_KEY))
+            {
                 bindingId = m_bindingURI.Parameters.Get(REGAGENT_CONTACT_ID_KEY);
             }
 
-            if (!sipProvider.RegisterContact.IsNullOrBlank()) {
+            if (!sipProvider.RegisterContact.IsNullOrBlank())
+            {
                 m_bindingURI = SIPURI.ParseSIPURI(sipProvider.RegisterContact);
-                if (!bindingId.IsNullOrBlank()) {
+                if (!bindingId.IsNullOrBlank())
+                {
                     m_bindingURI.Parameters.Set(REGAGENT_CONTACT_ID_KEY, bindingId);
                 }
             }
-            else {
+            else
+            {
                 // The register contact field on the SIP Provider is empty. 
                 // This condition needs to be trearted as the binding being disabled and it needs to be removed.
                 BindingExpiry = 0;
@@ -443,16 +471,20 @@ namespace SIPSorcery.SIP.App
             return providerBindingXML;
         }
 
-        public string GetXMLElementName() {
+        public string GetXMLElementName()
+        {
             return XML_ELEMENT_NAME;
         }
 
-        public string GetXMLDocumentElementName() {
+        public string GetXMLDocumentElementName()
+        {
             return XML_DOCUMENT_ELEMENT_NAME;
         }
 
-        private void NotifyPropertyChanged(string propertyName) {
-            if (PropertyChanged != null) {
+        private void NotifyPropertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null)
+            {
                 PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
         }

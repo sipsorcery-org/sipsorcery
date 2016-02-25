@@ -37,13 +37,7 @@
 // ============================================================================
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using SIPSorcery.Persistence;
+using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -57,30 +51,30 @@ namespace SIPSorcery.Persistence
         {
             try
             {
-                if (storageType == StorageTypes.XML)
-                {
-                    if (!storageConnectionStr.EndsWith(@"\"))
-                    {
-                        storageConnectionStr += @"\";
-                    }
-                    return new SIPAssetXMLPersistor<T>(storageConnectionStr + filename);
-                }
-                else if (storageType == StorageTypes.SQLLinqMySQL)
+                //if (storageType == StorageTypes.XML)
+                //{
+                //    if (!storageConnectionStr.EndsWith(@"\"))
+                //    {
+                //        storageConnectionStr += @"\";
+                //    }
+                //    return new SIPAssetXMLPersistor<T>(storageConnectionStr + filename);
+                //}
+                if (storageType == StorageTypes.SQLLinqMySQL)
                 {
                     return new SQLAssetPersistor<T>(MySql.Data.MySqlClient.MySqlClientFactory.Instance, storageConnectionStr);
                 }
-                else if (storageType == StorageTypes.SQLLinqPostgresql)
-                {
-                    return new SQLAssetPersistor<T>(Npgsql.NpgsqlFactory.Instance, storageConnectionStr);
-                }
+                //else if (storageType == StorageTypes.SQLLinqPostgresql)
+                //{
+                //    return new SQLAssetPersistor<T>(Npgsql.NpgsqlFactory.Instance, storageConnectionStr);
+                //}
                 //else if (storageType == StorageTypes.SimpleDBLinq)
                 //{
                 //    return new SimpleDBAssetPersistor<T>(storageConnectionStr);
                 //}
-                else if (storageType == StorageTypes.SQLLinqMSSQL)
-                {
-                    return new MSSQLAssetPersistor<T>(System.Data.SqlClient.SqlClientFactory.Instance, storageConnectionStr);
-                }
+                //else if (storageType == StorageTypes.SQLLinqMSSQL)
+                //{
+                //    return new MSSQLAssetPersistor<T>(System.Data.SqlClient.SqlClientFactory.Instance, storageConnectionStr);
+                //}
                 //else if (storageType == StorageTypes.SQLLinqOracle)
                 //{
                 //    return new SQLAssetPersistor<T>(Oracle.DataAccess.Client.OracleClientFactory.Instance, storageConnectionStr);

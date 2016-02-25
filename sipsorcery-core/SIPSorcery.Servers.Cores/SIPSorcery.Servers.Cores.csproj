@@ -28,7 +28,7 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -251,13 +251,13 @@
       <HintPath>..\packages\log4net.2.0.5\lib\net40-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Microsoft.Dynamic, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\stable\Microsoft.Dynamic.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Scripting, Version=0.9.5.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\stable\Microsoft.Scripting.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <Name>nunit.framework</Name>
-      <HintPath>..\stable\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>
@@ -313,6 +313,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AppCommon\SilverlightPolicyServer.cs" />
+    <Compile Include="SIPProxy\SIPCallDispatcherFile.cs" />
+    <Compile Include="AppCommon\Switchboard\SwitchboardToken.cs" />
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -321,6 +324,7 @@
     <Compile Include="SIPApplicationServer\SIPDialogueManager.cs" />
     <Compile Include="SIPNotifier\NotifierSubscriptionsManager.cs" />
     <Compile Include="SIPNotifier\SIPNotifierCore.cs" />
+    <Compile Include="SIPProxy\ScriptLoader.cs" />
     <Compile Include="SIPWatchTower\SIPAppServerManagerv2.cs" />
     <Compile Include="SIPNotifier\SIPNotifyManager.cs" />
     <Compile Include="SIPMonitor\SIPMonitorClientManager.cs" />

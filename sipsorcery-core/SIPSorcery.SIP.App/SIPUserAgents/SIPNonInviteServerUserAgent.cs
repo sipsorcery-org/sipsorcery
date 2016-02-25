@@ -36,13 +36,8 @@
 // ============================================================================
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using log4net;
-using SIPSorcery.Persistence;
-using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using log4net;
 
 namespace SIPSorcery.SIP.App
 {

@@ -37,31 +37,14 @@
 // ============================================================================
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using System.Runtime.Serialization;
-using System.ServiceModel;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Xml;
-using System.Xml.Serialization;
-using SIPSorcery.Persistence;
 using SIPSorcery.Sys;
 using log4net;
 
 #if !SILVERLIGHT
 using System.Data;
-using System.Data.Linq;
 using System.Data.Linq.Mapping;
-using System.Xml.Linq;
-#endif
-
-#if UNITTEST
-using NUnit.Framework;
 #endif
 
 namespace SIPSorcery.SIP.App
@@ -181,38 +164,38 @@ namespace SIPSorcery.SIP.App
             Aliases = ParseAliases(aliasList);
         }
 
-        public Dictionary<Guid, object> Load(XmlDocument dom)
-        {
-            try
-            {
-                Dictionary<Guid, object> sipDomains = new Dictionary<Guid, object>();
+        //public Dictionary<Guid, object> Load(XmlDocument dom)
+        //{
+        //    try
+        //    {
+        //        Dictionary<Guid, object> sipDomains = new Dictionary<Guid, object>();
 
-                XDocument sipDomainsDoc = XDocument.Parse(dom.OuterXml);
+        //        XDocument sipDomainsDoc = XDocument.Parse(dom.OuterXml);
 
-                var xmlSIPDomains = from domain in sipDomainsDoc.Document.Descendants(XML_ELEMENT_NAME)
-                                    select new SIPDomain()
-                                    {
-                                        Id = Guid.NewGuid(),
-                                        Domain = domain.Element("domain").Value,
-                                        Owner = (domain.Element("owner") != null && !domain.Element("owner").Value.IsNullOrBlank()) ? domain.Element("owner").Value : null,
-                                        Aliases =
-                                            (from alias in domain.Element("sipdomainaliases").Descendants("domainalias")
-                                             select alias.Value).ToList()
-                                    };
+        //        var xmlSIPDomains = from domain in sipDomainsDoc.Document.Descendants(XML_ELEMENT_NAME)
+        //                            select new SIPDomain()
+        //                            {
+        //                                Id = Guid.NewGuid(),
+        //                                Domain = domain.Element("domain").Value,
+        //                                Owner = (domain.Element("owner") != null && !domain.Element("owner").Value.IsNullOrBlank()) ? domain.Element("owner").Value : null,
+        //                                Aliases =
+        //                                    (from alias in domain.Element("sipdomainaliases").Descendants("domainalias")
+        //                                     select alias.Value).ToList()
+        //                            };
 
-                foreach (SIPDomain xmlSIPDomain in xmlSIPDomains)
-                {
-                    sipDomains.Add(xmlSIPDomain.Id, xmlSIPDomain);
-                }
+        //        foreach (SIPDomain xmlSIPDomain in xmlSIPDomains)
+        //        {
+        //            sipDomains.Add(xmlSIPDomain.Id, xmlSIPDomain);
+        //        }
 
-                return sipDomains;
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SIPDomain Load. " + excp.Message);
-                throw;
-            }
-        }
+        //        return sipDomains;
+        //    }
+        //    catch (Exception excp)
+        //    {
+        //        logger.Error("Exception SIPDomain Load. " + excp.Message);
+        //        throw;
+        //    }
+        //}
 
 #endif
 

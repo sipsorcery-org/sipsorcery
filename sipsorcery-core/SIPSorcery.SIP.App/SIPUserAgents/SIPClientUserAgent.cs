@@ -31,21 +31,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Net;
-using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-
-#if !SILVERLIGHT && !MIN_BUILD
-using SIPSorcery.Entities;
-#endif
-
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
-using SIPSorcery.SIP;
 using log4net;
 
 namespace SIPSorcery.SIP.App
@@ -86,10 +75,14 @@ namespace SIPSorcery.SIP.App
         private SIPEndPoint m_outboundProxy;                        // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
         private SIPDialogue m_sipDialogue;
 
-#if !SILVERLIGHT && !MIN_BUILD
+#if !SILVERLIGHT
 
-        private SIPSorcery.Entities.CustomerAccountDataLayer m_customerAccountDataLayer = new SIPSorcery.Entities.CustomerAccountDataLayer();
-
+        //private SIPSorcery.Entities.CustomerAccountDataLayer m_customerAccountDataLayer = new SIPSorcery.Entities.CustomerAccountDataLayer();
+        private RtccGetCustomerDelegate RtccGetCustomer_External;
+        private RtccGetRateDelegate RtccGetRate_External;
+        private RtccGetBalanceDelegate RtccGetBalance_External;
+        private RtccReserveInitialCreditDelegate RtccReserveInitialCredit_External;
+        private RtccUpdateCdrDelegate RtccUpdateCdr_External;
 #endif
 
         public event SIPCallResponseDelegate CallTrying;
@@ -295,11 +288,12 @@ namespace SIPSorcery.SIP.App
 
                             m_serverTransaction.CDR.Updated();
 
-#if !SILVERLIGHT && !MIN_BUILD
+#if !SILVERLIGHT
 
-                            if (m_sipCallDescriptor.AccountCode != null)
+                            if (m_sipCallDescriptor.AccountCode != null && RtccGetCustomer_External != null)
                             {
-                                var customerAccount = m_customerAccountDataLayer.CheckAccountCode(Owner, m_sipCallDescriptor.AccountCode);
+                                //var customerAccount = m_customerAccountDataLayer.CheckAccountCode(Owner, m_sipCallDescriptor.AccountCode);
+                                var customerAccount = RtccGetCustomer_External(Owner, m_sipCallDescriptor.AccountCode);
 
                                 if (customerAccount == null)
                                 {
@@ -317,7 +311,8 @@ namespace SIPSorcery.SIP.App
                                         rateDestination = SIPURI.ParseSIPURIRelaxed(m_sipCallDescriptor.Uri).User;
                                     }
 
-                                    var rate = m_customerAccountDataLayer.GetRate(Owner, m_sipCallDescriptor.RateCode, rateDestination, customerAccount.RatePlan);
+                                    //var rate = m_customerAccountDataLayer.GetRate(Owner, m_sipCallDescriptor.RateCode, rateDestination, customerAccount.RatePlan);
+                                    var rate = RtccGetRate_External(Owner, m_sipCallDescriptor.RateCode, rateDestination, customerAccount.RatePlan);
 
                                     if (rate == null)
                                     {
@@ -327,15 +322,16 @@ namespace SIPSorcery.SIP.App
                                     }
                                     else
                                     {
-                                        Rate = rate.Rate1;
+                                        Rate = rate.RatePerIncrement;
 
-                                        if (rate.Rate1 == 0 && rate.SetupCost == 0)
+                                        if (rate.RatePerIncrement == 0 && rate.SetupCost == 0)
                                         {
                                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "The rate and setup cost for the " + rateDestination + "were both zero. The call will be allowed to proceed with no RTCC reservation.", Owner));
                                         }
                                         else
                                         {
-                                            decimal balance = m_customerAccountDataLayer.GetBalance(AccountCode);
+                                            //decimal balance = m_customerAccountDataLayer.GetBalance(AccountCode);
+                                            decimal balance = RtccGetBalance_External(AccountCode);
 
                                             if (balance < Rate)
                                             {
@@ -346,7 +342,8 @@ namespace SIPSorcery.SIP.App
                                             else
                                             {
                                                 int intialSeconds = 0;
-                                                var reservationCost = m_customerAccountDataLayer.ReserveInitialCredit(AccountCode, rate, m_serverTransaction.CDR, out intialSeconds);
+                                                //var reservationCost = m_customerAccountDataLayer.ReserveInitialCredit(AccountCode, rate, m_serverTransaction.CDR, out intialSeconds);
+                                                var reservationCost = RtccReserveInitialCredit_External(AccountCode, rate, m_serverTransaction.CDR, out intialSeconds);
 
                                                 if (reservationCost == Decimal.MinusOne)
                                                 {
@@ -633,8 +630,9 @@ namespace SIPSorcery.SIP.App
                                     //    Direction = m_serverTransaction.CDR.CallDirection.ToString(),
                                     //    DialPlanContextID = m_sipCallDescriptor.DialPlanContextID.ToString()
                                     //};
-#if !SILVERLIGHT && !MIN_BUILD
-                                    m_customerAccountDataLayer.UpdateRealTimeCallControlCDRID(originalCallTransaction.CDR.CDRId.ToString(), m_serverTransaction.CDR);
+#if !SILVERLIGHT
+                                    //m_customerAccountDataLayer.UpdateRealTimeCallControlCDRID(originalCallTransaction.CDR.CDRId.ToString(), m_serverTransaction.CDR);
+                                    RtccUpdateCdr_External(originalCallTransaction.CDR.CDRId.ToString(), m_serverTransaction.CDR);
 #endif
 
                                     //m_serverTransaction.CDR.AccountCode = AccountCode;

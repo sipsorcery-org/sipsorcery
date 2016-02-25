@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using SIPSorcery.Entities;
 using SIPSorcery.Entities.Services;
+using SIPSorcery.SIP.App;
 
 namespace SIPSorcery
 {
