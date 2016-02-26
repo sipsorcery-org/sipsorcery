@@ -115,7 +115,8 @@ namespace SIPSorcery.SIP.App
             SIPEndPoint outboundProxy,
             string owner,
             string adminMemberId,
-            SIPMonitorLogDelegate logDelegate)
+            SIPMonitorLogDelegate logDelegate
+            )
         {
             m_sipTransport = sipTransport;
             m_outboundProxy = (outboundProxy != null) ? SIPEndPoint.ParseSIPEndPoint(outboundProxy.ToString()) : null;
@@ -129,6 +130,30 @@ namespace SIPSorcery.SIP.App
                 Log_External = (e) => { };
             }
         }
+
+#if !SILVERLIGHT
+
+        public SIPClientUserAgent(
+            SIPTransport sipTransport,
+            SIPEndPoint outboundProxy,
+            string owner,
+            string adminMemberId,
+            SIPMonitorLogDelegate logDelegate,
+            RtccGetCustomerDelegate rtccGetCustomer,
+            RtccGetRateDelegate rtccGetRate,
+            RtccGetBalanceDelegate rtccGetBalance,
+            RtccReserveInitialCreditDelegate rtccReserveInitialCredit,
+            RtccUpdateCdrDelegate rtccUpdateCdr
+            ) : this(sipTransport, outboundProxy, owner, adminMemberId, logDelegate)
+        {
+            RtccGetCustomer_External = rtccGetCustomer;
+            RtccGetRate_External = rtccGetRate;
+            RtccGetBalance_External = rtccGetBalance;
+            RtccReserveInitialCredit_External = rtccReserveInitialCredit;
+            RtccUpdateCdr_External = rtccUpdateCdr;
+        }
+
+#endif
 
         public void Call(SIPCallDescriptor sipCallDescriptor)
         {
@@ -343,7 +368,7 @@ namespace SIPSorcery.SIP.App
                                             {
                                                 int intialSeconds = 0;
                                                 //var reservationCost = m_customerAccountDataLayer.ReserveInitialCredit(AccountCode, rate, m_serverTransaction.CDR, out intialSeconds);
-                                                var reservationCost = RtccReserveInitialCredit_External(AccountCode, rate, m_serverTransaction.CDR, out intialSeconds);
+                                                var reservationCost = RtccReserveInitialCredit_External(AccountCode, rate.ID, m_serverTransaction.CDR, out intialSeconds);
 
                                                 if (reservationCost == Decimal.MinusOne)
                                                 {

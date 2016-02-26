@@ -32,9 +32,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Transactions;
 using SIPSorcery.Entities;
 using SIPSorcery.SIP;
@@ -141,6 +139,13 @@ namespace SIPSorcery.Entities
             }
         }
 
+        public SIPSorcery.SIP.App.RtccRate GetRtccRate(string owner, string rateCode, string destination, int ratePlan)
+        {
+            var rate = GetRate(owner, rateCode, destination,  ratePlan);
+
+            return (rate != null) ? new SIPSorcery.SIP.App.RtccRate() { ID = rate.ID, RatePerIncrement = rate.Rate1, SetupCost = rate.SetupCost } : null;
+        }
+
         public decimal GetBalance(string accountCode)
         {
             using (var db = new SIPSorceryEntities())
@@ -166,23 +171,27 @@ namespace SIPSorcery.Entities
         /// <param name="rate">The rate for the call destination and the values that will be used for subsequent credit reservations.</param>
         /// <param name="initialSeconds">IF the reservation is successful this parameter will hold the number of seconds that were reserved for the initial reservation.</param>
         /// <returns>True if there was enough credit for the reservation otherwise false.</returns>
-        public decimal ReserveInitialCredit(string accountCode, Rate rate, SIPCDR cdr, out int initialSeconds)
+        public decimal ReserveInitialCredit(string accountCode, string rateID, SIPCDR cdr, out int initialSeconds)
         {
             try
             {
-                logger.Debug("ReserveInitialCredit for " + accountCode + ", rate " + rate.Rate1 + ", setup cost " + rate.SetupCost + ", increment seconds " + rate.IncrementSeconds + ".");
+                logger.Debug("ReserveInitialCredit for " + accountCode + " and rate ID " + rateID + ".");
 
                 initialSeconds = 0;
-
-                if (accountCode.IsNullOrBlank() || rate.Rate1 <= 0)
-                {
-                    return Decimal.MinusOne;
-                }
 
                 using (var db = new SIPSorceryEntities())
                 {
                     using (var trans = new TransactionScope())
                     {
+                        var rate = db.Rates.Where(x => x.ID == rateID).SingleOrDefault();
+
+                        if (accountCode.IsNullOrBlank() || (rate == null || rate.Rate1 <= 0))
+                        {
+                            return Decimal.MinusOne;
+                        }
+
+                        logger.Debug("ReserveInitialCredit for " + accountCode + ", rate " + rate.Rate1 + ", setup cost " + rate.SetupCost + ", increment seconds " + rate.IncrementSeconds + ".");
+
                         var customerAccount = db.CustomerAccounts.Where(x => x.AccountCode == accountCode).SingleOrDefault();
 
                         if (customerAccount == null)
@@ -666,6 +675,13 @@ namespace SIPSorcery.Entities
                             ca.AccountNumber.ToLower() == accountNumber.ToLower()
                         select ca).SingleOrDefault();
             }
+        }
+
+        public SIPSorcery.SIP.App.RtccCustomerAccount GetRtccCustomer(string owner, string accountNumber)
+        {
+            var customer = Get(owner, accountNumber);
+
+            return customer != null ? new SIP.App.RtccCustomerAccount() { ID = customer.ID, AccountCode = customer.AccountCode, RatePlan = customer.RatePlan } : null;
         }
 
         public void SetCDRIsHangingUp(string rtccID)

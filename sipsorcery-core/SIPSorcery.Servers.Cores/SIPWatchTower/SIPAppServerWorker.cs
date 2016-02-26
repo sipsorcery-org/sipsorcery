@@ -200,7 +200,7 @@ namespace SIPSorcery.Servers
 
                     SIPCallDescriptor callDescriptor = new SIPCallDescriptor(m_dispatcherUsername, null, "sip:" + m_dispatcherUsername + "@" + AppServerEndpoint.GetIPEndPoint().ToString(),
                                        "sip:" + m_dispatcherUsername + "@sipcalldispatcher", "sip:" + AppServerEndpoint.GetIPEndPoint().ToString(), null, null, null, SIPCallDirection.Out, null, null, null);
-                    m_probeUAC = new SIPClientUserAgent(m_sipTransport, null, null, null, null);
+                    m_probeUAC = new SIPClientUserAgent(m_sipTransport, null, null, null, null, null, null, null, null, null);
 
                     m_probeUAC.CallAnswered += (call, sipResponse) =>
                     {

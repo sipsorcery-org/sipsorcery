@@ -268,7 +268,9 @@ namespace SIPSorcery.AppServer.DialPlan
                         }
                         else
                         {
-                            uacCall = new SIPClientUserAgent(m_sipTransport, m_outboundProxySocket, m_username, m_adminMemberId, m_statefulProxyLogEvent);
+                            uacCall = new SIPClientUserAgent(m_sipTransport, m_outboundProxySocket, m_username, m_adminMemberId, m_statefulProxyLogEvent,
+                                m_customerAccountDataLayer.GetRtccCustomer, m_customerAccountDataLayer.GetRtccRate, m_customerAccountDataLayer.GetBalance,
+                                m_customerAccountDataLayer.ReserveInitialCredit, m_customerAccountDataLayer.UpdateRealTimeCallControlCDRID);
                         }
                     }
                     else

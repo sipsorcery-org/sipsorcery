@@ -21,19 +21,21 @@ namespace SIPSorcery.SIP.App
 
     // Real-time call control delegates.
     public delegate RtccCustomerAccount RtccGetCustomerDelegate(string owner, string accountCode);
-    public delegate RtccRate RtccGetRateDelegate(string owner, string rateCode, string rateDestination, string ratePlan);
+    public delegate RtccRate RtccGetRateDelegate(string owner, string rateCode, string rateDestination, int ratePlan);
     public delegate decimal RtccGetBalanceDelegate(string accountCode);
-    public delegate decimal RtccReserveInitialCreditDelegate(string accountCode, RtccRate rate, SIPCDR cdr, out int intialSeconds);
+    public delegate decimal RtccReserveInitialCreditDelegate(string accountCode, string rateID, SIPCDR cdr, out int intialSeconds);
     public delegate void RtccUpdateCdrDelegate(string cdrID, SIPCDR cdr);
 
     public class RtccCustomerAccount
     {
+        public string ID;
         public string AccountCode;
-        public string RatePlan;
+        public int RatePlan;
     }
 
     public class RtccRate
     {
+        public string ID;
         public decimal RatePerIncrement;
         public decimal SetupCost;
     }
