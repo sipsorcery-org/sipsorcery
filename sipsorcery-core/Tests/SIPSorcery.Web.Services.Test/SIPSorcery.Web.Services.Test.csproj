@@ -152,6 +152,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="SIPSorcery.Web.Services">
+      <HintPath>..\..\Build\SIPSorcery.Web.Services.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -174,10 +177,6 @@
     <ProjectReference Include="..\..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
       <Project>{339648E6-3B61-4A27-B4A2-38A8216B1D7E}</Project>
       <Name>SIPSorcery.SIP.App</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\SIPSorcery.Web.Services\SIPSorcery.Web.Services.csproj">
-      <Project>{5D73FBAC-897F-4FEA-BAF9-61823545FE70}</Project>
-      <Name>SIPSorcery.Web.Services</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
