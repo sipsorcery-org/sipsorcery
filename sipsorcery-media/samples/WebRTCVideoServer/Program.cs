@@ -1,20 +1,13 @@
-﻿// openssl x509 -fingerprint -sha256 -in server-cert.pem 
-
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography;
-using System.Text;
+using System.Runtime.InteropServices;
 using System.Threading;
-using System.Threading.Tasks;
 using SIPSorceryMedia;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
@@ -26,6 +19,11 @@ namespace WebRTCVideoServer
 {
     public class WebRtcSession
     {
+        private const int RTP_MAX_PAYLOAD = 1400;
+        private const int TIMESTAMP_SPACING = 3000;
+        private const int PAYLOAD_TYPE_ID = 100;
+        private const int SRTP_AUTH_KEY_LENGTH = 10;
+
         private static ILog logger = AppState.logger;
 
         public WebRtcPeer Peer;
@@ -115,11 +113,69 @@ namespace WebRTCVideoServer
                 logger.Debug("An unrecognised packet was received on the WebRTC media socket.");
             }
         }
+
+        public void Send(byte[] buffer)
+        {
+            try
+            {
+                //if (client.LastRtcpSenderReportSentAt == DateTime.MinValue)
+                //{
+                //    logger.Debug("Sending RTCP report to " + client.SocketAddress + ".");
+
+                //    // Send RTCP report.
+                //    RTCPPacket rtcp = new RTCPPacket(client.SSRC, 0, 0, 0, 0);
+                //    byte[] rtcpBuffer = rtcp.GetBytes();
+                //    _webRTCReceiverClient.BeginSend(rtcpBuffer, rtcpBuffer.Length, client.SocketAddress, null, null);
+                //    //int rtperr = client.SrtpContext.ProtectRTP(rtcpBuffer, rtcpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
+                //}
+
+                //Console.WriteLine("Sending VP8 frame of " + encodedBuffer.Length + " bytes to " + client.SocketAddress + ".");
+
+                Peer.LastTimestamp = (Peer.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : Peer.LastTimestamp + TIMESTAMP_SPACING;
+
+                for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
+                {
+                    int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
+                    int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
+
+                    byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
+
+                    RTPPacket rtpPacket = new RTPPacket(payloadLength + SRTP_AUTH_KEY_LENGTH + vp8HeaderBytes.Length);
+                    rtpPacket.Header.SyncSource = Peer.SSRC;
+                    rtpPacket.Header.SequenceNumber = Peer.SequenceNumber++;
+                    rtpPacket.Header.Timestamp = Peer.LastTimestamp;
+                    rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
+                    rtpPacket.Header.PayloadType = PAYLOAD_TYPE_ID;
+
+                    Buffer.BlockCopy(vp8HeaderBytes, 0, rtpPacket.Payload, 0, vp8HeaderBytes.Length);
+                    Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, vp8HeaderBytes.Length, payloadLength);
+
+                    var rtpBuffer = rtpPacket.GetBytes();
+
+                    //_webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, _wiresharpEP);
+
+                    int rtperr = SrtpContext.ProtectRTP(rtpBuffer, rtpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
+                    if (rtperr != 0)
+                    {
+                        logger.Warn("SRTP packet protection failed, result " + rtperr + ".");
+                    }
+                    else
+                    {
+                        var connectedIceCandidate = Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).First();
+                        connectedIceCandidate.LocalRtpSocket.SendTo(rtpBuffer, connectedIceCandidate.RemoteRtpEndPoint);
+                    }
+                }
+            }
+            catch (Exception sendExcp)
+            {
+                // logger.Error("SendRTP exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
+            }
+        }
     }
 
     class Program
     {
-        private const int RTP_MAX_PAYLOAD = 1400; //1452;
+        private const int RTP_MAX_PAYLOAD = 1400;
         private const int TIMESTAMP_SPACING = 3000;
         private const int PAYLOAD_TYPE_ID = 100;
         private const int SRTP_AUTH_KEY_LENGTH = 10;
@@ -131,11 +187,7 @@ namespace WebRTCVideoServer
 
         private static ILog logger = AppState.logger;
 
-        private static uint _webcamWidth = 640;
-        private static uint _webcamHeight = 480;
-
         private static bool m_exit = false;
-
         private static WebSocketServer _receiverWSS;
         private static ConcurrentBag<WebRtcSession> _webRtcSessions = new ConcurrentBag<WebRtcSession>();
 
@@ -145,11 +197,10 @@ namespace WebRTCVideoServer
             {
                 Console.WriteLine("WebRTC Test Video Peer:");
 
-                SDPExchangeReceiver.WebSocketOpened += SDPExchangeReceiver_WebSocketOpened;
-                SDPExchangeReceiver.SDPAnswerReceived += SDPExchangeReceiver_SDPAnswerReceived;
+                SDPExchangeReceiver.WebSocketOpened += WebRtcStartCall;
+                SDPExchangeReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
 
-                var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2("aaron-pc.p12");
-                //var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2("wildcard_sipsorcery.p12", "");
+                var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2("test.p12");
                 Console.WriteLine("WSS Certificate CN: " + wssCertificate.Subject + ", have key " + wssCertificate.HasPrivateKey + ", Expires " + wssCertificate.GetExpirationDateString() + ".");
 
                 _receiverWSS = new WebSocketServer(8081, true);
@@ -181,7 +232,7 @@ namespace WebRTCVideoServer
             }
         }
 
-        private static void SDPExchangeReceiver_WebSocketOpened(WebSocketSharp.Net.WebSockets.WebSocketContext context, string webSocketID)
+        private static void WebRtcStartCall(WebSocketSharp.Net.WebSockets.WebSocketContext context, string webSocketID)
         {
             logger.Debug("New WebRTC client added for web socket connection " + webSocketID + ".");
 
@@ -201,7 +252,7 @@ namespace WebRTCVideoServer
             }
         }
 
-        private static void SDPExchangeReceiver_SDPAnswerReceived(string webSocketID, string sdpAnswer)
+        private static void WebRtcAnswerReceived(string webSocketID, string sdpAnswer)
         {
             try
             {
@@ -236,75 +287,35 @@ namespace WebRTCVideoServer
             }
         }
 
-        private static void ICMPListen(IPAddress listenAddress)
-        {
-            try
-            {
-                Socket icmpListener = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.Icmp);
-                icmpListener.Bind(new IPEndPoint(listenAddress, 0));
-                icmpListener.IOControl(IOControlCode.ReceiveAll, new byte[] { 1, 0, 0, 0 }, new byte[] { 1, 0, 0, 0 });
-
-                while (!m_exit)
-                {
-                    try
-                    {
-                        byte[] buffer = new byte[4096];
-                        EndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                        int bytesRead = icmpListener.ReceiveFrom(buffer, ref remoteEndPoint);
-
-                        logger.Debug(bytesRead + " ICMP bytes read from " + remoteEndPoint + ".");
-                    }
-                    catch (Exception listenExcp)
-                    {
-                        logger.Warn("ICMPListen. " + listenExcp.Message);
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception ICMPListen. " + excp);
-            }
-        }
-
         private static void SendTestPattern()
         {
             try
             {
                 unsafe
                 {
+                    Bitmap testPattern = new Bitmap("wizard.jpeg");
+
                     SIPSorceryMedia.VPXEncoder vpxEncoder = new VPXEncoder();
-                    vpxEncoder.InitEncoder(_webcamWidth, _webcamHeight);
+                    vpxEncoder.InitEncoder(Convert.ToUInt32(testPattern.Width), Convert.ToUInt32(testPattern.Height));
 
                     SIPSorceryMedia.ImageConvert colorConverter = new ImageConvert();
 
-                    Bitmap testPattern = new Bitmap("testpattern.jpeg");
-
-                    byte pictureID = 0x1;
                     byte[] sampleBuffer = null;
                     byte[] encodedBuffer = new byte[4096];
-
                     while (true)
                     {
-                        //if (_webRtcPeers.Any(x => x.STUNExchangeComplete == true && x.IsDtlsNegotiationComplete == true))
                         if (_webRtcSessions.Any(x => x.Peer.IsDtlsNegotiationComplete == true))
                         {
-                            //Console.WriteLine("Got managed sample " + sample.Buffer.Length + ", is key frame " + sample.IsKeyFrame + ".");
-
                             var stampedTestPattern = testPattern.Clone() as System.Drawing.Image;
 
                             AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
-
-                            //Bitmap bitmap = new Bitmap(timestampedTestPattern as System.Drawing.Bitmap);
-
                             sampleBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
 
                             fixed (byte* p = sampleBuffer)
                             {
                                 byte[] convertedFrame = null;
-                                //colorConverter.ConvertToI420(p, VideoSubTypesEnum.RGB24, testPattern.Width, testPattern.Height, ref convertedFrame);
                                 colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB24, testPattern.Width, testPattern.Height, VideoSubTypesEnum.I420, ref convertedFrame);
 
-                                //int encodeResult = vpxEncoder.Encode(p, sampleBuffer.Length, 1, ref encodedBuffer);
                                 fixed (byte* q = convertedFrame)
                                 {
                                     int encodeResult = vpxEncoder.Encode(q, sampleBuffer.Length, 1, ref encodedBuffer);
@@ -322,87 +333,13 @@ namespace WebRTCVideoServer
 
                             lock (_webRtcSessions)
                             {
-                                //foreach (var client in _webRtcPeers.Where(x => x.STUNExchangeComplete && x.IsDtlsNegotiationComplete == true))
                                 foreach (var session in _webRtcSessions.Where(x => x.Peer.IsDtlsNegotiationComplete == true && x.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
                                 {
-                                    try
-                                    {
-                                        var client = session.Peer;
-
-                                        //if (client.LastRtcpSenderReportSentAt == DateTime.MinValue)
-                                        //{
-                                        //    logger.Debug("Sending RTCP report to " + client.SocketAddress + ".");
-
-                                        //    // Send RTCP report.
-                                        //    RTCPPacket rtcp = new RTCPPacket(client.SSRC, 0, 0, 0, 0);
-                                        //    byte[] rtcpBuffer = rtcp.GetBytes();
-                                        //    _webRTCReceiverClient.BeginSend(rtcpBuffer, rtcpBuffer.Length, client.SocketAddress, null, null);
-                                        //    //int rtperr = client.SrtpContext.ProtectRTP(rtcpBuffer, rtcpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
-                                        //}
-
-                                        //Console.WriteLine("Sending VP8 frame of " + encodedBuffer.Length + " bytes to " + client.SocketAddress + ".");
-
-                                        client.LastTimestamp = (client.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : client.LastTimestamp + TIMESTAMP_SPACING;
-
-                                        for (int index = 0; index * RTP_MAX_PAYLOAD < encodedBuffer.Length; index++)
-                                        {
-                                            int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
-                                            int payloadLength = (offset + RTP_MAX_PAYLOAD < encodedBuffer.Length) ? RTP_MAX_PAYLOAD : encodedBuffer.Length - offset;
-
-                                            byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
-
-                                            RTPPacket rtpPacket = new RTPPacket(payloadLength + SRTP_AUTH_KEY_LENGTH + vp8HeaderBytes.Length);
-                                            rtpPacket.Header.SyncSource = client.SSRC;
-                                            rtpPacket.Header.SequenceNumber = client.SequenceNumber++;
-                                            rtpPacket.Header.Timestamp = client.LastTimestamp;
-                                            rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= encodedBuffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
-                                            rtpPacket.Header.PayloadType = PAYLOAD_TYPE_ID;
-
-                                            Buffer.BlockCopy(vp8HeaderBytes, 0, rtpPacket.Payload, 0, vp8HeaderBytes.Length);
-                                            Buffer.BlockCopy(encodedBuffer, offset, rtpPacket.Payload, vp8HeaderBytes.Length, payloadLength);
-
-                                            var rtpBuffer = rtpPacket.GetBytes();
-
-                                            //_webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, _wiresharpEP);
-
-                                            int rtperr = session.SrtpContext.ProtectRTP(rtpBuffer, rtpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
-                                            if (rtperr != 0)
-                                            {
-                                                logger.Warn("SRTP packet protection failed, result " + rtperr + ".");
-                                            }
-                                            else
-                                            {
-                                                var connectedIceCandidate = client.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).First();
-
-                                                //logger.Debug("Sending RTP, offset " + offset + ", frame bytes " + payloadLength + ", timestamp " + rtpPacket.Header.Timestamp + ", seq # " + rtpPacket.Header.SequenceNumber + " to " + connectedIceCandidate.RemoteRtpEndPoint + ".");
-
-                                                //_webRTCReceiverClient.Send(rtpBuffer, rtpBuffer.Length, client.SocketAddress);
-
-                                                //UdpClient localSocket = new UdpClient();
-                                                //localSocket.Client = client.LocalIceCandidates.First().RtpSocket;
-                                                //localSocket.BeginSend(rtpBuffer, rtpBuffer.Length, client.SocketAddress, null, null);
-
-
-                                                connectedIceCandidate.LocalRtpSocket.SendTo(rtpBuffer, connectedIceCandidate.RemoteRtpEndPoint);
-                                            }
-                                        }
-                                    }
-                                    catch (Exception sendExcp)
-                                    {
-                                        // logger.Error("SendRTP exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
-                                    }
+                                    session.Send(encodedBuffer);
                                 }
                             }
 
-                            pictureID++;
-
-                            if (pictureID > 127)
-                            {
-                                pictureID = 1;
-                            }
-
                             encodedBuffer = null;
-                            //sampleBuffer = null;
                         }
 
                         Thread.Sleep(100);
@@ -411,7 +348,7 @@ namespace WebRTCVideoServer
             }
             catch (Exception excp)
             {
-                Console.WriteLine("Exception SendRTP. " + excp);
+                Console.WriteLine("Exception SendTestPattern. " + excp);
             }
         }
 
@@ -472,11 +409,6 @@ namespace WebRTCVideoServer
             }
         }
 
-        private static string SASLPrep(string password)
-        {
-            byte[] encode = Encoding.UTF8.GetBytes(password);
-            return Convert.ToBase64String(encode, 0, encode.Length);
-        }
     }
 
     public class SDPExchangeReceiver : WebSocketBehavior

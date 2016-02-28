@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -77,6 +79,7 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="log4net, Version=1.2.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
@@ -87,9 +90,38 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>libs\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="SIPSorcery.Net, Version=1.5.0.36735, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\SIPSorcery.1.5.2\lib\net46\SIPSorcery.Net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SIPSorcery.SIP.App, Version=1.5.0.36736, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\SIPSorcery.1.5.2\lib\net46\SIPSorcery.SIP.App.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SIPSorcery.SIP.Core, Version=1.5.0.36735, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\SIPSorcery.1.5.2\lib\net46\SIPSorcery.SIP.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SIPSorcery.Sys, Version=1.5.0.36734, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\SIPSorcery.1.5.2\lib\net46\SIPSorcery.Sys.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SIPSorceryMedia, Version=1.1.5895.39785, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>packages\SIPSorceryMedia.1.1.7\lib\net45\SIPSorceryMedia.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data.Linq" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.ServiceModel.Web" />
+    <Reference Include="System.Transactions" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.ApplicationServices" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -108,6 +140,7 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
+    <None Include="packages.config" />
     <None Include="server-cert.pem">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -119,27 +152,18 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ffmpeg.txt" />
-    <Content Include="testpattern.jpeg">
+    <Content Include="wizard.jpeg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="webrtcrecv.html" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\sipsorcery-core\SIPSorcery.Net\SIPSorcery.Net.csproj">
-      <Project>{55898587-8456-40d4-bb88-c9fc8bd6ba9c}</Project>
-      <Name>SIPSorcery.Net</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\sipsorcery-core\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
-      <Project>{6d8dbb7d-8937-4cc4-9703-561f776f9dbd}</Project>
-      <Name>SIPSorcery.Sys</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\SIPSorcery.Media\SIPSorcery.Media.vcxproj">
-      <Project>{60cc689c-2616-441c-a38a-e1b764c7c446}</Project>
-      <Name>SIPSorceryMedia</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="packages\SIPSorceryMedia.1.1.7\build\SIPSorceryMedia.targets" Condition="Exists('packages\SIPSorceryMedia.1.1.7\build\SIPSorceryMedia.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\SIPSorceryMedia.1.1.7\build\SIPSorceryMedia.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\SIPSorceryMedia.1.1.7\build\SIPSorceryMedia.targets'))" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

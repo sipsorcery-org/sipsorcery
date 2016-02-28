@@ -24,11 +24,11 @@ namespace SIPSorceryMedia {
 		{
 			switch (videoModeEnum)
 			{
-			case VideoSubTypesEnum::I420: return MFVideoFormat_I420;
-			case VideoSubTypesEnum::RGB24: return MFVideoFormat_RGB24;
-			case VideoSubTypesEnum::RGB32: return MFVideoFormat_RGB32;
-			case VideoSubTypesEnum::YUY2: return MFVideoFormat_YUY2;
-			default: throw gcnew System::ApplicationException("Video mode not recognised in GetGuidForVideoSubType.");
+				case VideoSubTypesEnum::I420: return MFVideoFormat_I420;
+				case VideoSubTypesEnum::RGB24: return MFVideoFormat_RGB24;
+				case VideoSubTypesEnum::RGB32: return MFVideoFormat_RGB32;
+				case VideoSubTypesEnum::YUY2: return MFVideoFormat_YUY2;
+				default: throw gcnew System::ApplicationException("Video mode not recognised in GetGuidForVideoSubType.");
 			}
 		};
 
@@ -36,11 +36,11 @@ namespace SIPSorceryMedia {
 		{
 			switch (videoModeEnum)
 			{
-			case VideoSubTypesEnum::I420: return AVPixelFormat::AV_PIX_FMT_YUV420P;
-			case VideoSubTypesEnum::RGB24: return AVPixelFormat::AV_PIX_FMT_RGB24;
-			case VideoSubTypesEnum::RGB32: return AVPixelFormat::AV_PIX_FMT_RGB32;
-			case VideoSubTypesEnum::YUY2: return AVPixelFormat::AV_PIX_FMT_YUYV422;
-			default: throw gcnew System::ApplicationException("Video mode not recognised in GetPixelFormatForVideoSubType.");
+				case VideoSubTypesEnum::I420: return AVPixelFormat::AV_PIX_FMT_YUV420P;
+				case VideoSubTypesEnum::RGB24: return AVPixelFormat::AV_PIX_FMT_RGB24;
+				case VideoSubTypesEnum::RGB32: return AVPixelFormat::AV_PIX_FMT_RGB32;
+				case VideoSubTypesEnum::YUY2: return AVPixelFormat::AV_PIX_FMT_YUYV422;
+				default: throw gcnew System::ApplicationException("Video mode not recognised in GetPixelFormatForVideoSubType.");
 			}
 		}
 	};

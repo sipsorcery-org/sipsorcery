@@ -223,7 +223,7 @@ namespace SIPSorceryMedia {
 
 		hr = pSourceResolver->CreateObjectFromURL(
 			//L"max4.mp4",
-			L"big_buck_bunny.mp4", //L"max4.mp4",	// URL of the source.
+			L"big_buck_bunny.mp4", // URL of the source.
 			MF_RESOLUTION_MEDIASOURCE,  // Create a source object.
 			NULL,                       // Optional property store.
 			&ObjectType,        // Receives the created object type. 
@@ -272,6 +272,7 @@ namespace SIPSorceryMedia {
 			(DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
 			&videoType), L"Error retrieving current media type from first video stream.");
 
+		Console::WriteLine("Source File Video Description:");
 		Console::WriteLine(GetMediaTypeDescription(videoType));
 
 		CHECK_HR(MFCreateMediaType(&pVideoOutType), L"Failed to create output media type.");
@@ -289,6 +290,7 @@ namespace SIPSorceryMedia {
 			(DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
 			&videoType), L"Error retrieving current media type from first video stream.");
 
+		Console::WriteLine("Output Video Description:");
 		Console::WriteLine(GetMediaTypeDescription(videoType));
 
 		// Fiddling with audio type.
@@ -449,29 +451,29 @@ namespace SIPSorceryMedia {
 				DWORD buffMaxLen = 0;
 				pMediaBuffer->Lock(&imgBuff, &buffMaxLen, &buffCurrLen);
 
-				if (Stride != -1 && Stride < 0) {
-					// Bitmap needs to be flipped.
-					int bmpSize = buffCurrLen; // ToDo: Don't assume RGB/BGR 24.
-					int absStride = Stride * -1;
-					byte *flipBuf = new byte[bmpSize];
+				//if (Stride != -1 && Stride < 0) {
+				//	// Bitmap needs to be flipped.
+				//	int bmpSize = buffCurrLen; // ToDo: Don't assume RGB/BGR 24.
+				//	int absStride = Stride * -1;
+				//	byte *flipBuf = new byte[bmpSize];
 
-					for (int row = 0; row < _height; row++) {
-						for (int col = 0; col < absStride; col += 3) {
-							flipBuf[row * absStride + col] = imgBuff[((_height - row - 1) * absStride) + col];
-							flipBuf[row * absStride + col + 1] = imgBuff[((_height - row - 1) * absStride) + col + 1];
-							flipBuf[row * absStride + col + 2] = imgBuff[((_height - row - 1) * absStride) + col + 2];
-						}
-					}
+				//	for (int row = 0; row < _height; row++) {
+				//		for (int col = 0; col < absStride; col += 3) {
+				//			flipBuf[row * absStride + col] = imgBuff[((_height - row - 1) * absStride) + col];
+				//			flipBuf[row * absStride + col + 1] = imgBuff[((_height - row - 1) * absStride) + col + 1];
+				//			flipBuf[row * absStride + col + 2] = imgBuff[((_height - row - 1) * absStride) + col + 2];
+				//		}
+				//	}
 
-					buffer = gcnew array<Byte>(buffCurrLen);
-					Marshal::Copy((IntPtr)flipBuf, buffer, 0, buffCurrLen);
+				//	buffer = gcnew array<Byte>(buffCurrLen);
+				//	Marshal::Copy((IntPtr)flipBuf, buffer, 0, buffCurrLen);
 
-					delete flipBuf;
-				}
-				else {
+				//	delete flipBuf;
+				//}
+				//else {
 					buffer = gcnew array<Byte>(buffCurrLen);
 					Marshal::Copy((IntPtr)imgBuff, buffer, 0, buffCurrLen);
-				}
+				//}
 
 				pMediaBuffer->Unlock();
 				pMediaBuffer->Release();

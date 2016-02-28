@@ -2,9 +2,19 @@
 <script src="js/adapter.js"></script>
 
 <script type="text/javascript">
+var stun = {url: 'stun:103.29.66.243'};
+
+var turn = {url: 'turn:103.29.66.243',
+			credential: "password",
+			username: "user"};
+
+var iceServers = {
+   iceServers: [stun, turn]
+};
+
 var pc_constraints = {
   'optional': [
-    {'DtlsSrtpKeyAgreement': true},
+    {'DtlsSrtpKeyAgreement': true},  
     {'RtpDataChannels': false},
 	{'iceTransports': 'udp'}
   ]};
@@ -112,15 +122,15 @@ function wsConnect() {
 	//	pc.close();
 	//}
 
-			pc = new RTCPeerConnection(null, pc_constraints);
-		//pc = new webkitRTCPeerConnection(null, pc_constraints);
+		//pc = new RTCPeerConnection(iceServers, pc_constraints);
+		pc = new webkitRTCPeerConnection(null, pc_constraints);
 		pc.onicecandidate = handleIceCandidate;
 		pc.onaddstream = handleRemoteStreamAdded;
 		pc.onremovestream = handleRemoteStreamRemoved;
 		pc.onsignalingstatechange = handleSignalingStateChange;
 		pc.oniceconnectionstatechange = handleIceStateChange;
 	
-	getUserMedia(media_constraints, attachMediaSuccessCallback, attachMediaErrorCallback);
+	//getUserMedia(media_constraints, attachMediaSuccessCallback, attachMediaErrorCallback);
 	
      //src = null;
 	//ws = new WebSocket("wss://192.168.33.116:8081/stream?path=0.hivpx");
@@ -133,6 +143,22 @@ function wsConnect() {
 	//console.log("Web socket source: " + src + ".");
 	//ws = new WebSocket(src)
 	
+	ws = new WebSocket("wss://10.1.1.2:8081/stream?path=0.hivpx");
+	//ws = new WebSocket("wss://aaron-win10:8081/stream?path=0.hivpx");
+
+	ws.onopen = function () {
+		console.log("web socket onopen.");
+	};
+		
+	ws.onmessage = function (evt) {
+		console.log("web socket onmessage: " + evt.data + ".");
+		pc.setRemoteDescription(new RTCSessionDescription({type: "offer", sdp: evt.data}), remoteDescriptionSuccess, showError);
+	};
+	
+	ws.onclose = function () {
+		console.log("web socket closed.");
+	};
+	
 	count++;
 };
 
@@ -141,18 +167,11 @@ function wsConnect() {
 function attachMediaSuccessCallback(stream) {
   console.log("Attach media success callback.");
   //window.stream = stream; // make stream available to console
-  
-   var videoTracks = stream.getVideoTracks();
-  console.log('Using video device: ' + videoTracks[0].label);
-  
-  pc.addStream(stream);
-  
-  attachMediaStream(document.querySelector('#localVideo'), stream);
-  
+   
   //pc.createOffer(setLocalSDP, onCreateSessionDescriptionError, offerOptions);
   
-    //ws = new WebSocket("ws://192.168.33.117:8081/stream?path=0.hivpx");
-	ws = new WebSocket("wss://aaron-pc.q.in:8081/stream?path=0.hivpx");
+    ws = new WebSocket("wss://10.1.1.2:8081/stream?path=0.hivpx");
+	//ws = new WebSocket("wss://aaron-win10:8081/stream?path=0.hivpx");
 
 	ws.onopen = function () {
 		console.log("web socket onopen.");
@@ -244,14 +263,11 @@ function onIceStateChange(pc, event) {
 	
  </script>
   
-     <div>
-    <button style="width: 300px; height: 200px;" onclick="wsConnect();">Click here to start</button>
-	</div>
-  
- <video controls autoplay='true' id="localVideo">
- </video>
-  
   <video controls autoplay='true' id="remoteVideo">
  </video>
+ 
+  <div>
+    <button onclick="wsConnect();">Click here to start</button>
+	</div>
 
  
