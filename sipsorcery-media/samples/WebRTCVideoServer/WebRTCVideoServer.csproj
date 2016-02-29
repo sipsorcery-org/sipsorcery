@@ -90,20 +90,20 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>libs\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="SIPSorcery.Net, Version=1.5.0.36735, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\SIPSorcery.1.5.2\lib\net46\SIPSorcery.Net.dll</HintPath>
+    <Reference Include="SIPSorcery.Net, Version=1.5.0.36724, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\SIPSorcery.1.5.3\lib\net46\SIPSorcery.Net.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.SIP.App, Version=1.5.0.36736, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\SIPSorcery.1.5.2\lib\net46\SIPSorcery.SIP.App.dll</HintPath>
+    <Reference Include="SIPSorcery.SIP.App, Version=1.5.0.36724, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\SIPSorcery.1.5.3\lib\net46\SIPSorcery.SIP.App.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.SIP.Core, Version=1.5.0.36735, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\SIPSorcery.1.5.2\lib\net46\SIPSorcery.SIP.Core.dll</HintPath>
+    <Reference Include="SIPSorcery.SIP.Core, Version=1.5.0.36724, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\SIPSorcery.1.5.3\lib\net46\SIPSorcery.SIP.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.Sys, Version=1.5.0.36734, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\SIPSorcery.1.5.2\lib\net46\SIPSorcery.Sys.dll</HintPath>
+    <Reference Include="SIPSorcery.Sys, Version=1.5.0.36724, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\SIPSorcery.1.5.3\lib\net46\SIPSorcery.Sys.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="SIPSorceryMedia, Version=1.1.5895.39785, Culture=neutral, processorArchitecture=AMD64">
@@ -135,6 +135,7 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WebRtcSession.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
