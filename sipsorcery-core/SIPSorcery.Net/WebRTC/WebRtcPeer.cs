@@ -72,7 +72,7 @@ c=IN IP4 {2}
 {3}
 a=ice-ufrag:{4}
 a=ice-pwd:{5}
-a=fingerprint:sha-256 C4:ED:9C:13:06:A2:79:FB:A1:9A:44:B5:FE:BC:EE:30:2A:2E:00:84:48:6B:54:77:F5:EC:E4:B6:75:BD:F9:5B
+a=fingerprint:sha-256 {6}
 a=setup:actpass
 a=mid:video
 a=sendrecv
@@ -99,7 +99,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         public List<SDPICECandidate> RemoteIceCandidates;
         public bool IsClosed;
 
-        private IPEndPoint _turnServerEndPoint = new IPEndPoint(IPAddress.Parse("103.29.66.243"), 3478);
+        private string _dtlsCertificateFingerprint;
+        private IPEndPoint _turnServerEndPoint;
         private ManualResetEvent _iceGatheringMRE;
         private int _communicationFailureCount = 0;
 
@@ -150,10 +151,24 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             }
         }
 
-        public void Initialise()
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dtlsCertificateFingerprint">The SHA256 fingerprint that gets placed in the SDP offer for this WebRTC peer. It must match the certificate being used
+        /// in the DTLS negotiation.</param>
+        /// <param name="turnServerEndPoint">An optional parameter that can be used include a TURN server in this peer's ICE candidate gathering.</param>
+        public void Initialise(string dtlsCertificateFingerprint, IPEndPoint turnServerEndPoint)
         {
+            if (dtlsCertificateFingerprint.IsNullOrBlank())
+            {
+                throw new ArgumentNullException("dtlsCertificateFingerprint", "A DTLS certificate fingerprint must be supplied when initialising a new WebRTC peer (to get the fingerprint use: openssl x509 -fingerprint -sha256 -in server-cert.pem).");
+            }
+
             try
             {
+                _dtlsCertificateFingerprint = dtlsCertificateFingerprint;
+                _turnServerEndPoint = turnServerEndPoint;
+
                 _iceGatheringMRE = new ManualResetEvent(false);
 
                 DateTime startGatheringTime = DateTime.Now;
@@ -192,19 +207,19 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     var localIceUser = Crypto.GetRandomString(20);
                     var localIcePassword = Crypto.GetRandomString(20) + Crypto.GetRandomString(20);
 
-                    var offer = String.Format(_sdpOfferTemplate, Crypto.GetRandomInt(10).ToString(), (LocalIceCandidates.First().LocalRtpSocket.LocalEndPoint as IPEndPoint).Port, LocalIceCandidates.First().LocalAddress, iceCandidateString.TrimEnd(), localIceUser, localIcePassword);
+                    var offer = String.Format(_sdpOfferTemplate, Crypto.GetRandomInt(10).ToString(), (LocalIceCandidates.First().LocalRtpSocket.LocalEndPoint as IPEndPoint).Port, LocalIceCandidates.First().LocalAddress, iceCandidateString.TrimEnd(), localIceUser, localIcePassword, _dtlsCertificateFingerprint);
 
                     //logger.Debug("WebRTC Offer SDP: " + offer);
 
                     SDP = offer;
-                   LocalIceUser = localIceUser;
+                    LocalIceUser = localIceUser;
                     LocalIcePassword = localIcePassword;
                     SSRC = Convert.ToUInt32(Crypto.GetRandomInt(8));
                     SequenceNumber = 1;
 
                     logger.Debug("Sending SDP offer for WebRTC call " + CallID + ".");
 
-                    if(OnSdpOfferReady != null)
+                    if (OnSdpOfferReady != null)
                     {
                         OnSdpOfferReady(offer);
                     }
@@ -241,7 +256,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 {
                     logger.Debug("RTP socket successfully created on " + rtpSocket.LocalEndPoint + ".");
 
-                    var iceCandidate = new IceCandidate() { LocalAddress = address.Address, LocalRtpSocket = rtpSocket, LocalControlSocket = controlSocket, TurnServer = new TurnServer() { ServerEndPoint = _turnServerEndPoint } };
+                    var iceCandidate = new IceCandidate() { LocalAddress = address.Address, LocalRtpSocket = rtpSocket, LocalControlSocket = controlSocket, TurnServer = (_turnServerEndPoint != null) ? new TurnServer() { ServerEndPoint = _turnServerEndPoint } : null };
 
                     LocalIceCandidates.Add(iceCandidate);
 
@@ -249,7 +264,20 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                     iceCandidate.RtpListenerTask = listenerTask;
 
-                    var stunBindingTask = Task.Run(() => { SendInitialStunBindingRequest(iceCandidate, iceGatheringCompleteMRE); });
+                    if (_turnServerEndPoint != null)
+                    {
+                        var stunBindingTask = Task.Run(() => { SendInitialStunBindingRequest(iceCandidate, iceGatheringCompleteMRE); });
+                    }
+                    else
+                    {
+                        iceCandidate.IsGatheringComplete = true;
+
+                        // Potentially save a few seconds if all the ICE candidates are now ready.
+                        if (LocalIceCandidates.All(x => x.IsGatheringComplete))
+                        {
+                            iceGatheringCompleteMRE.Set();
+                        }
+                    }
                 }
             }
         }
@@ -275,7 +303,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
             iceCandidate.IsGatheringComplete = true;
 
-            // Potentially save a few secodns if all the ICE candidates are now ready.
+            // Potentially save a few seconds if all the ICE candidates are now ready.
             if (LocalIceCandidates.All(x => x.IsGatheringComplete))
             {
                 iceGatheringCompleteMRE.Set();

@@ -185,6 +185,8 @@ namespace WebRTCVideoServer
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
 
+        private const string DTLS_CERTIFICATE_THUMBRPINT = "25:5A:A9:32:1F:35:04:8D:5F:8A:5B:27:0B:9F:A2:90:1A:0E:B9:E9:02:A2:24:95:64:E5:7C:4C:10:11:F7:36";
+
         private static ILog logger = AppState.logger;
 
         private static bool m_exit = false;
@@ -247,7 +249,7 @@ namespace WebRTCVideoServer
                     webRtcSession.Peer.OnSdpOfferReady += (sdp) => { context.WebSocket.Send(sdp); };
                     webRtcSession.Peer.OnDtlsPacket += webRtcSession.DtlsPacketReceived;
                     webRtcSession.Peer.OnMediaPacket += webRtcSession.MediaPacketReceived;
-                    webRtcSession.Peer.Initialise();
+                    webRtcSession.Peer.Initialise(DTLS_CERTIFICATE_THUMBRPINT, null);
                 }
             }
         }
