@@ -10,11 +10,11 @@ var iceServers = {
 
 var pc_constraints = {
   'optional': [
-    {'DtlsSrtpKeyAgreement': true},  
+    {'DtlsSrtpKeyAgreement': true},
     {'RtpDataChannels': false},
 	{'iceTransports': 'udp'}
   ]};
-  
+
  var offerOptions = {
   offerToReceiveAudio: 0,
   offerToReceiveVideo: 1
@@ -23,20 +23,20 @@ var pc_constraints = {
  var media_constraints = {
     audio: false,
     video: true
-}; 
-  
+};
+
 // Set up audio and video regardless of what devices are present.
 var sdpConstraints = {'mandatory': {
   'OfferToReceiveAudio':false,
   'OfferToReceiveVideo':true }};
-  
-var constraints = {video: true};  
+
+var constraints = {video: true};
 
 var count = 0;
 var ws;
 var pc;
 var servers = null;
- 
+
 function handleIceCandidate(event) {
   console.log('handleIceCandidate event: ', event);
   if(event.candidate) {
@@ -54,7 +54,7 @@ function handleSignalingStateChange(event) {
 }
 
 function setLocalSDP(sessionDescription) {
-  pc.setLocalDescription(sessionDescription, localDescriptionSuccess, showError); 
+  pc.setLocalDescription(sessionDescription, localDescriptionSuccess, showError);
 }
 
 function localDescriptionSuccess(event) {
@@ -72,7 +72,7 @@ function answerCreated(sessionDescription) {
 
 function handleRemoteStreamAdded(event) {
   console.log('Remote stream added.');
-  
+
   //if(document.querySelector("#remoteVideo").src != null) {
 //	console.log("Removing existing stream.");
   //	document.querySelector("#remoteVideo").pause();
@@ -113,79 +113,34 @@ function parseCandidate(text) {
 
 function wsConnect() {
 
-	//if(pc != null) {
-	//	console.log("Closing peer connection.");
-	//	pc.close();
-	//}
-
-		//pc = new RTCPeerConnection(iceServers, pc_constraints);
 		pc = new webkitRTCPeerConnection(null, pc_constraints);
 		pc.onicecandidate = handleIceCandidate;
 		pc.onaddstream = handleRemoteStreamAdded;
 		pc.onremovestream = handleRemoteStreamRemoved;
 		pc.onsignalingstatechange = handleSignalingStateChange;
 		pc.oniceconnectionstatechange = handleIceStateChange;
-	
-	//getUserMedia(media_constraints, attachMediaSuccessCallback, attachMediaErrorCallback);
-	
-     //src = null;
-	//ws = new WebSocket("wss://192.168.33.116:8081/stream?path=0.hivpx");
-	//if(count % 2 == 0) {
-	//	src = "wss://192.168.33.128:8081/stream?path=0.lovpx";
-	//}
-	//else {
-	//	src = "wss://192.168.33.128:8081/stream?path=0.hivpx";
-	//}
-	//console.log("Web socket source: " + src + ".");
-	//ws = new WebSocket(src)
-	
+
 	ws = new WebSocket("wss://www.sipsorcery.com:8081/stream?path=0.hivpx");
-	//ws = new WebSocket("wss://aaron-win10:8081/stream?path=0.hivpx");
 
 	ws.onopen = function () {
 		console.log("web socket onopen.");
 	};
-		
+
 	ws.onmessage = function (evt) {
 		console.log("web socket onmessage: " + evt.data + ".");
 		pc.setRemoteDescription(new RTCSessionDescription({type: "offer", sdp: evt.data}), remoteDescriptionSuccess, showError);
 	};
-	
+
 	ws.onclose = function () {
 		console.log("web socket closed.");
 	};
-	
+
 	count++;
 };
 
-// Attach media handlers and setters.
-
-function attachMediaSuccessCallback(stream) {
-  console.log("Attach media success callback.");
-  //window.stream = stream; // make stream available to console
-   
-  //pc.createOffer(setLocalSDP, onCreateSessionDescriptionError, offerOptions);
-  
-    ws = new WebSocket("wss://10.1.1.2:8081/stream?path=0.hivpx");
-	//ws = new WebSocket("wss://aaron-win10:8081/stream?path=0.hivpx");
-
-	ws.onopen = function () {
-		console.log("web socket onopen.");
-	};
-		
-	ws.onmessage = function (evt) {
-		console.log("web socket onmessage: " + evt.data + ".");
-		pc.setRemoteDescription(new RTCSessionDescription({type: "offer", sdp: evt.data}), remoteDescriptionSuccess, showError);
-	};
-	
-	ws.onclose = function () {
-		console.log("web socket closed.");
-	};
-}
-
 function attachMediaErrorCallback(error) {
   console.log('Error attaching media: ', error);
-}	
+}
 
 function onCreateSessionDescriptionError(error) {
   trace('Failed to create session description: ' + error.toString());
@@ -220,7 +175,7 @@ function onCreateAnswerSuccess(desc) {
 function onSetSessionDescriptionError(error) {
   trace('Failed to set session description: ' + error.toString());
 }
-	
+
 function onIceCandidate(pc, event) {
   if (event.candidate) {
     pc.addIceCandidate(new RTCIceCandidate(event.candidate),
@@ -237,7 +192,7 @@ function onIceCandidate(pc, event) {
 
 function onAddIceCandidateSuccess(pc) {
   trace(' addIceCandidate success ' + pc.iceGatheringState);
-  
+
 	if(pc.iceGatheringState == "complete") {
     console.log("Sending offer SDP.");
 	//ws.send(pc.localDescription.sdp);
@@ -256,14 +211,13 @@ function onIceStateChange(pc, event) {
     console.log('ICE state change event: ', event);
   }
 }
-	
- </script>
-  
-  <video controls autoplay='true' id="remoteVideo">
- </video>
- 
-  <div>
-    <button onclick="wsConnect();">Click here to start</button>
-	</div>
 
- 
+</script>
+
+<video controls autoplay='true' id="remoteVideo"></video>
+
+<div>
+    <button onclick="wsConnect();">Click here to start</button>
+</div>
+
+

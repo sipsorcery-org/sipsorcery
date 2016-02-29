@@ -153,6 +153,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="webrtcsample.html" />
     <Content Include="wizard.jpeg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
