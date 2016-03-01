@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>SIPSorceryMedia</id>
-        <version>1.1.7</version>
+        <version>1.1.8</version>
         <authors>Aaron Clauson</authors>
         <owners>Aaron Clauson</owners>
         <licenseUrl>https://github.com/sipsorcery/sipsorcery/blob/master/LICENSE.md</licenseUrl>

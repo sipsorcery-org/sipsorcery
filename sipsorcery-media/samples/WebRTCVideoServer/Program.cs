@@ -4,6 +4,8 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading;
 using SIPSorceryMedia;
@@ -26,6 +28,7 @@ namespace WebRTCVideoServer
         private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f; // Black text outline thickness is set as a percentage of text height in pixels
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
+        private const string AUTOMATIC_PRIVATE_ADRRESS_PREFIX = "169.254";      // The prefix of the IP address range automatically assigned to interfaces using DHCP before they have acquired an address.
 
         private const string DTLS_CERTIFICATE_THUMBRPINT = "25:5A:A9:32:1F:35:04:8D:5F:8A:5B:27:0B:9F:A2:90:1A:0E:B9:E9:02:A2:24:95:64:E5:7C:4C:10:11:F7:36";
 
@@ -34,7 +37,7 @@ namespace WebRTCVideoServer
         private static string _webSocketCertificatePath = AppState.GetConfigSetting("WebSocketCertificatePath");
         private static string _webSocketCertificatePassword = AppState.GetConfigSetting("WebSocketCertificatePassword");
 
-        private static bool m_exit = false;
+        private static bool _exit = false;
         private static WebSocketServer _receiverWSS;
         private static ConcurrentBag<WebRtcSession> _webRtcSessions = new ConcurrentBag<WebRtcSession>();
 
@@ -62,6 +65,17 @@ namespace WebRTCVideoServer
                         IgnoreExtensions = true,
                     });
                 _receiverWSS.Start();
+
+                var addresses = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetUnicastAddresses()
+                    .Where(x =>
+                    x.Address.AddressFamily == AddressFamily.InterNetwork &&    // Exclude IPv6 at this stage.
+                    IPAddress.IsLoopback(x.Address) == false &&
+                    (x.Address != null && x.Address.ToString().StartsWith(AUTOMATIC_PRIVATE_ADRRESS_PREFIX) == false));
+
+                foreach (var address in addresses)
+                {
+                    ThreadPool.QueueUserWorkItem(delegate { ICMPListen(address.Address); });
+                }
 
                 ThreadPool.QueueUserWorkItem(delegate { SendTestPattern(); });
 
@@ -125,12 +139,44 @@ namespace WebRTCVideoServer
                     peer.SdpSessionID = answerSDP.SessionId;
                     peer.RemoteIceUser = answerSDP.IceUfrag;
                     peer.RemoteIcePassword = answerSDP.IcePwd;
-                    peer.RemoteIceCandidates = answerSDP.IceCandidates;
+                    peer.AppendRemoteIceCandidates(answerSDP.IceCandidates);
                 }
             }
             catch (Exception excp)
             {
                 logger.Error("Exception SDPExchangeReceiver_SDPAnswerReceived. " + excp.Message);
+            }
+        }
+
+        private static void ICMPListen(IPAddress listenAddress)
+        {
+            try
+            {
+                logger.Debug("ICMP listener starting on " + listenAddress + ".");
+
+                Socket icmpListener = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.Icmp);
+                icmpListener.Bind(new IPEndPoint(listenAddress, 0));
+                icmpListener.IOControl(IOControlCode.ReceiveAll, new byte[] { 1, 0, 0, 0 }, new byte[] { 1, 0, 0, 0 });
+
+                while (!_exit)
+                {
+                    try
+                    {
+                        byte[] buffer = new byte[4096];
+                        EndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                        int bytesRead = icmpListener.ReceiveFrom(buffer, ref remoteEndPoint);
+
+                        logger.Debug(bytesRead + " ICMP bytes read from " + remoteEndPoint + ".");
+                    }
+                    catch (Exception listenExcp)
+                    {
+                        logger.Warn("ICMPListen. " + listenExcp.Message);
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception ICMPListen. " + excp);
             }
         }
 
@@ -255,7 +301,6 @@ namespace WebRTCVideoServer
                 }
             }
         }
-
     }
 
     public class SDPExchangeReceiver : WebSocketBehavior

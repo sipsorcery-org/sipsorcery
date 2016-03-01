@@ -203,17 +203,6 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                     foreach (var iceCandidate in LocalIceCandidates)
                     {
-                        //var candidateStr = String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ host generation 0\r\n", Crypto.GetRandomInt(10).ToString(), "1", Crypto.GetRandomInt(10).ToString(), iceCandidate.LocalAddress.ToString(), (iceCandidate.LocalRtpSocket.LocalEndPoint as IPEndPoint).Port);
-                        //iceCandidateString += candidateStr;
-                        ////logger.Debug(" " + candidateStr);
-
-                        //if (iceCandidate.StunRflxIPEndPoint != null)
-                        //{
-                        //    var srflxCandidateStr = String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0\r\n", Crypto.GetRandomInt(10).ToString(), "1", Crypto.GetRandomInt(10).ToString(), iceCandidate.StunRflxIPEndPoint.Address, iceCandidate.StunRflxIPEndPoint.Port, iceCandidate.LocalAddress.ToString(), (iceCandidate.LocalRtpSocket.LocalEndPoint as IPEndPoint).Port);
-                        //    logger.Debug(" " + srflxCandidateStr);
-                        //    //iceCandidateString += srflxCandidateStr;
-                        //}
-
                         iceCandidateString += iceCandidate.ToString();
                     }
 
@@ -249,6 +238,11 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         public void AppendRemoteIceCandidates(List<SDPICECandidate> remoteIceCandidates)
         {
+            foreach(var iceCandidate  in remoteIceCandidates)
+            {
+                logger.Debug("Appending remote ICE candidate " + iceCandidate.NetworkAddress + ":" + iceCandidate.Port + ".");
+            }
+
             _remoteIceCandidates.AddRange(remoteIceCandidates);
         }
 
@@ -343,11 +337,11 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                         try
                         {
                             // If one of the ICE candidates has the remote RTP socket set then the negotiation is complete and the STUN checks are to keep the connection alive.
-                            if (LocalIceCandidates.Any(x => x.IsStunLocalExchangeComplete == true && x.IsStunRemoteExchangeComplete == true && x.RemoteRtpEndPoint != null))
+                            if (LocalIceCandidates.Any(x => x.IsStunLocalExchangeComplete == true && x.RemoteRtpEndPoint != null))
                             {
-                                var iceCandidate = LocalIceCandidates.Single(x => x.IsStunLocalExchangeComplete == true && x.IsStunRemoteExchangeComplete == true && x.RemoteRtpEndPoint != null);
+                                var iceCandidate = LocalIceCandidates.Single(x => x.IsStunLocalExchangeComplete == true && x.RemoteRtpEndPoint != null);
 
-                                //logger.Debug("Sending STUN connectivity check to client " + iceCandidate.RemoteRtpEndPoint + ".");
+                               logger.Debug("Sending STUN connectivity check to client " + iceCandidate.RemoteRtpEndPoint + ".");
 
                                 STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
                                 stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
@@ -363,8 +357,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                             else
                             {
                                 // The RTP socket is not yet available which means the connection negotation is still ongoing. Once the ICE credentials are available send the binding request to all remote candidates.
-                                if (attempts <= AUTHENTICATED_PEER_STUN_BINDING_ATTEMPTS_LIMIT)
-                                {
+                                //if (attempts <= AUTHENTICATED_PEER_STUN_BINDING_ATTEMPTS_LIMIT)
+                                //{
                                     foreach (var localIceCandidate in LocalIceCandidates.Where(x => x.IsStunLocalExchangeComplete == false))
                                     {
                                         foreach (var remoteIceCandidate in RemoteIceCandidates.Where(x => x.Transport != "tcp" && x.NetworkAddress.NotNullOrBlank()))   // Only supporting UDP candidates at this stage.
@@ -376,10 +370,10 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                                                 // Only supporting IPv4 addresses at this stage.
                                                 if (remoteAddress.AddressFamily == AddressFamily.InterNetwork)
                                                 {
-                                                    if (attempts == 1)
-                                                    {
+                                                    //if (attempts == 1)
+                                                    //{
                                                         logger.Debug("Sending authenticated STUN binding request from " + localIceCandidate.LocalRtpSocket.LocalEndPoint + " to WebRTC peer at " + remoteIceCandidate.NetworkAddress + ":" + remoteIceCandidate.Port + ".");
-                                                    }
+                                                    //}
 
                                                     STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
                                                     stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
@@ -401,18 +395,18 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                                     }
 
                                     attempts++;
-                                }
-                                else
-                                {
-                                    logger.Warn("The maximum number of authenticated STUN binding requests have been sent for call " + CallID + ".");
+                                //}
+                                //else
+                                //{
+                                //    logger.Warn("The maximum number of authenticated STUN binding requests have been sent for call " + CallID + ".");
 
-                                    if (DateTime.Now.Subtract(IceNegotiationStartedAt).TotalSeconds > ICE_CONNECTION_LIMIT_SECONDS)
-                                    {
-                                        logger.Warn("ICE connection not established on call " + CallID + " after " + DateTime.Now.Subtract(IceNegotiationStartedAt).TotalSeconds + "s, closing peer.");
-                                        Close();
-                                        break;
-                                    }
-                                }
+                                //    if (DateTime.Now.Subtract(IceNegotiationStartedAt).TotalSeconds > ICE_CONNECTION_LIMIT_SECONDS)
+                                //    {
+                                //        logger.Warn("ICE connection not established on call " + CallID + " after " + DateTime.Now.Subtract(IceNegotiationStartedAt).TotalSeconds + "s, closing peer.");
+                                //        Close();
+                                //        break;
+                                //    }
+                                //}
                             }
                         }
                         catch (Exception excp)
