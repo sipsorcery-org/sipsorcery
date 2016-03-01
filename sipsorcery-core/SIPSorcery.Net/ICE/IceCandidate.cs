@@ -35,6 +35,7 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -58,5 +59,19 @@ namespace SIPSorcery.Net
         public DateTime LastSTUNReceiveAt;
         public bool IsStunLocalExchangeComplete;      // This is the authenticated STUN request sent by us to the remote WebRTC peer.
         public bool IsStunRemoteExchangeComplete;     // This is the authenticated STUN request sent by the remote WebRTC peer to us.
+
+        public override string ToString()
+        {
+            var candidateStr = String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ host generation 0\r\n", Crypto.GetRandomInt(10).ToString(), "1", Crypto.GetRandomInt(10).ToString(), LocalAddress.ToString(), (LocalRtpSocket.LocalEndPoint as IPEndPoint).Port);
+
+            if (StunRflxIPEndPoint != null)
+            {
+                candidateStr += String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0\r\n", Crypto.GetRandomInt(10).ToString(), "1", Crypto.GetRandomInt(10).ToString(), StunRflxIPEndPoint.Address, StunRflxIPEndPoint.Port, LocalAddress.ToString(), (LocalRtpSocket.LocalEndPoint as IPEndPoint).Port);
+                //logger.Debug(" " + srflxCandidateStr);
+                //iceCandidateString += srflxCandidateStr;
+            }
+
+            return candidateStr;
+        }
     }
 }

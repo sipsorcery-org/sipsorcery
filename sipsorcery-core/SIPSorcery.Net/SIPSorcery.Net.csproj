@@ -249,6 +249,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="ICE\IceConnectionStatesEnum.cs" />
     <Compile Include="ICE\TurnServer.cs" />
     <Compile Include="ICE\IceCandidate.cs" />
     <Compile Include="ICE\ICEState.cs" />
