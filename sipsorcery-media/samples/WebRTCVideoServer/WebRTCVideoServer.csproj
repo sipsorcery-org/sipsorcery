@@ -86,10 +86,6 @@
       <HintPath>packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorceryMedia, Version=1.1.5895.39785, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>packages\SIPSorceryMedia.1.1.7\lib\net45\SIPSorceryMedia.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Configuration" />
@@ -146,6 +142,10 @@
     <ProjectReference Include="..\..\..\sipsorcery-core\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
       <Project>{6d8dbb7d-8937-4cc4-9703-561f776f9dbd}</Project>
       <Name>SIPSorcery.Sys</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\SIPSorcery.Media\SIPSorcery.Media.vcxproj">
+      <Project>{60cc689c-2616-441c-a38a-e1b764c7c446}</Project>
+      <Name>SIPSorceryMedia</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

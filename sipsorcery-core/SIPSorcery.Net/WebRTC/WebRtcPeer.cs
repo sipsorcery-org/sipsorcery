@@ -241,14 +241,37 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             }
         }
 
-        public void AppendRemoteIceCandidates(List<IceCandidate> remoteIceCandidates)
+        public void AppendRemoteIceCandidate(IceCandidate remoteIceCandidate)
         {
-            foreach (var iceCandidate in remoteIceCandidates)
-            {
-                logger.Debug("Appending remote ICE candidate " + iceCandidate.NetworkAddress + ":" + iceCandidate.Port + ".");
-            }
+            IPAddress candidateIPAddress = null;
 
-            _remoteIceCandidates.AddRange(remoteIceCandidates);
+            //foreach (var iceCandidate in remoteIceCandidates)
+            //{
+            //    logger.Debug("Appending remote ICE candidate " + iceCandidate.NetworkAddress + ":" + iceCandidate.Port + ".");
+            //}
+
+            if (remoteIceCandidate.Transport.ToLower() != "udp")
+            {
+                logger.Debug("Omitting remote non-UDP ICE candidate. " + remoteIceCandidate.ToString() + ".");
+            }
+            else if (!IPAddress.TryParse(remoteIceCandidate.NetworkAddress, out candidateIPAddress))
+            {
+                logger.Debug("Omitting ICE candidate with unrecognised IP Address. " + remoteIceCandidate.ToString() + ".");
+            }
+            else if (candidateIPAddress.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                logger.Debug("Omitting IPv6 ICE candidate. " + remoteIceCandidate.ToString() + ".");
+            }
+            else
+            {
+                // ToDo: Add srflx and relay endpoints as hosts as well.
+
+                if (!_remoteIceCandidates.Any(x => x.NetworkAddress == remoteIceCandidate.NetworkAddress && x.Port == remoteIceCandidate.Port))
+                {
+                    logger.Debug("Adding remote ICE candidate: " + remoteIceCandidate.ToString() + ".");
+                    _remoteIceCandidates.Add(remoteIceCandidate);
+                }
+            }
         }
 
         private void GetIceCandidates(ManualResetEvent iceGatheringCompleteMRE)
@@ -376,33 +399,24 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                                 {
                                     localIceCandidate.StunConnectionRequestAttempts++;
 
+                                    // ToDo: Include srflx and relay addresses.
+
                                     foreach (var remoteIceCandidate in RemoteIceCandidates.Where(x => x.Transport != "tcp" && x.NetworkAddress.NotNullOrBlank()))   // Only supporting UDP candidates at this stage.
                                     {
-                                        IPAddress remoteAddress = null;
+                                        IPAddress remoteAddress = IPAddress.Parse(remoteIceCandidate.NetworkAddress);
 
-                                        if (IPAddress.TryParse(remoteIceCandidate.NetworkAddress, out remoteAddress))
-                                        {
-                                            // Only supporting IPv4 addresses at this stage.
-                                            if (remoteAddress.AddressFamily == AddressFamily.InterNetwork)
-                                            {
-                                                logger.Debug("Sending authenticated STUN binding request " + localIceCandidate.StunConnectionRequestAttempts + " from " + localIceCandidate.LocalRtpSocket.LocalEndPoint + " to WebRTC peer at " + remoteIceCandidate.NetworkAddress + ":" + remoteIceCandidate.Port + ".");
+                                        logger.Debug("Sending authenticated STUN binding request " + localIceCandidate.StunConnectionRequestAttempts + " from " + localIceCandidate.LocalRtpSocket.LocalEndPoint + " to WebRTC peer at " + remoteIceCandidate.NetworkAddress + ":" + remoteIceCandidate.Port + ".");
 
-                                                STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
-                                                stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
-                                                stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + LocalIceUser);
-                                                stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
-                                                stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
-                                                byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
+                                        STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
+                                        stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
+                                        stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + LocalIceUser);
+                                        stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
+                                        stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
+                                        byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
 
-                                                localIceCandidate.LocalRtpSocket.SendTo(stunReqBytes, new IPEndPoint(IPAddress.Parse(remoteIceCandidate.NetworkAddress), remoteIceCandidate.Port));
+                                        localIceCandidate.LocalRtpSocket.SendTo(stunReqBytes, new IPEndPoint(IPAddress.Parse(remoteIceCandidate.NetworkAddress), remoteIceCandidate.Port));
 
-                                                localIceCandidate.LastSTUNSendAt = DateTime.Now;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            logger.Warn("WebRTC peer SendStunConnectivityChecks could not parse IP address " + remoteIceCandidate.NetworkAddress + ".");
-                                        }
+                                        localIceCandidate.LastSTUNSendAt = DateTime.Now;
                                     }
                                 }
                             }
@@ -513,15 +527,36 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 STUNv2Message stunResponse = new STUNv2Message(STUNv2MessageTypesEnum.BindingSuccessResponse);
                 stunResponse.Header.TransactionId = stunMessage.Header.TransactionId;
                 stunResponse.AddXORMappedAddressAttribute(remoteEndPoint.Address, remoteEndPoint.Port);
+
+                // ToDo: Check authentication.
+
                 byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(LocalIcePassword, true);
                 iceCandidate.LocalRtpSocket.SendTo(stunRespBytes, remoteEndPoint);
 
                 iceCandidate.LastStunRequestReceivedAt = DateTime.Now;
                 iceCandidate.IsStunRemoteExchangeComplete = true;
+
+                if (_remoteIceCandidates != null && !_remoteIceCandidates.Any(x =>
+                     (x.NetworkAddress == remoteEndPoint.Address.ToString() || x.RemoteAddress == remoteEndPoint.Address.ToString()) &&
+                     (x.Port == remoteEndPoint.Port || x.RemotePort == remoteEndPoint.Port)))
+                {
+                    // This STUN request has come from a socket not in the remote ICE candidates list. Add it so we can send our STUN binding request to it.
+                    IceCandidate remoteIceCandidate = new IceCandidate()
+                    {
+                        Transport = "udp",
+                        NetworkAddress = remoteEndPoint.Address.ToString(),
+                        Port = remoteEndPoint.Port,
+                        CandidateType = IceCandidateTypesEnum.host
+                    };
+
+                    logger.Debug("Adding missing remote ICE candidate for " + remoteEndPoint + ".");
+
+                    _remoteIceCandidates.Add(remoteIceCandidate);
+                }
             }
             else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingSuccessResponse)
             {
-                if (remoteEndPoint.ToString() == _turnServerEndPoint.ToString())
+                if (_turnServerEndPoint != null && remoteEndPoint.ToString() == _turnServerEndPoint.ToString())
                 {
                     if (iceCandidate.IsGatheringComplete == false)
                     {

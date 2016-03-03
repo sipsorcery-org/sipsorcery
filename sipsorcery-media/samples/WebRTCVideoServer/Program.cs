@@ -66,17 +66,6 @@ namespace WebRTCVideoServer
                     });
                 _receiverWSS.Start();
 
-                var addresses = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetUnicastAddresses()
-                    .Where(x =>
-                    x.Address.AddressFamily == AddressFamily.InterNetwork &&    // Exclude IPv6 at this stage.
-                    IPAddress.IsLoopback(x.Address) == false &&
-                    (x.Address != null && x.Address.ToString().StartsWith(AUTOMATIC_PRIVATE_ADRRESS_PREFIX) == false));
-
-                foreach (var address in addresses)
-                {
-                    ThreadPool.QueueUserWorkItem(delegate { ICMPListen(address.Address); });
-                }
-
                 ThreadPool.QueueUserWorkItem(delegate { SendTestPattern(); });
 
                 ManualResetEvent dontStopEvent = new ManualResetEvent(false);
@@ -105,7 +94,7 @@ namespace WebRTCVideoServer
 
                     _webRtcSessions.Add(webRtcSession);
 
-                    webRtcSession.Peer.OnSdpOfferReady += (sdp) => { context.WebSocket.Send(sdp); };
+                    webRtcSession.Peer.OnSdpOfferReady += (sdp) => { logger.Debug("Offer SDP: " + sdp); context.WebSocket.Send(sdp); };
                     webRtcSession.Peer.OnDtlsPacket += webRtcSession.DtlsPacketReceived;
                     webRtcSession.Peer.OnMediaPacket += webRtcSession.MediaPacketReceived;
                     webRtcSession.Peer.Initialise(DTLS_CERTIFICATE_THUMBRPINT, null);
@@ -117,14 +106,9 @@ namespace WebRTCVideoServer
         {
             try
             {
-                logger.Debug("SDP Answer Received.");
-
-                //Console.WriteLine(sdpAnswer);
+                logger.Debug("Answer SDP: " + sdpAnswer);
 
                 var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
-
-                logger.Debug("ICE User: " + answerSDP.IceUfrag + ".");
-                logger.Debug("ICE Password: " + answerSDP.IcePwd + ".");
 
                 var peer = _webRtcSessions.Select(x => x.Peer).SingleOrDefault(x => x.CallID == webSocketID);
 
@@ -139,44 +123,16 @@ namespace WebRTCVideoServer
                     peer.SdpSessionID = answerSDP.SessionId;
                     peer.RemoteIceUser = answerSDP.IceUfrag;
                     peer.RemoteIcePassword = answerSDP.IcePwd;
-                    peer.AppendRemoteIceCandidates(answerSDP.IceCandidates);
+
+                    foreach (var iceCandidate in answerSDP.IceCandidates)
+                    {
+                        peer.AppendRemoteIceCandidate(iceCandidate);
+                    }
                 }
             }
             catch (Exception excp)
             {
                 logger.Error("Exception SDPExchangeReceiver_SDPAnswerReceived. " + excp.Message);
-            }
-        }
-
-        private static void ICMPListen(IPAddress listenAddress)
-        {
-            try
-            {
-                logger.Debug("ICMP listener starting on " + listenAddress + ".");
-
-                Socket icmpListener = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.Icmp);
-                icmpListener.Bind(new IPEndPoint(listenAddress, 0));
-                icmpListener.IOControl(IOControlCode.ReceiveAll, new byte[] { 1, 0, 0, 0 }, new byte[] { 1, 0, 0, 0 });
-
-                while (!_exit)
-                {
-                    try
-                    {
-                        byte[] buffer = new byte[4096];
-                        EndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                        int bytesRead = icmpListener.ReceiveFrom(buffer, ref remoteEndPoint);
-
-                        logger.Debug(bytesRead + " ICMP bytes read from " + remoteEndPoint + ".");
-                    }
-                    catch (Exception listenExcp)
-                    {
-                        logger.Warn("ICMPListen. " + listenExcp.Message);
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception ICMPListen. " + excp);
             }
         }
 
