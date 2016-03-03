@@ -137,7 +137,7 @@ namespace SIPSorcery.Net
         public string[] OriginatorPhoneNumbers;		// Phone numbers for the person responsible for the session.
         public string IceUfrag;                     // If ICE is being used the username for the STUN requests.
         public string IcePwd;                       // If ICE is being used the password for the STUN requests.
-        public List<SDPICECandidate> IceCandidates;
+        public List<IceCandidate> IceCandidates;
 
         public SDPConnectionInformation Connection;
 
@@ -254,10 +254,10 @@ namespace SIPSorcery.Net
                         {
                             if(sdp.IceCandidates == null)
                             {
-                                sdp.IceCandidates = new List<SDPICECandidate>();
+                                sdp.IceCandidates = new List<IceCandidate>();
                             }
 
-                            sdp.IceCandidates.Add(SDPICECandidate.Parse(sdpLine.Substring(sdpLine.IndexOf(':') + 1)));
+                            sdp.IceCandidates.Add(IceCandidate.Parse(sdpLine.Substring(sdpLine.IndexOf(':') + 1)));
                         }
                         else
                         {

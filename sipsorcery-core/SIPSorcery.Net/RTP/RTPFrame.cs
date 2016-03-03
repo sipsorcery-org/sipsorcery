@@ -42,7 +42,8 @@ namespace SIPSorcery.Net
         public uint Timestamp;
         public bool HasMarker;
         public bool HasBeenProcessed;
-        public int FrameHeaderLength = 0;   // Some media types, such as VP8 video, have a header at the start of each RTP data payload. It needs to be stripped.
+        //public int FrameHeaderLength = 0;   // Some media types, such as VP8 video, have a header at the start of each RTP data payload. It needs to be stripped.
+        public FrameTypesEnum FrameType;
 
         private List<RTPPacket> _packets = new List<RTPPacket>();
 
@@ -154,7 +155,15 @@ namespace SIPSorcery.Net
 
             foreach (var rtpPacket in _packets.OrderBy(x => x.Header.SequenceNumber))
             {
-                payload.AddRange(rtpPacket.Payload.Skip(FrameHeaderLength));
+                if (FrameType == FrameTypesEnum.VP8)
+                {
+                    var vp8Header = RTPVP8Header.GetVP8Header(rtpPacket.Payload);
+                    payload.AddRange(rtpPacket.Payload.Skip(vp8Header.PayloadDescriptorLength));
+                }
+                else
+                {
+                    payload.AddRange(rtpPacket.Payload);
+                }
             }
 
             return payload.ToArray();

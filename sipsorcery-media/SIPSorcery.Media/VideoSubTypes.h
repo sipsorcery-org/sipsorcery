@@ -14,7 +14,8 @@ namespace SIPSorceryMedia {
 		I420,
 		RGB24,
 		RGB32,
-		YUY2
+		YUY2,
+		BGR24,
 	};
 
 	public ref class VideoSubTypesHelper
@@ -28,6 +29,7 @@ namespace SIPSorceryMedia {
 				case VideoSubTypesEnum::RGB24: return MFVideoFormat_RGB24;
 				case VideoSubTypesEnum::RGB32: return MFVideoFormat_RGB32;
 				case VideoSubTypesEnum::YUY2: return MFVideoFormat_YUY2;
+				case VideoSubTypesEnum::BGR24: return MFVideoFormat_RGB24;
 				default: throw gcnew System::ApplicationException("Video mode not recognised in GetGuidForVideoSubType.");
 			}
 		};
@@ -40,6 +42,7 @@ namespace SIPSorceryMedia {
 				case VideoSubTypesEnum::RGB24: return AVPixelFormat::AV_PIX_FMT_RGB24;
 				case VideoSubTypesEnum::RGB32: return AVPixelFormat::AV_PIX_FMT_RGB32;
 				case VideoSubTypesEnum::YUY2: return AVPixelFormat::AV_PIX_FMT_YUYV422;
+				case VideoSubTypesEnum::BGR24: return AVPixelFormat::AV_PIX_FMT_BGR24;
 				default: throw gcnew System::ApplicationException("Video mode not recognised in GetPixelFormatForVideoSubType.");
 			}
 		}

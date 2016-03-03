@@ -428,7 +428,7 @@ namespace SIPSorcery.Net
 
                                 if (frame == null)
                                 {
-                                    frame = new RTPFrame() { Timestamp = rtpPacket.Header.Timestamp, HasMarker = rtpPacket.Header.MarkerBit == 1, FrameHeaderLength = _rtspSession.RTPPayloadHeaderLength };
+                                    frame = new RTPFrame() { Timestamp = rtpPacket.Header.Timestamp, HasMarker = rtpPacket.Header.MarkerBit == 1 };
                                     frame.AddRTPPacket(rtpPacket);
                                     _frames.Add(frame);
                                 }

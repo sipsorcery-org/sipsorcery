@@ -162,11 +162,11 @@ namespace SIPSorcery.Net
             set { _rtpPayloadHeaderLength = value; }
         }
 
-        private ICEState _iceState;
-        public ICEState ICEState
-        {
-            get { return _iceState; }
-        }
+        //private ICEState _iceState;
+        //public ICEState ICEState
+        //{
+        //    get { return _iceState; }
+        //}
 
         public bool DontTimeout { get; set; }           // If set to true means a server should not timeout this session even if no activity is received on the RTP socket.
 
@@ -209,17 +209,17 @@ namespace SIPSorcery.Net
             _syncSource = Convert.ToUInt32(Crypto.GetRandomInt(0, 9999999));
         }
 
-        public void SetICEState(ICEState iceState)
-        {
-            try
-            {
-                _iceState = iceState;
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SetICEState. " + excp);
-            }
-        }
+        //public void SetICEState(ICEState iceState)
+        //{
+        //    try
+        //    {
+        //        _iceState = iceState;
+        //    }
+        //    catch (Exception excp)
+        //    {
+        //        logger.Error("Exception SetICEState. " + excp);
+        //    }
+        //}
 
         /// <summary>
         /// Attempts to reserve the RTP and control ports for the RTP session.
@@ -440,70 +440,70 @@ namespace SIPSorcery.Net
                                 else if ((buffer[0] == 0) || (buffer[0] == 1))
                                 {
                                     // STUN.
-                                    if (_iceState != null)
-                                    {
-                                        try
-                                        {
-                                            STUNv2Message stunMessage = STUNv2Message.ParseSTUNMessage(buffer, bytesRead);
+                                    //if (_iceState != null)
+                                    //{
+                                    //    try
+                                    //    {
+                                    //        STUNv2Message stunMessage = STUNv2Message.ParseSTUNMessage(buffer, bytesRead);
 
-                                            //logger.Debug("STUN message received from Receiver Client @ " + stunMessage.Header.MessageType + ".");
+                                    //        //logger.Debug("STUN message received from Receiver Client @ " + stunMessage.Header.MessageType + ".");
 
-                                            if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingRequest)
-                                            {
-                                                //logger.Debug("Sending STUN response to Receiver Client @ " + remoteEndPoint + ".");
+                                    //        if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingRequest)
+                                    //        {
+                                    //            //logger.Debug("Sending STUN response to Receiver Client @ " + remoteEndPoint + ".");
 
-                                                STUNv2Message stunResponse = new STUNv2Message(STUNv2MessageTypesEnum.BindingSuccessResponse);
-                                                stunResponse.Header.TransactionId = stunMessage.Header.TransactionId;
-                                                stunResponse.AddXORMappedAddressAttribute(remoteIPEndPoint.Address, remoteIPEndPoint.Port);
-                                                byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(_iceState.SenderPassword, true);
-                                                _rtpSocket.SendTo(stunRespBytes, remoteIPEndPoint);
+                                    //            STUNv2Message stunResponse = new STUNv2Message(STUNv2MessageTypesEnum.BindingSuccessResponse);
+                                    //            stunResponse.Header.TransactionId = stunMessage.Header.TransactionId;
+                                    //            stunResponse.AddXORMappedAddressAttribute(remoteIPEndPoint.Address, remoteIPEndPoint.Port);
+                                    //            byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(_iceState.SenderPassword, true);
+                                    //            _rtpSocket.SendTo(stunRespBytes, remoteIPEndPoint);
 
-                                                //logger.Debug("Sending Binding request to Receiver Client @ " + remoteEndPoint + ".");
+                                    //            //logger.Debug("Sending Binding request to Receiver Client @ " + remoteEndPoint + ".");
 
-                                                STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
-                                                stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
-                                                stunRequest.AddUsernameAttribute(_iceState.ReceiverUser + ":" + _iceState.SenderUser);
-                                                stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
-                                                stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
-                                                byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(_iceState.ReceiverPassword, true);
-                                                _rtpSocket.SendTo(stunReqBytes, remoteIPEndPoint);
+                                    //            STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
+                                    //            stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
+                                    //            stunRequest.AddUsernameAttribute(_iceState.ReceiverUser + ":" + _iceState.SenderUser);
+                                    //            stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
+                                    //            stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
+                                    //            byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(_iceState.ReceiverPassword, true);
+                                    //            _rtpSocket.SendTo(stunReqBytes, remoteIPEndPoint);
 
-                                                _iceState.LastSTUNMessageReceivedAt = DateTime.Now;
-                                            }
-                                            else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingSuccessResponse)
-                                            {
-                                                if (!_iceState.IsSTUNExchangeComplete)
-                                                {
-                                                    _iceState.IsSTUNExchangeComplete = true;
-                                                    logger.Debug("WebRTC client STUN exchange complete for " + remoteIPEndPoint.ToString() + " and ICE ufrag " + _iceState.ReceiverUser + ".");
+                                    //            _iceState.LastSTUNMessageReceivedAt = DateTime.Now;
+                                    //        }
+                                    //        else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingSuccessResponse)
+                                    //        {
+                                    //            if (!_iceState.IsSTUNExchangeComplete)
+                                    //            {
+                                    //                _iceState.IsSTUNExchangeComplete = true;
+                                    //                logger.Debug("WebRTC client STUN exchange complete for " + remoteIPEndPoint.ToString() + " and ICE ufrag " + _iceState.ReceiverUser + ".");
 
-                                                    _remoteEndPoint = remoteIPEndPoint;
-                                                }
-                                            }
-                                            else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingErrorResponse)
-                                            {
-                                                //logger.Warn("A STUN binding error response was received from " + remoteIPEndPoint + ".");
-                                            }
-                                            else
-                                            {
-                                                //logger.Warn("An unrecognised STUN request was received from " + remoteIPEndPoint + ".");
-                                            }
-                                        }
-                                        catch (SocketException sockExcp)
-                                        {
-                                            logger.Debug("RTPSession.RTPReceive STUN processing (" + remoteIPEndPoint + "). " + sockExcp.Message);
-                                            continue;
-                                        }
-                                        catch (Exception stunExcp)
-                                        {
-                                            logger.Warn("Exception RTPSession.RTPReceive STUN processing (" + remoteIPEndPoint + "). " + stunExcp);
-                                            continue;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        //logger.Warn("A STUN reponse was received on RTP socket from " + remoteIPEndPoint + " but no ICE state was set.");
-                                    }
+                                    //                _remoteEndPoint = remoteIPEndPoint;
+                                    //            }
+                                    //        }
+                                    //        else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingErrorResponse)
+                                    //        {
+                                    //            //logger.Warn("A STUN binding error response was received from " + remoteIPEndPoint + ".");
+                                    //        }
+                                    //        else
+                                    //        {
+                                    //            //logger.Warn("An unrecognised STUN request was received from " + remoteIPEndPoint + ".");
+                                    //        }
+                                    //    }
+                                    //    catch (SocketException sockExcp)
+                                    //    {
+                                    //        logger.Debug("RTPSession.RTPReceive STUN processing (" + remoteIPEndPoint + "). " + sockExcp.Message);
+                                    //        continue;
+                                    //    }
+                                    //    catch (Exception stunExcp)
+                                    //    {
+                                    //        logger.Warn("Exception RTPSession.RTPReceive STUN processing (" + remoteIPEndPoint + "). " + stunExcp);
+                                    //        continue;
+                                    //    }
+                                    //}
+                                    //else
+                                    //{
+                                    //    //logger.Warn("A STUN reponse was received on RTP socket from " + remoteIPEndPoint + " but no ICE state was set.");
+                                    //}
                                 }
                                 else if ((buffer[0] >= 128) && (buffer[0] <= 191))
                                 {

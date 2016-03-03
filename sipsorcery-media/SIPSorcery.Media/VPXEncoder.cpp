@@ -83,6 +83,7 @@ namespace SIPSorceryMedia {
 
 		if (vpx_codec_encode(_vpxCodec, _rawImage, sampleCount, 1, flags, VPX_DL_REALTIME)) {
 			printf("VPX codec failed to encode the frame.\n");
+			return -1;
 		}
 		else {
 			vpx_codec_iter_t iter = NULL;
@@ -116,6 +117,7 @@ namespace SIPSorceryMedia {
 
 		if (decodeResult != VPX_CODEC_OK) {
 			printf("VPX codec failed to decode the frame %s.\n", vpx_codec_err_to_string(decodeResult));
+			return -1;
 		}
 		else {
 			int pointer = 0;
