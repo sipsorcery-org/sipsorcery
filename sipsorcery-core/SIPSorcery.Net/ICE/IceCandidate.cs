@@ -79,6 +79,7 @@ namespace SIPSorcery.Net
         public IceCandidateTypesEnum CandidateType;
         public string RemoteAddress;
         public int RemotePort;
+        public string RawString;
 
         public bool IsConnected
         {
@@ -88,6 +89,9 @@ namespace SIPSorcery.Net
         public static IceCandidate Parse(string candidateLine)
         {
             IceCandidate candidate = new IceCandidate();
+
+            candidate.RawString = candidateLine;
+
             string[] candidateFields = candidateLine.Trim().Split(' ');
             candidate.Transport = candidateFields[2];
             candidate.NetworkAddress = candidateFields[4];

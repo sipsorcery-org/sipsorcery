@@ -252,15 +252,15 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
             if (remoteIceCandidate.Transport.ToLower() != "udp")
             {
-                logger.Debug("Omitting remote non-UDP ICE candidate. " + remoteIceCandidate.ToString() + ".");
+                logger.Debug("Omitting remote non-UDP ICE candidate. " + remoteIceCandidate.RawString + ".");
             }
             else if (!IPAddress.TryParse(remoteIceCandidate.NetworkAddress, out candidateIPAddress))
             {
-                logger.Debug("Omitting ICE candidate with unrecognised IP Address. " + remoteIceCandidate.ToString() + ".");
+                logger.Debug("Omitting ICE candidate with unrecognised IP Address. " + remoteIceCandidate.RawString + ".");
             }
             else if (candidateIPAddress.AddressFamily == AddressFamily.InterNetworkV6)
             {
-                logger.Debug("Omitting IPv6 ICE candidate. " + remoteIceCandidate.ToString() + ".");
+                logger.Debug("Omitting IPv6 ICE candidate. " + remoteIceCandidate.RawString + ".");
             }
             else
             {
@@ -268,7 +268,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                 if (!_remoteIceCandidates.Any(x => x.NetworkAddress == remoteIceCandidate.NetworkAddress && x.Port == remoteIceCandidate.Port))
                 {
-                    logger.Debug("Adding remote ICE candidate: " + remoteIceCandidate.ToString() + ".");
+                    logger.Debug("Adding remote ICE candidate: " + remoteIceCandidate.CandidateType + " " + remoteIceCandidate.NetworkAddress + ":" + remoteIceCandidate.Port + " (" + remoteIceCandidate.RawString + ").");
                     _remoteIceCandidates.Add(remoteIceCandidate);
                 }
             }
