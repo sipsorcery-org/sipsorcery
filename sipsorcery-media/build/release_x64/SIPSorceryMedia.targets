@@ -1,4 +1,12 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+ <Target Name="CheckAnyCPU" Condition="('$(PlatformTarget)' != 'x64')" BeforeTargets="PrepareForBuild">
+    <Error Text="The $(Platform) target platform is not supported." />
+  </Target>
+  <ItemGroup Condition="'$(ProjectExt)' != '.vcxproj'">
+    <SDKReference Include="Microsoft.VCLibs, Version=12.0">
+      <Name>Microsoft Visual C++ 2013 Runtime Package for Windows</Name>
+    </SDKReference>
+  </ItemGroup>
    <ItemGroup>
     <NativeLibs Include="$(MSBuildThisFileDirectory)\x64\*.dll" />
     <Content Include="@(NativeLibs)">
