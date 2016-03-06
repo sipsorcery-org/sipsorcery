@@ -225,6 +225,7 @@ namespace SIPSorcery.SoftPhone
             {
                 // Anonymous call direct to SIP server specified in the URI.
                 callURI = SIPURI.ParseSIPURIRelaxed(destination);
+                fromHeader = (new SIPFromHeader(m_sipFromName, SIPURI.ParseSIPURI(SIPFromHeader.DEFAULT_FROM_URI), null)).ToString();
             }
             else
             {
