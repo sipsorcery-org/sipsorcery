@@ -2,10 +2,10 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>SIPSorcery</id>
-        <version>1.5.4</version>
+        <version>1.5.5</version>
         <authors>Aaron Clauson</authors>
         <owners>Aaron Clauson</owners>
-		<releaseNotes>Added WebRTC thumbprint as an intialisation option to the WebRTC peer.</releaseNotes>
+		<releaseNotes>Fixes to the WebRTC peer class to cope with extra network edge cases.</releaseNotes>
         <licenseUrl>https://github.com/sipsorcery/sipsorcery/blob/master/LICENSE.md</licenseUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>The SIPSorcery package consists of a C# SIP protocol stack that implements all the required UDP, TCP and TLS transports as specified in RFC3261. 

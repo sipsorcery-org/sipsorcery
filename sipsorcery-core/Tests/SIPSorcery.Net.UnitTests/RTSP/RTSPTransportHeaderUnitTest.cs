@@ -65,14 +65,14 @@ namespace SIPSorcery.Net.UnitTests.RTSP
         {
             var transportHeader = new RTSPTransportHeader() { Destination = "192.168.33.170", Source = "192.168.33.103", ClientRTPPortRange = "61132-61133", ServerRTPPortRange = "6970-6971" };
 
-            Assert.AreEqual("RTP/AVP", transportHeader.TransportSpecifier);
+            Assert.AreEqual("RTP/AVP/UDP", transportHeader.TransportSpecifier);
             Assert.AreEqual("unicast", transportHeader.BroadcastType);
             Assert.AreEqual("192.168.33.170", transportHeader.Destination);
             Assert.AreEqual("192.168.33.103", transportHeader.Source);
             Assert.AreEqual("61132-61133", transportHeader.ClientRTPPortRange);
             Assert.AreEqual("6970-6971", transportHeader.ServerRTPPortRange);
 
-            Assert.AreEqual("RTP/AVP;unicast;destination=192.168.33.170;source=192.168.33.103;client_port=61132-61133;server_port=6970-6971", transportHeader.ToString());
+            Assert.AreEqual("RTP/AVP/UDP;unicast;destination=192.168.33.170;source=192.168.33.103;client_port=61132-61133;server_port=6970-6971", transportHeader.ToString());
         }
     }
 }

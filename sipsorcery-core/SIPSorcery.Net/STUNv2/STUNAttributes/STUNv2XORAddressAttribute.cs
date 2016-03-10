@@ -60,16 +60,14 @@ namespace SIPSorcery.Net
         {
             if (BitConverter.IsLittleEndian)
             {
-                Port = Utility.ReverseEndian(BitConverter.ToUInt16(attributeValue, 2)) ^ (UInt16)(STUNv2Header.MAGIC_COOKIE >> 16);
-                UInt32 address = Utility.ReverseEndian(BitConverter.ToUInt32(attributeValue, 4)) ^ STUNv2Header.MAGIC_COOKIE;
-                //Address = new IPAddress(BitConverter.GetBytes(address));
+                Port = Utility.ReverseEndian(BitConverter.ToUInt16(attributeValue, 0)) ^ (UInt16)(STUNv2Header.MAGIC_COOKIE >> 16);
+                UInt32 address = Utility.ReverseEndian(BitConverter.ToUInt32(attributeValue, 2)) ^ STUNv2Header.MAGIC_COOKIE;
                 Address = new IPAddress(Utility.ReverseEndian(address));
             }
             else
             {
-                Port = BitConverter.ToUInt16(attributeValue, 2) ^ (UInt16)(STUNv2Header.MAGIC_COOKIE >> 16);
-                UInt32 address = BitConverter.ToUInt32(attributeValue, 4) ^ STUNv2Header.MAGIC_COOKIE;
-                //Address = new IPAddress(BitConverter.GetBytes(address));
+                Port = BitConverter.ToUInt16(attributeValue, 0) ^ (UInt16)(STUNv2Header.MAGIC_COOKIE >> 16);
+                UInt32 address = BitConverter.ToUInt32(attributeValue, 2) ^ STUNv2Header.MAGIC_COOKIE;
                 Address = new IPAddress(address);
             }
         }
