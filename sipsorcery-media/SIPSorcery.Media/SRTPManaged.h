@@ -31,7 +31,7 @@ namespace SIPSorceryMedia {
 			static const int SRTP_MASTER_KEY_KEY_LEN = 16;
 			static const int SRTP_MASTER_KEY_SALT_LEN = 14;
 
-			srtp_t * _session;
+			srtp_t * _session{ nullptr };
 			System::String^ _key;
 	};
 }

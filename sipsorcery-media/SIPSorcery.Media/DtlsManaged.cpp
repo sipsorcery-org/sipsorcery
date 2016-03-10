@@ -19,7 +19,6 @@ namespace SIPSorceryMedia {
 	//void krx_ssl_info_callback(const SSL* ssl, int where, int ret, const char* name) {
 	void krx_ssl_info_callback(const SSL* ssl, int where, int ret) 
 	{
-
 		if (ret == 0) {
 			printf("-- krx_ssl_info_callback: error occured.\n");
 			return;
@@ -30,7 +29,7 @@ namespace SIPSorceryMedia {
 		SSL_WHERE_INFO(ssl, where, SSL_CB_HANDSHAKE_DONE, "HANDSHAKE DONE");
 	}
 
-	DtlsManaged::DtlsManaged() 
+	DtlsManaged::DtlsManaged()
 	{
 		SSL_library_init();
 		SSL_load_error_strings();
@@ -38,21 +37,37 @@ namespace SIPSorceryMedia {
 		OpenSSL_add_all_algorithms();
 
 		_k = new krx();
+		_k->ctx = nullptr;
+		_k->ssl = nullptr;
+		_k->in_bio = nullptr;
+		_k->out_bio = nullptr;
 	}
 
 	DtlsManaged::~DtlsManaged()
 	{
-		if (_k) {
+		if (_k != nullptr) {
 
-			if (_k->ctx) {
+			if (_k->ctx != nullptr) {
 				SSL_CTX_free(_k->ctx);
-				_k->ctx = NULL;
+				_k->ctx = nullptr;
 			}
 
-			if (_k->ssl) {
+			if (_k->ssl != nullptr) {
 				SSL_free(_k->ssl);
-				_k->ssl = NULL;
+				_k->ssl = nullptr;
 			}
+
+			/*if (_k->in_bio != nullptr) {
+				BIO_free(_k->in_bio);
+				_k->in_bio = nullptr;
+			}
+
+			if (_k->out_bio != nullptr) {
+				BIO_free(_k->out_bio);
+				_k->out_bio = nullptr;
+			}*/
+
+			_k = nullptr;
 		}
 	}
 

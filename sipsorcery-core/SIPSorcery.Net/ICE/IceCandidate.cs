@@ -83,7 +83,7 @@ namespace SIPSorcery.Net
 
         public bool IsConnected
         {
-            get { return IsStunLocalExchangeComplete == true && IsStunRemoteExchangeComplete; }
+            get { return IsStunLocalExchangeComplete == true && IsStunRemoteExchangeComplete && !IsDisconnected; }
         }
 
         public static IceCandidate Parse(string candidateLine)

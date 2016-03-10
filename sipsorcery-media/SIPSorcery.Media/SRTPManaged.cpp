@@ -159,9 +159,10 @@ namespace SIPSorceryMedia {
 
 	SRTPManaged::~SRTPManaged()
 	{
-		if (_session)
+		if (_session != nullptr)
 		{
-			delete _session;
+			srtp_dealloc(*_session);
+			_session = nullptr;
 		}
 	}
 }

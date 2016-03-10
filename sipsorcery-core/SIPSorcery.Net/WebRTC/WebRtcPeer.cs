@@ -125,36 +125,39 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         {
             try
             {
-                IsClosed = true;
-
-                logger.Debug("WebRTC peer for call " + CallID + " closing.");
-
-                if (LocalIceCandidates != null && LocalIceCandidates.Count > 0)
+                if (!IsClosed)
                 {
-                    foreach (var iceCandidate in LocalIceCandidates)
+                    IsClosed = true;
+
+                    logger.Debug("WebRTC peer for call " + CallID + " closing.");
+
+                    if (LocalIceCandidates != null && LocalIceCandidates.Count > 0)
                     {
-                        iceCandidate.IsDisconnected = true;
-
-                        if (iceCandidate.LocalRtpSocket != null)
+                        foreach (var iceCandidate in LocalIceCandidates)
                         {
-                            logger.Debug("Closing local ICE candidate socket for " + iceCandidate.LocalRtpSocket.LocalEndPoint + ".");
+                            iceCandidate.IsDisconnected = true;
 
-                            try
+                            if (iceCandidate.LocalRtpSocket != null)
                             {
-                                iceCandidate.LocalRtpSocket.Shutdown(SocketShutdown.Both);
-                                iceCandidate.LocalRtpSocket.Close();
-                            }
-                            catch (Exception closeSockExcp)
-                            {
-                                logger.Warn("Exception closing WebRTC peer. " + closeSockExcp.Message);
+                                logger.Debug("Closing local ICE candidate socket for " + iceCandidate.LocalAddress + ":" + iceCandidate.Port + ".");
+
+                                try
+                                {
+                                    iceCandidate.LocalRtpSocket.Shutdown(SocketShutdown.Both);
+                                    iceCandidate.LocalRtpSocket.Close();
+                                }
+                                catch (Exception closeSockExcp)
+                                {
+                                    logger.Warn("Exception closing WebRTC peer. " + closeSockExcp.Message);
+                                }
                             }
                         }
                     }
-                }
 
-                if (OnClose != null)
-                {
-                    OnClose();
+                    if (OnClose != null)
+                    {
+                        OnClose();
+                    }
                 }
             }
             catch (Exception excp)
@@ -363,7 +366,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                         // If one of the ICE candidates has the remote RTP socket set then the negotiation is complete and the STUN checks are to keep the connection alive.
                         if (LocalIceCandidates.Any(x => x.IsConnected == true))
                         {
-                            var iceCandidate = LocalIceCandidates.Single(x => x.IsConnected == true);
+                            var iceCandidate = LocalIceCandidates.First(x => x.IsConnected == true);
 
                             // Remote RTP endpoint gets set when the DTLS negotiation is finished.
                             if (iceCandidate.RemoteRtpEndPoint != null)
@@ -387,8 +390,15 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                             if (secondsSinceLastResponse > ICE_TIMEOUT_SECONDS)
                             {
                                 logger.Warn("No STUN response was received on a connected ICE connection for " + secondsSinceLastResponse + "s, closing connection.");
-                                Close();
-                                break;
+
+                                iceCandidate.IsDisconnected = true;
+
+                                if (LocalIceCandidates.Any(x => x.IsConnected == true) == false)
+                                {
+                                    // If there are no connected local candidates left close the peer.
+                                    Close();
+                                    break;
+                                }
                             }
                         }
                         else
