@@ -72,6 +72,7 @@ namespace SIPSorcery.Net
         public bool IsStunLocalExchangeComplete;      // This is the authenticated STUN request sent by us to the remote WebRTC peer.
         public bool IsStunRemoteExchangeComplete;     // This is the authenticated STUN request sent by the remote WebRTC peer to us.
         public int StunConnectionRequestAttempts = 0;
+        public DateTime LastCommunicationAt;
 
         public string Transport;
         public string NetworkAddress;

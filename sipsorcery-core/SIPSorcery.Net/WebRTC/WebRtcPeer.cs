@@ -301,7 +301,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 {
                     logger.Debug("RTP socket successfully created on " + rtpSocket.LocalEndPoint + ".");
 
-                    var iceCandidate = new IceCandidate() { LocalAddress = address.Address, LocalRtpSocket = rtpSocket, LocalControlSocket = controlSocket, TurnServer = (_turnServerEndPoint != null) ? new TurnServer() { ServerEndPoint = _turnServerEndPoint } : null };
+                    var iceCandidate = new IceCandidate() { LocalAddress = address.Address, Port = ((IPEndPoint)rtpSocket.LocalEndPoint).Port, LocalRtpSocket = rtpSocket, LocalControlSocket = controlSocket,
+                        TurnServer = (_turnServerEndPoint != null) ? new TurnServer() { ServerEndPoint = _turnServerEndPoint } : null };
 
                     LocalIceCandidates.Add(iceCandidate);
 
@@ -385,7 +386,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                                 iceCandidate.LastSTUNSendAt = DateTime.Now;
                             }
 
-                            var secondsSinceLastResponse = DateTime.Now.Subtract(iceCandidate.LastStunResponseReceivedAt).TotalSeconds;
+                            var secondsSinceLastResponse = DateTime.Now.Subtract(iceCandidate.LastCommunicationAt).TotalSeconds;
 
                             if (secondsSinceLastResponse > ICE_TIMEOUT_SECONDS)
                             {
@@ -465,6 +466,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     {
                         //logger.Debug("ListenToReceiverWebRTCClient Receive.");
                         byte[] buffer = localSocket.Receive(ref remoteEndPoint);
+
+                        iceCandidate.LastCommunicationAt = DateTime.Now;
 
                         //logger.Debug(buffer.Length + " bytes read on Receiver Client media socket from " + remoteEndPoint.ToString() + ".");
 
