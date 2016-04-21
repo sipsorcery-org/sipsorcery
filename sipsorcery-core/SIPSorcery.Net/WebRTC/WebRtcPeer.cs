@@ -128,6 +128,10 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 if (!IsClosed)
                 {
                     IsClosed = true;
+                    
+                    // Make sure no further packets get passed onto these handlers! They could get deallocated before the sockets shutdown.
+                    OnDtlsPacket = null;
+                    OnMediaPacket = null;
 
                     logger.Debug("WebRTC peer for call " + CallID + " closing.");
 
@@ -153,6 +157,12 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                             }
                         }
                     }
+
+                    logger.Debug("WebRTC peer waiting for all ICE candidate RTP listener tasks to complete.");
+
+                    Task.WaitAll(LocalIceCandidates.Where(x => x.RtpListenerTask != null).Select(x => x.RtpListenerTask).ToArray());
+
+                    logger.Debug("WebRTC peer RTP listener tasks now complete.");
 
                     if (OnClose != null)
                     {
@@ -452,9 +462,11 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         private void StartWebRtcRtpListener(IceCandidate iceCandidate)
         {
+            string localEndPoint = iceCandidate.LocalRtpSocket.LocalEndPoint.ToString();
+
             try
             {
-                logger.Debug("Starting WebRTC RTP listener for call " + CallID + " on socket " + iceCandidate.LocalRtpSocket.LocalEndPoint + ".");
+                logger.Debug("Starting WebRTC RTP listener for call " + CallID + " on socket " + localEndPoint + ".");
 
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 UdpClient localSocket = new UdpClient();
@@ -506,7 +518,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                             iceCandidate.RemoteRtpEndPoint != null && remoteEndPoint != null && iceCandidate.RemoteRtpEndPoint.ToString() == remoteEndPoint.ToString() &&
                             DateTime.Now.Subtract(IceNegotiationStartedAt).TotalSeconds > 10)
                         {
-                            logger.Warn("WebRtc peer communication failure on call " + CallID + " for local RTP socket " + iceCandidate.LocalRtpSocket.LocalEndPoint + " and remote RTP socket " + remoteEndPoint + " .");
+                            logger.Warn("WebRtc peer communication failure on call " + CallID + " for local RTP socket " + localEndPoint + " and remote RTP socket " + remoteEndPoint + " .");
                             iceCandidate.DisconnectionMessage = sockExcp.Message;
                             break;
                         }
@@ -527,7 +539,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ListenForWebRTCClient (" + iceCandidate.LocalRtpSocket.LocalEndPoint + "). " + excp);
+                logger.Error("Exception ListenForWebRTCClient (" + localEndPoint + "). " + excp);
             }
         }
 
