@@ -67,6 +67,7 @@ namespace SIPSorcery.Net
         private const int MAXIMUM_TURN_ALLOCATE_ATTEMPTS = 4;
         private const int MAXIMUM_STUN_CONNECTION_ATTEMPTS = 5;
         private const int ICE_TIMEOUT_SECONDS = 5;                              // If no response is received to the STUN connectivity check within this number of seconds the WebRTC connection will be assumed to be broken.
+        private const int CLOSE_SOCKETS_TIMEOUT_WAIT_MILLISECONDS = 3000;
 
         private static string _sdpOfferTemplate = @"v=0
 o=- {0} 2 IN IP4 127.0.0.1
@@ -160,14 +161,11 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                     logger.Debug("WebRTC peer waiting for all ICE candidate RTP listener tasks to complete.");
 
-                    Task.WaitAll(LocalIceCandidates.Where(x => x.RtpListenerTask != null).Select(x => x.RtpListenerTask).ToArray());
+                    Task.WaitAll(LocalIceCandidates.Where(x => x.RtpListenerTask != null).Select(x => x.RtpListenerTask).ToArray(), CLOSE_SOCKETS_TIMEOUT_WAIT_MILLISECONDS);
 
                     logger.Debug("WebRTC peer RTP listener tasks now complete.");
 
-                    if (OnClose != null)
-                    {
-                        OnClose();
-                    }
+                    OnClose?.Invoke();
                 }
             }
             catch (Exception excp)
@@ -462,10 +460,12 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         private void StartWebRtcRtpListener(IceCandidate iceCandidate)
         {
-            string localEndPoint = iceCandidate.LocalRtpSocket.LocalEndPoint.ToString();
+            string localEndPoint = "?";
 
             try
             {
+                localEndPoint = iceCandidate.LocalRtpSocket.LocalEndPoint.ToString();
+
                 logger.Debug("Starting WebRTC RTP listener for call " + CallID + " on socket " + localEndPoint + ".");
 
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
@@ -510,7 +510,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     {
                         _communicationFailureCount++;
 
-                        logger.Warn("Exception ListenToReceiverWebRTCClient Receive (" + iceCandidate.LocalRtpSocket.LocalEndPoint + " and " + remoteEndPoint + ", failure count " + _communicationFailureCount + "). " + sockExcp.Message);
+                        logger.Warn("Exception ListenToReceiverWebRTCClient Receive (" + localEndPoint + " and " + remoteEndPoint + ", failure count " + _communicationFailureCount + "). " + sockExcp.Message);
 
                         // Need to be careful about deciding when the connection has failed. Sometimes the STUN requests we send will arrive before the remote peer is ready and cause a socket exception.
                         // Only shutdown the peer if we are sure all ICE intialisation is complete and the socket exception occurred after the RTP had stated flowing.
