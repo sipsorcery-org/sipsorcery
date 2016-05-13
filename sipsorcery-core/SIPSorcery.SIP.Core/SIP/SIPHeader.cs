@@ -2161,13 +2161,13 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Allow-Events
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALLOW_EVENTS || headerNameLower == SIPHeaders.SIP_COMPACTHEADER_ALLOWEVENTS)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALLOW_EVENTS || headerNameLower == SIPHeaders.SIP_COMPACTHEADER_ALLOWEVENTS.ToLower())
                         {
                             sipHeader.AllowEvents = headerValue;
                         }
                         #endregion
                         #region Event
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_EVENT.ToLower() || headerNameLower == SIPHeaders.SIP_COMPACTHEADER_EVENT)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_EVENT.ToLower() || headerNameLower == SIPHeaders.SIP_COMPACTHEADER_EVENT.ToLower())
                         {
                             sipHeader.Event = headerValue;
                         }
@@ -2205,7 +2205,7 @@ namespace SIPSorcery.SIP
                         #endregion
                         #region Refer-To.
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_REFERTO.ToLower() ||
-                            headerNameLower == SIPHeaders.SIP_COMPACTHEADER_REFERTO)
+                            headerNameLower == SIPHeaders.SIP_COMPACTHEADER_REFERTO.ToLower())
                         {
                             if (sipHeader.ReferTo == null)
                             {
@@ -2261,121 +2261,121 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Authentication-Info
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_AUTHENTICATIONINFO)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_AUTHENTICATIONINFO.ToLower())
                         {
                             sipHeader.AuthenticationInfo = headerValue;
                         }
                         #endregion
                         #region Accept-Encoding
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ACCEPTENCODING)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ACCEPTENCODING.ToLower())
                         {
                             sipHeader.AcceptEncoding = headerValue;
                         }
                         #endregion
                         #region Accept-Language
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ACCEPTLANGUAGE)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ACCEPTLANGUAGE.ToLower())
                         {
                             sipHeader.AcceptLanguage = headerValue;
                         }
                         #endregion
                         #region Alert-Info
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALERTINFO)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALERTINFO.ToLower())
                         {
                             sipHeader.AlertInfo = headerValue;
                         }
                         #endregion
                         #region Allow
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALLOW)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALLOW.ToLower())
                         {
                             sipHeader.Allow = headerValue;
                         }
                         #endregion
                         #region Call-Info
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CALLINFO)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CALLINFO.ToLower())
                         {
                             sipHeader.CallInfo = headerValue;
                         }
                         #endregion
                         #region Content-Disposition
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CONTENT_DISPOSITION)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CONTENT_DISPOSITION.ToLower())
                         {
                             sipHeader.ContentDisposition = headerValue;
                         }
                         #endregion
                         #region Content-Encoding
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CONTENT_ENCODING)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CONTENT_ENCODING.ToLower())
                         {
                             sipHeader.ContentEncoding = headerValue;
                         }
                         #endregion
                         #region Content-Language
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CONTENT_LANGUAGE)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CONTENT_LANGUAGE.ToLower())
                         {
                             sipHeader.ContentLanguage = headerValue;
                         }
                         #endregion
                         #region Error-Info
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ERROR_INFO)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ERROR_INFO.ToLower())
                         {
                             sipHeader.ErrorInfo = headerValue;
                         }
                         #endregion
                         #region In-Reply-To
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_IN_REPLY_TO)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_IN_REPLY_TO.ToLower())
                         {
                             sipHeader.InReplyTo = headerValue;
                         }
                         #endregion
                         #region MIME-Version
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_MIME_VERSION)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_MIME_VERSION.ToLower())
                         {
                             sipHeader.MIMEVersion = headerValue;
                         }
                         #endregion
                         #region Organization
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ORGANIZATION)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ORGANIZATION.ToLower())
                         {
                             sipHeader.Organization = headerValue;
                         }
                         #endregion
                         #region Priority
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PRIORITY)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PRIORITY.ToLower())
                         {
                             sipHeader.Priority = headerValue;
                         }
                         #endregion
                         #region Proxy-Require
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_REQUIRE)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_REQUIRE.ToLower())
                         {
                             sipHeader.ProxyRequire = headerValue;
                         }
                         #endregion
                         #region Reply-To
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REPLY_TO)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REPLY_TO.ToLower())
                         {
                             sipHeader.ReplyTo = headerValue;
                         }
                         #endregion
                         #region Retry-After
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_RETRY_AFTER)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_RETRY_AFTER.ToLower())
                         {
                             sipHeader.RetryAfter = headerValue;
                         }
                         #endregion
                         #region Subject
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SUBJECT)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SUBJECT.ToLower())
                         {
                             sipHeader.Subject = headerValue;
                         }
                         #endregion
                         #region Unsupported
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_UNSUPPORTED)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_UNSUPPORTED.ToLower())
                         {
                             sipHeader.Unsupported = headerValue;
                         }
                         #endregion
                         #region Warning
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_WARNING)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_WARNING.ToLower())
                         {
                             sipHeader.Warning = headerValue;
                         }
