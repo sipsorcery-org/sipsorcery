@@ -537,7 +537,7 @@ namespace SIPSorcery.Entities
             {
                 return (from ca in db.CustomerAccounts
                         where
-                            ca.Owner == owner.ToLower() &&
+                            ca.Owner.ToLower() == owner.ToLower() &&
                             ca.AccountName.ToLower() == accountName.ToLower() &&
                             (updatingID == null || ca.ID != updatingID)
                         select ca).Any();
@@ -563,7 +563,7 @@ namespace SIPSorcery.Entities
             {
                 return (from ca in db.CustomerAccounts
                         where
-                            ca.Owner == owner.ToLower() &&
+                            ca.Owner.ToLower() == owner.ToLower() &&
                             ca.AccountNumber.ToLower() == accountNumber.ToLower() &&
                             (updatingID == null || ca.ID != updatingID)
                         select ca).Any();
@@ -671,7 +671,7 @@ namespace SIPSorcery.Entities
             {
                 return (from ca in db.CustomerAccounts
                         where
-                            ca.Owner == owner.ToLower() &&
+                            ca.Owner.ToLower() == owner.ToLower() &&
                             ca.AccountNumber.ToLower() == accountNumber.ToLower()
                         select ca).SingleOrDefault();
             }
@@ -715,7 +715,7 @@ namespace SIPSorcery.Entities
             {
                 var account = (from ca in db.CustomerAccounts
                         where
-                            ca.Owner == owner.ToLower() &&
+                            ca.Owner.ToLower() == owner.ToLower() &&
                            (ca.AccountCode.ToLower() == accountCode.ToLower() || ca.AccountNumber == accountCode)
                         select ca).SingleOrDefault();
 
