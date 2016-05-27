@@ -19,7 +19,7 @@ namespace SIPSorceryMedia {
 	public ref class DtlsManaged
 	{
 	private:
-		krx * _k;
+		krx * _k { nullptr };
 
 		static int VerifyPeer(int ok, X509_STORE_CTX* ctx);
 	public:

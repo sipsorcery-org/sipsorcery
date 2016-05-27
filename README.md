@@ -1,3 +1,5 @@
+<img src="https://ci.appveyor.com/api/projects/status/1prvhq7jyw0s5fb1/branch/master?svg=true" />
+
 The SIPSorcery project is an experiment into the depths of the Session Initiation Protocol (http://www.ietf.org/rfc/rfc3261.txt). The project is a combination of the source code available here on GitHub (previously sourceforge & codeplex) and a live service hosted at http://www.sipsorcery.com/. 
 The project has its roots in a previous project called mysipswitch (http://www.codeplex.com/Wikipage?ProjectName=mysipswitch) which was deprecated in the mid noughties.
 
@@ -21,8 +23,8 @@ The SIP server applications are:
 - The SIP protocol stack is able to run within Silverlight allowing SIP TCP communications directly from a browser. 
 - A basic C# softphone example application.
 
-Service at: http://www.sipsorcery.com/.
-Blog at: http://blog.sipsorcery.com/.
-Forum at: http://forum.sipsorcery.com/index.php.
-Twitter:  http://twitter.com/sipsorcery.
+Service at: http://www.sipsorcery.com/.<br/>
+Blog at: http://blog.sipsorcery.com/.<br/>
+Forum at: http://forum.sipsorcery.com/index.php.<br/>
+Twitter:  http://twitter.com/sipsorcery.<br/>
 NuGet: https://www.nuget.org/packages/SIPSorcery/.

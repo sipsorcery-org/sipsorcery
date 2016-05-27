@@ -67,6 +67,7 @@ namespace SIPSorcery.Net
         private const int MAXIMUM_TURN_ALLOCATE_ATTEMPTS = 4;
         private const int MAXIMUM_STUN_CONNECTION_ATTEMPTS = 5;
         private const int ICE_TIMEOUT_SECONDS = 5;                              // If no response is received to the STUN connectivity check within this number of seconds the WebRTC connection will be assumed to be broken.
+        private const int CLOSE_SOCKETS_TIMEOUT_WAIT_MILLISECONDS = 3000;
 
         private static string _sdpOfferTemplate = @"v=0
 o=- {0} 2 IN IP4 127.0.0.1
@@ -125,36 +126,46 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         {
             try
             {
-                IsClosed = true;
-
-                logger.Debug("WebRTC peer for call " + CallID + " closing.");
-
-                if (LocalIceCandidates != null && LocalIceCandidates.Count > 0)
+                if (!IsClosed)
                 {
-                    foreach (var iceCandidate in LocalIceCandidates)
+                    IsClosed = true;
+                    
+                    // Make sure no further packets get passed onto these handlers! They could get deallocated before the sockets shutdown.
+                    OnDtlsPacket = null;
+                    OnMediaPacket = null;
+
+                    logger.Debug("WebRTC peer for call " + CallID + " closing.");
+
+                    if (LocalIceCandidates != null && LocalIceCandidates.Count > 0)
                     {
-                        iceCandidate.IsDisconnected = true;
-
-                        if (iceCandidate.LocalRtpSocket != null)
+                        foreach (var iceCandidate in LocalIceCandidates)
                         {
-                            logger.Debug("Closing local ICE candidate socket for " + iceCandidate.LocalRtpSocket.LocalEndPoint + ".");
+                            iceCandidate.IsDisconnected = true;
 
-                            try
+                            if (iceCandidate.LocalRtpSocket != null)
                             {
-                                iceCandidate.LocalRtpSocket.Shutdown(SocketShutdown.Both);
-                                iceCandidate.LocalRtpSocket.Close();
-                            }
-                            catch (Exception closeSockExcp)
-                            {
-                                logger.Warn("Exception closing WebRTC peer. " + closeSockExcp.Message);
+                                logger.Debug("Closing local ICE candidate socket for " + iceCandidate.LocalAddress + ":" + iceCandidate.Port + ".");
+
+                                try
+                                {
+                                    iceCandidate.LocalRtpSocket.Shutdown(SocketShutdown.Both);
+                                    iceCandidate.LocalRtpSocket.Close();
+                                }
+                                catch (Exception closeSockExcp)
+                                {
+                                    logger.Warn("Exception closing WebRTC peer. " + closeSockExcp.Message);
+                                }
                             }
                         }
                     }
-                }
 
-                if (OnClose != null)
-                {
-                    OnClose();
+                    logger.Debug("WebRTC peer waiting for all ICE candidate RTP listener tasks to complete.");
+
+                    Task.WaitAll(LocalIceCandidates.Where(x => x.RtpListenerTask != null).Select(x => x.RtpListenerTask).ToArray(), CLOSE_SOCKETS_TIMEOUT_WAIT_MILLISECONDS);
+
+                    logger.Debug("WebRTC peer RTP listener tasks now complete.");
+
+                    OnClose?.Invoke();
                 }
             }
             catch (Exception excp)
@@ -298,7 +309,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 {
                     logger.Debug("RTP socket successfully created on " + rtpSocket.LocalEndPoint + ".");
 
-                    var iceCandidate = new IceCandidate() { LocalAddress = address.Address, LocalRtpSocket = rtpSocket, LocalControlSocket = controlSocket, TurnServer = (_turnServerEndPoint != null) ? new TurnServer() { ServerEndPoint = _turnServerEndPoint } : null };
+                    var iceCandidate = new IceCandidate() { LocalAddress = address.Address, Port = ((IPEndPoint)rtpSocket.LocalEndPoint).Port, LocalRtpSocket = rtpSocket, LocalControlSocket = controlSocket,
+                        TurnServer = (_turnServerEndPoint != null) ? new TurnServer() { ServerEndPoint = _turnServerEndPoint } : null };
 
                     LocalIceCandidates.Add(iceCandidate);
 
@@ -363,7 +375,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                         // If one of the ICE candidates has the remote RTP socket set then the negotiation is complete and the STUN checks are to keep the connection alive.
                         if (LocalIceCandidates.Any(x => x.IsConnected == true))
                         {
-                            var iceCandidate = LocalIceCandidates.Single(x => x.IsConnected == true);
+                            var iceCandidate = LocalIceCandidates.First(x => x.IsConnected == true);
 
                             // Remote RTP endpoint gets set when the DTLS negotiation is finished.
                             if (iceCandidate.RemoteRtpEndPoint != null)
@@ -382,13 +394,20 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                                 iceCandidate.LastSTUNSendAt = DateTime.Now;
                             }
 
-                            var secondsSinceLastResponse = DateTime.Now.Subtract(iceCandidate.LastStunResponseReceivedAt).TotalSeconds;
+                            var secondsSinceLastResponse = DateTime.Now.Subtract(iceCandidate.LastCommunicationAt).TotalSeconds;
 
                             if (secondsSinceLastResponse > ICE_TIMEOUT_SECONDS)
                             {
                                 logger.Warn("No STUN response was received on a connected ICE connection for " + secondsSinceLastResponse + "s, closing connection.");
-                                Close();
-                                break;
+
+                                iceCandidate.IsDisconnected = true;
+
+                                if (LocalIceCandidates.Any(x => x.IsConnected == true) == false)
+                                {
+                                    // If there are no connected local candidates left close the peer.
+                                    Close();
+                                    break;
+                                }
                             }
                         }
                         else
@@ -441,9 +460,13 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         private void StartWebRtcRtpListener(IceCandidate iceCandidate)
         {
+            string localEndPoint = "?";
+
             try
             {
-                logger.Debug("Starting WebRTC RTP listener for call " + CallID + " on socket " + iceCandidate.LocalRtpSocket.LocalEndPoint + ".");
+                localEndPoint = iceCandidate.LocalRtpSocket.LocalEndPoint.ToString();
+
+                logger.Debug("Starting WebRTC RTP listener for call " + CallID + " on socket " + localEndPoint + ".");
 
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 UdpClient localSocket = new UdpClient();
@@ -455,6 +478,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     {
                         //logger.Debug("ListenToReceiverWebRTCClient Receive.");
                         byte[] buffer = localSocket.Receive(ref remoteEndPoint);
+
+                        iceCandidate.LastCommunicationAt = DateTime.Now;
 
                         //logger.Debug(buffer.Length + " bytes read on Receiver Client media socket from " + remoteEndPoint.ToString() + ".");
 
@@ -485,7 +510,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     {
                         _communicationFailureCount++;
 
-                        logger.Warn("Exception ListenToReceiverWebRTCClient Receive (" + iceCandidate.LocalRtpSocket.LocalEndPoint + " and " + remoteEndPoint + ", failure count " + _communicationFailureCount + "). " + sockExcp.Message);
+                        logger.Warn("Exception ListenToReceiverWebRTCClient Receive (" + localEndPoint + " and " + remoteEndPoint + ", failure count " + _communicationFailureCount + "). " + sockExcp.Message);
 
                         // Need to be careful about deciding when the connection has failed. Sometimes the STUN requests we send will arrive before the remote peer is ready and cause a socket exception.
                         // Only shutdown the peer if we are sure all ICE intialisation is complete and the socket exception occurred after the RTP had stated flowing.
@@ -493,7 +518,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                             iceCandidate.RemoteRtpEndPoint != null && remoteEndPoint != null && iceCandidate.RemoteRtpEndPoint.ToString() == remoteEndPoint.ToString() &&
                             DateTime.Now.Subtract(IceNegotiationStartedAt).TotalSeconds > 10)
                         {
-                            logger.Warn("WebRtc peer communication failure on call " + CallID + " for local RTP socket " + iceCandidate.LocalRtpSocket.LocalEndPoint + " and remote RTP socket " + remoteEndPoint + " .");
+                            logger.Warn("WebRtc peer communication failure on call " + CallID + " for local RTP socket " + localEndPoint + " and remote RTP socket " + remoteEndPoint + " .");
                             iceCandidate.DisconnectionMessage = sockExcp.Message;
                             break;
                         }
@@ -514,7 +539,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ListenForWebRTCClient (" + iceCandidate.LocalRtpSocket.LocalEndPoint + "). " + excp);
+                logger.Error("Exception ListenForWebRTCClient (" + localEndPoint + "). " + excp);
             }
         }
 
