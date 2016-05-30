@@ -106,7 +106,7 @@ namespace SIPSorcery.SIP.Core.UnitTests
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            byte[] stunAttribute = new byte[]{0xe0, 0xda, 0xe1, 0xba, 0x85, 0x3f};
+            byte[] stunAttribute = new byte[]{0x00, 0x01, 0xe0, 0xda, 0xe1, 0xba, 0x85, 0x3f};
 
             STUNv2XORAddressAttribute xorAddressAttribute = new STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum.XORMappedAddress, stunAttribute);
 
@@ -192,6 +192,57 @@ namespace SIPSorcery.SIP.Core.UnitTests
             byte[] buffer = stunMessage.ToByteBufferStringKey("r89XhWC9k2kW4Pns75vmwHIa", true);
 
             Assert.AreEqual(BitConverter.ToString(stunReq), BitConverter.ToString(buffer));
+        }
+
+        /// <summary>
+        /// Parse a STUN response received from the Coturn TURN server.
+        /// </summary>
+        [TestMethod]
+        public void ParseCoturnSTUNResponseTestMethod()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            byte[] stunResp = new byte[]{ 0x01, 0x01, 0x00, 0x44, 0x21, 0x12, 0xa4, 0x42, 0x6b, 0x4c, 0xf3, 0x18, 0xd0, 0xa7, 0xf5, 0x40,
+                    0x97, 0x30, 0x3a, 0x27, 0x00, 0x20, 0x00, 0x08, 0x00, 0x01, 0x9e, 0x90, 0x1a, 0xb5, 0x08, 0xf3,
+                    0x00, 0x01, 0x00, 0x08, 0x00, 0x01, 0xbf, 0x82, 0x3b, 0xa7, 0xac, 0xb1, 0x80, 0x2b, 0x00, 0x08,
+                    0x00, 0x01, 0x0d, 0x96, 0x67, 0x1d, 0x42, 0xf3, 0x80, 0x22, 0x00, 0x1a, 0x43, 0x6f, 0x74, 0x75,
+                    0x72, 0x6e, 0x2d, 0x34, 0x2e, 0x35, 0x2e, 0x30, 0x2e, 0x33, 0x20, 0x27, 0x64, 0x61, 0x6e, 0x20,
+                    0x45, 0x69, 0x64, 0x65, 0x72, 0x27, 0x77, 0x75};
+
+            STUNv2Message stunMessage = STUNv2Message.ParseSTUNMessage(stunResp, stunResp.Length);
+
+            STUNv2Header stunHeader = stunMessage.Header;
+
+            Console.WriteLine("Request type = " + stunHeader.MessageType + ".");
+            Console.WriteLine("Length = " + stunHeader.MessageLength + ".");
+            Console.WriteLine("Transaction ID = " + BitConverter.ToString(stunHeader.TransactionId) + ".");
+
+            foreach (STUNv2Attribute attribute in stunMessage.Attributes)
+            {
+                if (attribute.AttributeType == STUNv2AttributeTypesEnum.MappedAddress)
+                {
+                    STUNv2AddressAttribute addressAttribute = new STUNv2AddressAttribute(attribute.Value);
+                    Console.WriteLine(" " + attribute.AttributeType + " " + addressAttribute.Address + ":" + addressAttribute.Port + ".");
+
+                    Assert.AreEqual("59.167.172.177", addressAttribute.Address.ToString());
+                    Assert.AreEqual(49026, addressAttribute.Port);
+                }
+                else if (attribute.AttributeType == STUNv2AttributeTypesEnum.XORMappedAddress)
+                {
+                    STUNv2XORAddressAttribute xorAddressAttribute = new STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum.XORMappedAddress, attribute.Value);
+                    Console.WriteLine(" " + attribute.AttributeType + " " + xorAddressAttribute.Address + ":" + xorAddressAttribute.Port + ".");
+
+                    Assert.AreEqual("59.167.172.177", xorAddressAttribute.Address.ToString());
+                    Assert.AreEqual(49026, xorAddressAttribute.Port);
+                }
+
+                else
+                {
+                    Console.WriteLine(" " + attribute.AttributeType + " " + attribute.Value + ".");
+                }
+            }
+
+            Assert.AreEqual(STUNv2MessageTypesEnum.BindingSuccessResponse, stunHeader.MessageType);
         }
     }
 }
