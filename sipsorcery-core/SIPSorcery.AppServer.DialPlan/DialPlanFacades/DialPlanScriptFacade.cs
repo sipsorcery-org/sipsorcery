@@ -2209,12 +2209,13 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-        //public string GoogleContactLookup(string username, string password, string lookup)
-        //{
-        //    Log("WARNING: Sorry the GoogleContactLookup is no longer available due to changes in the way Google authenitcates user accounts.");
+        public string GoogleContactLookup(string username, string password, string lookup)
+        {
+            Log("WARNING: Sorry this GoogleContactLookup method has been deprecated due to changes in GOogle's authentication mechanism. Please " +
+                "see the SIPSorcery web site and the DialPlan Help page for more information.");
 
-        //    return null;
-        //}
+            return null;
+        }
 
         public string GoogleContactLookup(string oAuthToken, string lookup)
         {
