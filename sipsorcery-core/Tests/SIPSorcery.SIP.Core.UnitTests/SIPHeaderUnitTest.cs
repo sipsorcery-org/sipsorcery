@@ -276,5 +276,36 @@ namespace SIPSorcery.SIP.Core.UnitTests
 
             Console.WriteLine("-----------------------------------------");
         }
+
+        [TestMethod]
+        public void ExtractHeadersUnitTest()
+        {
+            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sipMsg =
+                "From: <sip:10000579@200.170.136.196>;tag=0477183750" + m_CRLF +
+                "To: <sip:10000579@200.170.136.196>;tag=414dedfe" + m_CRLF +
+                "CSeq: 1 REGISTER" + m_CRLF +
+                "Call-ID: 438676792abe47328fc557da2d84d0ee" + m_CRLF +
+                "Via: SIP/2.0/UDP 192.168.1.102:7246;branch=z9hG4bK92460620adf84edab2341899a3453f79;received=124.168.235.200;rport=10552" + m_CRLF +
+                "Server: Huawei SoftX3000 R006B03D" + m_CRLF +
+                "Refer-To: Test Refer-To" + m_CRLF +
+                "Authentication-Info: Test Authentication-Info" + m_CRLF +
+                "WWW-Authenticate: Digest realm=\"huawei\"," + m_CRLF +
+                " nonce=\"248e4b4457f252ae53c859bfe03c4f93\",domain=\"sip:huawei.com\"," + m_CRLF +
+                " stale=false,algorithm=MD5" + m_CRLF +
+                "Content-Length: 0" + m_CRLF + m_CRLF;
+
+            Console.WriteLine("Original SIP Headers:\n" + sipMsg);
+
+            string[] headersCollection = SIPHeader.SplitHeaders(sipMsg);
+
+            SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
+
+            Assert.AreEqual("Test Refer-To", sipHeader.ReferTo);
+            Assert.AreEqual("Test Authentication-Info", sipHeader.AuthenticationInfo);
+
+            Console.WriteLine("-----------------------------------------");
+        }
     }
 }
