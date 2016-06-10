@@ -122,7 +122,7 @@ namespace SIPSorcery.Entities
             {
                 return (from ra in db.Rates
                         where
-                            ra.Owner == owner.ToLower() &&
+                            ra.Owner.ToLower() == owner.ToLower() &&
                             ra.ID.ToLower() == id.ToLower()
                         select ra).SingleOrDefault();
             }

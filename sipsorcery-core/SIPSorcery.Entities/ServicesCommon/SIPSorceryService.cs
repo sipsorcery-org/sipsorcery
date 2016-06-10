@@ -68,7 +68,7 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                if (sipSorceryEntities.Customers.Any(x => x.Name == customer.Name.ToLower()))
+                if (sipSorceryEntities.Customers.Any(x => x.Name.ToLower() == customer.Name.ToLower()))
                 {
                     throw new ApplicationException("The username is already taken. Please choose a different one.");
                 }
@@ -463,7 +463,7 @@ namespace SIPSorcery.Entities
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                SIPAccount existingAccount = (from sa in sipSorceryEntities.SIPAccounts where sa.ID == sipAccount.ID && sa.Owner == authUser.ToLower() select sa).FirstOrDefault();
+                SIPAccount existingAccount = (from sa in sipSorceryEntities.SIPAccounts where sa.ID == sipAccount.ID && sa.Owner.ToLower() == authUser.ToLower() select sa).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
@@ -631,7 +631,7 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for GetSIPProviders.");
             }
 
-            return new SIPSorceryEntities().SIPProviders.Where(x => x.Owner == authUser.ToLower());
+            return new SIPSorceryEntities().SIPProviders.Where(x => x.Owner.ToLower() == authUser.ToLower());
         }
 
         public List<SIPProvider> GetSIPProviders(string authUser, string where, int offset, int count)
@@ -663,7 +663,7 @@ namespace SIPSorcery.Entities
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                string serviceLevel = (from cust in sipSorceryEntities.Customers where cust.Name == authUser.ToLower() select cust.ServiceLevel).FirstOrDefault();
+                string serviceLevel = (from cust in sipSorceryEntities.Customers where cust.Name.ToLower() == authUser.ToLower() select cust.ServiceLevel).FirstOrDefault();
 
                 if (!serviceLevel.IsNullOrBlank() && serviceLevel.ToLower() == CustomerServiceLevels.Free.ToString().ToLower())
                 {
@@ -711,7 +711,7 @@ namespace SIPSorcery.Entities
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                existingAccount = (from sp in sipSorceryEntities.SIPProviders where sp.ID == sipProvider.ID && sp.Owner == authUser.ToLower() select sp).FirstOrDefault();
+                existingAccount = (from sp in sipSorceryEntities.SIPProviders where sp.ID == sipProvider.ID && sp.Owner.ToLower() == authUser.ToLower() select sp).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
@@ -918,7 +918,7 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for GetSIPSIPDialPlans.");
             }
 
-            return new SIPSorceryEntities().SIPDialPlans.Where(x => x.Owner == authUser.ToLower());
+            return new SIPSorceryEntities().SIPDialPlans.Where(x => x.Owner.ToLower() == authUser.ToLower());
         }
 
         public List<SIPDialPlan> GetSIPSIPDialPlans(string authUser, string where, int offset, int count)
@@ -1013,7 +1013,7 @@ namespace SIPSorcery.Entities
                 {
                     throw new ApplicationException("The SIP Dial Plan to update could not be found.");
                 }
-                else if (existingAccount.Owner != authUser.ToLower())
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
                 {
                     logger.Warn("User " + authUser + " was not authorised to update dial plan " + existingAccount.DialPlanName + " belonging to " + existingAccount.Owner + ".");
                     throw new ApplicationException("Not authorised to update the SIP Dial Plan.");
@@ -1054,13 +1054,13 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlan.ID && dp.Owner == authUser.ToLower() select dp).FirstOrDefault();
+                SIPDialPlan existingAccount = (from dp in sipSorceryEntities.SIPDialPlans where dp.ID == sipDialPlan.ID && dp.Owner.ToLower() == authUser.ToLower() select dp).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
                     throw new ApplicationException("The SIP Dial Plan to delete could not be found.");
                 }
-                else if (existingAccount.Owner != authUser.ToLower())
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to delete the SIP Dial Plan.");
                 }
@@ -1080,7 +1080,7 @@ namespace SIPSorcery.Entities
                 {
                     throw new ApplicationException("The SIP Dial Plan to delete could not be found.");
                 }
-                else if (existingAccount.Owner != authUser.ToLower())
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to delete the SIP Dial Plan.");
                 }
@@ -1105,7 +1105,7 @@ namespace SIPSorcery.Entities
                 {
                     throw new ApplicationException("The SIP Dial Plan to copy could not be found.");
                 }
-                else if (existingAccount.Owner != authUser.ToLower())
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
                 {
                     logger.Warn("User " + authUser + " was not authorised to copy dial plan " + existingAccount.DialPlanName + " belonging to " + existingAccount.Owner + ".");
                     throw new ApplicationException("Not authorised to copy the SIP Dial Plan.");
@@ -1160,7 +1160,7 @@ namespace SIPSorcery.Entities
 
                 if (existingAccount.ScriptType == SIPDialPlanScriptTypesEnum.SimpleWizard)
                 {
-                    var simpleWizardRules = sipSorceryEntities.SimpleWizardRules.Where(x => x.Owner == authUser.ToLower() && x.DialPlanID == existingAccount.ID);
+                    var simpleWizardRules = sipSorceryEntities.SimpleWizardRules.Where(x => x.Owner.ToLower() == authUser.ToLower() && x.DialPlanID == existingAccount.ID);
 
                     if (simpleWizardRules != null && simpleWizardRules.Count() > 0)
                     {
@@ -1217,7 +1217,7 @@ namespace SIPSorcery.Entities
                 {
                     throw new ApplicationException("The SIP Dial Plan to change the name for could not be found.");
                 }
-                else if (existingAccount.Owner != authUser.ToLower())
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
                 {
                     logger.Warn("User " + authUser + " was not authorised to change dial plan " + existingAccount.DialPlanName + " belonging to " + existingAccount.Owner + ".");
                     throw new ApplicationException("Not authorised to change the SIP Dial Plan name.");
@@ -1248,7 +1248,7 @@ namespace SIPSorcery.Entities
             var sipAccounts = (from sa in dbContext.SIPAccounts
                                where
                                    (sa.OutDialPlanName == oldDialPlanName || sa.InDialPlanName == oldDialPlanName)
-                                   && sa.Owner == owner.ToLower()
+                                   && sa.Owner.ToLower() == owner.ToLower()
                                select sa).ToList();
 
             foreach (SIPAccount sipAccount in sipAccounts)
@@ -1278,7 +1278,7 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for GetSimpleDialPlanWizardRules.");
             }
 
-            return new SIPSorceryEntities().SimpleWizardRules.Where(x => x.Owner == authUser.ToLower());
+            return new SIPSorceryEntities().SimpleWizardRules.Where(x => x.Owner.ToLower() == authUser.ToLower());
         }
 
         public void InsertSimpleWizardRule(string authUser, SimpleWizardRule rule)
@@ -1316,13 +1316,13 @@ namespace SIPSorcery.Entities
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                existingRule = (from ru in sipSorceryEntities.SimpleWizardRules where ru.ID == rule.ID && ru.Owner == authUser.ToLower() select ru).FirstOrDefault();
+                existingRule = (from ru in sipSorceryEntities.SimpleWizardRules where ru.ID == rule.ID && ru.Owner.ToLower() == authUser.ToLower() select ru).FirstOrDefault();
 
                 if (existingRule == null)
                 {
                     throw new ApplicationException("The Simple Wizard rule to update could not be found.");
                 }
-                else if (existingRule.Owner != authUser.ToLower())
+                else if (existingRule.Owner.ToLower() != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to update the Simple Wizard rule.");
                 }
@@ -1352,13 +1352,13 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                SimpleWizardRule existingRule = (from ru in sipSorceryEntities.SimpleWizardRules where ru.ID == rule.ID && ru.Owner == authUser.ToLower() select ru).FirstOrDefault();
+                SimpleWizardRule existingRule = (from ru in sipSorceryEntities.SimpleWizardRules where ru.ID == rule.ID && ru.Owner.ToLower() == authUser.ToLower() select ru).FirstOrDefault();
 
                 if (existingRule == null)
                 {
                     throw new ApplicationException("The Simple Wizard Rule to delete could not be found.");
                 }
-                else if (existingRule.Owner != authUser.ToLower())
+                else if (existingRule.Owner.ToLower() != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to delete the Simple Wizard Rule.");
                 }
@@ -1383,7 +1383,7 @@ namespace SIPSorcery.Entities
             {
                 entities.CommandTimeout = DEFAULT_COMMAND_TIMEOUT;
 
-                var query = (from cdr in entities.CDRs where cdr.Owner == authUser.ToLower() select cdr);
+                var query = (from cdr in entities.CDRs where cdr.Owner.ToLower() == authUser.ToLower() select cdr);
 
                 if (where != null)
                 {
@@ -1433,7 +1433,7 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for GetWebCallbacks.");
             }
 
-            return new SIPSorceryEntities().WebCallbacks.Where(x => x.Owner == authUser.ToLower());
+            return new SIPSorceryEntities().WebCallbacks.Where(x => x.Owner.ToLower() == authUser.ToLower());
         }
 
         public void InsertWebCallback(string authUser, WebCallback webcallback)
@@ -1463,13 +1463,13 @@ namespace SIPSorcery.Entities
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                var existingAccount = (from wc in sipSorceryEntities.WebCallbacks where wc.ID == webcallback.ID && wc.Owner == authUser.ToLower() select wc).FirstOrDefault();
+                var existingAccount = (from wc in sipSorceryEntities.WebCallbacks where wc.ID == webcallback.ID && wc.Owner.ToLower() == authUser.ToLower() select wc).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
                     throw new ApplicationException("The web callback to update could not be found.");
                 }
-                else if (existingAccount.Owner != authUser.ToLower())
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to update the web callback.");
                 }
@@ -1488,13 +1488,13 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                var existingAccount = (from wc in sipSorceryEntities.WebCallbacks where wc.ID == webCallback.ID && wc.Owner == authUser.ToLower() select wc).FirstOrDefault();
+                var existingAccount = (from wc in sipSorceryEntities.WebCallbacks where wc.ID == webCallback.ID && wc.Owner.ToLower() == authUser.ToLower() select wc).FirstOrDefault();
 
                 if (existingAccount == null)
                 {
                     throw new ApplicationException("The web callback to delete could not be found.");
                 }
-                else if (existingAccount.Owner != authUser.ToLower())
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to delete the web callback.");
                 }
@@ -1535,7 +1535,7 @@ namespace SIPSorcery.Entities
                 throw new ArgumentException("An authenticated user is required for GetCustomerAccounts.");
             }
 
-            return new SIPSorceryEntities().CustomerAccounts.Where(x => x.Owner == authUser.ToLower());
+            return new SIPSorceryEntities().CustomerAccounts.Where(x => x.Owner.ToLower() == authUser.ToLower());
         }
 
         public List<CustomerAccount> GetCustomerAccounts(string authUser, string where, int offset, int count)
@@ -1590,7 +1590,7 @@ namespace SIPSorcery.Entities
                 {
                     throw new ApplicationException("The customer account to delete could not be found.");
                 }
-                else if (existingAccount.Owner != authUser.ToLower())
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to delete the customer account.");
                 }
@@ -1610,7 +1610,7 @@ namespace SIPSorcery.Entities
                 {
                     throw new ApplicationException("The customer account to delete could not be found.");
                 }
-                else if (existingAccount.Owner != authUser.ToLower())
+                else if (existingAccount.Owner.ToLower() != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to delete the customer account.");
                 }
@@ -1700,13 +1700,13 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                var existingRate = (from ra in sipSorceryEntities.Rates where ra.ID == rate.ID && ra.Owner == authUser.ToLower() select ra).FirstOrDefault();
+                var existingRate = (from ra in sipSorceryEntities.Rates where ra.ID == rate.ID && ra.Owner.ToLower() == authUser.ToLower() select ra).FirstOrDefault();
 
                 if (existingRate == null)
                 {
                     throw new ApplicationException("The rate to delete could not be found.");
                 }
-                else if (existingRate.Owner != authUser.ToLower())
+                else if (existingRate.Owner.ToLower() != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to delete the rate.");
                 }
@@ -1726,7 +1726,7 @@ namespace SIPSorcery.Entities
                 {
                     throw new ApplicationException("The rate to delete could not be found.");
                 }
-                else if (existingRate.Owner != authUser.ToLower())
+                else if (existingRate.Owner.ToLower() != authUser.ToLower())
                 {
                     throw new ApplicationException("Not authorised to delete the rate.");
                 }

@@ -129,6 +129,7 @@ namespace SIPSorcery.Net
 
         public string SessionName = "-";			// Common name of the session.
         public string Timing;
+		public List<string> BandwidthAttributes = new List<string>();
 
         // Optional fields.
         public string SessionDescription;
@@ -190,9 +191,19 @@ namespace SIPSorcery.Net
                         }
                         else if (sdpLine.Trim().StartsWith("c="))
                         {
-                            sdp.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLine);
+							if(activeAnnouncement != null)
+								activeAnnouncement.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLine);
+							else
+								sdp.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLine);
                         }
-                        else if (sdpLine.Trim().StartsWith("t="))
+						else if(sdpLine.Trim().StartsWith("b="))
+						{
+							if(activeAnnouncement != null)
+								activeAnnouncement.BandwidthAttributes.Add(sdpLine.Substring(2));
+							else
+								sdp.BandwidthAttributes.Add(sdpLine.Substring(2));
+						}
+						else if (sdpLine.Trim().StartsWith("t="))
                         {
                             sdp.Timing = sdpLine.Substring(2);
                         }
@@ -242,7 +253,7 @@ namespace SIPSorcery.Net
                                 }
                                 else
                                 {
-                                    sdp.ExtraAttributes.Add(sdpLine);
+									activeAnnouncement.AddExtra(sdpLine);
                                 }
                             }
                             else
@@ -250,7 +261,34 @@ namespace SIPSorcery.Net
                                 logger.Warn("There was no active media announcement for a media format attribute, ignoring.");
                             }
                         }
-                        else if (sdpLine.Trim().StartsWith("a=" + ICE_CANDIDATE_ATTRIBUTE_PREFIX))
+						else if(sdpLine.Trim().StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX))
+						{
+							if(activeAnnouncement != null)
+							{
+								Match formatAttributeMatch = Regex.Match(sdpLine.Trim(), SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
+								if(formatAttributeMatch.Success)
+								{
+									int formatID;
+									if(Int32.TryParse(formatAttributeMatch.Result("${id}"), out formatID))
+									{
+										activeAnnouncement.AddFormatParameterAttribute(formatID, formatAttributeMatch.Result("${attribute}"));
+									}
+									else
+									{
+										logger.Warn("Invalid media format parameter attribute in SDP: " + sdpLine);
+									}
+								}
+								else
+								{
+									activeAnnouncement.AddExtra(sdpLine);
+								}
+							}
+							else
+							{
+								logger.Warn("There was no active media announcement for a media format parameter attribute, ignoring.");
+							}
+						}
+						else if (sdpLine.Trim().StartsWith("a=" + ICE_CANDIDATE_ATTRIBUTE_PREFIX))
                         {
                             if(sdp.IceCandidates == null)
                             {
@@ -261,7 +299,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            sdp.ExtraAttributes.Add(sdpLine);
+                            sdp.AddExtra(sdpLine);
                         }
                     }
 
@@ -281,7 +319,8 @@ namespace SIPSorcery.Net
 
         public void AddExtra(string attribute)
         {
-            ExtraAttributes.Add(attribute);
+			if(!string.IsNullOrWhiteSpace(attribute))
+				ExtraAttributes.Add(attribute);
         }
 
         public override string ToString()
@@ -290,19 +329,24 @@ namespace SIPSorcery.Net
                 "v=" + SDP_PROTOCOL_VERSION + CRLF +
                 "o=" + Owner + CRLF +
                 "s=" + SessionName + CRLF +
-                ((Connection != null) ? Connection.ToString() : null) +
-                "t=" + Timing + CRLF;
+                ((Connection != null) ? Connection.ToString() : null) ;
+			foreach(string bandwidth in BandwidthAttributes)
+			{
+				sdp += "b=" + bandwidth + CRLF;
+			}
 
-            sdp += (IceUfrag != null) ? "a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + CRLF : null;
-            sdp += (IcePwd != null) ? "a=" + ICE_PWD_ATTRIBUTE_PREFIX + ":" + IcePwd + CRLF : null;
-            sdp += (SessionDescription == null) ? null : "i=" + SessionDescription + CRLF;
-            sdp += (URI == null) ? null : "u=" + URI + CRLF;
+			sdp += "t=" + Timing + CRLF;
+
+			sdp += !string.IsNullOrWhiteSpace(IceUfrag) ? "a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + CRLF : null;
+            sdp += !string.IsNullOrWhiteSpace(IcePwd) ? "a=" + ICE_PWD_ATTRIBUTE_PREFIX + ":" + IcePwd + CRLF : null;
+            sdp += string.IsNullOrWhiteSpace(SessionDescription) ? null : "i=" + SessionDescription + CRLF;
+            sdp += string.IsNullOrWhiteSpace(URI) ? null : "u=" + URI + CRLF;
 
             if (OriginatorEmailAddresses != null && OriginatorEmailAddresses.Length > 0)
             {
                 foreach (string originatorAddress in OriginatorEmailAddresses)
                 {
-                    sdp += (originatorAddress == null) ? null : "e=" + originatorAddress + CRLF;
+                    sdp += string.IsNullOrWhiteSpace(originatorAddress ) ? null : "e=" + originatorAddress + CRLF;
                 }
             }
 
@@ -310,18 +354,18 @@ namespace SIPSorcery.Net
             {
                 foreach (string originatorNumber in OriginatorPhoneNumbers)
                 {
-                    sdp += (originatorNumber == null) ? null : "p=" + originatorNumber + CRLF;
+                    sdp += string.IsNullOrWhiteSpace( originatorNumber ) ? null : "p=" + originatorNumber + CRLF;
                 }
             }
 
-            foreach (SDPMediaAnnouncement media in Media)
+			foreach(string extra in ExtraAttributes)
+			{
+				sdp += string.IsNullOrWhiteSpace(extra) ? null : extra + CRLF;
+			}
+
+			foreach(SDPMediaAnnouncement media in Media)
             {
                 sdp += (media == null) ? null : media.ToString();
-            }
-
-            foreach (string extra in ExtraAttributes)
-            {
-                sdp += (extra == null) ? null : extra + CRLF; ;
             }
 
             return sdp;
