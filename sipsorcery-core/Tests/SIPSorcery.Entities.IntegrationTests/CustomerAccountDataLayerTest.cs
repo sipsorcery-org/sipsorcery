@@ -36,7 +36,7 @@ namespace SIPSorcery.Entities.IntegrationTests
         }
 
         [TestMethod]
-        public void TestGetCustomerAccountByAccountCOde()
+        public void TestGetCustomerAccountByAccountCode()
         {
             string accountNumber = "000111222";
             string accountCode = "AC" + accountNumber;
