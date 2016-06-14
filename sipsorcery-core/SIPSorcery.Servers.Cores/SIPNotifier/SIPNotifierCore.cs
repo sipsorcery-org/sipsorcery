@@ -135,7 +135,7 @@ namespace SIPSorcery.Servers
                     #region Do as many validation checks as possible on the request before adding it to the queue.
 
                     if (subscribeRequest.Header.Event.IsNullOrBlank() ||
-                        !(subscribeRequest.Header.Event.ToLower() == SIPEventPackage.Dialog.ToString() || subscribeRequest.Header.Event.ToLower() == SIPEventPackage.Presence.ToString()))
+                        !(subscribeRequest.Header.Event.ToLower() == SIPEventPackage.Dialog.ToString().ToLower() || subscribeRequest.Header.Event.ToLower() == SIPEventPackage.Presence.ToString().ToLower()))
                     {
                         SIPResponse badEventResponse = SIPTransport.GetResponse(subscribeRequest, SIPResponseStatusCodesEnum.BadEvent, null);
                         m_sipTransport.SendResponse(badEventResponse);
