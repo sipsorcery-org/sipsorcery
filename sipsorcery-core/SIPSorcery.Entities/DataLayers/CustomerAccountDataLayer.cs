@@ -672,7 +672,8 @@ namespace SIPSorcery.Entities
                 return (from ca in db.CustomerAccounts
                         where
                             ca.Owner.ToLower() == owner.ToLower() &&
-                            ca.AccountNumber.ToLower() == accountNumber.ToLower()
+                            (ca.AccountNumber.ToLower() == accountNumber.ToLower() ||
+                            ca.AccountCode.ToLower() == accountNumber.ToLower())
                         select ca).SingleOrDefault();
             }
         }

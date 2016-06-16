@@ -73,14 +73,20 @@
     <Reference Include="System.Windows.Browser" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\ICE\IceCandidate.cs">
+      <Link>ICE\IceCandidate.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\ICE\IceConnectionStatesEnum.cs">
+      <Link>ICE\IceConnectionStatesEnum.cs</Link>
+    </Compile>
+    <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\ICE\TurnServer.cs">
+      <Link>ICE\TurnServer.cs</Link>
+    </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\SDP\SDP.cs">
       <Link>SDP\SDP.cs</Link>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\SDP\SDPConnectionInformation.cs">
       <Link>SDP\SDPConnectionInformation.cs</Link>
-    </Compile>
-    <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\SDP\SDPICECandidate.cs">
-      <Link>SDP\SDPICECandidate.cs</Link>
     </Compile>
     <Compile Include="..\..\sipsorcery-core\SIPSorcery.Net\SDP\SDPMediaAnnouncement.cs">
       <Link>SDP\SDPMediaAnnouncement.cs</Link>

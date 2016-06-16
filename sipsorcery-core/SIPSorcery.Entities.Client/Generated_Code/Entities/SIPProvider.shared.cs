@@ -108,10 +108,10 @@ namespace SIPSorcery.Entities
                     {
                         return "A callback number is required for Google Voice entries.";
                     }
-                    else if (Regex.Match(sipProvider.GVCallbackNumber, @"\D").Success)
-                    {
-                        return "The callback number contains an invalid character. Only digits are permitted.";
-                    }
+                    //else if (Regex.Match(sipProvider.GVCallbackNumber, @"\D").Success)
+                    //{
+                    //    return "The callback number contains an invalid character. Only digits are permitted.";
+                    //}
                 }
             }
 

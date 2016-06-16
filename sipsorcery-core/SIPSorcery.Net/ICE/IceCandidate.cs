@@ -112,6 +112,7 @@ namespace SIPSorcery.Net
             return candidate;
         }
 
+#if !SILVERLIGHT
         public override string ToString()
         {
             var candidateStr = String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ host generation 0\r\n", Crypto.GetRandomInt(10).ToString(), "1", Crypto.GetRandomInt(10).ToString(), LocalAddress.ToString(), (LocalRtpSocket.LocalEndPoint as IPEndPoint).Port);
@@ -125,5 +126,6 @@ namespace SIPSorcery.Net
 
             return candidateStr;
         }
+#endif
     }
 }

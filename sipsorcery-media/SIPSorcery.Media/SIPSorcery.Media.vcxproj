@@ -30,14 +30,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CLRSupport>true</CLRSupport>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CLRSupport>true</CLRSupport>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -70,7 +70,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\include;..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include;..\..\..\build\openssl\vs12-64\include;..\..\..\libvpx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include;..\build\openssl\msc_14.0-x64\Release\include;..\..\..\libvpx</AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
       <CallingConvention>
       </CallingConvention>
@@ -79,7 +79,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>advapi32.lib;user32.lib;gdi32.lib;ssleay32.lib;libeay32.lib;srtp.lib;Ws2_32.lib;vpxmdd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libs\x64;..\..\..\build\openssl\vs12-64\lib;..\..\..\build\srtp\vs12-64\$(Configuration);..\..\..\build\vpx\vs12-64\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\build\ffmpeg;..\build\srtp\msc_14.0-x64\$(Configuration);..\build\vpx\msc_14.0-x64\$(Configuration);..\build\openssl\msc_14.0-x64\Release\lib;</AdditionalLibraryDirectories>
       <TargetMachine>MachineX64</TargetMachine>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
@@ -89,7 +89,7 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\include;..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include;..\..\..\build\openssl\vs12-64\include;..\..\..\libvpx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include;..\build\openssl\msc_14.0-x64\Release\include;..\..\..\libvpx</AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
       <CallingConvention>
       </CallingConvention>
@@ -98,7 +98,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>advapi32.lib;user32.lib;gdi32.lib;ssleay32.lib;libeay32.lib;srtp.lib;Ws2_32.lib;vpxmd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libs\x64;..\..\..\build\openssl\vs12-64\lib;..\..\..\build\srtp\vs12-64\$(Configuration);..\..\..\build\vpx\vs12-64\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\build\ffmpeg;..\build\srtp\msc_14.0-x64\$(Configuration);..\build\vpx\msc_14.0-x64\$(Configuration);..\build\openssl\msc_14.0-x64\Release\lib;</AdditionalLibraryDirectories>
       <TargetMachine>MachineX64</TargetMachine>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>

@@ -1971,7 +1971,7 @@ namespace SIPSorcery.SIP
                         string headerNameLower = headerName.ToLower();
 
                         #region Via
-                        if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_VIA.ToLower() ||
+                        if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_VIA ||
                             headerNameLower == SIPHeaders.SIP_HEADER_VIA.ToLower())
                         {
                             //sipHeader.RawVia += headerValue;
@@ -1988,7 +1988,7 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region CallId
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_CALLID.ToLower() ||
+                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_CALLID ||
                                 headerNameLower == SIPHeaders.SIP_HEADER_CALLID.ToLower())
                         {
                             sipHeader.CallId = headerValue;
@@ -2043,7 +2043,7 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Contact
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_CONTACT.ToLower() ||
+                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_CONTACT ||
                             headerNameLower == SIPHeaders.SIP_HEADER_CONTACT.ToLower())
                         {
                             List<SIPContactHeader> contacts = SIPContactHeader.ParseContactHeader(headerValue);
@@ -2054,7 +2054,7 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region From
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_FROM.ToLower() ||
+                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_FROM ||
                              headerNameLower == SIPHeaders.SIP_HEADER_FROM.ToLower())
                         {
                             //sipHeader.RawFrom = headerValue;
@@ -2062,7 +2062,7 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region To
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_TO.ToLower() ||
+                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_TO ||
                             headerNameLower == SIPHeaders.SIP_HEADER_TO.ToLower())
                         {
                             //sipHeader.RawTo = headerValue;
@@ -2112,7 +2112,7 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region ContentLength
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_CONTENTLENGTH.ToLower() ||
+                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_CONTENTLENGTH ||
                             headerNameLower == SIPHeaders.SIP_HEADER_CONTENTLENGTH.ToLower())
                         {
                             if (!Int32.TryParse(headerValue, out sipHeader.ContentLength))
@@ -2122,7 +2122,7 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region ContentType
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_CONTENTTYPE.ToLower() ||
+                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_CONTENTTYPE ||
                             headerNameLower == SIPHeaders.SIP_HEADER_CONTENTTYPE.ToLower())
                         {
                             sipHeader.ContentType = headerValue;
@@ -2254,7 +2254,7 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Supported
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_SUPPORTED.ToLower() ||
+                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_SUPPORTED ||
                             headerNameLower == SIPHeaders.SIP_HEADER_SUPPORTED.ToLower())
                         {
                             sipHeader.Supported = headerValue;

@@ -55,7 +55,15 @@ namespace SIPSorcery.Net
         public STUNv2AddressAttribute(byte[] attributeValue)
             : base(STUNv2AttributeTypesEnum.MappedAddress, attributeValue)
         {
-            Port = BitConverter.ToInt16(attributeValue, 2);
+            if (BitConverter.IsLittleEndian)
+            {
+                Port = Utility.ReverseEndian(BitConverter.ToUInt16(attributeValue, 2));
+            }
+            else
+            {
+                Port = BitConverter.ToUInt16(attributeValue, 2);
+            }
+
             Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
         }
 
