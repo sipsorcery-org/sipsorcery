@@ -157,13 +157,13 @@ namespace SIPSorcery.SIP
                     }
 
                     // ACK for 2xx response needs to be a new transaction and gets routed based on SIP request fields.
-                    ackRequest = GetNewTransactionACKRequest(sipResponse, ackURI, LocalSIPEndPoint);
+                    ackRequest = GetNewTransactionACKRequest(sipResponse, ackURI, localSIPEndPoint);
                     base.SendRequest(ackRequest);
                 }
                 else
                 {
                     // ACK for non 2xx response is part of the INVITE transaction and gets routed to the same endpoint as the INVITE.
-                    ackRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI, LocalSIPEndPoint);
+                    ackRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI, localSIPEndPoint);
                     base.SendRequest(RemoteEndPoint, ackRequest);
                 }
 
