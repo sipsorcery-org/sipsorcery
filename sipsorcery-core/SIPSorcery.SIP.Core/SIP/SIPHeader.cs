@@ -2161,13 +2161,13 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Allow-Events
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALLOW_EVENTS || headerNameLower == SIPHeaders.SIP_COMPACTHEADER_ALLOWEVENTS)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALLOW_EVENTS || headerNameLower == SIPHeaders.SIP_COMPACTHEADER_ALLOWEVENTS.ToLower())
                         {
                             sipHeader.AllowEvents = headerValue;
                         }
                         #endregion
                         #region Event
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_EVENT.ToLower() || headerNameLower == SIPHeaders.SIP_COMPACTHEADER_EVENT)
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_EVENT.ToLower() || headerNameLower == SIPHeaders.SIP_COMPACTHEADER_EVENT.ToLower())
                         {
                             sipHeader.Event = headerValue;
                         }
@@ -2205,7 +2205,7 @@ namespace SIPSorcery.SIP
                         #endregion
                         #region Refer-To.
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_REFERTO.ToLower() ||
-                            headerNameLower == SIPHeaders.SIP_COMPACTHEADER_REFERTO)
+                            headerNameLower == SIPHeaders.SIP_COMPACTHEADER_REFERTO.ToLower())
                         {
                             if (sipHeader.ReferTo == null)
                             {
