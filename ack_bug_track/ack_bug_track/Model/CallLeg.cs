@@ -55,7 +55,17 @@ namespace ack_bug_track.Model
 			get;
 			set;
 		}
-		public SIPContactHeader Contact
+		public SIPContactHeader LocalContact
+		{
+			get;
+			set;
+		}
+		public SIPContactHeader RemoteContact
+		{
+			get;
+			set;
+		}
+		public SIPEndPoint SipEndpointLocal
 		{
 			get;
 			set;

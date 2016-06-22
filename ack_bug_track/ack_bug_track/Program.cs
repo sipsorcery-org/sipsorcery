@@ -100,7 +100,7 @@ namespace ack_bug_track
 						this.SipTransport.AddSIPChannel(udpChannel);
 					if(tcpChannel != null)
 						this.SipTransport.AddSIPChannel(tcpChannel);
-					
+
 					this.SipTransport.SIPTransportRequestReceived += SIPTransport_RequestReceived;
 					this.SipTransport.SIPTransportResponseReceived += SIPTransport_ResponseReceived;
 				}
@@ -136,18 +136,24 @@ namespace ack_bug_track
 				{
 					legA = new Model.CallLeg();
 					legA.LegType = Model.CallLegType.LegA;
-					legA.Contact = new SIPContactHeader("LegA", SIPURI.ParseSIPURI($"sip:lega@{localSIPEndPoint.GetIPEndPoint().ToString()}"));
+					legA.LocalContact = new SIPContactHeader("LegA", SIPURI.ParseSIPURI($"sip:lega@{localSIPEndPoint.GetIPEndPoint().ToString()};transport={localSIPEndPoint.Protocol.ToString()}"));
+					if(sipRequest.Header.Contact.Count>0)
+						legA.RemoteContact = sipRequest.Header.Contact[0];
 					this.CallLegs.Add(legA);
 				}
 
 				else if(leg.CallState != Model.CallState.Idle)
 				{
 					//handle re-invite: hold, unhold, re-invite
+					SIPResponse tryingResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
 					if(leg.SipServer != null)
-						leg.SipServer.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
+					{
+						UASInviteTransaction tryingTransaction = this.SipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+						tryingTransaction.SendInformationalResponse(tryingResponse);
+						//leg.SipServer.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
+					}
 					else if(leg.SipClient != null)
 					{
-						SIPResponse tryingResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
 						leg.SipClient.ServerTransaction.SendInformationalResponse(tryingResponse);
 					}
 					if(leg.PartnerLeg == null)
@@ -167,21 +173,26 @@ namespace ack_bug_track
 						dialogue.CSeq += 1;
 						SIPRequest reInviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, dialogue.RemoteTarget);
 						SIPHeader reInviteHeader = new SIPHeader(SIPFromHeader.ParseFromHeader(dialogue.LocalUserField.ToString()), SIPToHeader.ParseToHeader(dialogue.RemoteUserField.ToString()), dialogue.CSeq, dialogue.CallId);
-						SIPURI contactURI = dialogue.LocalUserField.URI;
-						reInviteHeader.Contact = SIPContactHeader.ParseContactHeader("<" + contactURI.ToString() + ">");
+						reInviteHeader.Contact = new List<SIPContactHeader>();
+						reInviteHeader.Contact.Add(leg.PartnerLeg.LocalContact);
 						reInviteHeader.CSeqMethod = SIPMethodsEnum.INVITE;
 						reInviteRequest.Header = reInviteHeader;
+						reInviteRequest.Header.Routes = dialogue.RouteSet;
 						if(dialogue.Direction == SIPCallDirection.Out)
 						{
-							reInviteRequest = leg.PartnerLeg.SIPInvite;
-							reInviteRequest.Header.CSeq = dialogue.CSeq;
-							reInviteRequest.Header.Contact = reInviteHeader.Contact;
-							reInviteRequest.Header.CSeqMethod = reInviteHeader.CSeqMethod;
-							reInviteRequest.Header.Vias.PopTopViaHeader();
+							if(reInviteRequest.Header.Vias.Length>0)
+								reInviteRequest.Header.Vias.PopTopViaHeader();
+							SIPViaHeader viaHeader = new SIPViaHeader(new SIPEndPoint(dialogue.RemoteTarget), CallProperties.CreateBranchId());
+							reInviteRequest.Header.Vias.PushViaHeader(viaHeader);
 						}
-						reInviteRequest.Header.Routes = dialogue.RouteSet;
-						SIPViaHeader viaHeader = new SIPViaHeader(new SIPEndPoint(dialogue.LocalUserField.URI), CallProperties.CreateBranchId());
-						reInviteRequest.Header.Vias.PushViaHeader(viaHeader);
+						else if(dialogue.Direction == SIPCallDirection.In)
+						{
+							if(reInviteRequest.Header.Vias.Length > 0)
+								reInviteRequest.Header.Vias.PopTopViaHeader();
+							SIPViaHeader viaHeader = new SIPViaHeader(new SIPEndPoint(dialogue.LocalUserField.URI), CallProperties.CreateBranchId());
+							reInviteRequest.Header.Vias.PushViaHeader(viaHeader);
+						}
+
 						reInviteRequest.Body = sipRequest.Body;
 						reInviteRequest.Header.ContentLength = sipRequest.Header.ContentLength;
 						reInviteRequest.Header.ContentType = sipRequest.Header.ContentType;
@@ -194,9 +205,16 @@ namespace ack_bug_track
 						{
 							reinviteEndPoint = lookupResult.GetSIPEndPoint();
 						}
+						SIPEndPoint reinviteLocalEndpoint = null;
+						if(leg.PartnerLeg.SipClient != null)
+							reinviteLocalEndpoint = leg.PartnerLeg.SipClient.ServerTransaction.LocalSIPEndPoint;
+						else if(leg.PartnerLeg.SipServer != null)
+							reinviteLocalEndpoint = leg.PartnerLeg.SipEndpointLocal;
+
 						leg.SIPInvite = sipRequest;
 						leg.PartnerLeg.SIPInvite = reInviteRequest;
-						UACInviteTransaction reInviteTransaction = this.SipTransport.CreateUACTransaction(reInviteRequest, reinviteEndPoint, localSIPEndPoint, reinviteEndPoint);
+
+						UACInviteTransaction reInviteTransaction = this.SipTransport.CreateUACTransaction(reInviteRequest, reinviteEndPoint, reinviteLocalEndpoint, null);
 						reInviteTransaction.CDR = null;
 						reInviteTransaction.UACInviteTransactionFinalResponseReceived += ReInviteTransaction_UACInviteTransactionFinalResponseReceived;
 						reInviteTransaction.SendInviteRequest(reinviteEndPoint, reInviteRequest);
@@ -209,6 +227,7 @@ namespace ack_bug_track
 					legA.SIPInvite = sipRequest;
 					legA.CallId = sipRequest.Header.CallId;
 					UASInviteTransaction inviteTransaction = this.SipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+					legA.SipEndpointLocal = localSIPEndPoint;
 					legA.SipServer = new SIPServerUserAgent(this.SipTransport, null, null, null, SIPCallDirection.In, null, null, null, inviteTransaction);
 					legA.SipServer.CallCancelled += SipServer_CallCancelled;
 
@@ -218,7 +237,7 @@ namespace ack_bug_track
 					legA.SIPTo = tryingResponse.Header.To;
 
 					////need valid sip target here
-					string dst = $"sip:legb@siptarget:5060;transport=tcp";
+					string dst = $"sip:siptrunk@10.0.0.157:5060;transport=tcp";
 
 					Model.CallLeg legB = legA.PartnerLeg;
 					if(legB == null)
@@ -237,7 +256,7 @@ namespace ack_bug_track
 								null,
 								null,
 								callURI.ToString(),
-								legA.Contact.ToString(),
+								legA.LocalContact.ToString(),
 								callURI.User + "<" + callURI.ToString() + ">",
 								null,
 								null,
@@ -455,6 +474,7 @@ namespace ack_bug_track
 			int CallResponseCode = sipResponse.StatusCode;
 			if(legB != null)
 			{
+				legB.SipEndpointLocal = uac.ServerTransaction.LocalSIPEndPoint;
 				legB.CallId = sipResponse.Header.CallId;
 				Model.CallLeg legA = legB.PartnerLeg;
 				if(legA != null)
@@ -476,6 +496,8 @@ namespace ack_bug_track
 					else
 					{
 						legB.SIPTo = sipResponse.Header.To;
+						if(sipResponse.Header.Contact.Count>0)
+							legB.RemoteContact = sipResponse.Header.Contact[0];
 						legB.CallState = Model.CallState.Connected;
 
 						legA.SipServer.Answer("application/sdp", sipResponse.Body, null, SIPDialogueTransferModesEnum.NotAllowed);
@@ -495,6 +517,9 @@ namespace ack_bug_track
 			var legB = (from leg in this.CallLegs where leg.SipClient == uac select leg).FirstOrDefault();
 			if(legB != null)
 			{
+				if(uac.ServerTransaction.TransactionRequest.Header.Contact.Count > 0)
+					legB.LocalContact = uac.ServerTransaction.TransactionRequest.Header.Contact[0];
+				legB.SipEndpointLocal = uac.ServerTransaction.LocalSIPEndPoint;
 				legB.CallId = sipResponse.Header.CallId;
 				Model.CallLeg legA = legB.PartnerLeg;
 				if(legA != null)
@@ -512,6 +537,9 @@ namespace ack_bug_track
 			var legB = (from leg in this.CallLegs where leg.SipClient == uac select leg).FirstOrDefault();
 			if(legB != null)
 			{
+				if(uac.ServerTransaction.TransactionRequest.Header.Contact.Count>0)
+					legB.LocalContact = uac.ServerTransaction.TransactionRequest.Header.Contact[0];
+				legB.SipEndpointLocal = uac.ServerTransaction.LocalSIPEndPoint;
 				legB.CallId = sipResponse.Header.CallId;
 				Model.CallLeg legA = legB.PartnerLeg;
 				if(legA != null)
@@ -529,6 +557,7 @@ namespace ack_bug_track
 			var legB = (from leg in this.CallLegs where leg.SipClient == uac select leg).FirstOrDefault();
 			if(legB != null)
 			{
+				legB.SipEndpointLocal = uac.ServerTransaction.LocalSIPEndPoint;
 				Model.CallLeg legA = legB.PartnerLeg;
 				if(legA != null)
 				{
