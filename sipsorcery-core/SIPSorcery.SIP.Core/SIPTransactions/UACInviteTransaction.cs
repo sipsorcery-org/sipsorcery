@@ -51,7 +51,11 @@ namespace SIPSorcery.SIP
         public event SIPTransactionResponseReceivedDelegate UACInviteTransactionFinalResponseReceived;
         public event SIPTransactionTimedOutDelegate UACInviteTransactionTimedOut;
 
-        internal UACInviteTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy)
+        private string _ackContent;
+        private string _ackContentType;
+        
+        internal UACInviteTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy
+            ,string ackContent = null, string ackContentType= null)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.Invite;
@@ -64,6 +68,9 @@ namespace SIPSorcery.SIP
             TransactionTimedOut += UACInviteTransaction_TransactionTimedOut;
             TransactionRequestReceived += UACInviteTransaction_TransactionRequestReceived;
             TransactionRemoved += UACInviteTransaction_TransactionRemoved;
+
+            _ackContent = ackContent;
+            _ackContentType = ackContentType;
         }
 
         private void UACInviteTransaction_TransactionRemoved(SIPTransaction transaction)
@@ -248,6 +255,13 @@ namespace SIPSorcery.SIP
 
             SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
             ackRequest.Header.Vias.PushViaHeader(viaHeader);
+
+            if(_ackContent.NotNullOrBlank())
+            {
+                ackRequest.Header.ContentType = _ackContentType;
+                ackRequest.Body = _ackContent;
+                ackRequest.Header.ContentLength = ackRequest.Body.Length;
+            }
 
             return ackRequest;
         }
