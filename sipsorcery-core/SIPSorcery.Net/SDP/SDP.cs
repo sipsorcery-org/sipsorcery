@@ -299,7 +299,10 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            sdp.AddExtra(sdpLine);
+							if(activeAnnouncement != null)
+								activeAnnouncement.AddExtra(sdpLine);
+							else
+								sdp.AddExtra(sdpLine);
                         }
                     }
 
