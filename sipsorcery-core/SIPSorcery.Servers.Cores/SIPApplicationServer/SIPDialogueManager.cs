@@ -793,7 +793,7 @@ namespace SIPSorcery.Servers
                 // Get the dialogue for the other end of the bridge.
                 SIPDialogue bridgedDialogue = GetOppositeDialogue(dialogue);
 
-                SIPEndPoint forwardSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint(new SIPEndPoint(bridgedDialogue.RemoteTarget));
+                SIPEndPoint forwardSIPEndPoint = m_outboundProxy ?? m_sipTransport.GetDefaultSIPEndPoint(new SIPEndPoint(bridgedDialogue.RemoteTarget));
                 IPAddress remoteUAIPAddress = (inDialogueTransaction.TransactionRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? remoteEndPoint.Address : SIPEndPoint.ParseSIPEndPoint(inDialogueTransaction.TransactionRequest.Header.ProxyReceivedFrom).Address;
 
                 SIPRequest forwardedRequest = inDialogueTransaction.TransactionRequest.Copy();
