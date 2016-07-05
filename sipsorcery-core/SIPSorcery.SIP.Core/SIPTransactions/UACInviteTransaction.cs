@@ -51,13 +51,17 @@ namespace SIPSorcery.SIP
         public event SIPTransactionResponseReceivedDelegate UACInviteTransactionFinalResponseReceived;
         public event SIPTransactionTimedOutDelegate UACInviteTransactionTimedOut;
 
-        internal UACInviteTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy)
+        private bool _sendOkAckManually = false;
+
+        /// <param name="sendOkAckManually">If set an ACK request for the 2xx response will NOT be sent and it will be up to the application to explicitly call the SendACK request.</param>
+        internal UACInviteTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy, bool sendOkAckManually = false)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.Invite;
             m_localTag = sipRequest.Header.From.FromTag;
             SIPEndPoint localEP = SIPEndPoint.TryParse(sipRequest.Header.ProxySendFrom) ?? localSIPEndPoint;
             CDR = new SIPCDR(SIPCallDirection.Out, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, localEP, dstEndPoint);
+            _sendOkAckManually = sendOkAckManually;
 
             TransactionFinalResponseReceived += UACInviteTransaction_TransactionFinalResponseReceived;
             TransactionInformationResponseReceived += UACInviteTransaction_TransactionInformationResponseReceived;
@@ -134,36 +138,17 @@ namespace SIPSorcery.SIP
             try
             {
                 // BranchId for 2xx responses needs to be a new one, non-2xx final responses use same one as original request.
-                SIPRequest ackRequest = null;
                 if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode < 299)
                 {
-                    if (sipResponse.Header.To != null)
+                    if (_sendOkAckManually == false)
                     {
-                        m_remoteTag = sipResponse.Header.To.ToTag;
+                        Send2xxAckRequest(null, null);
                     }
-
-                    SIPURI ackURI = m_transactionRequest.URI;
-                    if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0)
-                    {
-                        ackURI = sipResponse.Header.Contact[0].ContactURI;
-                        // Don't mangle private contacts if there is a Record-Route header. If a proxy is putting private IP's in a Record-Route header that's its problem.
-                        if ((sipResponse.Header.RecordRoutes == null || sipResponse.Header.RecordRoutes.Length == 0)
-                            && IPSocket.IsPrivateAddress(ackURI.Host) && !sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank())
-                        {
-                            // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
-                            SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom);
-                            ackURI.Host = remoteUASSIPEndPoint.GetIPEndPoint().ToString();
-                        }
-                    }
-
-                    // ACK for 2xx response needs to be a new transaction and gets routed based on SIP request fields.
-                    ackRequest = GetNewTransactionACKRequest(sipResponse, ackURI, LocalSIPEndPoint);
-                    base.SendRequest(ackRequest);
                 }
                 else
                 {
                     // ACK for non 2xx response is part of the INVITE transaction and gets routed to the same endpoint as the INVITE.
-                    ackRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI, LocalSIPEndPoint);
+                    var ackRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI, LocalSIPEndPoint);
                     base.SendRequest(RemoteEndPoint, ackRequest);
                 }
 
@@ -183,6 +168,42 @@ namespace SIPSorcery.SIP
             {
                 logger.Error("Exception UACInviteTransaction_TransactionFinalResponseReceived. " + excp.Message);
             }
+        }
+
+        public void Send2xxAckRequest(string content, string contentType)
+        {
+            var sipResponse = m_transactionFinalResponse;
+
+            if (sipResponse.Header.To != null)
+            {
+                m_remoteTag = sipResponse.Header.To.ToTag;
+            }
+
+            SIPURI ackURI = m_transactionRequest.URI;
+            if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0)
+            {
+                ackURI = sipResponse.Header.Contact[0].ContactURI;
+                // Don't mangle private contacts if there is a Record-Route header. If a proxy is putting private IP's in a Record-Route header that's its problem.
+                if ((sipResponse.Header.RecordRoutes == null || sipResponse.Header.RecordRoutes.Length == 0)
+                    && IPSocket.IsPrivateAddress(ackURI.Host) && !sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank())
+                {
+                    // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
+                    SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom);
+                    ackURI.Host = remoteUASSIPEndPoint.GetIPEndPoint().ToString();
+                }
+            }
+
+            // ACK for 2xx response needs to be a new transaction and gets routed based on SIP request fields.
+            var ackRequest = GetNewTransactionACKRequest(sipResponse, ackURI, LocalSIPEndPoint);
+
+            if(content.NotNullOrBlank())
+            {
+                ackRequest.Body = content;
+                ackRequest.Header.ContentLength = ackRequest.Body.Length;
+                ackRequest.Header.ContentType = contentType;
+            }
+
+            base.SendRequest(ackRequest);
         }
 
         /// <summary>
