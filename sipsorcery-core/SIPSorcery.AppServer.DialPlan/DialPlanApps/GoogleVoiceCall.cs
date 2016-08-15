@@ -52,7 +52,6 @@ namespace SIPSorcery.AppServer.DialPlan
     {
         private const string GOOGLE_COM_URL = "https://www.google.com";
         private const string PRE_LOGIN_URL = "https://www.google.com/accounts/ServiceLogin";
-        //private const string LOGIN_URL = "https://www.google.com/accounts/ServiceLoginAuth?service=grandcentral";
         private const string LOGIN_URL = "https://accounts.google.com/accounts/ServiceLogin?service=grandcentral";
         private const string VOICE_HOME_URL = "https://www.google.com/voice";
         private const string VOICE_CALL_URL = "https://www.google.com/voice/call/connect";
