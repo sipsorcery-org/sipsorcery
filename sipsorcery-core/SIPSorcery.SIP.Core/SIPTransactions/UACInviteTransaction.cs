@@ -260,9 +260,14 @@ namespace SIPSorcery.SIP
             header.AuthenticationHeader = TransactionRequest.Header.AuthenticationHeader;
             header.ProxySendFrom = base.TransactionRequest.Header.ProxySendFrom;
 
+            // If the UAS supplies a desired Record-Route list use that first. Otherwise fall back to any Route list used in the original transaction.
             if (sipResponse.Header.RecordRoutes != null)
             {
                 header.Routes = sipResponse.Header.RecordRoutes.Reversed();
+            }
+            else if(base.TransactionRequest.Header.Routes != null)
+            {
+                header.Routes = base.TransactionRequest.Header.Routes;
             }
 
             ackRequest.Header = header;
