@@ -185,8 +185,18 @@ namespace SIPSorcery.AppServer.DialPlan
                     throw new ApplicationException("Could not find GALX key on your Google Voice pre-login page, callback cannot proceed.");
                 }
 
+                Match gxfMatch = Regex.Match(galxResponseFromServer, @"name=""gxf""[^>]+value=""(?<gxfvalue>.*?)""", RegexOptions.IgnoreCase);
+                if (gxfMatch.Success)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "gxf key " + gxfMatch.Result("${gxfvalue}") + " successfully retrieved.", m_username));
+                }
+                else
+                {
+                    throw new ApplicationException("Could not find GXF key on your Google Voice pre-login page, callback cannot proceed.");
+                }
+
                 // Build login request.
-                string loginData = "Email=" + Uri.EscapeDataString(emailAddress) + "&Passwd=" + Uri.EscapeDataString(password) + "&GALX=" + Uri.EscapeDataString(galxMatch.Result("${galxvalue}"));
+                string loginData = "Email=" + Uri.EscapeDataString(emailAddress) + "&Passwd=" + Uri.EscapeDataString(password) + "&GALX=" + Uri.EscapeDataString(galxMatch.Result("${galxvalue}")) + "&gxf=" + Uri.EscapeDataString(gxfMatch.Result("${gxfvalue}"));
                 HttpWebRequest loginRequest = (HttpWebRequest)WebRequest.Create(LOGIN_URL);
                 loginRequest.CookieContainer = m_cookies;
                 loginRequest.ConnectionGroupName = "login";
