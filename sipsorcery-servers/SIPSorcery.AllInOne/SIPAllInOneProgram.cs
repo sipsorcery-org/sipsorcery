@@ -157,6 +157,13 @@ namespace SIPSorcery.SIPAppServer
                     Thread daemonThread = new Thread(new ThreadStart(daemon.Start));
                     daemonThread.Start();
 
+                    Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e) {
+                        e.Cancel = true;
+                        Console.WriteLine("Ctrl-C, clean up and exit...");
+                        daemon.Stop();
+                        m_proxyUp.Set();
+                    };
+
                     m_proxyUp.WaitOne();
                 }
                 else
