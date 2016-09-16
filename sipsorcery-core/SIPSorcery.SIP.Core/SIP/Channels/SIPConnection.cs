@@ -60,7 +60,7 @@ namespace SIPSorcery.SIP
         private static string m_sipMessageDelimiter = SIPConstants.CRLF + SIPConstants.CRLF;
 
         public Stream SIPStream;
-        public Socket SIPSocket;
+        //public Socket SIPSocket;
         public IPEndPoint RemoteEndPoint;
         public SIPProtocolsEnum ConnectionProtocol;
         public SIPConnectionsEnum ConnectionType;
@@ -69,24 +69,26 @@ namespace SIPSorcery.SIP
         public int SocketBufferEndPosition = 0;
 
         private SIPChannel m_owningChannel;
+        private TcpClient _tcpClient;
 
         public event SIPMessageReceivedDelegate SIPMessageReceived;
         public event SIPConnectionDisconnectedDelegate SIPSocketDisconnected = (ep) => { };
 
-        public SIPConnection(SIPChannel channel, Socket sipSocket, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
-        {
-            LastTransmission = DateTime.Now;
-            m_owningChannel = channel;
-            SIPSocket = sipSocket;
-            RemoteEndPoint = remoteEndPoint;
-            ConnectionProtocol = connectionProtocol;
-            ConnectionType = connectionType;
-        }
+        //public SIPConnection(SIPChannel channel, Socket sipSocket, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
+        //{
+        //    LastTransmission = DateTime.Now;
+        //    m_owningChannel = channel;
+        //    SIPSocket = sipSocket;
+        //    RemoteEndPoint = remoteEndPoint;
+        //    ConnectionProtocol = connectionProtocol;
+        //    ConnectionType = connectionType;
+        //}
 
-        public SIPConnection(SIPChannel channel, Stream sipStream, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
+        public SIPConnection(SIPChannel channel, TcpClient tcpClient, Stream sipStream, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
         {
             LastTransmission = DateTime.Now;
             m_owningChannel = channel;
+            _tcpClient = tcpClient;
             SIPStream = sipStream;
             RemoteEndPoint = remoteEndPoint;
             ConnectionProtocol = connectionProtocol;
@@ -329,14 +331,8 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (SIPSocket != null)
-                {
-                    SIPSocket.Close();
-                }
-                else
-                {
-                    SIPStream.Close();
-                }
+                _tcpClient.Client.Shutdown(SocketShutdown.Both);
+                _tcpClient.Close();
             }
             catch (Exception closeExcp)
             {
