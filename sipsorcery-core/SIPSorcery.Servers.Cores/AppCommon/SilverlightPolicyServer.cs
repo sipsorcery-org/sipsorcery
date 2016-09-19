@@ -85,26 +85,37 @@ namespace SIPSorcery.Servers
 
         private void Listen()
         {
-            // Create the Listening Socket 
-            m_listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-            // Put the socket into dual mode to allow a single socket 
-            // to accept both IPv4 and IPv6 connections 
-            // Otherwise, server needs to listen on two sockets, 
-            // one for IPv4 and one for IPv6 
-            // NOTE: dual-mode sockets are supported on Vista and later 
-            //m_listener.SetSocketOption(SocketOptionLevel.IPv6, (SocketOptionName)27, 0); 
-            m_listener.Bind(new IPEndPoint(IPAddress.Any, 943));
-            m_listener.Listen(10);
-
-            while (!m_exit)
+            try
             {
-                Socket clientSocket = m_listener.Accept();
-                logger.Debug("SilverlightPolicyServer connection from " + clientSocket.RemoteEndPoint + ".");
-                PolicyConnection pc = new PolicyConnection(clientSocket, Encoding.UTF8.GetBytes(m_policy));
+                // Create the Listening Socket 
+                m_listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+                // Put the socket into dual mode to allow a single socket 
+                // to accept both IPv4 and IPv6 connections 
+                // Otherwise, server needs to listen on two sockets, 
+                // one for IPv4 and one for IPv6 
+                // NOTE: dual-mode sockets are supported on Vista and later 
+                //m_listener.SetSocketOption(SocketOptionLevel.IPv6, (SocketOptionName)27, 0); 
+                m_listener.Bind(new IPEndPoint(IPAddress.Any, 943));
+                m_listener.Listen(10);
+
+                while (!m_exit)
+                {
+                    Socket clientSocket = m_listener.Accept();
+
+                    if (!m_exit)
+                    {
+                        logger.Debug("SilverlightPolicyServer connection from " + clientSocket.RemoteEndPoint + ".");
+                        PolicyConnection pc = new PolicyConnection(clientSocket, Encoding.UTF8.GetBytes(m_policy));
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SilverlightPolicyServer.Listen. " + excp.Message);
             }
         }
-    } 
+    }
 
     /// <summary>
     ///  Encapsulate and manage state for a single connection from a client 

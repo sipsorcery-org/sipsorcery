@@ -517,7 +517,7 @@ CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            SIPConnection testConnection = new SIPConnection(null, (Stream)null, null, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+            SIPConnection testConnection = new SIPConnection(null, null, (Stream)null, null, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
             Array.Copy(testReceiveBytes, testConnection.SocketBuffer, testReceiveBytes.Length);
 
             bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length);
@@ -586,7 +586,7 @@ CRLF + CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            SIPConnection testConnection = new SIPConnection(null, (Stream)null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+            SIPConnection testConnection = new SIPConnection(null, null, (Stream)null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
             int sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
             Array.Copy(testReceiveBytes, testConnection.SocketBuffer, testReceiveBytes.Length);
@@ -634,7 +634,7 @@ CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            SIPConnection testConnection = new SIPConnection(null, (Stream)null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+            SIPConnection testConnection = new SIPConnection(null, null, (Stream)null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
             int sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
             Array.Copy(testReceiveBytes, testConnection.SocketBuffer, testReceiveBytes.Length);

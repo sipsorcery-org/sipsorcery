@@ -53,7 +53,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private const string GOOGLE_COM_URL = "https://www.google.com";
         private const string PRE_LOGIN_URL = "https://www.google.com/accounts/ServiceLogin";
         //private const string LOGIN_URL = "https://www.google.com/accounts/ServiceLoginAuth?service=grandcentral";
-        private const string LOGIN_URL = "https://accounts.google.com/accounts/ServiceLogin?service=grandcentral";
+        private const string LOGIN_URL = "https://accounts.google.com/accounts/ServiceLoginAuth?service=grandcentral";
         private const string VOICE_HOME_URL = "https://www.google.com/voice";
         private const string SMS_SEND_URL = "https://www.google.com/voice/sms/send";
         private const int HTTP_REQUEST_TIMEOUT = 5;
@@ -141,8 +141,18 @@ namespace SIPSorcery.AppServer.DialPlan
                     throw new ApplicationException("Could not find GALX key on your Google Voice pre-login page, SMS cannot proceed.");
                 }
 
+                Match gxfMatch = Regex.Match(galxResponseFromServer, @"name=""gxf""[^>]+value=""(?<gxfvalue>.*?)""", RegexOptions.IgnoreCase);
+                if (gxfMatch.Success)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "gxf key " + gxfMatch.Result("${gxfvalue}") + " successfully retrieved.", m_username));
+                }
+                else
+                {
+                    throw new ApplicationException("Could not find GXF key on your Google Voice pre-login page, callback cannot proceed.");
+                }
+
                 // Build login request.
-                string loginData = "Email=" + Uri.EscapeDataString(emailAddress) + "&Passwd=" + Uri.EscapeDataString(password) + "&GALX=" + Uri.EscapeDataString(galxMatch.Result("${galxvalue}"));
+                string loginData = "Email=" + Uri.EscapeDataString(emailAddress) + "&Passwd=" + Uri.EscapeDataString(password) + "&GALX=" + Uri.EscapeDataString(galxMatch.Result("${galxvalue}")) + "&gxf=" + Uri.EscapeDataString(gxfMatch.Result("${gxfvalue}"));
                 HttpWebRequest loginRequest = (HttpWebRequest)WebRequest.Create(LOGIN_URL);
                 loginRequest.CookieContainer = m_cookies;
                 loginRequest.ConnectionGroupName = "login";

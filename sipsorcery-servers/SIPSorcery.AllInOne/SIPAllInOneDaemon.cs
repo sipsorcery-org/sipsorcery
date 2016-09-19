@@ -101,7 +101,7 @@ namespace SIPSorcery.SIPAppServer
         private SIPDialogueManager m_sipDialogueManager;
         private RTCCCore m_rtccCore;
         private RateBulkUpdater m_rateUpdater;
-        private SIPNotifyManager m_notifyManager;
+        //private SIPNotifyManager m_notifyManager;
         private SIPProxyDaemon m_sipProxyDaemon;
         private SIPMonitorDaemon m_sipMonitorDaemon;
         private SIPRegAgentDaemon m_sipRegAgentDaemon;
@@ -495,25 +495,24 @@ namespace SIPSorcery.SIPAppServer
             {
                 logger.Debug("SIP Application Server stopping...");
 
-                DNSManager.Stop();
                 m_dialPlanEngine.StopScriptMonitoring = true;
 
-                if (m_accessPolicyHost != null)
+                if (m_accessPolicyHost != null && m_accessPolicyHost.State == CommunicationState.Opened)
                 {
                     m_accessPolicyHost.Close();
                 }
 
-                if (m_sipProvisioningHost != null)
+                if (m_sipProvisioningHost != null && m_sipProvisioningHost.State == CommunicationState.Opened)
                 {
                     m_sipProvisioningHost.Close();
                 }
 
-                if (m_callManagerSvcHost != null)
+                if (m_callManagerSvcHost != null && m_callManagerSvcHost.State == CommunicationState.Opened)
                 {
                     m_callManagerSvcHost.Close();
                 }
 
-                if (m_sipNotificationsHost != null)
+                if (m_sipNotificationsHost != null && m_sipNotificationsHost.State == CommunicationState.Opened)
                 {
                     m_sipNotificationsHost.Close();
                 }
@@ -528,10 +527,10 @@ namespace SIPSorcery.SIPAppServer
                     m_rtccCore.Stop();
                 }
 
-                if (m_notifyManager != null)
-                {
-                    m_notifyManager.Stop();
-                }
+                //if (m_notifyManager != null)
+                //{
+                //    m_notifyManager.Stop();
+                //}
 
                 if (m_monitorEventWriter != null)
                 {
@@ -568,8 +567,14 @@ namespace SIPSorcery.SIPAppServer
                     m_sipNotifierDaemon.Stop();
                 }
 
+                if(m_rateUpdater != null)
+                {
+                    m_rateUpdater.Stop();
+                }
+
                 // Shutdown the SIPTransport layer.
                 m_sipTransport.Shutdown();
+                DNSManager.Stop();
 
                 m_sipSorceryPersistor.StopCDRWrites = true;
 

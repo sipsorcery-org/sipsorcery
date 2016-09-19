@@ -129,7 +129,7 @@ namespace SIPSorcery.SIP
 
                         SslStream sslStream = new SslStream(tcpClient.GetStream(), false);
 
-                        SIPConnection sipTLSConnection = new SIPConnection(this, sslStream, remoteEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Listener);
+                        SIPConnection sipTLSConnection = new SIPConnection(this, tcpClient, sslStream, remoteEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Listener);
 
                         sslStream.BeginAuthenticateAsServer(m_serverCertificate, EndAuthenticateAsServer, sipTLSConnection);
 
@@ -340,7 +340,7 @@ namespace SIPSorcery.SIP
                 SslStream sslStream = new SslStream(tcpClient.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
                 //DisplayCertificateInformation(sslStream);
 
-                 SIPConnection callerConnection = new SIPConnection(this, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
+                 SIPConnection callerConnection = new SIPConnection(this, tcpClient, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
                  sslStream.BeginAuthenticateAsClient(serverCN, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
                 //sslStream.AuthenticateAsClient(serverCN);
 
