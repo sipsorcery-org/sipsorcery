@@ -60,7 +60,7 @@ namespace SIPSorcery.SIP
         private static string m_sipMessageDelimiter = SIPConstants.CRLF + SIPConstants.CRLF;
 
         public Stream SIPStream;
-        //public Socket SIPSocket;
+        public Socket SIPSocket;
         public IPEndPoint RemoteEndPoint;
         public SIPProtocolsEnum ConnectionProtocol;
         public SIPConnectionsEnum ConnectionType;
@@ -69,26 +69,26 @@ namespace SIPSorcery.SIP
         public int SocketBufferEndPosition = 0;
 
         private SIPChannel m_owningChannel;
-        private TcpClient _tcpClient;
+        //private TcpClient _tcpClient;
 
         public event SIPMessageReceivedDelegate SIPMessageReceived;
         public event SIPConnectionDisconnectedDelegate SIPSocketDisconnected = (ep) => { };
 
-        //public SIPConnection(SIPChannel channel, Socket sipSocket, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
-        //{
-        //    LastTransmission = DateTime.Now;
-        //    m_owningChannel = channel;
-        //    SIPSocket = sipSocket;
-        //    RemoteEndPoint = remoteEndPoint;
-        //    ConnectionProtocol = connectionProtocol;
-        //    ConnectionType = connectionType;
-        //}
-
-        public SIPConnection(SIPChannel channel, TcpClient tcpClient, Stream sipStream, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
+        public SIPConnection(SIPChannel channel, Socket sipSocket, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
         {
             LastTransmission = DateTime.Now;
             m_owningChannel = channel;
-            _tcpClient = tcpClient;
+            SIPSocket = sipSocket;
+            RemoteEndPoint = remoteEndPoint;
+            ConnectionProtocol = connectionProtocol;
+            ConnectionType = connectionType;
+        }
+
+        public SIPConnection(SIPChannel channel, Socket sipSocket, Stream sipStream, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
+        {
+            LastTransmission = DateTime.Now;
+            m_owningChannel = channel;
+            SIPSocket = sipSocket;
             SIPStream = sipStream;
             RemoteEndPoint = remoteEndPoint;
             ConnectionProtocol = connectionProtocol;
@@ -104,7 +104,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (bytesRead > 0)
+                if(bytesRead > 0)
                 {
                     SocketBufferEndPosition += bytesRead;
                     int bytesSkipped = 0;
@@ -112,10 +112,10 @@ namespace SIPSorcery.SIP
                     // Attempt to extract a SIP message from the receive buffer.
                     byte[] sipMsgBuffer = SIPConnection.ProcessReceive(SocketBuffer, 0, SocketBufferEndPosition, out bytesSkipped);
 
-                    while (sipMsgBuffer != null)
+                    while(sipMsgBuffer != null)
                     {
                         // A SIP message is available.
-                        if (SIPMessageReceived != null)
+                        if(SIPMessageReceived != null)
                         {
                             LastTransmission = DateTime.Now;
                             SIPMessageReceived(m_owningChannel, new SIPEndPoint(SIPProtocolsEnum.tcp, RemoteEndPoint), sipMsgBuffer);
@@ -123,7 +123,7 @@ namespace SIPSorcery.SIP
 
                         SocketBufferEndPosition -= (sipMsgBuffer.Length + bytesSkipped);
 
-                        if (SocketBufferEndPosition == 0)
+                        if(SocketBufferEndPosition == 0)
                         {
                             //Array.Clear(SocketBuffer, 0, SocketBuffer.Length);
                             break;
@@ -151,19 +151,19 @@ namespace SIPSorcery.SIP
                     return false;
                 }
             }
-            catch (ObjectDisposedException)
+            catch(ObjectDisposedException)
             {
                 // Will occur if the owning channel closed the connection.
                 SIPSocketDisconnected(RemoteEndPoint);
                 return false;
             }
-            catch (SocketException)
+            catch(SocketException)
             {
                 // Will occur if the owning channel closed the connection.
                 SIPSocketDisconnected(RemoteEndPoint);
                 return false;
             }
-            catch (Exception excp)
+            catch(Exception excp)
             {
                 logger.Error("Exception SIPConnection SocketReadCompleted. " + excp.Message);
                 throw;
@@ -185,9 +185,9 @@ namespace SIPSorcery.SIP
             // at the start of a receive as a non SIP transmission and skip over it.
             bytesSkipped = 0;
             bool letterCharFound = false;
-            while (!letterCharFound && start < length)
+            while(!letterCharFound && start < length)
             {
-                if ((int)receiveBuffer[start] >= 65)
+                if((int)receiveBuffer[start] >= 65)
                 {
                     break;
                 }
@@ -198,15 +198,15 @@ namespace SIPSorcery.SIP
                 }
             }
 
-            if (start < length)
+            if(start < length)
             {
                 int endMessageIndex = ByteBufferInfo.GetStringPosition(receiveBuffer, start, length, m_sipMessageDelimiter, null);
-                if (endMessageIndex != -1)
+                if(endMessageIndex != -1)
                 {
                     int contentLength = GetContentLength(receiveBuffer, start, endMessageIndex);
                     int messageLength = endMessageIndex - start + m_sipMessageDelimiter.Length + contentLength;
 
-                    if (length - start >= messageLength)
+                    if(length - start >= messageLength)
                     {
                         byte[] sipMsgBuffer = new byte[messageLength];
                         Buffer.BlockCopy(receiveBuffer, start, sipMsgBuffer, 0, messageLength);
@@ -227,7 +227,7 @@ namespace SIPSorcery.SIP
         /// <returns></returns>
         public static int GetContentLength(byte[] buffer, int start, int end)
         {
-            if (buffer == null || start > end || buffer.Length < end)
+            if(buffer == null || start > end || buffer.Length < end)
             {
                 return 0;
             }
@@ -241,18 +241,18 @@ namespace SIPSorcery.SIP
                 bool possibleHeaderFound = false;
                 int contentLengthValueStartPosn = 0;
 
-                for (int index = start; index < end; index++)
+                for(int index = start; index < end; index++)
                 {
-                    if (possibleHeaderFound)
+                    if(possibleHeaderFound)
                     {
                         // A possilbe match has been found for the Content-Length header. The next characters can only be whitespace or colon.
-                        if (buffer[index] == ':')
+                        if(buffer[index] == ':')
                         {
                             // The Content-Length header has been found.
                             contentLengthValueStartPosn = index + 1;
                             break;
                         }
-                        else if (buffer[index] == ' ' || buffer[index] == '\t')
+                        else if(buffer[index] == ' ' || buffer[index] == '\t')
                         {
                             // Skip any whitespace between the header and the colon.
                             continue;
@@ -266,11 +266,11 @@ namespace SIPSorcery.SIP
                         }
                     }
 
-                    if (buffer[index] == contentHeaderBytes[inContentHeaderPosn] || buffer[index] == contentHeaderBytes[inContentHeaderPosn] + 32)
+                    if(buffer[index] == contentHeaderBytes[inContentHeaderPosn] || buffer[index] == contentHeaderBytes[inContentHeaderPosn] + 32)
                     {
                         inContentHeaderPosn++;
 
-                        if (inContentHeaderPosn == contentHeaderBytes.Length)
+                        if(inContentHeaderPosn == contentHeaderBytes.Length)
                         {
                             possibleHeaderFound = true;
                         }
@@ -280,11 +280,11 @@ namespace SIPSorcery.SIP
                         inContentHeaderPosn = 0;
                     }
 
-                    if (buffer[index] == compactContentHeaderBytes[inCompactContentHeaderPosn] || buffer[index] == compactContentHeaderBytes[inCompactContentHeaderPosn] + 32)
+                    if(buffer[index] == compactContentHeaderBytes[inCompactContentHeaderPosn] || buffer[index] == compactContentHeaderBytes[inCompactContentHeaderPosn] + 32)
                     {
                         inCompactContentHeaderPosn++;
 
-                        if (inCompactContentHeaderPosn == compactContentHeaderBytes.Length)
+                        if(inCompactContentHeaderPosn == compactContentHeaderBytes.Length)
                         {
                             possibleHeaderFound = true;
                         }
@@ -295,19 +295,19 @@ namespace SIPSorcery.SIP
                     }
                 }
 
-                if (contentLengthValueStartPosn != 0)
+                if(contentLengthValueStartPosn != 0)
                 {
                     // The Content-Length header has been found, this block extracts the value of the header.
                     string contentLengthValue = null;
 
-                    for (int index = contentLengthValueStartPosn; index < end; index++)
+                    for(int index = contentLengthValueStartPosn; index < end; index++)
                     {
-                        if (contentLengthValue == null && (buffer[index] == ' ' || buffer[index] == '\t'))
+                        if(contentLengthValue == null && (buffer[index] == ' ' || buffer[index] == '\t'))
                         {
                             // Skip any whitespace at the start of the header value.
                             continue;
                         }
-                        else if (buffer[index] >= '0' && buffer[index] <= '9')
+                        else if(buffer[index] >= '0' && buffer[index] <= '9')
                         {
                             contentLengthValue += ((char)buffer[index]).ToString();
                         }
@@ -317,7 +317,7 @@ namespace SIPSorcery.SIP
                         }
                     }
 
-                    if (!contentLengthValue.IsNullOrBlank())
+                    if(!contentLengthValue.IsNullOrBlank())
                     {
                         return Convert.ToInt32(contentLengthValue);
                     }
@@ -331,10 +331,18 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                _tcpClient.Client.Shutdown(SocketShutdown.Both);
-                _tcpClient.Close();
+                if(SIPSocket != null)
+                {
+                    SIPSocket.Close();
+                }
+                else
+                {
+                    SIPStream.Close();
+                }
+                //_tcpClient.Client.Shutdown(SocketShutdown.Both);
+                //_tcpClient.Close();
             }
-            catch (Exception closeExcp)
+            catch(Exception closeExcp)
             {
                 logger.Warn("Exception closing socket in SIPConnection Close. " + closeExcp.Message);
             }
