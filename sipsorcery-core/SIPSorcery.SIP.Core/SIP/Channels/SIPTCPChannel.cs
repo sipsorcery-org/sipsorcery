@@ -405,29 +405,35 @@ namespace SIPSorcery.SIP
 
         public override void Close()
         {
-            logger.Debug("Closing SIP TCP Channel " + SIPChannelEndPoint + ".");
-
-            Closed = true;
-
-            foreach (SIPConnection tcpConnection in m_connectedSockets.Values)
+            if (!Closed == true)
             {
+                logger.Debug("Closing SIP TCP Channel " + SIPChannelEndPoint + ".");
+
+                Closed = true;
+
                 try
                 {
-                    tcpConnection.Close();
+                    m_tcpServerListener.Stop();
                 }
-                catch (Exception connectionCloseExcp)
+                catch (Exception listenerCloseExcp)
                 {
-                    logger.Warn("Exception SIPTCPChannel Close (shutting down connection to " + tcpConnection.RemoteEndPoint ?? "?" + "). " + connectionCloseExcp.Message);
+                    logger.Warn("Exception SIPTCPChannel Close (shutting down listener). " + listenerCloseExcp.Message);
                 }
-            }
 
-            try
-            {
-                m_tcpServerListener.Stop();
-            }
-            catch (Exception listenerCloseExcp)
-            {
-                logger.Warn("Exception SIPTCPChannel Close (shutting down listener). " + listenerCloseExcp.Message);
+                lock (m_connectedSockets)
+                {
+                    foreach (SIPConnection tcpConnection in m_connectedSockets.Values)
+                    {
+                        try
+                        {
+                            tcpConnection.Close();
+                        }
+                        catch (Exception connectionCloseExcp)
+                        {
+                            logger.Warn("Exception SIPTCPChannel Close (shutting down connection to " + tcpConnection.RemoteEndPoint ?? "?" + "). " + connectionCloseExcp.Message);
+                        }
+                    }
+                }
             }
         }
 

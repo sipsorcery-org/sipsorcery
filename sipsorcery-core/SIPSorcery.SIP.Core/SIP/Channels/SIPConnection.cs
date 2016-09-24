@@ -331,7 +331,17 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                _tcpClient.Client.Shutdown(SocketShutdown.Both);
+                if (_tcpClient.GetStream() != null)
+                {
+                    _tcpClient.GetStream().Close(0);
+                }
+
+                if (_tcpClient.Client != null && _tcpClient.Client.Connected == true)
+                {
+                    _tcpClient.Client.Shutdown(SocketShutdown.Both);
+                    _tcpClient.Client.Close(0);
+                }
+
                 _tcpClient.Close();
             }
             catch (Exception closeExcp)
