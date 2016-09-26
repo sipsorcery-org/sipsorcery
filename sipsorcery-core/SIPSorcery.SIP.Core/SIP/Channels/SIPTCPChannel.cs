@@ -265,8 +265,11 @@ namespace SIPSorcery.SIP
                         catch (SocketException)
                         {
                             logger.Warn("Could not send to TCP socket " + dstEndPoint + ", closing and removing.");
-                            sipTCPClient.SIPStream.Close();
-                            m_connectedSockets.Remove(dstEndPoint.ToString());
+							lock(m_connectedSockets)
+							{
+								sipTCPClient.Close();
+								m_connectedSockets.Remove(dstEndPoint.ToString());
+							}
                         }
                     }
 
@@ -356,8 +359,10 @@ namespace SIPSorcery.SIP
                     m_connectionFailures.Remove(dstEndPoint.ToString());
 
                     SIPConnection callerConnection = new SIPConnection(this, tcpClient, tcpClient.GetStream(), dstEndPoint, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
-                    m_connectedSockets.Add(dstEndPoint.ToString(), callerConnection);
-
+					lock(m_connectedSockets)
+					{
+						m_connectedSockets.Add(dstEndPoint.ToString(), callerConnection);
+					}
                     callerConnection.SIPSocketDisconnected += SIPTCPSocketDisconnected;
                     callerConnection.SIPMessageReceived += SIPTCPMessageReceived;
                     //byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];

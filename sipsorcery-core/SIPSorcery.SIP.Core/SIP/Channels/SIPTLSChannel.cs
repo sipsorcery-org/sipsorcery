@@ -182,7 +182,10 @@ namespace SIPSorcery.SIP
                 sslStream.ReadTimeout = 5000;
                 sslStream.WriteTimeout = 5000;
 
-                m_connectedSockets.Add(sipTLSConnection.RemoteEndPoint.ToString(), sipTLSConnection);
+				lock(m_connectedSockets)
+				{
+					m_connectedSockets.Add(sipTLSConnection.RemoteEndPoint.ToString(), sipTLSConnection);
+				}
 
                 sipTLSConnection.SIPSocketDisconnected += SIPTLSSocketDisconnected;
                 sipTLSConnection.SIPMessageReceived += SIPTLSMessageReceived;
@@ -274,8 +277,11 @@ namespace SIPSorcery.SIP
                         catch (SocketException)
                         {
                             logger.Warn("Could not send to TLS socket " + dstEndPoint + ", closing and removing.");
-                            sipTLSClient.SIPStream.Close();
-                            m_connectedSockets.Remove(dstEndPoint.ToString());
+							lock(m_connectedSockets)
+							{
+								sipTLSClient.Close();
+								m_connectedSockets.Remove(dstEndPoint.ToString());
+							}
                         }
                     }
 
@@ -397,8 +403,11 @@ namespace SIPSorcery.SIP
 
                 if (tcpClient != null && tcpClient.Connected)
                 {
-                    //SIPConnection callerConnection = new SIPConnection(this, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
-                    m_connectedSockets.Add(callerConnection.RemoteEndPoint.ToString(), callerConnection);
+					//SIPConnection callerConnection = new SIPConnection(this, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
+					lock(m_connectedSockets)
+					{
+						m_connectedSockets.Add(callerConnection.RemoteEndPoint.ToString(), callerConnection);
+					}
 
                     callerConnection.SIPSocketDisconnected += SIPTLSSocketDisconnected;
                     callerConnection.SIPMessageReceived += SIPTLSMessageReceived;
@@ -601,7 +610,7 @@ namespace SIPSorcery.SIP
                     {
                         try
                         {
-                            tcpConnection.SIPStream.Close();
+                            tcpConnection.Close();
                         }
                         catch (Exception connectionCloseExcp)
                         {

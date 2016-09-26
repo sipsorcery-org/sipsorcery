@@ -331,18 +331,16 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (_tcpClient.GetStream() != null)
+				if(_tcpClient.Client != null ) //&& _tcpClient.Client.Connected == true) //must not check connected, need to Shutdown/Close anyway
                 {
-                    _tcpClient.GetStream().Close(0);
+                    //_tcpClient.Client.Shutdown(SocketShutdown.Both); //Shutdown causes Exception in next Close steps
+                    _tcpClient.Client.Close();
                 }
-
-                if (_tcpClient.Client != null && _tcpClient.Client.Connected == true)
-                {
-                    _tcpClient.Client.Shutdown(SocketShutdown.Both);
-                    _tcpClient.Client.Close(0);
-                }
-
-                _tcpClient.Close();
+				if(this.SIPStream != null)
+				{
+					this.SIPStream.Close();
+				}
+				_tcpClient.Close();
             }
             catch (Exception closeExcp)
             {
