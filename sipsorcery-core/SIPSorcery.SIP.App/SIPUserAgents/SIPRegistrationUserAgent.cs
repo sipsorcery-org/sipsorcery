@@ -478,7 +478,7 @@ namespace SIPSorcery.SIP.App
         private int GetUpdatedExpiry(SIPResponse sipResponse)
         {
             // Find the contact in the list that matches the one being maintained by this agent in order to determine the expiry value.
-            int serverExpiry = 0;
+            int serverExpiry = m_expiry;
             int headerExpires = sipResponse.Header.Expires;
             int contactExpires = -1;
             if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0)
