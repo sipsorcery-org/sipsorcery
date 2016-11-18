@@ -76,10 +76,18 @@ namespace SIPSorcery.SimpleServers.Proxy
                 _sipTransport.SIPTransportRequestReceived += SIPTransportRequestReceived;
                 _sipTransport.SIPTransportResponseReceived += SIPTransportResponseReceived;
 
+                // If you want to see ALL the nitty gritty SIP traffic wire up the events below.
+                //_sipTransport.SIPBadRequestInTraceEvent += SIPBadRequestInTraceEvent;
+                //_sipTransport.SIPBadResponseInTraceEvent += SIPBadResponseInTraceEvent;
+                //_sipTransport.SIPRequestInTraceEvent += SIPRequestInTraceEvent;
+                //_sipTransport.SIPRequestOutTraceEvent += SIPRequestOutTraceEvent;
+                //_sipTransport.SIPResponseInTraceEvent += SIPResponseInTraceEvent;
+                //_sipTransport.SIPResponseOutTraceEvent += SIPResponseOutTraceEvent;
+
                 ManualResetEvent mre = new ManualResetEvent(false);
                 mre.WaitOne();
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 Console.WriteLine("Exception Main. " + excp);
             }
@@ -151,7 +159,7 @@ namespace SIPSorcery.SimpleServers.Proxy
                     logger.Debug("SIP " + sipRequest.Method + " request received but no processing has been set up for it, rejecting.");
                 }
             }
-            catch(NotImplementedException)
+            catch (NotImplementedException)
             {
                 logger.Debug(sipRequest.Method + " request processing not implemented for " + sipRequest.URI.ToParameterlessString() + " from " + remoteEndPoint + ".");
 
@@ -171,5 +179,43 @@ namespace SIPSorcery.SimpleServers.Proxy
         {
             logger.Debug("Response received from " + remoteEndPoint + " method " + sipResponse.Header.CSeqMethod + " status " + sipResponse.Status + ".");
         }
+
+        #region Non-functional trace/logging handlers. Main use is troubleshooting.
+
+        private static void SIPRequestInTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        {
+            logger.DebugFormat("REQUEST IN {0}->{1}", remoteEndPoint.ToString(), localSIPEndPoint.ToString());
+            logger.Debug(sipRequest.ToString());
+        }
+
+        private static void SIPRequestOutTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        {
+            logger.DebugFormat("REQUEST OUT {0}->{1}", localSIPEndPoint.ToString(), remoteEndPoint.ToString());
+            logger.Debug(sipRequest.ToString());
+        }
+
+        private static void SIPResponseInTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
+        {
+            logger.DebugFormat("RESPONSE IN {0}->{1}", remoteEndPoint.ToString(), localSIPEndPoint.ToString());
+            logger.Debug(sipResponse.ToString());
+        }
+
+        private static void SIPResponseOutTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
+        {
+            logger.DebugFormat("RESPONSE OUT {0}->{1}", localSIPEndPoint.ToString(), remoteEndPoint.ToString());
+            logger.Debug(sipResponse.ToString());
+        }
+
+        private static void SIPBadRequestInTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, string message, SIPValidationFieldsEnum sipErrorField, string rawMessage)
+        {
+            logger.Warn("Bad SIPRequest. Field=" + sipErrorField + ", Message=" + message + ", Remote=" + remoteEndPoint.ToString() + ".");
+        }
+
+        private static void SIPBadResponseInTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, string message, SIPValidationFieldsEnum sipErrorField, string rawMessage)
+        {
+            logger.Warn("Bad SIPResponse. Field=" + sipErrorField + ", Message=" + message + ", Remote=" + remoteEndPoint.ToString() + ".");
+        }
+
+        #endregion
     }
 }
