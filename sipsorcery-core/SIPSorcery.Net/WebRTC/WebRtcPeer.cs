@@ -38,6 +38,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -289,12 +290,30 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         {
             IceNegotiationStartedAt = DateTime.Now;
             LocalIceCandidates = new List<IceCandidate>();
+            List<UnicastIPAddressInformation> addresses = new List<UnicastIPAddressInformation>();
 
-            var addresses = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetUnicastAddresses()
-                .Where(x =>
-                x.Address.AddressFamily == AddressFamily.InterNetwork &&    // Exclude IPv6 at this stage.
-                IPAddress.IsLoopback(x.Address) == false &&
-                (x.Address != null && x.Address.ToString().StartsWith(AUTOMATIC_PRIVATE_ADRRESS_PREFIX) == false));
+            // CAUTION: GetUnicastAddresses canj take up to 60 seconds to return if the machine has IP addresses in the IpDadStateTentative state,
+            // such as DHCP addresses still checking for their lease. More info at: https://msdn.microsoft.com/en-us/library/windows/desktop/aa814507(v=vs.85).aspx 
+            //var addresses = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetUnicastAddresses()
+            //    .Where(x =>
+            //    x.Address.AddressFamily == AddressFamily.InterNetwork &&    // Exclude IPv6 at this stage.
+            //    IPAddress.IsLoopback(x.Address) == false &&
+            //    (x.Address != null && x.Address.ToString().StartsWith(AUTOMATIC_PRIVATE_ADRRESS_PREFIX) == false));
+
+            foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (ni.OperationalStatus == OperationalStatus.Up)
+                {
+                    foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
+                    {
+                        if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && IPAddress.IsLoopback(ip.Address) == false && ip.IsTransient == false)
+                        {
+                            //Console.WriteLine(ip.Address.ToString());
+                            addresses.Add(ip);
+                        }
+                    }
+                }
+            }
 
             foreach (var address in addresses)
             {
