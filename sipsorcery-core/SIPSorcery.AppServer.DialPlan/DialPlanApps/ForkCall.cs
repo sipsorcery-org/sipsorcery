@@ -236,8 +236,7 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 callDescriptor.DialPlanContextID = (m_dialPlanContext != null) ? m_dialPlanContext.DialPlanContextID : Guid.Empty;
 
-                // A call will not be delayed if there are no other calls being attempted.
-                if (callDescriptor.DelaySeconds != 0 && m_switchCalls.Count > 0)
+                if (callDescriptor.DelaySeconds != 0)
                 {
                     callDescriptor.DelayMRE = new ManualResetEvent(false);
                     lock (m_delayedCalls)

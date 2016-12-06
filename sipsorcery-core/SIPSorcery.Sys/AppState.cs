@@ -93,7 +93,7 @@ namespace SIPSorcery.Sys
                 // Initialise the string dictionary to hold the application settings.
                 m_appConfigSettings = new StringDictionary();
 
-                CurrentDirectory = Regex.Replace(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase), @"^file:\\", ""); // There's undoubtedly a better way!
+                CurrentDirectory = Environment.CurrentDirectory;
             }
             catch (Exception excp)
             {

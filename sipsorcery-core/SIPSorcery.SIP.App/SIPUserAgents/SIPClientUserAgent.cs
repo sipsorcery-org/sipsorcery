@@ -390,27 +390,6 @@ namespace SIPSorcery.SIP.App
 
                         }
 
-                        // If this is a billable call attempt to reserve the first chunk of credit.
-                        //if (m_serverTransaction.CDR != null && AccountCode.NotNullOrBlank())
-                        //{
-                        //    m_serverTransaction.CDR.AccountCode = AccountCode;
-                        //    m_serverTransaction.CDR.Rate = Rate;
-                        //    //m_serverTransaction.CDR.Cost = ReservedCredit;
-                        //    //m_serverTransaction.CDR.SecondsReserved = ReservedSeconds;
-
-                        //    var reservationCost = m_customerAccountDataLayer.ReserveInitialCredit(AccountCode, Rate, m_rtccInitialReservationSeconds);
-
-                        //    if (reservationCost == Decimal.MinusOne)
-                        //    {
-                        //        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call will not proceed as the intial real-time call control credit reservation failed.", Owner));
-                        //    }
-                        //    else
-                        //    {
-                        //        m_serverTransaction.CDR.SecondsReserved = m_rtccInitialReservationSeconds;
-                        //        m_serverTransaction.CDR.Cost = reservationCost;
-                        //    }
-                        //}
-
                         #endregion
 
                         if (rtccError == null)
@@ -433,13 +412,13 @@ namespace SIPSorcery.SIP.App
                         if (routeSet == null || routeSet.Length == 0)
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Forward leg failed, could not resolve URI host " + callURI.Host, Owner));
-                            m_serverTransaction.CancelCall("Unresolvable destination " + callURI.Host);
+                            m_serverTransaction?.CancelCall("Unresolvable destination " + callURI.Host);
                             FireCallFailed(this, "unresolvable destination " + callURI.Host);
                         }
                         else
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Forward leg failed, could not resolve top Route host " + routeSet.TopRoute.Host, Owner));
-                            m_serverTransaction.CancelCall("Unresolvable destination " + routeSet.TopRoute.Host);
+                            m_serverTransaction?.CancelCall("Unresolvable destination " + routeSet.TopRoute.Host);
                             FireCallFailed(this, "unresolvable destination " + routeSet.TopRoute.Host);
                         }
                     }
@@ -447,22 +426,13 @@ namespace SIPSorcery.SIP.App
             }
             catch (ApplicationException appExcp)
             {
-                if (m_serverTransaction != null)
-                {
-                    m_serverTransaction.CancelCall(appExcp.Message);
-                }
-
+                m_serverTransaction?.CancelCall(appExcp.Message);
                 FireCallFailed(this, appExcp.Message);
             }
             catch (Exception excp)
             {
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Exception UserAgentClient Call. " + excp.Message, Owner));
-
-                if (m_serverTransaction != null)
-                {
-                    m_serverTransaction.CancelCall("Unknown exception");
-                }
-
+                m_serverTransaction?.CancelCall("Unknown exception");
                 FireCallFailed(this, excp.Message);
             }
         }
@@ -590,8 +560,6 @@ namespace SIPSorcery.SIP.App
                 }
                 else if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
                 {
-                    //logger.Debug("AuthReqd Final response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + m_serverTransaction.TransactionRequest.URI.ToString() + ".");
-
                     #region Authenticate client call to third party server.
 
                     if (!m_callCancelled)
@@ -612,17 +580,8 @@ namespace SIPSorcery.SIP.App
                             authRequest.SetCredentials(username, m_sipCallDescriptor.Password, m_sipCallDescriptor.Uri, SIPMethodsEnum.INVITE.ToString());
 
                             SIPRequest authInviteRequest = m_serverTransaction.TransactionRequest;
-
-                            //if (SIPProviderMagicJack.IsMagicJackRequest(sipResponse))
-                            //{
-                            //    authInviteRequest.Header.AuthenticationHeader = SIPProviderMagicJack.GetAuthenticationHeader(sipResponse);
-                            //}
-                            //else
-                            //{
                             authInviteRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
                             authInviteRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
-                            //}
-
                             authInviteRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                             authInviteRequest.Header.CSeq = authInviteRequest.Header.CSeq + 1;
 
@@ -639,54 +598,22 @@ namespace SIPSorcery.SIP.App
 
                                 if (AccountCode != null)
                                 {
-                                    //var rtccCDR = new SIPSorcery.Entities.CDR()
-                                    //{
-                                    //    ID = m_serverTransaction.CDR.CDRId.ToString(),
-                                    //    Owner = m_serverTransaction.CDR.Owner,
-                                    //    AdminMemberID = m_serverTransaction.CDR.AdminMemberId,
-                                    //    Inserted = DateTimeOffset.UtcNow.ToString("o"),
-                                    //    Created = DateTimeOffset.UtcNow.ToString("o"),
-                                    //    DstHost = "",
-                                    //    DstURI = m_sipCallDescriptor.Uri,
-                                    //    CallID = "",
-                                    //    FromHeader = m_sipCallDescriptor.From,
-                                    //    LocalSocket = "udp:0.0.0.0:5060",
-                                    //    RemoteSocket = "udp:0.0.0.0:5060",
-                                    //    Direction = m_serverTransaction.CDR.CallDirection.ToString(),
-                                    //    DialPlanContextID = m_sipCallDescriptor.DialPlanContextID.ToString()
-                                    //};
 #if !SILVERLIGHT
-                                    //m_customerAccountDataLayer.UpdateRealTimeCallControlCDRID(originalCallTransaction.CDR.CDRId.ToString(), m_serverTransaction.CDR);
-                                    RtccUpdateCdr_External(originalCallTransaction.CDR.CDRId.ToString(), m_serverTransaction.CDR);
+                                    RtccUpdateCdr_External?.Invoke(originalCallTransaction.CDR?.CDRId.ToString(), m_serverTransaction.CDR);
 #endif
-
-                                    //m_serverTransaction.CDR.AccountCode = AccountCode;
-                                    //m_serverTransaction.CDR.Rate = Rate;
-
-                                    // Transfer any credit reservations from the original call to the new call.
-                                    //m_serverTransaction.CDR.SecondsReserved = originalCallTransaction.CDR.SecondsReserved;
-                                    //m_serverTransaction.CDR.Cost = originalCallTransaction.CDR.Cost;
-                                    //m_serverTransaction.CDR.IncrementSeconds = originalCallTransaction.CDR.IncrementSeconds;
-                                    //originalCallTransaction.CDR.SecondsReserved = 0;
-                                    //originalCallTransaction.CDR.Cost = 0;
-                                    //originalCallTransaction.CDR.ReconciliationResult = "reallocated";
-                                    //originalCallTransaction.CDR.IsHangingUp = true;
                                 }
 
-                                logger.Debug("RTCC reservation was reallocated from CDR " + originalCallTransaction.CDR.CDRId + " to " + m_serverTransaction.CDR.CDRId + " for owner " + Owner + ".");
+                                logger.Debug("RTCC reservation was reallocated from CDR " + originalCallTransaction.CDR?.CDRId + " to " + m_serverTransaction.CDR?.CDRId + " for owner " + Owner + ".");
                             }
                             m_serverTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
                             m_serverTransaction.UACInviteTransactionFinalResponseReceived += ServerFinalResponseReceived;
                             m_serverTransaction.UACInviteTransactionTimedOut += ServerTimedOut;
                             m_serverTransaction.TransactionTraceMessage += TransactionTraceMessage;
 
-                            //logger.Debug("Sending authenticated switchcall INVITE to " + ForwardedCallStruct.Host + ".");
                             m_serverTransaction.SendInviteRequest(m_serverEndPoint, authInviteRequest);
-                            //m_sipTrace += "Sending " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + " " + localEndPoint + "->" + ForwardedTransaction.TransactionRequest.GetRequestEndPoint() + "\r\n" + ForwardedTransaction.TransactionRequest.ToString();
                         }
                         else
                         {
-                            //logger.Debug("Authentication of client call to switch server failed.");
                             FireCallFailed(this, "Authentication with provided credentials failed");
                         }
                     }

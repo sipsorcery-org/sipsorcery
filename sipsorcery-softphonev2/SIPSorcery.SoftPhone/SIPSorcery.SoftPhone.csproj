@@ -91,24 +91,24 @@
       <HintPath>..\packages\NAudio.1.7.3\lib\net35\NAudio.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.Net, Version=1.5.0.39318, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.5.1\lib\net46\SIPSorcery.Net.dll</HintPath>
+    <Reference Include="SIPSorcery.Net, Version=1.5.0.35789, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SIPSorcery.1.5.5\lib\net46\SIPSorcery.Net.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.SIP.App, Version=1.5.0.39318, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.5.1\lib\net46\SIPSorcery.SIP.App.dll</HintPath>
+    <Reference Include="SIPSorcery.SIP.App, Version=1.5.0.35791, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SIPSorcery.1.5.5\lib\net46\SIPSorcery.SIP.App.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.SIP.Core, Version=1.5.0.39318, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.5.1\lib\net46\SIPSorcery.SIP.Core.dll</HintPath>
+    <Reference Include="SIPSorcery.SIP.Core, Version=1.5.0.37141, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SIPSorcery.1.5.5\lib\net46\SIPSorcery.SIP.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.Sys, Version=1.5.0.39318, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.5.1\lib\net46\SIPSorcery.Sys.dll</HintPath>
+    <Reference Include="SIPSorcery.Sys, Version=1.5.0.37141, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SIPSorcery.1.5.5\lib\net46\SIPSorcery.Sys.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorceryMedia, Version=1.1.5895.39785, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\SIPSorceryMedia.1.1.7\lib\net45\SIPSorceryMedia.dll</HintPath>
+    <Reference Include="SIPSorceryMedia, Version=1.1.5907.36321, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\SIPSorceryMedia.1.1.9\lib\net45\SIPSorceryMedia.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -240,12 +240,12 @@
     <Resource Include="readme.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\packages\SIPSorceryMedia.1.1.7\build\SIPSorceryMedia.targets" Condition="Exists('..\packages\SIPSorceryMedia.1.1.7\build\SIPSorceryMedia.targets')" />
+  <Import Project="..\packages\SIPSorceryMedia.1.1.9\build\SIPSorceryMedia.targets" Condition="Exists('..\packages\SIPSorceryMedia.1.1.9\build\SIPSorceryMedia.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\SIPSorceryMedia.1.1.7\build\SIPSorceryMedia.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SIPSorceryMedia.1.1.7\build\SIPSorceryMedia.targets'))" />
+    <Error Condition="!Exists('..\packages\SIPSorceryMedia.1.1.9\build\SIPSorceryMedia.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SIPSorceryMedia.1.1.9\build\SIPSorceryMedia.targets'))" />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
