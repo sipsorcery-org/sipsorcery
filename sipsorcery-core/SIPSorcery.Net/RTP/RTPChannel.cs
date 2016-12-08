@@ -440,10 +440,7 @@ namespace SIPSorcery.Net
 
                                             _packets.Clear();
 
-                                            if (OnRTPQueueFull != null)
-                                            {
-                                                OnRTPQueueFull();
-                                            }
+                                            OnRTPQueueFull?.Invoke();
                                         }
                                         else
                                         {
@@ -468,10 +465,7 @@ namespace SIPSorcery.Net
                             if (_rtpSocketError == SocketError.Interrupted)
                             {
                                 // If the receive has been interrupted it means the socket has been closed.
-                                if (OnRTPSocketDisconnected != null)
-                                {
-                                    OnRTPSocketDisconnected();
-                                }
+                                OnRTPSocketDisconnected?.Invoke();
                                 break;
                             }
                             else
@@ -495,10 +489,7 @@ namespace SIPSorcery.Net
                 {
                     logger.Error("Exception RTPChannel.RTPReceive. " + excp);
 
-                    if (OnRTPSocketDisconnected != null)
-                    {
-                        OnRTPSocketDisconnected();
-                    }
+                    OnRTPSocketDisconnected?.Invoke();
                 }
             }
         }
@@ -666,9 +657,9 @@ namespace SIPSorcery.Net
                 {
                     _controlLastActivityAt = DateTime.Now;
 
-                    if (OnControlDataReceived != null)
+                    if (bytesRead > 0)
                     {
-                        OnControlDataReceived(_controlSocketBuffer.Take(bytesRead).ToArray());
+                        OnControlDataReceived?.Invoke(_controlSocketBuffer.Take(bytesRead).ToArray());
                     }
 
                     _controlSocket.BeginReceive(_controlSocketBuffer, 0, _controlSocketBuffer.Length, SocketFlags.None, out _controlSocketError, ControlSocketReceive, null);
@@ -679,10 +670,7 @@ namespace SIPSorcery.Net
                     {
                         logger.Warn("A " + _controlSocketError + " occurred.");
 
-                        if (OnControlSocketDisconnected != null)
-                        {
-                            OnControlSocketDisconnected();
-                        }
+                        OnControlSocketDisconnected?.Invoke();
                     }
                 }
             }
@@ -692,10 +680,7 @@ namespace SIPSorcery.Net
                 {
                     logger.Error("Exception RTPChannel.ControlSocketReceive. " + excp);
 
-                    if (OnControlSocketDisconnected != null)
-                    {
-                        OnControlSocketDisconnected();
-                    }
+                    OnControlSocketDisconnected?.Invoke();
                 }
             }
         }
@@ -752,10 +737,7 @@ namespace SIPSorcery.Net
                 {
                     logger.Warn("Exception RTPChannel.SendAudioFrame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
 
-                    if (OnRTPSocketDisconnected != null)
-                    {
-                        OnRTPSocketDisconnected();
-                    }
+                    OnRTPSocketDisconnected?.Invoke();
                 }
             }
         }
@@ -835,10 +817,7 @@ namespace SIPSorcery.Net
                     logger.Warn("Exception RTPChannel.SendJpegFrame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
                     //_rtpSocketError = SocketError.SocketError;
 
-                    if (OnRTPSocketDisconnected != null)
-                    {
-                        OnRTPSocketDisconnected();
-                    }
+                    OnRTPSocketDisconnected?.Invoke();
                 }
             }
         }
@@ -929,10 +908,7 @@ namespace SIPSorcery.Net
                 {
                     logger.Warn("Exception RTPChannel.SendH264Frame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
 
-                    if (OnRTPSocketDisconnected != null)
-                    {
-                        OnRTPSocketDisconnected();
-                    }
+                    OnRTPSocketDisconnected?.Invoke();
                 }
             }
         }
@@ -1013,10 +989,7 @@ namespace SIPSorcery.Net
                 {
                     logger.Warn("Exception RTPChannel.SendVP8Frame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
 
-                    if (OnRTPSocketDisconnected != null)
-                    {
-                        OnRTPSocketDisconnected();
-                    }
+                    OnRTPSocketDisconnected?.Invoke();
                 }
             }
         }
@@ -1039,10 +1012,7 @@ namespace SIPSorcery.Net
                 {
                     logger.Error("Exception RTPChannel.SendRTPRaw attempting to send to " + _remoteEndPoint + ". " + excp);
 
-                    if (OnRTPSocketDisconnected != null)
-                    {
-                        OnRTPSocketDisconnected();
-                    }
+                    OnRTPSocketDisconnected?.Invoke();
                 }
             }
         }
