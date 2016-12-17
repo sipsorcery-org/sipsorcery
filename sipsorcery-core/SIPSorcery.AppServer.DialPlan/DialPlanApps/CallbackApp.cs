@@ -51,7 +51,7 @@ namespace SIPSorcery.AppServer.DialPlan
     public class CallbackApp
     {
         private const int MAXCALLBACK_DELAY_SECONDS = 15;           // The maximum seconds a callback method can be delayed for.
-        private const int MAXCALLBACK_RINGTIME_SECONDS = 30;        // Set ring time for calls being created by dial plan. There is nothing that can cancel the call.
+        private const int MAXCALLBACK_RINGTIME_SECONDS = 60;        // Set ring time for calls being created by dial plan. There is nothing that can cancel the call.
         private const int CHECK_FIRST_LEG_FOR_HANGUP_PERIOD = 1000; // The period to check whether the first call leg has been hungup while the second call leg is ringing.
 
         private string CRLF = SIPConstants.CRLF;
