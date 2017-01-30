@@ -445,7 +445,7 @@ namespace SIPSorcery.SIP.App
                 {
                     foreach (SIPContactHeader contactHeader in sipResponse.Header.Contact)
                     {
-                        if (contactHeader.ContactURI == m_sipAccountAOR)
+                        if (contactHeader.ContactURI.ToParameterlessString() == m_contactURI.ToParameterlessString())
                         {
                             contactExpires = contactHeader.Expires;
                             break;
