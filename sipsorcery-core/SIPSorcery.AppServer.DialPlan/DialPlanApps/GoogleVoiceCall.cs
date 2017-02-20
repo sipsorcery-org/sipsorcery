@@ -128,7 +128,18 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
 
                 m_cookies = new CookieContainer();
-                m_rnrKey = Login(emailAddress, password);
+                m_rnrKey = null;
+
+                // Allow rnrKey to be explicitly set. No idea how reliable this will be but was requested by a user so easy enough to try out.
+                if (password.NotNullOrBlank() && password.StartsWith("rnr=", StringComparison.InvariantCultureIgnoreCase) == true)
+                {
+                    m_rnrKey = password.ToLower().Replace("rnr=", String.Empty).Trim();
+                }
+                else
+                {
+                    m_rnrKey = Login(emailAddress, password);
+                }
+
                 if (!m_rnrKey.IsNullOrBlank())
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call key " + m_rnrKey + " successfully retrieved for " + emailAddress + ", proceeding with callback.", m_username));
