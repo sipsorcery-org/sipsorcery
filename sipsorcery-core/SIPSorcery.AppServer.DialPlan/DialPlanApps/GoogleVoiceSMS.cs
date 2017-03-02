@@ -91,7 +91,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 // Allow rnrKey to be explicitly set. No idea how reliable this will be but was requested by a user so easy enough to try out.
                 if (password.NotNullOrBlank() && password.StartsWith("rnr=", StringComparison.InvariantCultureIgnoreCase) == true)
                 {
-                    m_rnrKey = password.ToLower().Replace("rnr=", String.Empty).Trim();
+                    m_rnrKey = password.Replace("rnr=", String.Empty).Trim();
                 }
                 else
                 {
