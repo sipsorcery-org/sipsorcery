@@ -225,9 +225,11 @@ namespace SIPSorcery.SIP.App
                         }
                     }
 
-                    if (registrarSIPEndPoint == null && RegistrationFailed != null)
+                    if (registrarSIPEndPoint == null)
                     {
-                        RegistrationFailed(m_sipAccountAOR, "Could not resolve " + m_registrarHost + ".");
+                        logger.Warn("SIPRegistrationAgent could not resolve " + m_registrarHost + ".");
+
+                        RegistrationFailed?.Invoke(m_sipAccountAOR, "Could not resolve " + m_registrarHost + ".");
                     }
                     else
                     {
