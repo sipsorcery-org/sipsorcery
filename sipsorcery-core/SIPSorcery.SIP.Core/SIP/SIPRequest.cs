@@ -135,18 +135,21 @@ namespace SIPSorcery.SIP
 
                 statusLine = statusLine.Substring(firstSpacePosn).Trim();
                 int secondSpacePosn = statusLine.IndexOf(" ");
+				if(firstSpacePosn < statusLine.Length)
+				{
+					int secondSpacePosn = statusLine.IndexOf(" ", firstSpacePosn + 1);
+					if (secondSpacePosn != -1)
+					{
+						uriStr = statusLine.Substring(firstSpacePosn, secondSpacePosn - firstSpacePosn).Trim();
 
-                if (secondSpacePosn != -1)
-                {
-                    uriStr = statusLine.Substring(0, secondSpacePosn);
+						sipRequest.URI = SIPURI.ParseSIPURI(uriStr);
+						sipRequest.SIPVersion = statusLine.Substring(secondSpacePosn, statusLine.Length - secondSpacePosn).Trim();
+						sipRequest.Header = SIPHeader.ParseSIPHeaders(sipMessage.SIPHeaders);
+						sipRequest.Body = sipMessage.Body;
 
-                    sipRequest.URI = SIPURI.ParseSIPURI(uriStr);
-                    sipRequest.SIPVersion = statusLine.Substring(secondSpacePosn, statusLine.Length - secondSpacePosn).Trim();
-                    sipRequest.Header = SIPHeader.ParseSIPHeaders(sipMessage.SIPHeaders);
-                    sipRequest.Body = sipMessage.Body;
-
-                    return sipRequest;
-                }
+						return sipRequest;
+					}
+				}
                 else
                 {
                     throw new SIPValidationException(SIPValidationFieldsEnum.Request, "URI was missing on Request.");
@@ -215,7 +218,7 @@ namespace SIPSorcery.SIP
         /// <returns>New copy of the SIPRequest.</returns>
         public SIPRequest Copy()
         {
-            return ParseSIPRequest(this.ToString());
+			return ParseSIPRequest(this.ToString());
         }
 		
 		public string CreateBranchId()
