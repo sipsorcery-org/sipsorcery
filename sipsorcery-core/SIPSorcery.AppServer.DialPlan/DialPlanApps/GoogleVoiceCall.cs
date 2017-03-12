@@ -240,6 +240,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 HttpWebRequest rnrRequest = (HttpWebRequest)WebRequest.Create(VOICE_HOME_URL);
                 rnrRequest.ConnectionGroupName = "call";
                 rnrRequest.CookieContainer = m_cookies;
+                rnrRequest.AllowAutoRedirect = true;
 
                 // Send the Google Voice account page request and read response stream.
                 response = (HttpWebResponse)rnrRequest.GetResponse();
