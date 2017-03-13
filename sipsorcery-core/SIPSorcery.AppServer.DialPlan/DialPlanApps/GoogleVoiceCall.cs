@@ -251,7 +251,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice home page loaded successfully.", m_username));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, response.Address + " Google Voice home page loaded successfully.", m_username));
                 }
 
                 StreamReader reader = new StreamReader(response.GetResponseStream());
