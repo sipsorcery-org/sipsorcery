@@ -121,24 +121,10 @@ namespace SIPSorcery.AppServer.DialPlan
                 m_destinationNumber = destinationNumber;
                 m_fromURIUserRegexMatch = fromUserRegexMatch;
 
-                if (CallProgress != null)
-                {
-                    //CallProgress(SIPResponseStatusCodesEnum.Ringing, "Initiating Google Voice call", null, null, null);
-                    CallProgress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null, null);
-                }
+                CallProgress?.Invoke(SIPResponseStatusCodesEnum.Ringing, null, null, null, null, null);
 
                 m_cookies = new CookieContainer();
-                m_rnrKey = null;
-
-                // Allow rnrKey to be explicitly set. No idea how reliable this will be but was requested by a user so easy enough to try out.
-                if (password.NotNullOrBlank() && password.StartsWith("rnr=", StringComparison.InvariantCultureIgnoreCase) == true)
-                {
-                    m_rnrKey = password.Replace("rnr=", String.Empty).Trim();
-                }
-                else
-                {
-                    m_rnrKey = Login(emailAddress, password);
-                }
+                m_rnrKey = Login(emailAddress, password);
 
                 if (!m_rnrKey.IsNullOrBlank())
                 {
