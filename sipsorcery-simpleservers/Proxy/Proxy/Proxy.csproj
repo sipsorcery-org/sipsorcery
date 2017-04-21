@@ -36,21 +36,25 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net, Version=1.2.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
+    <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.Net">
-      <HintPath>..\packages\SIPSorcery.1.5.5\lib\net46\SIPSorcery.Net.dll</HintPath>
+    <Reference Include="SIPSorcery.Net, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SIPSorcery.1.5.6\lib\net46\SIPSorcery.Net.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.SIP.App">
-      <HintPath>..\packages\SIPSorcery.1.5.5\lib\net46\SIPSorcery.SIP.App.dll</HintPath>
+    <Reference Include="SIPSorcery.SIP.App, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SIPSorcery.1.5.6\lib\net46\SIPSorcery.SIP.App.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.SIP.Core">
-      <HintPath>..\packages\SIPSorcery.1.5.5\lib\net46\SIPSorcery.SIP.Core.dll</HintPath>
+    <Reference Include="SIPSorcery.SIP.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SIPSorcery.1.5.6\lib\net46\SIPSorcery.SIP.Core.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="SIPSorcery.Sys">
-      <HintPath>..\packages\SIPSorcery.1.5.5\lib\net46\SIPSorcery.Sys.dll</HintPath>
+    <Reference Include="SIPSorcery.Sys, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SIPSorcery.1.5.6\lib\net46\SIPSorcery.Sys.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
