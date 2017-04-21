@@ -48,25 +48,33 @@ using NUnit.Framework;
 
 namespace SIPSorcery.SIP
 {
-	public class SIPUDPChannel : SIPChannel
-	{
+    public class SIPUDPChannel : SIPChannel
+    {
         private const string THREAD_NAME = "sipchanneludp-";
 
         //private ILog logger = AssemblyState.logger;
 
-		// Channel sockets.
+        // Channel sockets.
         private Guid m_socketId = Guid.NewGuid();
-		private UdpClient m_sipConn = null;
-		//private bool m_closed = false;
+        private UdpClient m_sipConn = null;
+        //private bool m_closed = false;
 
-        public SIPUDPChannel(IPEndPoint endPoint) {
+        public SIPUDPChannel(IPEndPoint endPoint)
+        {
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, endPoint);
             Initialise();
         }
 
-        private void Initialise() {
-            try {
+        private void Initialise()
+        {
+            try
+            {
                 m_sipConn = new UdpClient(m_localSIPEndPoint.GetIPEndPoint());
+
+                if (m_localSIPEndPoint.Port == 0)
+                {
+                    m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, (IPEndPoint)m_sipConn.Client.LocalEndPoint);
+                }
 
                 Thread listenThread = new Thread(new ThreadStart(Listen));
                 listenThread.Name = THREAD_NAME + Crypto.GetRandomString(4);
@@ -74,31 +82,35 @@ namespace SIPSorcery.SIP
 
                 logger.Debug("SIPUDPChannel listener created " + m_localSIPEndPoint.GetIPEndPoint() + ".");
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception SIPUDPChannel Initialise. " + excp.Message);
                 throw excp;
             }
         }
 
-        private void Dispose(bool disposing) {
-            try {
+        private void Dispose(bool disposing)
+        {
+            try
+            {
                 this.Close();
             }
-            catch (Exception excp) {
+            catch (Exception excp)
+            {
                 logger.Error("Exception Disposing SIPUDPChannel. " + excp.Message);
             }
         }
-			
-		private void Listen()
-		{
-			try
-			{
-				byte[] buffer = null;
+
+        private void Listen()
+        {
+            try
+            {
+                byte[] buffer = null;
 
                 logger.Debug("SIPUDPChannel socket on " + m_localSIPEndPoint.ToString() + " listening started.");
 
-				while(!Closed)
-				{
+                while (!Closed)
+                {
                     IPEndPoint inEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
                     try
@@ -115,7 +127,7 @@ namespace SIPSorcery.SIP
                         //inEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
                         continue;
                     }
-                    catch(Exception listenExcp)
+                    catch (Exception listenExcp)
                     {
                         // There is no point logging this as without processing the ICMP message it's not possible to know which socket the rejection came from.
                         logger.Error("Exception listening on SIPUDPChannel. " + listenExcp.Message);
@@ -124,29 +136,29 @@ namespace SIPSorcery.SIP
                         continue;
                     }
 
-					if(buffer == null || buffer.Length == 0)
-					{
+                    if (buffer == null || buffer.Length == 0)
+                    {
                         // No need to care about zero byte packets.
                         //string remoteEndPoint = (inEndPoint != null) ? inEndPoint.ToString() : "could not determine";
                         //logger.Error("Zero bytes received on SIPUDPChannel " + m_localSIPEndPoint.ToString() + ".");
-					}
-					else
-					{
-						if(SIPMessageReceived != null)
-						{
+                    }
+                    else
+                    {
+                        if (SIPMessageReceived != null)
+                        {
                             SIPMessageReceived(this, new SIPEndPoint(SIPProtocolsEnum.udp, inEndPoint), buffer);
-						}
-					}
-				}
+                        }
+                    }
+                }
 
                 logger.Debug("SIPUDPChannel socket on " + m_localSIPEndPoint + " listening halted.");
-			}
-			catch(Exception excp)
-			{
-				logger.Error("Exception SIPUDPChannel Listen. " + excp.Message);
-				//throw excp;
-			}
-		}
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SIPUDPChannel Listen. " + excp.Message);
+                //throw excp;
+            }
+        }
 
         public override void Send(IPEndPoint destinationEndPoint, string message)
         {
@@ -154,8 +166,8 @@ namespace SIPSorcery.SIP
             Send(destinationEndPoint, messageBuffer);
         }
 
-		public override void Send(IPEndPoint destinationEndPoint, byte[] buffer)
-		{
+        public override void Send(IPEndPoint destinationEndPoint, byte[] buffer)
+        {
             try
             {
                 if (destinationEndPoint == null)
@@ -172,7 +184,7 @@ namespace SIPSorcery.SIP
                 logger.Error("Exception (" + excp.GetType().ToString() + ") SIPUDPChannel Send (sendto=>" + IPSocket.GetSocketString(destinationEndPoint) + "). " + excp.Message);
                 throw excp;
             }
-		}
+        }
 
         public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
         {
@@ -189,19 +201,19 @@ namespace SIPSorcery.SIP
             throw new NotSupportedException("The SIP UDP channel does not support connections.");
         }
 
-		public override void Close()
-		{
-			try
-			{
-				logger.Debug("Closing SIP UDP Channel " + SIPChannelEndPoint + ".");
-				
-				Closed = true;
-				m_sipConn.Close();
-			}
-			catch(Exception excp)
-			{
-				logger.Warn("Exception SIPUDPChannel Close. " +excp.Message);
-			}
-		}
-	}
+        public override void Close()
+        {
+            try
+            {
+                logger.Debug("Closing SIP UDP Channel " + SIPChannelEndPoint + ".");
+
+                Closed = true;
+                m_sipConn.Close();
+            }
+            catch (Exception excp)
+            {
+                logger.Warn("Exception SIPUDPChannel Close. " + excp.Message);
+            }
+        }
+    }
 }
