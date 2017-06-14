@@ -137,7 +137,8 @@ namespace SIPSorcery.SIP
 
                         SIPConnection sipTLSConnection = new SIPConnection(this, tcpClient, sslStream, remoteEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Listener);
 
-                        sslStream.BeginAuthenticateAsServer(m_serverCertificate, EndAuthenticateAsServer, sipTLSConnection);
+                        //sslStream.BeginAuthenticateAsServer(m_serverCertificate, EndAuthenticateAsServer, sipTLSConnection);
+                        sslStream.BeginAuthenticateAsServer(m_serverCertificate, true, SslProtocols.Default, false, EndAuthenticateAsServer, sipTLSConnection);
 
                         //sslStream.AuthenticateAsServer(m_serverCertificate, false, SslProtocols.Tls, false);
                         //// Display the properties and settings for the authenticated stream.
@@ -347,7 +348,8 @@ namespace SIPSorcery.SIP
                 //DisplayCertificateInformation(sslStream);
 
                  SIPConnection callerConnection = new SIPConnection(this, tcpClient, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
-                 sslStream.BeginAuthenticateAsClient(serverCN, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
+                 //sslStream.BeginAuthenticateAsClient(serverCN, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
+                 sslStream.BeginAuthenticateAsClient(serverCN, new X509Certificate2Collection() { m_serverCertificate }, SslProtocols.Default, false, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
                 //sslStream.AuthenticateAsClient(serverCN);
 
                 //if (tcpClient != null && tcpClient.Connected)
