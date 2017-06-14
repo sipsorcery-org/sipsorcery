@@ -118,8 +118,10 @@ namespace SIPSorcery.SIP
                         if (SIPMessageReceived != null)
                         {
                             LastTransmission = DateTime.Now;
-                            SIPMessageReceived(m_owningChannel, new SIPEndPoint(SIPProtocolsEnum.tcp, RemoteEndPoint), sipMsgBuffer);
-                        }
+							//rj2: check if owningChannel is TLS or not, to deduct RemoteEndpoint Protocol
+							//SIPMessageReceived(m_owningChannel, new SIPEndPoint(SIPProtocolsEnum.tcp, RemoteEndPoint), new SIPReceiveBuffer( sipMsgBuffer));
+							SIPMessageReceived(m_owningChannel, new SIPEndPoint(m_owningChannel.IsTLS ? SIPProtocolsEnum.tls : SIPProtocolsEnum.tcp, RemoteEndPoint), new SIPReceiveBuffer(sipMsgBuffer));
+						}
 
                         SocketBufferEndPosition -= (sipMsgBuffer.Length + bytesSkipped);
 

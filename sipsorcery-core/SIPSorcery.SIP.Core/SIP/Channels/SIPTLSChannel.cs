@@ -294,7 +294,7 @@ namespace SIPSorcery.SIP
 
                         if (!m_connectingSockets.Contains(dstEndPoint.ToString()))
                         {
-                            logger.Debug("Attempting to establish TLS connection to " + dstEndPoint + ".");
+							logger.Debug("Attempting to establish TLS connection to " + dstEndPoint + "." + "with certifcate " + serverCertificateName);
                             TcpClient tcpClient = new TcpClient();
                             tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                             tcpClient.Client.Bind(m_localSIPEndPoint.GetIPEndPoint());
@@ -347,7 +347,25 @@ namespace SIPSorcery.SIP
                 //DisplayCertificateInformation(sslStream);
 
                  SIPConnection callerConnection = new SIPConnection(this, tcpClient, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
-                 sslStream.BeginAuthenticateAsClient(serverCN, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
+				 //rj2: serverCertificateName SHOULD NOT include port
+				 int colon = serverCN.LastIndexOf(':');
+				 if (colon > 0)
+				 {
+					 //there is only 1 colon -> might not be IPv6 address
+					 if (colon == serverCN.IndexOf(':'))
+					 {
+						 serverCN = serverCN.Substring(0, colon);
+					 }
+					 //more than 1 : -> might be IPv6 address, check full IPv6 notation [addr:addr::]:port
+					 else
+					 {
+						 if (serverCN[colon - 1] == ']')
+						 {
+							 serverCN = serverCN.Substring(0, colon);
+						 }
+					 }
+				 }
+				 sslStream.BeginAuthenticateAsClient(serverCN, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
                 //sslStream.AuthenticateAsClient(serverCN);
 
                 //if (tcpClient != null && tcpClient.Connected)
