@@ -79,7 +79,6 @@ namespace SIPSorcery.SIP
             }
 
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tls, endPoint);
-            LocalTCPSockets.Add(endPoint.ToString());
             m_isReliable = true;
             m_isTLS = true;
             //m_certificatePath = certificateFileName;
@@ -96,6 +95,13 @@ namespace SIPSorcery.SIP
                 m_tlsServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
                 m_tlsServerListener.Start(MAX_TLS_CONNECTIONS);
+
+                if (m_localSIPEndPoint.Port == 0)
+                {
+                    m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tls, (IPEndPoint)m_tlsServerListener.Server.LocalEndPoint);
+                }
+
+                LocalTCPSockets.Add(((IPEndPoint)m_tlsServerListener.Server.LocalEndPoint).ToString());
 
                 ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + m_localSIPEndPoint.Port); });
                 ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + m_localSIPEndPoint.Port); });

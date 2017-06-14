@@ -70,7 +70,6 @@ namespace SIPSorcery.SIP
         public SIPTCPChannel(IPEndPoint endPoint)
         {
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tcp, endPoint);
-            LocalTCPSockets.Add(endPoint.ToString());
             m_isReliable = true;
             Initialise();
         }
@@ -83,6 +82,13 @@ namespace SIPSorcery.SIP
                 m_tcpServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
                 m_tcpServerListener.Start(MAX_TCP_CONNECTIONS);
+
+                if (m_localSIPEndPoint.Port == 0)
+                {
+                    m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tcp, (IPEndPoint)m_tcpServerListener.Server.LocalEndPoint);
+                }
+
+                LocalTCPSockets.Add(((IPEndPoint)m_tcpServerListener.Server.LocalEndPoint).ToString());
 
                 ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + m_localSIPEndPoint.Port); });
                 ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + m_localSIPEndPoint.Port); });

@@ -54,7 +54,8 @@ namespace SIPSorcery.AppServer.DialPlan
         private const string PRE_LOGIN_URL = "https://www.google.com/accounts/ServiceLogin";
         //private const string LOGIN_URL = "https://www.google.com/accounts/ServiceLoginAuth?service=grandcentral";
         private const string LOGIN_URL = "https://accounts.google.com/accounts/ServiceLoginAuth?service=grandcentral";
-        private const string VOICE_HOME_URL = "https://www.google.com/voice";
+        //private const string VOICE_HOME_URL = "https://www.google.com/voice";
+        private const string VOICE_HOME_URL = "https://www.google.com/voice/redirection/voice";
         private const string SMS_SEND_URL = "https://www.google.com/voice/sms/send";
         private const int HTTP_REQUEST_TIMEOUT = 5;
 
@@ -86,17 +87,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                 m_cookies = new CookieContainer();
 
-                //m_rnrKey = Login(emailAddress, password);
-
-                // Allow rnrKey to be explicitly set. No idea how reliable this will be but was requested by a user so easy enough to try out.
-                if (password.NotNullOrBlank() && password.StartsWith("rnr=", StringComparison.InvariantCultureIgnoreCase) == true)
-                {
-                    m_rnrKey = password.Replace("rnr=", String.Empty).Trim();
-                }
-                else
-                {
-                    m_rnrKey = Login(emailAddress, password);
-                }
+                m_rnrKey = Login(emailAddress, password);
 
                 if (!m_rnrKey.IsNullOrBlank())
                 {
@@ -189,6 +180,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 HttpWebRequest rnrRequest = (HttpWebRequest)WebRequest.Create(VOICE_HOME_URL);
                 rnrRequest.ConnectionGroupName = "call";
                 rnrRequest.CookieContainer = m_cookies;
+                rnrRequest.AllowAutoRedirect = true;
 
                 // Send the Google Voice account page request and read response stream.
                 response = (HttpWebResponse)rnrRequest.GetResponse();
@@ -199,7 +191,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Google Voice home page loaded successfully.", m_username));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, response.ResponseUri + " Google Voice home page loaded successfully.", m_username));
                 }
 
                 StreamReader reader = new StreamReader(response.GetResponseStream());
