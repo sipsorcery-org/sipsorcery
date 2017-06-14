@@ -134,7 +134,6 @@ namespace SIPSorcery.SIP
                 }
 
                 statusLine = statusLine.Substring(firstSpacePosn).Trim();
-                int secondSpacePosn = statusLine.IndexOf(" ");
 				if(firstSpacePosn < statusLine.Length)
 				{
 					int secondSpacePosn = statusLine.IndexOf(" ", firstSpacePosn + 1);
@@ -150,10 +149,7 @@ namespace SIPSorcery.SIP
 						return sipRequest;
 					}
 				}
-                else
-                {
-                    throw new SIPValidationException(SIPValidationFieldsEnum.Request, "URI was missing on Request.");
-                }
+                throw new SIPValidationException(SIPValidationFieldsEnum.Request, "URI was missing on Request.");
             }
             catch (SIPValidationException)
             {
