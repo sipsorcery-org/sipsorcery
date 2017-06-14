@@ -132,8 +132,7 @@ namespace SIPSorcery.SIP
                     sipRequest.UnknownMethod = method;
                     logger.Warn("Unknown SIP method received " + sipRequest.UnknownMethod + ".");
                 }
-
-                statusLine = statusLine.Substring(firstSpacePosn).Trim();
+				
 				if(firstSpacePosn < statusLine.Length)
 				{
 					int secondSpacePosn = statusLine.IndexOf(" ", firstSpacePosn + 1);
