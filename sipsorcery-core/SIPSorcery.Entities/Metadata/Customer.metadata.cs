@@ -44,11 +44,11 @@ namespace SIPSorcery.Entities
             [StringLength(64, ErrorMessage = "The last name is too long. The maximum length allowed is 64 characters.")]
             public string Lastname;
 
-            [Required(ErrorMessage = "Please enter the city you live in or that is closest to where you live.")]
-            [StringLength(64, ErrorMessage = "The email address is too long. The maximum length allowed is 64 characters.")]
+            //[Required(ErrorMessage = "Please enter the city you live in or that is closest to where you live.")]
+            [StringLength(64, ErrorMessage = "The City value is too long. The maximum length allowed is 64 characters.")]
             public string City;
 
-            [Required(ErrorMessage = "Please select the country you live in from the list.")]
+            //[Required(ErrorMessage = "Please select the country you live in from the list.")]
             public string Country;
 
             [StringLength(256, ErrorMessage = "The web site is too long. The maximum length allowed is 256 characters.")]

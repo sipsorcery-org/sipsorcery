@@ -1023,7 +1023,7 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 Log("The name of the header to set was empty, the header was not added.");
             }
-            else if (Regex.Match(headerName.Trim(), @"^(Via|To|From|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success)
+            else if (Regex.Match(headerName.Trim(), @"^(Via|From|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success)
             {
                 Log("The name of the header to set is not permitted, the header was not added.");
             }

@@ -46,9 +46,29 @@ namespace SIPSorcery.Entities
         private static ILog logger = AppState.logger;
 
         /// <summary>
+        /// Retrieves the customer record that matches the specified ID.
+        /// </summary>
+        /// <param name="id">The unique ID of the cutomer to try and retrieve.</param>
+        /// <returns>If found the customer record otherwise null.</returns>
+        public Customer Get(string id)
+        {
+            if (id.IsNullOrBlank())
+            {
+                return null;
+            }
+
+            using (var db = new SIPSorceryEntities())
+            {
+                return (from cu in db.Customers
+                        where cu.ID == id
+                        select cu).SingleOrDefault();
+            }
+        }
+
+        /// <summary>
         /// Retrieves the customer record that matches the specified name (name in this the username).
         /// </summary>
-        /// <param name="name">THe name of the customer to try and retrieve.</param>
+        /// <param name="name">The name of the customer to try and retrieve.</param>
         /// <returns>If found the customer record otherwise null.</returns>
         public Customer GetForName(string name)
         {
@@ -63,6 +83,28 @@ namespace SIPSorcery.Entities
 
                 return (from cu in db.Customers
                         where cu.Name.ToLower() == lowerName
+                        select cu).SingleOrDefault();
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the customer record that matches the specified email address.
+        /// </summary>
+        /// <param name="emailAddress">The email address of the customer to try and retrieve.</param>
+        /// <returns>If found the customer record otherwise null.</returns>
+        public Customer GetForEmail(string emailAddress)
+        {
+            if (emailAddress.IsNullOrBlank())
+            {
+                return null;
+            }
+
+            using (var db = new SIPSorceryEntities())
+            {
+                string lowerName = emailAddress.Trim().ToLower();
+
+                return (from cu in db.Customers
+                        where cu.EmailAddress.ToLower() == emailAddress
                         select cu).SingleOrDefault();
             }
         }

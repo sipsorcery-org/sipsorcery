@@ -472,7 +472,7 @@ namespace SIPSorcery.SIP.App
                                 //string headerName = customHeader.Substring(0, colonIndex).Trim();
                                 //string headerValue = (customHeader.Length > colonIndex) ? customHeader.Substring(colonIndex + 1).Trim() : String.Empty;
 
-                                if (Regex.Match(customHeader.Trim(), "^(Via|From|To|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success)
+                                if (Regex.Match(customHeader.Trim(), "^(Via|From|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success)
                                 {
                                     logger.Warn("ParseCustomHeaders skipping custom header due to an non-permitted string in header name, " + customHeader + ".");
                                     continue;

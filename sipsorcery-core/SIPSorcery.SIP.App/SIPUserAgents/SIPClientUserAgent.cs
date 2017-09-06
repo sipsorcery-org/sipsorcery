@@ -830,6 +830,14 @@ namespace SIPSorcery.SIP.App
                         {
                             inviteRequest.Header.UserAgent = customHeader.Substring(customHeader.IndexOf(":") + 1).Trim();
                         }
+                        else if (customHeader.Trim().StartsWith(SIPHeaders.SIP_HEADER_TO + ":"))
+                        {
+                            var customToHeader = SIPUserField.ParseSIPUserField(customHeader.Substring(customHeader.IndexOf(":") + 1).Trim());
+                            if (customToHeader != null)
+                            {
+                                inviteRequest.Header.To.ToUserField = customToHeader;
+                            }
+                        }
                         else
                         {
                             inviteRequest.Header.UnknownHeaders.Add(customHeader);
