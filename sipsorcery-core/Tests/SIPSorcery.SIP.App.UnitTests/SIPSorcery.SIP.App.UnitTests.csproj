@@ -179,11 +179,16 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SIPDNSManagerUnitTest.cs" />
+    <Compile Include="SIPMonitorFilterUnitTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\SIPSorcery.Net\SIPSorcery.Net.csproj">
       <Project>{55898587-8456-40d4-bb88-c9fc8bd6ba9c}</Project>
       <Name>SIPSorcery.Net</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
+      <Project>{339648e6-3b61-4a27-b4a2-38a8216b1d7e}</Project>
+      <Name>SIPSorcery.SIP.App</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
       <Project>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</Project>
