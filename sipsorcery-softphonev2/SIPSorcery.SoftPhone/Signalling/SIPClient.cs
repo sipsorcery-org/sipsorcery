@@ -33,17 +33,15 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using SIPSorcery.Sys.Net;
-using Heijden.DNS;
 using log4net;
 
 namespace SIPSorcery.SoftPhone
@@ -60,11 +58,13 @@ namespace SIPSorcery.SoftPhone
         private int _defaultSIPUdpPort = SIPConstants.DEFAULT_SIP_PORT;                     // The default UDP SIP port.
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
-        private string m_sipPassword = SIPSoftPhoneState.SIPPassword;    
+        private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
         private string m_sipServer = SIPSoftPhoneState.SIPServer;
         private string m_sipFromName = ConfigurationManager.AppSettings["SIPFromName"];    // Get the SIP From display name from the config file.
 
         private SIPTransport m_sipTransport;                                                // SIP transport layer.
+        private Task _initialisationTask;
+        private CancellationTokenSource _cancelCallTokenSource;
         private SIPClientUserAgent m_uac;                                                   // A SIP user agent client used to place outgoing calls.
         private SIPServerUserAgent m_uas;                                                   // A SIP user agent server used to process incoming calls.
         private ManualResetEvent m_dnsLookupComplete = new ManualResetEvent(false);
@@ -82,7 +82,8 @@ namespace SIPSorcery.SoftPhone
 
         public SIPClient()
         {
-            ThreadPool.QueueUserWorkItem(delegate { InitialiseSIP(); });
+            _cancelCallTokenSource = new CancellationTokenSource();
+           _initialisationTask = InitialiseSIP();
         }
 
         /// <summary>
@@ -101,10 +102,12 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Initialises the SIP transport layer.
         /// </summary>
-        private void InitialiseSIP()
+        private async Task InitialiseSIP()
         {
+            await Task.Delay(10);
+
             // Configure the SIP transport layer.
-            m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
+           m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
 
             if (m_sipSocketsNode != null)
             {
@@ -212,6 +215,8 @@ namespace SIPSorcery.SoftPhone
         /// be sent to the configured SIP server.</param>
         public void Call(MediaManager mediaManager, string destination)
         {
+            _initialisationTask.Wait(_cancelCallTokenSource.Token);
+
             _mediaManager = mediaManager;
             _mediaManager.NewCall();
 
@@ -237,7 +242,7 @@ namespace SIPSorcery.SoftPhone
             }
 
             StatusMessage("Starting call to " + callURI.ToString() + ".");
-            
+
             m_uac = new SIPClientUserAgent(m_sipTransport, null, null, null, null);
             m_uac.CallTrying += CallTrying;
             m_uac.CallRinging += CallRinging;
@@ -270,6 +275,8 @@ namespace SIPSorcery.SoftPhone
                 StatusMessage("Cancelling SIP call to " + m_uac.CallDescriptor.Uri + ".");
                 m_uac.Cancel();
             }
+
+            _cancelCallTokenSource.Cancel();
         }
 
         /// <summary>
@@ -351,13 +358,13 @@ namespace SIPSorcery.SoftPhone
 
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
-                if(sipResponse.Header.ContentType != _sdpMimeContentType)
+                if (sipResponse.Header.ContentType != _sdpMimeContentType)
                 {
                     // Payload not SDP, I don't understand :(.
                     StatusMessage("Call was hungup as the answer response content type was not recognised: " + sipResponse.Header.ContentType + ". :(");
                     Hangup();
                 }
-                else if(sipResponse.Body.IsNullOrBlank())
+                else if (sipResponse.Body.IsNullOrBlank())
                 {
                     // They said SDP but didn't give me any :(.
                     StatusMessage("Call was hungup as the answer response had an empty SDP payload. :(");
@@ -385,6 +392,8 @@ namespace SIPSorcery.SoftPhone
                 _mediaManager.EndCall();
                 _mediaManager = null;
             }
+
+            _cancelCallTokenSource.Cancel();
 
             m_uac = null;
             m_uas = null;
