@@ -857,7 +857,7 @@ namespace SIPSorcery.AppServer.DialPlan
         /// </summary>
         public bool IsMine(string username)
         {
-            return IsAvailable(username, DEFAULT_LOCAL_DOMAIN);
+            return IsMine(username, DEFAULT_LOCAL_DOMAIN);
         }
 
         /// <summary>
