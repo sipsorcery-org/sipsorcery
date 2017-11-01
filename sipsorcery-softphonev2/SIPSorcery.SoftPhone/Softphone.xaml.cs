@@ -359,28 +359,26 @@ namespace SIPSorcery.SoftPhone
         {
             if (sample != null && sample.Length > 0)
             {
-                if (sample != null && sample.Length > 0)
+                this.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
+                    if (_localWriteableBitmap == null || _localWriteableBitmap.Width != width || _localWriteableBitmap.Height != height)
                     {
-                        if (_localWriteableBitmap == null || _localWriteableBitmap.Width != width || _localWriteableBitmap.Height != height)
-                        {
-                            _localWriteableBitmap = new WriteableBitmap(
-                                width,
-                                height,
-                                96,
-                                96,
-                                PixelFormats.Bgr24, //PixelFormats.Bgr32,
-                                null);
+                        _localWriteableBitmap = new WriteableBitmap(
+                            width,
+                            height,
+                            96,
+                            96,
+                            PixelFormats.Bgr24, //PixelFormats.Bgr32,
+                            null);
 
-                            _localVideo.Source = _localWriteableBitmap;
-                            _localBitmapFullRectangle = new Int32Rect(0, 0, Convert.ToInt32(_localWriteableBitmap.Width), Convert.ToInt32(_localWriteableBitmap.Height));
-                        }
+                        _localVideo.Source = _localWriteableBitmap;
+                        _localBitmapFullRectangle = new Int32Rect(0, 0, Convert.ToInt32(_localWriteableBitmap.Width), Convert.ToInt32(_localWriteableBitmap.Height));
+                    }
 
                         // Reserve the back buffer for updates.
                         _localWriteableBitmap.Lock();
 
-                        Marshal.Copy(sample, 0, _localWriteableBitmap.BackBuffer, sample.Length);
+                    Marshal.Copy(sample, 0, _localWriteableBitmap.BackBuffer, sample.Length);
 
                         // Specify the area of the bitmap that changed.
                         _localWriteableBitmap.AddDirtyRect(_localBitmapFullRectangle);
@@ -388,9 +386,8 @@ namespace SIPSorcery.SoftPhone
                         // Release the back buffer and make it available for display.
                         _localWriteableBitmap.Unlock();
 
-                    }), System.Windows.Threading.DispatcherPriority.Normal);
-                }
-            }
+                }), System.Windows.Threading.DispatcherPriority.Normal);
+            }   
         }
 
         private void RemoteVideoSampleReady(byte[] sample, int width, int height)
