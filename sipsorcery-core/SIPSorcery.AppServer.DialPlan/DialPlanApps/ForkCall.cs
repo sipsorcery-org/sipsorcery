@@ -364,7 +364,14 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    CallProgress(progressResponse.Status, progressResponse.ReasonPhrase, null, progressResponse.Header.ContentType, progressResponse.Body, uac);
+                    if (uac.CallDescriptor.DisallowProgressIndications == true && progressResponse.Status == SIPResponseStatusCodesEnum.SessionProgress)
+                    {
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Progress indication from {progressResponse.Header.From.ToString()} was not passed through to caller due to dial string options.", m_username));
+                    }
+                    else
+                    { 
+                        CallProgress(progressResponse.Status, progressResponse.ReasonPhrase, null, progressResponse.Header.ContentType, progressResponse.Body, uac);
+                    }
                 }
             }
             catch (Exception excp)
