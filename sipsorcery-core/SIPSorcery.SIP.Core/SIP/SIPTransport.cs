@@ -42,6 +42,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.Sys;
 using log4net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 
 #if UNITTEST
 using NUnit.Framework;
@@ -341,26 +343,32 @@ namespace SIPSorcery.SIP
             return m_sipChannels.First().Value.SIPChannelEndPoint;
         }
 
-        public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
-        {
-            foreach (SIPChannel sipChannel in m_sipChannels.Values)
-            {
-                if (sipChannel.SIPChannelEndPoint.Protocol == protocol)
-                {
-                    return sipChannel.SIPChannelEndPoint;
-                }
-            }
+        //public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
+        //{
+        //    foreach (SIPChannel sipChannel in m_sipChannels.Values)
+        //    {
+        //        if (sipChannel.SIPChannelEndPoint.Protocol == protocol)
+        //        {
+        //            return sipChannel.SIPChannelEndPoint;
+        //        }
+        //    }
 
-            return null;
-        }
+        //    return null;
+        //}
 
         public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
         {
             bool isDestLoopback = IPAddress.IsLoopback(destinationEP.Address);
+            var localAddress = GetLocalAddress(destinationEP.Address);
+            if (localAddress == null)
+            {
+                throw new Exception("No network interface match with the following endpoint : " + destinationEP.Address.ToString());
+            }
 
             foreach (SIPChannel sipChannel in m_sipChannels.Values)
             {
-                if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol)
+                if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
+                    sipChannel.SIPChannelEndPoint.Address.ToString() == localAddress.ToString())
                 {
                     if (isDestLoopback)
                     {
@@ -378,6 +386,26 @@ namespace SIPSorcery.SIP
 
             return null;
         }
+
+        private IPAddress GetLocalAddress(IPAddress destination)
+        {
+            foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                foreach (UnicastIPAddressInformation unicastIPAddressInformation in adapter.GetIPProperties().UnicastAddresses)
+                {
+                    if (unicastIPAddressInformation.Address.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        long mask = unicastIPAddressInformation.IPv4Mask.Address & destination.Address;
+                        long networkMask = unicastIPAddressInformation.IPv4Mask.Address & unicastIPAddressInformation.Address.Address;
+
+                        if (mask == networkMask)
+                            return unicastIPAddressInformation.Address;
+                    }
+                }
+            }
+            return null;
+        }
+
 
         /// <summary>
         /// This function performs processing on a request to handle any actions that need to be taken based on the Route header.
@@ -534,11 +562,11 @@ namespace SIPSorcery.SIP
             if (sipRequest.LocalSIPEndPoint != null)
             {
                 sipChannel = FindSIPChannel(sipRequest.LocalSIPEndPoint);
-                sipChannel = sipChannel ?? GetDefaultChannel(sipRequest.LocalSIPEndPoint.Protocol);
+                sipChannel = sipChannel ?? GetDefaultChannel(sipRequest.LocalSIPEndPoint);
             }
             else
             {
-                sipChannel = GetDefaultChannel(dstEndPoint.Protocol);
+                sipChannel = GetDefaultChannel(dstEndPoint);
             }
 
             if (sipChannel != null)
@@ -701,7 +729,7 @@ namespace SIPSorcery.SIP
                 }
 
                 SIPChannel sipChannel = FindSIPChannel(sipResponse.LocalSIPEndPoint);
-                sipChannel = sipChannel ?? GetDefaultChannel(dstEndPoint.Protocol);
+                sipChannel = sipChannel ?? GetDefaultChannel(dstEndPoint);
 
                 if (sipChannel != null)
                 {
@@ -1529,6 +1557,17 @@ namespace SIPSorcery.SIP
             }
 
             logger.Warn("No default SIP channel could be found for " + protocol + ".");
+            return null;
+        }
+
+        private SIPChannel GetDefaultChannel(SIPEndPoint dstEndPoint)
+        {
+            var e = GetDefaultSIPEndPoint(dstEndPoint);
+            var sipChannel = FindSIPChannel(e);
+            if (sipChannel != null)
+                return sipChannel;
+
+            logger.Warn("No default SIP channel could be found for " + dstEndPoint.ToString() + ".");
             return null;
         }
 
