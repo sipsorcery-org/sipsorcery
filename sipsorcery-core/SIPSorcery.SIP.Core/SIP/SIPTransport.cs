@@ -343,18 +343,18 @@ namespace SIPSorcery.SIP
             return m_sipChannels.First().Value.SIPChannelEndPoint;
         }
 
-        //public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
-        //{
-        //    foreach (SIPChannel sipChannel in m_sipChannels.Values)
-        //    {
-        //        if (sipChannel.SIPChannelEndPoint.Protocol == protocol)
-        //        {
-        //            return sipChannel.SIPChannelEndPoint;
-        //        }
-        //    }
+        public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
+        {
+            foreach (SIPChannel sipChannel in m_sipChannels.Values)
+            {
+                if (sipChannel.SIPChannelEndPoint.Protocol == protocol)
+                {
+                    return sipChannel.SIPChannelEndPoint;
+                }
+            }
 
-        //    return null;
-        //}
+            return null;
+        }
 
         public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
         {
