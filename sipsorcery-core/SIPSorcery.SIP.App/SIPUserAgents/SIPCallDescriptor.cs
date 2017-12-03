@@ -112,7 +112,7 @@ namespace SIPSorcery.SIP.App
         public const string REQUEST_CALLER_DETAILS = "rcd";     // Dial string option to indicate the client agent would like any caller details if/when available.
         public const string ACCOUNT_CODE_KEY = "ac";            // Dial string option which indicates that the call leg is billable and the account code it should be billed against.
         public const string RATE_CODE_KEY = "rc";               // Dial string option which indicates the rate code a billable call leg should use. If no rate code is specified then the rate will be looked up based on the call destination.
-        public const string NO_PROGRESS_INDICATIONS_KEY = "ni"; // Dial string option to prevent any 183 Session Progress indications being relayed to the caller (users have reported issues with progress indications causing one way audio on muti-legged calls).
+        public const string IMMEDIATE_REINVITE_KEY = "ir";      // Dial string option to initiate an immediate re-INVITE request when a call is answered in an attempt to solve a one way audio problem.
 
         // Switchboard dial string options.
         public const string SWITCHBOARD_LINE_NAME_KEY = "swln";             // Dial string option to set the Switchboard-LineName header on the call leg.
@@ -148,7 +148,7 @@ namespace SIPSorcery.SIP.App
         public SIPDialogueTransferModesEnum TransferMode = SIPDialogueTransferModesEnum.Default;   // Determines how the call (dialogues) created by this descriptor will handle transfers (REFER requests).
         public bool RequestCallerDetails;       // If true indicates the client agent would like to pass on any caller details if/when available.
         public Guid DialPlanContextID;
-        public bool DisallowProgressIndications = false;   // If set to true 183 Session Progress indication messages will NOT be passed through to the caller.
+        public bool ImmediateReinvite = false;   // If set to true a SIP re-INVITE request will be sent to the remote caller immediately on answer. This is an attempt to work around a bug with one way audio and early media on a particular SIP server.
 
         // Custom headers for sipsorcery switchboard application.
         public SwitchboardHeaders SwitchboardHeaders = new SwitchboardHeaders();
@@ -444,10 +444,10 @@ namespace SIPSorcery.SIP.App
                 }
 
                 // Parse the no progress indiciations option.
-                Match noProgressIndicationMatch = Regex.Match(options, NO_PROGRESS_INDICATIONS_KEY + @"=(?<noprogress>\w+)");
-                if (noProgressIndicationMatch.Success)
+                Match immediateReinviteMatch = Regex.Match(options, IMMEDIATE_REINVITE_KEY + @"=(?<immediateReinvite>\w+)");
+                if (immediateReinviteMatch.Success)
                 {
-                    Boolean.TryParse(noProgressIndicationMatch.Result("${noprogress}"), out DisallowProgressIndications);
+                    Boolean.TryParse(immediateReinviteMatch.Result("${immediateReinvite}"), out ImmediateReinvite);
                 }
             }
         }

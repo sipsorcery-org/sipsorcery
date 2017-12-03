@@ -364,14 +364,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    if (uac.CallDescriptor.DisallowProgressIndications == true && progressResponse.Status == SIPResponseStatusCodesEnum.SessionProgress)
-                    {
-                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Progress indication from {progressResponse.Header.From.ToString()} was not passed through to caller due to dial string options.", m_username));
-                    }
-                    else
-                    { 
-                        CallProgress(progressResponse.Status, progressResponse.ReasonPhrase, null, progressResponse.Header.ContentType, progressResponse.Body, uac);
-                    }
+                    CallProgress(progressResponse.Status, progressResponse.ReasonPhrase, null, progressResponse.Header.ContentType, progressResponse.Body, uac);
                 }
             }
             catch (Exception excp)
@@ -442,6 +435,16 @@ namespace SIPSorcery.AppServer.DialPlan
                         {
                             logger.Debug("Transfer mode=" + m_answeredUAC.CallDescriptor.TransferMode + ".");
                             CallAnswered(answeredResponse.Status, answeredResponse.ReasonPhrase, null, null, answeredResponse.Header.ContentType, answeredResponse.Body, answeredUAC.SIPDialogue, uasTransferMode);
+
+                            if (answeredUAC.CallDescriptor.ImmediateReinvite == true)
+                            {
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Initiating re-INVITE request due to dial string options.", m_username));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Re-sending SDP: {answeredUAC.SIPDialogue.SDP}", m_username));
+
+                                SIPDialogue dummyDialogue = new SIPDialogue();
+                                dummyDialogue.RemoteSDP = answeredUAC.SIPDialogue.SDP;
+                                m_callManager.ReInvite(answeredUAC.SIPDialogue, dummyDialogue);
+                            }
                         }
 
                         // Cancel/hangup and other calls on this leg that are still around.
@@ -470,10 +473,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_callAnswered = true;
                         m_answeredUAC = answeredUAC;
 
-                        if (CallAnswered != null)
-                        {
-                            CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, null, answeredUAC.SIPDialogue.ContentType, answeredUAC.SIPDialogue.RemoteSDP, answeredUAC.SIPDialogue, SIPDialogueTransferModesEnum.NotAllowed);
-                        }
+                        CallAnswered?.Invoke(SIPResponseStatusCodesEnum.Ok, null, null, null, answeredUAC.SIPDialogue.ContentType, answeredUAC.SIPDialogue.RemoteSDP, answeredUAC.SIPDialogue, SIPDialogueTransferModesEnum.NotAllowed);
 
                         // Cancel/hangup and other calls on this leg that are still around.
                         CancelNotRequiredCallLegs(CallCancelCause.NormalClearing);
