@@ -30,5 +30,9 @@ using System.Reflection;
 [assembly: AssemblyTitle("SIPSorcery.SIP.App")]
 [assembly: AssemblyCompany("SIP Sorcery PTY LTD")]
 [assembly: AssemblyDescription("Application layer classes that provide common use casses for SIP protocol.")]
-[assembly: AssemblyCopyright("Aaron Clauson")]		
+[assembly: AssemblyCopyright("Aaron Clauson")]
+#if NETSTANDARD2_0
+[assembly: AssemblyVersion("1.5.6")]
+#else
 [assembly: AssemblyVersion("1.5.6.*")]
+#endif

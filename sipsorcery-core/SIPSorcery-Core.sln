@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2010
+VisualStudioVersion = 15.0.27130.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0B7CB4A2-B101-473E-B5A8-3B746A232647}"
 	ProjectSection(SolutionItems) = preProject
@@ -58,6 +58,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery.SIP.Core.Standard", "SIPSorcery.SIP.Core.Standard\SIPSorcery.SIP.Core.Standard.csproj", "{6849BC63-B334-40CE-9486-AF76E68926E8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery.Net.Standard", "SIPSorcery.Net.Standard\SIPSorcery.Net.Standard.csproj", "{EC6B3411-A1BD-4701-BBCF-1BA60332F776}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SIP.App.Standard", "SIPSorcery.SIP.App.Standard\SIPSorcery.SIP.App.Standard.csproj", "{CB5A2A55-947D-4628-B228-6D7C098E1E78}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shims", "Shims\Shims.csproj", "{80154454-E668-4A06-AA43-50A2171F3EDD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -321,6 +325,30 @@ Global
 		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Release|x64.Build.0 = Release|Any CPU
 		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Release|x86.ActiveCfg = Release|Any CPU
 		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Release|x86.Build.0 = Release|Any CPU
+		{CB5A2A55-947D-4628-B228-6D7C098E1E78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CB5A2A55-947D-4628-B228-6D7C098E1E78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CB5A2A55-947D-4628-B228-6D7C098E1E78}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CB5A2A55-947D-4628-B228-6D7C098E1E78}.Debug|x64.Build.0 = Debug|Any CPU
+		{CB5A2A55-947D-4628-B228-6D7C098E1E78}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CB5A2A55-947D-4628-B228-6D7C098E1E78}.Debug|x86.Build.0 = Debug|Any CPU
+		{CB5A2A55-947D-4628-B228-6D7C098E1E78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CB5A2A55-947D-4628-B228-6D7C098E1E78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CB5A2A55-947D-4628-B228-6D7C098E1E78}.Release|x64.ActiveCfg = Release|Any CPU
+		{CB5A2A55-947D-4628-B228-6D7C098E1E78}.Release|x64.Build.0 = Release|Any CPU
+		{CB5A2A55-947D-4628-B228-6D7C098E1E78}.Release|x86.ActiveCfg = Release|Any CPU
+		{CB5A2A55-947D-4628-B228-6D7C098E1E78}.Release|x86.Build.0 = Release|Any CPU
+		{80154454-E668-4A06-AA43-50A2171F3EDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80154454-E668-4A06-AA43-50A2171F3EDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80154454-E668-4A06-AA43-50A2171F3EDD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{80154454-E668-4A06-AA43-50A2171F3EDD}.Debug|x64.Build.0 = Debug|Any CPU
+		{80154454-E668-4A06-AA43-50A2171F3EDD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{80154454-E668-4A06-AA43-50A2171F3EDD}.Debug|x86.Build.0 = Debug|Any CPU
+		{80154454-E668-4A06-AA43-50A2171F3EDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80154454-E668-4A06-AA43-50A2171F3EDD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80154454-E668-4A06-AA43-50A2171F3EDD}.Release|x64.ActiveCfg = Release|Any CPU
+		{80154454-E668-4A06-AA43-50A2171F3EDD}.Release|x64.Build.0 = Release|Any CPU
+		{80154454-E668-4A06-AA43-50A2171F3EDD}.Release|x86.ActiveCfg = Release|Any CPU
+		{80154454-E668-4A06-AA43-50A2171F3EDD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -338,6 +366,8 @@ Global
 		{959BE749-1F3D-4758-A4C6-F7C3BBD36480} = {E7431B63-0BC0-4C5F-BCE1-6A3E582ACDD6}
 		{6849BC63-B334-40CE-9486-AF76E68926E8} = {E7431B63-0BC0-4C5F-BCE1-6A3E582ACDD6}
 		{EC6B3411-A1BD-4701-BBCF-1BA60332F776} = {E7431B63-0BC0-4C5F-BCE1-6A3E582ACDD6}
+		{CB5A2A55-947D-4628-B228-6D7C098E1E78} = {E7431B63-0BC0-4C5F-BCE1-6A3E582ACDD6}
+		{80154454-E668-4A06-AA43-50A2171F3EDD} = {E7431B63-0BC0-4C5F-BCE1-6A3E582ACDD6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F7AED29C-520F-4F82-95C6-AF2B97B66FFC}
