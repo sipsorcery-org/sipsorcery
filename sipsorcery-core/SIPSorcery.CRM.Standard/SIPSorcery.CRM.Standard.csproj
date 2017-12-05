@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <AssemblyName>SIPSorcery.CRM</AssemblyName>
+    <RootNamespace>SIPSorcery.CRM</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="2.0.8" />
+    <PackageReference Include="System.ServiceModel.Http" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Shims/Shims.csproj" />
+    <ProjectReference Include="../SIPSorcery.Persistence.Standard/SIPSorcery.Persistence.Standard.csproj" />
+    <ProjectReference Include="../SIPSorcery.SIP.Core.Standard/SIPSorcery.SIP.Core.Standard.csproj" />
+    <ProjectReference Include="../SIPSorcery.Sys.Standard/SIPSorcery.Sys.Standard.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../SIPSorcery.CRM/**/*.cs" Exclude="../SIPSorcery.CRM/obj/**/*.cs" />
+  </ItemGroup>
+
+</Project>
