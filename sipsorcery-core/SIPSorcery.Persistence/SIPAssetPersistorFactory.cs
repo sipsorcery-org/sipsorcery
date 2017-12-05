@@ -59,30 +59,29 @@ namespace SIPSorcery.Persistence
                 //    }
                 //    return new SIPAssetXMLPersistor<T>(storageConnectionStr + filename);
                 //}
+#if !NETSTANDARD2_0
                 if (storageType == StorageTypes.SQLLinqMySQL)
                 {
                     return new SQLAssetPersistor<T>(MySql.Data.MySqlClient.MySqlClientFactory.Instance, storageConnectionStr);
                 }
-                //else if (storageType == StorageTypes.SQLLinqPostgresql)
+#endif
+                //if (storageType == StorageTypes.SQLLinqPostgresql)
                 //{
                 //    return new SQLAssetPersistor<T>(Npgsql.NpgsqlFactory.Instance, storageConnectionStr);
                 //}
-                //else if (storageType == StorageTypes.SimpleDBLinq)
+                //if (storageType == StorageTypes.SimpleDBLinq)
                 //{
                 //    return new SimpleDBAssetPersistor<T>(storageConnectionStr);
                 //}
-                //else if (storageType == StorageTypes.SQLLinqMSSQL)
-                //{
-                //    return new MSSQLAssetPersistor<T>(System.Data.SqlClient.SqlClientFactory.Instance, storageConnectionStr);
-                //}
-                //else if (storageType == StorageTypes.SQLLinqOracle)
+                if (storageType == StorageTypes.SQLLinqMSSQL)
+                {
+                    return new SQLAssetPersistor<T>(System.Data.SqlClient.SqlClientFactory.Instance, storageConnectionStr);
+                }
+                //if (storageType == StorageTypes.SQLLinqOracle)
                 //{
                 //    return new SQLAssetPersistor<T>(Oracle.DataAccess.Client.OracleClientFactory.Instance, storageConnectionStr);
                 //}
-                else
-                {
-                    throw new ApplicationException(storageType + " is not supported as a CreateSIPAssetPersistor option.");
-                }
+                throw new ApplicationException(storageType + " is not supported as a CreateSIPAssetPersistor option.");
             }
             catch (Exception excp)
             {

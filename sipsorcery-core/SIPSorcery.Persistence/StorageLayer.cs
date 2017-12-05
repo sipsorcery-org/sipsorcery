@@ -22,8 +22,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Odbc;
-using System.Data.OleDb;
 using System.Data.SqlClient;
 using System.IO;
 using System.Net.Sockets;
@@ -31,9 +29,14 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.Sys;
 using log4net;
+
+#if !NETSTANDARD2_0
+using System.Data.Odbc;
+using System.Data.OleDb;
 using MySql.Data.MySqlClient;
 using Npgsql;
 using NpgsqlTypes;
+#endif
 
 #if UNITTEST
 using NUnit.Framework;
@@ -204,101 +207,102 @@ namespace SIPSorcery.Persistence
             }
 		}
 
-		//public int StoreLargeObject(Stream largeObjectStream)
-		//{
-		//	return StoreLargeObject(m_storageType, m_dbConnStr, largeObjectStream);
-		//}
-		
-		//public int StoreLargeObject(StorageTypes storageType, string dbConnString, Stream largeObjectStream)
-		//{
-		//	try
-		//	{
-		//		if(storageType == StorageTypes.Postgresql)
-		//		{
-		//			NpgsqlConnection connPgsql = new NpgsqlConnection(dbConnString);
-		//			connPgsql.Open();
+        //public int StoreLargeObject(Stream largeObjectStream)
+        //{
+        //	return StoreLargeObject(m_storageType, m_dbConnStr, largeObjectStream);
+        //}
 
-		//			NpgsqlTransaction t = connPgsql.BeginTransaction();
-				
-		//			LargeObjectManager lbm = new LargeObjectManager(connPgsql);
+        //public int StoreLargeObject(StorageTypes storageType, string dbConnString, Stream largeObjectStream)
+        //{
+        //	try
+        //	{
+        //		if(storageType == StorageTypes.Postgresql)
+        //		{
+        //			NpgsqlConnection connPgsql = new NpgsqlConnection(dbConnString);
+        //			connPgsql.Open();
 
-		//			int noid = lbm.Create(LargeObjectManager.READWRITE);
-		//			LargeObject lo =  lbm.Open(noid, LargeObjectManager.READWRITE);
+        //			NpgsqlTransaction t = connPgsql.BeginTransaction();
 
-		//			long offset = 0;
+        //			LargeObjectManager lbm = new LargeObjectManager(connPgsql);
 
-		//			while(offset < largeObjectStream.Length)
-		//			{
-		//				long bytesToWrite = (largeObjectStream.Length - offset > 1024) ? 1024 : largeObjectStream.Length - offset;
-						
-		//				byte[] buf = new byte[bytesToWrite];
-		//				largeObjectStream.Read(buf, 0, (int)bytesToWrite);
+        //			int noid = lbm.Create(LargeObjectManager.READWRITE);
+        //			LargeObject lo =  lbm.Open(noid, LargeObjectManager.READWRITE);
 
-		//				lo.Write(buf);
-		//				offset += bytesToWrite;
-		//			}
+        //			long offset = 0;
 
-		//			lo.Close();
-		//			t.Commit();
-					
-		//			// If using the Npgsql pooling close the connection to place it back in the pool.
-		//			connPgsql.Close();
+        //			while(offset < largeObjectStream.Length)
+        //			{
+        //				long bytesToWrite = (largeObjectStream.Length - offset > 1024) ? 1024 : largeObjectStream.Length - offset;
 
-		//			return noid;
-		//		}
-		//		else
-		//		{
-		//			throw new ApplicationException("Not supported in StorageLayer.StoreLargeObject");
-		//		}
-		//	}
-		//	catch(Exception excp)
-		//	{
-		//		logger.Error("Exception StoreLargeObject. " + excp.Message);
-		//		throw excp;
-		//	}
-		//}
-	
-		//public byte[] GetLargeObject(int largeObjectId)
-		//{
-		//	return GetLargeObject(m_storageType, m_dbConnStr, largeObjectId);
-		//}
-	
-		//public byte[] GetLargeObject(StorageTypes storageType, string dbConnString, int largeObjectId)
-		//{
-		//	try
-		//	{
-		//		if(storageType == StorageTypes.Postgresql)
-		//		{
-		//			NpgsqlConnection connPgsql = new NpgsqlConnection(dbConnString);
-		//			connPgsql.Open();
+        //				byte[] buf = new byte[bytesToWrite];
+        //				largeObjectStream.Read(buf, 0, (int)bytesToWrite);
 
-		//			NpgsqlTransaction t = connPgsql.BeginTransaction();
+        //				lo.Write(buf);
+        //				offset += bytesToWrite;
+        //			}
 
-		//			LargeObjectManager lbm = new LargeObjectManager(connPgsql);
-		//			LargeObject lo =  lbm.Open(largeObjectId, LargeObjectManager.READWRITE);
-        
-		//			byte[] buffer = lo.Read(lo.Size());
+        //			lo.Close();
+        //			t.Commit();
 
-		//			lo.Close();
-		//			t.Commit();
+        //			// If using the Npgsql pooling close the connection to place it back in the pool.
+        //			connPgsql.Close();
 
-		//			// If using the Npgsql pooling close the connection to place it back in the pool.
-		//			connPgsql.Close();
+        //			return noid;
+        //		}
+        //		else
+        //		{
+        //			throw new ApplicationException("Not supported in StorageLayer.StoreLargeObject");
+        //		}
+        //	}
+        //	catch(Exception excp)
+        //	{
+        //		logger.Error("Exception StoreLargeObject. " + excp.Message);
+        //		throw excp;
+        //	}
+        //}
 
-		//			return buffer;
-		//		}
-		//		else
-		//		{
-		//			throw new ApplicationException("Not supported in StorageLayer.StoreLargeObject");
-		//		}
-		//	}
-		//	catch(Exception excp)
-		//	{
-		//		logger.Error("Exception StoreLargeObject. " + excp.Message);
-		//		throw excp;
-		//	}
-		//}
+        //public byte[] GetLargeObject(int largeObjectId)
+        //{
+        //	return GetLargeObject(m_storageType, m_dbConnStr, largeObjectId);
+        //}
 
+        //public byte[] GetLargeObject(StorageTypes storageType, string dbConnString, int largeObjectId)
+        //{
+        //	try
+        //	{
+        //		if(storageType == StorageTypes.Postgresql)
+        //		{
+        //			NpgsqlConnection connPgsql = new NpgsqlConnection(dbConnString);
+        //			connPgsql.Open();
+
+        //			NpgsqlTransaction t = connPgsql.BeginTransaction();
+
+        //			LargeObjectManager lbm = new LargeObjectManager(connPgsql);
+        //			LargeObject lo =  lbm.Open(largeObjectId, LargeObjectManager.READWRITE);
+
+        //			byte[] buffer = lo.Read(lo.Size());
+
+        //			lo.Close();
+        //			t.Commit();
+
+        //			// If using the Npgsql pooling close the connection to place it back in the pool.
+        //			connPgsql.Close();
+
+        //			return buffer;
+        //		}
+        //		else
+        //		{
+        //			throw new ApplicationException("Not supported in StorageLayer.StoreLargeObject");
+        //		}
+        //	}
+        //	catch(Exception excp)
+        //	{
+        //		logger.Error("Exception StoreLargeObject. " + excp.Message);
+        //		throw excp;
+        //	}
+        //}
+
+#if !NETSTANDARD2_0
         public void StoreByteA(string query, byte[] buffer)
         {
             QuerySecurityCheck(query);
@@ -342,6 +346,7 @@ namespace SIPSorcery.Persistence
                 throw excp;
             }
         }
+#endif
 
 		/// <summary>
 		/// Used to determine whethe Npgsql will treat a connection string as pooling or not.
@@ -416,77 +421,76 @@ namespace SIPSorcery.Persistence
         }
 
         public static IDbConnection GetDbConnection(StorageTypes storageType, string dbConnStr) {
+#if !NETSTANDARD2_0
             if (storageType == StorageTypes.Postgresql) {
                 return new NpgsqlConnection(dbConnStr);
             }
-            else if (storageType == StorageTypes.MySQL) {
+            if (storageType == StorageTypes.MySQL) {
                 return new MySqlConnection(dbConnStr);
             }
-            else if (storageType == StorageTypes.MSSQL)
+#endif
+            if (storageType == StorageTypes.MSSQL)
             {
                 return new SqlConnection(dbConnStr);
             }
-            else
-            {
-                throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbConnection.");
-            }
+            throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbConnection.");
         }
 
-        public static IDbCommand GetDbCommand(StorageTypes storageType, IDbConnection dbConn, string cmdText) {
+        public static IDbCommand GetDbCommand(StorageTypes storageType, IDbConnection dbConn, string cmdText)
+        {
+#if !NETSTANDARD2_0
             if (storageType == StorageTypes.Postgresql) {
                 return new NpgsqlCommand(cmdText, (NpgsqlConnection)dbConn);
             }
-            else if (storageType == StorageTypes.MySQL) {
+            if (storageType == StorageTypes.MySQL) {
                 return new MySqlCommand(cmdText, (MySqlConnection)dbConn);
             }
-            else if (storageType == StorageTypes.MSSQL)
+#endif
+            if (storageType == StorageTypes.MSSQL)
             {
                 return new SqlCommand(cmdText, (SqlConnection)dbConn);
             }
-            else
-            {
-                throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbConnection.");
-            }
+            throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbConnection.");
         }
 
-        private IDataAdapter GetDataAdapter(StorageTypes storageType, IDbConnection dbConn, string cmdText) {
+        private IDataAdapter GetDataAdapter(StorageTypes storageType, IDbConnection dbConn, string cmdText)
+        {
+#if !NETSTANDARD2_0
             if (storageType == StorageTypes.Postgresql) {
                 return new NpgsqlDataAdapter(cmdText, (NpgsqlConnection)dbConn);
             }
-            else if (storageType == StorageTypes.MySQL) {
+            if (storageType == StorageTypes.MySQL) {
                 return new MySqlDataAdapter(cmdText, (MySqlConnection)dbConn);
             }
-            else if (storageType == StorageTypes.MSSQL)
+#endif
+            if (storageType == StorageTypes.MSSQL)
             {
                 return new SqlDataAdapter(cmdText, (SqlConnection)dbConn);
             }
-            else
-            {
-                throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbConnection.");
-            }
+            throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbConnection.");
         }
 
-        public static IDataParameter GetDbParameter(StorageTypes storageType, string name, object value) {
+        public static IDataParameter GetDbParameter(StorageTypes storageType, string name, object value)
+        {
+#if !NETSTANDARD2_0
             if (storageType == StorageTypes.Postgresql) {
                 return new NpgsqlParameter(name, value);
             }
-            else if (storageType == StorageTypes.MySQL) {
+            if (storageType == StorageTypes.MySQL) {
                 return new MySqlParameter(name, value);
             }
-            else if (storageType == StorageTypes.MSSQL)
+#endif
+            if (storageType == StorageTypes.MSSQL)
             {
                 return new SqlParameter(name, value);
             }
-            else
-            {
-                throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbParameter.");
-            }
+            throw new ApplicationException("Storage type " + storageType + " is not supported by GetDbParameter.");
         }
 
 
-        #region Unit tests.
+#region Unit tests.
 		
-		#if UNITTEST
+#if UNITTEST
 
 		[TestFixture]
 		public class StorageLayerUnitTests
@@ -549,8 +553,8 @@ namespace SIPSorcery.Persistence
 
 		}
 
-		#endif
+#endif
 
-		#endregion
+#endregion
 	}
 }
