@@ -25,9 +25,12 @@ using System.Text;
 using System.Net.Sockets;
 using System.Net.NetworkInformation;
 using System.Diagnostics;
-using System.Runtime.Remoting.Messaging;
 using SIPSorcery.Sys;
 using log4net;
+
+#if !NETSTANDARD2_0
+using System.Runtime.Remoting.Messaging;
+#endif
 
 /*
  * Network Working Group                                     P. Mockapetris
@@ -806,6 +809,7 @@ namespace Heijden.DNS
                 return MakeEntry(hostNameOrAddress, DEFAULT_TIMEOUT);
         }
 
+#if !NETSTANDARD2_0
         private delegate IPHostEntry GetHostEntryViaIPDelegate(IPAddress ip);
         private delegate IPHostEntry GetHostEntryDelegate(string hostNameOrAddress);
 
@@ -873,7 +877,7 @@ namespace Heijden.DNS
             }
             return null;
         }
-
+#endif
         private IPEndPoint GetActiveDNSServer()
         {
             if (m_DnsServers == null)

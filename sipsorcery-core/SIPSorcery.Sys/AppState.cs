@@ -26,11 +26,16 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using log4net;
+using log4net.Repository;
 
 namespace SIPSorcery.Sys
 {
     public class AppState : IConfigurationSectionHandler
     {
+#if NETSTANDARD2_0
+        public static readonly ILoggerRepository LoggerRepository = LogManager.GetRepository(System.Reflection.Assembly.GetEntryAssembly());
+#endif
+
         public const string CRLF = "\r\n";
         public const string DEFAULT_ERRRORLOG_FILE = @"c:\temp\appstate.error.log";
         public const string ENCRYPTED_SETTING_PREFIX = "$#";
@@ -55,7 +60,11 @@ namespace SIPSorcery.Sys
                 {
                     // Initialise logging functionality from an XML node in the app.config file.
                     Console.WriteLine("Starting logging initialisation.");
+#if NETSTANDARD2_0
+                    log4net.Config.XmlConfigurator.Configure(LoggerRepository, new FileInfo("log4net.config"));
+#else
                     log4net.Config.XmlConfigurator.Configure();
+#endif
                 }
                 catch
                 {
@@ -79,7 +88,11 @@ namespace SIPSorcery.Sys
                 {
                     try
                     {
+#if NETSTANDARD2_0
+                        logger = log4net.LogManager.GetLogger(LoggerRepository.Name, APP_LOGGING_ID);
+#else
                         logger = log4net.LogManager.GetLogger(APP_LOGGING_ID);
+#endif
                         logger.Debug("Logging initialised.");
                     }
                     catch (Exception excp)
@@ -105,7 +118,11 @@ namespace SIPSorcery.Sys
 
         public static ILog GetLogger(string logName)
         {
+#if NETSTANDARD2_0
+            return log4net.LogManager.GetLogger(LoggerRepository.Name, logName);
+#else
             return log4net.LogManager.GetLogger(logName);
+#endif
         }
 
         /// <summary>
@@ -120,7 +137,11 @@ namespace SIPSorcery.Sys
             log4net.Layout.ILayout fallbackLayout = new log4net.Layout.PatternLayout("%m%n");
             appender.Layout = fallbackLayout;
 
+#if NETSTANDARD2_0
+            log4net.Config.BasicConfigurator.Configure(LoggerRepository, appender);
+#else
             log4net.Config.BasicConfigurator.Configure(appender);
+#endif
         }
 
         /// <summary>

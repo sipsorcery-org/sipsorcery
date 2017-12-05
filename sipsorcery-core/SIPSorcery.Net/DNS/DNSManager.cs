@@ -55,7 +55,11 @@ namespace SIPSorcery.Net
         private const string SIP_TLS_QUERY_PREFIX = "_sip._tls.";
         private const string SIPS_TCP_QUERY_PREFIX = "_sips._tcp.";
 
+#if NETSTANDARD2_0
+        private static ILog logger = LogManager.GetLogger(SIPSorcery.Sys.AppState.LoggerRepository.Name, LOOKUP_THREAD_NAME);
+#else
         private static ILog logger = LogManager.GetLogger(LOOKUP_THREAD_NAME);
+#endif
 
         //private static Dictionary<string, DNSResponse> m_dnsResponses = new Dictionary<string, DNSResponse>();  // DNS query responses that have been looked up and stored.
 

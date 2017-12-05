@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <AssemblyName>SIPSorcery.Net</AssemblyName>
+    <RootNamespace>SIPSorcery.Net</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="2.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../SIPSorcery.Sys.Standard/SIPSorcery.Sys.Standard.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../SIPSorcery.Net/**/*.cs" Exclude="../SIPSorcery.Net/obj/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="../SIPSorcery.Net/RTP/RTPReceiver.cs" />
+  </ItemGroup>
+
+</Project>

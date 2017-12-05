@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0B7CB4A2-B101-473E-B5A8-3B746A232647}"
 	ProjectSection(SolutionItems) = preProject
@@ -50,6 +50,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Web.Services.Test", "Tests\SIPSorcery.Web.Services.Test\SIPSorcery.Web.Services.Test.csproj", "{0E37C7C5-D19B-4D55-B4F0-F95FED155AE3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.Entities.IntegrationTests", "Tests\SIPSorcery.Entities.IntegrationTests\SIPSorcery.Entities.IntegrationTests.csproj", "{3853A052-236B-4A7F-B55A-804E9DCBAA93}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "netstandard", "netstandard", "{E7431B63-0BC0-4C5F-BCE1-6A3E582ACDD6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery.Sys.Standard", "SIPSorcery.Sys.Standard\SIPSorcery.Sys.Standard.csproj", "{959BE749-1F3D-4758-A4C6-F7C3BBD36480}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery.SIP.Core.Standard", "SIPSorcery.SIP.Core.Standard\SIPSorcery.SIP.Core.Standard.csproj", "{6849BC63-B334-40CE-9486-AF76E68926E8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery.Net.Standard", "SIPSorcery.Net.Standard\SIPSorcery.Net.Standard.csproj", "{EC6B3411-A1BD-4701-BBCF-1BA60332F776}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -277,6 +285,42 @@ Global
 		{3853A052-236B-4A7F-B55A-804E9DCBAA93}.Release|x64.Build.0 = Release|Any CPU
 		{3853A052-236B-4A7F-B55A-804E9DCBAA93}.Release|x86.ActiveCfg = Release|Any CPU
 		{3853A052-236B-4A7F-B55A-804E9DCBAA93}.Release|x86.Build.0 = Release|Any CPU
+		{959BE749-1F3D-4758-A4C6-F7C3BBD36480}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{959BE749-1F3D-4758-A4C6-F7C3BBD36480}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{959BE749-1F3D-4758-A4C6-F7C3BBD36480}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{959BE749-1F3D-4758-A4C6-F7C3BBD36480}.Debug|x64.Build.0 = Debug|Any CPU
+		{959BE749-1F3D-4758-A4C6-F7C3BBD36480}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{959BE749-1F3D-4758-A4C6-F7C3BBD36480}.Debug|x86.Build.0 = Debug|Any CPU
+		{959BE749-1F3D-4758-A4C6-F7C3BBD36480}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{959BE749-1F3D-4758-A4C6-F7C3BBD36480}.Release|Any CPU.Build.0 = Release|Any CPU
+		{959BE749-1F3D-4758-A4C6-F7C3BBD36480}.Release|x64.ActiveCfg = Release|Any CPU
+		{959BE749-1F3D-4758-A4C6-F7C3BBD36480}.Release|x64.Build.0 = Release|Any CPU
+		{959BE749-1F3D-4758-A4C6-F7C3BBD36480}.Release|x86.ActiveCfg = Release|Any CPU
+		{959BE749-1F3D-4758-A4C6-F7C3BBD36480}.Release|x86.Build.0 = Release|Any CPU
+		{6849BC63-B334-40CE-9486-AF76E68926E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6849BC63-B334-40CE-9486-AF76E68926E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6849BC63-B334-40CE-9486-AF76E68926E8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6849BC63-B334-40CE-9486-AF76E68926E8}.Debug|x64.Build.0 = Debug|Any CPU
+		{6849BC63-B334-40CE-9486-AF76E68926E8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6849BC63-B334-40CE-9486-AF76E68926E8}.Debug|x86.Build.0 = Debug|Any CPU
+		{6849BC63-B334-40CE-9486-AF76E68926E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6849BC63-B334-40CE-9486-AF76E68926E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6849BC63-B334-40CE-9486-AF76E68926E8}.Release|x64.ActiveCfg = Release|Any CPU
+		{6849BC63-B334-40CE-9486-AF76E68926E8}.Release|x64.Build.0 = Release|Any CPU
+		{6849BC63-B334-40CE-9486-AF76E68926E8}.Release|x86.ActiveCfg = Release|Any CPU
+		{6849BC63-B334-40CE-9486-AF76E68926E8}.Release|x86.Build.0 = Release|Any CPU
+		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Debug|x64.Build.0 = Debug|Any CPU
+		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Debug|x86.Build.0 = Debug|Any CPU
+		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Release|x64.ActiveCfg = Release|Any CPU
+		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Release|x64.Build.0 = Release|Any CPU
+		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Release|x86.ActiveCfg = Release|Any CPU
+		{EC6B3411-A1BD-4701-BBCF-1BA60332F776}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -291,6 +335,12 @@ Global
 		{8A2CFE65-422F-4F16-8841-B44067BAB59F} = {5A855FE1-8B93-429D-95A5-B8215CF62A9D}
 		{0E37C7C5-D19B-4D55-B4F0-F95FED155AE3} = {5A855FE1-8B93-429D-95A5-B8215CF62A9D}
 		{3853A052-236B-4A7F-B55A-804E9DCBAA93} = {5A855FE1-8B93-429D-95A5-B8215CF62A9D}
+		{959BE749-1F3D-4758-A4C6-F7C3BBD36480} = {E7431B63-0BC0-4C5F-BCE1-6A3E582ACDD6}
+		{6849BC63-B334-40CE-9486-AF76E68926E8} = {E7431B63-0BC0-4C5F-BCE1-6A3E582ACDD6}
+		{EC6B3411-A1BD-4701-BBCF-1BA60332F776} = {E7431B63-0BC0-4C5F-BCE1-6A3E582ACDD6}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F7AED29C-520F-4F82-95C6-AF2B97B66FFC}
 	EndGlobalSection
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = SIPSorcery-Core.vsmdi
