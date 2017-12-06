@@ -8,16 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="log4net" Version="2.0.8" />
     <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Shims/Shims.csproj" />
     <ProjectReference Include="../SIPSorcery.SIP.App.Standard/SIPSorcery.SIP.App.Standard.csproj" />
-    <ProjectReference Include="../SIPSorcery.SIP.Core.Standard/SIPSorcery.SIP.Core.Standard.csproj" />
-    <ProjectReference Include="../SIPSorcery.Sys.Standard/SIPSorcery.Sys.Standard.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -10,8 +10,6 @@
   <ItemGroup>
     <PackageReference Include="log4net" Version="2.0.8" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.4.0" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="4.5.0-preview1-25914-04" />
-    <PackageReference Include="System.ServiceModel.Primitives" Version="4.4.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,9 +21,11 @@
     <Compile Remove="../SIPSorcery.Sys/Crypto.cs" />
     <Compile Remove="../SIPSorcery.Sys/Crypto/RandomNumberProxy.cs" />
     <Compile Remove="../SIPSorcery.Sys/Net/DNSResolver.cs" />
-	<!-- Files below ARE included in the corresponding .NET Framework project! -->
+    <!-- Files below ARE included in the corresponding .NET Framework project! -->
     <Compile Remove="../SIPSorcery.Sys/Auth/ServiceAuthToken.cs" />
+    <Compile Remove="../SIPSorcery.Sys/Auth/SIPSorcerySecurityHeader.cs" />
     <Compile Remove="../SIPSorcery.Sys/WCFUtility.cs" />
+    <Compile Remove="../SIPSorcery.Sys/SIPSorceryPerformanceMonitor.cs" />
     <Compile Remove="../SIPSorcery.Sys/WrapperImpersonationContext.cs" />
   </ItemGroup>
 

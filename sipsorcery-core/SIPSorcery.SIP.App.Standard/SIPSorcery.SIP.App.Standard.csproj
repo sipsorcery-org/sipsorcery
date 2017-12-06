@@ -8,14 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="log4net" Version="2.0.8" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="../Shims/Shims.csproj" />
     <ProjectReference Include="../SIPSorcery.Net.Standard/SIPSorcery.Net.Standard.csproj" />
     <ProjectReference Include="../SIPSorcery.SIP.Core.Standard/SIPSorcery.SIP.Core.Standard.csproj" />
-    <ProjectReference Include="../SIPSorcery.Sys.Standard/SIPSorcery.Sys.Standard.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +22,8 @@
     <Compile Remove="../SIPSorcery.SIP.App/SIPCallDispatcherFile.cs" />
     <Compile Remove="../SIPSorcery.SIP.App/SIPDNS/SIPDNSLookupResult.cs" />
     <Compile Remove="../SIPSorcery.SIP.App/SIPUserAgents/JingleUserAgent.cs" />
+    <!-- Files below ARE included in the corresponding .NET Framework project! -->
+    <Compile Remove="../SIPSorcery.SIP.App/Monitoring/ISIPMonitorPublisher.cs" />
   </ItemGroup>
 
 </Project>

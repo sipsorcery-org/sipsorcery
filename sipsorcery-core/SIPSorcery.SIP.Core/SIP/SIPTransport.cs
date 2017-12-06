@@ -1221,7 +1221,7 @@ namespace SIPSorcery.SIP
                         {
                             STUNRequestReceived(sipChannel.SIPChannelEndPoint.GetIPEndPoint(), remoteEndPoint.GetIPEndPoint(), buffer, buffer.Length);
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETSTANDARD2_0
                             if (PerformanceMonitorPrefix != null)
                             {
                                 SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_STUN_REQUESTS_PER_SECOND_SUFFIX);
@@ -1239,7 +1239,7 @@ namespace SIPSorcery.SIP
                             SIPResponse tooLargeResponse = GetResponse(sipChannel.SIPChannelEndPoint, remoteEndPoint, SIPResponseStatusCodesEnum.MessageTooLarge, null);
                             SendResponse(tooLargeResponse);
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETSTANDARD2_0
                             if (PerformanceMonitorPrefix != null)
                             {
                                 SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
@@ -1254,7 +1254,7 @@ namespace SIPSorcery.SIP
                                 // An emptry transmission has been received. More than likely this is a NAT keep alive and can be disregarded.
                                 //FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "No printable characters, length " + buffer.Length + " bytes.", SIPValidationFieldsEnum.Unknown, null);
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETSTANDARD2_0
                                 if (PerformanceMonitorPrefix != null)
                                 {
                                     // SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
@@ -1267,7 +1267,7 @@ namespace SIPSorcery.SIP
                             {
                                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Missing SIP string.", SIPValidationFieldsEnum.NoSIPString, rawSIPMessage);
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETSTANDARD2_0
                                 if (PerformanceMonitorPrefix != null)
                                 {
                                     SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
@@ -1287,7 +1287,7 @@ namespace SIPSorcery.SIP
 
                                     try
                                     {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETSTANDARD2_0
                                         if (PerformanceMonitorPrefix != null)
                                         {
                                             SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_RESPONSES_PER_SECOND_SUFFIX);
@@ -1337,7 +1337,7 @@ namespace SIPSorcery.SIP
                                 {
                                     #region SIP Request.
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETSTANDARD2_0
                                     if (PerformanceMonitorPrefix != null)
                                     {
                                         SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_REQUESTS_PER_SECOND_SUFFIX);
@@ -1454,7 +1454,7 @@ namespace SIPSorcery.SIP
                             {
                                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Not parseable as SIP message.", SIPValidationFieldsEnum.Unknown, rawSIPMessage);
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETSTANDARD2_0
                                 if (PerformanceMonitorPrefix != null)
                                 {
                                     SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
@@ -1469,7 +1469,7 @@ namespace SIPSorcery.SIP
             {
                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Exception SIPTransport. " + excp.Message, SIPValidationFieldsEnum.Unknown, rawSIPMessage);
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETSTANDARD2_0
                 if (PerformanceMonitorPrefix != null)
                 {
                     SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
