@@ -6,7 +6,7 @@ namespace SIPSorcery.SIP.App
     {
         Guid Id { get; set; }
 
-#if !SILVERLIGHT
+#if  !SILVERLIGHT && !NETSTANDARD2_0
         void Load(System.Data.DataRow row);
         //Dictionary<Guid, object> Load(XmlDocument dom);
         System.Data.DataTable GetTable();

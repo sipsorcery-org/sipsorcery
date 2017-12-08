@@ -42,7 +42,7 @@ using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
 using log4net;
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETSTANDARD2_0
 using System.Data;
 using System.Data.Linq.Mapping;
 #endif
@@ -350,7 +350,7 @@ namespace SIPSorcery.SIP.App
 
         public SIPAccount() { }
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETSTANDARD2_0
 
         public SIPAccount(DataRow sipAccountRow)
         {
