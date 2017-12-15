@@ -32,8 +32,20 @@ namespace SIPSorcery.Sys.Net
             int port = startPort;
             bool isAvailable = true;
 
+#if NETSTANDARD2_0
+            Mutex mutex;
+            try
+            {
+                mutex = new Mutex(false, string.Concat("Global/", PortReleaseGuid));
+            }
+            catch (NotSupportedException)
+            {
+                mutex = new Mutex(false);
+            }
+#else
             var mutex = new Mutex(false,
                 string.Concat("Global/", PortReleaseGuid));
+#endif
             mutex.WaitOne();
             try
             {
@@ -81,8 +93,20 @@ namespace SIPSorcery.Sys.Net
             int port = startPort;
             bool isAvailable = true;
 
+#if NETSTANDARD2_0
+            Mutex mutex;
+            try
+            {
+                mutex = new Mutex(false, string.Concat("Global/", PortReleaseGuid));
+            }
+            catch (NotSupportedException)
+            {
+                mutex = new Mutex(false);
+            }
+#else
             var mutex = new Mutex(false,
                 string.Concat("Global/", PortReleaseGuid));
+#endif
             mutex.WaitOne();
             try
             {
