@@ -362,9 +362,10 @@ namespace SIPSorcery.SIP
             var localAddress = GetLocalAddress(destinationEP.Address);
             if (localAddress == null)
             {
-                throw new Exception("No network interface match with the following endpoint : " + destinationEP.Address.ToString());
+                //throw new Exception("No network interface match with the following endpoint : " + destinationEP.Address.ToString());
+                return GetDefaultSIPEndPoint();
             }
-
+                
             foreach (SIPChannel sipChannel in m_sipChannels.Values)
             {
                 if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
@@ -1553,7 +1554,7 @@ namespace SIPSorcery.SIP
                 if (sipChannel.SIPChannelEndPoint.Protocol == protocol)
                 {
                     return sipChannel;
-                }
+                }  
             }
 
             logger.Warn("No default SIP channel could be found for " + protocol + ".");
