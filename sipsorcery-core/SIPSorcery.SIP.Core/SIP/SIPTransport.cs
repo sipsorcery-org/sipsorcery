@@ -359,28 +359,36 @@ namespace SIPSorcery.SIP
         public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
         {
             bool isDestLoopback = IPAddress.IsLoopback(destinationEP.Address);
-            var localAddress = GetLocalAddress(destinationEP.Address);
+            var localAddress = m_sipChannels?.Count > 1 ? GetLocalAddress(destinationEP.Address) : null;
+
             if (localAddress == null)
             {
                 //throw new Exception("No network interface match with the following endpoint : " + destinationEP.Address.ToString());
                 return GetDefaultSIPEndPoint();
             }
-                
-            foreach (SIPChannel sipChannel in m_sipChannels.Values)
+
+            if (m_sipChannels?.Count == 1)
             {
-                if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
-                    sipChannel.SIPChannelEndPoint.Address.ToString() == localAddress.ToString())
+                return m_sipChannels.First().Value.SIPChannelEndPoint;
+            }
+            else if(m_sipChannels?.Count > 1)
+            {
+                foreach (SIPChannel sipChannel in m_sipChannels.Values)
                 {
-                    if (isDestLoopback)
+                    if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
+                        sipChannel.SIPChannelEndPoint.Address.ToString() == localAddress.ToString())
                     {
-                        if (IPAddress.IsLoopback(sipChannel.SIPChannelEndPoint.Address))
+                        if (isDestLoopback)
+                        {
+                            if (IPAddress.IsLoopback(sipChannel.SIPChannelEndPoint.Address))
+                            {
+                                return sipChannel.SIPChannelEndPoint;
+                            }
+                        }
+                        else
                         {
                             return sipChannel.SIPChannelEndPoint;
                         }
-                    }
-                    else
-                    {
-                        return sipChannel.SIPChannelEndPoint;
                     }
                 }
             }

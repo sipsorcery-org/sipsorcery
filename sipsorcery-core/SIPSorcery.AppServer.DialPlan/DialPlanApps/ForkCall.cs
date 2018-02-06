@@ -37,7 +37,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -436,19 +435,16 @@ namespace SIPSorcery.AppServer.DialPlan
 
                             if (answeredUAC.CallDescriptor.ImmediateReinvite == true)
                             {
-                                Task.Run(() =>
-                                {
-                                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Initiating re-INVITE request due to dial string options (1s delay).", m_username));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Initiating re-INVITE request due to dial string options (1s delay).", m_username));
 
-                                    // Add a delay so that the other call legs get cancelled prior to the re-INIVTE request being sent. This was done on a user request to help with calls with multiple legs having audio issues.
-                                    Task.Delay(1000);
+                                // Add a delay so that the other call legs get cancelled prior to the re-INIVTE request being sent. This was done on a user request to help with calls with multiple legs having audio issues.
+                                Thread.Sleep(1000);
 
-                                    FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Re-sending SDP: {answeredUAC.SIPDialogue.SDP}", m_username));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Re-sending SDP: {answeredUAC.SIPDialogue.SDP}", m_username));
 
-                                    SIPDialogue dummyDialogue = new SIPDialogue();
-                                    dummyDialogue.RemoteSDP = answeredUAC.SIPDialogue.SDP;
-                                    m_callManager.ReInvite(answeredUAC.SIPDialogue, dummyDialogue);
-                                });
+                                SIPDialogue dummyDialogue = new SIPDialogue();
+                                dummyDialogue.RemoteSDP = answeredUAC.SIPDialogue.SDP;
+                                m_callManager.ReInvite(answeredUAC.SIPDialogue, dummyDialogue);
                             }
                         }
                     }
