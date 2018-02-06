@@ -166,3 +166,4 @@ bower_components
 
 */.vs/*
 /sipsorcery-servers/build
+/.vs
