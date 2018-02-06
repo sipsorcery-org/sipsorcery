@@ -83,29 +83,28 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net, Version=1.2.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
     </Reference>
     <Reference Include="NAudio, Version=1.7.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\NAudio.1.7.3\lib\net35\NAudio.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="SIPSorcery.Net, Version=1.5.0.35789, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.5.5\lib\net46\SIPSorcery.Net.dll</HintPath>
-      <Private>True</Private>
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>\\10.0.0.5\DataSecure\Source\git\sipsorcery-public\sipsorcery-core\Build\SIPSorcery.Net.dll</HintPath>
     </Reference>
     <Reference Include="SIPSorcery.SIP.App, Version=1.5.0.35791, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.5.5\lib\net46\SIPSorcery.SIP.App.dll</HintPath>
-      <Private>True</Private>
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>\\10.0.0.5\DataSecure\Source\git\sipsorcery-public\sipsorcery-core\Build\SIPSorcery.SIP.App.dll</HintPath>
     </Reference>
     <Reference Include="SIPSorcery.SIP.Core, Version=1.5.0.37141, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.5.5\lib\net46\SIPSorcery.SIP.Core.dll</HintPath>
-      <Private>True</Private>
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>\\10.0.0.5\DataSecure\Source\git\sipsorcery-public\sipsorcery-core\Build\SIPSorcery.SIP.Core.dll</HintPath>
     </Reference>
     <Reference Include="SIPSorcery.Sys, Version=1.5.0.37141, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.5.5\lib\net46\SIPSorcery.Sys.dll</HintPath>
-      <Private>True</Private>
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>\\10.0.0.5\DataSecure\Source\git\sipsorcery-public\sipsorcery-core\Build\SIPSorcery.Sys.dll</HintPath>
     </Reference>
     <Reference Include="SIPSorceryMedia, Version=1.1.5907.36321, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\SIPSorceryMedia.1.1.9\lib\net45\SIPSorceryMedia.dll</HintPath>
