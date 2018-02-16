@@ -33,9 +33,8 @@ namespace SIPSorcery.Sys
     public class AppState : IConfigurationSectionHandler
     {
 #if NETSTANDARD2_0
-        public static readonly ILoggerRepository LoggerRepository = LogManager.GetRepository(System.Reflection.Assembly.GetEntryAssembly());
+        public static readonly ILoggerRepository LoggerRepository;
 #endif
-
         public const string CRLF = "\r\n";
         public const string DEFAULT_ERRRORLOG_FILE = @"c:\temp\appstate.error.log";
         public const string ENCRYPTED_SETTING_PREFIX = "$#";
@@ -61,6 +60,10 @@ namespace SIPSorcery.Sys
                     // Initialise logging functionality from an XML node in the app.config file.
                     Console.WriteLine("Starting logging initialisation.");
 #if NETSTANDARD2_0
+                    var assembly = System.Reflection.Assembly.GetEntryAssembly() ?? System.Reflection.Assembly.GetExecutingAssembly();
+                    LoggerRepository = LogManager.GetRepository(assembly);
+                    if (LoggerRepository == null) LoggerRepository = LogManager.CreateRepository("SIPSorcery.Sys.AppState");
+
                     log4net.Config.XmlConfigurator.Configure(LoggerRepository, new FileInfo("log4net.config"));
 #else
                     log4net.Config.XmlConfigurator.Configure();
