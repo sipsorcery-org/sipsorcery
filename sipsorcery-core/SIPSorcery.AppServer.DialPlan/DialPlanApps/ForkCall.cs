@@ -433,12 +433,12 @@ namespace SIPSorcery.AppServer.DialPlan
                             // Cancel/hangup and other calls on this leg that are still around.
                             CancelNotRequiredCallLegs(CallCancelCause.NormalClearing);
 
-                            if (answeredUAC.CallDescriptor.ImmediateReinvite == true)
+                            if (answeredUAC.CallDescriptor.ReinviteDelay >= 0)
                             {
-                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Initiating re-INVITE request due to dial string options (1s delay).", m_username));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Initiating re-INVITE request in {answeredUAC.CallDescriptor.ReinviteDelay}s due to dial string option.", m_username));
 
                                 // Add a delay so that the other call legs get cancelled prior to the re-INIVTE request being sent. This was done on a user request to help with calls with multiple legs having audio issues.
-                                Thread.Sleep(1000);
+                                Thread.Sleep(answeredUAC.CallDescriptor.ReinviteDelay * 1000);
 
                                 FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Re-sending SDP: {answeredUAC.SIPDialogue.SDP}", m_username));
 
