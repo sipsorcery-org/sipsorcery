@@ -447,10 +447,10 @@ namespace SIPSorcery.SIP.App
                 }
 
                 // Parse the delayed reinvite option.
-                Match delayedReinviteMatch = Regex.Match(options, DELAYED_REINVITE_KEY + @"=(?<delayedReinvite>\w+)");
+                Match delayedReinviteMatch = Regex.Match(options, DELAYED_REINVITE_KEY + @"=(?<delayedReinvite>\d+)");
                 if (delayedReinviteMatch.Success)
                 {
-                    Int32.TryParse(delayedReinviteMatch.Result("${<delayedReinvite}"), out ReinviteDelay);
+                    Int32.TryParse(delayedReinviteMatch.Result("${delayedReinvite}"), out ReinviteDelay);
 
                     if(ReinviteDelay > MAX_REINVITE_DELAY)
                     {
@@ -459,7 +459,7 @@ namespace SIPSorcery.SIP.App
                 }
 
                 // Parse the immediate reinvite option (TODO: remove after user switches to delayed reinvite option).
-                Match immediateReinviteMatch = Regex.Match(options, @"ir=\w+)");
+                Match immediateReinviteMatch = Regex.Match(options, @"ir=\w+");
                 if (immediateReinviteMatch.Success)
                 {
                     ReinviteDelay = DEFAULT_REINVITE_DELAY;
