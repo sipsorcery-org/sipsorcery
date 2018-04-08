@@ -428,24 +428,16 @@ namespace SIPSorcery.AppServer.DialPlan
                         if (CallAnswered != null)
                         {
                             logger.Debug("Transfer mode=" + m_answeredUAC.CallDescriptor.TransferMode + ".");
+
+                            if (answeredUAC.CallDescriptor.ReinviteDelay > 0)
+                            {
+                                answeredUAC.SIPDialogue.ReinviteDelay = answeredUAC.CallDescriptor.ReinviteDelay;
+                            }
+
                             CallAnswered(answeredResponse.Status, answeredResponse.ReasonPhrase, null, null, answeredResponse.Header.ContentType, answeredResponse.Body, answeredUAC.SIPDialogue, uasTransferMode);
 
                             // Cancel/hangup and other calls on this leg that are still around.
                             CancelNotRequiredCallLegs(CallCancelCause.NormalClearing);
-
-                            if (answeredUAC.CallDescriptor.ReinviteDelay >= 0)
-                            {
-                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Initiating re-INVITE request in {answeredUAC.CallDescriptor.ReinviteDelay}s due to dial string option.", m_username));
-
-                                // Add a delay so that the other call legs get cancelled prior to the re-INIVTE request being sent. This was done on a user request to help with calls with multiple legs having audio issues.
-                                Thread.Sleep(answeredUAC.CallDescriptor.ReinviteDelay * 1000);
-
-                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Re-sending SDP: {answeredUAC.SIPDialogue.SDP}", m_username));
-
-                                SIPDialogue dummyDialogue = new SIPDialogue();
-                                dummyDialogue.RemoteSDP = answeredUAC.SIPDialogue.SDP;
-                                m_callManager.ReInvite(answeredUAC.SIPDialogue, dummyDialogue);
-                            }
                         }
                     }
                     else
@@ -694,10 +686,7 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                if (m_statefulProxyLogEvent != null)
-                {
-                    m_statefulProxyLogEvent(monitorEvent);
-                }
+                m_statefulProxyLogEvent?.Invoke(monitorEvent);
             }
             catch (Exception excp)
             {

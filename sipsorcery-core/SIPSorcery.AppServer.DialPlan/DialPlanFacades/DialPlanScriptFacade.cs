@@ -72,7 +72,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private const int ALLOWED_ADDRESSES_PER_EMAIL = 5;     // The maximum number of addresses that can be used in an email.
         private const int ALLOWED_EMAILS_PER_EXECUTION = 3;     // The maximum number of emails that can be sent pre dialplan execution.
         private const int MAX_EMAIL_SUBJECT_LENGTH = 256;
-        private const int MAX_EMAIL_BODY_LENGTH = 2048;
+        private const int MAX_EMAIL_BODY_LENGTH = 4096;
         private const string USERDATA_DBTYPE_KEY = "UserDataDBType";
         private const string USERDATA_DBCONNSTR_KEY = "UserDataDBConnStr";
         private const int MAX_DATA_ENTRIES_PER_USER = 100;

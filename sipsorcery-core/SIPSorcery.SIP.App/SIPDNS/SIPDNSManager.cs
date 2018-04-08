@@ -156,9 +156,22 @@ namespace SIPSorcery.SIP.App
                     else
                     {
                         //logger.Debug("SIPDNSManager SRV lookup for " + host + " is final.");
-                        SIPDNSServiceResult nextSRVRecord = sipLookupResult.GetNextUnusedSRV();
-                        int lookupPort = (nextSRVRecord != null) ? nextSRVRecord.Port : port;
-                        return DNSARecordLookup(nextSRVRecord, host, lookupPort, async, sipLookupResult.URI);
+
+                        // Add some custom logic to cope with sips SRV records using _sips._tcp (e.g. free.call.ciscospark.com).
+                        // By default only _sips._tls SRV records are checked for. THis block adds an additional check for _sips._tcp SRV records.
+                        if ((sipLookupResult.SIPSRVResults == null || sipLookupResult.SIPSRVResults.Count == 0) && sipURI.Scheme == SIPSchemesEnum.sips)
+                        {
+                            DNSSRVRecordLookup(sipURI.Scheme, SIPProtocolsEnum.tcp, host, async, ref sipLookupResult);
+                            SIPDNSServiceResult nextSRVRecord = sipLookupResult.GetNextUnusedSRV();
+                            int lookupPort = (nextSRVRecord != null) ? nextSRVRecord.Port : port;
+                            return DNSARecordLookup(nextSRVRecord, host, lookupPort, async, sipLookupResult.URI);
+                        }
+                        else
+                        {
+                            SIPDNSServiceResult nextSRVRecord = sipLookupResult.GetNextUnusedSRV();
+                            int lookupPort = (nextSRVRecord != null) ? nextSRVRecord.Port : port;
+                            return DNSARecordLookup(nextSRVRecord, host, lookupPort, async, sipLookupResult.URI);
+                        }
                     }
                 }
             }

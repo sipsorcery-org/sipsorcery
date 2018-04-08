@@ -103,6 +103,8 @@ namespace SIPSorcery.SIP
         public string CRMCompanyName { get; set; }
         public string CRMPictureURL { get; set; }
 
+        public int ReinviteDelay = 0;      // Used as a mechanism to send an immeidate or slightly delayed re-INVITE request when a call is answered as an attempt to help solve audio issues.
+
         public string DialogueName
         {
             get
