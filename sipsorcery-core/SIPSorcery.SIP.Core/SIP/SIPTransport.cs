@@ -358,25 +358,19 @@ namespace SIPSorcery.SIP
 
         public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
         {
-            bool isDestLoopback = IPAddress.IsLoopback(destinationEP.Address);
-            var localAddress = m_sipChannels?.Count > 1 ? GetLocalAddress(destinationEP.Address) : null;
-
-            if (localAddress == null)
-            {
-                //throw new Exception("No network interface match with the following endpoint : " + destinationEP.Address.ToString());
-                return GetDefaultSIPEndPoint();
-            }
-
             if (m_sipChannels?.Count == 1)
             {
                 return m_sipChannels.First().Value.SIPChannelEndPoint;
             }
             else if(m_sipChannels?.Count > 1)
             {
+                bool isDestLoopback = IPAddress.IsLoopback(destinationEP.Address);
+                var localAddress = isDestLoopback == false ? GetLocalAddress(destinationEP.Address) : null;
+
                 foreach (SIPChannel sipChannel in m_sipChannels.Values)
                 {
                     if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
-                        sipChannel.SIPChannelEndPoint.Address.ToString() == localAddress.ToString())
+                        (localAddress == null || sipChannel.SIPChannelEndPoint.Address.ToString() == localAddress.ToString()))
                     {
                         if (isDestLoopback)
                         {
@@ -414,7 +408,6 @@ namespace SIPSorcery.SIP
             }
             return null;
         }
-
 
         /// <summary>
         /// This function performs processing on a request to handle any actions that need to be taken based on the Route header.
