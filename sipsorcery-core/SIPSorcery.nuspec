@@ -2,17 +2,17 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>SIPSorcery</id>
-        <version>1.5.6</version>
+        <version>1.6.0</version>
         <authors>Aaron Clauson</authors>
         <owners>Aaron Clauson</owners>
-		<releaseNotes>Fix to allow SIP channels to cope with system allocated port number. Updated log4net dependency to 2.0.8.</releaseNotes>
+		<releaseNotes>Improved the selection of interface for multi-honed hosts.</releaseNotes>
         <licenseUrl>https://github.com/sipsorcery/sipsorcery/blob/master/LICENSE.md</licenseUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>The SIPSorcery package consists of a C# SIP protocol stack that implements all the required UDP, TCP and TLS transports as specified in RFC3261. 
 		There are also partial implementations of a number of related protocols: STUN, SDP, RTP and RTCP. The SIP functionality includes a number of user agents which
 		can be used to initiate and receive both calls and registrations.</description>
       <summary>This is the official package of SIPSorcery. Full source code can be found at https://github.com/sipsorcery/sipsorcery.</summary>  
-      <copyright>Copyright (c) 2017, Aaron Clauson</copyright>
+      <copyright>Copyright (c) 2018, Aaron Clauson</copyright>
         <language>en-US</language>
 		<projectUrl>https://github.com/sipsorcery/sipsorcery</projectUrl>
 		<iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
