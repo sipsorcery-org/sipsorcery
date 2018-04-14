@@ -33,12 +33,11 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Linq;
 using System.Net;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.Sys;
 using log4net;
@@ -101,6 +100,11 @@ namespace SIPSorcery.SIP
 
     public class SIPTransport
     {
+        [DllImport("iphlpapi.dll", SetLastError = true)]
+        static extern int GetBestInterface(UInt32 DestAddr, out UInt32 BestIfIndex);    // For IPv6 will need to switch to GetBestInterfaceEx.
+
+        private const int NO_ERROR = 0;
+
         private const string RECEIVE_THREAD_NAME = "siptransport-receive";
         private const string RELIABLES_THREAD_NAME = "siptransport-reliables";
         private const int MAX_QUEUEWAIT_PERIOD = 2000;              // Maximum time to wait to check the message received queue if no events are received.
@@ -392,21 +396,42 @@ namespace SIPSorcery.SIP
 
         private IPAddress GetLocalAddress(IPAddress destination)
         {
-            foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
-            {
-                foreach (UnicastIPAddressInformation unicastIPAddressInformation in adapter.GetIPProperties().UnicastAddresses)
-                {
-                    if (unicastIPAddressInformation.Address.AddressFamily == AddressFamily.InterNetwork)
-                    {
-                        long mask = unicastIPAddressInformation.IPv4Mask.Address & destination.Address;
-                        long networkMask = unicastIPAddressInformation.IPv4Mask.Address & unicastIPAddressInformation.Address.Address;
+            uint bestInterfaceIndex = 0;
+            int result = GetBestInterface(BitConverter.ToUInt32(destination.GetAddressBytes(), 0), out bestInterfaceIndex);
 
-                        if (mask == networkMask)
-                            return unicastIPAddressInformation.Address;
+            IPAddress localAddress = null;
+
+            if (result == NO_ERROR)
+            {
+                var bestInterface = from ni in NetworkInterface.GetAllNetworkInterfaces() where ni.GetIPProperties().GetIPv4Properties().Index == bestInterfaceIndex select ni;
+
+                localAddress = bestInterface.FirstOrDefault()?.GetIPProperties().UnicastAddresses.Where(x => x.Address.AddressFamily == destination.AddressFamily).FirstOrDefault()?.Address;
+            }
+            
+            if(localAddress != null)
+            {
+                foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    var adapterIPProperties = adapter.GetIPProperties();
+
+                    foreach (UnicastIPAddressInformation unicastIPAddressInformation in adapterIPProperties.UnicastAddresses.Where(x => x.Address.AddressFamily == destination.AddressFamily))
+                    {
+                        if (unicastIPAddressInformation.Address.AddressFamily == AddressFamily.InterNetwork)
+                        {
+                            long mask = unicastIPAddressInformation.IPv4Mask.Address & destination.Address;
+                            long networkMask = unicastIPAddressInformation.IPv4Mask.Address & unicastIPAddressInformation.Address.Address;
+
+                            if (mask == networkMask)
+                            {
+                                localAddress = unicastIPAddressInformation.Address;
+                                break;
+                            }
+                        }
                     }
                 }
             }
-            return null;
+
+            return localAddress;
         }
 
         /// <summary>
