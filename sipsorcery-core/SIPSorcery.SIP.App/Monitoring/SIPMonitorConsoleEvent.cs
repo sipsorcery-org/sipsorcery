@@ -14,7 +14,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2008 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
+// Copyright (c) 2008-2018 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -36,22 +36,9 @@
 // ============================================================================
 
 using System;
-using System.Collections;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Xml;
 using SIPSorcery.Sys;
-using log4net;
-
-#if UNITTEST
-using NUnit.Framework;
-#endif
 
 namespace SIPSorcery.SIP.App
 {
@@ -263,30 +250,5 @@ namespace SIPSorcery.SIP.App
 
             return consoleString;
         }
-
-        #region Unit testing.
-
-#if UNITTEST
-	
-		[TestFixture]
-		public class SIPMonitorConsoleEventUnitTest
-		{
-			[TestFixtureSetUp]
-			public void Init()
-			{
-				
-			}
-
-		
-			[TestFixtureTearDown]
-			public void Dispose()
-			{			
-				
-			}
-		}
-
-#endif
-
-        #endregion
     }
 }

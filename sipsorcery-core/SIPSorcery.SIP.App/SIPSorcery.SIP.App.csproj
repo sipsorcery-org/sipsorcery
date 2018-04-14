@@ -253,6 +253,10 @@
       <Project>{55898587-8456-40d4-bb88-c9fc8bd6ba9c}</Project>
       <Name>SIPSorcery.Net</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
+      <Project>{01d01bc6-231f-4fd6-badf-51c509ab495f}</Project>
+      <Name>SIPSorcery.SIP.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
       <Project>{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}</Project>
       <Name>SIPSorcery.Sys</Name>
