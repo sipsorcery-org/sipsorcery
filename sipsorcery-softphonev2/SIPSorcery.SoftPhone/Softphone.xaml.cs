@@ -9,7 +9,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006-2012 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
+// Copyright (c) 2006-2018 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -32,14 +32,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -66,7 +60,6 @@ namespace SIPSorcery.SoftPhone
         private string m_sipServer = SIPSoftPhoneState.SIPServer;
 
         private SIPClient _sipClient;                               // SIP calls.
-        //private GingleClient _gingleClient;                         // Google Voice calls.
         private IVoIPClient _activeClient;                          // The active client, either SIP or GV.
         private SoftphoneSTUNClient _stunClient;                    // STUN client to periodically check the public IP address.
         private SIPRegistrationUserAgent _sipRegistrationClient;    // Can be used to register with an external SIP provider if incoming calls are required.
@@ -98,28 +91,33 @@ namespace SIPSorcery.SoftPhone
             // Lookup and periodically check the public IP address of the host machine.
             _stunClient = new SoftphoneSTUNClient();
 
-            // Uncomment this if you want the app to register with your SIP server.
-            //_sipRegistrationClient = new SIPRegistrationUserAgent(
-            //    _sipClient.SIPClientTransport,
-            //    null,
-            //    null,
-            //    new SIPURI(m_sipUsername, m_sipServer, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
-            //    m_sipUsername,
-            //    m_sipPassword,
-            //    null,
-            //    m_sipServer,
-            //    new SIPURI(m_sipUsername, _sipClient.SIPClientTransport.GetDefaultSIPEndPoint().GetIPEndPoint().ToString(), null),
-            //    180,
-            //    null,
-            //    null,
-            //    (message) => { logger.Debug(message); });
-            //_sipRegistrationClient.Start();
+            Initialise();
+        }
+
+        private async void Initialise()
+        {
+            await _sipClient.InitialiseSIP();
+
+            _sipRegistrationClient = new SIPRegistrationUserAgent(
+                _sipClient.SIPClientTransport,
+                null,
+                null,
+                new SIPURI(m_sipUsername, m_sipServer, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
+                m_sipUsername,
+                m_sipPassword,
+                null,
+                m_sipServer,
+                new SIPURI(m_sipUsername, _sipClient.SIPClientTransport.GetDefaultSIPEndPoint().GetIPEndPoint().ToString(), null),
+                180,
+                null,
+                null,
+                (message) => { logger.Debug(message); });
+            _sipRegistrationClient.Start();
         }
 
         private void OnWindowLoaded(object sender, System.Windows.RoutedEventArgs e)
         {
-            ThreadPool.QueueUserWorkItem(delegate
-            {
+            Task.Run(() => { 
                 _mediaManager = new MediaManager();
                 logger.Debug("Media Manager Initialised.");
                 _mediaManager.OnLocalVideoSampleReady += LocalVideoSampleReady;
@@ -271,7 +269,7 @@ namespace SIPSorcery.SoftPhone
 
                 // SIP call.
                 _activeClient = _sipClient;
-                ThreadPool.QueueUserWorkItem(delegate { _sipClient.Call(_mediaManager, destination); });
+                Task.Run (() => { _sipClient.Call(_mediaManager, destination); });
             }
         }
 

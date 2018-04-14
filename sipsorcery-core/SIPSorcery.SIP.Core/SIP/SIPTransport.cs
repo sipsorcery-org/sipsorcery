@@ -334,17 +334,43 @@ namespace SIPSorcery.SIP
             }
         }
 
+        /// <summary>
+        /// Attempts to find the optimal SIP UDP channel connected to the internet. If the caller needs to send the SIP request on
+        /// a different channel (e.g. TCP. TLS or on a private network interface it must set the local end point manually).
+        /// </summary>
+        /// <returns>A SIP channel.</returns>
         public SIPEndPoint GetDefaultSIPEndPoint()
         {
-            foreach (SIPChannel sipChannel in m_sipChannels.Values)
+            if(m_sipChannels == null)
             {
-                if (sipChannel.SIPChannelEndPoint.Protocol == SIPProtocolsEnum.udp)
-                {
-                    return sipChannel.SIPChannelEndPoint;
-                }
+                throw new ApplicationException("No SIP channels available.");
             }
 
-            return m_sipChannels.First().Value.SIPChannelEndPoint;
+            if(m_sipChannels.Count == 1)
+            {
+                return m_sipChannels.First().Value.SIPChannelEndPoint;
+            }
+
+            var internetAddress = GetLocalAddress(IPAddress.Parse("1.1.1.1"));
+
+            var internetChannel = m_sipChannels.Values.Where(x => x.SIPChannelEndPoint.Address.Equals(internetAddress) && x.SIPChannelEndPoint.Protocol == SIPProtocolsEnum.udp).FirstOrDefault();
+
+            if (internetChannel != null)
+            {
+                return internetChannel.SIPChannelEndPoint;
+            }
+            else
+            {
+                foreach (SIPChannel sipChannel in m_sipChannels.Values)
+                {
+                    if (sipChannel.SIPChannelEndPoint.Protocol == SIPProtocolsEnum.udp)
+                    {
+                        return sipChannel.SIPChannelEndPoint;
+                    }
+                }
+
+                return m_sipChannels.First().Value.SIPChannelEndPoint;
+            }
         }
 
         public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
@@ -394,7 +420,7 @@ namespace SIPSorcery.SIP
             return null;
         }
 
-        private IPAddress GetLocalAddress(IPAddress destination)
+        public IPAddress GetLocalAddress(IPAddress destination)
         {
             uint bestInterfaceIndex = 0;
             int result = GetBestInterface(BitConverter.ToUInt32(destination.GetAddressBytes(), 0), out bestInterfaceIndex);
@@ -1592,7 +1618,9 @@ namespace SIPSorcery.SIP
             var e = GetDefaultSIPEndPoint(dstEndPoint);
             var sipChannel = FindSIPChannel(e);
             if (sipChannel != null)
+            {
                 return sipChannel;
+            }
 
             logger.Warn("No default SIP channel could be found for " + dstEndPoint.ToString() + ".");
             return null;

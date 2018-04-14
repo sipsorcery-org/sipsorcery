@@ -63,12 +63,11 @@ namespace SIPSorcery.SoftPhone
         private string m_sipFromName = ConfigurationManager.AppSettings["SIPFromName"];    // Get the SIP From display name from the config file.
 
         private SIPTransport m_sipTransport;                                                // SIP transport layer.
-        private Task _initialisationTask;
-        private CancellationTokenSource _cancelCallTokenSource;
         private SIPClientUserAgent m_uac;                                                   // A SIP user agent client used to place outgoing calls.
         private SIPServerUserAgent m_uas;                                                   // A SIP user agent server used to process incoming calls.
         private ManualResetEvent m_dnsLookupComplete = new ManualResetEvent(false);
         private MediaManager _mediaManager;
+        bool _isIntialised = false;
 
         public event Action CallAnswer;                 // Fires when an incoming SIP call is answered.
         public event Action CallEnded;                  // Fires when an incoming or outgoing call is over.
@@ -81,10 +80,7 @@ namespace SIPSorcery.SoftPhone
         }
 
         public SIPClient()
-        {
-            _cancelCallTokenSource = new CancellationTokenSource();
-           _initialisationTask = InitialiseSIP();
-        }
+        { }
 
         /// <summary>
         /// Shutdown the SIP tranpsort layer and any other resources the SIP client is using. Typically called when the application exits.
@@ -102,35 +98,41 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Initialises the SIP transport layer.
         /// </summary>
-        private async Task InitialiseSIP()
+        public async Task InitialiseSIP()
         {
-            await Task.Delay(10);
-
-            // Configure the SIP transport layer.
-           m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
-
-            if (m_sipSocketsNode != null)
+            if (_isIntialised == false)
             {
-                // Set up the SIP channels based on the app.config file.
-                List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipSocketsNode);
-                m_sipTransport.AddSIPChannel(sipChannels);
-            }
-            else
-            {
-                // Use default options to set up a SIP channel.
-                int port = FreePort.FindNextAvailableUDPPort(_defaultSIPUdpPort);
-                var sipChannel = new SIPUDPChannel(new IPEndPoint(_defaultLocalAddress, port));
-                m_sipTransport.AddSIPChannel(sipChannel);
-            }
+                await Task.Run(() =>
+                {
+                    _isIntialised = true;
 
-            // Wire up the transport layer so incoming SIP requests have somewhere to go.
-            m_sipTransport.SIPTransportRequestReceived += SIPTransportRequestReceived;
+                    // Configure the SIP transport layer.
+                    m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
 
-            // Log all SIP packets received to a log file.
-            m_sipTransport.SIPRequestInTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { _sipTraceLogger.Debug("Request Received : " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipRequest.ToString()); };
-            m_sipTransport.SIPRequestOutTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { _sipTraceLogger.Debug("Request Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipRequest.ToString()); };
-            m_sipTransport.SIPResponseInTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { _sipTraceLogger.Debug("Response Received: " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipResponse.ToString()); };
-            m_sipTransport.SIPResponseOutTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { _sipTraceLogger.Debug("Response Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipResponse.ToString()); };
+                    if (m_sipSocketsNode != null)
+                    {
+                        // Set up the SIP channels based on the app.config file.
+                        List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipSocketsNode);
+                        m_sipTransport.AddSIPChannel(sipChannels);
+                    }
+                    else
+                    {
+                        // Use default options to set up a SIP channel.
+                        int port = FreePort.FindNextAvailableUDPPort(_defaultSIPUdpPort);
+                        var sipChannel = new SIPUDPChannel(new IPEndPoint(_defaultLocalAddress, port));
+                        m_sipTransport.AddSIPChannel(sipChannel);
+                    }
+                });
+
+                // Wire up the transport layer so incoming SIP requests have somewhere to go.
+                m_sipTransport.SIPTransportRequestReceived += SIPTransportRequestReceived;
+
+                // Log all SIP packets received to a log file.
+                m_sipTransport.SIPRequestInTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { _sipTraceLogger.Debug("Request Received : " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipRequest.ToString()); };
+                m_sipTransport.SIPRequestOutTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { _sipTraceLogger.Debug("Request Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipRequest.ToString()); };
+                m_sipTransport.SIPResponseInTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { _sipTraceLogger.Debug("Response Received: " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipResponse.ToString()); };
+                m_sipTransport.SIPResponseOutTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { _sipTraceLogger.Debug("Response Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipResponse.ToString()); };
+            }
         }
 
         /// <summary>
@@ -215,7 +217,7 @@ namespace SIPSorcery.SoftPhone
         /// be sent to the configured SIP server.</param>
         public void Call(MediaManager mediaManager, string destination)
         {
-            _initialisationTask.Wait(_cancelCallTokenSource.Token);
+            //_initialisationTask.Wait(_cancelCallTokenSource.Token);
 
             _mediaManager = mediaManager;
             _mediaManager.NewCall();
@@ -276,7 +278,7 @@ namespace SIPSorcery.SoftPhone
                 m_uac.Cancel();
             }
 
-            _cancelCallTokenSource.Cancel();
+            //_cancelCallTokenSource.Cancel();
         }
 
         /// <summary>
@@ -393,7 +395,7 @@ namespace SIPSorcery.SoftPhone
                 _mediaManager = null;
             }
 
-            _cancelCallTokenSource.Cancel();
+            //_cancelCallTokenSource.Cancel();
 
             m_uac = null;
             m_uas = null;
