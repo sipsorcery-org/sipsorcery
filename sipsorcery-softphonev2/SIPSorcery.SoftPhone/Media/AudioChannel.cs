@@ -60,6 +60,7 @@ namespace SIPSorcery.SoftPhone
             // Set up the device that will play the audio from the RTP received from the remote end of the call.
             m_waveOut = new WaveOut();
             m_waveProvider = new BufferedWaveProvider(_waveFormat);
+            m_waveProvider.BufferLength = 100000;
             m_waveOut.Init(m_waveProvider);
             m_waveOut.Play();
 

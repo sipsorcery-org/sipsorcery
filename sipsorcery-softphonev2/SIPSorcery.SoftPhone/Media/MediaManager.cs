@@ -10,7 +10,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006-2014 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
+// Copyright (c) 2006-2018 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -33,20 +33,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SIPSorceryMedia;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
-using SIPSorcery.Sys.Net;
 using log4net;
-using NAudio.MediaFoundation;
 
 namespace SIPSorcery.SoftPhone
 {
@@ -64,6 +57,7 @@ namespace SIPSorcery.SoftPhone
         private CancellationTokenSource _localVideoSamplingCancelTokenSource;
         private bool _stop = false;
         private int _encodingSample = 1;
+        private bool _useVideo = false;
 
         // Audio and Video events.
         public event Action<byte[], int, int> OnLocalVideoSampleReady;      // [sample, width, height] Fires when a local video sample is ready for display.
@@ -71,12 +65,17 @@ namespace SIPSorcery.SoftPhone
         public event Action<string> OnLocalVideoError = delegate { };       // Fires when there is an error communicating with the local webcam.
         public event Action<string> OnRemoteVideoError;
 
-        public MediaManager()
+        public MediaManager(bool useVideo = false)
         {
-            _vpxDecoder = new VPXEncoder();
-            _vpxDecoder.InitDecoder();
+            _useVideo = useVideo;
 
-            _imageConverter = new ImageConvert();
+            if (_useVideo == true)
+            {
+                _vpxDecoder = new VPXEncoder();
+                _vpxDecoder.InitDecoder();
+
+                _imageConverter = new ImageConvert();
+            }
         }
 
         public List<VideoMode> GetVideoDevices()
@@ -94,7 +93,7 @@ namespace SIPSorcery.SoftPhone
             _audioChannel = new AudioChannel();
             _audioChannel.SampleReady += AudioChannelSampleReady;
 
-            _rtpManager = new RTPManager(true, true);
+            _rtpManager = new RTPManager(true, _useVideo);
             _rtpManager.OnRemoteVideoSampleReady += EncodedVideoSampleReceived;
             _rtpManager.OnRemoteAudioSampleReady += RemoteAudioSampleReceived;
 
