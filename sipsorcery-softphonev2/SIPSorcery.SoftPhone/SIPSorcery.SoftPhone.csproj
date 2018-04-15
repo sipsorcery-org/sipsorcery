@@ -86,21 +86,20 @@
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="NAudio, Version=1.7.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NAudio.1.7.3\lib\net35\NAudio.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="NAudio, Version=1.8.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NAudio.1.8.4\lib\net35\NAudio.dll</HintPath>
     </Reference>
     <Reference Include="SIPSorcery.Net, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.5.6\lib\net46\SIPSorcery.Net.dll</HintPath>
+      <HintPath>..\packages\SIPSorcery.1.6.0\lib\net46\SIPSorcery.Net.dll</HintPath>
     </Reference>
     <Reference Include="SIPSorcery.SIP.App, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.5.6\lib\net46\SIPSorcery.SIP.App.dll</HintPath>
+      <HintPath>..\packages\SIPSorcery.1.6.0\lib\net46\SIPSorcery.SIP.App.dll</HintPath>
     </Reference>
     <Reference Include="SIPSorcery.SIP.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.5.6\lib\net46\SIPSorcery.SIP.Core.dll</HintPath>
+      <HintPath>..\packages\SIPSorcery.1.6.0\lib\net46\SIPSorcery.SIP.Core.dll</HintPath>
     </Reference>
     <Reference Include="SIPSorcery.Sys, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.1.5.6\lib\net46\SIPSorcery.Sys.dll</HintPath>
+      <HintPath>..\packages\SIPSorcery.1.6.0\lib\net46\SIPSorcery.Sys.dll</HintPath>
     </Reference>
     <Reference Include="SIPSorceryMedia, Version=1.1.5907.36321, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\SIPSorceryMedia.1.1.9\lib\net45\SIPSorceryMedia.dll</HintPath>

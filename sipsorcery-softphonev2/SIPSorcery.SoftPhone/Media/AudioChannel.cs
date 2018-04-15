@@ -10,7 +10,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006-2012 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
+// Copyright (c) 2006-2018 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -33,14 +33,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Windows.Threading;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
-using NAudio;
 using NAudio.Codecs;
-using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using log4net;
 
