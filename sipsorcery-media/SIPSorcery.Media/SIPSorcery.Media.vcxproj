@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -19,33 +19,37 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{60CC689C-2616-441C-A38A-E1B764C7C446}</ProjectGuid>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <Keyword>ManagedCProj</Keyword>
     <RootNamespace>SIPSorceryMedia</RootNamespace>
     <ProjectName>SIPSorceryMedia</ProjectName>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <VcpkgTriplet Condition="'$(Platform)'=='Win32'">x86-windows</VcpkgTriplet>
+    <VcpkgTriplet Condition="'$(Platform)'=='x64'">x64-windows</VcpkgTriplet>
+    <VcpkgEnabled>true</VcpkgEnabled>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CLRSupport>true</CLRSupport>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CLRSupport>true</CLRSupport>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -70,7 +74,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\include;..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include;..\build\openssl\msc_14.0-x64\Release\include;..\..\..\libvpx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
       <CallingConvention>
       </CallingConvention>
@@ -78,8 +82,9 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>advapi32.lib;user32.lib;gdi32.lib;ssleay32.lib;libeay32.lib;srtp.lib;Ws2_32.lib;vpxmdd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\build\ffmpeg;..\build\srtp\msc_14.0-x64\$(Configuration);..\build\vpx\msc_14.0-x64\$(Configuration);..\build\openssl\msc_14.0-x64\Release\lib;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>user32.lib;gdi32.lib;Ws2_32.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
       <TargetMachine>MachineX64</TargetMachine>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
@@ -89,7 +94,7 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\include;..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include;..\build\openssl\msc_14.0-x64\Release\include;..\..\..\libvpx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
       <CallingConvention>
       </CallingConvention>
@@ -97,11 +102,22 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>advapi32.lib;user32.lib;gdi32.lib;ssleay32.lib;libeay32.lib;srtp.lib;Ws2_32.lib;vpxmd.lib;swscale.lib;avutil.lib;avcodec.lib;avformat.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\build\ffmpeg;..\build\srtp\msc_14.0-x64\$(Configuration);..\build\vpx\msc_14.0-x64\$(Configuration);..\build\openssl\msc_14.0-x64\Release\lib;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>user32.lib;gdi32.lib;Ws2_32.lib;ole32.lib;mfplat.lib;mf.lib;mfplay.lib;shlwapi.lib;mfreadwrite.lib;mfuuid.lib;Quartz.lib;Rpcrt4.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
       <TargetMachine>MachineX64</TargetMachine>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include</AdditionalIncludeDirectories>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -125,11 +141,9 @@
     <ClCompile Include="VPXEncoder.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\libs\x64\avcodec-56.dll" />
-    <None Include="..\libs\x64\avformat-56.dll" />
-    <None Include="..\libs\x64\avutil-54.dll" />
-    <None Include="..\libs\x64\swresample-1.dll" />
-    <None Include="..\libs\x64\swscale-3.dll" />
+    <ProjectReference Include="..\..\..\libsrtp\srtp.vcxproj">
+      <Project>{eef031cb-fed8-451e-a471-91ec8d4f6750}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
