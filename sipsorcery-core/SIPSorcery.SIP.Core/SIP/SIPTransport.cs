@@ -50,54 +50,6 @@ using NUnit.Framework;
 
 namespace SIPSorcery.SIP
 {
-    /// <summary>
-    /// Record number of each type of request received.
-    /// </summary>
-    //public struct SIPTransportMetric
-    //{
-    //    public const string PACKET_VOLUMES_KEY = "pkts";
-    //    public const string SIPMETHOD_VOLUMES_KEY = "meth";
-    //    public const string TOPTALKERS_VOLUME_KEY = "talk";
-
-    //    public DateTime ReceivedAt;
-    //    public IPEndPoint RemoteEndPoint;
-    //    public SIPMessageTypesEnum SIPMessageType;
-    //    public SIPMethodsEnum SIPMethod;
-    //    public bool STUNRequest;
-    //    public bool UnrecognisedPacket;
-    //    public bool BadSIPMessage;                  // Set to true if the message appeared to be a SIP Message but then couldn't be parsed as one.
-    //    public bool Discard;                        // If true indicates the SIP message was not parsed due to the receive queue being full and was instead discarded.
-    //    public bool TooLarge;                       // If the message is greater than the max accepted length.
-    //    public bool Originated;                     // If true inidcates the SIP message was sent by the transport layer, false means it was received.
-    //    public double ParseDuration;                // Time it took to parse the message in milliseconds.
-
-    //    public SIPTransportMetric(
-    //        DateTime receivedAt,
-    //        IPEndPoint remoteEndPoint,
-    //        SIPMessageTypesEnum sipMessageType,
-    //        SIPMethodsEnum sipMethod,
-    //        bool stunRequest,
-    //        bool unrecognisedPacket,
-    //        bool badSIPMessage,
-    //        bool discard,
-    //        bool tooLarge,
-    //        bool originated,
-    //        double parseDuration)
-    //    {
-    //        ReceivedAt = receivedAt;
-    //        RemoteEndPoint = remoteEndPoint;
-    //        SIPMessageType = sipMessageType;
-    //        SIPMethod = sipMethod;
-    //        STUNRequest = stunRequest;
-    //        UnrecognisedPacket = unrecognisedPacket;
-    //        BadSIPMessage = badSIPMessage;
-    //        Discard = discard;
-    //        TooLarge = tooLarge;
-    //        Originated = originated;
-    //        ParseDuration = parseDuration;
-    //    }
-    //}
-
     public class SIPTransport
     {
         [DllImport("iphlpapi.dll", SetLastError = true)]
@@ -154,11 +106,6 @@ namespace SIPSorcery.SIP
         // rather then just relying on the initial request to get through.
         private Dictionary<string, SIPTransaction> m_reliableTransmissions = new Dictionary<string, SIPTransaction>();
         private bool m_reliablesThreadRunning = false;   // Only gets started when a request is made to send a reliable request.
-
-        public int ReliableTransmissionsCount
-        {
-            get { return m_reliableTransmissions.Count; }
-        }
 
         public SIPTransport(ResolveSIPEndPointDelegate sipResolver, SIPTransactionEngine transactionEngine)
         {
