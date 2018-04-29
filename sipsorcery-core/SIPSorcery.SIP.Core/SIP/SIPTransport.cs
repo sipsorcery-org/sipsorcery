@@ -155,7 +155,7 @@ namespace SIPSorcery.SIP
         private Dictionary<string, SIPTransaction> m_reliableTransmissions = new Dictionary<string, SIPTransaction>();
         private bool m_reliablesThreadRunning = false;   // Only gets started when a request is made to send a reliable request.
 
-        public int ReliableTrasmissionsCount
+        public int ReliableTransmissionsCount
         {
             get { return m_reliableTransmissions.Count; }
         }
