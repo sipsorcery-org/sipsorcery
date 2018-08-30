@@ -267,9 +267,16 @@ namespace SIPSorcery.SIP
 
                         try
                         {
-                            lock (m_writeLock)                            {                                if (sipTLSClient.SIPStream != null && sipTLSClient.SIPStream.CanWrite)                                {
+                            lock (m_writeLock)
+                            {
+                                if (sipTLSClient.SIPStream != null && sipTLSClient.SIPStream.CanWrite)
+                                {
                                     //sipTLSClient.SIPStream.Write(buffer, 0, buffer.Length);
-                                    sipTLSClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTLSClient);                                    sent = true;                                    sipTLSClient.LastTransmission = DateTime.Now;                                }                                else
+                                    sipTLSClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTLSClient);
+                                    sent = true;
+                                    sipTLSClient.LastTransmission = DateTime.Now;
+                                }
+                                else
                                 {
                                     logger.Warn("A SIPTLSChannel write operation to " + dstEndPoint + " was dropped as the stream was null or could not be written to.");
                                 }
