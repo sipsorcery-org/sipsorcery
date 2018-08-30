@@ -55,7 +55,7 @@ namespace SIPSorcery.SIP
 		public byte[] Buffer;
         public DateTime ReceivedAt;
 
-		public IncomingMessage(SIPChannel sipChannel, SIPEndPoint remoteEndPoint, byte[] buffer)
+        public IncomingMessage(SIPChannel sipChannel, SIPEndPoint remoteEndPoint, byte[] buffer)
 		{
             LocalSIPChannel = sipChannel;
             RemoteEndPoint = remoteEndPoint;
@@ -75,6 +75,8 @@ namespace SIPSorcery.SIP
         public static List<string> LocalTCPSockets = new List<string>(); // Keeps a list of TCP sockets this process is listening on to prevent it establishing TCP connections to itself.
 
         protected SIPEndPoint m_localSIPEndPoint = null;
+
+        public event EventHandler SendComplete;
         public SIPEndPoint SIPChannelEndPoint
         {
             get { return m_localSIPEndPoint; }
@@ -178,6 +180,11 @@ namespace SIPSorcery.SIP
             {
                 logger.Error("Exception SIPChannel PruneConnections. " + excp.Message);
             }
+        }
+
+        protected virtual void OnSendComplete(EventArgs args)
+        {
+            SendComplete?.Invoke(this, args);
         }
     }
 }
