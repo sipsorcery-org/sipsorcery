@@ -82,6 +82,8 @@ namespace SIPSorcery.SIP.App
         private string m_lastServerNonce;
         private ManualResetEvent m_waitForRegistrationMRE = new ManualResetEvent(false);
 
+        private Timer m_registrationTimer;
+
         public string UserAgent;                // If not null this value will replace the default user agent value in the REGISTER request.
         //public bool RequestSwitchboardToken;    // If set to true a header will be set on the REGISTER request that asks the server to return a toekn that can be used by the switchboard for 3rd party authorisation.
         //public string SwitchboardToken;         // If a switchboard token is provided by the server it will be placed here.
@@ -120,6 +122,8 @@ namespace SIPSorcery.SIP.App
             m_adminMemberID = adminMemberID;
             m_callID = Guid.NewGuid().ToString();
 
+            m_registrationTimer = null;
+
             Log_External = logDelegate;
         }
 
@@ -130,40 +134,15 @@ namespace SIPSorcery.SIP.App
 
         public void StartRegistration()
         {
+            if (m_registrationTimer != null)
+                throw new ApplicationException("SIPRegistrationUserAgent is already running, try Stop() at first!");
+
             try
             {
+                m_registrationTimer = new Timer(new TimerCallback(TimerProc));
+                m_registrationTimer.Change(0, (m_expiry - REGISTRATION_HEAD_TIME) * 1000);
+
                 logger.Debug("Starting SIPRegistrationUserAgent for " + m_sipAccountAOR.ToString() + ".");
-
-                while (!m_exit)
-                {
-                    m_waitForRegistrationMRE.Reset();
-                    m_attempts = 0;
-
-                    SendInitialRegister();
-
-                    if (!m_waitForRegistrationMRE.WaitOne(MAX_REGISTRATION_ATTEMPT_TIMEOUT * 1000))
-                    {
-                        m_isRegistered = false;
-
-                        if (!m_exit && RegistrationTemporaryFailure != null)
-                        {
-                            RegistrationTemporaryFailure(m_sipAccountAOR, "Registration to " + m_registrarHost + " for " + m_sipAccountAOR.ToString() + " timed out.");
-                        }
-                    }
-
-                    if (!m_exit && m_isRegistered)
-                    {
-                        logger.Debug("SIPRegistrationUserAgent was successful, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + (m_expiry - REGISTRATION_HEAD_TIME) + "s.");
-                        Thread.Sleep((m_expiry - REGISTRATION_HEAD_TIME) * 1000);
-                    }
-                    else
-                    {
-                        logger.Debug("SIPRegistrationUserAgent temporarily failed, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + REGISTER_FAILURERETRY_INTERVAL + "s.");
-                        Thread.Sleep(REGISTER_FAILURERETRY_INTERVAL * 1000);
-                    }
-                }
-
-                logger.Debug("SIPRegistrationUserAgent for " + m_sipAccountAOR.ToString() + " stopping.");
             }
             catch (Exception excp)
             {
@@ -175,6 +154,9 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
+                if (m_registrationTimer != null)
+                    m_registrationTimer.Dispose();
+
                 if (!m_exit)
                 {
                     logger.Debug("Stopping SIP registration user agent for " + m_sipAccountAOR.ToString() + ".");
@@ -193,6 +175,40 @@ namespace SIPSorcery.SIP.App
             catch (Exception excp)
             {
                 logger.Error("Exception SIPRegistrationUserAgent Stop. " + excp.Message);
+            }
+        }
+
+        private void TimerProc(object state)
+        {
+            try
+            {
+                m_waitForRegistrationMRE.Reset();
+                m_attempts = 0;
+
+                SendInitialRegister();
+
+                if (!m_waitForRegistrationMRE.WaitOne(MAX_REGISTRATION_ATTEMPT_TIMEOUT * 1000))
+                {
+                    m_isRegistered = false;
+
+                    if (!m_exit && RegistrationTemporaryFailure != null)
+                    {
+                        RegistrationTemporaryFailure(m_sipAccountAOR, "Registration to " + m_registrarHost + " for " + m_sipAccountAOR.ToString() + " timed out.");
+                    }
+                }
+
+                if (!m_exit && m_isRegistered)
+                {
+                    logger.Debug("SIPRegistrationUserAgent was successful, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + (m_expiry - REGISTRATION_HEAD_TIME) + "s.");
+                }
+                else
+                {
+                    logger.Debug("SIPRegistrationUserAgent temporarily failed, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + (m_expiry - REGISTRATION_HEAD_TIME) + "s.");
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Error("Exception SIPRegistrationUserAgent Stop. " + e.Message);
             }
         }
 
