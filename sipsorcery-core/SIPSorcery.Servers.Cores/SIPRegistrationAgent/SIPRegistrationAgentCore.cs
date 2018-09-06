@@ -289,7 +289,7 @@ namespace SIPSorcery.Servers
                                             {
                                                 // The registrar resolved to a private, loopback or 0.0.0.0 address, delete the binding and disable the provider registration.
                                                 FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.RegisterAgent, SIPMonitorEventTypesEnum.ContactRegisterFailed, "DNS resolution for " + binding.RegistrarServer.ToString() + " resolved to a private address of " + ipAddress + ". DISABLING.", binding.Owner));
-                                                DisableSIPProviderRegistration(provider.Id, "Registrar resovled to a disallowed private IP address of " + ipAddress + ".");
+                                                DisableSIPProviderRegistration(provider.Id, "Registrar resolved to a disallowed private IP address of " + ipAddress + ".");
                                                 m_bindingPersistor.Delete(binding);
                                             }
                                             else

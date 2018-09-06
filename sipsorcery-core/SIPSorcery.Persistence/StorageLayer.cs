@@ -405,7 +405,7 @@ namespace SIPSorcery.Persistence
             {
                 return false;
             }
-            else if (column.ToString() == "1" | column.ToString() == "t" ||  column.ToString() == "T" || Regex.Match(column.ToString(), "true", RegexOptions.IgnoreCase).Success)
+            else if (column.ToString() == "1" || column.ToString() == "t" ||  column.ToString() == "T" || Regex.Match(column.ToString(), "true", RegexOptions.IgnoreCase).Success)
             {
                 return true;
             }

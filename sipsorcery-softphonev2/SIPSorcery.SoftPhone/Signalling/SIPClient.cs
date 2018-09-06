@@ -33,17 +33,15 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using SIPSorcery.Sys.Net;
-using Heijden.DNS;
 using log4net;
 
 namespace SIPSorcery.SoftPhone
@@ -60,7 +58,7 @@ namespace SIPSorcery.SoftPhone
         private int _defaultSIPUdpPort = SIPConstants.DEFAULT_SIP_PORT;                     // The default UDP SIP port.
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
-        private string m_sipPassword = SIPSoftPhoneState.SIPPassword;    
+        private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
         private string m_sipServer = SIPSoftPhoneState.SIPServer;
         private string m_sipFromName = ConfigurationManager.AppSettings["SIPFromName"];    // Get the SIP From display name from the config file.
 
@@ -69,6 +67,7 @@ namespace SIPSorcery.SoftPhone
         private SIPServerUserAgent m_uas;                                                   // A SIP user agent server used to process incoming calls.
         private ManualResetEvent m_dnsLookupComplete = new ManualResetEvent(false);
         private MediaManager _mediaManager;
+        bool _isIntialised = false;
 
         public event Action CallAnswer;                 // Fires when an incoming SIP call is answered.
         public event Action CallEnded;                  // Fires when an incoming or outgoing call is over.
@@ -81,9 +80,7 @@ namespace SIPSorcery.SoftPhone
         }
 
         public SIPClient()
-        {
-            ThreadPool.QueueUserWorkItem(delegate { InitialiseSIP(); });
-        }
+        { }
 
         /// <summary>
         /// Shutdown the SIP tranpsort layer and any other resources the SIP client is using. Typically called when the application exits.
@@ -101,33 +98,41 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Initialises the SIP transport layer.
         /// </summary>
-        private void InitialiseSIP()
+        public async Task InitialiseSIP()
         {
-            // Configure the SIP transport layer.
-            m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
-
-            if (m_sipSocketsNode != null)
+            if (_isIntialised == false)
             {
-                // Set up the SIP channels based on the app.config file.
-                List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipSocketsNode);
-                m_sipTransport.AddSIPChannel(sipChannels);
-            }
-            else
-            {
-                // Use default options to set up a SIP channel.
-                int port = FreePort.FindNextAvailableUDPPort(_defaultSIPUdpPort);
-                var sipChannel = new SIPUDPChannel(new IPEndPoint(_defaultLocalAddress, port));
-                m_sipTransport.AddSIPChannel(sipChannel);
-            }
+                await Task.Run(() =>
+                {
+                    _isIntialised = true;
 
-            // Wire up the transport layer so incoming SIP requests have somewhere to go.
-            m_sipTransport.SIPTransportRequestReceived += SIPTransportRequestReceived;
+                    // Configure the SIP transport layer.
+                    m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
 
-            // Log all SIP packets received to a log file.
-            m_sipTransport.SIPRequestInTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { _sipTraceLogger.Debug("Request Received : " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipRequest.ToString()); };
-            m_sipTransport.SIPRequestOutTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { _sipTraceLogger.Debug("Request Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipRequest.ToString()); };
-            m_sipTransport.SIPResponseInTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { _sipTraceLogger.Debug("Response Received: " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipResponse.ToString()); };
-            m_sipTransport.SIPResponseOutTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { _sipTraceLogger.Debug("Response Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipResponse.ToString()); };
+                    if (m_sipSocketsNode != null)
+                    {
+                        // Set up the SIP channels based on the app.config file.
+                        List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipSocketsNode);
+                        m_sipTransport.AddSIPChannel(sipChannels);
+                    }
+                    else
+                    {
+                        // Use default options to set up a SIP channel.
+                        int port = FreePort.FindNextAvailableUDPPort(_defaultSIPUdpPort);
+                        var sipChannel = new SIPUDPChannel(new IPEndPoint(_defaultLocalAddress, port));
+                        m_sipTransport.AddSIPChannel(sipChannel);
+                    }
+                });
+
+                // Wire up the transport layer so incoming SIP requests have somewhere to go.
+                m_sipTransport.SIPTransportRequestReceived += SIPTransportRequestReceived;
+
+                // Log all SIP packets received to a log file.
+                m_sipTransport.SIPRequestInTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { _sipTraceLogger.Debug("Request Received : " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipRequest.ToString()); };
+                m_sipTransport.SIPRequestOutTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { _sipTraceLogger.Debug("Request Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipRequest.ToString()); };
+                m_sipTransport.SIPResponseInTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { _sipTraceLogger.Debug("Response Received: " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipResponse.ToString()); };
+                m_sipTransport.SIPResponseOutTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { _sipTraceLogger.Debug("Response Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipResponse.ToString()); };
+            }
         }
 
         /// <summary>
@@ -212,6 +217,8 @@ namespace SIPSorcery.SoftPhone
         /// be sent to the configured SIP server.</param>
         public void Call(MediaManager mediaManager, string destination)
         {
+            //_initialisationTask.Wait(_cancelCallTokenSource.Token);
+
             _mediaManager = mediaManager;
             _mediaManager.NewCall();
 
@@ -237,7 +244,7 @@ namespace SIPSorcery.SoftPhone
             }
 
             StatusMessage("Starting call to " + callURI.ToString() + ".");
-            
+
             m_uac = new SIPClientUserAgent(m_sipTransport, null, null, null, null);
             m_uac.CallTrying += CallTrying;
             m_uac.CallRinging += CallRinging;
@@ -270,6 +277,8 @@ namespace SIPSorcery.SoftPhone
                 StatusMessage("Cancelling SIP call to " + m_uac.CallDescriptor.Uri + ".");
                 m_uac.Cancel();
             }
+
+            //_cancelCallTokenSource.Cancel();
         }
 
         /// <summary>
@@ -351,13 +360,13 @@ namespace SIPSorcery.SoftPhone
 
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
-                if(sipResponse.Header.ContentType != _sdpMimeContentType)
+                if (sipResponse.Header.ContentType != _sdpMimeContentType)
                 {
                     // Payload not SDP, I don't understand :(.
                     StatusMessage("Call was hungup as the answer response content type was not recognised: " + sipResponse.Header.ContentType + ". :(");
                     Hangup();
                 }
-                else if(sipResponse.Body.IsNullOrBlank())
+                else if (sipResponse.Body.IsNullOrBlank())
                 {
                     // They said SDP but didn't give me any :(.
                     StatusMessage("Call was hungup as the answer response had an empty SDP payload. :(");
@@ -385,6 +394,8 @@ namespace SIPSorcery.SoftPhone
                 _mediaManager.EndCall();
                 _mediaManager = null;
             }
+
+            //_cancelCallTokenSource.Cancel();
 
             m_uac = null;
             m_uas = null;

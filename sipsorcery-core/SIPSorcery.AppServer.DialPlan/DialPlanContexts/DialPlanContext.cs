@@ -273,7 +273,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
                         SIPDialogue uasDialogue = m_sipServerUserAgent.Answer(answeredContentType, answeredBody, toTag, answeredDialogue, uasTransferMode);
 
-                        if (!m_sipServerUserAgent.IsB2B && answeredDialogue != null)
+                        if (m_sipServerUserAgent.IsB2B == false && answeredDialogue != null)
                         {
                             if (uasDialogue != null)
                             {

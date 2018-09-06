@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.SoftPhone", "SIPSorcery.SoftPhone\SIPSorcery.SoftPhone.csproj", "{45ECFC1D-26F4-453C-B840-1B877B14F3CF}"
 EndProject
@@ -10,6 +10,9 @@ Global
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Debugx64|Any CPU = Debugx64|Any CPU
+		Debugx64|x64 = Debugx64|x64
+		Debugx64|x86 = Debugx64|x86
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
@@ -21,6 +24,12 @@ Global
 		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Debug|x64.Build.0 = Debug|x64
 		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Debug|x86.Build.0 = Debug|Any CPU
+		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Debugx64|Any CPU.ActiveCfg = Debug|Any CPU
+		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Debugx64|Any CPU.Build.0 = Debug|Any CPU
+		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Debugx64|x64.ActiveCfg = Debug|x64
+		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Debugx64|x64.Build.0 = Debug|x64
+		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Debugx64|x86.ActiveCfg = Debug|Any CPU
+		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Debugx64|x86.Build.0 = Debug|Any CPU
 		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{45ECFC1D-26F4-453C-B840-1B877B14F3CF}.Release|x64.ActiveCfg = Release|x64
@@ -30,5 +39,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A34462A0-58BF-4021-AE80-CA2C8D6D3F91}
 	EndGlobalSection
 EndGlobal

@@ -48,7 +48,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\Build\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -254,7 +254,7 @@
       <Name>SIPSorcery.Net</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
-      <Project>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</Project>
+      <Project>{01d01bc6-231f-4fd6-badf-51c509ab495f}</Project>
       <Name>SIPSorcery.SIP.Core</Name>
     </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">

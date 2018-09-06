@@ -31,17 +31,17 @@ namespace SIPSorcery.Sys
         private static string m_smtpSendUsername = AppState.GetConfigSetting("SMTPServerUsername");
         private static string m_smtpSendPassword = AppState.GetConfigSetting("SMTPServerPassword");
 
-		public static void SendEmail(string toAddress, string fromAddress, string subject, string messageBody)
+		public static void SendEmail(string toAddress, string fromAddress, string subject, string messageBody, bool isHtml = false)
 		{
-            ThreadPool.QueueUserWorkItem(delegate { SendEmailAsync(toAddress, fromAddress, null, null, subject, messageBody); });
+            ThreadPool.QueueUserWorkItem(delegate { SendEmailAsync(toAddress, fromAddress, null, null, subject, messageBody, isHtml); });
 		}
 
-        public static void SendEmail(string toAddress, string fromAddress, string ccAddress, string bccAddress, string subject, string messageBody)
+        public static void SendEmail(string toAddress, string fromAddress, string ccAddress, string bccAddress, string subject, string messageBody, bool isHtml = false)
         {
-            ThreadPool.QueueUserWorkItem(delegate { SendEmailAsync(toAddress, fromAddress, ccAddress, bccAddress, subject, messageBody); });
+            ThreadPool.QueueUserWorkItem(delegate { SendEmailAsync(toAddress, fromAddress, ccAddress, bccAddress, subject, messageBody, isHtml); });
         }
 
-        private static void SendEmailAsync(string toAddress, string fromAddress, string ccAddress, string bccAddress, string subject, string messageBody)
+        private static void SendEmailAsync(string toAddress, string fromAddress, string ccAddress, string bccAddress, string subject, string messageBody, bool isHtml)
 		{
             if (toAddress.IsNullOrBlank())
             {
@@ -60,6 +60,7 @@ namespace SIPSorcery.Sys
 					// Send an email.
                     MailMessage email = new MailMessage(fromAddress, toAddress, subject, messageBody);
                     email.BodyEncoding = Encoding.UTF8;
+                    email.IsBodyHtml = isHtml;
 
                     if (!ccAddress.IsNullOrBlank())
                     {

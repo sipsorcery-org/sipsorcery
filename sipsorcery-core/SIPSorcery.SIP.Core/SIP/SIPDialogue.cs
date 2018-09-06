@@ -103,6 +103,8 @@ namespace SIPSorcery.SIP
         public string CRMCompanyName { get; set; }
         public string CRMPictureURL { get; set; }
 
+        public int ReinviteDelay = 0;      // Used as a mechanism to send an immeidate or slightly delayed re-INVITE request when a call is answered as an attempt to help solve audio issues.
+
         public string DialogueName
         {
             get
@@ -337,9 +339,13 @@ namespace SIPSorcery.SIP
                     byeOutboundProxy = outboundProxy;
                 }
 
-                SIPEndPoint localEndPoint = (byeOutboundProxy != null) ? sipTransport.GetDefaultSIPEndPoint(byeOutboundProxy.Protocol) : sipTransport.GetDefaultSIPEndPoint(GetRemoteTargetProtocol());
+                SIPEndPoint localEndPoint = (byeOutboundProxy != null) ?
+                    sipTransport.GetDefaultSIPEndPoint(byeOutboundProxy) :
+                    sipTransport.GetDefaultSIPEndPoint(GetRemoteTargetEndpoint());
+
                 SIPRequest byeRequest = GetByeRequest(localEndPoint);
                 SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(byeRequest, null, localEndPoint, byeOutboundProxy);
+
                 byeTransaction.SendReliableRequest();
             }
             catch (Exception excp)
@@ -353,6 +359,12 @@ namespace SIPSorcery.SIP
         {
             SIPURI dstURI = (RouteSet == null) ? RemoteTarget : RouteSet.TopRoute.URI;
             return dstURI.Protocol;
+        }
+
+        private SIPEndPoint GetRemoteTargetEndpoint()
+        {
+            SIPURI dstURI = (RouteSet == null) ? RemoteTarget : RouteSet.TopRoute.URI;
+            return dstURI.ToSIPEndPoint();
         }
 
         private SIPRequest GetByeRequest(SIPEndPoint localSIPEndPoint)

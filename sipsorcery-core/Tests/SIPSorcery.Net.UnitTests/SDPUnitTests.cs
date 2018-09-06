@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Text;
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -18,19 +16,7 @@ namespace SIPSorcery.Net.UnitTests
         public SDPUnitTests()
         { }
 
-        private TestContext testContextInstance;
-
-        public TestContext TestContext
-        {
-            get
-            {
-                return testContextInstance;
-            }
-            set
-            {
-                testContextInstance = value;
-            }
-        }
+        public TestContext TestContext { get; set; }
 
         [TestMethod]
         public void ParseSDPUnitTest()
@@ -107,7 +93,6 @@ namespace SIPSorcery.Net.UnitTests
             Assert.IsTrue(sdp.IcePwd == "asd88fgpdd777uzjYhagZg", "The ICE password was not parsed correctly.");
         }
 
-
         /// <summary>
         /// Test that an SDP payload with multiple media announcements (in this test audio and video) are correctly
         /// parsed.
@@ -138,6 +123,35 @@ namespace SIPSorcery.Net.UnitTests
             Assert.AreEqual(2, sdp.Media.Count);
             Assert.AreEqual(49290, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault().Port);
             Assert.AreEqual(56674, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault().Port);
+        }
+
+        /// <summary>
+        /// Test that an SDP payload with multiple connection options is correctly parsed.
+        /// </summary>
+        [TestMethod]
+        public void ParseAudioAndVideoConnectionsUnitTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr = "v=0" + m_CRLF +
+                "o=Cisco-SIPUA 6396 0 IN IP4 101.180.234.134" + m_CRLF +
+                "s=SIP Call" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "m=audio 19586 RTP/AVP 0" + m_CRLF +
+                "c=IN IP4 101.180.234.134" + m_CRLF +
+                "a=rtpmap:0 PCMU/8000" + m_CRLF +
+                "a=sendrecv" + m_CRLF +
+                "m=video 0 RTP/AVP 96" + m_CRLF +
+                "c=IN IP4 10.0.0.10";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Debug.WriteLine(sdp.ToString());
+
+            Assert.IsTrue(sdp.Connection.ConnectionAddress == "101.180.234.134", "The connection address was not parsed correctly.");
+            //Assert.AreEqual(2, sdp.Connection);
+            //Assert.AreEqual(49290, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault().Port);
+            // Assert.AreEqual(56674, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault().Port);
         }
     }
 }

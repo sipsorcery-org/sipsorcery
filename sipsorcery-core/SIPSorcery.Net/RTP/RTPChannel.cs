@@ -208,7 +208,7 @@ namespace SIPSorcery.Net
         //    }
         //}
 
-         public void ReservePorts()
+        public void ReservePorts()
         {
             ReservePorts(MEDIA_PORT_START, MEDIA_PORT_END);
         }
@@ -544,21 +544,18 @@ namespace SIPSorcery.Net
                             {
                                 System.Diagnostics.Debug.WriteLine("Ignoring RTP packet with timestamp " + rtpPacket.Header.Timestamp + " as it's earlier than the last complete frame.");
                             }
-                            else if(_frameType == FrameTypesEnum.Audio)
+                            else if (_frameType == FrameTypesEnum.Audio)
                             {
                                 var frame = RTPFrame.MakeSinglePacketFrame(rtpPacket);
 
-                                if (OnFrameReady != null)
+                                try
                                 {
-                                    try
-                                    {
-                                        //System.Diagnostics.Debug.WriteLine("RTP audio frame ready for timestamp " + frame.Timestamp + ".");
-                                        OnFrameReady(frame);
-                                    }
-                                    catch (Exception frameReadyExcp)
-                                    {
-                                        logger.Error("Exception RTPChannel.ProcessRTPPackets OnFrameReady Audio. " + frameReadyExcp);
-                                    }
+                                    //System.Diagnostics.Debug.WriteLine("RTP audio frame ready for timestamp " + frame.Timestamp + ".");
+                                    OnFrameReady?.Invoke(frame);
+                                }
+                                catch (Exception frameReadyExcp)
+                                {
+                                    logger.Error("Exception RTPChannel.ProcessRTPPackets OnFrameReady Audio. " + frameReadyExcp);
                                 }
                             }
                             else

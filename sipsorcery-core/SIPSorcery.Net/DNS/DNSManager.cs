@@ -15,7 +15,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Text.RegularExpressions;
 using Heijden.DNS;
@@ -50,10 +49,10 @@ namespace SIPSorcery.Net
         private const string LOOKUP_THREAD_NAME = "dnslookup";
         private const int DEFAULT_DNS_TIMEOUT = 5;              // Default timeout in seconds for DNS lookups.
         private const int DEFAULT_A_RECORD_DNS_TIMEOUT = 15;    // Default timeout in seconds for A record DNS lookups.
-        private const string SIP_TCP_QUERY_PREFIX = "_sip._tcp.";
-        private const string SIP_UDP_QUERY_PREFIX = "_sip._udp.";
-        private const string SIP_TLS_QUERY_PREFIX = "_sip._tls.";
-        private const string SIPS_TCP_QUERY_PREFIX = "_sips._tcp.";
+        //private const string SIP_TCP_QUERY_PREFIX = "_sip._tcp.";
+        //private const string SIP_UDP_QUERY_PREFIX = "_sip._udp.";
+        //private const string SIP_TLS_QUERY_PREFIX = "_sip._tls.";
+        //private const string SIPS_TCP_QUERY_PREFIX = "_sips._tcp.";
 
         private static ILog logger = LogManager.GetLogger(LOOKUP_THREAD_NAME);
 

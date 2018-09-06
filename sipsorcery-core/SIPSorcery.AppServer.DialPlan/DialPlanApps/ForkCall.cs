@@ -35,13 +35,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Net;
-using System.Security;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -434,11 +428,17 @@ namespace SIPSorcery.AppServer.DialPlan
                         if (CallAnswered != null)
                         {
                             logger.Debug("Transfer mode=" + m_answeredUAC.CallDescriptor.TransferMode + ".");
-                            CallAnswered(answeredResponse.Status, answeredResponse.ReasonPhrase, null, null, answeredResponse.Header.ContentType, answeredResponse.Body, answeredUAC.SIPDialogue, uasTransferMode);
-                        }
 
-                        // Cancel/hangup and other calls on this leg that are still around.
-                        CancelNotRequiredCallLegs(CallCancelCause.NormalClearing);
+                            if (answeredUAC.CallDescriptor.ReinviteDelay > 0)
+                            {
+                                answeredUAC.SIPDialogue.ReinviteDelay = answeredUAC.CallDescriptor.ReinviteDelay;
+                            }
+
+                            CallAnswered(answeredResponse.Status, answeredResponse.ReasonPhrase, null, null, answeredResponse.Header.ContentType, answeredResponse.Body, answeredUAC.SIPDialogue, uasTransferMode);
+
+                            // Cancel/hangup and other calls on this leg that are still around.
+                            CancelNotRequiredCallLegs(CallCancelCause.NormalClearing);
+                        }
                     }
                     else
                     {
@@ -463,10 +463,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_callAnswered = true;
                         m_answeredUAC = answeredUAC;
 
-                        if (CallAnswered != null)
-                        {
-                            CallAnswered(SIPResponseStatusCodesEnum.Ok, null, null, null, answeredUAC.SIPDialogue.ContentType, answeredUAC.SIPDialogue.RemoteSDP, answeredUAC.SIPDialogue, SIPDialogueTransferModesEnum.NotAllowed);
-                        }
+                        CallAnswered?.Invoke(SIPResponseStatusCodesEnum.Ok, null, null, null, answeredUAC.SIPDialogue.ContentType, answeredUAC.SIPDialogue.RemoteSDP, answeredUAC.SIPDialogue, SIPDialogueTransferModesEnum.NotAllowed);
 
                         // Cancel/hangup and other calls on this leg that are still around.
                         CancelNotRequiredCallLegs(CallCancelCause.NormalClearing);
@@ -689,10 +686,7 @@ namespace SIPSorcery.AppServer.DialPlan
         {
             try
             {
-                if (m_statefulProxyLogEvent != null)
-                {
-                    m_statefulProxyLogEvent(monitorEvent);
-                }
+                m_statefulProxyLogEvent?.Invoke(monitorEvent);
             }
             catch (Exception excp)
             {

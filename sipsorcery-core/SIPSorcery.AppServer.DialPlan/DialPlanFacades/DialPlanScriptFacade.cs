@@ -35,39 +35,27 @@
 // ============================================================================
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Data;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Security;
 using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 using SIPSorcery.Net;
 using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
-using System.Transactions;
 using Heijden.DNS;
 using log4net;
 using agsXMPP;
-using agsXMPP.protocol;
 using agsXMPP.protocol.client;
 using GaDotNet.Common.Data;
 using GaDotNet.Common.Helpers;
 using GaDotNet.Common;
-//using Google.Apis.Auth.OAuth2;
-//using Google.GData.Client;
-//using Google.GData.Contacts;
-//using Google.GData.Extensions;
 
 namespace SIPSorcery.AppServer.DialPlan
 {
@@ -84,7 +72,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private const int ALLOWED_ADDRESSES_PER_EMAIL = 5;     // The maximum number of addresses that can be used in an email.
         private const int ALLOWED_EMAILS_PER_EXECUTION = 3;     // The maximum number of emails that can be sent pre dialplan execution.
         private const int MAX_EMAIL_SUBJECT_LENGTH = 256;
-        private const int MAX_EMAIL_BODY_LENGTH = 2048;
+        private const int MAX_EMAIL_BODY_LENGTH = 4096;
         private const string USERDATA_DBTYPE_KEY = "UserDataDBType";
         private const string USERDATA_DBCONNSTR_KEY = "UserDataDBConnStr";
         private const int MAX_DATA_ENTRIES_PER_USER = 100;
@@ -857,7 +845,7 @@ namespace SIPSorcery.AppServer.DialPlan
         /// </summary>
         public bool IsMine(string username)
         {
-            return IsAvailable(username, DEFAULT_LOCAL_DOMAIN);
+            return IsMine(username, DEFAULT_LOCAL_DOMAIN);
         }
 
         /// <summary>
@@ -1023,7 +1011,7 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 Log("The name of the header to set was empty, the header was not added.");
             }
-            else if (Regex.Match(headerName.Trim(), @"^(Via|To|From|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success)
+            else if (Regex.Match(headerName.Trim(), @"^(Via|From|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success)
             {
                 Log("The name of the header to set is not permitted, the header was not added.");
             }
@@ -1326,7 +1314,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         }
 
                         Log("WebGet attempting to read from " + url + ".");
-
+                        
                         System.IO.Stream responseStream = webClient.OpenRead(url);
                         if (responseStream != null)
                         {
@@ -1360,6 +1348,49 @@ namespace SIPSorcery.AppServer.DialPlan
             return WebGet(url, 0);
         }
 
+        public string WebGet2(string url, int timeout)
+        {
+            try
+            {
+                if (!url.IsNullOrBlank())
+                {
+                    Log("WebGet2 attempting to read from " + url + ".");
+
+                    using (System.Net.Http.HttpClient client = new System.Net.Http.HttpClient())
+                    {
+                        if(timeout <= 0 || timeout > WEBGET_MAXIMUM_TIMEOUT)
+                        {
+                            timeout = WEBGET_MAXIMUM_TIMEOUT;
+                        }
+
+                        client.Timeout = new TimeSpan(0, 0, 0, timeout, 0);
+                        client.MaxResponseContentBufferSize = MAX_BYTES_WEB_GET;
+
+                        var getStringTask = Task.Run(async () => await client.GetStringAsync(url));
+                        return getStringTask.Result;
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception WebGet2. " + excp.Message);
+                Log("Error in WebGet2 for " + url + ".");
+                return null;
+            }
+        }
+
+        public void Email(string to, string subject, string body)
+        {
+            EmailSend(to, subject, body, false);
+        }
+
+        public void Email(string to, string subject, string body, bool isHtml)
+        {
+            EmailSend(to, subject, body, isHtml);
+        }
+
         /// <summary>
         /// Sends an email from the dialplan. There are a number of restrictions put in place and this is a privileged
         /// application that users must be manually authorised for.
@@ -1367,14 +1398,11 @@ namespace SIPSorcery.AppServer.DialPlan
         /// <param name="to">The list of addressees to send the email to. Limited to a maximum of ALLOWED_ADDRESSES_PER_EMAIL.</param>
         /// <param name="subject">The email subject. Limited to a maximum length of MAX_EMAIL_SUBJECT_LENGTH.</param>
         /// <param name="body">The email body. Limited to a maximum length of MAX_EMAIL_BODY_LENGTH.</param>
-        public void Email(string to, string subject, string body)
+        /// <param name="isHtml">Sets the is email body HTML flag.</param>
+        private void EmailSend(string to, string subject, string body, bool isHtml)
         {
             try
             {
-                //if (!IsAppAuthorised(m_dialPlanContext.SIPDialPlan.AuthorisedApps, "email"))
-                //{
-                //    Log("You are not authorised to use the Email application, please contact admin@sipsorcery.com.");
-                //}
                 if (ServiceLevel == CustomerServiceLevels.Free)
                 {
                     Log("Your service level of " + ServiceLevel + " is not authorised to use the " + System.Reflection.MethodBase.GetCurrentMethod().Name + " application.");
@@ -1413,7 +1441,7 @@ namespace SIPSorcery.AppServer.DialPlan
                         m_emailCount++;
                         subject = (subject.Length > MAX_EMAIL_SUBJECT_LENGTH) ? subject.Substring(0, MAX_EMAIL_SUBJECT_LENGTH) : subject;
                         body = (body.Length > MAX_EMAIL_BODY_LENGTH) ? body.Substring(0, MAX_EMAIL_BODY_LENGTH) : body;
-                        SIPSorcerySMTP.SendEmail(to, EMAIL_FROM_ADDRESS, subject, body);
+                        SIPSorcerySMTP.SendEmail(to, EMAIL_FROM_ADDRESS, subject, body, isHtml);
                         Log("Email sent to " + to + " with subject of \"" + subject + "\".");
                     }
                 }
@@ -2314,28 +2342,28 @@ namespace SIPSorcery.AppServer.DialPlan
             }
         }
 
-            //private async Task<string> GoogleContactLookupAysnc(string username)
-            //{
-            //    ServiceAccountCredential.Initializer("").
+        //private async Task<string> GoogleContactLookupAysnc(string username)
+        //{
+        //    ServiceAccountCredential.Initializer("").
 
-            //    UserCredential credential;
+        //    UserCredential credential;
 
-            //    using (var stream = new FileStream("client_secrets.json", FileMode.Open, FileAccess.Read))
-            //    {
-            //        credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-            //            GoogleClientSecrets.Load(stream).Secrets,
-            //            new[] { ContactsService.GContactService },
-            //            username, CancellationToken.None);
-            //    }
+        //    using (var stream = new FileStream("client_secrets.json", FileMode.Open, FileAccess.Read))
+        //    {
+        //        credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+        //            GoogleClientSecrets.Load(stream).Secrets,
+        //            new[] { ContactsService.GContactService },
+        //            username, CancellationToken.None);
+        //    }
 
-            //    return "";
-            //}
+        //    return "";
+        //}
 
-            /// <summary>
-            /// Gets the balance for a customer account record.
-            /// </summary>
-            /// <param name="accountCode">The account code to get the record for.</param>
-            /// <returns>If the account code exists the balance for it otherwise -1.</returns>
+        /// <summary>
+        /// Gets the balance for a customer account record.
+        /// </summary>
+        /// <param name="accountCode">The account code to get the record for.</param>
+        /// <returns>If the account code exists the balance for it otherwise -1.</returns>
         public decimal GetBalance(string accountCode)
         {
             return m_customerAccountDataLayer.GetBalance(accountCode);

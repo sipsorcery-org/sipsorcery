@@ -1,2 +1,2 @@
-COPY E:\Data\LiveMesh\Source\git\sipsorcery-public\sipsorcery-core\Build\*.dll E:\temp\sipsorcery /Y
+COPY F:\Dev\sipsorcery\sipsorcery-public\sipsorcery-core\Build\*.dll f:\temp\sipsorcery /Y
 PAUSE

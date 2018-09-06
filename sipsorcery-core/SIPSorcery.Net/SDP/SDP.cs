@@ -191,17 +191,26 @@ namespace SIPSorcery.Net
                         }
                         else if (sdpLine.Trim().StartsWith("c="))
                         {
-							if(activeAnnouncement != null)
-								activeAnnouncement.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLine);
-							else
-								sdp.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLine);
+                            if(sdp.Connection == null)
+                            {
+                                sdp.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLine);
+                            }
+
+                            if (activeAnnouncement != null)
+                            {
+                                activeAnnouncement.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLine);
+                            }
                         }
 						else if(sdpLine.Trim().StartsWith("b="))
 						{
-							if(activeAnnouncement != null)
-								activeAnnouncement.BandwidthAttributes.Add(sdpLine.Substring(2));
-							else
-								sdp.BandwidthAttributes.Add(sdpLine.Substring(2));
+                            if (activeAnnouncement != null)
+                            {
+                                activeAnnouncement.BandwidthAttributes.Add(sdpLine.Substring(2));
+                            }
+                            else
+                            {
+                                sdp.BandwidthAttributes.Add(sdpLine.Substring(2));
+                            }
 						}
 						else if (sdpLine.Trim().StartsWith("t="))
                         {
@@ -299,10 +308,14 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-							if(activeAnnouncement != null)
-								activeAnnouncement.AddExtra(sdpLine);
-							else
-								sdp.AddExtra(sdpLine);
+                            if (activeAnnouncement != null)
+                            {
+                                activeAnnouncement.AddExtra(sdpLine);
+                            }
+                            else
+                            {
+                                sdp.AddExtra(sdpLine);
+                            }
                         }
                     }
 

@@ -125,7 +125,9 @@ namespace SIPSorcery.Net
             MarkerBit = (firstWord >> 7) & 0x1;
             PayloadType = firstWord & 0x7f;
 
-            if (HeaderExtensionFlag == 1)
+            int headerAndCSRCLength = 12 + 4 * CSRCCount;
+
+            if (HeaderExtensionFlag == 1 && (packet.Length >= (headerAndCSRCLength + 4)))
             {
                 if (BitConverter.IsLittleEndian)
                 {
@@ -134,8 +136,14 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    ExtensionProfile = BitConverter.ToUInt16(packet, 8 + 4 * CSRCCount);
-                    ExtensionLength = BitConverter.ToUInt16(packet, 10 + 4 * CSRCCount);
+                    ExtensionProfile = BitConverter.ToUInt16(packet, 12 + 4 * CSRCCount);
+                    ExtensionLength = BitConverter.ToUInt16(packet, 14 + 4 * CSRCCount);
+                }
+
+                if(ExtensionLength > 0 && packet.Length >= (headerAndCSRCLength + 4 + ExtensionLength * 4))
+                {
+                    ExtensionPayload = new byte[ExtensionLength * 4];
+                    Buffer.BlockCopy(packet, headerAndCSRCLength + 4, ExtensionPayload, 0, ExtensionLength * 4);
                 }
             }
         }

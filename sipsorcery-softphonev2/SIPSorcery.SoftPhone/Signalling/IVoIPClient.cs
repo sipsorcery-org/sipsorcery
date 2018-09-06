@@ -9,7 +9,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006-2014 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
+// Copyright (c) 2006-2018 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -29,11 +29,6 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace SIPSorcery.SoftPhone
 {

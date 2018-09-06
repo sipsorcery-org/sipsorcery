@@ -686,8 +686,21 @@ namespace SIPSorcery.Servers
                 if (!IPSocket.IsPrivateAddress(dialogueSDPSocket.Address.ToString()) && IPSocket.IsPrivateAddress(replacementSDPSocket.Address.ToString()))
                 {
                     // The SDP being used in the re-invite uses a private IP address but the SDP on the ua it's being sent to does not so mangle.
-                    string publicIPAddress = (PublicIPAddress != null) ? PublicIPAddress.ToString() : IPSocket.ParseHostFromSocket(substituteDialogue.RemoteTarget.Host);
-                    replacementSDP = SIPPacketMangler.MangleSDP(replacementSDP, publicIPAddress, out wasMangled);
+                    string publicIPAddress = null;
+
+                    if (PublicIPAddress != null)
+                    {
+                        publicIPAddress = PublicIPAddress.ToString();
+                    }
+                    else if (substituteDialogue.RemoteTarget != null)
+                    {
+                        publicIPAddress = IPSocket.ParseHostFromSocket(substituteDialogue.RemoteTarget.Host);
+                    }
+
+                    if (publicIPAddress != null)
+                    {
+                        replacementSDP = SIPPacketMangler.MangleSDP(replacementSDP, publicIPAddress, out wasMangled);
+                    }
                 }
 
                 if (wasMangled)
@@ -696,12 +709,13 @@ namespace SIPSorcery.Servers
                 }
 
                 // Check whether there is a need to send the re-invite by comparing the new SDP being sent with what has already been sent.
-                if (dialogue.SDP == replacementSDP)
-                {
-                    logger.Debug("A reinvite was not sent to " + dialogue.RemoteTarget.ToString() + " as the SDP has not changed.");
-                }
-                else
-                {
+                //if (dialogue.SDP == replacementSDP)
+                //{
+                //    logger.Debug("A reinvite was not sent to " + dialogue.RemoteTarget.ToString() + " as the SDP has not changed.");
+                //}
+                //else
+                //{
+                // Resend even if SDP has not changed as an attempt to refresh a call having one-way audio issues.
                     logger.Debug("Reinvite SDP being sent to " + dialogue.RemoteTarget.ToString() + ":\r\n" + replacementSDP);
 
                     dialogue.CSeq = dialogue.CSeq + 1;
@@ -747,7 +761,7 @@ namespace SIPSorcery.Servers
                     {
                         throw new ApplicationException("Could not forward re-invite as request end point could not be determined.\r\n" + reInviteReq.ToString());
                     }
-                }
+                //}
             }
             catch (Exception excp)
             {
@@ -797,7 +811,7 @@ namespace SIPSorcery.Servers
                 IPAddress remoteUAIPAddress = (inDialogueTransaction.TransactionRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? remoteEndPoint.Address : SIPEndPoint.ParseSIPEndPoint(inDialogueTransaction.TransactionRequest.Header.ProxyReceivedFrom).Address;
 
                 SIPRequest forwardedRequest = inDialogueTransaction.TransactionRequest.Copy();
-               
+
                 // Need to remove or reset headers from the copied request that conflict with the existing dialogue requests.
                 forwardedRequest.Header.RecordRoutes = null;
                 forwardedRequest.Header.MaxForwards = SIPConstants.DEFAULT_MAX_FORWARDS;
@@ -932,7 +946,7 @@ namespace SIPSorcery.Servers
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Replacement dialogue found on Refer, accepting.", dialogue.Owner));
 
                         bool sendNotifications = true;
-                        if(!referRequest.Header.ReferSub.IsNullOrBlank())
+                        if (!referRequest.Header.ReferSub.IsNullOrBlank())
                         {
                             Boolean.TryParse(referRequest.Header.ReferSub, out sendNotifications);
                         }

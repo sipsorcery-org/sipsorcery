@@ -33,15 +33,16 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Linq;
 using System.Net;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.Sys;
 using log4net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 
 #if UNITTEST
 using NUnit.Framework;
@@ -49,56 +50,13 @@ using NUnit.Framework;
 
 namespace SIPSorcery.SIP
 {
-    /// <summary>
-    /// Record number of each type of request received.
-    /// </summary>
-    //public struct SIPTransportMetric
-    //{
-    //    public const string PACKET_VOLUMES_KEY = "pkts";
-    //    public const string SIPMETHOD_VOLUMES_KEY = "meth";
-    //    public const string TOPTALKERS_VOLUME_KEY = "talk";
-
-    //    public DateTime ReceivedAt;
-    //    public IPEndPoint RemoteEndPoint;
-    //    public SIPMessageTypesEnum SIPMessageType;
-    //    public SIPMethodsEnum SIPMethod;
-    //    public bool STUNRequest;
-    //    public bool UnrecognisedPacket;
-    //    public bool BadSIPMessage;                  // Set to true if the message appeared to be a SIP Message but then couldn't be parsed as one.
-    //    public bool Discard;                        // If true indicates the SIP message was not parsed due to the receive queue being full and was instead discarded.
-    //    public bool TooLarge;                       // If the message is greater than the max accepted length.
-    //    public bool Originated;                     // If true inidcates the SIP message was sent by the transport layer, false means it was received.
-    //    public double ParseDuration;                // Time it took to parse the message in milliseconds.
-
-    //    public SIPTransportMetric(
-    //        DateTime receivedAt,
-    //        IPEndPoint remoteEndPoint,
-    //        SIPMessageTypesEnum sipMessageType,
-    //        SIPMethodsEnum sipMethod,
-    //        bool stunRequest,
-    //        bool unrecognisedPacket,
-    //        bool badSIPMessage,
-    //        bool discard,
-    //        bool tooLarge,
-    //        bool originated,
-    //        double parseDuration)
-    //    {
-    //        ReceivedAt = receivedAt;
-    //        RemoteEndPoint = remoteEndPoint;
-    //        SIPMessageType = sipMessageType;
-    //        SIPMethod = sipMethod;
-    //        STUNRequest = stunRequest;
-    //        UnrecognisedPacket = unrecognisedPacket;
-    //        BadSIPMessage = badSIPMessage;
-    //        Discard = discard;
-    //        TooLarge = tooLarge;
-    //        Originated = originated;
-    //        ParseDuration = parseDuration;
-    //    }
-    //}
-
     public class SIPTransport
     {
+        [DllImport("iphlpapi.dll", SetLastError = true)]
+        static extern int GetBestInterface(UInt32 DestAddr, out UInt32 BestIfIndex);    // For IPv6 will need to switch to GetBestInterfaceEx.
+
+        private const int NO_ERROR = 0;
+
         private const string RECEIVE_THREAD_NAME = "siptransport-receive";
         private const string RELIABLES_THREAD_NAME = "siptransport-reliables";
         private const int MAX_QUEUEWAIT_PERIOD = 2000;              // Maximum time to wait to check the message received queue if no events are received.
@@ -148,11 +106,6 @@ namespace SIPSorcery.SIP
         // rather then just relying on the initial request to get through.
         private Dictionary<string, SIPTransaction> m_reliableTransmissions = new Dictionary<string, SIPTransaction>();
         private bool m_reliablesThreadRunning = false;   // Only gets started when a request is made to send a reliable request.
-
-        public int ReliableTrasmissionsCount
-        {
-            get { return m_reliableTransmissions.Count; }
-        }
 
         public SIPTransport(ResolveSIPEndPointDelegate sipResolver, SIPTransactionEngine transactionEngine)
         {
@@ -328,17 +281,43 @@ namespace SIPSorcery.SIP
             }
         }
 
+        /// <summary>
+        /// Attempts to find the optimal SIP UDP channel connected to the internet. If the caller needs to send the SIP request on
+        /// a different channel (e.g. TCP. TLS or on a private network interface it must set the local end point manually).
+        /// </summary>
+        /// <returns>A SIP channel.</returns>
         public SIPEndPoint GetDefaultSIPEndPoint()
         {
-            foreach (SIPChannel sipChannel in m_sipChannels.Values)
+            if(m_sipChannels == null)
             {
-                if (sipChannel.SIPChannelEndPoint.Protocol == SIPProtocolsEnum.udp)
-                {
-                    return sipChannel.SIPChannelEndPoint;
-                }
+                throw new ApplicationException("No SIP channels available.");
             }
 
-            return m_sipChannels.First().Value.SIPChannelEndPoint;
+            if(m_sipChannels.Count == 1)
+            {
+                return m_sipChannels.First().Value.SIPChannelEndPoint;
+            }
+
+            var internetAddress = GetLocalAddress(IPAddress.Parse("1.1.1.1"));
+
+            var internetChannel = m_sipChannels.Values.Where(x => x.SIPChannelEndPoint.Address.Equals(internetAddress) && x.SIPChannelEndPoint.Protocol == SIPProtocolsEnum.udp).FirstOrDefault();
+
+            if (internetChannel != null)
+            {
+                return internetChannel.SIPChannelEndPoint;
+            }
+            else
+            {
+                foreach (SIPChannel sipChannel in m_sipChannels.Values)
+                {
+                    if (sipChannel.SIPChannelEndPoint.Protocol == SIPProtocolsEnum.udp)
+                    {
+                        return sipChannel.SIPChannelEndPoint;
+                    }
+                }
+
+                return m_sipChannels.First().Value.SIPChannelEndPoint;
+            }
         }
 
         public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
@@ -356,27 +335,76 @@ namespace SIPSorcery.SIP
 
         public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
         {
-            bool isDestLoopback = IPAddress.IsLoopback(destinationEP.Address);
-
-            foreach (SIPChannel sipChannel in m_sipChannels.Values)
+            if (m_sipChannels?.Count == 1)
             {
-                if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol)
+                return m_sipChannels.First().Value.SIPChannelEndPoint;
+            }
+            else if(m_sipChannels?.Count > 1)
+            {
+                bool isDestLoopback = IPAddress.IsLoopback(destinationEP.Address);
+                var localAddress = isDestLoopback == false ? GetLocalAddress(destinationEP.Address) : null;
+
+                foreach (SIPChannel sipChannel in m_sipChannels.Values)
                 {
-                    if (isDestLoopback)
+                    if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
+                        (localAddress == null || sipChannel.SIPChannelEndPoint.Address.ToString() == localAddress.ToString()))
                     {
-                        if (IPAddress.IsLoopback(sipChannel.SIPChannelEndPoint.Address))
+                        if (isDestLoopback)
+                        {
+                            if (IPAddress.IsLoopback(sipChannel.SIPChannelEndPoint.Address))
+                            {
+                                return sipChannel.SIPChannelEndPoint;
+                            }
+                        }
+                        else
                         {
                             return sipChannel.SIPChannelEndPoint;
                         }
-                    }
-                    else
-                    {
-                        return sipChannel.SIPChannelEndPoint;
                     }
                 }
             }
 
             return null;
+        }
+
+        public IPAddress GetLocalAddress(IPAddress destination)
+        {
+            uint bestInterfaceIndex = 0;
+            int result = GetBestInterface(BitConverter.ToUInt32(destination.GetAddressBytes(), 0), out bestInterfaceIndex);
+
+            IPAddress localAddress = null;
+
+            if (result == NO_ERROR)
+            {
+                var bestInterface = from ni in NetworkInterface.GetAllNetworkInterfaces() where ni.GetIPProperties().GetIPv4Properties().Index == bestInterfaceIndex select ni;
+
+                localAddress = bestInterface.FirstOrDefault()?.GetIPProperties().UnicastAddresses.Where(x => x.Address.AddressFamily == destination.AddressFamily).FirstOrDefault()?.Address;
+            }
+            
+            if(localAddress != null)
+            {
+                foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    var adapterIPProperties = adapter.GetIPProperties();
+
+                    foreach (UnicastIPAddressInformation unicastIPAddressInformation in adapterIPProperties.UnicastAddresses.Where(x => x.Address.AddressFamily == destination.AddressFamily))
+                    {
+                        if (unicastIPAddressInformation.Address.AddressFamily == AddressFamily.InterNetwork)
+                        {
+                            long mask = unicastIPAddressInformation.IPv4Mask.Address & destination.Address;
+                            long networkMask = unicastIPAddressInformation.IPv4Mask.Address & unicastIPAddressInformation.Address.Address;
+
+                            if (mask == networkMask)
+                            {
+                                localAddress = unicastIPAddressInformation.Address;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return localAddress;
         }
 
         /// <summary>
@@ -534,11 +562,11 @@ namespace SIPSorcery.SIP
             if (sipRequest.LocalSIPEndPoint != null)
             {
                 sipChannel = FindSIPChannel(sipRequest.LocalSIPEndPoint);
-                sipChannel = sipChannel ?? GetDefaultChannel(sipRequest.LocalSIPEndPoint.Protocol);
+                sipChannel = sipChannel ?? GetDefaultChannel(sipRequest.LocalSIPEndPoint);
             }
             else
             {
-                sipChannel = GetDefaultChannel(dstEndPoint.Protocol);
+                sipChannel = GetDefaultChannel(dstEndPoint);
             }
 
             if (sipChannel != null)
@@ -701,7 +729,7 @@ namespace SIPSorcery.SIP
                 }
 
                 SIPChannel sipChannel = FindSIPChannel(sipResponse.LocalSIPEndPoint);
-                sipChannel = sipChannel ?? GetDefaultChannel(dstEndPoint.Protocol);
+                sipChannel = sipChannel ?? GetDefaultChannel(dstEndPoint);
 
                 if (sipChannel != null)
                 {
@@ -1525,10 +1553,23 @@ namespace SIPSorcery.SIP
                 if (sipChannel.SIPChannelEndPoint.Protocol == protocol)
                 {
                     return sipChannel;
-                }
+                }  
             }
 
             logger.Warn("No default SIP channel could be found for " + protocol + ".");
+            return null;
+        }
+
+        private SIPChannel GetDefaultChannel(SIPEndPoint dstEndPoint)
+        {
+            var e = GetDefaultSIPEndPoint(dstEndPoint);
+            var sipChannel = FindSIPChannel(e);
+            if (sipChannel != null)
+            {
+                return sipChannel;
+            }
+
+            logger.Warn("No default SIP channel could be found for " + dstEndPoint.ToString() + ".");
             return null;
         }
 

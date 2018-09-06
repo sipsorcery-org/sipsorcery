@@ -241,6 +241,11 @@ namespace SIPSorcery.SIP
             return authHeader;
 		}
 
+        public void IncrementNonceCount()
+        {
+            NonceCount++;
+        }
+
         private string GetPaddedNonceCount(int count)
         {
             return "00000000".Substring(0, 8 - NonceCount.ToString().Length) + count;

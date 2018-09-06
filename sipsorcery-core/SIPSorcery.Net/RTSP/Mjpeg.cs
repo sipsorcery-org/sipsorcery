@@ -293,7 +293,7 @@ namespace SIPSorcery.Net
                     i++;
 
                     //Chroma
-                    BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)Math.Min(Math.Max((defaultQuantizers[i] * q + 50) / 100, 1), byte.MaxValue))).CopyTo(resultTables, j);
+                    BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)Math.Min(Math.Max((defaultQuantizers[j] * q + 50) / 100, 1), byte.MaxValue))).CopyTo(resultTables, j);
                     j++;
                 }
             }

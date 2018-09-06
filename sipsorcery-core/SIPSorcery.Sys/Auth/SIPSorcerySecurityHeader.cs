@@ -43,7 +43,7 @@ namespace SIPSorcery.Sys.Auth
             if (!APIKey.IsNullOrBlank())
             {
                 writer.WriteStartElement(SECURITY_PREFIX, APIKEY_ELEMENT_NAME, SECURITY_NAMESPACE);
-                writer.WriteString(AuthID);
+                writer.WriteString(APIKey);
                 writer.WriteEndElement();
             }
         }

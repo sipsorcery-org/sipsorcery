@@ -66,6 +66,7 @@ namespace SIPSorcery.SIP
         private List<string> m_connectingSockets = new List<string>();                                  // List of sockets that are in the process of being connected to. Need to avoid SIP re-transmits initiating multiple connect attempts.
         private Dictionary<string, int> m_connectionFailureStrikes = new Dictionary<string, int>();     // Tracks the number of connection attempts made to a remote socket, three strikes and it's out.
         private Dictionary<string, DateTime> m_connectionFailures = new Dictionary<string, DateTime>(); // Tracks sockets that have had a connection failure on them to avoid endless re-connect attmepts.
+        private static object m_writeLock = new object();
 
         public SIPTCPChannel(IPEndPoint endPoint)
         {
@@ -261,12 +262,15 @@ namespace SIPSorcery.SIP
 
                         try
                         {
-                            //logger.Warn("TCP channel BeginWrite from " + SIPChannelEndPoint.ToString() + " to " + sipTCPClient.RemoteEndPoint + ": " + Encoding.ASCII.GetString(buffer, 0, 32) + ".");
-                            sipTCPClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTCPClient);
-                            //logger.Warn("TCP channel BeginWrite complete from " + SIPChannelEndPoint.ToString() + " to " + sipTCPClient.RemoteEndPoint + ".");
-                            //sipTCPClient.SIPStream.Flush();
-                            sent = true;
-                            sipTCPClient.LastTransmission = DateTime.Now;
+                            lock (m_writeLock)
+                            {
+                                //logger.Warn("TCP channel BeginWrite from " + SIPChannelEndPoint.ToString() + " to " + sipTCPClient.RemoteEndPoint + ": " + Encoding.ASCII.GetString(buffer, 0, 32) + ".");
+                                sipTCPClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTCPClient);
+                                //logger.Warn("TCP channel BeginWrite complete from " + SIPChannelEndPoint.ToString() + " to " + sipTCPClient.RemoteEndPoint + ".");
+                                //sipTCPClient.SIPStream.Flush();
+                                sent = true;
+                                sipTCPClient.LastTransmission = DateTime.Now;
+                            }
                         }
                         catch (SocketException)
                         {
@@ -323,6 +327,7 @@ namespace SIPSorcery.SIP
             {
                 SIPConnection sipTCPConnection = (SIPConnection)ar.AsyncState;
                 sipTCPConnection.SIPStream.EndWrite(ar);
+                OnSendComplete(EventArgs.Empty);
 
                 //logger.Debug("EndSend on TCP " + SIPChannelEndPoint.ToString() + ".");
             }
@@ -330,6 +335,10 @@ namespace SIPSorcery.SIP
             {
                 logger.Error("Exception EndSend. " + excp.Message);
             }
+        }
+        protected override void OnSendComplete(EventArgs args)
+        {
+            base.OnSendComplete(args);
         }
 
         public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)

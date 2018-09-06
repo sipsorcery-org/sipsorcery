@@ -63,7 +63,8 @@ namespace SIPSorcery.SIP
 
         //private string m_certificatePath;
         private X509Certificate2 m_serverCertificate;
-
+        private static object m_writeLock = new object();
+        
         private new ILog logger = AppState.GetLogger("siptls-channel");
 
         public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint)
@@ -137,8 +138,7 @@ namespace SIPSorcery.SIP
 
                         SIPConnection sipTLSConnection = new SIPConnection(this, tcpClient, sslStream, remoteEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Listener);
 
-                        //sslStream.BeginAuthenticateAsServer(m_serverCertificate, EndAuthenticateAsServer, sipTLSConnection);
-                        sslStream.BeginAuthenticateAsServer(m_serverCertificate, true, SslProtocols.Default, false, EndAuthenticateAsServer, sipTLSConnection);
+                        sslStream.BeginAuthenticateAsServer(m_serverCertificate, EndAuthenticateAsServer, sipTLSConnection);
 
                         //sslStream.AuthenticateAsServer(m_serverCertificate, false, SslProtocols.Tls, false);
                         //// Display the properties and settings for the authenticated stream.
@@ -267,15 +267,19 @@ namespace SIPSorcery.SIP
 
                         try
                         {
-                            if (sipTLSClient.SIPStream != null && sipTLSClient.SIPStream.CanWrite)
+                            lock (m_writeLock)
                             {
-                                sipTLSClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTLSClient);
-                                sent = true;
-                                sipTLSClient.LastTransmission = DateTime.Now;
-                            }
-                            else
-                            {
-                                logger.Warn("A SIPTLSChannel write operation to " + dstEndPoint + " was dropped as the stream was null or could not be written to.");
+                                if (sipTLSClient.SIPStream != null && sipTLSClient.SIPStream.CanWrite)
+                                {
+                                    //sipTLSClient.SIPStream.Write(buffer, 0, buffer.Length);
+                                    sipTLSClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTLSClient);
+                                    sent = true;
+                                    sipTLSClient.LastTransmission = DateTime.Now;
+                                }
+                                else
+                                {
+                                    logger.Warn("A SIPTLSChannel write operation to " + dstEndPoint + " was dropped as the stream was null or could not be written to.");
+                                }
                             }
                         }
                         catch (SocketException)
@@ -323,11 +327,17 @@ namespace SIPSorcery.SIP
             {
                 SIPConnection sipConnection = (SIPConnection)ar.AsyncState;
                 sipConnection.SIPStream.EndWrite(ar);
+                OnSendComplete(EventArgs.Empty);
             }
             catch (Exception excp)
             {
                 logger.Error("Exception EndSend. " + excp);
             }
+        }
+
+        protected override void OnSendComplete(EventArgs args)
+        {
+            base.OnSendComplete(args);
         }
 
         private void EndConnect(IAsyncResult ar)
@@ -348,8 +358,7 @@ namespace SIPSorcery.SIP
                 //DisplayCertificateInformation(sslStream);
 
                  SIPConnection callerConnection = new SIPConnection(this, tcpClient, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
-                 //sslStream.BeginAuthenticateAsClient(serverCN, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
-                 sslStream.BeginAuthenticateAsClient(serverCN, new X509Certificate2Collection() { m_serverCertificate }, SslProtocols.Default, false, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
+                 sslStream.BeginAuthenticateAsClient(serverCN, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
                 //sslStream.AuthenticateAsClient(serverCN);
 
                 //if (tcpClient != null && tcpClient.Connected)

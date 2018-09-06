@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SIPSorcery.Net.UnitTests.RTP
@@ -101,6 +98,57 @@ namespace SIPSorcery.Net.UnitTests.RTP
             Assert.IsTrue(src.HeaderExtensionFlag == dst.HeaderExtensionFlag, "SequenceNumber was mismatched.");
             Assert.IsTrue(src.Timestamp == dst.Timestamp, "Timestamp was mismatched.");
             Assert.IsTrue(src.SyncSource == dst.SyncSource, "SyncSource was mismatched.");
+        }
+
+        [TestMethod]
+        public void ParseRawRtpTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            byte[] rtpBytes = new byte[] {
+                0x80, 0x88, 0xe6, 0xfd, 0x00, 0x00, 0x00, 0xf0, 0xde, 0xe0, 0xee, 0x8f,
+                0xd5, 0xd5, 0xd5, 0xd5, 0xd5, 0xd5, 0xd5, 0xd5, 0xd5, 0xd5, 0xd5, 0xd5
+               };
+
+            RTPPacket rtpPacket = new RTPPacket(rtpBytes);
+
+            Assert.AreEqual(2, rtpPacket.Header.Version, "Version was mismatched.");
+            Assert.AreEqual(0, rtpPacket.Header.PaddingFlag, "PaddingFlag was mismatched.");
+            Assert.AreEqual(0, rtpPacket.Header.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
+            Assert.AreEqual(0, rtpPacket.Header.CSRCCount, "CSRCCount was mismatched.");
+            Assert.AreEqual(1, rtpPacket.Header.MarkerBit, "MarkerBit was mismatched.");
+            Assert.AreEqual(59133, rtpPacket.Header.SequenceNumber, "SequenceNumber was mismatched..");
+            Assert.AreEqual(240U, rtpPacket.Header.Timestamp, "Timestamp was mismatched.");
+            Assert.AreEqual(3739283087, rtpPacket.Header.SyncSource, "SyncSource was mismatched.");
+        }
+
+        [TestMethod]
+        public void ParseRawRtpWithExtensionTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            byte[] rtpBytes = new byte[] {
+                0x90, 0x88, 0xe6, 0xfd,
+                0x00, 0x00, 0x00, 0xf0,
+                0xde, 0xe0, 0xee, 0x8f,
+                0x00, 0x01, 0x00, 0x01,
+                0xd5, 0xd5, 0xd5, 0xd5,
+                0xd5, 0xd5, 0xd5, 0xd5,
+                0xd5, 0xd5, 0xd5, 0xd5
+               };
+
+            RTPPacket rtpPacket = new RTPPacket(rtpBytes);
+
+            Assert.AreEqual(2, rtpPacket.Header.Version, "Version was mismatched.");
+            Assert.AreEqual(0, rtpPacket.Header.PaddingFlag, "PaddingFlag was mismatched.");
+            Assert.AreEqual(1, rtpPacket.Header.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
+            Assert.AreEqual(0, rtpPacket.Header.CSRCCount, "CSRCCount was mismatched.");
+            Assert.AreEqual(1, rtpPacket.Header.MarkerBit, "MarkerBit was mismatched.");
+            Assert.AreEqual(59133, rtpPacket.Header.SequenceNumber, "SequenceNumber was mismatched..");
+            Assert.AreEqual(240U, rtpPacket.Header.Timestamp, "Timestamp was mismatched.");
+            Assert.AreEqual(3739283087, rtpPacket.Header.SyncSource, "SyncSource was mismatched.");
+            Assert.AreEqual(1U, rtpPacket.Header.ExtensionLength, "Extension Length was mismatched.");
+            Assert.AreEqual(rtpPacket.Header.ExtensionPayload.Length, rtpPacket.Header.ExtensionLength * 4, "Extension length and payload were mismatched.");
         }
     }
 }

@@ -423,7 +423,7 @@ namespace SIPSorcery.Servers
                     string pseudoScript =
                         //"sys.Log(\"Dispatcher Call.\")\n" +
                         "result = sys.DoesSIPAccountExist(\"" + DISPATCHER_SIPACCOUNT_NAME + "\")\n" + // Allows the test call to check the database connectivity.
-                        //"sys.Log(\"DoesSIPAccountExist result=#{result}.\")\n" +
+                                                                                                       //"sys.Log(\"DoesSIPAccountExist result=#{result}.\")\n" +
                         "sys.Respond(420, nil, \"DialPlanEngine-ExecutionCount: " + m_dialPlanEngine.ScriptCount + "\")\n";
                     SIPDialPlan dispatcherDialPlan = new SIPDialPlan(null, null, null, pseudoScript, SIPDialPlanScriptTypesEnum.Ruby);
                     dispatcherDialPlan.Id = Guid.Empty; // Prevents the increment and decrement on the execution counts.
@@ -437,7 +437,7 @@ namespace SIPSorcery.Servers
                             null,
                             null,
                             null,
-                            null, 
+                            null,
                             null,
                             null);
                     m_dialPlanEngine.Execute(scriptContext, uas, uas.CallDirection, null, this);
@@ -659,7 +659,7 @@ namespace SIPSorcery.Servers
                                     GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
                                     m_traceDirectory,
                                     null,
-                                    customer, 
+                                    customer,
                                     null,
                                     GetCanonicalDomain_External);
                             //scriptContext.DialPlanComplete += () => { DecrementCustomerExecutionCount(customer); };
@@ -730,7 +730,7 @@ namespace SIPSorcery.Servers
                     string callbackScript =
                       "sys.Log(\"Callback dialString1=" + dialString1 + ", dialString2=" + dialString2 + ".\")\n" +
                       "sys.Callback(\"" + dialString1 + "\",\"" + dialString2 + "\", 0)\n";
-                    
+
                     SIPDialPlan callbackDialPlan = new SIPDialPlan(username, null, null, callbackScript, SIPDialPlanScriptTypesEnum.Ruby);
                     callbackDialPlan.Id = Guid.Empty; // Prevents the increment and decrement on the execution counts.
                     DialPlanScriptContext scriptContext = new DialPlanScriptContext(
@@ -743,7 +743,7 @@ namespace SIPSorcery.Servers
                             GetSIPProviders_External(p => p.Owner == username, null, 0, Int32.MaxValue),
                             null,
                             null,
-                            customer, 
+                            customer,
                             null,
                             GetCanonicalDomain_External);
                     m_dialPlanEngine.Execute(scriptContext, uas, SIPCallDirection.Out, CreateDialogueBridge, this);
@@ -1154,6 +1154,30 @@ namespace SIPSorcery.Servers
         public void CreateDialogueBridge(SIPDialogue clientDiaglogue, SIPDialogue forwardedDialogue, string owner)
         {
             m_sipDialogueManager.CreateDialogueBridge(clientDiaglogue, forwardedDialogue, owner);
+
+            try
+            {
+                if (forwardedDialogue.ReinviteDelay > 0)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Initiating re-INVITE request in {forwardedDialogue.ReinviteDelay}s due to dial string option.", owner));
+
+                    // Add a delay so that the other call legs get cancelled prior to the re-INIVTE request being sent. This was done on a user request to help with calls with multiple legs having audio issues.
+                    Thread.Sleep(forwardedDialogue.ReinviteDelay * 1000);
+
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Re-sending SDP: {forwardedDialogue.SDP}", owner));
+
+                    ReInvite(forwardedDialogue, clientDiaglogue);
+
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, $"Re-sending SDP: {clientDiaglogue.SDP}", owner));
+
+                    ReInvite(clientDiaglogue, forwardedDialogue);
+                }
+            }
+            catch (Exception reinviteExcp)
+            {
+                logger.Error($"Exception sending immediate reinvite. {reinviteExcp}");
+            }
+
         }
 
         private void InitialiseDispatcherProxies()
@@ -1185,14 +1209,14 @@ namespace SIPSorcery.Servers
             {
                 var transferEntry = m_inProgressTransfers.Where(x => x.Key.CallId == sipDialogue.CallId).FirstOrDefault();
 
-                if(transferEntry.Key != null)
+                if (transferEntry.Key != null)
                 {
                     logger.Debug("A matching in progress transfer was found for a hungup dialogue.");
                     transferEntry.Value.PendingLegHungup();
                     m_inProgressTransfers.Remove(transferEntry.Key);
                 }
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.Error("Exception SIPCallManager.OnCallHungup. " + excp);
             }
