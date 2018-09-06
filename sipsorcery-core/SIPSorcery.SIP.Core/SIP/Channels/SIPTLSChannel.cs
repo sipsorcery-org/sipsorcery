@@ -134,7 +134,7 @@ namespace SIPSorcery.SIP
                         IPEndPoint remoteEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
                         logger.Debug("SIP TLS Channel connection accepted from " + remoteEndPoint + ".");
 
-                        SslStream sslStream = new SslStream(tcpClient.GetStream(), false);
+                        SslStream sslStream = new SslStream(tcpClient.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate));
 
                         SIPConnection sipTLSConnection = new SIPConnection(this, tcpClient, sslStream, remoteEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Listener);
 

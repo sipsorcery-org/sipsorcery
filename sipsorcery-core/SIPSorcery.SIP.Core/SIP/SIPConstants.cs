@@ -299,9 +299,11 @@ namespace SIPSorcery.SIP
         MESSAGE = 15,       // RFC3428.
         PRACK = 16,         // RFC3262.
         UPDATE = 17,        // RFC3311.
-	}
+	    NEGOTIATE = 18,     // https://tools.ietf.org/html/draft-spbs-sip-negotiate-01
+   }
 
-	public class SIPMethods
+
+    public class SIPMethods
 	{
 		public static SIPMethodsEnum GetMethod(string method)
 		{

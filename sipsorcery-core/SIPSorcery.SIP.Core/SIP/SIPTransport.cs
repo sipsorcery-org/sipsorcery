@@ -1430,7 +1430,7 @@ namespace SIPSorcery.SIP
 
                                             #region Check for invalid SIP requests.
 
-                                            if (sipRequest.Header.MaxForwards == 0 && sipRequest.Method != SIPMethodsEnum.OPTIONS)
+                                            if (sipRequest.Header.MaxForwards == 0 && sipRequest.Method != SIPMethodsEnum.OPTIONS && sipRequest.Method != SIPMethodsEnum.NEGOTIATE)
                                             {
                                                 // Check the MaxForwards value, if equal to 0 the request must be discarded. If MaxForwards is -1 it indicates the
                                                 // header was not present in the request and that the MaxForwards check should not be undertaken.
