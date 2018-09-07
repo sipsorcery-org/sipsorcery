@@ -19,7 +19,7 @@ namespace SIPSorcery.SIP.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -71,8 +71,7 @@ namespace SIPSorcery.SIP.Properties {
         ///  &lt;!-- This import brings in the XML language attribute xml:lang--&gt;
         ///  &lt;xs:import namespace=&quot;http://www.w3.org/XML/1998/namespace&quot; schemaLocation=&quot;http://www.w3.org/2001/03/xml.xsd&quot;/&gt;
         ///  &lt;xs:element name=&quot;dialog-info&quot;&gt;
-        ///    &lt;xs:complexType&gt;
-        ///    [rest of string was truncated]&quot;;.
+        ///    &lt;xs:comple [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string EventDialogSchema {
             get {
@@ -92,8 +91,7 @@ namespace SIPSorcery.SIP.Properties {
         ///  &lt;xs:import namespace=&quot;http://www.w3.org/XML/1998/namespace&quot; schemaLocation=&quot;http://www.w3.org/2001/xml.xsd&quot;/&gt;
         ///
         ///  &lt;xs:element name=&quot;presence&quot;&gt;
-        ///    &lt;xs:complexType&gt;
-        ///      &lt;xs:s [rest of string was truncated]&quot;;.
+        ///    &lt;xs:complexType&gt;        /// [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string PIDFSchema {
             get {
