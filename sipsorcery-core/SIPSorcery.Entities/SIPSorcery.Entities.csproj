@@ -29,7 +29,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\Build\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -153,10 +153,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
+      <HintPath>..\..\..\_production\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="MySql.Data, Version=6.6.4.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL" />
+    <Reference Include="MySql.Data, Version=6.7.9.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\_Production\packages\MySql.Data.6.7.9\lib\net45\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data.Entity">
+      <HintPath>..\..\..\_Production\packages\MySQL.Data.Entities.6.5.4.0\lib\net40\MySql.Data.Entity.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.configuration" />
@@ -187,6 +193,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\_version.cs">
+      <Link>_version.cs</Link>
+    </Compile>
     <Compile Include="DataLayers\CDRDataLayer.cs" />
     <Compile Include="DataLayers\CustomerDataLayer.cs" />
     <Compile Include="DataLayers\RateDataLayer.cs" />
@@ -227,15 +236,15 @@
     <Compile Include="ServicesCommon\DynamicLinq.cs" />
     <Compile Include="ServicesCommon\SIPProviderBindingSynchroniser.cs" />
     <Compile Include="ServicesCommon\SIPSorceryService.cs" />
-    <Compile Include="SIPEntities.Designer.cs">
-      <DependentUpon>SIPEntities.edmx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <Compile Include="Entities\SIPProvider.shared.cs" />
     <Compile Include="Entities\SIPProviderBinding.shared.cs" />
     <Compile Include="Enums\SIPProviderTypes.shared.cs" />
     <Compile Include="Entities\SIPRegistrarBinding.shared.cs" />
+    <Compile Include="SIPEntities.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SIPEntities.edmx</DependentUpon>
+    </Compile>
     <Compile Include="Utility\TimeZoneHelper.shared.cs" />
     <Compile Include="Validation\CustomerValidator.shared.cs" />
   </ItemGroup>

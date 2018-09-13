@@ -31,4 +31,3 @@ using System.Reflection;
 [assembly: AssemblyCompany("SIP Sorcery PTY LTD")]
 [assembly: AssemblyDescription("Application layer classes that provide common use casses for SIP protocol.")]
 [assembly: AssemblyCopyright("Aaron Clauson")]		
-[assembly: AssemblyVersion("1.5.6.*")]

@@ -82,7 +82,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
-    <DebugSymbols>false</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
     <NoWarn>
@@ -92,7 +92,7 @@
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
-    <DebugType>none</DebugType>
+    <DebugType>pdbonly</DebugType>
     <ErrorReport>prompt</ErrorReport>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
@@ -226,7 +226,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
+      <HintPath>..\..\..\_production\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -248,6 +248,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\_version.cs">
+      <Link>_version.cs</Link>
+    </Compile>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ICE\IceConnectionStatesEnum.cs" />
     <Compile Include="ICE\TurnServer.cs" />

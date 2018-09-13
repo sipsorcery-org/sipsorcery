@@ -182,15 +182,15 @@
       <HintPath>..\..\stable\GaDotNet.Common.dll</HintPath>
     </Reference>
     <Reference Include="Google.GData.Client, Version=2.2.0.0, Culture=neutral, PublicKeyToken=04a59ca9b0273830, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.GData.Client.2.2.0.0\lib\Google.GData.Client.dll</HintPath>
+      <HintPath>..\..\..\_production\packages\Google.GData.Client.2.2.0.0\lib\Google.GData.Client.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Google.GData.Contacts, Version=2.2.0.0, Culture=neutral, PublicKeyToken=7e065189dd4b982f, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.GData.Contacts.2.2.0.0\lib\Google.GData.Contacts.dll</HintPath>
+      <HintPath>..\..\..\_production\packages\Google.GData.Contacts.2.2.0.0\lib\Google.GData.Contacts.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Google.GData.Extensions, Version=2.2.0.0, Culture=neutral, PublicKeyToken=0b4c5df2ebf20876, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.GData.Extensions.2.2.0.0\lib\Google.GData.Extensions.dll</HintPath>
+      <HintPath>..\..\..\_production\packages\Google.GData.Extensions.2.2.0.0\lib\Google.GData.Extensions.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="IronRuby, Version=0.9.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -198,7 +198,7 @@
       <HintPath>..\..\stable\IronRuby.dll</HintPath>
     </Reference>
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
+      <HintPath>..\..\..\_production\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Dynamic, Version=0.9.6.20, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -210,7 +210,7 @@
       <HintPath>..\..\stable\Microsoft.Scripting.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=4.0.5.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.4.0.5\lib\net40\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\_production\packages\Newtonsoft.Json.4.0.5\lib\net40\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="nunit.framework, Version=2.2.2.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
@@ -237,6 +237,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\_version.cs">
+      <Link>_version.cs</Link>
+    </Compile>
     <Compile Include="DialPlanApps\CallbackApp.cs" />
     <Compile Include="DialPlanApps\GoogleVoiceUserAgent.cs" />
     <Compile Include="DialPlanApps\GoogleVoiceSMS.cs" />
@@ -309,6 +312,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

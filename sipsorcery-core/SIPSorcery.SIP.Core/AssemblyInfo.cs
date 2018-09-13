@@ -31,4 +31,4 @@ using System.Reflection;
 [assembly: AssemblyDescription("Implementation of SIP protocol.")]
 [assembly: AssemblyCompany("SIP Sorcery PTY LTD")]
 [assembly: AssemblyCopyright("Aaron Clauson")]
-[assembly: AssemblyVersion("1.5.6.*")]
+
