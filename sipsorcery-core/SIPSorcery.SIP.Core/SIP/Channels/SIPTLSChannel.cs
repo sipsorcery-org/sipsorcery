@@ -47,6 +47,9 @@ using log4net;
 
 namespace SIPSorcery.SIP
 {
+    public delegate bool SIPTLSChannelInboundCertificateValidationCallback(SIPTLSChannel channel, IPEndPoint remoteEndpoint, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors);
+    public delegate bool SIPTLSChannelOutboundCertificateValidationCallback(SIPTLSChannel channel, IPEndPoint remoteEndpoint, string serverFQDN, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors);
+
     public class SIPTLSChannel : SIPChannel
     {
         private const string ACCEPT_THREAD_NAME = "siptls-";
@@ -63,11 +66,23 @@ namespace SIPSorcery.SIP
 
         //private string m_certificatePath;
         private X509Certificate2 m_serverCertificate;
+        private SslProtocols m_sslProtocols;
+        private bool m_clientCertificateRequired;
+        private bool m_checkCertificateRevocation;
+
+        private SIPTLSChannelInboundCertificateValidationCallback m_inboundCertificateValidationCallback;
+        private SIPTLSChannelOutboundCertificateValidationCallback m_outboundCertificateValidationCallback;
+
         private static object m_writeLock = new object();
+
+        
         
         private new ILog logger = AppState.GetLogger("siptls-channel");
 
-        public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint)
+        public SIPTLSChannel(X509Certificate2 serverCertificate, SslProtocols sslProtocols, bool clientCertificateRequired, bool checkCertificateRevocation,
+            SIPTLSChannelInboundCertificateValidationCallback inboundCertificateValidationCallback,
+            SIPTLSChannelOutboundCertificateValidationCallback outboundCertificateValidationCallback,
+            IPEndPoint endPoint)
         {
             if (serverCertificate == null)
             {
@@ -85,13 +100,26 @@ namespace SIPSorcery.SIP
             //m_certificatePath = certificateFileName;
             ///base.Name = "s" + Crypto.GetRandomInt(4);
             m_serverCertificate = serverCertificate;
+            m_sslProtocols = sslProtocols;
+            m_clientCertificateRequired = clientCertificateRequired;
+            m_checkCertificateRevocation = checkCertificateRevocation;
             Initialise();
+        }
+
+        public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint) : 
+            this(serverCertificate, SslProtocols.Default, false, false, null, null, endPoint)
+        {
         }
 
         private void Initialise()
         {
             try
             {
+                if (m_inboundCertificateValidationCallback == null)
+                    m_inboundCertificateValidationCallback = InboundCertificateValidation;
+                if (m_outboundCertificateValidationCallback == null)
+                    m_outboundCertificateValidationCallback = OutboundCertificateValidation;
+
                 m_tlsServerListener = new TcpListener(m_localSIPEndPoint.GetIPEndPoint());
                 m_tlsServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
@@ -134,12 +162,11 @@ namespace SIPSorcery.SIP
                         IPEndPoint remoteEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
                         logger.Debug("SIP TLS Channel connection accepted from " + remoteEndPoint + ".");
 
-                        SslStream sslStream = new SslStream(tcpClient.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate));
+                        SslStream sslStream = new SslStream(tcpClient.GetStream(), false, (sender, certificate, chain, errors) => m_inboundCertificateValidationCallback( this, remoteEndPoint, certificate, chain, errors ));
 
                         SIPConnection sipTLSConnection = new SIPConnection(this, tcpClient, sslStream, remoteEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Listener);
 
-                        //sslStream.BeginAuthenticateAsServer(m_serverCertificate, EndAuthenticateAsServer, sipTLSConnection);
-                        sslStream.BeginAuthenticateAsServer(m_serverCertificate, true, SslProtocols.Default, false, EndAuthenticateAsServer, sipTLSConnection);
+                        sslStream.BeginAuthenticateAsServer(m_serverCertificate, m_clientCertificateRequired, m_sslProtocols, m_checkCertificateRevocation, EndAuthenticateAsServer, sipTLSConnection);
 
                         //sslStream.AuthenticateAsServer(m_serverCertificate, false, SslProtocols.Tls, false);
                         //// Display the properties and settings for the authenticated stream.
@@ -355,12 +382,11 @@ namespace SIPSorcery.SIP
 
                 tcpClient.EndConnect(ar);
 
-                SslStream sslStream = new SslStream(tcpClient.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+                SslStream sslStream = new SslStream(tcpClient.GetStream(), false, (sender, certificate, chain, errors) => m_outboundCertificateValidationCallback(this, dstEndPoint, serverCN, certificate, chain, errors), null);
                 //DisplayCertificateInformation(sslStream);
 
-                 SIPConnection callerConnection = new SIPConnection(this, tcpClient, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
-                // sslStream.BeginAuthenticateAsClient(serverCN, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
-                sslStream.BeginAuthenticateAsClient(serverCN, new X509Certificate2Collection() { m_serverCertificate }, SslProtocols.Default, false, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
+                SIPConnection callerConnection = new SIPConnection(this, tcpClient, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
+                sslStream.BeginAuthenticateAsClient(serverCN, new X509Certificate2Collection() { m_serverCertificate }, m_sslProtocols, m_checkCertificateRevocation, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
 
                 //sslStream.AuthenticateAsClient(serverCN);
 
@@ -581,8 +607,9 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private bool ValidateServerCertificate(
-            object sender,
+        private bool InboundCertificateValidation(
+            SIPTLSChannel channel,
+            IPEndPoint remotEndPoint,
             X509Certificate certificate,
             X509Chain chain,
             SslPolicyErrors sslPolicyErrors)
@@ -597,6 +624,26 @@ namespace SIPSorcery.SIP
                 return true;
             }
         }
+
+        private bool OutboundCertificateValidation(
+            SIPTLSChannel channel,
+            IPEndPoint remotEndPoint,
+            string serverFQDN,
+            X509Certificate certificate,
+            X509Chain chain,
+            SslPolicyErrors sslPolicyErrors)
+        {
+            if (sslPolicyErrors == SslPolicyErrors.None)
+            {
+                return true;
+            }
+            else
+            {
+                logger.Warn(String.Format("Certificate error: {0}", sslPolicyErrors));
+                return true;
+            }
+        }
+
 
         public override void Close()
         {
