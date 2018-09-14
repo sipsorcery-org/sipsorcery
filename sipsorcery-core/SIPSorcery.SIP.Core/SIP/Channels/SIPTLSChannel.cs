@@ -61,6 +61,7 @@ namespace SIPSorcery.SIP
 
         private TcpListener m_tlsServerListener;
         //private bool m_closed = false;
+
         private Dictionary<string, SIPConnection> m_connectedSockets = new Dictionary<string, SIPConnection>();
         private List<string> m_connectingSockets = new List<string>(); // List of connecting sockets to avoid SIP re-transmits initiating multiple connect attempts.
 
@@ -73,9 +74,7 @@ namespace SIPSorcery.SIP
         private SIPTLSChannelInboundCertificateValidationCallback m_inboundCertificateValidationCallback;
         private SIPTLSChannelOutboundCertificateValidationCallback m_outboundCertificateValidationCallback;
 
-        private static object m_writeLock = new object();
-
-        
+       
         
         private new ILog logger = AppState.GetLogger("siptls-channel");
 
@@ -295,19 +294,16 @@ namespace SIPSorcery.SIP
 
                         try
                         {
-                            lock (m_writeLock)
+                            if (sipTLSClient.SIPStream != null && sipTLSClient.SIPStream.CanWrite)
                             {
-                                if (sipTLSClient.SIPStream != null && sipTLSClient.SIPStream.CanWrite)
-                                {
-                                    //sipTLSClient.SIPStream.Write(buffer, 0, buffer.Length);
-                                    sipTLSClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTLSClient);
-                                    sent = true;
-                                    sipTLSClient.LastTransmission = DateTime.Now;
-                                }
-                                else
-                                {
-                                    logger.Warn("A SIPTLSChannel write operation to " + dstEndPoint + " was dropped as the stream was null or could not be written to.");
-                                }
+                                //sipTLSClient.SIPStream.Write(buffer, 0, buffer.Length);
+                                sipTLSClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTLSClient);
+                                sent = true;
+                                sipTLSClient.LastTransmission = DateTime.Now;
+                            }
+                            else
+                            {
+                                logger.Warn("A SIPTLSChannel write operation to " + dstEndPoint + " was dropped as the stream was null or could not be written to.");
                             }
                         }
                         catch (SocketException)
