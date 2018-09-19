@@ -900,6 +900,14 @@ namespace SIPSorcery.SIP.App
                                 inviteRequest.Header.To.ToUserField = customToHeader;
                             }
                         }
+                        else if (customHeader.Trim().StartsWith(SIPHeaders.SIP_HEADER_CONTACT + ":"))
+                        {
+                            var customContactHeader = SIPContactHeader.ParseContactHeader(customHeader.Substring(customHeader.IndexOf(":") + 1).Trim());
+                            if (customContactHeader != null)
+                            {
+                                inviteRequest.Header.Contact = customContactHeader;
+                            }
+                        }
                         else
                         {
                             inviteRequest.Header.UnknownHeaders.Add(customHeader);
