@@ -63,7 +63,8 @@ namespace SIPSorcery.SIP
 
         //private string m_certificatePath;
         private X509Certificate2 m_serverCertificate;
-
+        private static object m_writeLock = new object();
+        
         private new ILog logger = AppState.GetLogger("siptls-channel");
 
         public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint)
@@ -266,15 +267,19 @@ namespace SIPSorcery.SIP
 
                         try
                         {
-                            if (sipTLSClient.SIPStream != null && sipTLSClient.SIPStream.CanWrite)
+                            lock (m_writeLock)
                             {
-                                sipTLSClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTLSClient);
-                                sent = true;
-                                sipTLSClient.LastTransmission = DateTime.Now;
-                            }
-                            else
-                            {
-                                logger.Warn("A SIPTLSChannel write operation to " + dstEndPoint + " was dropped as the stream was null or could not be written to.");
+                                if (sipTLSClient.SIPStream != null && sipTLSClient.SIPStream.CanWrite)
+                                {
+                                    //sipTLSClient.SIPStream.Write(buffer, 0, buffer.Length);
+                                    sipTLSClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTLSClient);
+                                    sent = true;
+                                    sipTLSClient.LastTransmission = DateTime.Now;
+                                }
+                                else
+                                {
+                                    logger.Warn("A SIPTLSChannel write operation to " + dstEndPoint + " was dropped as the stream was null or could not be written to.");
+                                }
                             }
                         }
                         catch (SocketException)
@@ -322,11 +327,17 @@ namespace SIPSorcery.SIP
             {
                 SIPConnection sipConnection = (SIPConnection)ar.AsyncState;
                 sipConnection.SIPStream.EndWrite(ar);
+                OnSendComplete(EventArgs.Empty);
             }
             catch (Exception excp)
             {
                 logger.Error("Exception EndSend. " + excp);
             }
+        }
+
+        protected override void OnSendComplete(EventArgs args)
+        {
+            base.OnSendComplete(args);
         }
 
         private void EndConnect(IAsyncResult ar)
