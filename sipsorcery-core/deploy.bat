@@ -1,2 +1,2 @@
-COPY F:\Dev\sipsorcery\sipsorcery-public\sipsorcery-core\Build\*.dll f:\temp\sipsorcery /Y
+COPY c:\Dev\sipsorcery\sipsorcery-public\sipsorcery-core\Build\*.dll c:\temp\sipsorcery-allinone\ /Y
 PAUSE
