@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
-using System.Data.Linq;
-using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Linq.Dynamic;
-using System.Text;
 using System.Text.RegularExpressions;
 using SIPSorcery.SIP;
 using SIPSorcery.Sys;
@@ -107,14 +102,14 @@ namespace SIPSorcery.Entities
                         }
                     }
 
-                    if ((customer.EntityState != EntityState.Detached))
-                    {
-                        sipSorceryEntities.ObjectStateManager.ChangeObjectState(customer, EntityState.Added);
-                    }
-                    else
-                    {
-                        sipSorceryEntities.Customers.AddObject(customer);
-                    }
+                    //if ((customer.EntityState != EntityState.Detached))
+                    //{
+                    //    sipSorceryEntities.ObjectStateManager.ChangeObjectState(customer, EntityState.Added);
+                    //}
+                    //else
+                    //{
+                        sipSorceryEntities.Customers.Add(customer);
+                    //}
 
                     sipSorceryEntities.SaveChanges();
 
@@ -132,7 +127,7 @@ namespace SIPSorcery.Entities
                         LastUpdate = DateTimeOffset.UtcNow.ToString("o"),
                         MaxExecutionCount = SIPDialPlan.DEFAULT_MAXIMUM_EXECUTION_COUNT
                     };
-                    sipSorceryEntities.SIPDialPlans.AddObject(defaultDialPlan);
+                    sipSorceryEntities.SIPDialPlans.Add(defaultDialPlan);
                     sipSorceryEntities.SaveChanges();
 
                     logger.Debug("Default dialplan added for " + customer.Name + ".");
@@ -144,7 +139,7 @@ namespace SIPSorcery.Entities
                     if (!sipSorceryEntities.SIPAccounts.Any(s => s.SIPUsername == customer.Name && s.SIPDomain == defaultDomain))
                     {
                         SIPAccount sipAccount = SIPAccount.Create(customer.Name, defaultDomain, customer.Name, plainTextassword, "default");
-                        sipSorceryEntities.SIPAccounts.AddObject(sipAccount);
+                        sipSorceryEntities.SIPAccounts.Add(sipAccount);
                         sipSorceryEntities.SaveChanges();
                         logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");
                     }
@@ -157,7 +152,7 @@ namespace SIPSorcery.Entities
                             if (!sipSorceryEntities.SIPAccounts.Any(s => s.SIPUsername == testUsername && s.SIPDomain == defaultDomain))
                             {
                                 SIPAccount sipAccount = SIPAccount.Create(customer.Name, defaultDomain, testUsername, plainTextassword, "default");
-                                sipSorceryEntities.SIPAccounts.AddObject(sipAccount);
+                                sipSorceryEntities.SIPAccounts.Add(sipAccount);
                                 sipSorceryEntities.SaveChanges();
                                 logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");
                                 break;
@@ -447,7 +442,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Sorry the requested username and domain combination is already in use.");
                 }
 
-                sipSorceryEntities.SIPAccounts.AddObject(sipAccount);
+                sipSorceryEntities.SIPAccounts.Add(sipAccount);
                 sipSorceryEntities.SaveChanges();
 
                 return sipAccount.ID;
@@ -523,7 +518,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to delete the SIP Account.");
                 }
 
-                sipSorceryEntities.SIPAccounts.DeleteObject(existingAccount);
+                sipSorceryEntities.SIPAccounts.Remove(existingAccount);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -543,7 +538,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to delete the SIP Account.");
                 }
 
-                sipSorceryEntities.SIPAccounts.DeleteObject(existingAccount);
+                sipSorceryEntities.SIPAccounts.Remove(existingAccount);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -693,7 +688,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException(validationError);
                 }
 
-                sipSorceryEntities.SIPProviders.AddObject(sipProvider);
+                sipSorceryEntities.SIPProviders.Add(sipProvider);
                 sipSorceryEntities.SaveChanges();
             }
 
@@ -778,7 +773,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to delete the SIP Provider.");
                 }
 
-                sipSorceryEntities.SIPProviders.DeleteObject(existingAccount);
+                sipSorceryEntities.SIPProviders.Remove(existingAccount);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -798,7 +793,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to delete the SIP Provider.");
                 }
 
-                sipSorceryEntities.SIPProviders.DeleteObject(existingAccount);
+                sipSorceryEntities.SIPProviders.Remove(existingAccount);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -981,11 +976,11 @@ namespace SIPSorcery.Entities
                     sipDialPlan.DialPlanScript = "require 'teliswizard'";
 
                     // Create a new SIP dialplan options record.
-                    SIPDialplanOption options = sipSorceryEntities.SIPDialplanOptions.CreateObject();
+                    SIPDialplanOption options = sipSorceryEntities.SIPDialplanOptions.Create();
                     options.ID = Guid.NewGuid().ToString();
                     options.Owner = sipDialPlan.Owner;
                     options.DialPlanID = sipDialPlan.ID;
-                    sipSorceryEntities.SIPDialplanOptions.AddObject(options);
+                    sipSorceryEntities.SIPDialplanOptions.Add(options);
                 }
                 if (sipDialPlan.ScriptType == SIPDialPlanScriptTypesEnum.SimpleWizard)
                 {
@@ -993,7 +988,7 @@ namespace SIPSorcery.Entities
                     sipDialPlan.DialPlanScript = "require 'simplewizard'";
                 }
 
-                sipSorceryEntities.SIPDialPlans.AddObject(sipDialPlan);
+                sipSorceryEntities.SIPDialPlans.Add(sipDialPlan);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -1065,7 +1060,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to delete the SIP Dial Plan.");
                 }
 
-                sipSorceryEntities.SIPDialPlans.DeleteObject(existingAccount);
+                sipSorceryEntities.SIPDialPlans.Remove(existingAccount);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -1085,7 +1080,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to delete the SIP Dial Plan.");
                 }
 
-                sipSorceryEntities.SIPDialPlans.DeleteObject(existingAccount);
+                sipSorceryEntities.SIPDialPlans.Remove(existingAccount);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -1153,7 +1148,7 @@ namespace SIPSorcery.Entities
                 copy.AuthorisedApps = existingAccount.AuthorisedApps;
                 copy.AcceptNonInvite = existingAccount.AcceptNonInvite;
 
-                sipSorceryEntities.SIPDialPlans.AddObject(copy);
+                sipSorceryEntities.SIPDialPlans.Add(copy);
                 //sipSorceryEntities.SaveChanges();
 
                 logger.Debug("A new dial plan copy was created for " + existingAccount.DialPlanName + ", new dial plan name " + copy.DialPlanName + ".");
@@ -1187,7 +1182,7 @@ namespace SIPSorcery.Entities
                             copiedRule.ToSIPAccount = rule.ToSIPAccount;
                             copiedRule.ToProvider = rule.ToProvider;
 
-                            sipSorceryEntities.SimpleWizardRules.AddObject(copiedRule);
+                            sipSorceryEntities.SimpleWizardRules.Add(copiedRule);
 
                             logger.Debug("Copied simple wizard rule priority " + rule.Priority + " to dial plan " + copy.DialPlanName + ".");
                         }
@@ -1292,14 +1287,15 @@ namespace SIPSorcery.Entities
 
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                if (rule.EntityState != EntityState.Detached)
-                {
-                    sipSorceryEntities.ObjectStateManager.ChangeObjectState(rule, EntityState.Added);
-                }
-                else
-                {
-                    sipSorceryEntities.SimpleWizardRules.AddObject(rule);
-                }
+                // ToDo Check.
+                //if (rule.EntityState != EntityState.Detached)
+                //{
+                //    sipSorceryEntities.ObjectStateManager.ChangeObjectState(rule, EntityState.Added);
+                //}
+                //else
+                //{
+                    sipSorceryEntities.SimpleWizardRules.Add(rule);
+                //}
 
                 sipSorceryEntities.SaveChanges();
             }
@@ -1363,7 +1359,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to delete the Simple Wizard Rule.");
                 }
 
-                sipSorceryEntities.SimpleWizardRules.DeleteObject(existingRule);
+                sipSorceryEntities.SimpleWizardRules.Remove(existingRule);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -1381,7 +1377,7 @@ namespace SIPSorcery.Entities
 
             using (var entities = new SIPSorceryEntities())
             {
-                entities.CommandTimeout = DEFAULT_COMMAND_TIMEOUT;
+                entities.Database.CommandTimeout = DEFAULT_COMMAND_TIMEOUT;
 
                 var query = (from cdr in entities.CDRs where cdr.Owner.ToLower() == authUser.ToLower() select cdr);
 
@@ -1406,7 +1402,7 @@ namespace SIPSorcery.Entities
 
             using (var entities = new SIPSorceryEntities())
             {
-                entities.CommandTimeout = DEFAULT_COMMAND_TIMEOUT;
+                entities.Database.CommandTimeout = DEFAULT_COMMAND_TIMEOUT;
 
                 var query = (from cdr in entities.CDRs.Include("rtccs") where cdr.Owner.ToLower() == authUser.ToLower() select cdr);
 
@@ -1449,7 +1445,7 @@ namespace SIPSorcery.Entities
                 webcallback.Owner = authUser.ToLower();
                 webcallback.Inserted = DateTimeOffset.UtcNow.ToString("o");
 
-                sipSorceryEntities.WebCallbacks.AddObject(webcallback);
+                sipSorceryEntities.WebCallbacks.Add(webcallback);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -1499,7 +1495,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to delete the web callback.");
                 }
 
-                sipSorceryEntities.WebCallbacks.DeleteObject(existingAccount);
+                sipSorceryEntities.WebCallbacks.Remove(existingAccount);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -1595,7 +1591,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to delete the customer account.");
                 }
 
-                sipSorceryEntities.CustomerAccounts.DeleteObject(existingAccount);
+                sipSorceryEntities.CustomerAccounts.Remove(existingAccount);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -1615,7 +1611,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to delete the customer account.");
                 }
 
-                sipSorceryEntities.CustomerAccounts.DeleteObject(existingAccount);
+                sipSorceryEntities.CustomerAccounts.Remove(existingAccount);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -1711,7 +1707,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to delete the rate.");
                 }
 
-                sipSorceryEntities.Rates.DeleteObject(existingRate);
+                sipSorceryEntities.Rates.Remove(existingRate);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -1731,7 +1727,7 @@ namespace SIPSorcery.Entities
                     throw new ApplicationException("Not authorised to delete the rate.");
                 }
 
-                sipSorceryEntities.Rates.DeleteObject(existingRate);
+                sipSorceryEntities.Rates.Remove(existingRate);
                 sipSorceryEntities.SaveChanges();
             }
         }
@@ -1753,7 +1749,7 @@ namespace SIPSorcery.Entities
                 else
                 {
                     var newEntry = new DialPlanDataEntry() { DataOwner = authUsername, DataKey = key, DataValue = value };
-                    entities.AddToDialPlanData(newEntry);
+                    entities.DialPlanData.Add(newEntry);
                 }
 
                 entities.SaveChanges();
@@ -1768,7 +1764,7 @@ namespace SIPSorcery.Entities
 
                 if (existingEntry != null)
                 {
-                    entities.DeleteObject(existingEntry);
+                    entities.DialPlanData.Remove(existingEntry);
                     entities.SaveChanges();
                 }
             }

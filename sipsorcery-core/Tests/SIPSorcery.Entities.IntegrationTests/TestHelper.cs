@@ -13,7 +13,7 @@ namespace SIPSorcery.Entities.IntegrationTests
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                sipSorceryEntities.ExecuteStoreCommand(query, null);
+                sipSorceryEntities.Database.ExecuteSqlCommand(query, null);
             }
         }
     }

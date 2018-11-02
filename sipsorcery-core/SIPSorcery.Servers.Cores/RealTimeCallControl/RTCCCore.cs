@@ -36,9 +36,8 @@
 // ============================================================================
 
 using System;
-using System.Collections.Generic;
-using System.Data.Objects;
-using System.IO;
+using System.Data.Entity.Core;
+using System.Data.Entity.Core.Objects;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -162,7 +161,7 @@ namespace SIPSorcery.Servers
                             DateTime now = DateTime.Now;
                             var rtccTerminationDue = (from rtcc in db.RTCCs1.Include("cdr")
                                                       where !rtcc.IsHangingUp && rtcc.AccountCode != null && rtcc.cdr.HungupTime == null && rtcc.cdr.AnsweredAt != null && rtcc.SecondsReserved != null && 
-                                                              rtcc.cdr.AnsweredStatus >= 200 && rtcc.cdr.AnsweredStatus <= 299 && EntityFunctions.AddSeconds(rtcc.cdr.AnsweredAt, rtcc.SecondsReserved) <= now && !rtcc.IsHangingUp
+                                                              rtcc.cdr.AnsweredStatus >= 200 && rtcc.cdr.AnsweredStatus <= 299 &&  EntityFunctions.AddSeconds(rtcc.cdr.AnsweredAt, rtcc.SecondsReserved) <= now && !rtcc.IsHangingUp
                                                               && rtcc.ReconciliationResult == null
                                                       orderby rtcc.cdr.AnsweredAt
                                                       select rtcc).Take(NUMBER_CDRS_PER_ROUNDTRIP);

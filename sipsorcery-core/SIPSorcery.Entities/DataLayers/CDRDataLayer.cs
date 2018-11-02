@@ -73,7 +73,7 @@ namespace SIPSorcery.Entities
                     LocalSocket = (cdr.LocalSIPEndPoint != null) ? cdr.LocalSIPEndPoint.ToString() : null
                 };
 
-                sipSorceryEntities.CDRs.AddObject(entityCDR);
+                sipSorceryEntities.CDRs.Add(entityCDR);
                 sipSorceryEntities.SaveChanges();
             }
         }

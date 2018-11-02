@@ -152,29 +152,39 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Protobuf, Version=3.5.1.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Protobuf.3.5.1\lib\net45\Google.Protobuf.dll</HintPath>
+    </Reference>
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="MySql.Data, Version=6.6.4.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL" />
+    <Reference Include="MySql.Data, Version=8.0.13.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+      <HintPath>..\packages\MySql.Data.8.0.13\lib\net452\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data.EntityFramework, Version=8.0.13.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+      <HintPath>..\packages\MySql.Data.EntityFramework.8.0.13\lib\net452\MySql.Data.EntityFramework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.configuration" />
+    <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.Entity" />
     <Reference Include="System.Data.Linq" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Drawing.Design" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Security" />
     <Reference Include="System.ServiceModel">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.ServiceModel.DomainServices.EntityFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.ServiceModel.DomainServices.Hosting, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.ServiceModel.DomainServices.Server, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Transactions" />
@@ -187,10 +197,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CDR.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Customer.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="CustomerAccount.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
     <Compile Include="DataLayers\CDRDataLayer.cs" />
     <Compile Include="DataLayers\CustomerDataLayer.cs" />
     <Compile Include="DataLayers\RateDataLayer.cs" />
     <Compile Include="DataLayers\CustomerAccountDataLayer.cs" />
+    <Compile Include="DialPlanDataEntry.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
     <Compile Include="Entities\JSON\CDRJSON.cs" />
     <Compile Include="Entities\JSON\CustomerAccountJSON.cs" />
     <Compile Include="Entities\JSON\RateJSON.cs" />
@@ -199,7 +221,6 @@
     <Compile Include="Entities\JSON\SIPProviderBindingJSON.cs" />
     <Compile Include="Entities\SimpleWizardRule.shared.cs" />
     <Compile Include="Entities\Customer.shared.cs" />
-    <Compile Include="DomainServices\SIPEntitiesDomainService.cs" />
     <Compile Include="Entities\JSON\CustomerJSON.cs" />
     <Compile Include="Entities\JSON\SIPProviderJSON.cs" />
     <Compile Include="Entities\JSON\SIPAccountJSON.cs" />
@@ -218,32 +239,84 @@
     <Compile Include="Metadata\SIPProvider.metadata.cs" />
     <Compile Include="Metadata\Customer.metadata.cs" />
     <Compile Include="Metadata\SIPAccount.metadata.cs" />
+    <Compile Include="PayPalIPN.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Enums\SelectionLists.shared.cs" />
     <Compile Include="Entities\SIPAccount.shared.cs" />
     <Compile Include="Entities\CDR.shared.cs" />
     <Compile Include="Entities\SIPDialPlan.shared.cs" />
     <Compile Include="Enums\SIPDialPlanScriptTypes.shared.cs" />
+    <Compile Include="Rate.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="RTCC.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
     <Compile Include="ServicesCommon\DynamicLinq.cs" />
     <Compile Include="ServicesCommon\SIPProviderBindingSynchroniser.cs" />
     <Compile Include="ServicesCommon\SIPSorceryService.cs" />
-    <Compile Include="SIPEntities.Designer.cs">
-      <DependentUpon>SIPEntities.edmx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <Compile Include="Entities\SIPProvider.shared.cs" />
     <Compile Include="Entities\SIPProviderBinding.shared.cs" />
     <Compile Include="Enums\SIPProviderTypes.shared.cs" />
     <Compile Include="Entities\SIPRegistrarBinding.shared.cs" />
+    <Compile Include="SimpleWizardRule.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="SIPAccount.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="SIPDialogue.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="SIPDialPlan.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="SIPDialplanLookup.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="SIPDialplanOption.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="SIPDialplanProvider.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="SIPDialplanRoute.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="SIPDomain.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="SIPEntities.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SIPEntities.edmx</DependentUpon>
+    </Compile>
+    <Compile Include="SIPEntitiesModel.Context.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SIPEntitiesModel.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="SIPEntitiesModel.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="SIPProvider.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="SIPProviderBinding.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="SIPRegistrarBinding.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
     <Compile Include="Utility\TimeZoneHelper.shared.cs" />
     <Compile Include="Validation\CustomerValidator.shared.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EntityDeploy Include="SIPEntities.edmx">
-      <Generator>EntityModelCodeGenerator</Generator>
-      <LastGenOutput>SIPEntities.Designer.cs</LastGenOutput>
-    </EntityDeploy>
+    <Compile Include="WebCallback.cs">
+      <DependentUpon>SIPEntitiesModel.tt</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
@@ -260,9 +333,38 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.Config" />
+    <None Include="App.Config">
+      <SubType>Designer</SubType>
+    </None>
+    <EntityDeploy Include="SIPEntities.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>SIPEntities.Designer.cs</LastGenOutput>
+    </EntityDeploy>
     <None Include="packages.config" />
-    <None Include="SIPSorceryEntities1.datasource" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.Config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="SIPEntitiesModel.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SIPEntitiesModel.Context.cs</LastGenOutput>
+      <DependentUpon>SIPEntities.edmx</DependentUpon>
+    </Content>
+    <Content Include="SIPEntitiesModel.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SIPEntitiesModel.cs</LastGenOutput>
+      <DependentUpon>SIPEntities.edmx</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DomainServices\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
