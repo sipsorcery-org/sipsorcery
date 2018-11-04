@@ -103,7 +103,7 @@
           <Property Name="datakey" Type="varchar" MaxLength="64" Nullable="false" />
           <Property Name="datavalue" Type="varchar" MaxLength="10000" Nullable="false" />
         </EntityType>
-        <EntityType Name="PayPalIPN">
+        <EntityType Name="paypalipn">
           <Key>
             <PropertyRef Name="ID" />
           </Key>
@@ -407,7 +407,7 @@
           <EntitySet Name="CustomerAccount" EntityType="Self.CustomerAccount" Schema="sipsorcery" store:Type="Tables" />
           <EntitySet Name="customers" EntityType="Self.customers" Schema="sipsorcery" store:Type="Tables" />
           <EntitySet Name="dialplandata" EntityType="Self.dialplandata" Schema="sipsorcery" store:Type="Tables" />
-          <EntitySet Name="PayPalIPN" EntityType="Self.PayPalIPN" Schema="sipsorcery" store:Type="Tables" />
+          <EntitySet Name="paypalipn" EntityType="Self.paypalipn" Schema="sipsorcery" store:Type="Tables" />
           <EntitySet Name="rate" EntityType="Self.rate" Schema="sipsorcery" store:Type="Tables" />
           <EntitySet Name="rtcc" EntityType="Self.rtcc" Schema="sipsorcery" store:Type="Tables" />
           <EntitySet Name="SimpleWizardRule" EntityType="Self.SimpleWizardRule" Schema="sipsorcery" store:Type="Tables" />
@@ -1392,7 +1392,7 @@
           </EntitySetMapping>
           <EntitySetMapping Name="PayPalIPNs">
             <EntityTypeMapping TypeName="SIPSorcery.Entities.PayPalIPN">
-              <MappingFragment StoreEntitySet="PayPalIPN">
+              <MappingFragment StoreEntitySet="paypalipn">
                 <ScalarProperty Name="ActionTaken" ColumnName="ActionTaken" />
                 <ScalarProperty Name="CustomerID" ColumnName="CustomerID" />
                 <ScalarProperty Name="ItemId" ColumnName="ItemId" />
@@ -1481,7 +1481,7 @@
         <EntityTypeShape EntityType="SIPSorcery.Entities.CustomerAccount" Width="1.5" PointX="14" PointY="14.625" />
         <EntityTypeShape EntityType="SIPSorcery.Entities.SimpleWizardRule" Width="2.125" PointX="15.125" PointY="7" IsExpanded="true" />
         <AssociationConnector Association="SIPSorcery.Entities.SIPDialPlanSimpleWizardRule" />
-        <EntityTypeShape EntityType="SIPSorcery.Entities.PayPalIPN" Width="1.5" PointX="0.75" PointY="14.75" />
+        <EntityTypeShape EntityType="SIPSorcery.Entities.PayPalIPN" Width="1.5" PointX="8.375" PointY="15.75" />
       </Diagram>
     </Diagrams>
   </Designer>
