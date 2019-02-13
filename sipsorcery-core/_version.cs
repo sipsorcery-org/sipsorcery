@@ -12,5 +12,5 @@
 // by using the '*' as shown below:
 
 [assembly: AssemblyVersion("7.1.0.3")]
-[assembly: AssemblyFileVersion("7.1.0.100")]
-[assembly: AssemblyInformationalVersion("7.1.97.0")]
+[assembly: AssemblyFileVersion("7.1.0.105")]
+[assembly: AssemblyInformationalVersion("7.1.102.0")]
