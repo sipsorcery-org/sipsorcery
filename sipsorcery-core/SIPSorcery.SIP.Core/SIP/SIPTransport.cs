@@ -1190,9 +1190,13 @@ namespace SIPSorcery.SIP
                                                 {
                                                     SendRequest(transaction.OutboundProxy, transaction.TransactionRequest);
                                                 }
-                                                else
+                                                else if (transaction.RemoteEndPoint != null)
                                                 {
                                                     SendRequest(transaction.RemoteEndPoint, transaction.TransactionRequest);
+                                                }
+                                                else
+                                                {
+                                                    SendRequest(transaction.TransactionRequest);
                                                 }
                                                 transaction.RequestRetransmit();
                                             }
