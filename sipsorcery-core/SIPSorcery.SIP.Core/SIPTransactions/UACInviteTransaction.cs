@@ -149,7 +149,7 @@ namespace SIPSorcery.SIP
                 {
                     // ACK for non 2xx response is part of the INVITE transaction and gets routed to the same endpoint as the INVITE.
                     var ackRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI, LocalSIPEndPoint);
-                    base.SendRequest(RemoteEndPoint, ackRequest);
+                    base.SendRequest(sipResponse.RemoteSIPEndPoint, ackRequest);
                 }
 
                 if (UACInviteTransactionFinalResponseReceived != null)
@@ -203,7 +203,7 @@ namespace SIPSorcery.SIP
                 ackRequest.Header.ContentType = contentType;
             }
 
-            base.SendRequest(ackRequest);
+            base.SendRequest(sipResponse.RemoteSIPEndPoint, ackRequest);
         }
 
         /// <summary>

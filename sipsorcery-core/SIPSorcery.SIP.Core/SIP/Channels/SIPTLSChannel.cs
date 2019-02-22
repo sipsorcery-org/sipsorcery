@@ -98,29 +98,31 @@ namespace SIPSorcery.SIP
         
         private new ILog logger = AppState.GetLogger("siptls-channel");
 
-        public SIPTLSChannel(X509Certificate2 a_serverCertificate, SslProtocols a_sslProtocols, bool a_clientCertificateRequired, bool a_checkCertificateRevocation,
+        public SIPTLSChannel(X509Certificate2 serverCertificate, SslProtocols sslProtocols, bool clientCertificateRequired, bool checkCertificateRevocation,
             SIPTLSChannelInboundCertificateValidationCallback inboundCertificateValidationCallback,
             SIPTLSChannelOutboundCertificateValidationCallback outboundCertificateValidationCallback,
-            IPEndPoint a_endPoint, bool a_useAnyAvailablePortForSend)
+            IPEndPoint endPoint, bool useAnyAvailablePortForSend)
         {
-            if (a_serverCertificate == null)
+            if (serverCertificate == null)
             {
-                throw new ArgumentNullException(nameof(a_serverCertificate), "An X509 certificate must be supplied for a SIP TLS channel.");
+                throw new ArgumentNullException(nameof(serverCertificate), "An X509 certificate must be supplied for a SIP TLS channel.");
             }
 
-            if (a_endPoint == null)
+            if (endPoint == null)
             {
-                throw new ArgumentNullException(nameof(a_endPoint), "An IP end point must be supplied for a SIP TLS channel.");
+                throw new ArgumentNullException(nameof(endPoint), "An IP end point must be supplied for a SIP TLS channel.");
             }
 
-            m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tls, a_endPoint);
+            m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tls, endPoint);
             m_isReliable = true;
             m_isTLS = true;
-            m_serverCertificate = a_serverCertificate;
-            m_sslProtocols = a_sslProtocols;
-            m_clientCertificateRequired = a_clientCertificateRequired;
-            m_checkCertificateRevocation = a_checkCertificateRevocation;
-            m_useAnyAvailablePortForSend = a_useAnyAvailablePortForSend;
+            m_serverCertificate = serverCertificate;
+            m_sslProtocols = sslProtocols;
+            m_clientCertificateRequired = clientCertificateRequired;
+            m_checkCertificateRevocation = checkCertificateRevocation;
+            m_useAnyAvailablePortForSend = useAnyAvailablePortForSend;
+            m_inboundCertificateValidationCallback = inboundCertificateValidationCallback;
+            m_outboundCertificateValidationCallback = outboundCertificateValidationCallback;
 
             m_connectAndSendSync = new object();
             m_endpointsToEvent = new Dictionary<string, AutoResetEvent>();
@@ -130,7 +132,7 @@ namespace SIPSorcery.SIP
         }
 
         public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint) : 
-            this(serverCertificate, SslProtocols.Default, false, false, null, null, endPoint, true)
+            this(serverCertificate, SslProtocols.Default, false, false, null, null, endPoint, false)
         {
         }
 
