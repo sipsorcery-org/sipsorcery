@@ -27,20 +27,24 @@ namespace SIPSorcery.SIP
         public IPAddress Address { get; private set; }
         public int Port { get; private set; }
 
+        public string Fqdn { get; private set; }
+
         private SIPEndPoint() { }
 
-        public SIPEndPoint(IPEndPoint endPoint)
+        public SIPEndPoint(IPEndPoint endPoint, string fqdn = null)
         {
             Protocol = SIPProtocolsEnum.udp;
             Address = endPoint.Address;
             Port = endPoint.Port;
+            Fqdn = fqdn;
         }
 
-        public SIPEndPoint(SIPProtocolsEnum protocol, IPAddress address, int port)
+        public SIPEndPoint(SIPProtocolsEnum protocol, IPAddress address, int port, string fqdn = null)
         {
             Protocol = protocol;
             Address = address;
             Port = (port == 0) ? (Protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort : port;
+            Fqdn = fqdn;
         }
 
         public SIPEndPoint(SIPURI sipURI)
@@ -51,11 +55,12 @@ namespace SIPSorcery.SIP
             Port = (endPoint.Port == 0) ? (Protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort : endPoint.Port;
         }
 
-        public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint)
+        public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint, string fqdn = null)
         {
             Protocol = protocol;
             Address = endPoint.Address;
             Port = endPoint.Port;
+            Fqdn = fqdn;
         }
 
         public static SIPEndPoint ParseSIPEndPoint(string sipEndPointStr)
@@ -210,7 +215,7 @@ namespace SIPSorcery.SIP
 
         public SIPEndPoint CopyOf()
         {
-            SIPEndPoint copy = new SIPEndPoint(Protocol, new IPAddress(Address.GetAddressBytes()), Port);
+            SIPEndPoint copy = new SIPEndPoint(Protocol, new IPAddress(Address.GetAddressBytes()), Port, Fqdn);
             return copy;
         }
 

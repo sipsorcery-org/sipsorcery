@@ -53,6 +53,10 @@ namespace SIPSorcery.SIP
     public delegate bool SIPTLSChannelInboundCertificateValidationCallback(SIPTLSChannel channel, IPEndPoint remoteEndpoint, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors);
     public delegate bool SIPTLSChannelOutboundCertificateValidationCallback(SIPTLSChannel channel, IPEndPoint remoteEndpoint, string serverFQDN, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors);
 
+    public delegate void SIPTLSChannelConnectionOpened(SIPTLSChannel channel, SIPConnection connection);
+    public delegate void SIPTLSChannelConnectionClosed(SIPTLSChannel channel, SIPConnection connection);
+
+
     public class SIPTLSChannel : SIPChannel
     {
         private const string ACCEPT_THREAD_NAME = "siptls-";
@@ -88,6 +92,7 @@ namespace SIPSorcery.SIP
 
         //private string m_certificatePath;
         private readonly X509Certificate2 m_serverCertificate;
+        private readonly string m_fqdn;
         private readonly SslProtocols m_sslProtocols;
         private readonly bool m_clientCertificateRequired;
         private readonly bool m_checkCertificateRevocation;
@@ -98,7 +103,11 @@ namespace SIPSorcery.SIP
         
         private new ILog logger = AppState.GetLogger("siptls-channel");
 
-        public SIPTLSChannel(X509Certificate2 serverCertificate, SslProtocols sslProtocols, bool clientCertificateRequired, bool checkCertificateRevocation,
+        public event SIPTLSChannelConnectionOpened ConnectionOpened;
+        public event SIPTLSChannelConnectionClosed ConnectionClosed;
+
+
+        public SIPTLSChannel(X509Certificate2 serverCertificate, string fqdn, SslProtocols sslProtocols, bool clientCertificateRequired, bool checkCertificateRevocation,
             SIPTLSChannelInboundCertificateValidationCallback inboundCertificateValidationCallback,
             SIPTLSChannelOutboundCertificateValidationCallback outboundCertificateValidationCallback,
             IPEndPoint endPoint, bool useAnyAvailablePortForSend)
@@ -113,7 +122,7 @@ namespace SIPSorcery.SIP
                 throw new ArgumentNullException(nameof(endPoint), "An IP end point must be supplied for a SIP TLS channel.");
             }
 
-            m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tls, endPoint);
+            m_fqdn = fqdn ?? serverCertificate.GetNameInfo(X509NameType.SimpleName, false);
             m_isReliable = true;
             m_isTLS = true;
             m_serverCertificate = serverCertificate;
@@ -128,15 +137,15 @@ namespace SIPSorcery.SIP
             m_endpointsToEvent = new Dictionary<string, AutoResetEvent>();
             m_endpointsToCountOfWaitingThreads = new Dictionary<string, int>();
 
-            Initialise();
+            Initialise(endPoint);
         }
 
         public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint) : 
-            this(serverCertificate, SslProtocols.Default, false, false, null, null, endPoint, false)
+            this(serverCertificate, null, SslProtocols.Default, false, false, null, null, endPoint, false)
         {
         }
 
-        private void Initialise()
+        private void Initialise(IPEndPoint localEndPoint)
         {
             try
             {
@@ -145,15 +154,11 @@ namespace SIPSorcery.SIP
                 if (m_outboundCertificateValidationCallback == null)
                     m_outboundCertificateValidationCallback = OutboundCertificateValidation;
 
-                m_tlsServerListener = new TcpListener(m_localSIPEndPoint.GetIPEndPoint());
+                m_tlsServerListener = new TcpListener(localEndPoint);
                 m_tlsServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
                 m_tlsServerListener.Start(MAX_TLS_CONNECTIONS);
-
-                if (m_localSIPEndPoint.Port == 0)
-                {
-                    m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tls, (IPEndPoint)m_tlsServerListener.Server.LocalEndPoint);
-                }
+                m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tls, (IPEndPoint)m_tlsServerListener.Server.LocalEndPoint, m_fqdn);
 
                 LocalTCPSockets.Add(((IPEndPoint)m_tlsServerListener.Server.LocalEndPoint).ToString());
 
@@ -305,6 +310,8 @@ namespace SIPSorcery.SIP
             {
                 SignalNextWaitingThreadAndPossibleRemoveWaitHandle(sipTlsConnection.RemoteEndPoint);
             }
+
+            FireConnectionOpened(sipTlsConnection);
 
             try
             {
@@ -641,6 +648,8 @@ namespace SIPSorcery.SIP
                 return;
             }
 
+            FireConnectionOpened(callerConnection);
+
             try
             {
                 callerConnection.SIPSocketDisconnected += SIPTLSSocketDisconnected;
@@ -737,6 +746,7 @@ namespace SIPSorcery.SIP
 
         private void SIPTLSSocketDisconnected(IPEndPoint remoteEndPoint)
         {
+            SIPConnection closedConnection = null;
             try
             {
                 logger.Debug("TLS socket from " + remoteEndPoint + " disconnected.");
@@ -745,6 +755,7 @@ namespace SIPSorcery.SIP
 
                 lock (m_connectedSockets)
                 {
+                    m_connectedSockets.TryGetValue(k, out closedConnection);
                     m_connectedSockets.Remove(k);
                     m_connectingSockets.Remove(k);
                 }
@@ -753,6 +764,9 @@ namespace SIPSorcery.SIP
             {
                 logger.Error("Exception SIPTLSClientDisconnected. " + excp);
             }
+
+            if (null != closedConnection)
+                FireConnectionClosed(closedConnection);
         }
 
         private void SIPTLSMessageReceived(SIPChannel channel, SIPEndPoint remoteEndPoint, byte[] buffer)
@@ -923,6 +937,7 @@ namespace SIPSorcery.SIP
                 {
                     foreach (SIPConnection tcpConnection in m_connectedSockets.Values)
                     {
+                        FireConnectionClosed(tcpConnection);
                         try
                         {
                             tcpConnection.SIPStream.Close();
@@ -935,6 +950,29 @@ namespace SIPSorcery.SIP
                 }
             }
         }
+
+        private void FireConnectionClosed(SIPConnection closedConnection)
+        {
+            try
+            {
+                ConnectionClosed?.Invoke(this,closedConnection);
+            }
+            catch
+            {
+            }
+        }
+
+        private void FireConnectionOpened(SIPConnection openedConnection)
+        {
+            try
+            {
+                ConnectionOpened?.Invoke(this, openedConnection);
+            }
+            catch
+            {
+            }
+        }
+
 
         private void Dispose(bool disposing)
         {

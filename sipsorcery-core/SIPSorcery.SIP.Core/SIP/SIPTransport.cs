@@ -598,7 +598,7 @@ namespace SIPSorcery.SIP
 
                 if (sipChannel.IsTLS)
                 {
-                    sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host);
+                    sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), dstEndPoint.Fqdn);
                 }
                 else
                 {
@@ -809,7 +809,7 @@ namespace SIPSorcery.SIP
                 }
                 else if (dstEndPoint != null)
                 {
-                    SendResponse(sipChannel, new SIPEndPoint(topVia.Transport, dstEndPoint.GetIPEndPoint()), sipResponse);
+                    SendResponse(sipChannel, new SIPEndPoint(topVia.Transport, dstEndPoint.GetIPEndPoint(), dstEndPoint.Fqdn), sipResponse);
                 }
                 else
                 {
@@ -1777,7 +1777,7 @@ namespace SIPSorcery.SIP
                 string callId = CallProperties.CreateNewCallId();
                 response.Header = new SIPHeader(from, to, cSeq, callId);
                 response.Header.CSeqMethod = SIPMethodsEnum.NONE;
-                response.Header.Vias.PushViaHeader(new SIPViaHeader(new SIPEndPoint(localSIPEndPoint.Protocol, remoteEndPoint.GetIPEndPoint()), CallProperties.CreateBranchId()));
+                response.Header.Vias.PushViaHeader(new SIPViaHeader(new SIPEndPoint(localSIPEndPoint.Protocol, remoteEndPoint.GetIPEndPoint(), remoteEndPoint.Fqdn), CallProperties.CreateBranchId()));
                 response.Header.MaxForwards = Int32.MinValue;
                 response.Header.Allow = ALLOWED_SIP_METHODS;
 
