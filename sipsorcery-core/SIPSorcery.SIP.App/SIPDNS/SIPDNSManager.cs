@@ -208,7 +208,7 @@ namespace SIPSorcery.SIP.App
                 SIPURI sipURI = result.URI;
                 foreach (RecordA aRecord in aRecordResponse.RecordsA)
                 {
-                    SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, new IPEndPoint(aRecord.Address, port), host.Trim(new char[]{' ', '.'})), aRecord.RR.TTL);
+                    SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, new IPEndPoint(aRecord.Address, port), host.Trim(new char[]{' ', '.'})), aRecord.RR == null ? 0 : aRecord.RR.TTL);
                     result.AddLookupResult(sipLookupEndPoint);
                     SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS A record found for " + host + ", result " + sipLookupEndPoint.LookupEndPoint.ToString() + ".", null));
                 }

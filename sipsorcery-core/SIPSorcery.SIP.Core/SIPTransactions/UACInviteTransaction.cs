@@ -51,16 +51,18 @@ namespace SIPSorcery.SIP
         public event SIPTransactionResponseReceivedDelegate UACInviteTransactionFinalResponseReceived;
         public event SIPTransactionTimedOutDelegate UACInviteTransactionTimedOut;
 
+        private List<string> _customHeader;
         private bool _sendOkAckManually = false;
 
         /// <param name="sendOkAckManually">If set an ACK request for the 2xx response will NOT be sent and it will be up to the application to explicitly call the SendACK request.</param>
-        internal UACInviteTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy, bool sendOkAckManually = false)
+        internal UACInviteTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy, List<string> customHeader, bool sendOkAckManually = false)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.Invite;
             m_localTag = sipRequest.Header.From.FromTag;
             SIPEndPoint localEP = SIPEndPoint.TryParse(sipRequest.Header.ProxySendFrom) ?? localSIPEndPoint;
             CDR = new SIPCDR(SIPCallDirection.Out, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, localEP, dstEndPoint);
+            _customHeader = customHeader;
             _sendOkAckManually = sendOkAckManually;
 
             TransactionFinalResponseReceived += UACInviteTransaction_TransactionFinalResponseReceived;
@@ -275,6 +277,7 @@ namespace SIPSorcery.SIP
             SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
             ackRequest.Header.Vias.PushViaHeader(viaHeader);
 
+            AddCustomHeader(ackRequest);
             return ackRequest;
         }
 
@@ -297,6 +300,7 @@ namespace SIPSorcery.SIP
             SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, sipResponse.Header.Vias.TopViaHeader.Branch);
             ackRequest.Header.Vias.PushViaHeader(viaHeader);
 
+            AddCustomHeader(ackRequest);
             return ackRequest;
         }
 
@@ -317,5 +321,18 @@ namespace SIPSorcery.SIP
                 throw;
             }
         }
+
+        protected void AddCustomHeader(SIPRequest request)
+        {
+            if (_customHeader != null && _customHeader.Count > 0)
+            {
+                foreach (string header in _customHeader)
+                {
+                    if (!header.IsNullOrBlank() && !request.Header.UnknownHeaders.Contains(header))
+                        request.Header.UnknownHeaders.Add(header);
+                }
+            }
+        }
+
     }
 }

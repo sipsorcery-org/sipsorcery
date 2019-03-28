@@ -444,7 +444,7 @@ namespace SIPSorcery.SIP
             m_sipTransport.SendSIPReliable(this);
         }
 
-        protected SIPResponse GetInfoResponse(SIPRequest sipRequest, SIPResponseStatusCodesEnum sipResponseCode)
+        protected SIPResponse GetInfoResponse(SIPRequest sipRequest, SIPResponseStatusCodesEnum sipResponseCode, List<string> customHeader)
         {
             try
             {
@@ -456,6 +456,15 @@ namespace SIPSorcery.SIP
                 informationalResponse.Header.Vias = requestHeader.Vias;
                 informationalResponse.Header.MaxForwards = Int32.MinValue;
                 informationalResponse.Header.Timestamp = requestHeader.Timestamp;
+
+                if (customHeader != null && customHeader.Count > 0)
+                {
+                    foreach (string header in customHeader)
+                    {
+                        if (!header.IsNullOrBlank())
+                            informationalResponse.Header.UnknownHeaders.Add(header);
+                    }
+                }
 
                 return informationalResponse;
             }

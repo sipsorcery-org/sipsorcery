@@ -86,7 +86,7 @@ namespace SIPSorcery.SIP.App
             {
                 SIPRequest req = GetRequest(method);
                 SIPNonInviteTransaction tran = m_sipTransport.CreateNonInviteTransaction(req, null, m_sipTransport.GetDefaultSIPEndPoint(), m_outboundProxy);
-                
+
                 ManualResetEvent waitForResponse = new ManualResetEvent(false);
                 tran.NonInviteTransactionTimedOut += RequestTimedOut;
                 tran.NonInviteTransactionFinalResponseReceived += ServerResponseReceived;
@@ -252,7 +252,6 @@ namespace SIPSorcery.SIP.App
 
                 authRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(digest);
                 authRequest.Header.AuthenticationHeader.SIPDigest.Response = digest.Digest;
-
                 return authRequest;
             }
             catch (Exception excp)

@@ -56,6 +56,9 @@ namespace SIPSorcery.SIP.App
         private QueueNewCallDelegate QueueNewCall_External;
         private SIPTransport m_sipTransport;
 
+        private List<string> m_uacHeader;
+        private List<string> m_uasHeader;
+
         // Real-time call control properties (not used by this user agent).
         //public string AccountCode { get; set; }
         //public decimal ReservedCredit { get; set; }
@@ -128,19 +131,35 @@ namespace SIPSorcery.SIP.App
         public SIPDialogue SIPDialogue { get { return m_sipDialogue; } }
         //private SIPAccount m_destinationSIPAccount;
 
+
         public SIPB2BUserAgent(
             SIPMonitorLogDelegate logDelegate,
             QueueNewCallDelegate queueCall,
             SIPTransport sipTranpsort,
             string uacOwner,
-            string uacAdminMemberId
-            )
+            string uacAdminMemberId,
+            List<string> uacHeader,
+            List<string> uasHeader
+        )
         {
             Log_External = logDelegate;
             QueueNewCall_External = queueCall;
             m_sipTransport = sipTranpsort;
             m_uacOwner = uacOwner;
             m_uacAdminMemberId = uacAdminMemberId;
+            m_uacHeader = uacHeader;
+            m_uasHeader = uasHeader;
+        }
+
+
+        public SIPB2BUserAgent(
+            SIPMonitorLogDelegate logDelegate,
+            QueueNewCallDelegate queueCall,
+            SIPTransport sipTranpsort,
+            string uacOwner,
+            string uacAdminMemberId
+            ) : this(logDelegate, queueCall, sipTranpsort, uacOwner, uacAdminMemberId, null, null)
+        {
         }
 
         #region UAC methods.
@@ -161,7 +180,7 @@ namespace SIPSorcery.SIP.App
                 uacInviteRequest.RemoteSIPEndPoint = m_blackhole;
 
                 // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
-                m_uacTransaction = m_sipTransport.CreateUACTransaction(uacInviteRequest, m_blackhole, m_blackhole, null);
+                m_uacTransaction = m_sipTransport.CreateUACTransaction(uacInviteRequest, m_blackhole, m_blackhole, null, m_uacHeader);
                 if (m_uacTransaction.CDR != null)
                 {
                     m_uacTransaction.CDR.Owner = m_uacOwner;
@@ -180,7 +199,7 @@ namespace SIPSorcery.SIP.App
                 uasInviteRequest.LocalSIPEndPoint = m_blackhole;
                 uasInviteRequest.RemoteSIPEndPoint = m_blackhole;
                 uasInviteRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-                m_uasTransaction = m_sipTransport.CreateUASTransaction(uasInviteRequest, m_blackhole, m_blackhole, null);
+                m_uasTransaction = m_sipTransport.CreateUASTransaction(uasInviteRequest, m_blackhole, m_blackhole, null, m_uasHeader);
 
                 SetOwner(sipCallDescriptor.ToSIPAccount.Owner, sipCallDescriptor.ToSIPAccount.AdminMemberId);
                 //m_uasTransaction.TransactionTraceMessage += TransactionTraceMessage;
@@ -263,6 +282,7 @@ namespace SIPSorcery.SIP.App
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "B2BUA call progressing with " + progressStatus + ".", m_uacOwner));
                             SIPResponse uasProgressResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, progressStatus, reasonPhrase);
+                            AddCustomHeader(uasProgressResponse, m_uasHeader);
                             m_uasTransaction.SendInformationalResponse(uasProgressResponse);
 
                             SIPResponse uacProgressResponse = SIPTransport.GetResponse(m_uacTransaction.TransactionRequest, progressStatus, reasonPhrase);
@@ -278,6 +298,7 @@ namespace SIPSorcery.SIP.App
                                     uacProgressResponse.Header.UnknownHeaders.Add(header);
                                 }
                             }
+                            AddCustomHeader(uacProgressResponse, m_uacHeader);
                             m_uacTransaction.GotResponse(m_blackhole, m_blackhole, uacProgressResponse);
                             CallRinging((ISIPClientUserAgent)this, uacProgressResponse);
                         }
@@ -312,11 +333,13 @@ namespace SIPSorcery.SIP.App
                 }
 
                 SIPResponse uasOkResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, SIPResponseStatusCodesEnum.Ok, null);
+                AddCustomHeader(uasOkResponse, m_uasHeader);
                 m_uasTransaction.SendFinalResponse(uasOkResponse);
                 m_uasTransaction.ACKReceived(m_blackhole, m_blackhole, null);
 
                 SIPResponse uacOkResponse = SIPTransport.GetResponse(m_uacTransaction.TransactionRequest, SIPResponseStatusCodesEnum.Ok, null);
                 uacOkResponse.Header.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, new SIPURI(SIPSchemesEnum.sip, m_blackhole)) };
+                AddCustomHeader(uacOkResponse, m_uacHeader);
                 m_uacTransaction.GotResponse(m_blackhole, m_blackhole, uacOkResponse);
                 uacOkResponse.Header.ContentType = contentType;
                 if (!body.IsNullOrBlank())
@@ -349,9 +372,11 @@ namespace SIPSorcery.SIP.App
             }
 
             SIPResponse uasfailureResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, rejectCode, rejectReason);
+            AddCustomHeader(uasfailureResponse, m_uasHeader);
             m_uasTransaction.SendFinalResponse(uasfailureResponse);
 
             SIPResponse uacfailureResponse = SIPTransport.GetResponse(m_uacTransaction.TransactionRequest, rejectCode, rejectReason);
+            AddCustomHeader(uacfailureResponse, m_uacHeader);
             if (customHeaders != null && customHeaders.Length > 0)
             {
                 foreach (string header in customHeaders)
@@ -446,5 +471,18 @@ namespace SIPSorcery.SIP.App
 
             return inviteRequest;
         }
+
+        private static void AddCustomHeader(SIPResponse response, List<string> customHeader)
+        {
+            if (customHeader != null && customHeader.Count > 0)
+            {
+                foreach (string header in customHeader)
+                {
+                    if (!header.IsNullOrBlank() && !response.Header.UnknownHeaders.Contains(header))
+                        response.Header.UnknownHeaders.Add(header);
+                }
+            }
+        }
+
     }
 }

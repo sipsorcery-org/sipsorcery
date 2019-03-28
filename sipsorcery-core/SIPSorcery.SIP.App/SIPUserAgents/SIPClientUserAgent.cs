@@ -56,6 +56,8 @@ namespace SIPSorcery.SIP.App
         private SIPEndPoint m_localSIPEndPoint;
         private SIPMonitorLogDelegate Log_External;
 
+        private List<string> m_customHeader;
+
         public string Owner { get; private set; }                   // If the UAC is authenticated holds the username of the client.
         public string AdminMemberId { get; private set; }           // If the UAC is authenticated holds the username of the client.
 
@@ -116,13 +118,25 @@ namespace SIPSorcery.SIP.App
             string owner,
             string adminMemberId,
             SIPMonitorLogDelegate logDelegate
-            )
+            ) : this(sipTransport, outboundProxy, owner, adminMemberId, null, logDelegate)
+        {
+        }
+
+        public SIPClientUserAgent(
+            SIPTransport sipTransport,
+            SIPEndPoint outboundProxy,
+            string owner,
+            string adminMemberId,
+            List<string> customHeader,
+            SIPMonitorLogDelegate logDelegate
+        ) 
         {
             m_sipTransport = sipTransport;
             m_outboundProxy = (outboundProxy != null) ? SIPEndPoint.ParseSIPEndPoint(outboundProxy.ToString()) : null;
             Owner = owner;
             AdminMemberId = adminMemberId;
             Log_External = logDelegate;
+            m_customHeader = customHeader;
 
             // If external logging is not required assign an empty handler to stop null reference exceptions.
             if (Log_External == null)
@@ -131,9 +145,10 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+
 #if !SILVERLIGHT
 
-        public SIPClientUserAgent(
+            public SIPClientUserAgent(
             SIPTransport sipTransport,
             SIPEndPoint outboundProxy,
             string owner,
@@ -144,7 +159,23 @@ namespace SIPSorcery.SIP.App
             RtccGetBalanceDelegate rtccGetBalance,
             RtccReserveInitialCreditDelegate rtccReserveInitialCredit,
             RtccUpdateCdrDelegate rtccUpdateCdr
-            ) : this(sipTransport, outboundProxy, owner, adminMemberId, logDelegate)
+            ) : this(sipTransport, outboundProxy, owner, adminMemberId, null, logDelegate, rtccGetCustomer, rtccGetRate, rtccGetBalance, rtccReserveInitialCredit, rtccUpdateCdr)
+        {
+        }
+
+        public SIPClientUserAgent(
+            SIPTransport sipTransport,
+            SIPEndPoint outboundProxy,
+            string owner,
+            string adminMemberId,
+            List<string> customHeader,
+            SIPMonitorLogDelegate logDelegate,
+            RtccGetCustomerDelegate rtccGetCustomer,
+            RtccGetRateDelegate rtccGetRate,
+            RtccGetBalanceDelegate rtccGetBalance,
+            RtccReserveInitialCreditDelegate rtccReserveInitialCredit,
+            RtccUpdateCdrDelegate rtccUpdateCdr
+        ) : this(sipTransport, outboundProxy, owner, adminMemberId, null, logDelegate)
         {
             RtccGetCustomer_External = rtccGetCustomer;
             RtccGetRate_External = rtccGetRate;
@@ -299,7 +330,7 @@ namespace SIPSorcery.SIP.App
                         SIPRequest switchServerInvite = GetInviteRequest(m_sipCallDescriptor, CallProperties.CreateBranchId(), CallProperties.CreateNewCallId(), m_localSIPEndPoint, routeSet, content, sipCallDescriptor.ContentType);
 
                         // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
-                        m_serverTransaction = m_sipTransport.CreateUACTransaction(switchServerInvite, m_serverEndPoint, m_localSIPEndPoint, m_outboundProxy);
+                        m_serverTransaction = m_sipTransport.CreateUACTransaction(switchServerInvite, m_serverEndPoint, m_localSIPEndPoint, m_outboundProxy, m_customHeader);
                         m_serverTransaction.CDR.DialPlanContextID = m_sipCallDescriptor.DialPlanContextID;
 
                         #region Real-time call control processing.
@@ -622,7 +653,8 @@ namespace SIPSorcery.SIP.App
 
                             // Create a new UAC transaction to establish the authenticated server call.
                             var originalCallTransaction = m_serverTransaction;
-                            m_serverTransaction = m_sipTransport.CreateUACTransaction(authInviteRequest, m_serverEndPoint, localSIPEndPoint, m_outboundProxy);
+                            m_serverTransaction = m_sipTransport.CreateUACTransaction(authInviteRequest, m_serverEndPoint, localSIPEndPoint, m_outboundProxy, m_customHeader);
+
                             if (m_serverTransaction.CDR != null)
                             {
                                 m_serverTransaction.CDR.Owner = Owner;
@@ -935,6 +967,7 @@ namespace SIPSorcery.SIP.App
             cancelHeader.Routes = inviteHeader.Routes;
             cancelHeader.ProxySendFrom = inviteHeader.ProxySendFrom;
             cancelHeader.Vias = inviteHeader.Vias;
+            AddCustomHeader(cancelRequest);
 
             return cancelRequest;
         }
@@ -958,6 +991,7 @@ namespace SIPSorcery.SIP.App
             SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
             byeRequest.Header.Vias.PushViaHeader(viaHeader);
 
+            AddCustomHeader(byeRequest);
             return byeRequest;
         }
 
@@ -985,6 +1019,7 @@ namespace SIPSorcery.SIP.App
                 updateHeader.CRMPictureURL = crmHeaders.AvatarURL;
             }
 
+            AddCustomHeader(updateRequest);
             return updateRequest;
         }
 
@@ -1047,7 +1082,20 @@ namespace SIPSorcery.SIP.App
             SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
             byeRequest.Header.Vias.PushViaHeader(viaHeader);
 
+            AddCustomHeader(byeRequest);
             return byeRequest;
+        }
+
+        private void AddCustomHeader(SIPRequest request)
+        {
+            if (m_customHeader != null && m_customHeader.Count > 0)
+            {
+                foreach (string header in m_customHeader)
+                {
+                    if (!header.IsNullOrBlank() && !request.Header.UnknownHeaders.Contains(header))
+                        request.Header.UnknownHeaders.Add(header);
+                }
+            }
         }
     }
 }

@@ -55,6 +55,7 @@ namespace SIPSorcery.SIP
         private static string m_sipServerAgent = SIPConstants.SIP_SERVER_STRING;
 
         private IPAddress m_contactIPAddress;   // If set this IP address should be used in the Contact header of the Ok response so that ACK requests can be delivered correctly.
+        private List<string> m_customHeader;
 
         public string LocalTag
         {
@@ -72,6 +73,7 @@ namespace SIPSorcery.SIP
             SIPEndPoint localSIPEndPoint,
             SIPEndPoint outboundProxy,
             IPAddress contactIPAddress,
+            List<string> customHeader,
             bool noCDR = false)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
         {
@@ -98,6 +100,8 @@ namespace SIPSorcery.SIP
             {
                 CDR = new SIPCDR(SIPCallDirection.In, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, localEP, remoteEP);
             }
+
+            m_customHeader = customHeader;
 
             //UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
 
@@ -151,7 +155,7 @@ namespace SIPSorcery.SIP
                 {
                     if (TransactionState != SIPTransactionStatesEnum.Trying)
                     {
-                        SIPResponse tryingResponse = GetInfoResponse(m_transactionRequest, SIPResponseStatusCodesEnum.Trying);
+                        SIPResponse tryingResponse = GetInfoResponse(m_transactionRequest, SIPResponseStatusCodesEnum.Trying, m_customHeader);
                         SendInformationalResponse(tryingResponse);
                     }
 
@@ -164,6 +168,7 @@ namespace SIPSorcery.SIP
                     {
                         // Nobody wants the call so return an error response.
                         SIPResponse declinedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Nothing listening");
+                        AddCustomHeader(declinedResponse);
                         SendFinalResponse(declinedResponse);
                     }
                 }
@@ -224,6 +229,7 @@ namespace SIPSorcery.SIP
                     base.Cancel();
 
                     SIPResponse cancelResponse = SIPTransport.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
+                    AddCustomHeader(cancelResponse);
                     SendFinalResponse(cancelResponse);
 
                     if (UASInviteTransactionCancelled != null)
@@ -273,6 +279,7 @@ namespace SIPSorcery.SIP
                 okResponse.Header.ContentType = contentType;
                 okResponse.Header.ContentLength = (messageBody != null) ? messageBody.Length : 0;
 
+                AddCustomHeader(okResponse);
                 return okResponse;
             }
             catch (Exception excp)
@@ -281,5 +288,18 @@ namespace SIPSorcery.SIP
                 throw excp;
             }
         }
+
+        protected void AddCustomHeader(SIPResponse response)
+        {
+            if (m_customHeader != null && m_customHeader.Count > 0)
+            {
+                foreach (string header in m_customHeader)
+                {
+                    if (!header.IsNullOrBlank() && !response.Header.UnknownHeaders.Contains(header))
+                        response.Header.UnknownHeaders.Add(header);
+                }
+            }
+        }
+
     }
 }

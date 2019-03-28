@@ -36,6 +36,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
 using log4net;
+using SIPSorcery.Sys;
 
 #if UNITTEST
 using NUnit.Framework;
@@ -48,8 +49,9 @@ namespace SIPSorcery.SIP
         public event SIPTransactionResponseReceivedDelegate CancelTransactionFinalResponseReceived;
 
         private UASInviteTransaction m_originalTransaction;
+	    private List<string> m_customCancelHeader;
 
-        internal SIPCancelTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, UASInviteTransaction originalTransaction)
+        internal SIPCancelTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, UASInviteTransaction originalTransaction, List<string> customCancelHeader)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, originalTransaction.OutboundProxy)
         {
             m_originalTransaction = originalTransaction;
@@ -122,6 +124,7 @@ namespace SIPSorcery.SIP
                 cancelResponse.Header.Vias = requestHeader.Vias;
                 cancelResponse.Header.MaxForwards = Int32.MinValue;
 
+                AddCustomHeader(cancelResponse);
                 return cancelResponse;
             }
             catch (Exception excp)
@@ -130,5 +133,18 @@ namespace SIPSorcery.SIP
                 throw excp;
             }
         }
+
+	    protected void AddCustomHeader(SIPResponse response)
+	    {
+	        if (m_customCancelHeader != null && m_customCancelHeader.Count > 0)
+	        {
+	            foreach (string header in m_customCancelHeader)
+	            {
+	                if (!header.IsNullOrBlank() && !response.Header.UnknownHeaders.Contains(header))
+    	                response.Header.UnknownHeaders.Add(header);
+	            }
+	        }
+	    }
+
     }
 }
