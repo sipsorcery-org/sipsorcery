@@ -98,6 +98,12 @@ namespace SIPSorcery.SIP
         public event SIPTransportSIPBadMessageDelegate SIPBadRequestInTraceEvent;
         public event SIPTransportSIPBadMessageDelegate SIPBadResponseInTraceEvent;
 
+        public event SIPTransportRequestModifyDelegate SIPRequestInBeforeUseEvent;
+        public event SIPTransportRequestModifyDelegate SIPRequestOutBeforeSendEvent;
+        public event SIPTransportResponseModifyDelegate SIPResponseInBeforeUseEvent;
+        public event SIPTransportResponseModifyDelegate SIPResponseOutBeforeSendEvent;
+
+
         public string PerformanceMonitorPrefix;                              // Allows an application to set the prefix for the performance monitor counter it wants to use for tracking the SIP transport metrics.
 
         public IPAddress ContactIPAddress;          // If set this address will be passed to the UAS Invite transaction so it can be used as the Contact address in Ok responses.
@@ -594,6 +600,8 @@ namespace SIPSorcery.SIP
                     throw new ApplicationException("No channels are configured in the SIP transport layer. The request could not be sent.");
                 }
 
+                FireSIPRequestOutBeforeSendEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, ref sipRequest);
+
                 sipRequest.Header.ContentLength = (sipRequest.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipRequest.Body) : 0;
 
                 if (sipChannel.IsTLS)
@@ -605,10 +613,7 @@ namespace SIPSorcery.SIP
                     sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()));
                 }
 
-                if (SIPRequestOutTraceEvent != null)
-                {
-                    FireSIPRequestOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipRequest);
-                }
+                FireSIPRequestOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipRequest);
             }
             catch (ApplicationException appExcp)
             {
@@ -833,13 +838,12 @@ namespace SIPSorcery.SIP
                     throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
                 }
 
+                FireSIPResponseOutBeforeSendEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, ref sipResponse);
+
                 sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
                 sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
 
-                if (SIPRequestOutTraceEvent != null)
-                {
-                    FireSIPResponseOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipResponse);
-                }
+                FireSIPResponseOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipResponse);
             }
             catch (ApplicationException appExcp)
             {
@@ -1328,10 +1332,9 @@ namespace SIPSorcery.SIP
 
                                         SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessage);
 
-                                        if (SIPResponseInTraceEvent != null)
-                                        {
-                                            FireSIPResponseInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, sipResponse);
-                                        }
+                                        FireSIPResponseInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, sipResponse);
+
+                                        FireSIPResponseInBeforeUseEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, ref sipResponse);
 
                                         if (m_transactionEngine != null && m_transactionEngine.Exists(sipResponse))
                                         {
@@ -1387,10 +1390,9 @@ namespace SIPSorcery.SIP
                                             throw new SIPValidationException(sipRequestErrorField, sipRequestValidationError);
                                         }
 
-                                        if (SIPRequestInTraceEvent != null)
-                                        {
-                                            FireSIPRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, sipRequest);
-                                        }
+                                        FireSIPRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, sipRequest);
+
+                                        FireSIPRequestInBeforeUseEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, ref sipRequest);
 
                                         // Stateful cores will create transactions once they get the request and the transport layer will use those transactions.
                                         // Stateless cores will not be affected by this step as the transaction layer will always return false.
@@ -1624,10 +1626,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (SIPRequestInTraceEvent != null)
-                {
-                    SIPRequestInTraceEvent(localSIPEndPoint, remoteEndPoint, sipRequest);
-                }
+                SIPRequestInTraceEvent?.Invoke(localSIPEndPoint, remoteEndPoint, sipRequest);
             }
             catch (Exception excp)
             {
@@ -1639,10 +1638,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (SIPRequestOutTraceEvent != null)
-                {
-                    SIPRequestOutTraceEvent(localSIPEndPoint, remoteEndPoint, sipRequest);
-                }
+                SIPRequestOutTraceEvent?.Invoke(localSIPEndPoint, remoteEndPoint, sipRequest);
             }
             catch (Exception excp)
             {
@@ -1654,10 +1650,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (SIPResponseInTraceEvent != null)
-                {
-                    SIPResponseInTraceEvent(localSIPEndPoint, remoteEndPoint, sipResponse);
-                }
+                SIPResponseInTraceEvent?.Invoke(localSIPEndPoint, remoteEndPoint, sipResponse);
             }
             catch (Exception excp)
             {
@@ -1669,10 +1662,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (SIPResponseOutTraceEvent != null)
-                {
-                    SIPResponseOutTraceEvent(localSIPEndPoint, remoteEndPoint, sipResponse);
-                }
+                SIPResponseOutTraceEvent?.Invoke(localSIPEndPoint, remoteEndPoint, sipResponse);
             }
             catch (Exception excp)
             {
@@ -1686,10 +1676,7 @@ namespace SIPSorcery.SIP
             {
                 //logger.Warn("SIPTransport SIPValidationException SIPRequest. Field=" + sipErrorField + ", Message=" + message + ", Remote=" + remoteEndPoint.ToString() + ".");
 
-                if (SIPBadRequestInTraceEvent != null)
-                {
-                    SIPBadRequestInTraceEvent(localSIPEndPoint, remoteEndPoint, message, sipErrorField, rawMessage);
-                }
+                SIPBadRequestInTraceEvent?.Invoke(localSIPEndPoint, remoteEndPoint, message, sipErrorField, rawMessage);
             }
             catch (Exception excp)
             {
@@ -1701,10 +1688,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (SIPBadResponseInTraceEvent != null)
-                {
-                    SIPBadResponseInTraceEvent(localSIPEndPoint, remoteEndPoint, message, sipErrorField, rawMessage);
-                }
+                SIPBadResponseInTraceEvent?.Invoke(localSIPEndPoint, remoteEndPoint, message, sipErrorField, rawMessage);
             }
             catch (Exception excp)
             {
@@ -1713,6 +1697,59 @@ namespace SIPSorcery.SIP
         }
 
         #endregion
+
+
+        #region SIPMessage manipulation hooks
+        private void FireSIPRequestInBeforeUseEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, ref SIPRequest sipRequest)
+        { 
+            try
+            {
+                SIPRequestInBeforeUseEvent?.Invoke(this, localSIPEndPoint, remoteEndPoint, ref sipRequest);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception FireSIPRequestInBeforeUseEvent. " + excp.Message);
+            }
+        }
+
+        private void FireSIPRequestOutBeforeSendEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, ref SIPRequest sipRequest)
+        {
+            try
+            {
+                SIPRequestOutBeforeSendEvent?.Invoke(this, localSIPEndPoint, remoteEndPoint, ref sipRequest);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception FireSIPRequestOutBeforeSendEvent. " + excp.Message);
+            }
+        }
+
+        private void FireSIPResponseInBeforeUseEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, ref SIPResponse sipResponse)
+        {
+            try
+            {
+                SIPResponseInBeforeUseEvent?.Invoke(this, localSIPEndPoint, remoteEndPoint, ref sipResponse);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception FireSIPResponseInBeforeUseEvent. " + excp.Message);
+            }
+        }
+
+        private void FireSIPResponseOutBeforeSendEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, ref SIPResponse sipResponse)
+        {
+            try
+            {
+                SIPResponseOutBeforeSendEvent?.Invoke(this, localSIPEndPoint, remoteEndPoint, ref sipResponse);
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception FireSIPResponseOutBeforeSendEvent. " + excp.Message);
+            }
+        }
+
+        #endregion
+
 
         #region Request, Response and Transaction retrieval and creation methods.
 

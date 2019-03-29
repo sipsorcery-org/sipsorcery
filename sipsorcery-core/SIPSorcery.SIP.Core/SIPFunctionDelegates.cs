@@ -50,6 +50,9 @@ namespace SIPSorcery.SIP
     public delegate void SIPTransportSIPBadMessageDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remotePoint, string message, SIPValidationFieldsEnum errorField, string rawMessage);
     public delegate void STUNRequestReceivedDelegate(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] buffer, int bufferLength);
     public delegate SIPDNSLookupResult ResolveSIPEndPointDelegate(SIPURI uri, bool async);
+    public delegate void SIPTransportRequestModifyDelegate(SIPTransport sipTransport, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, ref SIPRequest sipRequest);
+    public delegate void SIPTransportResponseModifyDelegate(SIPTransport sipTransport, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, ref SIPResponse sipResponse);
+
 
     // SIP Transaction delegates.
     public delegate void SIPTransactionStateChangeDelegate(SIPTransaction sipTransaction);
