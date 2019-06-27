@@ -109,7 +109,7 @@ namespace SIPSorcery.Sys.Net
                 } while (!isAvailable && port < IPEndPoint.MaxPort);
 
                 if (!isAvailable)
-                    throw new ApplicationException("Not able to find a free TCP port.");
+                    throw new ApplicationException("Not able to find a free UDP port.");
 
                 return port;
             }
