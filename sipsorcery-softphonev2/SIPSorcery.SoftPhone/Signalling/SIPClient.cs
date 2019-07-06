@@ -69,10 +69,10 @@ namespace SIPSorcery.SoftPhone
         private MediaManager _mediaManager;
         bool _isIntialised = false;
 
-        public event Action CallAnswer;                 // Fires when an incoming SIP call is answered.
+        public event Action CallAnswer;                 // Fires when an outgoing SIP call is answered.
         public event Action CallEnded;                  // Fires when an incoming or outgoing call is over.
         public event Action IncomingCall;               // Fires when an incoming call request is received.
-        public event Action<string> StatusMessage;      // Fires when the SIP client has a staus message it wants to inform the UI about.
+        public event Action<string> StatusMessage;      // Fires when the SIP client has a status message it wants to inform the UI about.
 
         public SIPTransport SIPClientTransport
         {
