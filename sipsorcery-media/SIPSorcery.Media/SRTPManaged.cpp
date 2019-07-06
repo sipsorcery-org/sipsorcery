@@ -1,5 +1,3 @@
-#include <iostream>
-#include <msclr/marshal_cppstd.h>
 #include "SRTPManaged.h"
 
 using namespace System;
