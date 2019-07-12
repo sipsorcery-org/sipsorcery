@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Collections.Generic;
 using System.Text;
@@ -19,7 +20,14 @@ namespace SIPSorcery.SIP
         private static readonly int m_t6 = SIPTimings.T6;
         protected static readonly int m_maxRingTime = SIPTimings.MAX_RING_TIME; // Max time an INVITE will be left ringing for (typically 10 mins).    
 
-        private Dictionary<string, SIPTransaction> m_transactions = new Dictionary<string, SIPTransaction>();
+        private readonly ConcurrentDictionary<string, SIPTransaction> m_transactions = new ConcurrentDictionary<string, SIPTransaction>();
+
+        private readonly object m_expireCheckLock = new object();
+        private bool m_expireCheckRunnung = false;
+        private DateTime m_nextExpireCheck = DateTime.UtcNow;
+        private const int EXPIRECHECKDELAY = 1000; //ms; minimal Time between two expire checks
+
+
         public int TransactionsCount
         {
             get { return m_transactions.Count; }
@@ -32,28 +40,20 @@ namespace SIPSorcery.SIP
         {
             RemoveExpiredTransactions();
 
-            lock (m_transactions)
-            {
-                if (!m_transactions.ContainsKey(sipTransaction.TransactionId))
-                {
-                    m_transactions.Add(sipTransaction.TransactionId, sipTransaction);
-                }
-                else
-                {
-                    throw new ApplicationException("An attempt was made to add a duplicate SIP transaction.");
-                }
-            }
+            if (!m_transactions.TryAdd(sipTransaction.TransactionId, sipTransaction))
+                throw new ApplicationException("An attempt was made to add a duplicate SIP transaction.");
         }
 
         public bool Exists(SIPRequest sipRequest)
         {
-            return GetTransaction(sipRequest) != null;
+            return TryGetTransaction(sipRequest, out var _);
         }
 
         public bool Exists(SIPResponse sipResponse)
         {
-            return GetTransaction(sipResponse) != null;
+            return TryGetTransaction(sipResponse, out var _);
         }
+
 
         /// <summary>
         /// Transaction matching see RFC3261 17.1.3 & 17.2.3 for matching client and server transactions respectively. 
@@ -67,221 +67,227 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="sipRequest"></param>
         /// <returns></returns>
-        public SIPTransaction GetTransaction(SIPRequest sipRequest)
+        public bool TryGetTransaction(SIPRequest sipRequest, out SIPTransaction foundTransaction)
         {
+            foundTransaction = null;
             // The branch is mandatory but it doesn't stop some UA's not setting it.
             if (sipRequest.Header.Vias.TopViaHeader.Branch == null || sipRequest.Header.Vias.TopViaHeader.Branch.Trim().Length == 0)
             {
-                return null;
+                return false;
             }
 
             SIPMethodsEnum transactionMethod = (sipRequest.Method != SIPMethodsEnum.ACK) ? sipRequest.Method : SIPMethodsEnum.INVITE;
             string transactionId = SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, transactionMethod);
-            string contactAddress = (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count > 0) ? sipRequest.Header.Contact[0].ToString() : "no contact";
 
-            lock (m_transactions)
+            //if (transactionMethod == SIPMethodsEnum.ACK)
+            //{
+            //string contactAddress = (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count > 0) ? sipRequest.Header.Contact[0].ToString() : "no contact";
+            //logger.Info("Matching ACK with contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + ".");
+            //}
+            if (m_transactions.TryGetValue(transactionId, out foundTransaction))
+                return true;
+
+            // No normal match found so look fo a 2xx INVITE response waiting for an ACK.
+            if (sipRequest.Method == SIPMethodsEnum.ACK)
             {
-                //if (transactionMethod == SIPMethodsEnum.ACK)
-                //{
-                    //logger.Info("Matching ACK with contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + ".");
-                //}
-
-                if (transactionId != null && m_transactions.ContainsKey(transactionId))
+                //logger.Debug("Looking for ACK transaction, branchid=" + sipRequest.Header.Via.TopViaHeader.Branch + ".");
+                foreach (var keyValuePair in m_transactions)
                 {
-                    //if (transactionMethod == SIPMethodsEnum.ACK)
-                    //{
-                        //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by branchid.");
-                    //}
-
-                    return m_transactions[transactionId];
-                }
-                else
-                {
-                    // No normal match found so look fo a 2xx INVITE response waiting for an ACK.
-                    if (sipRequest.Method == SIPMethodsEnum.ACK)
+                    // According to the standard an ACK should only not get matched by the branchid on the original INVITE for a non-2xx response. However
+                    // my Cisco phone created a new branchid on ACKs to 487 responses and since the Cisco also used the same Call-ID and From tag on the initial
+                    // unauthenticated request and the subsequent authenticated request the condition below was found to be the best way to match the ACK.
+                    /*if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionFinalResponse != null && transaction.TransactionState == SIPTransactionStatesEnum.Completed)
                     {
-                        //logger.Debug("Looking for ACK transaction, branchid=" + sipRequest.Header.Via.TopViaHeader.Branch + ".");
-
-                        foreach (SIPTransaction transaction in m_transactions.Values)
+                        if (transaction.TransactionFinalResponse.Header.CallId == sipRequest.Header.CallId &&
+                            transaction.TransactionFinalResponse.Header.To.ToTag == sipRequest.Header.To.ToTag &&
+                            transaction.TransactionFinalResponse.Header.From.FromTag == sipRequest.Header.From.FromTag)
                         {
-                            // According to the standard an ACK should only not get matched by the branchid on the original INVITE for a non-2xx response. However
-                            // my Cisco phone created a new branchid on ACKs to 487 responses and since the Cisco also used the same Call-ID and From tag on the initial
-                            // unauthenticated request and the subsequent authenticated request the condition below was found to be the best way to match the ACK.
-                            /*if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionFinalResponse != null && transaction.TransactionState == SIPTransactionStatesEnum.Completed)
-                            {
-                                if (transaction.TransactionFinalResponse.Header.CallId == sipRequest.Header.CallId &&
-                                    transaction.TransactionFinalResponse.Header.To.ToTag == sipRequest.Header.To.ToTag &&
-                                    transaction.TransactionFinalResponse.Header.From.FromTag == sipRequest.Header.From.FromTag)
-                                {
-                                    return transaction;
-                                }
-                            }*/
-
-                            // As an experiment going to try matching on the Call-ID. This field seems to be unique and therefore the chance
-                            // of collisions seemingly very slim. As a safeguard if there happen to be two transactions with the same Call-ID in the list the match will not be made.
-                            // One case where the Call-Id match breaks down is for in-Dialogue requests in that case there will be multiple transactions with the same Call-ID and tags.
-                            //if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionFinalResponse != null && transaction.TransactionState == SIPTransactionStatesEnum.Completed)
-                            if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionFinalResponse != null)
-                            {
-                                if (transaction.TransactionRequest.Header.CallId == sipRequest.Header.CallId &&
-                                    transaction.TransactionFinalResponse.Header.To.ToTag == sipRequest.Header.To.ToTag &&
-                                    transaction.TransactionFinalResponse.Header.From.FromTag == sipRequest.Header.From.FromTag &&
-                                    transaction.TransactionFinalResponse.Header.CSeq == sipRequest.Header.CSeq)
-                                {
-                                    //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by callid, tags and cseq.");
-
-                                    return transaction;
-                                }
-                                else if (transaction.TransactionRequest.Header.CallId == sipRequest.Header.CallId && 
-                                    transaction.TransactionFinalResponse.Header.CSeq == sipRequest.Header.CSeq &&
-                                    IsCallIdUniqueForPending(sipRequest.Header.CallId))
-                                {
-                                    string requestEndPoint = (sipRequest.RemoteSIPEndPoint != null) ? sipRequest.RemoteSIPEndPoint.ToString() : " ? ";
-                                    //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched using Call-ID mechanism (to tags: " + transaction.TransactionFinalResponse.Header.To.ToTag + "=" + sipRequest.Header.To.ToTag + ", from tags:" + transaction.TransactionFinalResponse.Header.From.FromTag + "=" + sipRequest.Header.From.FromTag + ").");
-                                    return transaction;
-                                }
-                            }
+                            return transaction;
                         }
+                    }*/
 
-                        //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was not matched.");
+                    // As an experiment going to try matching on the Call-ID. This field seems to be unique and therefore the chance
+                    // of collisions seemingly very slim. As a safeguard if there happen to be two transactions with the same Call-ID in the list the match will not be made.
+                    // One case where the Call-Id match breaks down is for in-Dialogue requests in that case there will be multiple transactions with the same Call-ID and tags.
+                    //if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionFinalResponse != null && transaction.TransactionState == SIPTransactionStatesEnum.Completed)
+                    var transaction = keyValuePair.Value;
+                    if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionFinalResponse != null)
+                    {
+                        if (transaction.TransactionRequest.Header.CallId == sipRequest.Header.CallId &&
+                            transaction.TransactionFinalResponse.Header.To.ToTag == sipRequest.Header.To.ToTag &&
+                            transaction.TransactionFinalResponse.Header.From.FromTag == sipRequest.Header.From.FromTag &&
+                            transaction.TransactionFinalResponse.Header.CSeq == sipRequest.Header.CSeq)
+                        {
+                            //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by callid, tags and cseq.");
+                            foundTransaction = transaction;
+                            return true;
+                        }
+                        else if (transaction.TransactionRequest.Header.CallId == sipRequest.Header.CallId && 
+                            transaction.TransactionFinalResponse.Header.CSeq == sipRequest.Header.CSeq &&
+                            IsCallIdUniqueForPending(sipRequest.Header.CallId))
+                        {
+                            //string requestEndPoint = (sipRequest.RemoteSIPEndPoint != null) ? sipRequest.RemoteSIPEndPoint.ToString() : " ? ";
+                            //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched using Call-ID mechanism (to tags: " + transaction.TransactionFinalResponse.Header.To.ToTag + "=" + sipRequest.Header.To.ToTag + ", from tags:" + transaction.TransactionFinalResponse.Header.From.FromTag + "=" + sipRequest.Header.From.FromTag + ").");
+                            foundTransaction = transaction;
+                            return true;
+                        }
                     }
-
-                    return null;
                 }
+
+                //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was not matched.");
             }
+
+            return false;
         }
 
-        public SIPTransaction GetTransaction(SIPResponse sipResponse)
+        public SIPTransaction GetTransaction(SIPRequest sipRequest)
         {
+            if ( !TryGetTransaction(sipRequest, out var transaction))
+                return null;
+            return transaction;
+        }
+
+        public bool TryGetTransaction(SIPResponse sipResponse, out SIPTransaction transaction)
+        {
+            transaction = null;
             if (sipResponse.Header.Vias.TopViaHeader.Branch == null || sipResponse.Header.Vias.TopViaHeader.Branch.Trim().Length == 0)
             {
-                return null;
+                return false;
             }
             else
             {
                 string transactionId = SIPTransaction.GetRequestTransactionId(sipResponse.Header.Vias.TopViaHeader.Branch, sipResponse.Header.CSeqMethod);
 
-                lock (m_transactions)
-                {
-                    if (m_transactions.ContainsKey(transactionId))
-                    {
-                        return m_transactions[transactionId];
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
+                if (!m_transactions.TryGetValue(transactionId, out transaction))
+                    return false;
+                return transaction != null;
             }
+        }
+
+        public SIPTransaction GetTransaction(SIPResponse sipRequest)
+        {
+            if (!TryGetTransaction(sipRequest, out var transaction))
+                return null;
+            return transaction;
+        }
+
+
+        public bool TryGetTransaction(string transactionId, out SIPTransaction transaction)
+        {
+            transaction = null;
+            if (!m_transactions.TryGetValue(transactionId, out transaction))
+                return false;
+            return transaction != null;
         }
 
         public SIPTransaction GetTransaction(string transactionId)
         {
-            lock (m_transactions)
-            {
-                if (m_transactions.ContainsKey(transactionId))
-                {
-                    return m_transactions[transactionId];
-                }
-                else
-                {
-                    return null;
-                }
-            }
+            if (!TryGetTransaction(transactionId, out var transaction))
+                return null;
+            return transaction;
         }
+
 
         public void RemoveExpiredTransactions()
         {
+            lock (m_expireCheckLock)
+            {
+                if (m_expireCheckRunnung)
+                    return;
+                if (m_nextExpireCheck > DateTime.UtcNow)
+                    return;
+
+                m_expireCheckRunnung = true;
+            }
+
             try
             {
-                lock (m_transactions)
+                List<string> expiredTransactionIds = new List<string>();
+
+                foreach (var keyValuePair in m_transactions)
                 {
-                    List<string> expiredTransactionIds = new List<string>();
-
-                    foreach (SIPTransaction transaction in m_transactions.Values)
+                    var transaction = keyValuePair.Value;
+                    if (transaction.TransactionType == SIPTransactionTypesEnum.Invite)
                     {
-                        if (transaction.TransactionType == SIPTransactionTypesEnum.Invite)
+                        if (transaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
                         {
-                            if (transaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
+                            // Need to wait until the transaction timeout period is reached in case any ACK re-transmits are received.
+                            if (DateTime.Now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
                             {
-                                // Need to wait until the transaction timeout period is reached in case any ACK re-transmits are received.
-                                if (DateTime.Now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
-                                {
-                                    expiredTransactionIds.Add(transaction.TransactionId);
-                                }
+                                expiredTransactionIds.Add(transaction.TransactionId);
                             }
-                            else if (transaction.TransactionState == SIPTransactionStatesEnum.Completed)
+                        }
+                        else if (transaction.TransactionState == SIPTransactionStatesEnum.Completed)
+                        {
+                            if (DateTime.Now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
                             {
-                                if (DateTime.Now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
-                                {
-                                    expiredTransactionIds.Add(transaction.TransactionId);
-                                }
-                            }
-                            else if (transaction.HasTimedOut)
-                            {
-                                // For INVITES need to give timed out transactions time to send the reliable repsonses and receive the ACKs.
-                                if (DateTime.Now.Subtract(transaction.TimedOutAt).TotalSeconds >= m_t6)
-                                {
-                                    expiredTransactionIds.Add(transaction.TransactionId);
-                                }
-                            }
-                            else if (transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
-                            {
-                                if (DateTime.Now.Subtract(transaction.Created).TotalMilliseconds >= m_maxRingTime)
-                                {
-                                    // INVITE requests that have been ringing too long.
-                                    transaction.HasTimedOut = true;
-                                    transaction.TimedOutAt = DateTime.Now;
-                                    transaction.DeliveryPending = false;
-                                    transaction.DeliveryFailed = true;
-                                    transaction.FireTransactionTimedOut();
-                                }
-                            }
-                            else if (DateTime.Now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
-                            {
-                                //logger.Debug("INVITE transaction (" + transaction.TransactionId + ") " + transaction.TransactionRequestURI.ToString() + " in " + transaction.TransactionState + " has been alive for " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0") + ".");
-
-                                if (transaction.TransactionState == SIPTransactionStatesEnum.Calling ||
-                                    transaction.TransactionState == SIPTransactionStatesEnum.Trying)
-                                {
-                                    transaction.HasTimedOut = true;
-                                    transaction.TimedOutAt = DateTime.Now;
-                                    transaction.DeliveryPending = false;
-                                    transaction.DeliveryFailed = true;
-                                    transaction.FireTransactionTimedOut();
-                                }
+                                expiredTransactionIds.Add(transaction.TransactionId);
                             }
                         }
                         else if (transaction.HasTimedOut)
                         {
-                            expiredTransactionIds.Add(transaction.TransactionId);
+                            // For INVITES need to give timed out transactions time to send the reliable repsonses and receive the ACKs.
+                            if (DateTime.Now.Subtract(transaction.TimedOutAt).TotalSeconds >= m_t6)
+                            {
+                                expiredTransactionIds.Add(transaction.TransactionId);
+                            }
+                        }
+                        else if (transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
+                        {
+                            if (DateTime.Now.Subtract(transaction.Created).TotalMilliseconds >= m_maxRingTime)
+                            {
+                                // INVITE requests that have been ringing too long.
+                                transaction.HasTimedOut = true;
+                                transaction.TimedOutAt = DateTime.Now;
+                                transaction.DeliveryPending = false;
+                                transaction.DeliveryFailed = true;
+                                transaction.FireTransactionTimedOut();
+                            }
                         }
                         else if (DateTime.Now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
                         {
+                            //logger.Debug("INVITE transaction (" + transaction.TransactionId + ") " + transaction.TransactionRequestURI.ToString() + " in " + transaction.TransactionState + " has been alive for " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0") + ".");
+
                             if (transaction.TransactionState == SIPTransactionStatesEnum.Calling ||
-                               transaction.TransactionState == SIPTransactionStatesEnum.Trying ||
-                               transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
+                                transaction.TransactionState == SIPTransactionStatesEnum.Trying)
                             {
-                                //logger.Warn("Timed out transaction in SIPTransactionEngine, should have been timed out in the SIP Transport layer. " + transaction.TransactionRequest.Method + ".");
+                                transaction.HasTimedOut = true;
+                                transaction.TimedOutAt = DateTime.Now;
                                 transaction.DeliveryPending = false;
                                 transaction.DeliveryFailed = true;
-                                transaction.TimedOutAt = DateTime.Now;
-                                transaction.HasTimedOut = true;
                                 transaction.FireTransactionTimedOut();
                             }
-
-                            expiredTransactionIds.Add(transaction.TransactionId);
                         }
                     }
-
-                    foreach (string transactionId in expiredTransactionIds)
+                    else if (transaction.HasTimedOut)
                     {
-                        if (m_transactions.ContainsKey(transactionId))
+                        expiredTransactionIds.Add(transaction.TransactionId);
+                    }
+                    else if (DateTime.Now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
+                    {
+                        if (transaction.TransactionState == SIPTransactionStatesEnum.Calling ||
+                            transaction.TransactionState == SIPTransactionStatesEnum.Trying ||
+                            transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
                         {
-                            SIPTransaction expiredTransaction = m_transactions[transactionId];
-                            expiredTransaction.FireTransactionRemoved();
-                            RemoveTransaction(expiredTransaction);
+                            //logger.Warn("Timed out transaction in SIPTransactionEngine, should have been timed out in the SIP Transport layer. " + transaction.TransactionRequest.Method + ".");
+                            transaction.DeliveryPending = false;
+                            transaction.DeliveryFailed = true;
+                            transaction.TimedOutAt = DateTime.Now;
+                            transaction.HasTimedOut = true;
+                            transaction.FireTransactionTimedOut();
                         }
+
+                        expiredTransactionIds.Add(transaction.TransactionId);
+                    }
+                }
+
+                foreach (string transactionId in expiredTransactionIds)
+                {
+                    if (m_transactions.ContainsKey(transactionId))
+                    {
+                        SIPTransaction expiredTransaction = m_transactions[transactionId];
+                        expiredTransaction.FireTransactionRemoved();
+                        RemoveTransaction(expiredTransaction);
                     }
                 }
 
@@ -290,6 +296,14 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.Error("Exception RemoveExpiredTransaction. " + excp.Message);
+            }
+            finally
+            {
+                lock (m_expireCheckLock)
+                {
+                    m_expireCheckRunnung = false;
+                    m_nextExpireCheck = DateTime.UtcNow.AddMilliseconds(EXPIRECHECKDELAY);
+                }
             }
         }
 
@@ -310,31 +324,19 @@ namespace SIPSorcery.SIP
         /// <param name="transactionId"></param>
         public void RemoveTransaction(string transactionId)
         {
-            lock (m_transactions)
-            {
-                if (m_transactions.ContainsKey(transactionId))
-                {
-                    m_transactions.Remove(transactionId);
-                }
-            }
+            m_transactions.TryRemove(transactionId, out var _);
         }
 
         private void RemoveTransaction(SIPTransaction transaction)
         {
             // Remove all event handlers.
             transaction.RemoveEventHandlers();
-
             RemoveTransaction(transaction.TransactionId);
-
-            transaction = null;
         }
 
         public void RemoveAll()
         {
-            lock (m_transactions)
-            {
-                m_transactions.Clear();
-            }
+            m_transactions.Clear();
         }
 
         /// <summary>
@@ -347,23 +349,21 @@ namespace SIPSorcery.SIP
         {
             bool match = false;
             
-            lock (m_transactions)
+            foreach (var keyValuePair in m_transactions)
             {
-                foreach (SIPTransaction transaction in m_transactions.Values)
+                var transaction = keyValuePair.Value;
+                if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && 
+                    transaction.TransactionFinalResponse != null && 
+                    transaction.TransactionState == SIPTransactionStatesEnum.Completed &&
+                    transaction.TransactionRequest.Header.CallId == callId)
                 {
-                    if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && 
-                        transaction.TransactionFinalResponse != null && 
-                        transaction.TransactionState == SIPTransactionStatesEnum.Completed &&
-                        transaction.TransactionRequest.Header.CallId == callId)
+                    if (!match)
                     {
-                        if (!match)
-                        {
-                            match = true;
-                        }
-                        else
-                        {
-                            return false;
-                        }
+                        match = true;
+                    }
+                    else
+                    {
+                        return false;
                     }
                 }
             }

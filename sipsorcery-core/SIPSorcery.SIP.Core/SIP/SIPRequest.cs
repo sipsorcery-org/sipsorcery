@@ -187,21 +187,28 @@ namespace SIPSorcery.SIP
 		{
 			try
 			{
-				string methodStr = (Method != SIPMethodsEnum.UNKNOWN) ? Method.ToString() : UnknownMethod;
-				
-				string message = methodStr + " " + URI.ToString() + " " + SIPVersion + m_CRLF + this.Header.ToString();
+                var sb = new StringBuilder(300);
+
+                sb.Append((Method != SIPMethodsEnum.UNKNOWN) ? Method.ToString() : UnknownMethod);
+                sb.Append(" ");
+                sb.Append(URI.ToString());
+                sb.Append(" ");
+                sb.Append(SIPVersion);
+                sb.Append(m_CRLF);
+                sb.Append(this.Header.ToString());
 
 				if(Body != null)
-				{
-					message += m_CRLF + Body;
+                {
+                    sb.Append(m_CRLF);
+                    sb.Append(Body);
 				}
 				else
 				{
-					message += m_CRLF;
+                    sb.Append(m_CRLF);
 				}
-			
-				return message;
-			}
+
+                return sb.ToString();
+            }
 			catch(Exception excp)
 			{
 				logger.Error("Exception SIPRequest ToString. " + excp.Message);

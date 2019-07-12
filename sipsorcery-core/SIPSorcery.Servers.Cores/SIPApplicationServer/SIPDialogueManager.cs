@@ -1165,7 +1165,7 @@ namespace SIPSorcery.Servers
             try
             {
                 // Lookup the originating transaction.
-                SIPTransaction originTransaction = m_sipTransport.GetTransaction(m_inDialogueTransactions[sipTransaction.TransactionId]);
+                m_sipTransport.TryGetTransaction(m_inDialogueTransactions[sipTransaction.TransactionId], out var originTransaction);
 
                 SIPResponse response = sipResponse.Copy();
                 response.Header.Vias = originTransaction.TransactionRequest.Header.Vias;
@@ -1198,7 +1198,7 @@ namespace SIPSorcery.Servers
                 logger.Debug("Final response of " + sipResponse.StatusCode + " on " + sipResponse.Header.CSeqMethod + " in-dialogue transaction.");
 
                 // Lookup the originating transaction.
-                SIPTransaction originTransaction = m_sipTransport.GetTransaction(m_inDialogueTransactions[sipTransaction.TransactionId]);
+                m_sipTransport.TryGetTransaction(m_inDialogueTransactions[sipTransaction.TransactionId], out var originTransaction);
                 IPAddress remoteUAIPAddress = (sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank()) ? remoteEndPoint.Address : SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom).Address;
                 SIPEndPoint forwardSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint(sipResponse.Header.Vias.TopViaHeader.Transport);
 

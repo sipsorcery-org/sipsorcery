@@ -144,7 +144,9 @@ namespace SIPSorcery.Servers
                 {
                     #region CANCEL request handling.
 
-                    UASInviteTransaction inviteTransaction = (UASInviteTransaction)m_sipTransport.GetTransaction(SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, SIPMethodsEnum.INVITE));
+                    UASInviteTransaction inviteTransaction = null;
+                    if (m_sipTransport.TryGetTransaction(SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, SIPMethodsEnum.INVITE), out var transaction))
+                        inviteTransaction = (UASInviteTransaction)transaction;
 
                     if (inviteTransaction != null)
                     {

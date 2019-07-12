@@ -95,6 +95,23 @@ namespace SIPSorcery.SIP
             ConnectionType = connectionType;
         }
 
+        private readonly Action<string> m_logDebug;
+        private readonly Action<string> m_logError;
+
+        public SIPConnection(SIPChannel channel, TcpClient tcpClient, Stream sipStream, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType, Action<string> logDebug, Action<string> logError)
+        {
+            LastTransmission = DateTime.Now;
+            m_owningChannel = channel;
+            _tcpClient = tcpClient;
+            SIPStream = sipStream;
+            RemoteEndPoint = remoteEndPoint;
+            ConnectionProtocol = connectionProtocol;
+            ConnectionType = connectionType;
+
+            m_logDebug = logDebug;
+            m_logError = logError;
+        }
+
         /// <summary>
         /// Processes the receive buffer after a read from the connected socket.
         /// </summary>
@@ -331,22 +348,38 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (_tcpClient.GetStream() != null)
+                // NUR TEMPORÄR WEGEN Task 6052: SipTransport "sauber" beenden
+
+                ExecSafe(() => _tcpClient.GetStream().Close(0), "SIPConnection Close Stream");
+
+                if (_tcpClient.Client != null && _tcpClient.Client.Connected)
                 {
-                    _tcpClient.GetStream().Close(0);
+                    ExecSafe(() => _tcpClient.Client.Shutdown(SocketShutdown.Both), "Shutdown Socket");
+                    ExecSafe(() => _tcpClient.Client.Close(0), "Close Socket");
                 }
 
-                if (_tcpClient.Client != null && _tcpClient.Client.Connected == true)
-                {
-                    _tcpClient.Client.Shutdown(SocketShutdown.Both);
-                    _tcpClient.Client.Close(0);
-                }
-
+                m_logDebug?.Invoke("SIPConnection Before TcpClient.Close");
                 _tcpClient.Close();
+                m_logDebug?.Invoke("SIPConnection Finished TcpClient.Close");
             }
             catch (Exception closeExcp)
             {
+                m_logError?.Invoke($"SIPConnection SIPConnection Error: {closeExcp}");
                 logger.Warn("Exception closing socket in SIPConnection Close. " + closeExcp.Message);
+            }
+        }
+
+        private void ExecSafe(Action exec, string description)
+        {
+            try
+            {
+                m_logDebug?.Invoke($"SIPConnection Before {description}");
+                exec();
+                m_logDebug?.Invoke($"SIPConnection Finished {description}");
+            }
+            catch (Exception e)
+            {
+                m_logError?.Invoke($"SIPConnection {description} Exception: {e}");
             }
         }
     }
