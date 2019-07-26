@@ -24,10 +24,9 @@ using System.Net;
 using System.Text;
 using System.Net.Sockets;
 using System.Net.NetworkInformation;
-using System.Diagnostics;
-using System.Runtime.Remoting.Messaging;
 using SIPSorcery.Sys;
 using log4net;
+using System.Threading.Tasks;
 
 /*
  * Network Working Group                                     P. Mockapetris
@@ -65,10 +64,10 @@ namespace Heijden.DNS
         /// Gets list of OPENDNS servers
         /// </summary>
         public static readonly List<IPEndPoint> DefaultDnsServers = new List<IPEndPoint>()
-		{ 
-			new IPEndPoint(IPAddress.Parse("208.67.222.222"), DefaultPort), 
-			new IPEndPoint(IPAddress.Parse("208.67.220.220"), DefaultPort) 
-		};
+        {
+            new IPEndPoint(IPAddress.Parse("208.67.222.222"), DefaultPort),
+            new IPEndPoint(IPAddress.Parse("208.67.220.220"), DefaultPort)
+        };
 
         private ushort m_Unique;
         private bool m_UseCache;
@@ -391,7 +390,7 @@ namespace Heijden.DNS
                     m_lookupFailures.Add(questionKey, response);
                 }
             }
-            else if(!response.Timedout && response.Answers.Count > 0)
+            else if (!response.Timedout && response.Answers.Count > 0)
             {
                 // Cache non-error responses.
                 logger.Debug("Caching DNS lookup success for " + questionKey + ".");
@@ -806,74 +805,26 @@ namespace Heijden.DNS
                 return MakeEntry(hostNameOrAddress, DEFAULT_TIMEOUT);
         }
 
-        private delegate IPHostEntry GetHostEntryViaIPDelegate(IPAddress ip);
-        private delegate IPHostEntry GetHostEntryDelegate(string hostNameOrAddress);
-
         /// <summary>
         /// Asynchronously resolves a host name or IP address to an System.Net.IPHostEntry instance.
         /// </summary>
         /// <param name="hostNameOrAddress">The host name or IP address to resolve.</param>
-        /// <param name="requestCallback">
-        ///		An System.AsyncCallback delegate that references the method to invoke when
-        ///		the operation is complete.
-        ///</param>
-        /// <param name="stateObject">
-        ///		A user-defined object that contains information about the operation. This
-        ///		object is passed to the requestCallback delegate when the operation is complete.
-        /// </param>
-        /// <returns>An System.IAsyncResult instance that references the asynchronous request.</returns>
-        public IAsyncResult BeginGetHostEntry(string hostNameOrAddress, AsyncCallback requestCallback, object stateObject)
+        /// <returns>An System.Threading.Tasks.Task<System.Net.IPHostEntry> instance.</returns>
+        public Task<IPHostEntry> GetHostEntryAsync(string hostNameOrAddress)
         {
-            GetHostEntryDelegate g = new GetHostEntryDelegate(GetHostEntry);
-            return g.BeginInvoke(hostNameOrAddress, requestCallback, stateObject);
+            return Task.Run(() => GetHostEntry(hostNameOrAddress));
         }
 
         /// <summary>
         /// Asynchronously resolves an IP address to an System.Net.IPHostEntry instance.
         /// </summary>
         /// <param name="ip">The IP address to resolve.</param>
-        /// <param name="requestCallback">
-        ///		An System.AsyncCallback delegate that references the method to invoke when
-        ///		the operation is complete.
-        /// </param>
-        /// <param name="stateObject">
-        ///		A user-defined object that contains information about the operation. This
-        ///     object is passed to the requestCallback delegate when the operation is complete.
-        /// </param>
-        /// <returns>An System.IAsyncResult instance that references the asynchronous request.</returns>
-        public IAsyncResult BeginGetHostEntry(IPAddress ip, AsyncCallback requestCallback, object stateObject)
+        /// <returns>An System.Threading.Tasks.Task<System.Net.IPHostEntry> instance.</returns>
+        public Task<IPHostEntry> GetHostEntryAsync(IPAddress ip)
         {
-            GetHostEntryViaIPDelegate g = new GetHostEntryViaIPDelegate(GetHostEntry);
-            return g.BeginInvoke(ip, requestCallback, stateObject);
+            return Task.Run(() => GetHostEntry(ip));
         }
-
-        /// <summary>
-        /// Ends an asynchronous request for DNS information.
-        /// </summary>
-        /// <param name="AsyncResult">
-        ///		An System.IAsyncResult instance returned by a call to an 
-        ///		Overload:Heijden.Dns.Resolver.BeginGetHostEntry method.
-        /// </param>
-        /// <returns>
-        ///		An System.Net.IPHostEntry instance that contains address information about
-        ///		the host. 
-        ///</returns>
-        public IPHostEntry EndGetHostEntry(IAsyncResult AsyncResult)
-        {
-            AsyncResult aResult = (AsyncResult)AsyncResult;
-            if (aResult.AsyncDelegate is GetHostEntryDelegate)
-            {
-                GetHostEntryDelegate g = (GetHostEntryDelegate)aResult.AsyncDelegate;
-                return g.EndInvoke(AsyncResult);
-            }
-            if (aResult.AsyncDelegate is GetHostEntryViaIPDelegate)
-            {
-                GetHostEntryViaIPDelegate g = (GetHostEntryViaIPDelegate)aResult.AsyncDelegate;
-                return g.EndInvoke(AsyncResult);
-            }
-            return null;
-        }
-
+                
         private IPEndPoint GetActiveDNSServer()
         {
             if (m_DnsServers == null)
