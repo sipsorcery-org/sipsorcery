@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Specialized;
-using System.Configuration;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -26,7 +25,7 @@ using log4net;
 
 namespace SIPSorcery.Sys
 {
-    public class AppState : IConfigurationSectionHandler
+    public class AppState
     {
         public const string CRLF = "\r\n";
         public const string DEFAULT_ERRRORLOG_FILE = @"c:\temp\appstate.error.log";
@@ -328,14 +327,6 @@ namespace SIPSorcery.Sys
             }
 
             return directoryPath;
-        }
-
-        /// <summary>
-        /// Handler for processing the App.Config file and retrieving a custom XML node.
-        /// </summary>
-        public object Create(object parent, object context, XmlNode configSection)
-        {
-            return configSection;
         }
     }
 }
