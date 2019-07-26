@@ -15,15 +15,12 @@
 ///----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
 using System.Collections.Specialized;
 using System.Configuration;
-using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Xml;
 using log4net;
 
@@ -46,6 +43,7 @@ namespace SIPSorcery.Sys
         private static X509Certificate2 m_encryptedSettingsCertificate;
         public static readonly string NewLine = Environment.NewLine;
         public static readonly string CurrentDirectory;
+        private static IConfiguration m_appConfiguration;
 
         static AppState()
         {
@@ -103,6 +101,11 @@ namespace SIPSorcery.Sys
             }
         }
 
+        public void SetupConfiguration(IConfiguration configuration)
+        {
+            m_appConfiguration = configuration;
+        }
+
         public static ILog GetLogger(string logName)
         {
             return log4net.LogManager.GetLogger(logName);
@@ -139,7 +142,7 @@ namespace SIPSorcery.Sys
                 }
                 else
                 {
-                    string setting = ConfigurationManager.AppSettings[key];
+                    string setting = m_appConfiguration.GetSetting(key);
 
                     if (!setting.IsNullOrBlank())
                     {
@@ -212,7 +215,7 @@ namespace SIPSorcery.Sys
 
         public static object GetSection(string sectionName)
         {
-            return ConfigurationManager.GetSection(sectionName);
+            return m_appConfiguration.GetSection(sectionName);
         }
 
         /// <summary>
@@ -249,7 +252,7 @@ namespace SIPSorcery.Sys
             {
                 if (m_encryptedSettingsCertificate == null)
                 {
-                    string encryptedSettingsCertName = ConfigurationManager.AppSettings[ENCRYPTED_SETTINGS_CERTIFICATE_NAME];
+                    string encryptedSettingsCertName = m_appConfiguration.GetSetting(ENCRYPTED_SETTINGS_CERTIFICATE_NAME);
                     if (!encryptedSettingsCertName.IsNullOrBlank())
                     {
                         X509Certificate2 encryptedSettingsCertificate = LoadCertificate(StoreLocation.LocalMachine, encryptedSettingsCertName, false);
@@ -308,7 +311,7 @@ namespace SIPSorcery.Sys
         /// <returns>An absolute directory path.</returns>
         public static string ToAbsoluteDirectoryPath(string directoryPath)
         {
-             if (directoryPath.IsNullOrBlank())
+            if (directoryPath.IsNullOrBlank())
             {
                 return null;
             }

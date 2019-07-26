@@ -104,8 +104,6 @@
     <Reference Include="System">
       <Name>System</Name>
     </Reference>
-    <Reference Include="System.configuration">
-    </Reference>
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -138,6 +136,7 @@
     <Compile Include="AzureTraceAppender.cs" />
     <Compile Include="CRC32.cs" />
     <Compile Include="Crypto\PasswordHash.cs" />
+    <Compile Include="IConfiguration.cs" />
     <Compile Include="IPerformanceMonitor.cs" />
     <Compile Include="Net\FreePort.cs" />
     <Compile Include="Net\UDPListener.cs" />
