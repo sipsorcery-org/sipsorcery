@@ -263,6 +263,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery.Configuration.Framework\SIPSorcery.Configuration.Framework.csproj">
+      <Project>{9825f643-03df-474f-9013-3027e53c7263}</Project>
+      <Name>SIPSorcery.Configuration.Framework</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SIPSorcery.CRM\SIPSorcery.CRM.csproj">
       <Project>{F951789F-1ABB-42E8-BB51-F028DC4824EF}</Project>
       <Name>SIPSorcery.CRM</Name>

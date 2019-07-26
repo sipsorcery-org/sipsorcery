@@ -138,9 +138,9 @@
     <Compile Include="AzureTraceAppender.cs" />
     <Compile Include="CRC32.cs" />
     <Compile Include="Crypto\PasswordHash.cs" />
+    <Compile Include="IPerformanceMonitor.cs" />
     <Compile Include="Net\FreePort.cs" />
     <Compile Include="Net\UDPListener.cs" />
-    <Compile Include="SIPSorceryConfiguration.cs" />
     <Compile Include="Net\ByteBufferInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -164,8 +164,6 @@
     </Compile>
     <Compile Include="StorageTypes.cs" />
     <Compile Include="TypeExtensions.cs" />
-    <Compile Include="WCFUtility.cs" />
-    <Compile Include="WrapperImpersonationContext.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
