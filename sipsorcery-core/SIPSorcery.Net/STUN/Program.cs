@@ -1,3 +1,4 @@
+using SIPSorcery.Sys;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -13,15 +14,15 @@ namespace SIPSorcery.Net
         public const string PORT_ONE_KEY = "PortOne";
         public const string IPADDRESS_TWO_KEY = "IPAddressTwo";
         public const string PORT_TWO_KEY = "PortTwo";
-        
+
         static void Main(string[] args)
         {
             try
             {
-                IPAddress IPAddressOne = IPAddress.Parse(ConfigurationManager.AppSettings[IPADDRESS_ONE_KEY]); ;
-                int PortOne = Convert.ToInt32(ConfigurationManager.AppSettings[PORT_ONE_KEY]);
-                IPAddress IPAddressTwo = IPAddress.Parse(ConfigurationManager.AppSettings[IPADDRESS_TWO_KEY]);
-                int PortTwo = Convert.ToInt32(ConfigurationManager.AppSettings[PORT_TWO_KEY]);
+                IPAddress IPAddressOne = IPAddress.Parse(AppState.GetConfigSetting(IPADDRESS_ONE_KEY));
+                int PortOne = Convert.ToInt32(AppState.GetConfigSetting(PORT_ONE_KEY));
+                IPAddress IPAddressTwo = IPAddress.Parse(AppState.GetConfigSetting(IPADDRESS_TWO_KEY));
+                int PortTwo = Convert.ToInt32(AppState.GetConfigSetting(PORT_TWO_KEY));
 
                 IPEndPoint primaryEndPoint = new IPEndPoint(IPAddressOne, PortOne);
                 IPEndPoint secondaryEndPoint = new IPEndPoint(IPAddressTwo, PortTwo);
