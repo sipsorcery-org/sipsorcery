@@ -209,6 +209,8 @@
     <Content Include="Provisioning\SIPProvisioningWebService.svc" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Auth\ServiceAuthToken.cs" />
+    <Compile Include="Auth\SIPSorcerySecurityHeader.cs" />
     <Compile Include="CallDispatcher\ICallDispatcherService.cs" />
     <Compile Include="CallDispatcher\CallDispatcherProxy.cs" />
     <Compile Include="CallManager\CallManagerPassThruService.cs" />
