@@ -57,6 +57,9 @@
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="SIPSorcery.Configuration.Framework">
+      <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Configuration.Framework.dll</HintPath>
+    </Reference>
     <Reference Include="SIPSorcery.CRM, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.CRM.dll</HintPath>

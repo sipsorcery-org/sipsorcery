@@ -72,6 +72,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.AppServer.DialPlan.dll</HintPath>
     </Reference>
+    <Reference Include="SIPSorcery.Configuration.Framework">
+      <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.Configuration.Framework.dll</HintPath>
+    </Reference>
     <Reference Include="SIPSorcery.CRM, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\sipsorcery-core\Build\SIPSorcery.CRM.dll</HintPath>
