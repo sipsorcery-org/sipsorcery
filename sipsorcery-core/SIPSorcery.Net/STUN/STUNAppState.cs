@@ -62,7 +62,7 @@ namespace SIPSorcery.Net
 			try
 			{
 				// Configure logging.
-				logger = log4net.LogManager.GetLogger(LOGGER_NAME);
+				logger = Sys.AppState.GetLogger(LOGGER_NAME);
 			}
 			catch(Exception excp)
 			{

@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Specialized;
-using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -31,7 +30,7 @@ namespace SIPSorcery.Sys
         public const string DEFAULT_ERRRORLOG_FILE = @"c:\temp\appstate.error.log";
         public const string ENCRYPTED_SETTING_PREFIX = "$#";
         private const string ENCRYPTED_SETTINGS_CERTIFICATE_NAME = "EncryptedSettingsCertificateName";
-        private const string APP_LOGGING_ID = "sipsorcery"; // Name of log4net identifier.
+        private const string APP_LOGGING_REPOSITORY = "sipsorcery"; // Name of log4net identifier.
 
         // From http://fightingforalostcause.net/misc/2006/compare-email-regex.php.
         public const string EMAIL_VALIDATION_REGEX = @"^([\w\!\#$\%\&\'\*\+\-\/\=\?\^\`{\|\}\~]+\.)*[\w\!\#$\%\&\'\*\+\-\/\=\?\^\`{\|\}\~]+@((((([a-zA-Z0-9]{1}[a-zA-Z0-9\-]{0,62}[a-zA-Z0-9]{1})|[a-zA-Z])\.)+[a-zA-Z]{2,6})|(\d{1,3}\.){3}\d{1,3}(\:\d{1,5})?)$";
@@ -43,86 +42,31 @@ namespace SIPSorcery.Sys
         public static readonly string NewLine = Environment.NewLine;
         public static readonly string CurrentDirectory;
         private static IConfiguration m_appConfiguration;
+        private static ILoggerProvider m_loggerProvider;
 
         static AppState()
         {
-            try
-            {
-                try
-                {
-                    // Initialise logging functionality from an XML node in the app.config file.
-                    Console.WriteLine("Starting logging initialisation.");
-                    log4net.Config.XmlConfigurator.Configure();
-                }
-                catch
-                {
-                    // Unable to load the log4net configuration node (probably invalid XML in the config file).
-                    Console.WriteLine("Unable to load logging configuration check that the app.config file exists and is well formed.");
+            // Initialise the string dictionary to hold the application settings.
+            m_appConfigSettings = new StringDictionary();
 
-                    try
-                    {
-                        //EventLog.WriteEntry(APP_LOGGING_ID, "Unable to load logging configuration check that the app.config file exists and is well formed.", EventLogEntryType.Error, 0);
-                    }
-                    catch (Exception evtLogExcp)
-                    {
-                        Console.WriteLine("Exception writing logging configuration error to event log. " + evtLogExcp.Message);
-                    }
-
-                    // Configure a basic console appender so if there is anyone watching they can still see log messages and to
-                    // ensure that any classes using the logger won't get null references.
-                    ConfigureConsoleLogger();
-                }
-                finally
-                {
-                    try
-                    {
-                        logger = log4net.LogManager.GetLogger(APP_LOGGING_ID);
-                        logger.Debug("Logging initialised.");
-                    }
-                    catch (Exception excp)
-                    {
-                        StreamWriter errorLog = new StreamWriter(DEFAULT_ERRRORLOG_FILE, true);
-                        errorLog.WriteLine(DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + " Exception Initialising AppState Logging. " + excp.Message);
-                        errorLog.Close();
-                    }
-                }
-
-                // Initialise the string dictionary to hold the application settings.
-                m_appConfigSettings = new StringDictionary();
-
-                CurrentDirectory = Environment.CurrentDirectory;
-            }
-            catch (Exception excp)
-            {
-                StreamWriter errorLog = new StreamWriter(DEFAULT_ERRRORLOG_FILE, true);
-                errorLog.WriteLine(DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + " Exception Initialising AppState. " + excp.Message);
-                errorLog.Close();
-            }
+            CurrentDirectory = Environment.CurrentDirectory;
         }
 
-        public void SetupConfiguration(IConfiguration configuration)
+        public static void SetupLogger(ILoggerProvider loggerProvider)
+        {
+            m_loggerProvider = loggerProvider;
+
+            logger = GetLogger(APP_LOGGING_REPOSITORY);
+        }
+
+        public static void SetupConfiguration(IConfiguration configuration)
         {
             m_appConfiguration = configuration;
         }
 
         public static ILog GetLogger(string logName)
         {
-            return log4net.LogManager.GetLogger(logName);
-        }
-
-        /// <summary>
-        /// Configures the logging object to use a console logger. This would normally be used
-        /// as a fallback when either the application does not have any logging configuration
-        /// or there is an error in it.
-        /// </summary>
-        public static void ConfigureConsoleLogger()
-        {
-            log4net.Appender.ConsoleAppender appender = new log4net.Appender.ConsoleAppender();
-
-            log4net.Layout.ILayout fallbackLayout = new log4net.Layout.PatternLayout("%m%n");
-            appender.Layout = fallbackLayout;
-
-            log4net.Config.BasicConfigurator.Configure(appender);
+            return m_loggerProvider.GetLogger(logName);
         }
 
         /// <summary>

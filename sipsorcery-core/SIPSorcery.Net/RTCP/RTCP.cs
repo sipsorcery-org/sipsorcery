@@ -240,7 +240,7 @@ namespace SIPSorcery.Net
         private const string RTCP_FORMAT_STRING = "syncsrc={0}, ts={1} ,te={2} , dur={3} ,seqs={4,-5:S} ,seqe={5,-5:S} ,pkttot={6,-3:S} ,jitmax={7,-3:S}, jitavg={8,-4:S} " + 
                                     ",transit={9,-5:S} ,pktrate={10,-5:S} ,bytestot={11,-5:S} ,bw={12,-9:S} ,drops={13} ,jitdrops={14} ,duplicates={15} ,outoforder={16}";
 
-		private static ILog logger = log4net.LogManager.GetLogger("rtcp");
+		private static ILog logger = Sys.AppState.GetLogger("rtcp");
 
 		public int JitterBufferMilliseconds = 150;	// The size of a the theoretical jitter buffer.
 		public int ReportSampleDuration = 1500;		// Sample time in milliseconds after which a new sample is generated.

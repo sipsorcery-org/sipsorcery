@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppSettingsConfiguration.cs" />
+    <Compile Include="DefaultLog4NetProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SIPSorceryConfiguration.cs" />
     <Compile Include="DiagnosticsPerformanceMonitor.cs" />

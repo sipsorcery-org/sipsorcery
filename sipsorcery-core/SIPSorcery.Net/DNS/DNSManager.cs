@@ -54,7 +54,7 @@ namespace SIPSorcery.Net
         //private const string SIP_TLS_QUERY_PREFIX = "_sip._tls.";
         //private const string SIPS_TCP_QUERY_PREFIX = "_sips._tcp.";
 
-        private static ILog logger = LogManager.GetLogger(LOOKUP_THREAD_NAME);
+        private static ILog logger = Sys.AppState.GetLogger(LOOKUP_THREAD_NAME);
 
         //private static Dictionary<string, DNSResponse> m_dnsResponses = new Dictionary<string, DNSResponse>();  // DNS query responses that have been looked up and stored.
 
@@ -159,7 +159,7 @@ namespace SIPSorcery.Net
                     return cacheResult;
                 }
             }
-            
+
             if (async)
             {
                 //logger.Debug("DNS lookup cache miss for async lookup to " + queryType.ToString() + " " + hostname + ".");
