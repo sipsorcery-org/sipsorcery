@@ -4,8 +4,8 @@
 #pragma once
 
 #include <stdio.h>
-#include <memory>
 #include <mfapi.h>
+#include <mfobjects.h>
 #include <mfplay.h>
 #include <mftransform.h>
 #include <mferror.h>
@@ -19,11 +19,20 @@
 
 #include "VideoSubTypes.h"
 
+#include <memory>
+
 using namespace System;
 using namespace System::Collections::Generic;
 using namespace System::Runtime::InteropServices;
 
 #define CHECK_HR(hr, msg) if (HRHasFailed(hr, msg)) return hr;
+
+#define CHECK_HR_EXTENDED(hr, msg) if (HRHasFailed(hr, msg)) { \
+   MediaSampleProperties^ sampleProps; \
+   sampleProps->Success = false; \
+   sampleProps->Error = msg; \
+   return sampleProps; \
+ };
 
 #define CHECKHR_GOTO(x, y) if(FAILED(x)) goto y
 
@@ -59,10 +68,45 @@ namespace SIPSorceryMedia {
 		String ^ VideoSubTypeFriendlyName;
 	};
 
+  public ref class MediaSampleProperties
+  {
+  public:
+    bool Success;
+    bool HasSample;
+    String ^ Error;
+    UInt32 Width;
+    UInt32 Height;
+    Guid VideoSubType;
+    String ^ VideoSubTypeFriendlyName;
+
+    MediaSampleProperties():
+      Success(true),
+      HasSample(false),
+      Error(),
+      Width(0),
+      Height(0),
+      VideoSubType(Guid::Empty),
+      VideoSubTypeFriendlyName()
+    {}
+
+    MediaSampleProperties(const MediaSampleProperties % copy)
+    {
+      Success = copy.Success;
+      HasSample = copy.HasSample;
+      Error = copy.Error;
+      Width = copy.Width;
+      Height = copy.Height;
+      VideoSubType = copy.VideoSubType;
+      VideoSubTypeFriendlyName = copy.VideoSubTypeFriendlyName;
+    }
+  };
+
 	public ref class MFVideoSampler
 	{
 	public:
 		long Stride = -1;
+    Guid VideoMajorType;
+    Guid VideoMinorType;
 
 		MFVideoSampler();
 		~MFVideoSampler();
@@ -70,7 +114,7 @@ namespace SIPSorceryMedia {
 		HRESULT Init(int videoDeviceIndex, VideoSubTypesEnum videoSubType, UInt32 width, UInt32 height);
 		HRESULT InitFromFile();
 		HRESULT FindVideoMode(IMFSourceReader *pReader, const GUID mediaSubType, UInt32 width, UInt32 height, /* out */ IMFMediaType *&foundpType);
-		HRESULT GetSample(/* out */ array<Byte> ^% buffer);
+    MediaSampleProperties^ GetSample(/* out */ array<Byte> ^% buffer);
 		HRESULT GetAudioSample(/* out */ array<Byte> ^% buffer);
 		HRESULT PlayAudio();
 		void Stop();

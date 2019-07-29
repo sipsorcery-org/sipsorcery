@@ -21,7 +21,6 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{60CC689C-2616-441C-A38A-E1B764C7C446}</ProjectGuid>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <Keyword>ManagedCProj</Keyword>
     <RootNamespace>SIPSorceryMedia</RootNamespace>
     <ProjectName>SIPSorceryMedia</ProjectName>

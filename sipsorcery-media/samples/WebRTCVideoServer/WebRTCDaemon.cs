@@ -5,6 +5,7 @@
 //
 // History:
 // 04 Mar 2016	Aaron Clauson	Created.
+// 24 Jul 2019  Aaron Clauson   Switched from WebSocketSahrp to asp.net core for web sockets.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -37,13 +38,16 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using System.Threading.Tasks;
 using SIPSorceryMedia;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using log4net;
 using WebSocketSharp;
 using WebSocketSharp.Server;
+//using Fleck;
 
 namespace WebRTCVideoServer
 {
@@ -71,17 +75,30 @@ namespace WebRTCVideoServer
             {
                 logger.Debug("WebRTCDaemon starting.");
 
+                SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
+                sampler.InitFromFile();
+
                 SDPExchangeReceiver.WebSocketOpened += WebRtcStartCall;
                 SDPExchangeReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
 
-                var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(_webSocketCertificatePath, _webSocketCertificatePassword);
-                logger.Debug("Web Socket Server Certificate CN: " + wssCertificate.Subject + ", have key " + wssCertificate.HasPrivateKey + ", Expires " + wssCertificate.GetExpirationDateString() + ".");
+                //var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(_webSocketCertificatePath, _webSocketCertificatePassword);
+                //logger.Debug("Web Socket Server Certificate CN: " + wssCertificate.Subject + ", have key " + wssCertificate.HasPrivateKey + ", Expires " + wssCertificate.GetExpirationDateString() + ".");
 
-                _receiverWSS = new WebSocketServer(8081, true);
-                //_receiverWSS.Log.Level = LogLevel.Debug;
-                _receiverWSS.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate, false,
-                     System.Security.Authentication.SslProtocols.Tls,
-                    false);
+                _receiverWSS = new WebSocketServer("ws://192.168.11.50:8081");
+                //_receiverWSS.Certificate = wssCertificate;
+                //_receiverWSS.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+                //_receiverWSS.Start(socket =>
+                //{
+                //    socket.OnOpen = () => Console.WriteLine("Open!");
+                //    socket.OnClose = () => Console.WriteLine("Close!");
+                //    socket.OnMessage = message => socket.Send(message);
+                //});
+
+                //_receiverWSS = new WebSocketServer(8081, true);
+                _receiverWSS.Log.Level = LogLevel.Debug;
+                //_receiverWSS.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate, false,
+                //     System.Security.Authentication.SslProtocols.Tls,
+                //    false);
 
                 _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/stream",
                     () => new SDPExchangeReceiver()
@@ -90,7 +107,9 @@ namespace WebRTCVideoServer
                     });
                 _receiverWSS.Start();
 
-                ThreadPool.QueueUserWorkItem(delegate { SendTestPattern(); });
+                //Task.Run(SendTestPattern);
+                //Task.Run(SendMp4);
+                Task.Run(SendMp4ViaFile);
             }
             catch (Exception excp)
             {
@@ -111,7 +130,7 @@ namespace WebRTCVideoServer
                     session.Peer.Close();
                 }
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.Error("Exception WebRTCDaemon.Stop. " + excp);
             }
@@ -151,12 +170,12 @@ namespace WebRTCVideoServer
 
                 WebRtcSession closedSession = null;
 
-                if(!_webRtcSessions.TryRemove(callID, out closedSession))
+                if (!_webRtcSessions.TryRemove(callID, out closedSession))
                 {
                     logger.Error("Failed to remove closed WebRTC session from dictionary.");
                 }
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.Error("Exception WebRTCDaemon.PeerClosed. " + excp);
             }
@@ -202,33 +221,35 @@ namespace WebRTCVideoServer
             {
                 unsafe
                 {
-                    Bitmap testPattern = new Bitmap("wizard.jpeg");
+                    //Bitmap testPattern = new Bitmap("wizard.jpeg");
+                    Bitmap testPattern = new Bitmap(@"..\..\max\max257.jpg");
 
                     SIPSorceryMedia.VPXEncoder vpxEncoder = new VPXEncoder();
-                    vpxEncoder.InitEncoder(Convert.ToUInt32(testPattern.Width), Convert.ToUInt32(testPattern.Height));
+                    vpxEncoder.InitEncoder(Convert.ToUInt32(testPattern.Width), Convert.ToUInt32(testPattern.Height), 2160);
 
                     SIPSorceryMedia.ImageConvert colorConverter = new ImageConvert();
 
                     byte[] sampleBuffer = null;
-                    byte[] encodedBuffer = new byte[4096];
+                    byte[] encodedBuffer = new byte[5000000];
+                    int sampleCount = 0;
 
                     while (!_exit)
                     {
                         if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
                         {
                             var stampedTestPattern = testPattern.Clone() as System.Drawing.Image;
-
                             AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
                             sampleBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
 
                             fixed (byte* p = sampleBuffer)
                             {
                                 byte[] convertedFrame = null;
-                                colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB24, testPattern.Width, testPattern.Height, VideoSubTypesEnum.I420, ref convertedFrame);
+                                //colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB24, testPattern.Width, testPattern.Height, VideoSubTypesEnum.I420, ref convertedFrame);
+                                colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, testPattern.Width, testPattern.Height, VideoSubTypesEnum.I420, ref convertedFrame);
 
                                 fixed (byte* q = convertedFrame)
                                 {
-                                    int encodeResult = vpxEncoder.Encode(q, sampleBuffer.Length, 1, ref encodedBuffer);
+                                    int encodeResult = vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
 
                                     if (encodeResult != 0)
                                     {
@@ -250,9 +271,228 @@ namespace WebRTCVideoServer
                             }
 
                             encodedBuffer = null;
+
+                            sampleCount++;
                         }
 
-                        Thread.Sleep(100);
+                        Thread.Sleep(30);
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SendTestPattern. " + excp);
+            }
+        }
+
+        private void SendMp4()
+        {
+            try
+            {
+                unsafe
+                {
+                    //Bitmap testPattern = new Bitmap("wizard.jpeg");
+
+                    SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
+                    //videoSampler.Init(videoMode.DeviceIndex, VideoSubTypesEnum.RGB24, videoMode.Width, videoMode.Height);
+                    sampler.InitFromFile();
+
+                    uint sampleWidth = 0; // Convert.ToUInt32(sampler.Width);
+                    uint sampleHeight = 0; // Convert.ToUInt32(sampler.Height);
+                    //VideoSubTypesHelper.GetPixelFormatForVideoSubType(sampleHeight.)
+
+                    logger.Debug($"Sampler width {sampleWidth}, height {sampleHeight}.");
+
+                    SIPSorceryMedia.VPXEncoder vpxEncoder = new VPXEncoder();
+                    //vpxEncoder.InitEncoder(sampleWidth, sampleHeight);
+                    //vpxEncoder.InitEncoder(Convert.ToUInt32(testPattern.Width), Convert.ToUInt32(testPattern.Height));
+
+                    SIPSorceryMedia.ImageConvert colorConverter = new ImageConvert();
+
+                    byte[] sampleBuffer = null;
+                    byte[] encodedBuffer = new byte[4096];
+                    int sampleCount = 0;
+
+                    while (!_exit)
+                    {
+                        if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
+                        {
+                            var sampleProps = sampler.GetSample(ref sampleBuffer);
+
+                            if (sampleProps.Width != 0 && sampleProps.Height != 0 &&
+                                sampleProps.Width != sampleWidth && sampleProps.Height != sampleHeight)
+                            {
+                                sampleWidth = sampleProps.Width;
+                                sampleHeight = sampleProps.Height;
+
+                                vpxEncoder.InitEncoder(sampleWidth, sampleHeight, 2176);
+
+                                Console.WriteLine($"VPX encoder dimensions set to {sampleWidth} x {sampleHeight}.");
+                            }
+
+                            // Save frame to Bitmap for diagnostics.
+                            //fixed (byte* p = sampleBuffer)
+                            //{
+                            //    IntPtr ptr = (IntPtr)p;
+                            //    Bitmap bmp = new Bitmap((int)sampleWidth, (int)sampleHeight, (int)sampleStride, PixelFormat.Format32bppRgb, ptr);
+                            //    bmp.Save(@"bmp\sample_" + sampleCount + ".bmp");
+                            //}
+
+                            //var stampedTestPattern = testPattern.Clone() as System.Drawing.Image;
+                            //AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
+                            //sampleBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
+
+                            fixed (byte* p = sampleBuffer)
+                            {
+                                byte[] convertedFrame = null;
+                                //colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB24, testPattern.Width, testPattern.Height, VideoSubTypesEnum.I420, ref convertedFrame);
+                                colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB32, (int)sampleWidth, (int)sampleHeight, VideoSubTypesEnum.I420, ref convertedFrame);
+                                //colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB32, (int)sampleWidth, (int)sampleHeight, VideoSubTypesEnum.YUY2, ref convertedFrame);
+
+                                fixed (byte* q = convertedFrame)
+                                {
+                                    //int encodeResult = vpxEncoder.Encode(q, sampleBuffer.Length, 1, ref encodedBuffer);
+                                    int encodeResult = vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
+
+                                    if (encodeResult != 0)
+                                    {
+                                        logger.Warn("VPX encode of video sample failed.");
+                                        continue;
+                                    }
+                                }
+                            }
+
+                            //stampedTestPattern.Dispose();
+                            //stampedTestPattern = null;
+
+                            lock (_webRtcSessions)
+                            {
+                                foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                                {
+                                    session.Value.Send(encodedBuffer);
+                                }
+                            }
+
+                            encodedBuffer = null;
+
+                            sampleCount++;
+                        }
+
+                        Thread.Sleep(30);
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SendTestPattern. " + excp);
+            }
+        }
+
+        private void SendMp4ViaFile()
+        {
+            try
+            {
+                unsafe
+                {
+                    //Bitmap testPattern = new Bitmap("wizard.jpeg");
+
+                    SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
+                    //videoSampler.Init(videoMode.DeviceIndex, VideoSubTypesEnum.RGB24, videoMode.Width, videoMode.Height);
+                    sampler.InitFromFile();
+
+                    uint sampleWidth = 0; // Convert.ToUInt32(sampler.Width);
+                    uint sampleHeight = 0; // Convert.ToUInt32(sampler.Height);
+                    uint sampleStride = 2176;
+                    //VideoSubTypesHelper.GetPixelFormatForVideoSubType(sampleHeight.)
+
+                    logger.Debug($"Sampler width {sampleWidth}, height {sampleHeight}.");
+
+                    SIPSorceryMedia.VPXEncoder vpxEncoder = new VPXEncoder();
+                    //vpxEncoder.InitEncoder(sampleWidth, sampleHeight);
+                    //vpxEncoder.InitEncoder(Convert.ToUInt32(testPattern.Width), Convert.ToUInt32(testPattern.Height));
+
+                    SIPSorceryMedia.ImageConvert colorConverter = new ImageConvert();
+
+                    byte[] sampleBuffer = null;
+                    byte[] encodedBuffer = new byte[1000000];
+                    int sampleCount = 0;
+
+                    while (!_exit)
+                    {
+                        if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
+                        {
+                            var sampleProps = sampler.GetSample(ref sampleBuffer);
+
+                            if (sampleProps.Width != 0 && sampleProps.Height != 0 &&
+                                sampleProps.Width != sampleWidth && sampleProps.Height != sampleHeight)
+                            {
+                                sampleWidth = sampleProps.Width;
+                                sampleHeight = sampleProps.Height;
+
+                                vpxEncoder.InitEncoder(sampleWidth, sampleHeight, sampleStride);
+
+                                Console.WriteLine($"VPX encoder dimensions set to {sampleWidth} x {sampleHeight}.");
+                            }
+
+                            // Save frame to Bitmap for diagnostics.
+                            if (sampleBuffer.Length > 0)
+                            {
+                                Bitmap bmp = null;
+
+                                fixed (byte* p = sampleBuffer)
+                                {
+                                    IntPtr ptr = (IntPtr)p;
+                                    bmp = new Bitmap((int)sampleWidth, (int)sampleHeight, (int)sampleStride, PixelFormat.Format32bppRgb, ptr);
+                                    //Bitmap bmp = new Bitmap((int)sampleWidth, (int)sampleHeight, (int)sampleStride, PixelFormat.Format24bppRgb, ptr);
+                                    //bmp.Save("bmp\\sample_" + sampleCount + ".bmp");
+                                    //bmp.Save("bmp\\sample.bmp");
+                                }
+
+
+                                //Bitmap frameBmp = new Bitmap("bmp\\sample_" + sampleCount + ".bmp");
+                                var bmpSampleBuffer = BitmapToRGB24(bmp as System.Drawing.Bitmap);
+                                //var stampedTestPattern = testPattern.Clone() as System.Drawing.Image;
+                                //AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
+                                //sampleBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
+
+                                fixed (byte* p = bmpSampleBuffer)
+                                {
+                                    byte[] convertedFrame = null;
+                                    //colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB24, testPattern.Width, testPattern.Height, VideoSubTypesEnum.I420, ref convertedFrame);
+                                    colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, (int)sampleWidth, (int)sampleHeight, VideoSubTypesEnum.I420, ref convertedFrame);
+                                    //colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB32, (int)sampleWidth, (int)sampleHeight, VideoSubTypesEnum.YUY2, ref convertedFrame);
+
+                                    fixed (byte* q = convertedFrame)
+                                    {
+                                        //int encodeResult = vpxEncoder.Encode(q, sampleBuffer.Length, 1, ref encodedBuffer);
+                                        int encodeResult = vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
+
+                                        if (encodeResult != 0)
+                                        {
+                                            logger.Warn("VPX encode of video sample failed.");
+                                            continue;
+                                        }
+                                    }
+                                }
+
+                                //stampedTestPattern.Dispose();
+                                //stampedTestPattern = null;
+
+                                lock (_webRtcSessions)
+                                {
+                                    foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                                    {
+                                        session.Value.Send(encodedBuffer);
+                                    }
+                                }
+
+                                encodedBuffer = null;
+
+                                sampleCount++;
+                            }
+                        }
+
+                        Thread.Sleep(30);
                     }
                 }
             }

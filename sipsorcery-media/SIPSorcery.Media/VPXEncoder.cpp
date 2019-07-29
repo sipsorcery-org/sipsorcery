@@ -21,12 +21,13 @@ namespace SIPSorceryMedia {
 		}
 	}
 
-	int VPXEncoder::InitEncoder(unsigned int width, unsigned int height)
+	int VPXEncoder::InitEncoder(unsigned int width, unsigned int height, unsigned int stride)
 	{
 		_vpxCodec = new vpx_codec_ctx_t();
 		_rawImage = new vpx_image_t();
 		_width = width;
 		_height = height;
+    _stride = stride;
 
 		vpx_codec_enc_cfg_t vpxConfig;
 		vpx_codec_err_t res;
@@ -41,7 +42,7 @@ namespace SIPSorceryMedia {
 			return -1;
 		}
 		else {
-			vpx_img_alloc(_rawImage, VPX_IMG_FMT_I420, width, height, 0);
+			vpx_img_alloc(_rawImage, VPX_IMG_FMT_I420, width, height, stride);
 
 			vpxConfig.g_w = width;
 			vpxConfig.g_h = height;
