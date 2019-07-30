@@ -62,7 +62,7 @@ namespace SIPSorcery.Servers
 
         private SIPMonitorLogDelegate SIPMonitorLogEvent_External;              // Function to log messages from this core.
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
-        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
+        private SIPAssetGetDelegate<ISIPAccount> GetSIPAccount_External;
         private SIPAuthenticateRequestDelegate SIPRequestAuthenticator_External;
 
         private SIPTransport m_sipTransport;
@@ -74,7 +74,7 @@ namespace SIPSorcery.Servers
         public SIPAppServerCore(
             SIPTransport sipTransport,
             GetCanonicalDomainDelegate getCanonicalDomain,
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            SIPAssetGetDelegate<ISIPAccount> getSIPAccount,
             SIPMonitorLogDelegate proxyLog,
             SIPCallManager callManager,
             SIPDialogueManager sipDialogueManager,

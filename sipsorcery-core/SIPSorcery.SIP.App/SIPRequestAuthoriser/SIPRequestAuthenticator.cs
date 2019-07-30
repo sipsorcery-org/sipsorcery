@@ -54,7 +54,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Authenticates a SIP request.
         /// </summary>
-        public static SIPRequestAuthenticationResult AuthenticateSIPRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, SIPAccount sipAccount, SIPMonitorLogDelegate logSIPMonitorEvent)
+        public static SIPRequestAuthenticationResult AuthenticateSIPRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, ISIPAccount sipAccount, SIPMonitorLogDelegate logSIPMonitorEvent)
         {
             try
             {

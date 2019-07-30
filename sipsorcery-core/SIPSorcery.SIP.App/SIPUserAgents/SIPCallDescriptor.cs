@@ -168,7 +168,7 @@ namespace SIPSorcery.SIP.App
         public string CallbackPattern;
         public int CallbackPhoneType;
 
-        public SIPAccount ToSIPAccount;         // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
+        public ISIPAccount ToSIPAccount;         // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
 
         public ManualResetEvent DelayMRE;       // If the call needs to be delayed DelaySeconds this MRE will be used.
 
@@ -181,10 +181,10 @@ namespace SIPSorcery.SIP.App
         /// <param name="fromHeader"></param>
         /// <param name="contentType"></param>
         /// <param name="content"></param>
-        public SIPCallDescriptor(SIPAccount toSIPAccount, string uri, string fromHeader, string contentType, string content)
+        public SIPCallDescriptor(ISIPAccount toSipAccount, string uri, string fromHeader, string contentType, string content)
         {
-            ToSIPAccount = toSIPAccount;
-            Uri = uri ?? toSIPAccount.SIPUsername + "@" + toSIPAccount.SIPDomain;
+            ToSIPAccount = toSipAccount;
+            Uri = uri;
             From = fromHeader;
             ContentType = contentType;
             Content = content;
@@ -252,7 +252,7 @@ namespace SIPSorcery.SIP.App
             //}
             //else
             //{
-                fromHeader = SIPFromHeader.ParseFromHeader(From);
+            fromHeader = SIPFromHeader.ParseFromHeader(From);
             //}
 
             if (!FromDisplayName.IsNullOrBlank())
@@ -426,7 +426,7 @@ namespace SIPSorcery.SIP.App
                 }
 
                 // Parse the request caller details option.
-                Match callerDetailsMatch = Regex.Match(options,REQUEST_CALLER_DETAILS + @"=(?<callerdetails>\w+)");
+                Match callerDetailsMatch = Regex.Match(options, REQUEST_CALLER_DETAILS + @"=(?<callerdetails>\w+)");
                 if (callerDetailsMatch.Success)
                 {
                     Boolean.TryParse(callerDetailsMatch.Result("${callerdetails}"), out RequestCallerDetails);
@@ -452,7 +452,7 @@ namespace SIPSorcery.SIP.App
                 {
                     Int32.TryParse(delayedReinviteMatch.Result("${delayedReinvite}"), out ReinviteDelay);
 
-                    if(ReinviteDelay > MAX_REINVITE_DELAY)
+                    if (ReinviteDelay > MAX_REINVITE_DELAY)
                     {
                         ReinviteDelay = DEFAULT_REINVITE_DELAY;
                     }
@@ -550,8 +550,6 @@ namespace SIPSorcery.SIP.App
             copy.FromURIUsername = FromURIUsername;
             copy.FromURIHost = FromURIHost;
             copy.TransferMode = TransferMode;
-
-            copy.ToSIPAccount = ToSIPAccount;
 
             return copy;
         }

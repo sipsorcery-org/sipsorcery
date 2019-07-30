@@ -1,11 +1,9 @@
-﻿using System;
+﻿using SIPSorcery.SIP.App;
+using System;
 using System.Collections.Generic;
-using System.Net.Security;
-using System.Linq;
 using System.ServiceModel;
-using System.Text;
 
-namespace SIPSorcery.SIP.App
+namespace SIPSorcery.Web.Services
 {
     public delegate List<string> GetNotificationsDelegate(string address, out string sessionID, out string sessionError);
 

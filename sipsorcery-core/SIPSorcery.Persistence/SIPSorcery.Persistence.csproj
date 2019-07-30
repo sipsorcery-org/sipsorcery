@@ -228,6 +228,16 @@
     <Compile Include="LINQtoData\TypeSystem.cs" />
     <Compile Include="SIPAssetPersistor.cs" />
     <Compile Include="SIPAssetPersistorFactory.cs" />
+    <Compile Include="SIPAssets\ISIPAsset.cs" />
+    <Compile Include="SIPAssets\SIPAccount.cs" />
+    <Compile Include="SIPAssets\SIPCDRAsset.cs" />
+    <Compile Include="SIPAssets\SIPDialogueAsset.cs" />
+    <Compile Include="SIPAssets\SIPDialPlan.cs" />
+    <Compile Include="SIPAssets\SIPDialPlanScriptTypes.cs" />
+    <Compile Include="SIPAssets\SIPDomain.cs" />
+    <Compile Include="SIPAssets\SIPProvider.cs" />
+    <Compile Include="SIPAssets\SIPProviderBinding.cs" />
+    <Compile Include="SIPAssets\SIPRegistrarBinding.cs" />
     <Compile Include="SIPDomainManager.cs" />
     <Compile Include="SIPProviderBindingSynchroniser.cs" />
     <Compile Include="SIPSorceryPersistor.cs" />

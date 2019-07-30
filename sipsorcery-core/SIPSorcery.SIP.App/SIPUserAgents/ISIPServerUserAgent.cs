@@ -43,7 +43,7 @@ namespace SIPSorcery.SIP.App
     {
         SIPCallDirection CallDirection { get; }
         SIPDialogue SIPDialogue { get; }
-        SIPAccount SIPAccount { get; set; }
+        ISIPAccount SIPAccount { get; set; }
         bool IsAuthenticated { get; set; }
         bool IsB2B { get; }
         bool IsInvite { get; }                      // Set to true for server user agents that are handling an INVITE reqquest.

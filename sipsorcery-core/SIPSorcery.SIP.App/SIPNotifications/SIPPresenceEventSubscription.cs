@@ -15,10 +15,10 @@ namespace SIPSorcery.SIP.App
 
         private SIPEventPresence Presence;
 
-        private SIPAssetCountDelegate<SIPRegistrarBinding> GetSIPRegistrarBindingsCount_External;
-        private SIPAssetGetListDelegate<SIPAccount> GetSIPAccounts_External;
+        private SIPAssetCountDelegate<ISIPRegistrarBinding> GetSIPRegistrarBindingsCount_External;
+        private SIPAssetGetListDelegate<ISIPAccount> GetSIPAccounts_External;
         //private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
-        private SIPAssetGetPropertyByIdDelegate<SIPAccount> GetSipAccountProperty_External;
+        private SIPAssetGetPropertyByIdDelegate<ISIPAccount> GetSipAccountProperty_External;
 
         private bool m_switchboardSIPAccountsOnly;      // If true means this subscription should only generate notifications for SIP accounts that are switchboard enabled.
 
@@ -46,9 +46,9 @@ namespace SIPSorcery.SIP.App
             SIPDialogue subscriptionDialogue,
             int expiry,
             //SIPAssetPersistor<SIPAccount> sipAccountPersistor,
-            SIPAssetGetListDelegate<SIPAccount> getSipAccountsExternal,
-            SIPAssetGetPropertyByIdDelegate<SIPAccount> getSipAccountPropertyExternal,
-            SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount,
+            SIPAssetGetListDelegate<ISIPAccount> getSipAccountsExternal,
+            SIPAssetGetPropertyByIdDelegate<ISIPAccount> getSipAccountPropertyExternal,
+            SIPAssetCountDelegate<ISIPRegistrarBinding> getBindingsCount,
             bool switchboardSIPAccountsOnly
             )
             : base(log, sessionID, resourceURI, canonincalResourceURI, filter, subscriptionDialogue, expiry)
@@ -65,7 +65,7 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                List<SIPAccount> sipAccounts = null;
+                List<ISIPAccount> sipAccounts = null;
 
                 if (ResourceURI.User == m_wildcardUser)
                 {
@@ -94,7 +94,7 @@ namespace SIPSorcery.SIP.App
                     }
                 }
 
-                foreach (SIPAccount sipAccount in sipAccounts)
+                foreach (ISIPAccount sipAccount in sipAccounts)
                 {
                     SIPURI aor = SIPURI.ParseSIPURIRelaxed(sipAccount.SIPUsername + "@" + sipAccount.SIPDomain);
 

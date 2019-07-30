@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ProductVersion>9.0.30729</ProductVersion>
     <ProjectGuid>{339648E6-3B61-4A27-B4A2-38A8216B1D7E}</ProjectGuid>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
     <FileUpgradeFlags />
     <UpgradeBackupLocation />
     <PublishUrl>publish\</PublishUrl>
@@ -129,11 +129,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="log4net" Version="2.0.8" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="System.Data.Linq" />
-    <Reference Include="System.Security" />
-    <Reference Include="System.ServiceModel" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery.Net\SIPSorcery.Net.csproj" />

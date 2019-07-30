@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace SIPSorcery.SIP.App
 {
@@ -13,8 +12,8 @@ namespace SIPSorcery.SIP.App
 
         private SIPEventDialogInfo DialogInfo;
 
-        private SIPAssetGetListDelegate<SIPDialogueAsset> GetDialogues_External;
-        private SIPAssetGetByIdDelegate<SIPDialogueAsset> GetDialogue_External;
+        private SIPAssetGetListDelegate<SIPDialogue> GetDialogues_External;
+        private SIPAssetGetByIdDelegate<SIPDialogue> GetDialogue_External;
 
         public override SIPEventPackage SubscriptionEventPackage
         {
@@ -39,8 +38,8 @@ namespace SIPSorcery.SIP.App
             string filter,
             SIPDialogue subscriptionDialogue,
             int expiry,
-            SIPAssetGetListDelegate<SIPDialogueAsset> getDialogues,
-            SIPAssetGetByIdDelegate<SIPDialogueAsset> getDialogue
+            SIPAssetGetListDelegate<SIPDialogue> getDialogues,
+            SIPAssetGetByIdDelegate<SIPDialogue> getDialogue
             )
             : base(log, sessionID, resourceURI, canonincalResourceURI, filter, subscriptionDialogue, expiry)
         {
@@ -54,11 +53,11 @@ namespace SIPSorcery.SIP.App
             try
             {
                 DialogInfo.State = SIPEventDialogInfoStateEnum.full;
-                List<SIPDialogueAsset> dialogueAssets = GetDialogues_External(d => d.Owner == SubscriptionDialogue.Owner, "Inserted", 0, MAX_DIALOGUES_FOR_NOTIFY);
+                List<SIPDialogue> dialogues = GetDialogues_External(d => d.Owner == SubscriptionDialogue.Owner, "Inserted", 0, MAX_DIALOGUES_FOR_NOTIFY);
 
-                foreach (SIPDialogueAsset dialogueAsset in dialogueAssets)
+                foreach (SIPDialogue dialogue in dialogues)
                 {
-                    DialogInfo.DialogItems.Add(new SIPEventDialog(dialogueAsset.SIPDialogue.Id.ToString(), "confirmed", dialogueAsset.SIPDialogue));
+                    DialogInfo.DialogItems.Add(new SIPEventDialog(dialogue.Id.ToString(), "confirmed", dialogue));
                 }
 
                 MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.NotifySent, "Full state notification for dialog and " + ResourceURI.ToString() + ".", SubscriptionDialogue.Owner));
@@ -91,7 +90,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        SIPDialogueAsset sipDialogue = GetDialogue_External(new Guid(machineEvent.ResourceID));
+                        SIPDialogue sipDialogue = GetDialogue_External(new Guid(machineEvent.ResourceID));
 
                         if (sipDialogue == null)
                         {
@@ -102,14 +101,14 @@ namespace SIPSorcery.SIP.App
                         else if (machineEvent.MachineEventType == SIPMonitorMachineEventTypesEnum.SIPDialogueTransfer)
                         {
                             // For dialog transfer events add both dialogs involved to the notification.
-                            DialogInfo.DialogItems.Add(new SIPEventDialog(sipDialogue.Id.ToString(), state, sipDialogue.SIPDialogue));
+                            DialogInfo.DialogItems.Add(new SIPEventDialog(sipDialogue.Id.ToString(), state, sipDialogue));
 
-                            if (sipDialogue.SIPDialogue.BridgeId != Guid.Empty)
+                            if (sipDialogue.BridgeId != Guid.Empty)
                             {
-                                SIPDialogueAsset bridgedDialogue = GetDialogues_External(d => d.BridgeId == sipDialogue.BridgeId && d.Id != sipDialogue.Id, null, 0, 1).FirstOrDefault();
+                                SIPDialogue bridgedDialogue = GetDialogues_External(d => d.BridgeId == sipDialogue.BridgeId && d.Id != sipDialogue.Id, null, 0, 1).FirstOrDefault();
                                 if (bridgedDialogue != null)
                                 {
-                                    DialogInfo.DialogItems.Add(new SIPEventDialog(bridgedDialogue.Id.ToString(), state, bridgedDialogue.SIPDialogue));
+                                    DialogInfo.DialogItems.Add(new SIPEventDialog(bridgedDialogue.Id.ToString(), state, bridgedDialogue));
                                 }
                             }
 
@@ -117,7 +116,7 @@ namespace SIPSorcery.SIP.App
                         }
                         else
                         {
-                            DialogInfo.DialogItems.Add(new SIPEventDialog(sipDialogue.Id.ToString(), state, sipDialogue.SIPDialogue));
+                            DialogInfo.DialogItems.Add(new SIPEventDialog(sipDialogue.Id.ToString(), state, sipDialogue));
                             return true;
                         }
                     }

@@ -221,6 +221,7 @@
     <Compile Include="CallManager\ICallManagerServices.cs" />
     <Compile Include="CallManager\ISIPCallDispatcher.cs" />
     <Compile Include="Notifications\INotifications.cs" />
+    <Compile Include="Notifications\ISIPMonitorPublisher.cs" />
     <Compile Include="Notifications\MonitorProxyManager.cs">
       <SubType>Code</SubType>
     </Compile>

@@ -56,7 +56,7 @@ namespace SIPSorcery.SIP.App
         {
             get { throw new NotImplementedException("SIPTransferServerUserAgent SIPDialogue"); }
         }
-        public SIPAccount SIPAccount
+        public ISIPAccount SIPAccount
         {
             get
             {

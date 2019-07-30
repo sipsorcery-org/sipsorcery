@@ -1,14 +1,15 @@
 ﻿// ============================================================================
-// FileName: SIPFunctionDelegates.cs
+// FileName: SIPAccount.cs
 //
 // Description:
-// A list of function delegates that are used by the SIP Server Agents.
+// Represents a SIP account that holds authentication information and additional settings
+// for SIP accounts.
 //
 // Author(s):
 // Aaron Clauson
 //
 // History:
-// 14 Nov 2008	Aaron Clauson	Created.
+// 10 May 2008  Aaron Clauson   Created.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -35,25 +36,59 @@
 // ============================================================================
 
 using System;
-using System.Collections.Generic;
-using System.Net;
 
 namespace SIPSorcery.SIP.App
 {
-    public delegate void SIPMonitorLogDelegate(SIPMonitorEvent monitorEvent);
-    public delegate void SIPMonitorMachineLogDelegate(SIPMonitorMachineEvent machineEvent);
-    public delegate bool SIPMonitorAuthenticationDelegate(string username, string password);    // Delegate to authenticate connections to the SIP Monitor Server.
-    public delegate void DialogueBridgeCreatedDelegate(SIPDialogue clientDialogue, SIPDialogue forwardedDialogue, string owner);
-    public delegate void DialogueBridgeClosedDelegate(string dialogueId, string owner);
-    public delegate void IPAddressChangedDelegate(IPAddress newIPAddress);
-    public delegate void QueueNewCallDelegate(ISIPServerUserAgent uas);
-    public delegate void BlindTransferDelegate(SIPDialogue deadDialogue, SIPDialogue orphanedDialogue, SIPDialogue answeredDialogue);
+    /// <remarks>
+    /// SIP account usernames can be treated by some SIP Sorcery server agents as domain name like structures where a username of
+    /// "x.username" will match the "username" account for receiving calls. To facilitate this SIP accounts with a '.' character in them
+    /// can only be created where the suffix "username" portion matches the Owner field. This allows users to create SIP accounts with '.'
+    /// in them but will prevent a different user from being able to hijack an "x.username" account and caue unexpected behaviour.
+    /// </remarks>
+    public interface ISIPAccount
+    {
+        Guid Id { get; set; }
 
-    // SIP User Agent Delegates.
-    public delegate void SIPCallResponseDelegate(ISIPClientUserAgent uac, SIPResponse sipResponse);
-    public delegate void SIPCallFailedDelegate(ISIPClientUserAgent uac, string errorMessage);
-    public delegate void SIPUASStateChangedDelegate(ISIPServerUserAgent uas, SIPResponseStatusCodesEnum statusCode, string reasonPhrase);
+        string Owner { get; set; }
 
-    // Authorisation delegates.
-    public delegate SIPRequestAuthenticationResult SIPAuthenticateRequestDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, ISIPAccount sipAccount, SIPMonitorLogDelegate log);
+        string AdminMemberId { get; set; }
+
+        string SIPUsername { get; set; }
+
+        string SIPPassword { get; set; }
+
+        string SIPDomain { get; set; }
+
+        bool SendNATKeepAlives { get; set; }
+
+        bool IsIncomingOnly { get; set; }
+
+        string OutDialPlanName { get; set; }
+
+        string InDialPlanName { get; set; }
+
+        bool IsUserDisabled { get; set; }
+
+        bool IsAdminDisabled { get; set; }
+
+        string AdminDisabledReason { get; set; }
+
+        string NetworkId { get; set; }
+
+        string IPAddressACL { get; set; }
+
+        DateTimeOffset Inserted { get; set; }
+
+        bool IsSwitchboardEnabled { get; set; }
+
+        bool DontMangleEnabled { get; set; }
+
+        string AvatarURL { get; set; }
+
+        string AccountCode { get; set; }
+
+        string Description { get; set; }
+
+        bool IsDisabled { get; }
+    }
 }

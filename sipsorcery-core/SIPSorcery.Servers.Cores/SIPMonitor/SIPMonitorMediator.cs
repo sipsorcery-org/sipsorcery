@@ -53,6 +53,7 @@ using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
+using SIPSorcery.Web.Services;
 
 #if UNITTEST
 using NUnit.Framework;

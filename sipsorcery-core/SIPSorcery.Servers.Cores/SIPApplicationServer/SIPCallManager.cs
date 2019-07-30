@@ -90,8 +90,8 @@ namespace SIPSorcery.Servers
         private SIPMonitorLogDelegate Log_External;
         private SIPAssetGetListDelegate<SIPProvider> GetSIPProviders_External;
         private SIPAssetGetDelegate<SIPDialPlan> GetDialPlan_External;                          // Function to load user dial plans.
-        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;                         // Function in authenticate user outgoing calls.
-        private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;    // Function to lookup bindings that have been registered for a SIP account.
+        private SIPAssetGetDelegate<ISIPAccount> GetSIPAccount_External;                         // Function in authenticate user outgoing calls.
+        private SIPAssetGetListDelegate<ISIPRegistrarBinding> GetSIPAccountBindings_External;    // Function to lookup bindings that have been registered for a SIP account.
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
 
         private Dictionary<string, string> m_inDialogueTransactions = new Dictionary<string, string>();     // <Forwarded transaction id, Origin transaction id>.
@@ -113,8 +113,8 @@ namespace SIPSorcery.Servers
             SIPAssetPersistor<SIPCDRAsset> sipCDRPersistor,
             DialPlanEngine dialPlanEngine,
             SIPAssetGetDelegate<SIPDialPlan> getDialPlan,
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
-            SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPAccountBindings,
+            SIPAssetGetDelegate<ISIPAccount> getSIPAccount,
+            SIPAssetGetListDelegate<ISIPRegistrarBinding> getSIPAccountBindings,
             SIPAssetGetListDelegate<SIPProvider> getSIPProviders,
             GetCanonicalDomainDelegate getCanonicalDomain,
             SIPAssetPersistor<Customer> customerPersistor,
@@ -412,7 +412,7 @@ namespace SIPSorcery.Servers
                 #endregion
 
                 SIPURI callURI = (uas.CallRequest != null) ? uas.CallRequest.URI : null;
-                SIPAccount sipAccount = uas.SIPAccount;
+                ISIPAccount sipAccount = uas.SIPAccount;
 
                 if (uas.CallDirection == SIPCallDirection.In && callURI.User == DISPATCHER_SIPACCOUNT_NAME)
                 {
@@ -518,7 +518,7 @@ namespace SIPSorcery.Servers
                                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No dialplan specified for incoming call to " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + ", registered bindings will be used.", owner));
 
                                 // The SIP account has no dialplan for an incoming call therefore send to the SIP account's bindings.
-                                List<SIPRegistrarBinding> bindings = GetSIPAccountBindings_External(b => b.SIPAccountId == sipAccount.Id, null, 0, MAX_FORWARD_BINDINGS);
+                                List<ISIPRegistrarBinding> bindings = GetSIPAccountBindings_External(b => b.SIPAccountId == sipAccount.Id, null, 0, MAX_FORWARD_BINDINGS);
                                 if (bindings != null && bindings.Count > 0)
                                 {
                                     // Create a pseudo-dialplan to process the incoming call.

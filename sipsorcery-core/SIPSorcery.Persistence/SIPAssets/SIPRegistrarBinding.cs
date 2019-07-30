@@ -66,7 +66,7 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     [Table(Name = "sipregistrarbindings")]
     [DataContract]
-    public class SIPRegistrarBinding : INotifyPropertyChanged, ISIPAsset
+    public class SIPRegistrarBinding : ISIPRegistrarBinding, INotifyPropertyChanged, ISIPAsset
     {
         public const string XML_DOCUMENT_ELEMENT_NAME = "sipregistrarbindings";
         public const string XML_ELEMENT_NAME = "sipregistrarbinding";

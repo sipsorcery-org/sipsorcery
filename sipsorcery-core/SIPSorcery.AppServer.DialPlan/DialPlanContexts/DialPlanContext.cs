@@ -123,7 +123,7 @@ namespace SIPSorcery.AppServer.DialPlan
 
         public SIPAccount SIPAccount
         {
-            get { return m_sipServerUserAgent.SIPAccount; }
+            get { return (SIPAccount)m_sipServerUserAgent.SIPAccount; }
         }
 
         private SIPResponse m_redirectResponse;

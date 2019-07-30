@@ -63,10 +63,10 @@ namespace SIPSorcery.Servers
         private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
 
         private SIPMonitorLogDelegate MonitorLogEvent_External;
-        private SIPAssetGetListDelegate<SIPDialogueAsset> GetDialogues_External;
-        private SIPAssetGetByIdDelegate<SIPDialogueAsset> GetDialogue_External;
-        private SIPAssetCountDelegate<SIPRegistrarBinding> GetSIPRegistrarBindingsCount_External;
-        private SIPAssetPersistor<SIPAccount> m_sipAssetPersistor;
+        private SIPAssetGetListDelegate<SIPDialogue> GetDialogues_External;
+        private SIPAssetGetByIdDelegate<SIPDialogue> GetDialogue_External;
+        private SIPAssetCountDelegate<ISIPRegistrarBinding> GetSIPRegistrarBindingsCount_External;
+        private SIPAssetPersistor<ISIPAccount> m_sipAssetPersistor;
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
         private ISIPMonitorPublisher m_publisher;                           // The SIP monitor event publisher, could be a memory or WPF boundary.
@@ -76,10 +76,10 @@ namespace SIPSorcery.Servers
 
         public NotifierSubscriptionsManager(
             SIPMonitorLogDelegate logDelegate,
-            SIPAssetGetListDelegate<SIPDialogueAsset> getDialogues,
-            SIPAssetGetByIdDelegate<SIPDialogueAsset> getDialogue,
-            SIPAssetPersistor<SIPAccount> sipAssetPersistor,
-            SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount,
+            SIPAssetGetListDelegate<SIPDialogue> getDialogues,
+            SIPAssetGetByIdDelegate<SIPDialogue> getDialogue,
+            SIPAssetPersistor<ISIPAccount> sipAssetPersistor,
+            SIPAssetCountDelegate<ISIPRegistrarBinding> getBindingsCount,
             SIPTransport sipTransport,
             SIPEndPoint outboundProxy,
             ISIPMonitorPublisher publisher)

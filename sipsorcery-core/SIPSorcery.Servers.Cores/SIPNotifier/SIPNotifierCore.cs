@@ -52,6 +52,7 @@ using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
+using SIPSorcery.Web.Services;
 
 #if UNITTEST
 using NUnit.Framework;
@@ -77,7 +78,7 @@ namespace SIPSorcery.Servers
         private SIPAssetGetDelegate<Customer> GetCustomer_External;
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
         private SIPAuthenticateRequestDelegate SIPRequestAuthenticator_External;
-        private SIPAssetPersistor<SIPAccount> m_sipAssetPersistor;
+        private SIPAssetPersistor<ISIPAccount> m_sipAssetPersistor;
 
         private Queue<SIPNonInviteTransaction> m_notifierQueue = new Queue<SIPNonInviteTransaction>();
         private AutoResetEvent m_notifierARE = new AutoResetEvent(false);
@@ -90,11 +91,11 @@ namespace SIPSorcery.Servers
             SIPMonitorLogDelegate logDelegate,
             SIPTransport sipTransport,
             SIPAssetGetDelegate<Customer> getCustomer,
-            SIPAssetGetListDelegate<SIPDialogueAsset> getDialogues,
-            SIPAssetGetByIdDelegate<SIPDialogueAsset> getDialogue,
+            SIPAssetGetListDelegate<SIPDialogue> getDialogues,
+            SIPAssetGetByIdDelegate<SIPDialogue> getDialogue,
             GetCanonicalDomainDelegate getCanonicalDomain,
-            SIPAssetPersistor<SIPAccount> sipAssetPersistor,
-            SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount,
+            SIPAssetPersistor<ISIPAccount> sipAssetPersistor,
+            SIPAssetCountDelegate<ISIPRegistrarBinding> getBindingsCount,
             SIPAuthenticateRequestDelegate sipRequestAuthenticator,
             SIPEndPoint outboundProxy,
             ISIPMonitorPublisher publisher)
@@ -247,7 +248,7 @@ namespace SIPSorcery.Servers
                     return;
                 }
 
-                SIPAccount sipAccount = m_sipAssetPersistor.Get(s => s.SIPUsername == fromUser && s.SIPDomain == canonicalDomain);
+                ISIPAccount sipAccount = m_sipAssetPersistor.Get(s => s.SIPUsername == fromUser && s.SIPDomain == canonicalDomain);
                 SIPRequestAuthenticationResult authenticationResult = SIPRequestAuthenticator_External(subscribeTransaction.LocalSIPEndPoint, subscribeTransaction.RemoteEndPoint, sipRequest, sipAccount, FireProxyLogEvent);
 
                 if (!authenticationResult.Authenticated)
@@ -304,7 +305,7 @@ namespace SIPSorcery.Servers
                         SIPURI canonicalResourceURI = sipRequest.URI.CopyOf();
                         string resourceCanonicalDomain = GetCanonicalDomain_External(canonicalResourceURI.Host, true);
                         canonicalResourceURI.Host = resourceCanonicalDomain;
-                        SIPAccount resourceSIPAccount = null;
+                        ISIPAccount resourceSIPAccount = null;
 
                         if (resourceCanonicalDomain == null)
                         {

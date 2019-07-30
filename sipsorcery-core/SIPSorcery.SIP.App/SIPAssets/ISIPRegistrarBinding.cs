@@ -1,14 +1,14 @@
 ﻿// ============================================================================
-// FileName: SIPFunctionDelegates.cs
+// FileName: SIPRegistrarBinding.cs
 //
 // Description:
-// A list of function delegates that are used by the SIP Server Agents.
+// SIP Registrar that strives to be RFC3822 compliant.
 //
 // Author(s):
 // Aaron Clauson
 //
 // History:
-// 14 Nov 2008	Aaron Clauson	Created.
+// 23 Aug 2008	Aaron Clauson	Created, refactored from RegistrarCore.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -35,25 +35,25 @@
 // ============================================================================
 
 using System;
-using System.Collections.Generic;
-using System.Net;
 
 namespace SIPSorcery.SIP.App
 {
-    public delegate void SIPMonitorLogDelegate(SIPMonitorEvent monitorEvent);
-    public delegate void SIPMonitorMachineLogDelegate(SIPMonitorMachineEvent machineEvent);
-    public delegate bool SIPMonitorAuthenticationDelegate(string username, string password);    // Delegate to authenticate connections to the SIP Monitor Server.
-    public delegate void DialogueBridgeCreatedDelegate(SIPDialogue clientDialogue, SIPDialogue forwardedDialogue, string owner);
-    public delegate void DialogueBridgeClosedDelegate(string dialogueId, string owner);
-    public delegate void IPAddressChangedDelegate(IPAddress newIPAddress);
-    public delegate void QueueNewCallDelegate(ISIPServerUserAgent uas);
-    public delegate void BlindTransferDelegate(SIPDialogue deadDialogue, SIPDialogue orphanedDialogue, SIPDialogue answeredDialogue);
-
-    // SIP User Agent Delegates.
-    public delegate void SIPCallResponseDelegate(ISIPClientUserAgent uac, SIPResponse sipResponse);
-    public delegate void SIPCallFailedDelegate(ISIPClientUserAgent uac, string errorMessage);
-    public delegate void SIPUASStateChangedDelegate(ISIPServerUserAgent uas, SIPResponseStatusCodesEnum statusCode, string reasonPhrase);
-
-    // Authorisation delegates.
-    public delegate SIPRequestAuthenticationResult SIPAuthenticateRequestDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, ISIPAccount sipAccount, SIPMonitorLogDelegate log);
+    public interface ISIPRegistrarBinding
+    {
+        SIPURI ContactSIPURI { get; set; }
+        string ContactURI { get; set; }
+        int Expiry { get; set; }
+        DateTimeOffset ExpiryTime { get; set; }
+        Guid Id { get; set; }
+        SIPURI MangledContactSIPURI { get; set; }
+        string MangledContactURI { get; set; }
+        SIPEndPoint ProxySIPEndPoint { get; set; }
+        string ProxySIPSocket { get; set; }
+        SIPEndPoint RegistrarSIPEndPoint { get; }
+        string RegistrarSIPSocket { get; set; }
+        string RemoteSIPSocket { get; set; }
+        Guid SIPAccountId { get; set; }
+        string SIPAccountName { get; set; }
+        string UserAgent { get; set; }
+    }
 }

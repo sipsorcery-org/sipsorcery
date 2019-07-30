@@ -92,7 +92,7 @@ namespace SIPSorcery.SIP.App
             get { return m_uasTransaction; }
         }
 
-        public SIPAccount SIPAccount
+        public ISIPAccount SIPAccount
         {
             get { return m_uacCallDescriptor.ToSIPAccount; }
             set { }

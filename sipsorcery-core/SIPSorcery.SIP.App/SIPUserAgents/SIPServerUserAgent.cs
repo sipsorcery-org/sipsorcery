@@ -46,7 +46,7 @@ namespace SIPSorcery.SIP.App
 
         private SIPMonitorLogDelegate Log_External = (e) => { }; //SIPMonitorEvent.DefaultSIPMonitorLogger;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;
-        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
+        private SIPAssetGetDelegate<ISIPAccount> GetSIPAccount_External;
 
         private SIPTransport m_sipTransport;
         private UASInviteTransaction m_uasTransaction;
@@ -76,8 +76,8 @@ namespace SIPSorcery.SIP.App
             get { return m_sipDialogue; }
         }
 
-        private SIPAccount m_sipAccount;
-        public SIPAccount SIPAccount
+        private ISIPAccount m_sipAccount;
+        public ISIPAccount SIPAccount
         {
             get { return m_sipAccount; }
             set { m_sipAccount = value; }
@@ -120,7 +120,7 @@ namespace SIPSorcery.SIP.App
             string sipUsername,
             string sipDomain,
             SIPCallDirection callDirection,
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            SIPAssetGetDelegate<ISIPAccount> getSIPAccount,
             SIPAuthenticateRequestDelegate sipAuthenticateRequest,
             SIPMonitorLogDelegate logDelegate,
             UASInviteTransaction uasTransaction)
