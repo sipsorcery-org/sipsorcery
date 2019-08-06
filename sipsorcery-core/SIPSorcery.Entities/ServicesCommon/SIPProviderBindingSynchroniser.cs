@@ -80,7 +80,7 @@ namespace SIPSorcery.Entities
                             }
                             else
                             {
-                                sipSorceryEntities.SIPProviderBindings.DeleteObject(existingBinding);
+                                sipSorceryEntities.SIPProviderBindings.Remove(existingBinding);
                                 sipSorceryEntities.SaveChanges();
                             }
                         }
@@ -117,7 +117,7 @@ namespace SIPSorcery.Entities
                         }
                         else
                         {
-                            sipSorceryEntities.SIPProviderBindings.DeleteObject(existingBinding);
+                            sipSorceryEntities.SIPProviderBindings.Remove(existingBinding);
                             sipSorceryEntities.SaveChanges();
                         }
                     }
@@ -134,14 +134,14 @@ namespace SIPSorcery.Entities
             try
             {
                 logger.Debug("AddNewBindingForProvider provider ID=" + sipProvider.ID + ".");
-                SIPProviderBinding newBinding = sipSorceryEntities.SIPProviderBindings.CreateObject();
+                SIPProviderBinding newBinding = sipSorceryEntities.SIPProviderBindings.Create();
                 newBinding.SetProviderFields(sipProvider);
                 newBinding.ID = Guid.NewGuid().ToString();
                 newBinding.NextRegistrationTime = DateTimeOffset.UtcNow.ToString("o");
                 newBinding.ProviderID = sipProvider.ID;
                 newBinding.Owner = sipProvider.Owner;
             
-                sipSorceryEntities.SIPProviderBindings.AddObject(newBinding);
+                sipSorceryEntities.SIPProviderBindings.Add(newBinding);
                 sipSorceryEntities.SaveChanges();
             }
             catch (Exception excp)

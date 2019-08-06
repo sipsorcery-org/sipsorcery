@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SIPSorcery.Entities;
-
-namespace SIPSorcery.Entities.IntegrationTests
+﻿namespace SIPSorcery.Entities.IntegrationTests
 {
     class TestHelper
     {
@@ -13,7 +6,7 @@ namespace SIPSorcery.Entities.IntegrationTests
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                sipSorceryEntities.ExecuteStoreCommand(query, null);
+                sipSorceryEntities.Database.ExecuteSqlCommand(query, null);
             }
         }
     }

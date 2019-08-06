@@ -54,9 +54,10 @@
     <TargetFrameworkProfile />
     <Utf8Output>true</Utf8Output>
     <ExpressionBlendVersion>4.0.20525.0</ExpressionBlendVersion>
-    <LinkedServerProject>..\SIPSorcery.TestWeb\SIPSorcery.TestWeb.csproj</LinkedServerProject>
+    <LinkedServerProject>
+    </LinkedServerProject>
     <OutOfBrowserSettingsFile>Properties\OutOfBrowserSettings.xml</OutOfBrowserSettingsFile>
-    <EnableOutOfBrowser>false</EnableOutOfBrowser>
+    <EnableOutOfBrowser>true</EnableOutOfBrowser>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

@@ -62,7 +62,7 @@ namespace SIPSorcery.Entities
                     rate.ID = Guid.NewGuid().ToString();
                     rate.Inserted = DateTimeOffset.UtcNow.ToString("o");
 
-                    sipSorceryEntities.Rates.AddObject(rate);
+                    sipSorceryEntities.Rates.Add(rate);
                     sipSorceryEntities.SaveChanges();
                 }
             }
@@ -140,7 +140,7 @@ namespace SIPSorcery.Entities
 
                 if (rate != null)
                 {
-                    sipSorceryEntities.Rates.DeleteObject(rate);
+                    sipSorceryEntities.Rates.Remove(rate);
                     sipSorceryEntities.SaveChanges();
                 }
             }
@@ -154,7 +154,7 @@ namespace SIPSorcery.Entities
         {
             using (var sipSorceryEntities = new SIPSorceryEntities())
             {
-                sipSorceryEntities.ExecuteStoreCommand("delete from rate where owner = @p0", owner);
+                sipSorceryEntities.Database.ExecuteSqlCommand("delete from rate where owner = @p0", owner);
             }
         }
     }

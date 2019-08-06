@@ -24,7 +24,7 @@ namespace SIPSorceryMedia {
 		public:
 			VPXEncoder();
 			~VPXEncoder();
-			int InitEncoder(unsigned int width, unsigned int height);
+			int InitEncoder(unsigned int width, unsigned int height, unsigned int stride);
 			int InitDecoder();
 			int Encode(unsigned char * i420, int i420Length, int sampleCount, array<Byte> ^% buffer);
 			int Decode(unsigned char* buffer, int bufferSize, array<Byte> ^% outBuffer, unsigned int % width, unsigned int % height);
@@ -34,7 +34,7 @@ namespace SIPSorceryMedia {
 			vpx_codec_ctx_t * _vpxCodec;
 			vpx_codec_ctx_t * _vpxDecoder;
 			vpx_image_t * _rawImage;
-			int _width = 0, _height = 0;
+			int _width = 0, _height = 0, _stride = 0;
 	};
 }
 

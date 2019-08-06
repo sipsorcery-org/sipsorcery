@@ -81,7 +81,7 @@ namespace Heijden.DNS
 	/// </summary>
 	public class RR
 	{
-        private const int MIN_TTL = 5;     // Because SIP DNS lookups are async if the TTL is set to 0 it will never get used. To get around it if TTL comes back as 0 override it with this min value.
+        private const int MIN_TTL = 60;     // Because SIP DNS lookups are async if the TTL is set to 0 it will never get used. To get around it if TTL comes back as 0 override it with this min value.
 
 		/// <summary>
 		/// The name of the node to which this resource record pertains

@@ -75,7 +75,6 @@ namespace SIPSorcery.AppServer.DialPlan
         private const int MAX_EMAIL_BODY_LENGTH = 4096;
         private const string USERDATA_DBTYPE_KEY = "UserDataDBType";
         private const string USERDATA_DBCONNSTR_KEY = "UserDataDBConnStr";
-        private const int MAX_DATA_ENTRIES_PER_USER = 100;
         private const int MAX_CALLS_ALLOWED = 20;       // The maximum number of outgoing call requests that will be allowed per dialplan execution.
         private const int MAX_CALLBACKS_ALLOWED = 3;    // The maximum number of callback method calls that will be alowed per dialplan instance.
         private const int WEBGET_MAXIMUM_TIMEOUT = 300; // The maximum number of seconds a web get can be set to wait for a response.
@@ -101,8 +100,6 @@ namespace SIPSorcery.AppServer.DialPlan
         private SIPTransport m_sipTransport;
         private DialPlanExecutingScript m_executingScript;
         private List<SIPProvider> m_sipProviders;
-        private DialogueBridgeCreatedDelegate CreateBridge_External;
-        //private DialPlanEngine m_dialPlanEngine;                                        // Used for allowed redirect responses that need to execute a new dial plan execution.
         private SIPSorcery.Entities.CustomerAccountDataLayer m_customerAccountDataLayer = new SIPSorcery.Entities.CustomerAccountDataLayer();
 
         private GetCanonicalDomainDelegate m_getCanonicalDomainDelegate;
@@ -276,7 +273,7 @@ namespace SIPSorcery.AppServer.DialPlan
             m_sipTransport = sipTransport;
             m_executingScript = executingScript;
             m_dialPlanLogDelegate = logDelegate;
-            CreateBridge_External = createBridge;
+            //CreateBridge_External = createBridge;
             m_sipRequest = sipRequest;
             m_callDirection = callDirection;
             m_dialPlanContext = dialPlanContext;

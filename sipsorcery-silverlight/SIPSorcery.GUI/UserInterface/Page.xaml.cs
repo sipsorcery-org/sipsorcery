@@ -40,7 +40,7 @@ namespace SIPSorcery
 
         public static List<string> TimeZones;
 
-        private string m_notificationsServiceURL = DEFAULT_NOTIFICATIONS_HOST + DEFAULT_NOTIFICATIONS_FILE;
+        private string m_notificationsServiceURL = null;
         private string m_entitiesServiceURL = null;
 
         private SIPEntitiesDomainContext m_riaContext;
@@ -48,8 +48,8 @@ namespace SIPSorcery
         private string m_persistorStatusMessage = "Initialising...";
         private bool m_provisioningInitialisationInProgress;
         private string m_owner;
-        private string m_serviceURL;
-        private string m_notificationsURL;
+        //private string m_serviceURL;
+        //private string m_notificationsURL;
 
         private UserPage m_userPage;
 
@@ -67,18 +67,36 @@ namespace SIPSorcery
             m_createAccountControl.CloseClicked += CancelCreateCustomer;
             m_createAccountControl.CustomerCreated += CustomerCreated;
 
-            m_serviceURL = App.ServiceURL;
-            m_notificationsURL = App.NotificationsURL;
+            //m_serviceURL = App.ServiceURL;
+            //m_notificationsURL = App.NotificationsURL;
 
-            if (!m_serviceURL.IsNullOrBlank())
+            if (!String.IsNullOrEmpty(App.ServiceURL))
             {
-                m_entitiesServiceURL = m_serviceURL + ENTITIES_SERVICE_URL;
+                m_entitiesServiceURL = App.ServiceURL + ENTITIES_SERVICE_URL;
+            }
+            else
+            {
+                m_entitiesServiceURL = DEFAULT_SERVICE_HOST + ENTITIES_SERVICE_URL;
             }
 
-            if (!m_notificationsURL.IsNullOrBlank())
+            if (!String.IsNullOrEmpty(App.NotificationsURL))
             {
-                m_notificationsServiceURL = m_notificationsURL + DEFAULT_NOTIFICATIONS_FILE;
+                m_notificationsServiceURL = App.NotificationsURL + DEFAULT_NOTIFICATIONS_FILE;
             }
+            else
+            {
+                m_notificationsServiceURL = DEFAULT_NOTIFICATIONS_HOST + DEFAULT_NOTIFICATIONS_FILE;
+            }
+            
+            //if (!m_serviceURL.IsNullOrBlank())
+            //{
+            //    m_entitiesServiceURL = m_serviceURL + ENTITIES_SERVICE_URL;
+            //}
+
+            //if (!m_notificationsURL.IsNullOrBlank())
+            //{
+            //    m_notificationsServiceURL = m_notificationsURL + DEFAULT_NOTIFICATIONS_FILE;
+            //}
 
             // Use the Silverlight network stack so that SOAP faults can get through.
             HttpWebRequest.RegisterPrefix(m_notificationsServiceURL, WebRequestCreator.ClientHttp);
@@ -185,23 +203,23 @@ namespace SIPSorcery
             if (m_persistorStatus == ServiceConnectionStatesEnum.Error)
             {
                 UIHelper.SetFill(m_appStatusIcon, Colors.Red);
-                UIHelper.SetText(m_provisioningStatusMessage, m_persistorStatusMessage + " " + m_serviceURL);
+                UIHelper.SetText(m_provisioningStatusMessage, m_persistorStatusMessage + " " + m_entitiesServiceURL);
 
                 if (m_userPage != null)
                 {
                     m_userPage.SetProvisioningStatusIconColour(Colors.Red);
-                    m_userPage.SetProvisioningStatusMessage(m_persistorStatusMessage + " " + m_serviceURL);
+                    m_userPage.SetProvisioningStatusMessage(m_persistorStatusMessage + " " + m_entitiesServiceURL);
                 }
             }
             else if (m_persistorStatus == ServiceConnectionStatesEnum.Ok)
             {
                 UIHelper.SetFill(m_appStatusIcon, Colors.Green);
-                UIHelper.SetText(m_provisioningStatusMessage, "Provisioning service ok. " + m_serviceURL);
+                UIHelper.SetText(m_provisioningStatusMessage, "Provisioning service ok. " + m_entitiesServiceURL);
 
                 if (m_userPage != null)
                 {
                     m_userPage.SetProvisioningStatusIconColour(Colors.Green);
-                    m_userPage.SetProvisioningStatusMessage("Provisioning service ok. " + m_serviceURL);
+                    m_userPage.SetProvisioningStatusMessage("Provisioning service ok. " + m_entitiesServiceURL);
                 }
 
                 if (m_loginControl.Visibility == System.Windows.Visibility.Visible)

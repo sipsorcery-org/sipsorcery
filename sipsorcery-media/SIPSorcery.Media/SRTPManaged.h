@@ -5,11 +5,18 @@
 
 #pragma once
 
+#include <winsock2.h>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
 #include "srtp.h"
 #include "err.h"
 #include "openssl\srtp.h"
 #include "openssl\err.h"
 #include "DtlsManaged.h"
+
+#include <msclr/marshal_cppstd.h>
+#include <iostream>
 
 extern "C" srtp_debug_module_t mod_srtp;
 extern "C" srtp_debug_module_t srtp_mod_auth;

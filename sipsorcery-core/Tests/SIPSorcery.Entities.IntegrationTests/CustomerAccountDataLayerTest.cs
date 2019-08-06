@@ -19,7 +19,7 @@ namespace SIPSorcery.Entities.IntegrationTests
 
                 using (var db = new SIPSorceryEntities())
                 {
-                    db.CustomerAccounts.AddObject(customerAccount);
+                    db.CustomerAccounts.Add(customerAccount);
                     db.SaveChanges();
                 }
 
@@ -56,7 +56,7 @@ namespace SIPSorcery.Entities.IntegrationTests
 
                 using (var db = new SIPSorceryEntities())
                 {
-                    db.CustomerAccounts.AddObject(customerAccount);
+                    db.CustomerAccounts.Add(customerAccount);
                     db.SaveChanges();
                 }
 

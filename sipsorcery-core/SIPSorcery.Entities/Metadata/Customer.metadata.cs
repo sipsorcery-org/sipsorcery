@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.ServiceModel.DomainServices.Server.ApplicationServices;
-using System.Text;
-using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Entities
 {
     [MetadataType(typeof(CustomerMetadata))]
-    public partial class Customer : IUser
+    public partial class Customer //: IUser
     {
         internal class CustomerMetadata
         {

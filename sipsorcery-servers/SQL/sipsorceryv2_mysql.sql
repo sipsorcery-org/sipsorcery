@@ -268,7 +268,7 @@ create table cdr
  Primary Key(id)
 );
 
-create table RTCC
+create table rtcc
 (
  ID varchar(36) not null,
  CDRID varchar(36) not null,

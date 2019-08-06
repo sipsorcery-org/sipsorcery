@@ -32,6 +32,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Data.Entity;
+using System.Data.Entity.Core;
+using System.Data.Entity.Core.Objects;
 using System.Linq;
 using System.Transactions;
 using SIPSorcery.Entities;
@@ -227,7 +230,7 @@ namespace SIPSorcery.Entities
                                 Inserted = DateTime.UtcNow
                             };
 
-                            db.RTCCs1.AddObject(rtccRecord);
+                            db.RTCCs1.Add(rtccRecord);
                             //var callCDR = (from cdr in db.CDRs where cdr.ID == cdrID select cdr).SingleOrDefault();
 
                             //if (callCDR == null)
@@ -620,7 +623,7 @@ namespace SIPSorcery.Entities
                 customerAccount.ID = Guid.NewGuid().ToString();
                 customerAccount.Inserted = DateTimeOffset.UtcNow.ToString("o");
 
-                sipSorceryEntities.CustomerAccounts.AddObject(customerAccount);
+                sipSorceryEntities.CustomerAccounts.Add(customerAccount);
                 sipSorceryEntities.SaveChanges();
             }
         }

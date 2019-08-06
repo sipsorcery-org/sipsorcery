@@ -9,7 +9,7 @@
         <SilverlightProjectProperties>
           <StartPageUrl>
           </StartPageUrl>
-          <StartAction>DynamicPage</StartAction>
+          <StartAction>OfflineApplication</StartAction>
           <AspNetDebugging>True</AspNetDebugging>
           <NativeDebugging>False</NativeDebugging>
           <SQLDebugging>False</SQLDebugging>
@@ -22,8 +22,7 @@
           <StartWorkingDirectory>
           </StartWorkingDirectory>
           <ShowWebRefOnDebugPrompt>True</ShowWebRefOnDebugPrompt>
-          <OutOfBrowserProjectToDebug>
-          </OutOfBrowserProjectToDebug>
+          <OutOfBrowserProjectToDebug>SIPSorcery.Client</OutOfBrowserProjectToDebug>
           <ShowRiaSvcsOnDebugPrompt>False</ShowRiaSvcsOnDebugPrompt>
         </SilverlightProjectProperties>
       </FlavorProperties>
