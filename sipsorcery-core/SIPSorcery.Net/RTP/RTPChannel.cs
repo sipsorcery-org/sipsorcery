@@ -80,7 +80,7 @@ namespace SIPSorcery.Net
 
         private static Mutex _allocatePortsMutex = new Mutex();
 
-        private static IPEndPoint _wiresharkEP = new IPEndPoint(IPAddress.Parse("10.1.1.3"), 10001);
+        //private static IPEndPoint _wiresharkEP = new IPEndPoint(IPAddress.Parse("10.1.1.3"), 10001);
 
         private Socket _rtpSocket;
         private SocketError _rtpSocketError = SocketError.Success;
@@ -351,7 +351,7 @@ namespace SIPSorcery.Net
 
                         if (bytesRead > 0)
                         {
-                            _rtpSocket.SendTo(buffer, bytesRead, SocketFlags.None, _wiresharkEP);
+                            //_rtpSocket.SendTo(buffer, bytesRead, SocketFlags.None, _wiresharkEP);
 
                             _rtpLastActivityAt = DateTime.Now;
 
