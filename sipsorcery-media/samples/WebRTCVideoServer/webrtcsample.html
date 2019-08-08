@@ -15,29 +15,30 @@
         'optional': [
             { 'DtlsSrtpKeyAgreement': true },
             { 'RtpDataChannels': false },
-            { 'iceTransports': 'udp' }
+            { 'iceTransports': 'udp' },
+            { 'bundlePolicy': "max-bundle"}
         ]
     };
 
     var offerOptions = {
-        offerToReceiveAudio: 0,
+        offerToReceiveAudio: 1,
         offerToReceiveVideo: 1
     };
 
     var media_constraints = {
-        audio: false,
+        audio: true,
         video: true
     };
 
     // Set up audio and video regardless of what devices are present.
     var sdpConstraints = {
         'mandatory': {
-            'OfferToReceiveAudio': false,
+            'OfferToReceiveAudio': true,
             'OfferToReceiveVideo': true
         }
     };
 
-    var constraints = { video: true };
+    var constraints = { video: true, audio: true };
 
     var count = 0;
     var ws;
@@ -79,9 +80,13 @@
 
     function handleRemoteStreamAdded(event) {
         console.log('Remote stream added.');
+        console.log(event);
 
         document.querySelector("#remoteVideo").srcObject = event.stream;
         document.querySelector("#remoteVideo").play();
+
+        //document.querySelector("#remoteAudio").srcObject = event.stream;
+        //document.querySelector("#remoteAudio").play();
     }
 
     function handleRemoteStreamRemoved(event) {
@@ -216,10 +221,10 @@
 
 </script>
 
-<video controls autoplay='true' id="remoteVideo" width="1080" height="720"></video>
-
+<video controls autoplay="autoplay" id="remoteVideo" width="1080" height="720"></video>
 <div>
     <button onclick="wsConnect();">Click here to start</button>
 </div>
 
+<!--<audio controls autoplay="autoplay" id="remoteAudio" />-->
 

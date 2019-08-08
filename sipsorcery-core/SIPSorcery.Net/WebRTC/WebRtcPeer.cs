@@ -51,8 +51,10 @@ namespace SIPSorcery.Net
 {
     public class WebRtcPeer
     {
-        private const int WEBRTC_START_PORT = 49000;
-        private const int WEBRTC_END_PORT = 53000;
+        private const int WEBRTC_START_AUDIO_PORT = 49000;
+        private const int WEBRTC_END_AUDIO_PORT = 51000;
+        private const int WEBRTC_START_VIDEO_PORT = 51001;
+        private const int WEBRTC_END_VIDEO_PORT = 53000;
         private const int EXPIRE_CLIENT_SECONDS = 3;
         private const int RTP_MAX_PAYLOAD = 1400;
         private const int TIMESTAMP_SPACING = 3000;
@@ -74,18 +76,61 @@ namespace SIPSorcery.Net
 o=- {0} 2 IN IP4 127.0.0.1
 s=-
 t=0 0
-m=video {1} RTP/SAVPF " + PAYLOAD_TYPE_ID + @"
-c=IN IP4 {2}
-{3}
-a=ice-ufrag:{4}
-a=ice-pwd:{5}
-a=fingerprint:sha-256 {6}
+a=group:BUNDLE audio video
+";
+        private static string _sdpAudioPcmOfferTemplate =
+@"m=audio {0} RTP/SAVPF 0
+c=IN IP4 {1}
+{2}
+a=ice-ufrag:{3}
+a=ice-pwd:{4}
+a=fingerprint:sha-256 {5}
+a=setup:actpass
+a=mid:audio
+a=sendrecv
+a=rtcp-mux
+a=mid:audio
+a=rtpmap:0 PCMU/8000
+a=end-of-candidates 
+";
+
+        private static string _sdpVideoOfferTemplate =
+"m=video 0 RTP/SAVPF " + PAYLOAD_TYPE_ID + @"
+c=IN IP4 {0}
+a=bundle-only 
 a=setup:actpass
 a=mid:video
 a=sendrecv
 a=rtcp-mux
+a=mid:video
 a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 ";
+
+        //        private static string _sdpVideoOfferTemplate =
+        //"m=video {0} RTP/SAVPF " + PAYLOAD_TYPE_ID + @"
+        //{1}
+        //a=ice-ufrag:{2}
+        //a=ice-pwd:{3}
+        //a=fingerprint:sha-256 {4}
+        //a=setup:actpass
+        //a=mid:video
+        //a=sendrecv
+        //a=rtcp-mux
+        //a=mid:video
+        //a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
+        //";
+
+        //        private static string _sdpAudioPcmBundledOfferTemplate =
+        //@"m=audio {0} RTP/SAVPF 0
+        //a=fingerprint:sha-256 {1}
+        //a=setup:actpass
+        //a=mid:audio
+        //a=sendrecv
+        //a=rtcp-mux
+        //a=mid:audio
+        //a=rtpmap:0 PCMU/8000
+        //";
+
 
         private static ILog logger = AppState.logger;
 
@@ -94,10 +139,13 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         public string SdpSessionID;
         public string LocalIceUser;
         public string LocalIcePassword;
+        //public string LocalVideoIceUser;
+        //public string LocalVideoIcePassword;
         public string RemoteIceUser;
         public string RemoteIcePassword;
         public bool IsDtlsNegotiationComplete;
-        public uint SSRC;
+        public uint VideoSSRC;
+        public uint AudioSSRC;
         public ushort SequenceNumber;
         public uint LastTimestamp;
         public DateTime LastRtcpSenderReportSentAt = DateTime.MinValue;
@@ -105,6 +153,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         public List<IceCandidate> LocalIceCandidates;
         public bool IsClosed;
         public IceConnectionStatesEnum IceConnectionState = IceConnectionStatesEnum.None;
+        public List<RtpMediaTypesEnum> MediaTypes;
 
         private List<IceCandidate> _remoteIceCandidates = new List<IceCandidate>();
         public List<IceCandidate> RemoteIceCandidates
@@ -116,6 +165,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         private IPEndPoint _turnServerEndPoint;
         private ManualResetEvent _iceGatheringMRE;
         private int _communicationFailureCount = 0;
+        private List<IPAddress> _localIPAddresses;
 
         public event Action OnClose;
         public event Action<string> OnSdpOfferReady;
@@ -130,7 +180,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 if (!IsClosed)
                 {
                     IsClosed = true;
-                    
+
                     // Make sure no further packets get passed onto these handlers! They could get deallocated before the sockets shutdown.
                     OnDtlsPacket = null;
                     OnMediaPacket = null;
@@ -181,8 +231,17 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         /// <param name="dtlsCertificateFingerprint">The SHA256 fingerprint that gets placed in the SDP offer for this WebRTC peer. It must match the certificate being used
         /// in the DTLS negotiation.</param>
         /// <param name="turnServerEndPoint">An optional parameter that can be used include a TURN server in this peer's ICE candidate gathering.</param>
-        public void Initialise(string dtlsCertificateFingerprint, IPEndPoint turnServerEndPoint)
+        /// <param name="localAddress">Optional parameter to specify the local IP address to use for STUN/TRP sockets. If null all available interfaces will be used.</param>
+        public void Initialise(string dtlsCertificateFingerprint, IPEndPoint turnServerEndPoint, List<RtpMediaTypesEnum> mediaTypes, IPAddress localAddress)
         {
+            MediaTypes = mediaTypes;
+            _localIPAddresses = new List<IPAddress>();
+
+            if (localAddress != null)
+            {
+                _localIPAddresses.Add(localAddress);
+            }
+
             if (dtlsCertificateFingerprint.IsNullOrBlank())
             {
                 throw new ArgumentNullException("dtlsCertificateFingerprint", "A DTLS certificate fingerprint must be supplied when initialising a new WebRTC peer (to get the fingerprint use: openssl x509 -fingerprint -sha256 -in server-cert.pem).");
@@ -214,36 +273,64 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 }
                 else
                 {
-                    string iceCandidateString = null;
+                    string localIceCandidateString = null;
 
                     logger.Debug("ICE Candidates for " + CallID + ": ");
 
-                    foreach (var iceCandidate in LocalIceCandidates)
+                    foreach (var iceCandidate in GetIceCandidatesForMediaType(RtpMediaTypesEnum.None))
                     {
-                        iceCandidateString += iceCandidate.ToString();
+                        localIceCandidateString += iceCandidate.ToString();
                     }
 
                     var localIceUser = Crypto.GetRandomString(20);
                     var localIcePassword = Crypto.GetRandomString(20) + Crypto.GetRandomString(20);
+                    var localIceCandidate = GetIceCandidatesForMediaType(RtpMediaTypesEnum.None).First();
 
-                    var offer = String.Format(_sdpOfferTemplate, Crypto.GetRandomInt(10).ToString(), (LocalIceCandidates.First().LocalRtpSocket.LocalEndPoint as IPEndPoint).Port, LocalIceCandidates.First().LocalAddress, iceCandidateString.TrimEnd(), localIceUser, localIcePassword, _dtlsCertificateFingerprint);
+                    var offerHeader = String.Format(_sdpOfferTemplate, Crypto.GetRandomInt(10).ToString());
+
+                    //var videoOffer = mediaTypes.Contains(RtpMediaTypesEnum.Video) ? String.Format(_sdpVideoOfferTemplate,
+                    //   videoCandidate.Port,
+                    //    videoIceCandidateString.TrimEnd(),
+                    //    localVideoIceUser,
+                    //    localVideoIcePassword,
+                    //    _dtlsCertificateFingerprint) : null;
+
+                    var videoOffer = String.Format(_sdpVideoOfferTemplate, localIceCandidate.LocalAddress);
+
+                    //var audioOffer = mediaTypes.Contains(RtpMediaTypesEnum.Audio) ? String.Format(_sdpAudioPcmOfferTemplate,
+                    //    audioCandidate.Port,
+                    //    audioIceCandidateString.TrimEnd(),
+                    //    localAudioIceUser,
+                    //    localAudioIcePassword,
+                    //    _dtlsCertificateFingerprint) : null;
+
+                    var audioOffer = mediaTypes.Contains(RtpMediaTypesEnum.Audio) ? String.Format(_sdpAudioPcmOfferTemplate,
+                         localIceCandidate.Port,
+                         localIceCandidate.LocalAddress,
+                         localIceCandidateString.TrimEnd(),
+                         localIceUser,
+                         localIcePassword,
+                         _dtlsCertificateFingerprint) : null;
+
+                    string offer = offerHeader + audioOffer + videoOffer;
 
                     //logger.Debug("WebRTC Offer SDP: " + offer);
 
                     SDP = offer;
                     LocalIceUser = localIceUser;
                     LocalIcePassword = localIcePassword;
-                    SSRC = Convert.ToUInt32(Crypto.GetRandomInt(8));
+                    //LocalVideoIceUser = localVideoIceUser;
+                    //LocalVideoIcePassword = localVideoIcePassword;
+                    VideoSSRC = Convert.ToUInt32(Crypto.GetRandomInt(8));
+                    AudioSSRC = Convert.ToUInt32(Crypto.GetRandomInt(8));
                     SequenceNumber = 1;
 
-                    Task.Run(() => { SendStunConnectivityChecks(); });
+                    //Task.Run(() => { SendStunConnectivityChecks(RtpMediaTypesEnum.Audio); });
+                    Task.Run(() => { SendStunConnectivityChecks(RtpMediaTypesEnum.None); });
 
                     logger.Debug("Sending SDP offer for WebRTC call " + CallID + ".");
 
-                    if (OnSdpOfferReady != null)
-                    {
-                        OnSdpOfferReady(offer);
-                    }
+                    OnSdpOfferReady?.Invoke(offer);
                 }
             }
             catch (Exception excp)
@@ -286,72 +373,112 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             }
         }
 
+        private List<IceCandidate> GetIceCandidatesForMediaType(RtpMediaTypesEnum mediaType)
+        {
+            int startPort = WEBRTC_START_AUDIO_PORT;
+            int endPort = WEBRTC_END_VIDEO_PORT;
+
+            if (mediaType == RtpMediaTypesEnum.Audio)
+            {
+                startPort = WEBRTC_START_AUDIO_PORT;
+                endPort = WEBRTC_END_AUDIO_PORT;
+            }
+            else if (mediaType == RtpMediaTypesEnum.Video)
+            {
+                startPort = WEBRTC_START_VIDEO_PORT;
+                endPort = WEBRTC_END_VIDEO_PORT;
+            }
+
+            List<IceCandidate> candidates = new List<IceCandidate>();
+
+            foreach (var candidate in LocalIceCandidates)
+            {
+                var localRtpEndPoint = candidate.LocalRtpSocket.LocalEndPoint as IPEndPoint;
+
+                if (localRtpEndPoint.Port >= startPort && localRtpEndPoint.Port <= endPort)
+                {
+                    candidates.Add(candidate);
+                }
+            }
+
+            return candidates;
+        }
+
         private void GetIceCandidates(ManualResetEvent iceGatheringCompleteMRE)
         {
             IceNegotiationStartedAt = DateTime.Now;
             LocalIceCandidates = new List<IceCandidate>();
-            List<UnicastIPAddressInformation> addresses = new List<UnicastIPAddressInformation>();
 
-            // CAUTION: GetUnicastAddresses canj take up to 60 seconds to return if the machine has IP addresses in the IpDadStateTentative state,
-            // such as DHCP addresses still checking for their lease. More info at: https://msdn.microsoft.com/en-us/library/windows/desktop/aa814507(v=vs.85).aspx 
-            //var addresses = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetUnicastAddresses()
-            //    .Where(x =>
-            //    x.Address.AddressFamily == AddressFamily.InterNetwork &&    // Exclude IPv6 at this stage.
-            //    IPAddress.IsLoopback(x.Address) == false &&
-            //    (x.Address != null && x.Address.ToString().StartsWith(AUTOMATIC_PRIVATE_ADRRESS_PREFIX) == false));
-
-            foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+            if (_localIPAddresses.Count == 0)
             {
-                if (ni.OperationalStatus == OperationalStatus.Up)
+                // CAUTION: GetUnicastAddresses can take up to 60 seconds to return if the machine has IP addresses in the IpDadStateTentative state,
+                // such as DHCP addresses still checking for their lease. More info at: https://msdn.microsoft.com/en-us/library/windows/desktop/aa814507(v=vs.85).aspx 
+                //var addresses = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetUnicastAddresses()
+                //    .Where(x =>
+                //    x.Address.AddressFamily == AddressFamily.InterNetwork &&    // Exclude IPv6 at this stage.
+                //    IPAddress.IsLoopback(x.Address) == false &&
+                //    (x.Address != null && x.Address.ToString().StartsWith(AUTOMATIC_PRIVATE_ADRRESS_PREFIX) == false));
+
+                foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
                 {
-                    foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
+                    if (ni.OperationalStatus == OperationalStatus.Up)
                     {
-                        if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && IPAddress.IsLoopback(ip.Address) == false && ip.IsTransient == false)
+                        foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
                         {
-                            //Console.WriteLine(ip.Address.ToString());
-                            addresses.Add(ip);
+                            if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && IPAddress.IsLoopback(ip.Address) == false && ip.IsTransient == false)
+                            {
+                                //Console.WriteLine(ip.Address.ToString());
+                                _localIPAddresses.Add(ip.Address);
+                            }
                         }
                     }
                 }
             }
 
-            foreach (var address in addresses)
+            foreach (var address in _localIPAddresses)
             {
-                logger.Debug("Attempting to create RTP socket with IP address " + address.Address + ".");
+                logger.Debug("Attempting to create RTP socket with IP address " + address + ".");
 
                 Socket rtpSocket = null;
                 Socket controlSocket = null;
 
-                NetServices.CreateRtpSocket(address.Address, WEBRTC_START_PORT, WEBRTC_END_PORT, false, out rtpSocket, out controlSocket);
+                NetServices.CreateRtpSocket(address, WEBRTC_START_AUDIO_PORT, WEBRTC_END_VIDEO_PORT, false, out rtpSocket, out controlSocket);
 
-                if (rtpSocket != null)
-                {
-                    logger.Debug("RTP socket successfully created on " + rtpSocket.LocalEndPoint + ".");
-
-                    var iceCandidate = new IceCandidate() { LocalAddress = address.Address, Port = ((IPEndPoint)rtpSocket.LocalEndPoint).Port, LocalRtpSocket = rtpSocket, LocalControlSocket = controlSocket,
-                        TurnServer = (_turnServerEndPoint != null) ? new TurnServer() { ServerEndPoint = _turnServerEndPoint } : null };
-
-                    LocalIceCandidates.Add(iceCandidate);
-
-                    var listenerTask = Task.Run(() => { StartWebRtcRtpListener(iceCandidate); });
-
-                    iceCandidate.RtpListenerTask = listenerTask;
-
-                    if (_turnServerEndPoint != null)
+                    if (rtpSocket != null)
                     {
-                        var stunBindingTask = Task.Run(() => { SendInitialStunBindingRequest(iceCandidate, iceGatheringCompleteMRE); });
-                    }
-                    else
-                    {
-                        iceCandidate.IsGatheringComplete = true;
+                        logger.Debug("RTP socket successfully created on " + rtpSocket.LocalEndPoint + ".");
 
-                        // Potentially save a few seconds if all the ICE candidates are now ready.
-                        if (LocalIceCandidates.All(x => x.IsGatheringComplete))
+                        var iceCandidate = new IceCandidate()
                         {
-                            iceGatheringCompleteMRE.Set();
+                            LocalAddress = address,
+                            Port = ((IPEndPoint)rtpSocket.LocalEndPoint).Port,
+                            LocalRtpSocket = rtpSocket,
+                            LocalControlSocket = controlSocket,
+                            TurnServer = (_turnServerEndPoint != null) ? new TurnServer() { ServerEndPoint = _turnServerEndPoint } : null,
+                            MediaType = RtpMediaTypesEnum.Multiple
+                        };
+
+                        LocalIceCandidates.Add(iceCandidate);
+
+                        var listenerTask = Task.Run(() => { StartWebRtcRtpListener(iceCandidate); });
+
+                        iceCandidate.RtpListenerTask = listenerTask;
+
+                        if (_turnServerEndPoint != null)
+                        {
+                            var stunBindingTask = Task.Run(() => { SendInitialStunBindingRequest(iceCandidate, iceGatheringCompleteMRE); });
+                        }
+                        else
+                        {
+                            iceCandidate.IsGatheringComplete = true;
+
+                            // Potentially save a few seconds if all the ICE candidates are now ready.
+                            if (LocalIceCandidates.All(x => x.IsGatheringComplete))
+                            {
+                                iceGatheringCompleteMRE.Set();
+                            }
                         }
                     }
-                }
             }
         }
 
@@ -383,7 +510,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             }
         }
 
-        private void SendStunConnectivityChecks()
+        private void SendStunConnectivityChecks(RtpMediaTypesEnum mediaType)
         {
             try
             {
@@ -392,18 +519,20 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     try
                     {
                         // If one of the ICE candidates has the remote RTP socket set then the negotiation is complete and the STUN checks are to keep the connection alive.
-                        if (LocalIceCandidates.Any(x => x.IsConnected == true))
+                        if (LocalIceCandidates.Any(x => (mediaType == RtpMediaTypesEnum.None || x.MediaType == mediaType) && x.IsConnected == true))
                         {
-                            var iceCandidate = LocalIceCandidates.First(x => x.IsConnected == true);
+                            var iceCandidate = LocalIceCandidates.First(x => (mediaType == RtpMediaTypesEnum.None || x.MediaType == mediaType) && x.IsConnected == true);
 
                             // Remote RTP endpoint gets set when the DTLS negotiation is finished.
                             if (iceCandidate.RemoteRtpEndPoint != null)
                             {
                                 //logger.Debug("Sending STUN connectivity check to client " + iceCandidate.RemoteRtpEndPoint + ".");
 
+                                string localUser = LocalIceUser;
+
                                 STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
                                 stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
-                                stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + LocalIceUser);
+                                stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + localUser);
                                 stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
                                 stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
                                 byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
@@ -433,21 +562,23 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                         {
                             if (_remoteIceCandidates.Count() > 0)
                             {
-                                foreach (var localIceCandidate in LocalIceCandidates.Where(x => x.IsStunLocalExchangeComplete == false && x.StunConnectionRequestAttempts < MAXIMUM_STUN_CONNECTION_ATTEMPTS))
+                                foreach (var localIceCandidate in LocalIceCandidates.Where(x => x.MediaType == mediaType && x.IsStunLocalExchangeComplete == false && x.StunConnectionRequestAttempts < MAXIMUM_STUN_CONNECTION_ATTEMPTS))
                                 {
                                     localIceCandidate.StunConnectionRequestAttempts++;
 
                                     // ToDo: Include srflx and relay addresses.
 
-                                    foreach (var remoteIceCandidate in RemoteIceCandidates.Where(x => x.Transport != "tcp" && x.NetworkAddress.NotNullOrBlank()))   // Only supporting UDP candidates at this stage.
+                                    foreach (var remoteIceCandidate in RemoteIceCandidates.Where(x => x.MediaType == mediaType && x.Transport != "tcp" && x.NetworkAddress.NotNullOrBlank()))   // Only supporting UDP candidates at this stage.
                                     {
                                         IPAddress remoteAddress = IPAddress.Parse(remoteIceCandidate.NetworkAddress);
 
                                         logger.Debug("Sending authenticated STUN binding request " + localIceCandidate.StunConnectionRequestAttempts + " from " + localIceCandidate.LocalRtpSocket.LocalEndPoint + " to WebRTC peer at " + remoteIceCandidate.NetworkAddress + ":" + remoteIceCandidate.Port + ".");
 
+                                        string localUser = LocalIceUser;
+
                                         STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
                                         stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
-                                        stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + LocalIceUser);
+                                        stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + localUser);
                                         stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
                                         stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
                                         byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
@@ -506,10 +637,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                         if (buffer[0] >= 20 && buffer[0] <= 64)
                         {
                             //OnMediaPacket(iceCandidate, buffer, remoteEndPoint);
-                            if (OnDtlsPacket != null)
-                            {
-                                OnDtlsPacket(iceCandidate, buffer, remoteEndPoint);
-                            }
+                            OnDtlsPacket?.Invoke(iceCandidate, buffer, remoteEndPoint);
                         }
                         //else if ((buffer[0] & 0x80) == 0)
                         else if (buffer[0] == 0 || buffer[0] == 1)
@@ -519,10 +647,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                         }
                         else
                         {
-                            if (OnMediaPacket != null)
-                            {
-                                OnMediaPacket(iceCandidate, buffer, remoteEndPoint);
-                            }
+                            OnMediaPacket?.Invoke(iceCandidate, buffer, remoteEndPoint);
                         }
                     }
                     catch (Exception sockExcp)
@@ -574,7 +699,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                 // ToDo: Check authentication.
 
-                byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(LocalIcePassword, true);
+                string localIcePassword = LocalIcePassword;
+                byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(localIcePassword, true);
                 iceCandidate.LocalRtpSocket.SendTo(stunRespBytes, remoteEndPoint);
 
                 iceCandidate.LastStunRequestReceivedAt = DateTime.Now;
@@ -590,10 +716,11 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                         Transport = "udp",
                         NetworkAddress = remoteEndPoint.Address.ToString(),
                         Port = remoteEndPoint.Port,
-                        CandidateType = IceCandidateTypesEnum.host
+                        CandidateType = IceCandidateTypesEnum.host,
+                        MediaType = iceCandidate.MediaType
                     };
 
-                    logger.Debug("Adding missing remote ICE candidate for " + remoteEndPoint + ".");
+                    logger.Debug("Adding missing remote ICE candidate for " + remoteEndPoint + " and media type " + iceCandidate.MediaType + ".");
 
                     _remoteIceCandidates.Add(remoteIceCandidate);
                 }

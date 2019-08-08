@@ -312,8 +312,8 @@ namespace SIPSorceryMedia {
 
     CHECK_HR(MFCreateMediaType(&pAudioOutType), L"Failed to create output media type.");
     CHECK_HR(pAudioOutType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio), L"Failed to set output media major type.");
-    //CHECK_HR(pAudioOutType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM), L"Failed to set output audio sub type (PCM).");
-    CHECK_HR(pAudioOutType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_Float), L"Failed to set output audio sub type (Float).");
+    CHECK_HR(pAudioOutType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM), L"Failed to set output audio sub type (PCM).");
+    //CHECK_HR(pAudioOutType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_Float), L"Failed to set output audio sub type (Float).");
     //CHECK_HR(pAudioOutType->SetUINT64(MF_MT_AUDIO_SAMPLES_PER_SECOND, 48000), L"Failed to set output audio samples per second (Float).");
 
     CHECK_HR(_videoReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, NULL, pAudioOutType),
@@ -323,6 +323,7 @@ namespace SIPSorceryMedia {
       (DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM,
       &audioType), L"Error retrieving current type from first audio stream.");
 
+    Console::WriteLine("Output Audio Description:");
     Console::WriteLine(GetMediaTypeDescription(audioType));
 
     //done:
@@ -537,10 +538,11 @@ namespace SIPSorceryMedia {
       {
         DWORD nCurrBufferCount = 0;
         CHECK_HR(audioSample->GetBufferCount(&nCurrBufferCount), L"Failed to get the buffer count from the audio sample.\n");
+        //Console::WriteLine("Buffer count " + nCurrBufferCount);
 
         IMFMediaBuffer * pMediaBuffer;
         CHECK_HR(audioSample->ConvertToContiguousBuffer(&pMediaBuffer), L"Failed to extract the audio sample into a raw buffer.\n");
-
+        
         DWORD nCurrLen = 0;
         CHECK_HR(pMediaBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the audio sample.\n");
 
@@ -1091,7 +1093,9 @@ namespace SIPSorceryMedia {
     CHECK_HR(MFCreateSourceResolver(&pSourceResolver), L"MFCreateSourceResolver failed.\n");
 
     CHECK_HR(pSourceResolver->CreateObjectFromURL(
-      L"big_buck_bunny.mp4",		// URL of the source.
+      //L"big_buck_bunny.mp4",		// URL of the source.
+      L"C:\\Dev\\sipsorcery\\mediafoundationsamples\\MediaFiles\\max4.mp4",		// URL of the source.
+      //L"C:\\Dev\\sipsorcery\\mediafoundationsamples\\MediaFiles\\big_buck_bunny_48k.mp4",
       MF_RESOLUTION_MEDIASOURCE,  // Create a source object.
       NULL,                       // Optional property store.
       &ObjectType,				// Receives the created object type. 
@@ -1123,7 +1127,7 @@ namespace SIPSorceryMedia {
 
     CHECK_HR(pStreamSink->GetMediaTypeHandler(&pMediaTypeHandler), L"Failed to get media type handler.\n");
 
-    CHECK_HR(pMediaTypeHandler->GetMediaTypeByIndex(2, &pSinkMediaType), L"Failed to get sink media type.\n");
+    CHECK_HR(pMediaTypeHandler->GetMediaTypeByIndex(0, &pSinkMediaType), L"Failed to get sink media type.\n");
 
     CHECK_HR(pMediaTypeHandler->SetCurrentMediaType(pSinkMediaType), L"Failed to set current media type.\n");
 
@@ -1138,8 +1142,8 @@ namespace SIPSorceryMedia {
     DWORD streamIndex, flags;
     LONGLONG llAudioTimeStamp;
 
-    for(int index = 0; index < 10; index++)
-      //while (true)
+    //for(int index = 0; index < 10; index++)
+    while (true)
     {
       // Initial read results in a null pSample??
       CHECK_HR(pSourceReader->ReadSample(

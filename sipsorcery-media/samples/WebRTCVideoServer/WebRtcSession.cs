@@ -35,6 +35,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using SIPSorceryMedia;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
@@ -46,12 +47,16 @@ namespace WebRTCVideoServer
     {
         private const int RTP_MAX_PAYLOAD = 1400;
         private const int TIMESTAMP_SPACING = 3000;
-        private const int PAYLOAD_TYPE_ID = 100;
+        private const int VP8_PAYLOAD_TYPE_ID = 100;
+        private const int PCMU_PAYLOAD_TYPE_ID = 0;
         private const int SRTP_AUTH_KEY_LENGTH = 10;
 
         private static ILog logger = AppState.logger;
 
+        private static ManualResetEvent _dtlsInitMre = new ManualResetEvent(false);
+
         public WebRtcPeer Peer;
+
         public DtlsManaged DtlsContext;
         public SRTPManaged SrtpContext;
         public SRTPManaged SrtpReceiveContext;  // Used to decrypt packets received from the remote peer.
@@ -68,13 +73,16 @@ namespace WebRTCVideoServer
 
         public void DtlsPacketReceived(IceCandidate iceCandidate, byte[] buffer, IPEndPoint remoteEndPoint)
         {
-            logger.Debug("DTLS packet received " + buffer.Length + " bytes from " + remoteEndPoint.ToString() + ".");
+            logger.Debug("DTLS packet received for media type " + iceCandidate.MediaType.ToString().ToUpper() + " of " + buffer.Length + " bytes from " + remoteEndPoint.ToString() + ".");
 
             if (DtlsContext == null)
             {
-                DtlsContext = new DtlsManaged();
-                int res = DtlsContext.Init();
-                logger.Debug("DtlsContext initialisation result=" + res);
+                lock (_dtlsInitMre)
+                {
+                    DtlsContext = new DtlsManaged();
+                    int res = DtlsContext.Init();
+                    logger.Debug("DtlsContext initialisation result=" + res);
+                }
             }
 
             int bytesWritten = DtlsContext.Write(buffer, buffer.Length);
@@ -139,7 +147,7 @@ namespace WebRTCVideoServer
             }
         }
 
-        public void Send(byte[] buffer)
+        public void SendPcmu(byte[] buffer)
         {
             try
             {
@@ -153,11 +161,54 @@ namespace WebRTCVideoServer
                     byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
 
                     RTPPacket rtpPacket = new RTPPacket(payloadLength + SRTP_AUTH_KEY_LENGTH + vp8HeaderBytes.Length);
-                    rtpPacket.Header.SyncSource = Peer.SSRC;
+                    rtpPacket.Header.SyncSource = Peer.AudioSSRC;
                     rtpPacket.Header.SequenceNumber = Peer.SequenceNumber++;
                     rtpPacket.Header.Timestamp = Peer.LastTimestamp;
                     rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
-                    rtpPacket.Header.PayloadType = PAYLOAD_TYPE_ID;
+                    rtpPacket.Header.PayloadType = PCMU_PAYLOAD_TYPE_ID;
+
+                    Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, vp8HeaderBytes.Length, payloadLength);
+
+                    var rtpBuffer = rtpPacket.GetBytes();
+
+                    //int rtperr = AudioSrtpContext.ProtectRTP(rtpBuffer, rtpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
+                    int rtperr = SrtpContext.ProtectRTP(rtpBuffer, rtpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
+                    if (rtperr != 0)
+                    {
+                        logger.Warn("SRTP packet protection failed, result " + rtperr + ".");
+                    }
+                    else
+                    {
+                        var connectedIceCandidate = Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).First();
+                        connectedIceCandidate.LocalRtpSocket.SendTo(rtpBuffer, connectedIceCandidate.RemoteRtpEndPoint);
+                    }
+                }
+            }
+            catch (Exception sendExcp)
+            {
+                // logger.Error("SendRTP exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
+            }
+        }
+
+        public void SendVp8(byte[] buffer)
+        {
+            try
+            {
+                Peer.LastTimestamp = (Peer.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : Peer.LastTimestamp + TIMESTAMP_SPACING;
+
+                for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
+                {
+                    int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
+                    int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
+
+                    byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
+
+                    RTPPacket rtpPacket = new RTPPacket(payloadLength + SRTP_AUTH_KEY_LENGTH + vp8HeaderBytes.Length);
+                    rtpPacket.Header.SyncSource = Peer.VideoSSRC;
+                    rtpPacket.Header.SequenceNumber = Peer.SequenceNumber++;
+                    rtpPacket.Header.Timestamp = Peer.LastTimestamp;
+                    rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
+                    rtpPacket.Header.PayloadType = VP8_PAYLOAD_TYPE_ID;
 
                     Buffer.BlockCopy(vp8HeaderBytes, 0, rtpPacket.Payload, 0, vp8HeaderBytes.Length);
                     Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, vp8HeaderBytes.Length, payloadLength);

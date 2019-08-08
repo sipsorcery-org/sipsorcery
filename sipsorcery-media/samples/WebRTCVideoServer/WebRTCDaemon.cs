@@ -5,7 +5,6 @@
 //
 // History:
 // 04 Mar 2016	Aaron Clauson	Created.
-// 24 Jul 2019  Aaron Clauson   Switched from WebSocketSahrp to asp.net core for web sockets.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -33,10 +32,12 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -45,6 +46,9 @@ using SIPSorceryMedia;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using log4net;
+using NAudio.Codecs;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 //using Fleck;
@@ -57,6 +61,8 @@ namespace WebRTCVideoServer
         private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f; // Black text outline thickness is set as a percentage of text height in pixels
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
+        private const string LOCAL_IP_ADDRESS = "192.168.11.50";
+        //private const string LOCAL_IP_ADDRESS = "127.0.0.1";
 
         private const string DTLS_CERTIFICATE_THUMBRPINT = "25:5A:A9:32:1F:35:04:8D:5F:8A:5B:27:0B:9F:A2:90:1A:0E:B9:E9:02:A2:24:95:64:E5:7C:4C:10:11:F7:36";
 
@@ -107,9 +113,12 @@ namespace WebRTCVideoServer
                     });
                 _receiverWSS.Start();
 
-                //Task.Run(SendTestPattern);
+                //PlayPcmAudio();
+                Task.Run(SendTestPattern);
                 //Task.Run(SendMp4);
-                Task.Run(SendMp4ViaFile);
+                //Task.Run(SendMp4ViaFile);
+                //Task.Run(SendPcmAudio);
+                Task.Run(SendSineWaveAudio);
             }
             catch (Exception excp)
             {
@@ -140,6 +149,8 @@ namespace WebRTCVideoServer
         {
             logger.Debug("New WebRTC client added for web socket connection " + webSocketID + ".");
 
+            var mediaTypes = new List<RtpMediaTypesEnum> { RtpMediaTypesEnum.Video, RtpMediaTypesEnum.Audio };
+
             lock (_webRtcSessions)
             {
                 if (!_webRtcSessions.Any(x => x.Key == webSocketID))
@@ -151,7 +162,7 @@ namespace WebRTCVideoServer
                         webRtcSession.Peer.OnSdpOfferReady += (sdp) => { logger.Debug("Offer SDP: " + sdp); context.WebSocket.Send(sdp); };
                         webRtcSession.Peer.OnDtlsPacket += webRtcSession.DtlsPacketReceived;
                         webRtcSession.Peer.OnMediaPacket += webRtcSession.MediaPacketReceived;
-                        webRtcSession.Peer.Initialise(DTLS_CERTIFICATE_THUMBRPINT, null);
+                        webRtcSession.Peer.Initialise(DTLS_CERTIFICATE_THUMBRPINT, null, mediaTypes, IPAddress.Parse(LOCAL_IP_ADDRESS));
                         webRtcSession.Peer.OnClose += () => { PeerClosed(webSocketID); };
                     }
                     else
@@ -221,8 +232,8 @@ namespace WebRTCVideoServer
             {
                 unsafe
                 {
-                    //Bitmap testPattern = new Bitmap("wizard.jpeg");
-                    Bitmap testPattern = new Bitmap(@"..\..\max\max257.jpg");
+                    Bitmap testPattern = new Bitmap("wizard.jpeg");
+                    //Bitmap testPattern = new Bitmap(@"..\..\max\max257.jpg");
 
                     SIPSorceryMedia.VPXEncoder vpxEncoder = new VPXEncoder();
                     vpxEncoder.InitEncoder(Convert.ToUInt32(testPattern.Width), Convert.ToUInt32(testPattern.Height), 2160);
@@ -233,7 +244,7 @@ namespace WebRTCVideoServer
                     byte[] encodedBuffer = new byte[5000000];
                     int sampleCount = 0;
 
-                    while (!_exit)
+                    while (!_exit && sampleCount < 10)
                     {
                         if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
                         {
@@ -266,7 +277,7 @@ namespace WebRTCVideoServer
                             {
                                 foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
                                 {
-                                    session.Value.Send(encodedBuffer);
+                                    session.Value.SendVp8(encodedBuffer);
                                 }
                             }
 
@@ -369,7 +380,7 @@ namespace WebRTCVideoServer
                             {
                                 foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
                                 {
-                                    session.Value.Send(encodedBuffer);
+                                    session.Value.SendVp8(encodedBuffer);
                                 }
                             }
 
@@ -480,15 +491,167 @@ namespace WebRTCVideoServer
 
                                 lock (_webRtcSessions)
                                 {
-                                    foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                                    foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true
+                                        //&& x.Value.Peer.LocalIceCandidates.Any(y => y.MediaType == RtpMediaTypesEnum.Video && y.RemoteRtpEndPoint != null)))
+                                        && x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
                                     {
-                                        session.Value.Send(encodedBuffer);
+                                        session.Value.SendVp8(encodedBuffer);
                                     }
                                 }
 
                                 encodedBuffer = null;
 
                                 sampleCount++;
+                            }
+                        }
+
+                        Thread.Sleep(30);
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception SendTestPattern. " + excp);
+            }
+        }
+
+        private void SendSineWaveAudio()
+        {
+            try
+            {
+                int sampleRate = 8000;
+                byte[] buffer = new byte[8000 * 2];
+                double amplitude = 0.25 * short.MaxValue;
+                double frequency = 1000;
+
+                while (!_exit)
+                {
+                    for (int n = 0; n < buffer.Length; n += 2)
+                    {
+                        short sample = (short)(amplitude * Math.Sin((2 * Math.PI * n * frequency) / sampleRate));
+                        buffer[n] = (byte)(sample & 0xff);
+                        buffer[n + 1] = (byte)(sample >> 8 & 0xff);
+                    }
+
+                    lock (_webRtcSessions)
+                    {
+                        foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true
+                            //&& x.Value.Peer.LocalIceCandidates.Any(y => y.MediaType == RtpMediaTypesEnum.Audio && y.RemoteRtpEndPoint != null)))
+                            && x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                        {
+                            session.Value.SendPcmu(buffer);
+                        }
+                    }
+
+                    Thread.Sleep(100);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception PlayPcmAudio. " + excp);
+            }
+        }
+
+        private void PlayPcmAudio()
+        {
+            try
+            {
+                var readerStream = new MediaFoundationReader("max4.mp4");
+                WaveFormat waveFormat = new WaveFormat(8000, 16, 2);
+                BufferedWaveProvider waveProvider = new BufferedWaveProvider(waveFormat);
+
+                var outputDevice = new WaveOutEvent();
+                outputDevice.Init(waveProvider);
+                outputDevice.Play();
+
+                unsafe
+                {
+                    SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
+                    sampler.InitFromFile();
+
+                    while (!_exit)
+                    {
+                        byte[] decodeBuffer = null;
+                        int result = sampler.GetAudioSample(ref decodeBuffer);
+
+                        if (result != 0 || decodeBuffer == null)
+                        {
+                            logger.Warn($"Failed to get audio sample, error code {result}.");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Decoded sample size " + decodeBuffer.Length + ".");
+                            waveProvider.AddSamples(decodeBuffer, 0, decodeBuffer.Length);
+                            Thread.Sleep(80);
+                        }
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception PlayPcmAudio. " + excp);
+            }
+        }
+
+        private void SendPcmAudio()
+        {
+            try
+            {
+                WaveFormat waveFormat = new WaveFormat(8000, 16, 2);
+                //WaveFormat waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(8000, 2);
+                BufferedWaveProvider waveProvider = new BufferedWaveProvider(waveFormat);
+                //WaveFloatTo16Provider waveFloatTo16Provider = new WaveFloatTo16Provider(waveProvider);
+
+                waveProvider.BufferLength = 100000;
+                var outputDevice = new WaveOutEvent();
+                outputDevice.Init(waveProvider);
+                outputDevice.Play();
+
+                unsafe
+                {
+                    SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
+                    sampler.InitFromFile();
+
+                    byte[] sampleBuffer = null;
+
+                    while (!_exit)
+                    {
+                        if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
+                        {
+                            int result = sampler.GetAudioSample(ref sampleBuffer);
+
+                            if (result != 0)
+                            {
+                                logger.Warn($"Failed to get audio sample, error code {result}.");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Audio sample size {sampleBuffer.Length}.");
+
+                                var waveBuffer = new WaveBuffer(sampleBuffer);
+                                //int samplesRequired = 9600 / 4;
+                                //int offset = 0;
+                                //int samplesRead = Read(waveBuffer.FloatBuffer, offset / 4, samplesRequired);
+                                //return samplesRead * 4;
+
+                                int bytesRead = sampleBuffer.Length;
+                                int outIndex = 0;
+                                for (int n = 0; n < bytesRead; n += 2)
+                                {
+                                    waveBuffer.FloatBuffer[outIndex++] = BitConverter.ToInt16(sampleBuffer, n) / 32768f;
+                                }
+                                int samples = bytesRead / 2;
+
+                                waveProvider.AddSamples(waveBuffer.ByteBuffer, 0, samples);
+
+                                lock (_webRtcSessions)
+                                {
+                                    foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true &&
+                                        x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                                    {
+                                        session.Value.SendPcmu(sampleBuffer);
+                                    }
+                                }
                             }
                         }
 
@@ -570,6 +733,32 @@ namespace WebRTCVideoServer
         {
             base.OnOpen();
             WebSocketOpened(this.Context, this.ID);
+        }
+    }
+
+    public class SineWaveProvider32 : WaveProvider32
+    {
+        int sample;
+
+        public SineWaveProvider32()
+        {
+            Frequency = 1000;
+            Amplitude = 0.25f; // let's not hurt our ears
+        }
+
+        public float Frequency { get; set; }
+        public float Amplitude { get; set; }
+
+        public override int Read(float[] buffer, int offset, int sampleCount)
+        {
+            int sampleRate = WaveFormat.SampleRate;
+            for (int n = 0; n < sampleCount; n++)
+            {
+                buffer[n + offset] = (float)(Amplitude * Math.Sin((2 * Math.PI * sample * Frequency) / sampleRate));
+                sample++;
+                if (sample >= sampleRate) sample = 0;
+            }
+            return sampleCount;
         }
     }
 }

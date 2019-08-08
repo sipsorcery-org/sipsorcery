@@ -85,9 +85,6 @@
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="SIPSorcery.Net, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\SIPSorcery.1.6.1\lib\net46\SIPSorcery.Net.dll</HintPath>
-    </Reference>
     <Reference Include="SIPSorcery.SIP.App, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\SIPSorcery.1.6.1\lib\net46\SIPSorcery.SIP.App.dll</HintPath>
     </Reference>
@@ -111,6 +108,7 @@
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
     <Reference Include="System.Web.ApplicationServices" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -144,6 +142,14 @@
     <Content Include="webrtcsample.html" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\github\NAudio\NAudio\NAudio.csproj">
+      <Project>{06f589c9-3e57-4a4c-973f-5f9bb0b75b7d}</Project>
+      <Name>NAudio</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\sipsorcery-core\SIPSorcery.Net\SIPSorcery.Net.csproj">
+      <Project>{55898587-8456-40d4-bb88-c9fc8bd6ba9c}</Project>
+      <Name>SIPSorcery.Net</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\SIPSorcery.Media\SIPSorcery.Media.vcxproj">
       <Project>{60cc689c-2616-441c-a38a-e1b764c7c446}</Project>
       <Name>SIPSorceryMedia</Name>
