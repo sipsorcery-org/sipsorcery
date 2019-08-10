@@ -19,6 +19,7 @@
 
 #include "VideoSubTypes.h"
 
+#include <iostream>
 #include <memory>
 
 using namespace System;
@@ -73,32 +74,38 @@ namespace SIPSorceryMedia {
   {
   public:
     bool Success;
-    bool HasSample;
+    bool HasVideoSample;
+    bool HasAudioSample;
     String ^ Error;
     UInt32 Width;
     UInt32 Height;
     Guid VideoSubType;
     String ^ VideoSubTypeFriendlyName;
+    UInt64 Timestamp;
 
     MediaSampleProperties():
       Success(true),
-      HasSample(false),
+      HasVideoSample(false),
+      HasAudioSample(false),
       Error(),
       Width(0),
       Height(0),
       VideoSubType(Guid::Empty),
-      VideoSubTypeFriendlyName()
+      VideoSubTypeFriendlyName(),
+      Timestamp(0)
     {}
 
     MediaSampleProperties(const MediaSampleProperties % copy)
     {
       Success = copy.Success;
-      HasSample = copy.HasSample;
+      HasVideoSample = copy.HasVideoSample;
+      HasAudioSample = copy.HasAudioSample;
       Error = copy.Error;
       Width = copy.Width;
       Height = copy.Height;
       VideoSubType = copy.VideoSubType;
       VideoSubTypeFriendlyName = copy.VideoSubTypeFriendlyName;
+      Timestamp = copy.Timestamp;
     }
   };
 
@@ -117,6 +124,7 @@ namespace SIPSorceryMedia {
 		HRESULT FindVideoMode(IMFSourceReader *pReader, const GUID mediaSubType, UInt32 width, UInt32 height, /* out */ IMFMediaType *&foundpType);
     MediaSampleProperties^ GetSample(/* out */ array<Byte> ^% buffer);
 		HRESULT GetAudioSample(/* out */ array<Byte> ^% buffer);
+    MediaSampleProperties^ GetNextSample(/* out */ array<Byte> ^% buffer);
 		HRESULT PlayAudio();
 		void Stop();
 		void DumpVideoSubTypes();
@@ -136,7 +144,7 @@ namespace SIPSorceryMedia {
 
 		static BOOL _isInitialised = false;
 
-		IMFSourceReader * _videoReader = NULL;
+		IMFSourceReader * _sourceReader = NULL;
 		IMFMediaSink * _audioSink = NULL;             // Streaming audio renderer (SAR)
 		DWORD videoStreamIndex;
 		int _width, _height;

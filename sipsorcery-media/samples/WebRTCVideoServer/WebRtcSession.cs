@@ -61,6 +61,8 @@ namespace WebRTCVideoServer
         public SRTPManaged SrtpContext;
         public SRTPManaged SrtpReceiveContext;  // Used to decrypt packets received from the remote peer.
 
+        private static IPEndPoint wiresharkEp = new IPEndPoint(IPAddress.Parse("192.168.11.2"), 33333);
+
         public string CallID
         {
             get { return Peer.CallID; }
@@ -147,29 +149,30 @@ namespace WebRTCVideoServer
             }
         }
 
-        public void SendPcmu(byte[] buffer)
+        // https://tools.ietf.org/html/rfc3551#section-4.5.14: 8 bit PCMU samples must be signed.
+        public void SendPcmu(byte[] buffer, uint sampleTimestamp)
         {
             try
             {
-                Peer.LastTimestamp = (Peer.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : Peer.LastTimestamp + TIMESTAMP_SPACING;
+                //Peer.LastTimestamp = (Peer.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : Peer.LastTimestamp + sampleDuarion;
 
                 for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
                 {
                     int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
                     int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
 
-                    byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
-
-                    RTPPacket rtpPacket = new RTPPacket(payloadLength + SRTP_AUTH_KEY_LENGTH + vp8HeaderBytes.Length);
+                    RTPPacket rtpPacket = new RTPPacket(payloadLength + SRTP_AUTH_KEY_LENGTH);
                     rtpPacket.Header.SyncSource = Peer.AudioSSRC;
                     rtpPacket.Header.SequenceNumber = Peer.SequenceNumber++;
-                    rtpPacket.Header.Timestamp = Peer.LastTimestamp;
-                    rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
+                    rtpPacket.Header.Timestamp = sampleTimestamp; //Peer.LastTimestamp;
+                    rtpPacket.Header.MarkerBit =  0;
                     rtpPacket.Header.PayloadType = PCMU_PAYLOAD_TYPE_ID;
 
-                    Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, vp8HeaderBytes.Length, payloadLength);
+                    Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, 0, payloadLength);
 
                     var rtpBuffer = rtpPacket.GetBytes();
+
+                    Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).First().LocalRtpSocket.SendTo(rtpBuffer, wiresharkEp);
 
                     //int rtperr = AudioSrtpContext.ProtectRTP(rtpBuffer, rtpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
                     int rtperr = SrtpContext.ProtectRTP(rtpBuffer, rtpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
@@ -190,11 +193,11 @@ namespace WebRTCVideoServer
             }
         }
 
-        public void SendVp8(byte[] buffer)
+        public void SendVp8(byte[] buffer, uint sampleTimestamp)
         {
             try
             {
-                Peer.LastTimestamp = (Peer.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : Peer.LastTimestamp + TIMESTAMP_SPACING;
+                //Peer.LastTimestamp = (Peer.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : Peer.LastTimestamp + TIMESTAMP_SPACING;
 
                 for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
                 {
@@ -206,7 +209,7 @@ namespace WebRTCVideoServer
                     RTPPacket rtpPacket = new RTPPacket(payloadLength + SRTP_AUTH_KEY_LENGTH + vp8HeaderBytes.Length);
                     rtpPacket.Header.SyncSource = Peer.VideoSSRC;
                     rtpPacket.Header.SequenceNumber = Peer.SequenceNumber++;
-                    rtpPacket.Header.Timestamp = Peer.LastTimestamp;
+                    rtpPacket.Header.Timestamp = sampleTimestamp; // Peer.LastTimestamp;
                     rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
                     rtpPacket.Header.PayloadType = VP8_PAYLOAD_TYPE_ID;
 

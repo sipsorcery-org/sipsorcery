@@ -28,16 +28,16 @@ namespace SIPSorceryMedia {
 
   MFVideoSampler::~MFVideoSampler()
   {
-    if(_videoReader != NULL) {
-      _videoReader->Release();
+    if(_sourceReader != NULL) {
+      _sourceReader->Release();
     }
   }
 
   void MFVideoSampler::Stop()
   {
-    if(_videoReader != NULL) {
-      _videoReader->Release();
-      _videoReader = NULL;
+    if(_sourceReader != NULL) {
+      _sourceReader->Release();
+      _sourceReader = NULL;
     }
   }
 
@@ -155,23 +155,23 @@ namespace SIPSorceryMedia {
       CHECK_HR(videoDevices[videoDeviceIndex]->ActivateObject(IID_PPV_ARGS(&videoSource)), L"Error activating video device.");
 
       // Create the source readers. Need to pin the video reader as it's a managed resource being access by native code.
-      cli::pin_ptr<IMFSourceReader*> pinnedVideoReader = &_videoReader;
+      cli::pin_ptr<IMFSourceReader*> pinnedVideoReader = &_sourceReader;
 
       CHECK_HR(MFCreateSourceReaderFromMediaSource(
         videoSource,
         videoConfig,
         reinterpret_cast<IMFSourceReader**>(pinnedVideoReader)), L"Error creating video source reader.");
 
-      FindVideoMode(_videoReader, MF_INPUT_FORMAT, width, height, desiredInputVideoType);
+      FindVideoMode(_sourceReader, MF_INPUT_FORMAT, width, height, desiredInputVideoType);
 
       if(desiredInputVideoType == NULL) {
         printf("The specified media type could not be found for the MF video reader.\n");
       }
       else {
-        CHECK_HR(_videoReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, NULL, desiredInputVideoType),
+        CHECK_HR(_sourceReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, NULL, desiredInputVideoType),
           L"Error setting video reader media type.\n");
 
-        CHECK_HR(_videoReader->GetCurrentMediaType(
+        CHECK_HR(_sourceReader->GetCurrentMediaType(
           (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
           &videoType), L"Error retrieving current media type from first video stream.");
 
@@ -257,14 +257,14 @@ namespace SIPSorceryMedia {
     }
 
     // Create the source readers. Need to pin the video reader as it's a managed resource being access by native code.
-    cli::pin_ptr<IMFSourceReader*> pinnedVideoReader = &_videoReader;
+    cli::pin_ptr<IMFSourceReader*> pinnedVideoReader = &_sourceReader;
 
     CHECK_HR(MFCreateSourceReaderFromMediaSource(
       mediaFileSource,
       mediaFileConfig,
       reinterpret_cast<IMFSourceReader**>(pinnedVideoReader)), L"Error creating video source reader.");
 
-    CHECK_HR(_videoReader->GetCurrentMediaType(
+    CHECK_HR(_sourceReader->GetCurrentMediaType(
       (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
       &videoType), L"Error retrieving current media type from first video stream.");
 
@@ -279,10 +279,10 @@ namespace SIPSorceryMedia {
     //CHECK_HR(pVideoOutType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_YV12), L"Failed to set output media sub type (NV12).");
     //CHECK_HR(pVideoOutType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_I420), L"Failed to set output media sub type (I420).");
 
-    CHECK_HR(_videoReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, NULL, pVideoOutType),
+    CHECK_HR(_sourceReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, NULL, pVideoOutType),
       L"Error setting video reader media type.\n");
 
-    CHECK_HR(_videoReader->GetCurrentMediaType(
+    CHECK_HR(_sourceReader->GetCurrentMediaType(
       (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
       &videoType), L"Error retrieving current media type from first video stream.");
 
@@ -304,7 +304,7 @@ namespace SIPSorceryMedia {
 
     // Fiddling with audio type.
 
-    CHECK_HR(_videoReader->GetCurrentMediaType(
+    CHECK_HR(_sourceReader->GetCurrentMediaType(
       (DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM,
       &audioType), L"Error retrieving current type from first audio stream.");
 
@@ -313,13 +313,16 @@ namespace SIPSorceryMedia {
     CHECK_HR(MFCreateMediaType(&pAudioOutType), L"Failed to create output media type.");
     CHECK_HR(pAudioOutType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio), L"Failed to set output media major type.");
     CHECK_HR(pAudioOutType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM), L"Failed to set output audio sub type (PCM).");
+    //CHECK_HR(pAudioOutType->SetGUID(MF_MT_SUBTYPE, WAVE_FORMAT_MULAW), L"Failed to set output audio sub type (MULAW).");
     //CHECK_HR(pAudioOutType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_Float), L"Failed to set output audio sub type (Float).");
     //CHECK_HR(pAudioOutType->SetUINT64(MF_MT_AUDIO_SAMPLES_PER_SECOND, 48000), L"Failed to set output audio samples per second (Float).");
+    CHECK_HR(pAudioOutType->SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, 1), L"Failed to set audio output to mono.");
+    CHECK_HR(pAudioOutType->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, 16), L"Failed to set audio bits per sample.");
 
-    CHECK_HR(_videoReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, NULL, pAudioOutType),
+    CHECK_HR(_sourceReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, NULL, pAudioOutType),
       L"Error setting reader audio type.\n");
 
-    CHECK_HR(_videoReader->GetCurrentMediaType(
+    CHECK_HR(_sourceReader->GetCurrentMediaType(
       (DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM,
       &audioType), L"Error retrieving current type from first audio stream.");
 
@@ -385,7 +388,7 @@ namespace SIPSorceryMedia {
   {
     MediaSampleProperties^ sampleProps = gcnew MediaSampleProperties();
 
-    if(_videoReader == NULL) {
+    if(_sourceReader == NULL) {
       sampleProps->Success = false;
       return sampleProps;
     }
@@ -395,7 +398,7 @@ namespace SIPSorceryMedia {
       LONGLONG llVideoTimeStamp;
 
       // Initial read results in a null pSample??
-      CHECK_HR_EXTENDED(_videoReader->ReadSample(
+      CHECK_HR_EXTENDED(_sourceReader->ReadSample(
         //MF_SOURCE_READER_ANY_STREAM,    // Stream index.
         MF_SOURCE_READER_FIRST_VIDEO_STREAM,
         0,                              // Flags.
@@ -422,7 +425,7 @@ namespace SIPSorceryMedia {
         wprintf(L"\tCurrent type changed\n");
 
         IMFMediaType *videoType = NULL;
-        CHECK_HR_EXTENDED(_videoReader->GetCurrentMediaType(
+        CHECK_HR_EXTENDED(_sourceReader->GetCurrentMediaType(
           (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
           &videoType), L"Error retrieving current media type from first video stream.");
 
@@ -482,7 +485,7 @@ namespace SIPSorceryMedia {
 
   HRESULT MFVideoSampler::GetAudioSample(/* out */ array<Byte> ^% buffer)
   {
-    if(_videoReader == NULL) {
+    if(_sourceReader == NULL) {
       return -1;
     }
     else {
@@ -491,7 +494,7 @@ namespace SIPSorceryMedia {
       LONGLONG llVideoTimeStamp;
 
       // Initial read results in a null pSample??
-      CHECK_HR(_videoReader->ReadSample(
+      CHECK_HR(_sourceReader->ReadSample(
         MF_SOURCE_READER_FIRST_AUDIO_STREAM,
         0,                              // Flags.
         &streamIndex,                   // Receives the actual stream index. 
@@ -517,7 +520,7 @@ namespace SIPSorceryMedia {
         wprintf(L"\tCurrent type changed\n");
 
         IMFMediaType *audioType = NULL;
-        CHECK_HR(_videoReader->GetCurrentMediaType(
+        CHECK_HR(_sourceReader->GetCurrentMediaType(
           (DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM,
           &audioType), L"Error retrieving current media type from first audio stream.");
 
@@ -542,7 +545,7 @@ namespace SIPSorceryMedia {
 
         IMFMediaBuffer * pMediaBuffer;
         CHECK_HR(audioSample->ConvertToContiguousBuffer(&pMediaBuffer), L"Failed to extract the audio sample into a raw buffer.\n");
-        
+
         DWORD nCurrLen = 0;
         CHECK_HR(pMediaBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the audio sample.\n");
 
@@ -554,6 +557,10 @@ namespace SIPSorceryMedia {
         buffer = gcnew array<Byte>(buffCurrLen);
         Marshal::Copy((IntPtr)audioBuff, buffer, 0, buffCurrLen);
 
+        //for(int i=0; i<buffCurrLen; i++) {
+        //  buffer[i] = (buffer[i] < 0x80) ? 0x80 | buffer[i] : 0x7f & buffer[i]; // Convert from an 8 bit unsigned sample to an 8 bit 2's complement signed sample.
+        //}
+
         pMediaBuffer->Unlock();
         pMediaBuffer->Release();
 
@@ -561,6 +568,148 @@ namespace SIPSorceryMedia {
 
         return S_OK;
       }
+    }
+  }
+
+  // Gets the next available sample from the source reader.
+  MediaSampleProperties^ MFVideoSampler::GetNextSample(/* out */ array<Byte> ^% buffer)
+  {
+    MediaSampleProperties^ sampleProps = gcnew MediaSampleProperties();
+
+    if(_sourceReader == nullptr) {
+      sampleProps->Success = false;
+      return sampleProps;
+    }
+    else {
+      IMFSample *sample = nullptr;
+      DWORD streamIndex, flags;
+      LONGLONG sampleTimestamp;
+
+      CHECK_HR_EXTENDED(_sourceReader->ReadSample(
+        MF_SOURCE_READER_ANY_STREAM,    // Stream index.
+        0,                              // Flags.
+        &streamIndex,                   // Receives the actual stream index. 
+        &flags,                         // Receives status flags.
+        &sampleTimestamp,               // Receives the time stamp.
+        &sample                         // Receives the sample or NULL.
+      ), L"Error reading media sample.");
+
+      if(flags & MF_SOURCE_READERF_ENDOFSTREAM)
+      {
+        std::cout << "End of stream." << std::endl;
+      }
+      if(flags & MF_SOURCE_READERF_NEWSTREAM)
+      {
+        std::cout << "New stream." << std::endl;
+      }
+      if(flags & MF_SOURCE_READERF_NATIVEMEDIATYPECHANGED)
+      {
+        std::cout << "Native type changed." << std::endl;
+      }
+      if(flags & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED)
+      {
+        std::cout << "Current type changed for stream index " << streamIndex << "." << std::endl;
+
+        IMFMediaType *videoType = nullptr;
+        CHECK_HR_EXTENDED(_sourceReader->GetCurrentMediaType(
+          (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
+          &videoType), L"Error retrieving current media type from first video stream.");
+
+        Console::WriteLine(GetMediaTypeDescription(videoType));
+
+        // Get the frame dimensions and stride
+        UINT32 nWidth, nHeight;
+        MFGetAttributeSize(videoType, MF_MT_FRAME_SIZE, &nWidth, &nHeight);
+        _width = nWidth;
+        _height = nHeight;
+
+        //LONG lFrameStride;
+        //videoType->GetUINT32(MF_MT_DEFAULT_STRIDE, (UINT32*)&lFrameStride);
+
+        sampleProps->Width = nWidth;
+        sampleProps->Height = nHeight;
+
+        videoType->Release();
+      }
+      if(flags & MF_SOURCE_READERF_STREAMTICK)
+      {
+        std::cout << "Stream tick." << std::endl;
+      }
+
+      if(sample == nullptr)
+      {
+        std::cout << "Failed to get media sample in from source reader." << std::endl;
+      }
+      else
+      {
+        //std::cout << "Stream index " << streamIndex << ", timestamp " <<  sampleTimestamp << ", flags " << flags << "." << std::endl;
+
+        // Accroding to https://docs.microsoft.com/en-us/windows/win32/api/mfreadwrite/nf-mfreadwrite-imfsourcereader-readsample 
+        // the timestamp is in 100ns units.
+        sampleProps->Timestamp = sampleTimestamp / 10; // Make it into ms.
+
+        //else if(streamIndex == (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM)
+        if(streamIndex == 1)
+        {
+          DWORD nCurrBufferCount = 0;
+          CHECK_HR_EXTENDED(sample->GetBufferCount(&nCurrBufferCount), L"Failed to get the buffer count from the video sample.\n");
+
+          IMFMediaBuffer * pMediaBuffer;
+          CHECK_HR_EXTENDED(sample->ConvertToContiguousBuffer(&pMediaBuffer), L"Failed to extract the video sample into a raw buffer.\n");
+
+          DWORD nCurrLen = 0;
+          CHECK_HR_EXTENDED(pMediaBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the video sample.\n");
+
+          byte *imgBuff;
+          DWORD buffCurrLen = 0;
+          DWORD buffMaxLen = 0;
+          pMediaBuffer->Lock(&imgBuff, &buffMaxLen, &buffCurrLen);
+
+          buffer = gcnew array<Byte>(buffCurrLen);
+          Marshal::Copy((IntPtr)imgBuff, buffer, 0, buffCurrLen);
+
+          pMediaBuffer->Unlock();
+          pMediaBuffer->Release();
+
+          sampleProps->HasVideoSample = true;
+
+          sample->Release();
+        }
+        //else if(streamIndex == (DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM)
+        else if(streamIndex == 0)
+        {
+          DWORD nCurrBufferCount = 0;
+          CHECK_HR_EXTENDED(sample->GetBufferCount(&nCurrBufferCount), L"Failed to get the buffer count from the audio sample.\n");
+          //Console::WriteLine("Buffer count " + nCurrBufferCount);
+
+          IMFMediaBuffer * pMediaBuffer;
+          CHECK_HR_EXTENDED(sample->ConvertToContiguousBuffer(&pMediaBuffer), L"Failed to extract the audio sample into a raw buffer.\n");
+
+          DWORD nCurrLen = 0;
+          CHECK_HR_EXTENDED(pMediaBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the audio sample.\n");
+
+          byte *audioBuff;
+          DWORD buffCurrLen = 0;
+          DWORD buffMaxLen = 0;
+          pMediaBuffer->Lock(&audioBuff, &buffMaxLen, &buffCurrLen);
+
+          buffer = gcnew array<Byte>(buffCurrLen);
+          Marshal::Copy((IntPtr)audioBuff, buffer, 0, buffCurrLen);
+
+          //for(int i=0; i<buffCurrLen; i++) {
+          //  buffer[i] = (buffer[i] < 0x80) ? 0x80 | buffer[i] : 0x7f & buffer[i]; // Convert from an 8 bit unsigned sample to an 8 bit 2's complement signed sample.
+          //}
+
+          pMediaBuffer->Unlock();
+          pMediaBuffer->Release();
+
+          sampleProps->HasAudioSample = true;
+
+          sample->Release();
+        }
+      }
+
+      return sampleProps;
     }
   }
 
@@ -622,7 +771,7 @@ namespace SIPSorceryMedia {
       //CHECK_HR(MFCreateAudioRenderer(pAttributes, &pAudioSink), L"Failed to create audio sink.");
     CHECK_HR(MFCreateAudioRenderer(NULL, &pAudioSink), L"Failed to create audio sink.");
 
-    /*CHECK_HR(_videoReader->GetCurrentMediaType(
+    /*CHECK_HR(_sourceReader->GetCurrentMediaType(
       (DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM,
       &audioType), L"Error retrieving current type from first audio stream.");
 
@@ -683,7 +832,7 @@ namespace SIPSorceryMedia {
     //pAttributes->Release();
     //CoTaskMemFree(wstrID);
 
-    if(_videoReader == NULL) {
+    if(_sourceReader == NULL) {
       return -1;
     }
     else {
@@ -698,7 +847,7 @@ namespace SIPSorceryMedia {
         //while (true)
       {
         // Initial read results in a null pSample??
-        CHECK_HR(_videoReader->ReadSample(
+        CHECK_HR(_sourceReader->ReadSample(
           MF_SOURCE_READER_FIRST_AUDIO_STREAM,
           0,                              // Flags.
           &streamIndex,                   // Receives the actual stream index. 
@@ -725,7 +874,7 @@ namespace SIPSorceryMedia {
           wprintf(L"\tCurrent type changed\n");
 
           IMFMediaType *audioType = NULL;
-          CHECK_HR(_videoReader->GetCurrentMediaType(
+          CHECK_HR(_sourceReader->GetCurrentMediaType(
             (DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM,
             &audioType), L"Error retrieving current media type from first audio stream.");
 
@@ -1143,7 +1292,7 @@ namespace SIPSorceryMedia {
     LONGLONG llAudioTimeStamp;
 
     //for(int index = 0; index < 10; index++)
-    while (true)
+    while(true)
     {
       // Initial read results in a null pSample??
       CHECK_HR(pSourceReader->ReadSample(
