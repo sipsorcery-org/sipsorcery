@@ -22,7 +22,7 @@ namespace SIPSorceryMedia {
 	public:
 		ImageConvert();
 		~ImageConvert();
-		int ConvertRGBtoYUV(unsigned char* bmp, VideoSubTypesEnum rgbInputFormat, int width, int height, VideoSubTypesEnum yuvOutputFormat, /* out */ array<Byte> ^% buffer);
+		int ConvertRGBtoYUV(unsigned char* bmp, VideoSubTypesEnum rgbInputFormat, int width, int height, int stride, VideoSubTypesEnum yuvOutputFormat, /* out */ array<Byte> ^% buffer);
 		int ConvertYUVToRGB(unsigned char* yuv, VideoSubTypesEnum yuvInputFormat, int width, int height, VideoSubTypesEnum rgbOutputFormat, /* out */ array<Byte> ^% buffer);
 
 	private:

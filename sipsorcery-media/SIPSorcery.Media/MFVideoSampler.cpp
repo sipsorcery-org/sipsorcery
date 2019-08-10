@@ -177,7 +177,7 @@ namespace SIPSorceryMedia {
 
         long stride = -1;
         CHECK_HR(GetDefaultStride(videoType, &stride), L"There was an error retrieving the stride for the media type.");
-        Stride = stride;
+        _stride = (int)stride;
 
         // Get the frame dimensions and stride
         /*UINT32 nWidth, nHeight;
@@ -195,66 +195,42 @@ namespace SIPSorceryMedia {
     }
   }
 
-  HRESULT MFVideoSampler::InitFromFile()
+  HRESULT MFVideoSampler::InitFromFile(String^ path)
   {
     MF_OBJECT_TYPE ObjectType = MF_OBJECT_INVALID;
 
-    IMFSourceResolver* pSourceResolver = NULL;
-    IUnknown* uSource = NULL;
-    IMFMediaSource *mediaFileSource = NULL;
-    IMFAttributes *mediaFileConfig = NULL;
-    IMFMediaType *pVideoOutType = NULL, *pAudioOutType = NULL;
-    IMFMediaType *videoType = NULL;
-    IMFMediaType *audioType = NULL;
+    IMFSourceResolver* pSourceResolver = nullptr;
+    IUnknown* uSource = nullptr;
+    IMFMediaSource *mediaFileSource = nullptr;
+    IMFAttributes *mediaFileConfig = nullptr;
+    IMFMediaType *pVideoOutType = nullptr, *pAudioOutType = nullptr;
+    IMFMediaType *videoType = nullptr;
+    IMFMediaType *audioType = nullptr;
+
+    std::wstring pathNative = msclr::interop::marshal_as<std::wstring>(path);
 
     // Create the source resolver.
-    HRESULT hr = MFCreateSourceResolver(&pSourceResolver);
-    if(FAILED(hr))
-    {
-      printf("MFCreateSourceResolver failed.\n");
-    }
+    CHECK_HR(MFCreateSourceResolver(&pSourceResolver), L"MFCreateSourceResolver failed.");
 
     // Use the source resolver to create the media source.
-
-    // Note: For simplicity this sample uses the synchronous method to create 
-    // the media source. However, creating a media source can take a noticeable
-    // amount of time, especially for a network source. For a more responsive 
-    // UI, use the asynchronous BeginCreateObjectFromURL method.
-
-    hr = pSourceResolver->CreateObjectFromURL(
-      L"max4.mp4",
-      //L"big_buck_bunny.mp4", // URL of the source.
+    CHECK_HR(pSourceResolver->CreateObjectFromURL(
+      pathNative.c_str(),
       MF_RESOLUTION_MEDIASOURCE,  // Create a source object.
       NULL,                       // Optional property store.
       &ObjectType,        // Receives the created object type. 
       &uSource            // Receives a pointer to the media source.
-    );
-    if(FAILED(hr))
-    {
-      printf("CreateObjectFromURL failed.\n");
-      //goto done;
-    }
+    ), L"CreateObjectFromURL failed.");
 
     // Get the IMFMediaSource interface from the media source.
-    hr = uSource->QueryInterface(IID_PPV_ARGS(&mediaFileSource));
+    CHECK_HR(uSource->QueryInterface(IID_PPV_ARGS(&mediaFileSource)), L"Failed to get IMFMediaSource.");
 
-    if(FAILED(hr))
-    {
-      printf("Failed to get IMFMediaSource.\n");
-    }
-
-    MFCreateAttributes(&mediaFileConfig, 2);
+    CHECK_HR(MFCreateAttributes(&mediaFileConfig, 2), L"Failed to create MF atttributes.");;
 
     CHECK_HR(mediaFileConfig->SetGUID(
       MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE,
       MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID), L"Failed to set dev source attribute type for reader config.");
 
     CHECK_HR(mediaFileConfig->SetUINT32(MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING, 1), L"Failed to set enable video processing attribute type for reader config.");
-
-    if(FAILED(hr))
-    {
-      printf("Failed to initialise videoConfig object.\n");
-    }
 
     // Create the source readers. Need to pin the video reader as it's a managed resource being access by native code.
     cli::pin_ptr<IMFSourceReader*> pinnedVideoReader = &_sourceReader;
@@ -297,13 +273,17 @@ namespace SIPSorceryMedia {
      videoType->GetItem(MF_MT_SUBTYPE, &subVidType);
      subVidType*/
 
+     // Get the frame dimensions and stride
+    UINT32 nWidth, nHeight;
+    MFGetAttributeSize(videoType, MF_MT_FRAME_SIZE, &nWidth, &nHeight);
+    _width = nWidth;
+    _height = nHeight;
+
     long stride = -1;
     CHECK_HR(GetDefaultStride(videoType, &stride), L"There was an error retrieving the stride for the media type.");
-    //Stride = stride;
-    Console::WriteLine("Stride " + stride);
+    _stride = (int)stride;
 
-    // Fiddling with audio type.
-
+    // Set audio type.
     CHECK_HR(_sourceReader->GetCurrentMediaType(
       (DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM,
       &audioType), L"Error retrieving current type from first audio stream.");
@@ -335,7 +315,7 @@ namespace SIPSorceryMedia {
     videoType->Release();
     audioType->Release();
 
-    return hr;
+    return S_OK;
   }
 
   HRESULT MFVideoSampler::FindVideoMode(IMFSourceReader *pReader, const GUID mediaSubType, UInt32 width, UInt32 height, /* out */ IMFMediaType *&foundpType)
@@ -433,15 +413,17 @@ namespace SIPSorceryMedia {
 
         // Get the frame dimensions and stride
         UINT32 nWidth, nHeight;
-        MFGetAttributeSize(videoType, MF_MT_FRAME_SIZE, &nWidth, &nHeight);
+        CHECK_HR_EXTENDED(MFGetAttributeSize(videoType, MF_MT_FRAME_SIZE, &nWidth, &nHeight), L"There was an error retrieving the dimensions for the media type.");
         _width = nWidth;
         _height = nHeight;
 
-        //LONG lFrameStride;
-        //videoType->GetUINT32(MF_MT_DEFAULT_STRIDE, (UINT32*)&lFrameStride);
+        long stride = -1;
+        CHECK_HR_EXTENDED(GetDefaultStride(videoType, &stride), L"There was an error retrieving the stride for the media type.");
+        _stride = (int)stride;
 
         sampleProps->Width = nWidth;
         sampleProps->Height = nHeight;
+        sampleProps->Stride = stride;
 
         videoType->Release();
       }
@@ -597,6 +579,7 @@ namespace SIPSorceryMedia {
       if(flags & MF_SOURCE_READERF_ENDOFSTREAM)
       {
         std::cout << "End of stream." << std::endl;
+        sampleProps->EndOfStream = true;
       }
       if(flags & MF_SOURCE_READERF_NEWSTREAM)
       {
@@ -623,11 +606,12 @@ namespace SIPSorceryMedia {
         _width = nWidth;
         _height = nHeight;
 
-        //LONG lFrameStride;
-        //videoType->GetUINT32(MF_MT_DEFAULT_STRIDE, (UINT32*)&lFrameStride);
+        LONG lFrameStride;
+        videoType->GetUINT32(MF_MT_DEFAULT_STRIDE, (UINT32*)&lFrameStride);
 
         sampleProps->Width = nWidth;
         sampleProps->Height = nHeight;
+        sampleProps->Stride = lFrameStride;
 
         videoType->Release();
       }
@@ -653,23 +637,24 @@ namespace SIPSorceryMedia {
         {
           DWORD nCurrBufferCount = 0;
           CHECK_HR_EXTENDED(sample->GetBufferCount(&nCurrBufferCount), L"Failed to get the buffer count from the video sample.\n");
+          sampleProps->FrameCount = nCurrBufferCount;
 
-          IMFMediaBuffer * pMediaBuffer;
-          CHECK_HR_EXTENDED(sample->ConvertToContiguousBuffer(&pMediaBuffer), L"Failed to extract the video sample into a raw buffer.\n");
+          IMFMediaBuffer * pVideoBuffer;
+          CHECK_HR_EXTENDED(sample->ConvertToContiguousBuffer(&pVideoBuffer), L"Failed to extract the video sample into a raw buffer.\n");
 
           DWORD nCurrLen = 0;
-          CHECK_HR_EXTENDED(pMediaBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the video sample.\n");
+          CHECK_HR_EXTENDED(pVideoBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the video sample.\n");
 
           byte *imgBuff;
           DWORD buffCurrLen = 0;
           DWORD buffMaxLen = 0;
-          pMediaBuffer->Lock(&imgBuff, &buffMaxLen, &buffCurrLen);
+          pVideoBuffer->Lock(&imgBuff, &buffMaxLen, &buffCurrLen);
 
           buffer = gcnew array<Byte>(buffCurrLen);
           Marshal::Copy((IntPtr)imgBuff, buffer, 0, buffCurrLen);
 
-          pMediaBuffer->Unlock();
-          pMediaBuffer->Release();
+          pVideoBuffer->Unlock();
+          pVideoBuffer->Release();
 
           sampleProps->HasVideoSample = true;
 
@@ -680,18 +665,18 @@ namespace SIPSorceryMedia {
         {
           DWORD nCurrBufferCount = 0;
           CHECK_HR_EXTENDED(sample->GetBufferCount(&nCurrBufferCount), L"Failed to get the buffer count from the audio sample.\n");
-          //Console::WriteLine("Buffer count " + nCurrBufferCount);
+          sampleProps->FrameCount = nCurrBufferCount;
 
-          IMFMediaBuffer * pMediaBuffer;
-          CHECK_HR_EXTENDED(sample->ConvertToContiguousBuffer(&pMediaBuffer), L"Failed to extract the audio sample into a raw buffer.\n");
+          IMFMediaBuffer* pAudioBuffer;
+          CHECK_HR_EXTENDED(sample->ConvertToContiguousBuffer(&pAudioBuffer), L"Failed to extract the audio sample into a raw buffer.\n");
 
           DWORD nCurrLen = 0;
-          CHECK_HR_EXTENDED(pMediaBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the audio sample.\n");
+          CHECK_HR_EXTENDED(pAudioBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the audio sample.\n");
 
           byte *audioBuff;
           DWORD buffCurrLen = 0;
           DWORD buffMaxLen = 0;
-          pMediaBuffer->Lock(&audioBuff, &buffMaxLen, &buffCurrLen);
+          pAudioBuffer->Lock(&audioBuff, &buffMaxLen, &buffCurrLen);
 
           buffer = gcnew array<Byte>(buffCurrLen);
           Marshal::Copy((IntPtr)audioBuff, buffer, 0, buffCurrLen);
@@ -700,8 +685,8 @@ namespace SIPSorceryMedia {
           //  buffer[i] = (buffer[i] < 0x80) ? 0x80 | buffer[i] : 0x7f & buffer[i]; // Convert from an 8 bit unsigned sample to an 8 bit 2's complement signed sample.
           //}
 
-          pMediaBuffer->Unlock();
-          pMediaBuffer->Release();
+          pAudioBuffer->Unlock();
+          pAudioBuffer->Release();
 
           sampleProps->HasAudioSample = true;
 

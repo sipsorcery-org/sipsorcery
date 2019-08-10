@@ -12,7 +12,7 @@ namespace SIPSorceryMedia {
 		//sws_freeContext(_swsContext);
 	}
 
-	int ImageConvert::ConvertRGBtoYUV(unsigned char* bmp, VideoSubTypesEnum rgbInputFormat, int width, int height, VideoSubTypesEnum yuvOutputFormat, /* out */ array<Byte> ^% buffer)
+	int ImageConvert::ConvertRGBtoYUV(unsigned char* bmp, VideoSubTypesEnum rgbInputFormat, int width, int height, int stride, VideoSubTypesEnum yuvOutputFormat, /* out */ array<Byte> ^% buffer)
 	{
 		AVPixelFormat rgbPixelFormat = VideoSubTypesHelper::GetPixelFormatForVideoSubType(rgbInputFormat);
 		AVPixelFormat yuvPixelFormat = VideoSubTypesHelper::GetPixelFormatForVideoSubType(yuvOutputFormat);
@@ -31,7 +31,7 @@ namespace SIPSorceryMedia {
 		avpicture_fill((AVPicture*)dstFrame, dstFrameBuffer, yuvPixelFormat, width, height);
 
 		uint8_t * srcData[1] = { bmp };		// RGB has one plane
-		int srcLinesize[1] = { 3 * width };	// RGB stride
+    int srcLinesize[1] = { stride };
 
 		int res = sws_scale(_swsContextRGBToYUV, srcData, srcLinesize, 0, height, dstFrame->data, dstFrame->linesize);
 

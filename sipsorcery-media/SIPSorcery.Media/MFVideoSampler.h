@@ -17,10 +17,14 @@
 #include <mmdeviceapi.h>
 #include <Audioclient.h>
 
+#include <msclr\marshal.h>
+#include <msclr\marshal_cppstd.h>
+
 #include "VideoSubTypes.h"
 
 #include <iostream>
 #include <memory>
+#include <string>
 
 using namespace System;
 using namespace System::Collections::Generic;
@@ -76,23 +80,29 @@ namespace SIPSorceryMedia {
     bool Success;
     bool HasVideoSample;
     bool HasAudioSample;
+    bool EndOfStream;
     String ^ Error;
-    UInt32 Width;
-    UInt32 Height;
+    int Width;
+    int Height;
+    int Stride;
     Guid VideoSubType;
     String ^ VideoSubTypeFriendlyName;
     UInt64 Timestamp;
+    UInt32 FrameCount;               // Number of audio of video frames contained in the raw sample.
 
     MediaSampleProperties():
       Success(true),
       HasVideoSample(false),
       HasAudioSample(false),
+      EndOfStream(false),
       Error(),
       Width(0),
       Height(0),
+      Stride(0),
       VideoSubType(Guid::Empty),
       VideoSubTypeFriendlyName(),
-      Timestamp(0)
+      Timestamp(0),
+      FrameCount(0)
     {}
 
     MediaSampleProperties(const MediaSampleProperties % copy)
@@ -112,7 +122,6 @@ namespace SIPSorceryMedia {
 	public ref class MFVideoSampler
 	{
 	public:
-		long Stride = -1;
     Guid VideoMajorType;
     Guid VideoMinorType;
 
@@ -120,7 +129,7 @@ namespace SIPSorceryMedia {
 		~MFVideoSampler();
 		HRESULT GetVideoDevices(/* out */ List<VideoMode^> ^% devices);
 		HRESULT Init(int videoDeviceIndex, VideoSubTypesEnum videoSubType, UInt32 width, UInt32 height);
-		HRESULT InitFromFile();
+		HRESULT InitFromFile(String^ path);
 		HRESULT FindVideoMode(IMFSourceReader *pReader, const GUID mediaSubType, UInt32 width, UInt32 height, /* out */ IMFMediaType *&foundpType);
     MediaSampleProperties^ GetSample(/* out */ array<Byte> ^% buffer);
 		HRESULT GetAudioSample(/* out */ array<Byte> ^% buffer);
@@ -140,6 +149,10 @@ namespace SIPSorceryMedia {
 			int get() { return _height; }
 		}
 
+    property int Stride {
+      int get() { return _stride; }
+    }
+
 	private:
 
 		static BOOL _isInitialised = false;
@@ -147,7 +160,7 @@ namespace SIPSorceryMedia {
 		IMFSourceReader * _sourceReader = NULL;
 		IMFMediaSink * _audioSink = NULL;             // Streaming audio renderer (SAR)
 		DWORD videoStreamIndex;
-		int _width, _height;
+		int _width, _height, _stride;
 
 		HRESULT GetDefaultStride(IMFMediaType *pType, /* out */ LONG *plStride);
 
