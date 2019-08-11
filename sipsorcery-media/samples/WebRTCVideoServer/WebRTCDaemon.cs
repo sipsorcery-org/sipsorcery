@@ -83,10 +83,11 @@ namespace WebRTCVideoServer
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
         private const string LOCAL_IP_ADDRESS = "192.168.11.50";
-        private const string MEDIA_FILE = "max4.1.mp4";
-        //private const string MEDIA_FILE = "max4.mp4";
+        //private const string MEDIA_FILE = "max4.1.mp4";
+        private const string MEDIA_FILE = "max4.mp4";
         private const int CACHE_SAMPLE_SIZE = 1000;
-        private const int VP8_TIMESTAMP_SPACING = 3000;
+        //private const int VP8_TIMESTAMP_SPACING = 3000;
+        private const int VP8_TIMESTAMP_SPACING = 18000;
 
         private const string DTLS_CERTIFICATE_THUMBRPINT = "25:5A:A9:32:1F:35:04:8D:5F:8A:5B:27:0B:9F:A2:90:1A:0E:B9:E9:02:A2:24:95:64:E5:7C:4C:10:11:F7:36";
 
@@ -502,8 +503,8 @@ namespace WebRTCVideoServer
                             sampleWidth = 0;
                             sampleHeight = 0;
                             sampleStride = 0;
-                            videoTimestamp = 0;
-                            audioTimestamp = 0;
+                            //videoTimestamp = 0;
+                            //audioTimestamp = 0;
                         }
                         else if (sampleProps.Success == false)
                         {
