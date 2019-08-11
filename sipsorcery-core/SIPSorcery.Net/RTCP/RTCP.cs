@@ -5,6 +5,7 @@
 //
 // History:
 // 24 May 2005	Aaron Clauson	Created.
+// 11 Aug 2019  Aaron Clauson   Added full license header.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
