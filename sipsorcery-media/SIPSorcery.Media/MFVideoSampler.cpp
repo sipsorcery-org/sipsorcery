@@ -298,6 +298,7 @@ namespace SIPSorceryMedia {
     //CHECK_HR(pAudioOutType->SetUINT64(MF_MT_AUDIO_SAMPLES_PER_SECOND, 48000), L"Failed to set output audio samples per second (Float).");
     CHECK_HR(pAudioOutType->SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, 1), L"Failed to set audio output to mono.");
     CHECK_HR(pAudioOutType->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, 16), L"Failed to set audio bits per sample.");
+    CHECK_HR(pAudioOutType->SetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, 8000), L"Failed to set audio samples per second.");
 
     CHECK_HR(_sourceReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, NULL, pAudioOutType),
       L"Error setting reader audio type.\n");
@@ -554,7 +555,7 @@ namespace SIPSorceryMedia {
   }
 
   // Gets the next available sample from the source reader.
-  MediaSampleProperties^ MFVideoSampler::GetNextSample(/* out */ array<Byte> ^% buffer)
+  MediaSampleProperties^ MFVideoSampler::GetNextSample(int streamTypeIndex, /* out */ array<Byte> ^% buffer)
   {
     MediaSampleProperties^ sampleProps = gcnew MediaSampleProperties();
 
@@ -568,7 +569,7 @@ namespace SIPSorceryMedia {
       LONGLONG sampleTimestamp;
 
       CHECK_HR_EXTENDED(_sourceReader->ReadSample(
-        MF_SOURCE_READER_ANY_STREAM,    // Stream index.
+        streamTypeIndex, // MF_SOURCE_READER_ANY_STREAM or MF_SOURCE_READER_FIRST_AUDIO_STREAM or MF_SOURCE_READER_FIRST_VIDEO_STREAM
         0,                              // Flags.
         &streamIndex,                   // Receives the actual stream index. 
         &flags,                         // Receives status flags.
@@ -630,8 +631,9 @@ namespace SIPSorceryMedia {
 
         // Accroding to https://docs.microsoft.com/en-us/windows/win32/api/mfreadwrite/nf-mfreadwrite-imfsourcereader-readsample 
         // the timestamp is in 100ns units.
-        sampleProps->Timestamp = sampleTimestamp / 10; // Make it into ms.
+        sampleProps->Timestamp = sampleTimestamp;
 
+        // ToDo: Get the stream indexes of teh frist audio and video stream properly rather than relying on default values.
         //else if(streamIndex == (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM)
         if(streamIndex == 1)
         {

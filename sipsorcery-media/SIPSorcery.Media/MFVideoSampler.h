@@ -133,7 +133,7 @@ namespace SIPSorceryMedia {
 		HRESULT FindVideoMode(IMFSourceReader *pReader, const GUID mediaSubType, UInt32 width, UInt32 height, /* out */ IMFMediaType *&foundpType);
     MediaSampleProperties^ GetSample(/* out */ array<Byte> ^% buffer);
 		HRESULT GetAudioSample(/* out */ array<Byte> ^% buffer);
-    MediaSampleProperties^ GetNextSample(/* out */ array<Byte> ^% buffer);
+    MediaSampleProperties^ GetNextSample(int streamTypeIndex, /* out */ array<Byte> ^% buffer);
 		HRESULT PlayAudio();
 		void Stop();
 		void DumpVideoSubTypes();
@@ -226,10 +226,11 @@ namespace SIPSorceryMedia {
 			// Video
 			INTERNAL_GUID_TO_STRING(MF_MT_FRAME_SIZE, 6);                     // FRAME_SIZE
 			INTERNAL_GUID_TO_STRING(MF_MT_FRAME_RATE, 6);                     // FRAME_RATE
+      
 			INTERNAL_GUID_TO_STRING(MF_MT_PIXEL_ASPECT_RATIO, 6);             // PIXEL_ASPECT_RATIO
 			INTERNAL_GUID_TO_STRING(MF_MT_INTERLACE_MODE, 6);                 // INTERLACE_MODE
 			INTERNAL_GUID_TO_STRING(MF_MT_AVG_BITRATE, 6);                    // AVG_BITRATE
-			INTERNAL_GUID_TO_STRING(MF_MT_DEFAULT_STRIDE, 6);				  // STRIDE
+			INTERNAL_GUID_TO_STRING(MF_MT_DEFAULT_STRIDE, 6);				          // STRIDE
 			INTERNAL_GUID_TO_STRING(MF_MT_AVG_BIT_ERROR_RATE, 6);
 			INTERNAL_GUID_TO_STRING(MF_MT_GEOMETRIC_APERTURE, 6);
 			INTERNAL_GUID_TO_STRING(MF_MT_MINIMUM_DISPLAY_APERTURE, 6);
@@ -272,6 +273,7 @@ namespace SIPSorceryMedia {
 			INTERNAL_GUID_TO_STRING(MFAudioFormat_WMASPDIF, 14);              // WMASPDIF
 			INTERNAL_GUID_TO_STRING(MFAudioFormat_MP3, 14);                   // MP3
 			INTERNAL_GUID_TO_STRING(MFAudioFormat_MPEG, 14);                  // MPEG
+      INTERNAL_GUID_TO_STRING(MFAudioFormat_AAC, 14);                   // AAC
 
 			// Media sub types
 			INTERNAL_GUID_TO_STRING(WMMEDIASUBTYPE_I420, 15);                  // I420

@@ -46,7 +46,6 @@ namespace WebRTCVideoServer
     public class WebRtcSession
     {
         private const int RTP_MAX_PAYLOAD = 1400;
-        private const int TIMESTAMP_SPACING = 3000;
         private const int VP8_PAYLOAD_TYPE_ID = 100;
         private const int PCMU_PAYLOAD_TYPE_ID = 0;
         private const int SRTP_AUTH_KEY_LENGTH = 10;
@@ -163,7 +162,7 @@ namespace WebRTCVideoServer
 
                     RTPPacket rtpPacket = new RTPPacket(payloadLength + SRTP_AUTH_KEY_LENGTH);
                     rtpPacket.Header.SyncSource = Peer.AudioSSRC;
-                    rtpPacket.Header.SequenceNumber = Peer.SequenceNumber++;
+                    rtpPacket.Header.SequenceNumber = Peer.AudioSequenceNumber++;
                     rtpPacket.Header.Timestamp = sampleTimestamp; //Peer.LastTimestamp;
                     rtpPacket.Header.MarkerBit =  0;
                     rtpPacket.Header.PayloadType = PCMU_PAYLOAD_TYPE_ID;
@@ -208,7 +207,7 @@ namespace WebRTCVideoServer
 
                     RTPPacket rtpPacket = new RTPPacket(payloadLength + SRTP_AUTH_KEY_LENGTH + vp8HeaderBytes.Length);
                     rtpPacket.Header.SyncSource = Peer.VideoSSRC;
-                    rtpPacket.Header.SequenceNumber = Peer.SequenceNumber++;
+                    rtpPacket.Header.SequenceNumber = Peer.VideoSequenceNumber++;
                     rtpPacket.Header.Timestamp = sampleTimestamp; // Peer.LastTimestamp;
                     rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
                     rtpPacket.Header.PayloadType = VP8_PAYLOAD_TYPE_ID;

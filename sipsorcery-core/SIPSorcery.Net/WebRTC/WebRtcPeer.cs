@@ -146,7 +146,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         public bool IsDtlsNegotiationComplete;
         public uint VideoSSRC;
         public uint AudioSSRC;
-        public ushort SequenceNumber;
+        public ushort VideoSequenceNumber;
+        public ushort AudioSequenceNumber;
         public uint LastTimestamp;
         public DateTime LastRtcpSenderReportSentAt = DateTime.MinValue;
         public DateTime IceNegotiationStartedAt;
@@ -323,7 +324,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     //LocalVideoIcePassword = localVideoIcePassword;
                     VideoSSRC = Convert.ToUInt32(Crypto.GetRandomInt(8));
                     AudioSSRC = Convert.ToUInt32(Crypto.GetRandomInt(8));
-                    SequenceNumber = 1;
+                    VideoSequenceNumber = 1;
+                    AudioSequenceNumber = 1;
 
                     //Task.Run(() => { SendStunConnectivityChecks(RtpMediaTypesEnum.Audio); });
                     Task.Run(() => { SendStunConnectivityChecks(RtpMediaTypesEnum.None); });

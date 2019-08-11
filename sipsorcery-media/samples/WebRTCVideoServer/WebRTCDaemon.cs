@@ -31,6 +31,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// ffmpeg command for an audio and video container that "should" work well with this sample is:
+// ToDo: Determine good output codec/format parameters.
+// ffmpeg -i max.mp4 -ss 00:00:06 max_even_better.mp4
+//-----------------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -55,6 +61,21 @@ using WebSocketSharp.Server;
 
 namespace WebRTCVideoServer
 {
+    public class CachedSample
+    {
+        public byte[] VideoSample;
+        public byte[] AudioSample;
+        public uint Timestamp;
+        public int DelayMilliseconds; // Delay after previous sample to wait before sending this one.
+    }
+
+    public enum MFReaderSampleType
+    {
+        ANY_STREAM = -2,
+        FIRST_AUDIO_STREAM = -3,
+        FIRST_VIDEO_STREAM = -4
+    }
+
     public class WebRTCDaemon
     {
         private const float TEXT_SIZE_PERCENTAGE = 0.035f;       // height of text as a percentage of the total image height
@@ -62,8 +83,10 @@ namespace WebRTCVideoServer
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
         private const string LOCAL_IP_ADDRESS = "192.168.11.50";
-        //private const string MEDIA_FILE = "max4.1.mp4";
-        private const string MEDIA_FILE = "max4.mp4";
+        private const string MEDIA_FILE = "max4.1.mp4";
+        //private const string MEDIA_FILE = "max4.mp4";
+        private const int CACHE_SAMPLE_SIZE = 1000;
+        private const int VP8_TIMESTAMP_SPACING = 3000;
 
         private const string DTLS_CERTIFICATE_THUMBRPINT = "25:5A:A9:32:1F:35:04:8D:5F:8A:5B:27:0B:9F:A2:90:1A:0E:B9:E9:02:A2:24:95:64:E5:7C:4C:10:11:F7:36";
 
@@ -75,6 +98,8 @@ namespace WebRTCVideoServer
         private bool _exit = false;
         private WebSocketServer _receiverWSS;
         private ConcurrentDictionary<string, WebRtcSession> _webRtcSessions = new ConcurrentDictionary<string, WebRtcSession>();
+
+        private SortedList<uint, CachedSample> _cachedSamples = new SortedList<uint, CachedSample>();
 
         public void Start()
         {
@@ -118,6 +143,9 @@ namespace WebRTCVideoServer
                 //Task.Run(SendPcmAudio);
                 //Task.Run(SendSineWaveAudio);
                 //Task.Run(SendRawPcmAudio);
+
+                //Task.Run(DecodeAndCacheMp4);
+                //Task.Run(StreamCache);
 
                 Task.Run(StreamMp4);
 
@@ -240,6 +268,195 @@ namespace WebRTCVideoServer
             }
         }
 
+        private void DecodeAndCacheMp4()
+        {
+            try
+            {
+                SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
+                sampler.InitFromFile(MEDIA_FILE);
+
+                SIPSorceryMedia.VPXEncoder vpxEncoder = new VPXEncoder();
+                SIPSorceryMedia.ImageConvert colorConverter = new ImageConvert();
+
+                // Note that these settings can change once the stream processing starts.
+                // If they do change the VPX encoder will be reinitialised with the new dimensions.
+                int sampleWidth = sampler.Width;
+                int sampleHeight = sampler.Height;
+                int sampleStride = sampler.Stride;
+
+                byte[] sampleBuffer = null;
+                int sampleCount = 0;
+                ulong previousTimestamp = 0;
+
+                Console.WriteLine($"Decode and cahce media sampler successfully initialised for {MEDIA_FILE}, initial dimensions are {sampleWidth}x{sampleHeight} and stride {sampleStride}.");
+
+                var sampleProps = sampler.GetNextSample(MFReaderSampleType.ANY_STREAM.GetHashCode(), ref sampleBuffer);
+
+                DateTime startTime = DateTime.Now;
+
+                while (!sampleProps.EndOfStream && sampleCount < CACHE_SAMPLE_SIZE)
+                {
+                    uint timestampMilliseconds = (uint)(sampleProps.Timestamp / 10000); // MF timestamps use a resolution of 100ns.
+                    int timestamptDeltaMilliseconds = (int)timestampMilliseconds - (int)previousTimestamp; // Can be negative for some reason? Screwed up encoding or screwed up MF decoding.
+
+                    string sampleType = (sampleProps.HasVideoSample) ? "video" : "audio";
+                    Console.WriteLine($"{sampleCount} {sampleType} length {sampleBuffer.Length} timestamp {timestampMilliseconds} delta {timestampMilliseconds}.");
+
+                    if (timestamptDeltaMilliseconds < 0)
+                    {
+                        Console.WriteLine("Timestamp delta was NEGATIVE!");
+                    }
+
+                    if (sampleProps.Success == false)
+                    {
+                        logger.Warn("The request for the next media sample failed.");
+                    }
+                    else if (sampleProps.HasVideoSample == true)
+                    {
+                        if (sampleProps.Width != 0 && sampleProps.Height != 0 &&
+                            (sampleProps.Width != sampleWidth || sampleProps.Height != sampleHeight || sampleProps.Stride != sampleStride))
+                        {
+                            sampleWidth = sampleProps.Width;
+                            sampleHeight = sampleProps.Height;
+                            sampleStride = sampleProps.Stride;
+
+                            vpxEncoder.InitEncoder((uint)sampleWidth, (uint)sampleHeight, (uint)sampleStride);
+
+                            Console.WriteLine($"VPX encoder dimensions set to {sampleWidth} x {sampleHeight} and stride {sampleStride}.");
+                        }
+
+                        if (sampleBuffer != null && sampleBuffer.Length > 0)
+                        {
+                            byte[] vpxEncodedBuffer = null;
+
+                            unsafe
+                            {
+                                fixed (byte* p = sampleBuffer)
+                                {
+                                    byte[] convertedFrame = null;
+                                    colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB32, sampleWidth, sampleHeight, sampleStride, VideoSubTypesEnum.I420, ref convertedFrame);
+
+                                    fixed (byte* q = convertedFrame)
+                                    {
+                                        int encodeResult = vpxEncoder.Encode(q, convertedFrame.Length, 1, ref vpxEncodedBuffer);
+
+                                        if (encodeResult != 0)
+                                        {
+                                            logger.Warn("VPX encode of video sample failed.");
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (_cachedSamples.ContainsKey(timestampMilliseconds))
+                            {
+                                _cachedSamples[timestampMilliseconds].VideoSample = vpxEncodedBuffer;
+                            }
+                            else
+                            {
+                                _cachedSamples.Add(timestampMilliseconds, new CachedSample { VideoSample = vpxEncodedBuffer, Timestamp = timestampMilliseconds, DelayMilliseconds = timestamptDeltaMilliseconds });
+                            }
+                            sampleCount++;
+
+                            previousTimestamp = timestampMilliseconds;
+                        }
+                    }
+                    else if (sampleProps.HasAudioSample == true)
+                    {
+                        uint sampleDuration = (uint)(sampleBuffer.Length / 2);
+
+                        byte[] mulawSample = new byte[sampleDuration];
+                        int sampleIndex = 0;
+
+                        // ToDo: Find a way to wire up the Media foundation WAVE_FORMAT_MULAW codec so the encoding below is not necessary.
+                        for (int index = 0; index < sampleBuffer.Length; index += 2)
+                        {
+                            var ulawByte = MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(sampleBuffer, index));
+                            mulawSample[sampleIndex++] = ulawByte;
+                        }
+
+                        if (_cachedSamples.ContainsKey(timestampMilliseconds))
+                        {
+                            _cachedSamples[timestampMilliseconds].AudioSample = mulawSample;
+                        }
+                        else
+                        {
+                            _cachedSamples.Add(timestampMilliseconds, new CachedSample { AudioSample = mulawSample, Timestamp = timestampMilliseconds, DelayMilliseconds = timestamptDeltaMilliseconds });
+                        }
+                        sampleCount++;
+
+                        previousTimestamp = timestampMilliseconds;
+                    }
+
+                    sampleProps = sampler.GetNextSample(MFReaderSampleType.ANY_STREAM.GetHashCode(), ref sampleBuffer);
+                }
+
+                TimeSpan duration = DateTime.Now.Subtract(startTime);
+                Console.WriteLine($"Cache samples completed in {duration.TotalSeconds}.");
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception DecodeAndCacheMp4. " + excp);
+            }
+        }
+
+        private void StreamCache()
+        {
+            try
+            {
+                while (!_exit)
+                {
+                    if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
+                    {
+                        int sampleCount = 0;
+
+                        foreach (var cachedSample in _cachedSamples)
+                        {
+                            if (sampleCount % 3 == 0)
+                            {
+                                Thread.Sleep(30);
+                            }
+
+                            lock (_webRtcSessions)
+                            {
+                                foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true &&
+                                   x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                                {
+                                    if (cachedSample.Value.VideoSample != null)
+                                    {
+                                        session.Value.SendVp8(cachedSample.Value.VideoSample, cachedSample.Value.Timestamp);
+                                    }
+
+                                    if (cachedSample.Value.AudioSample != null)
+                                    {
+                                        session.Value.SendPcmu(cachedSample.Value.AudioSample, cachedSample.Value.Timestamp);
+                                    }
+                                }
+                            }
+
+                            sampleCount++;
+                        }
+
+                        foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true &&
+                                       x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                        {
+                            session.Value.Peer.Close();
+                        }
+                    }
+                    else
+                    {
+                        // Wait for a WebRTC client to connect.
+                        Thread.Sleep(500);
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.Error("Exception StreamCache. " + excp);
+            }
+        }
+
         private void StreamMp4()
         {
             try
@@ -257,8 +474,10 @@ namespace WebRTCVideoServer
                 int sampleStride = sampler.Stride;
 
                 byte[] sampleBuffer = null;
-                byte[] encodedBuffer = new byte[1000000];
-                int sampleCount = 0;
+                int videoSampleCount = 0;
+                int audioSampleCount = 0;
+                uint videoTimestamp = 0;
+                uint audioTimestamp = 0;
 
                 Console.WriteLine($"Media sampler successfully initialised for {MEDIA_FILE}, initial dimensions are {sampleWidth}x{sampleHeight} and stride {sampleStride}.");
 
@@ -266,7 +485,13 @@ namespace WebRTCVideoServer
                 {
                     if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
                     {
-                        var sampleProps = sampler.GetNextSample(ref sampleBuffer);
+                        var sampleProps = sampler.GetNextSample(MFReaderSampleType.ANY_STREAM.GetHashCode(), ref sampleBuffer);
+
+                        if (videoTimestamp == 0 && audioTimestamp == 0)
+                        {
+                            videoTimestamp = RTSPSession.DateTimeToNptTimestamp32(DateTime.Now);
+                            audioTimestamp = RTSPSession.DateTimeToNptTimestamp32(DateTime.Now);
+                        }
 
                         //Console.WriteLine($"{(sampleProps.HasVideoSample?"V":"A")} timestamp {sampleProps.Timestamp}");
 
@@ -277,6 +502,8 @@ namespace WebRTCVideoServer
                             sampleWidth = 0;
                             sampleHeight = 0;
                             sampleStride = 0;
+                            videoTimestamp = 0;
+                            audioTimestamp = 0;
                         }
                         else if (sampleProps.Success == false)
                         {
@@ -299,6 +526,8 @@ namespace WebRTCVideoServer
 
                             if (sampleBuffer != null && sampleBuffer.Length > 0)
                             {
+                                byte[] vpxEncodedBuffer = null;
+
                                 unsafe
                                 {
                                     fixed (byte* p = sampleBuffer)
@@ -308,7 +537,7 @@ namespace WebRTCVideoServer
 
                                         fixed (byte* q = convertedFrame)
                                         {
-                                            int encodeResult = vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
+                                            int encodeResult = vpxEncoder.Encode(q, convertedFrame.Length, 1, ref vpxEncodedBuffer);
 
                                             if (encodeResult != 0)
                                             {
@@ -319,22 +548,26 @@ namespace WebRTCVideoServer
                                     }
                                 }
 
+                                videoTimestamp += VP8_TIMESTAMP_SPACING;
+
                                 lock (_webRtcSessions)
                                 {
                                     foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true &&
                                        x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
                                     {
-                                        session.Value.SendVp8(encodedBuffer, (uint)sampleProps.Timestamp);
+                                        session.Value.SendVp8(vpxEncodedBuffer, videoTimestamp);
                                     }
                                 }
 
-                                encodedBuffer = null;
+                                vpxEncodedBuffer = null;
 
-                                sampleCount++;
+                                videoSampleCount++;
                             }
                         }
                         else if (sampleProps.HasAudioSample == true)
                         {
+                            //Console.WriteLine($"Audio sample, length {sampleBuffer.Length}, timestamp {sampleProps.Timestamp / 10000}.");
+
                             uint sampleDuration = (uint)(sampleBuffer.Length / 2);
 
                             byte[] mulawSample = new byte[sampleDuration];
@@ -347,15 +580,24 @@ namespace WebRTCVideoServer
                                 mulawSample[sampleIndex++] = ulawByte;
                             }
 
+                            audioTimestamp += sampleDuration;
+
                             lock (_webRtcSessions)
                             {
                                 foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true &&
                                     x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
                                 {
-                                    session.Value.SendPcmu(mulawSample, (uint)sampleProps.Timestamp);
+                                    session.Value.SendPcmu(mulawSample, audioTimestamp);
                                 }
                             }
+
+                            audioSampleCount++;
                         }
+
+                        //if (sampleCount % 3 == 0)
+                        //{
+                        //    Thread.Sleep(10);
+                        //}
                     }
                     else
                     {
@@ -501,11 +743,11 @@ namespace WebRTCVideoServer
                     {
                         if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
                         {
-                            int result = sampler.GetAudioSample(ref sampleBuffer);
+                            var sampleProps = sampler.GetNextSample(MFReaderSampleType.FIRST_AUDIO_STREAM.GetHashCode(), ref sampleBuffer);
 
-                            if (result != 0 && sampleBuffer.Length != 0)
+                            if (sampleProps.Success == false || sampleBuffer.Length == 0)
                             {
-                                logger.Warn($"Failed to get audio sample, error code {result}.");
+                                logger.Warn($"Failed to get audio sample, error code {sampleProps.Error}.");
                             }
                             else
                             {
@@ -525,7 +767,7 @@ namespace WebRTCVideoServer
                                     foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true &&
                                         x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
                                     {
-                                        session.Value.SendPcmu(mulawSample, sampleDuration);
+                                        session.Value.SendPcmu(mulawSample, (uint)sampleProps.Timestamp);
                                     }
                                 }
 
@@ -545,7 +787,6 @@ namespace WebRTCVideoServer
             }
         }
 
-
         private void SendMp4()
         {
             try
@@ -560,7 +801,7 @@ namespace WebRTCVideoServer
 
                     int sampleWidth = 0; // Convert.ToUInt32(sampler.Width);
                     int sampleHeight = 0; // Convert.ToUInt32(sampler.Height);
-                    //VideoSubTypesHelper.GetPixelFormatForVideoSubType(sampleHeight.)
+                                          //VideoSubTypesHelper.GetPixelFormatForVideoSubType(sampleHeight.)
 
                     logger.Debug($"Sampler width {sampleWidth}, height {sampleHeight}.");
 
