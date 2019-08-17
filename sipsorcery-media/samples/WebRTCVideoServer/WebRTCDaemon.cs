@@ -108,7 +108,8 @@ namespace WebRTCVideoServer
         private const int POINTS_PER_INCH = 72;
         private const string LOCAL_IP_ADDRESS = "192.168.11.50";
 
-        private const string MEDIA_FILE = "max4.1.mp4";
+        private const string MEDIA_FILE = "max_intro.mp4";
+        //private const string MEDIA_FILE = "max4.1.mp4";
         //private const string MEDIA_FILE = "max4.mp4";
         //private const string MEDIA_FILE = @"c:\tools\ffmpeg\max4small.mp4";
         private const int CACHE_SAMPLE_SIZE = 1000;
@@ -897,7 +898,6 @@ namespace WebRTCVideoServer
                             //Console.WriteLine($"Audio SeqNum {audioSeqNum}, timestamp {audioTimestamp}, buffer length {mulawSample.Length}.");
 
                             audioTimestamp += sampleDuration;
-                            audioSsrc++;
                         }
                     }
                 }
