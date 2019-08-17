@@ -35,6 +35,21 @@
 // ffmpeg command for an audio and video container that "should" work well with this sample is:
 // ToDo: Determine good output codec/format parameters.
 // ffmpeg -i max.mp4 -ss 00:00:06 max_even_better.mp4
+// ffmpeg -i max4.mp4 -ss 00:00:06 -vf scale=320x240 max4small.mp4
+
+// To stream samples to ffplay use SendSamplesAsRtp with: 
+// ffplay -i ffplay_av.sdp -protocol_whitelist "file,rtp,udp"
+//
+// cat ffplay_av.sdp
+//v=0
+//o=- 1129870806 2 IN IP4 127.0.0.1
+//s=-
+//c=IN IP4 192.168.11.50
+//t=0 0
+//m=audio 4040 RTP/AVP 0
+//a=rtpmap:0 PCMU/8000
+//m=video 4042 RTP/AVP 100
+//a=rtpmap:100 VP8/90000
 //-----------------------------------------------------------------------------
 
 using System;
@@ -61,19 +76,28 @@ using WebSocketSharp.Server;
 
 namespace WebRTCVideoServer
 {
-    public class CachedSample
-    {
-        public byte[] VideoSample;
-        public byte[] AudioSample;
-        public uint Timestamp;
-        public int DelayMilliseconds; // Delay after previous sample to wait before sending this one.
-    }
-
     public enum MFReaderSampleType
     {
         ANY_STREAM = -2,
         FIRST_AUDIO_STREAM = -3,
         FIRST_VIDEO_STREAM = -4
+    }
+
+    public class SDPExchangeReceiver : WebSocketBehavior
+    {
+        public event Action<WebSocketSharp.Net.WebSockets.WebSocketContext, string> WebSocketOpened;
+        public event Action<string, string> SDPAnswerReceived;
+
+        protected override void OnMessage(MessageEventArgs e)
+        {
+            SDPAnswerReceived(this.ID, e.Data);
+        }
+
+        protected override void OnOpen()
+        {
+            base.OnOpen();
+            WebSocketOpened(this.Context, this.ID);
+        }
     }
 
     public class WebRTCDaemon
@@ -83,11 +107,21 @@ namespace WebRTCVideoServer
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
         private const string LOCAL_IP_ADDRESS = "192.168.11.50";
-        //private const string MEDIA_FILE = "max4.1.mp4";
-        private const string MEDIA_FILE = "max4.mp4";
+
+        private const string MEDIA_FILE = "max4.1.mp4";
+        //private const string MEDIA_FILE = "max4.mp4";
+        //private const string MEDIA_FILE = @"c:\tools\ffmpeg\max4small.mp4";
         private const int CACHE_SAMPLE_SIZE = 1000;
-        //private const int VP8_TIMESTAMP_SPACING = 3000;
-        private const int VP8_TIMESTAMP_SPACING = 18000;
+        private const int VP8_TIMESTAMP_SPACING = 3000;
+        private const int RTP_MAX_PAYLOAD = 1400;
+        private const int VP8_PAYLOAD_TYPE_ID = 100;
+        private const int RTCP_SR_PERIOD_SECONDS = 3;
+        private const int VIDEO_FRAMES_EXPECTED_PER_SECOND = 30;
+        private const int PER_FRAME_DELAY_MINIMUM_THRESHOLD = 5;
+        private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 8;
+
+        private const int SEND_RTP_AUDIO_DEST_PORT = 4040;
+        private const int SEND_RTP_VIDEO_DEST_PORT = 4042;
 
         private const string DTLS_CERTIFICATE_THUMBRPINT = "25:5A:A9:32:1F:35:04:8D:5F:8A:5B:27:0B:9F:A2:90:1A:0E:B9:E9:02:A2:24:95:64:E5:7C:4C:10:11:F7:36";
 
@@ -99,17 +133,13 @@ namespace WebRTCVideoServer
         private bool _exit = false;
         private WebSocketServer _receiverWSS;
         private ConcurrentDictionary<string, WebRtcSession> _webRtcSessions = new ConcurrentDictionary<string, WebRtcSession>();
-
-        private SortedList<uint, CachedSample> _cachedSamples = new SortedList<uint, CachedSample>();
+        private ConcurrentDictionary<string, WebRtcSessionUnencrypted> _webRtcSessionsUnencrypted = new ConcurrentDictionary<string, WebRtcSessionUnencrypted>();
 
         public void Start()
         {
             try
             {
                 logger.Debug("WebRTCDaemon starting.");
-
-                SDPExchangeReceiver.WebSocketOpened += WebRtcStartCall;
-                SDPExchangeReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
 
                 //var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(_webSocketCertificatePath, _webSocketCertificatePassword);
                 //logger.Debug("Web Socket Server Certificate CN: " + wssCertificate.Subject + ", have key " + wssCertificate.HasPrivateKey + ", Expires " + wssCertificate.GetExpirationDateString() + ".");
@@ -130,38 +160,27 @@ namespace WebRTCVideoServer
                 //     System.Security.Authentication.SslProtocols.Tls,
                 //    false);
 
-                _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/stream",
-                    () => new SDPExchangeReceiver()
-                    {
-                        IgnoreExtensions = true,
-                    });
+                // Standard encrypted WebRtc stream.
+                SDPExchangeReceiver sdpReceiver = new SDPExchangeReceiver { IgnoreExtensions = true };
+                sdpReceiver.WebSocketOpened += WebRtcStartCall;
+                sdpReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
+
+                _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/stream", () => sdpReceiver);
                 _receiverWSS.Start();
 
-                //PlayPcmAudio();
-                //Task.Run(SendTestPattern);
-                //Task.Run(SendMp4);
-                //Task.Run(SendMp4ViaFile);
-                //Task.Run(SendPcmAudio);
-                //Task.Run(SendSineWaveAudio);
-                //Task.Run(SendRawPcmAudio);
+                // Decrypted WebRtc stream for diagnostics (browsers do not support this without specific flags being enabled).
+                SDPExchangeReceiver noEncryptionSdpReceiver = new SDPExchangeReceiver { IgnoreExtensions = true };
+                noEncryptionSdpReceiver.WebSocketOpened += WebRtcStartCallUnencrypted;
+                noEncryptionSdpReceiver.SDPAnswerReceived += WebRtcAnswerReceivedUnencrypted;
 
-                //Task.Run(DecodeAndCacheMp4);
-                //Task.Run(StreamCache);
+                _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/nocrypt", () => noEncryptionSdpReceiver);
+                _receiverWSS.Start();
 
-                Task.Run(StreamMp4);
-
-                //Task.Run(SendMp4ViaFile);
-                //Task.Run(SendMp4Audio);
-                //SendMulawFileAudio();
-
-                //Task.Run(SaveMp4AudioToRawFile);
-
-                //Task.Run(SendAudioToWireshark);
-                //Task.Run(SendAudioToWireshark2);
-
-                //Task.Run(SendTestPattern);
-                //Task.Run(SendMp4Audio);
-                //SendMulawFileAudio();
+                // Streaming methods
+                Task.Run(StreamMp4);              // Send to WebRtc enabled browser.
+                Task.Run(StreamMp4Unecrypted);    // Send to Chrome Canary with webrtc encryption disabled.
+                Task.Run(SendSamplesAsRtp);       // Send to ffplay.
+                //Task.Run(SendTestPattern);      // Streams a static test pattern image overlayed with text of teh current time.
             }
             catch (Exception excp)
             {
@@ -207,6 +226,33 @@ namespace WebRTCVideoServer
                         webRtcSession.Peer.OnMediaPacket += webRtcSession.MediaPacketReceived;
                         webRtcSession.Peer.Initialise(DTLS_CERTIFICATE_THUMBRPINT, null, mediaTypes, IPAddress.Parse(LOCAL_IP_ADDRESS));
                         webRtcSession.Peer.OnClose += () => { PeerClosed(webSocketID); };
+                    }
+                    else
+                    {
+                        logger.Error("Failed to add new WebRTC client to sessions dictionary.");
+                    }
+                }
+            }
+        }
+
+        private void WebRtcStartCallUnencrypted(WebSocketSharp.Net.WebSockets.WebSocketContext context, string webSocketID)
+        {
+            logger.Debug("New WebRTC client added for web socket connection " + webSocketID + ".");
+
+            var mediaTypes = new List<RtpMediaTypesEnum> { RtpMediaTypesEnum.Video, RtpMediaTypesEnum.Audio };
+
+            lock (_webRtcSessions)
+            {
+                if (!_webRtcSessions.Any(x => x.Key == webSocketID))
+                {
+                    var webRtcSessionUnencrypted = new WebRtcSessionUnencrypted(webSocketID);
+
+                    if (_webRtcSessionsUnencrypted.TryAdd(webSocketID, webRtcSessionUnencrypted))
+                    {
+                        webRtcSessionUnencrypted.Peer.OnSdpOfferReady += (sdp) => { logger.Debug("Offer SDP: " + sdp); context.WebSocket.Send(sdp); };
+                        webRtcSessionUnencrypted.Peer.OnMediaPacket += webRtcSessionUnencrypted.MediaPacketReceived;
+                        webRtcSessionUnencrypted.Peer.Initialise(null, mediaTypes, IPAddress.Parse(LOCAL_IP_ADDRESS));
+                        webRtcSessionUnencrypted.Peer.OnClose += () => { PeerClosed(webSocketID); };
                     }
                     else
                     {
@@ -269,195 +315,45 @@ namespace WebRTCVideoServer
             }
         }
 
-        private void DecodeAndCacheMp4()
+        private void WebRtcAnswerReceivedUnencrypted(string webSocketID, string sdpAnswer)
         {
             try
             {
-                SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
-                sampler.InitFromFile(MEDIA_FILE);
+                logger.Debug("Answer SDP: " + sdpAnswer);
 
-                SIPSorceryMedia.VPXEncoder vpxEncoder = new VPXEncoder();
-                SIPSorceryMedia.ImageConvert colorConverter = new ImageConvert();
+                var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
 
-                // Note that these settings can change once the stream processing starts.
-                // If they do change the VPX encoder will be reinitialised with the new dimensions.
-                int sampleWidth = sampler.Width;
-                int sampleHeight = sampler.Height;
-                int sampleStride = sampler.Stride;
+                var peer = _webRtcSessionsUnencrypted.Where(x => x.Key == webSocketID).Select(x => x.Value.Peer).SingleOrDefault();
 
-                byte[] sampleBuffer = null;
-                int sampleCount = 0;
-                ulong previousTimestamp = 0;
-
-                Console.WriteLine($"Decode and cahce media sampler successfully initialised for {MEDIA_FILE}, initial dimensions are {sampleWidth}x{sampleHeight} and stride {sampleStride}.");
-
-                var sampleProps = sampler.GetNextSample(MFReaderSampleType.ANY_STREAM.GetHashCode(), ref sampleBuffer);
-
-                DateTime startTime = DateTime.Now;
-
-                while (!sampleProps.EndOfStream && sampleCount < CACHE_SAMPLE_SIZE)
+                if (peer == null)
                 {
-                    uint timestampMilliseconds = (uint)(sampleProps.Timestamp / 10000); // MF timestamps use a resolution of 100ns.
-                    int timestamptDeltaMilliseconds = (int)timestampMilliseconds - (int)previousTimestamp; // Can be negative for some reason? Screwed up encoding or screwed up MF decoding.
-
-                    string sampleType = (sampleProps.HasVideoSample) ? "video" : "audio";
-                    Console.WriteLine($"{sampleCount} {sampleType} length {sampleBuffer.Length} timestamp {timestampMilliseconds} delta {timestampMilliseconds}.");
-
-                    if (timestamptDeltaMilliseconds < 0)
-                    {
-                        Console.WriteLine("Timestamp delta was NEGATIVE!");
-                    }
-
-                    if (sampleProps.Success == false)
-                    {
-                        logger.Warn("The request for the next media sample failed.");
-                    }
-                    else if (sampleProps.HasVideoSample == true)
-                    {
-                        if (sampleProps.Width != 0 && sampleProps.Height != 0 &&
-                            (sampleProps.Width != sampleWidth || sampleProps.Height != sampleHeight || sampleProps.Stride != sampleStride))
-                        {
-                            sampleWidth = sampleProps.Width;
-                            sampleHeight = sampleProps.Height;
-                            sampleStride = sampleProps.Stride;
-
-                            vpxEncoder.InitEncoder((uint)sampleWidth, (uint)sampleHeight, (uint)sampleStride);
-
-                            Console.WriteLine($"VPX encoder dimensions set to {sampleWidth} x {sampleHeight} and stride {sampleStride}.");
-                        }
-
-                        if (sampleBuffer != null && sampleBuffer.Length > 0)
-                        {
-                            byte[] vpxEncodedBuffer = null;
-
-                            unsafe
-                            {
-                                fixed (byte* p = sampleBuffer)
-                                {
-                                    byte[] convertedFrame = null;
-                                    colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB32, sampleWidth, sampleHeight, sampleStride, VideoSubTypesEnum.I420, ref convertedFrame);
-
-                                    fixed (byte* q = convertedFrame)
-                                    {
-                                        int encodeResult = vpxEncoder.Encode(q, convertedFrame.Length, 1, ref vpxEncodedBuffer);
-
-                                        if (encodeResult != 0)
-                                        {
-                                            logger.Warn("VPX encode of video sample failed.");
-                                            continue;
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (_cachedSamples.ContainsKey(timestampMilliseconds))
-                            {
-                                _cachedSamples[timestampMilliseconds].VideoSample = vpxEncodedBuffer;
-                            }
-                            else
-                            {
-                                _cachedSamples.Add(timestampMilliseconds, new CachedSample { VideoSample = vpxEncodedBuffer, Timestamp = timestampMilliseconds, DelayMilliseconds = timestamptDeltaMilliseconds });
-                            }
-                            sampleCount++;
-
-                            previousTimestamp = timestampMilliseconds;
-                        }
-                    }
-                    else if (sampleProps.HasAudioSample == true)
-                    {
-                        uint sampleDuration = (uint)(sampleBuffer.Length / 2);
-
-                        byte[] mulawSample = new byte[sampleDuration];
-                        int sampleIndex = 0;
-
-                        // ToDo: Find a way to wire up the Media foundation WAVE_FORMAT_MULAW codec so the encoding below is not necessary.
-                        for (int index = 0; index < sampleBuffer.Length; index += 2)
-                        {
-                            var ulawByte = MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(sampleBuffer, index));
-                            mulawSample[sampleIndex++] = ulawByte;
-                        }
-
-                        if (_cachedSamples.ContainsKey(timestampMilliseconds))
-                        {
-                            _cachedSamples[timestampMilliseconds].AudioSample = mulawSample;
-                        }
-                        else
-                        {
-                            _cachedSamples.Add(timestampMilliseconds, new CachedSample { AudioSample = mulawSample, Timestamp = timestampMilliseconds, DelayMilliseconds = timestamptDeltaMilliseconds });
-                        }
-                        sampleCount++;
-
-                        previousTimestamp = timestampMilliseconds;
-                    }
-
-                    sampleProps = sampler.GetNextSample(MFReaderSampleType.ANY_STREAM.GetHashCode(), ref sampleBuffer);
+                    logger.Warn("No WebRTC client entry exists for web socket ID " + webSocketID + ", ignoring.");
                 }
-
-                TimeSpan duration = DateTime.Now.Subtract(startTime);
-                Console.WriteLine($"Cache samples completed in {duration.TotalSeconds}.");
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception DecodeAndCacheMp4. " + excp);
-            }
-        }
-
-        private void StreamCache()
-        {
-            try
-            {
-                while (!_exit)
+                else
                 {
-                    if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
+                    logger.Debug("New WebRTC client SDP answer for web socket ID " + webSocketID + ".");
+
+                    peer.SdpSessionID = answerSDP.SessionId;
+                    peer.RemoteIceUser = answerSDP.IceUfrag;
+                    peer.RemoteIcePassword = answerSDP.IcePwd;
+
+                    foreach (var iceCandidate in answerSDP.IceCandidates)
                     {
-                        int sampleCount = 0;
-
-                        foreach (var cachedSample in _cachedSamples)
-                        {
-                            if (sampleCount % 3 == 0)
-                            {
-                                Thread.Sleep(30);
-                            }
-
-                            lock (_webRtcSessions)
-                            {
-                                foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true &&
-                                   x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
-                                {
-                                    if (cachedSample.Value.VideoSample != null)
-                                    {
-                                        session.Value.SendVp8(cachedSample.Value.VideoSample, cachedSample.Value.Timestamp);
-                                    }
-
-                                    if (cachedSample.Value.AudioSample != null)
-                                    {
-                                        session.Value.SendPcmu(cachedSample.Value.AudioSample, cachedSample.Value.Timestamp);
-                                    }
-                                }
-                            }
-
-                            sampleCount++;
-                        }
-
-                        foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true &&
-                                       x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
-                        {
-                            session.Value.Peer.Close();
-                        }
-                    }
-                    else
-                    {
-                        // Wait for a WebRTC client to connect.
-                        Thread.Sleep(500);
+                        peer.AppendRemoteIceCandidate(iceCandidate);
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.Error("Exception StreamCache. " + excp);
+                logger.Error("Exception SDPExchangeReceiver_SDPAnswerReceived. " + excp.Message);
             }
         }
 
+        /// <summary>
+        /// This is the most important of the "Send" and "Stream" methods. It streams the first audio and video stream from
+        /// an mp4 file to a WebRtc browser (tested predominanty with Chrome). This method deals only with the media, the 
+        /// signalling and WebRtc session needs to have already been set up by the respective WebRtc classes.
+        /// </summary>
         private void StreamMp4()
         {
             try
@@ -475,10 +371,18 @@ namespace WebRTCVideoServer
                 int sampleStride = sampler.Stride;
 
                 byte[] sampleBuffer = null;
-                int videoSampleCount = 0;
-                int audioSampleCount = 0;
-                uint videoTimestamp = 0;
-                uint audioTimestamp = 0;
+                uint videoSampleCount = 0;
+                uint audioSampleCount = 0;
+                uint videoOctetsCount = 0;
+                uint audioOctetsCount = 0;
+                uint audioSamplesPerSecondCount = 0;
+                DateTime? audioSamplePeriodStart = null;
+                uint videoTimestamp = Convert.ToUInt32(Crypto.GetRandomInt(8));
+                uint audioTimestamp = Convert.ToUInt32(Crypto.GetRandomInt(8));
+                DateTime lastRtcpSRSentAt = DateTime.MinValue;
+                uint videoSamplesSinceLastRtcp = 0;
+                uint audioSamplesSinceLastRtcp = 0;
+                int perFrameDelayMilliseconds = 0;
 
                 Console.WriteLine($"Media sampler successfully initialised for {MEDIA_FILE}, initial dimensions are {sampleWidth}x{sampleHeight} and stride {sampleStride}.");
 
@@ -486,15 +390,7 @@ namespace WebRTCVideoServer
                 {
                     if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
                     {
-                        var sampleProps = sampler.GetNextSample(MFReaderSampleType.ANY_STREAM.GetHashCode(), ref sampleBuffer);
-
-                        if (videoTimestamp == 0 && audioTimestamp == 0)
-                        {
-                            videoTimestamp = RTSPSession.DateTimeToNptTimestamp32(DateTime.Now);
-                            audioTimestamp = RTSPSession.DateTimeToNptTimestamp32(DateTime.Now);
-                        }
-
-                        //Console.WriteLine($"{(sampleProps.HasVideoSample?"V":"A")} timestamp {sampleProps.Timestamp}");
+                        var sampleProps = sampler.GetNextSample(MFReaderSampleType.ANY_STREAM.GetHashCode(), ref sampleBuffer, 0);
 
                         if (sampleProps.EndOfStream == true)
                         {
@@ -503,8 +399,6 @@ namespace WebRTCVideoServer
                             sampleWidth = 0;
                             sampleHeight = 0;
                             sampleStride = 0;
-                            //videoTimestamp = 0;
-                            //audioTimestamp = 0;
                         }
                         else if (sampleProps.Success == false)
                         {
@@ -533,18 +427,12 @@ namespace WebRTCVideoServer
                                 {
                                     fixed (byte* p = sampleBuffer)
                                     {
-                                        byte[] convertedFrame = null;
-                                        colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB32, sampleWidth, sampleHeight, sampleStride, VideoSubTypesEnum.I420, ref convertedFrame);
+                                        int encodeResult = vpxEncoder.Encode(p, sampleBuffer.Length, 1, ref vpxEncodedBuffer);
 
-                                        fixed (byte* q = convertedFrame)
+                                        if (encodeResult != 0)
                                         {
-                                            int encodeResult = vpxEncoder.Encode(q, convertedFrame.Length, 1, ref vpxEncodedBuffer);
-
-                                            if (encodeResult != 0)
-                                            {
-                                                logger.Warn("VPX encode of video sample failed.");
-                                                continue;
-                                            }
+                                            logger.Warn("VPX encode of video sample failed.");
+                                            continue;
                                         }
                                     }
                                 }
@@ -560,14 +448,33 @@ namespace WebRTCVideoServer
                                     }
                                 }
 
-                                vpxEncodedBuffer = null;
-
                                 videoSampleCount++;
+                                videoSamplesSinceLastRtcp++;
+                                videoOctetsCount += (uint)vpxEncodedBuffer.Length;
+
+                                vpxEncodedBuffer = null;
+                            }
+
+                            if (perFrameDelayMilliseconds > PER_FRAME_DELAY_MINIMUM_THRESHOLD)
+                            {
+                                Thread.Sleep(perFrameDelayMilliseconds);
                             }
                         }
                         else if (sampleProps.HasAudioSample == true)
                         {
                             //Console.WriteLine($"Audio sample, length {sampleBuffer.Length}, timestamp {sampleProps.Timestamp / 10000}.");
+                            if (audioSamplePeriodStart == null)
+                            {
+                                audioSamplePeriodStart = DateTime.Now;
+                            }
+                            else if (DateTime.Now.Subtract(audioSamplePeriodStart.Value).TotalSeconds > 1)
+                            {
+                                //Console.WriteLine($"Audio samples per second {audioSamplesPerSecondCount}.");
+                                audioSamplesPerSecondCount = 0;
+                                audioSamplePeriodStart = DateTime.Now;
+                            }
+
+                            audioSamplesPerSecondCount++;
 
                             uint sampleDuration = (uint)(sampleBuffer.Length / 2);
 
@@ -593,12 +500,44 @@ namespace WebRTCVideoServer
                             }
 
                             audioSampleCount++;
+                            audioSamplesSinceLastRtcp++;
+                            audioOctetsCount += (uint)mulawSample.Length;
                         }
 
-                        //if (sampleCount % 3 == 0)
-                        //{
-                        //    Thread.Sleep(10);
-                        //}
+                        if (audioSampleCount > 0 && videoSampleCount > 0 &&
+                            (lastRtcpSRSentAt == DateTime.MinValue || DateTime.Now.Subtract(lastRtcpSRSentAt).TotalSeconds > RTCP_SR_PERIOD_SECONDS))
+                        {
+                            var ntp = RTSPSession.DateTimeToNptTimestamp(DateTime.Now);
+
+                            lock (_webRtcSessions)
+                            {
+                                foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true &&
+                                    x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                                {
+                                    var webRtcSession = session.Value;
+
+                                    webRtcSession.SendRtcpSenderReport(webRtcSession.Peer.AudioSSRC, ntp, audioTimestamp, audioSampleCount, audioOctetsCount);
+                                    webRtcSession.SendRtcpSenderReport(webRtcSession.Peer.VideoSSRC, ntp, videoTimestamp, videoSampleCount, videoOctetsCount);
+
+                                    //if (videoSamplesSinceLastRtcp > VIDEO_FRAMES_EXPECTED_PER_SECOND * RTCP_SR_PERIOD_SECONDS)
+                                    //{
+                                    //    // ToDo: Determine if the Media Foundation Presentation clock can be AND makes sense to be used instead of this hack.
+                                    //    // The stream is running too fast. Use this crude mechanism to insert a delay.
+                                    //    int extraFramesPerPeriod = (int)(videoSamplesSinceLastRtcp - VIDEO_FRAMES_EXPECTED_PER_SECOND * RTCP_SR_PERIOD_SECONDS);
+                                    //    int streamAheadMilliseconds = 1000 / VIDEO_FRAMES_EXPECTED_PER_SECOND * extraFramesPerPeriod;
+
+                                    //    perFrameDelayMilliseconds = (int)(streamAheadMilliseconds / (videoSamplesSinceLastRtcp + audioSamplesSinceLastRtcp));
+
+                                    //    Console.WriteLine($"Adjusting per frame delay to {perFrameDelayMilliseconds}ms.");
+                                    //}
+
+                                    videoSamplesSinceLastRtcp = 0;
+                                    audioSamplesSinceLastRtcp = 0;
+                                }
+                            }
+
+                            lastRtcpSRSentAt = DateTime.Now;
+                        }
                     }
                     else
                     {
@@ -613,84 +552,117 @@ namespace WebRTCVideoServer
             }
         }
 
-        private void SendMp4ViaFile()
+        /// <summary>
+        /// This method is the equivalent of the StreamMp4 method but for a media session that is not DTLS encrypted. The 
+        /// purpose of this method is to enable diagnostics on the RTP packets by capturing with WireShark. With the standard
+        /// StreamMP4 method this is not possible due to the encryption. To be able to use this method WebRtc encryption
+        /// needs to be deactivated. For testing Chrome Canary was started as:
+        /// 
+        /// "C:\Users\username\AppData\Local\Google\Chrome SxS\Application\chrome.exe" -disable-webrtc-encryption
+        /// 
+        /// </summary>
+        private void StreamMp4Unecrypted()
         {
             try
             {
-                unsafe
+                SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
+                sampler.InitFromFile(MEDIA_FILE);
+
+                SIPSorceryMedia.VPXEncoder vpxEncoder = new VPXEncoder();
+                SIPSorceryMedia.ImageConvert colorConverter = new ImageConvert();
+
+                // Note that these settings can change once the stream processing starts.
+                // If they do change the VPX encoder will be reinitialised with the new dimensions.
+                int sampleWidth = sampler.Width;
+                int sampleHeight = sampler.Height;
+                int sampleStride = sampler.Stride;
+
+                byte[] sampleBuffer = null;
+                uint videoSampleCount = 0;
+                uint audioSampleCount = 0;
+                uint videoOctetsCount = 0;
+                uint audioOctetsCount = 0;
+                uint audioSamplesPerSecond = 0;
+                uint audioBytesPerSecond = 0;
+                DateTime? audioSamplePeriodStart = null;
+                uint videoSamplesPerSecond = 0;
+                uint videoBytesPerSecond = 0;
+                DateTime? videoSamplePeriodStart = null;
+                uint videoTimestamp = Convert.ToUInt32(Crypto.GetRandomInt(8));
+                uint audioTimestamp = Convert.ToUInt32(Crypto.GetRandomInt(8));
+                ulong nextAudioSampleDueAt = 0;
+                DateTime lastRtcpSRSentAt = DateTime.MinValue;
+                uint videoSamplesSinceLastRtcp = 0;
+                uint audioSamplesSinceLastRtcp = 0;
+
+                Console.WriteLine($"Media sampler successfully initialised for {MEDIA_FILE}, initial dimensions are {sampleWidth}x{sampleHeight} and stride {sampleStride}.");
+
+                while (!_exit)
                 {
-                    //Bitmap testPattern = new Bitmap("wizard.jpeg");
-
-                    SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
-                    //videoSampler.Init(videoMode.DeviceIndex, VideoSubTypesEnum.RGB24, videoMode.Width, videoMode.Height);
-                    sampler.InitFromFile(MEDIA_FILE);
-
-                    int sampleWidth = 0; // Convert.ToUInt32(sampler.Width);
-                    int sampleHeight = 0; // Convert.ToUInt32(sampler.Height);
-                    int sampleStride = 2176;
-                    //VideoSubTypesHelper.GetPixelFormatForVideoSubType(sampleHeight.)
-
-                    logger.Debug($"Sampler width {sampleWidth}, height {sampleHeight}.");
-
-                    SIPSorceryMedia.VPXEncoder vpxEncoder = new VPXEncoder();
-                    //vpxEncoder.InitEncoder(sampleWidth, sampleHeight);
-                    //vpxEncoder.InitEncoder(Convert.ToUInt32(testPattern.Width), Convert.ToUInt32(testPattern.Height));
-
-                    SIPSorceryMedia.ImageConvert colorConverter = new ImageConvert();
-
-                    byte[] sampleBuffer = null;
-                    byte[] encodedBuffer = new byte[1000000];
-                    int sampleCount = 0;
-
-                    while (!_exit)
+                    if (_webRtcSessionsUnencrypted.Any(x => x.Value.Peer.IceConnectionState == IceConnectionStatesEnum.Connected && x.Value.Peer.IsClosed == false))
                     {
-                        if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
+                        //var sampleProps = sampler.GetNextSample(MFReaderSampleType.ANY_STREAM.GetHashCode(), ref sampleBuffer, nextAudioSampleDueAt);
+                        var sampleProps = sampler.GetNextSample(MFReaderSampleType.ANY_STREAM.GetHashCode(), ref sampleBuffer, 0);
+
+                        //if (videoTimestamp == 0 && audioTimestamp == 0)
+                        //{
+                        //    videoTimestamp = RTSPSession.DateTimeToNptTimestamp32(DateTime.Now);
+                        //    audioTimestamp = RTSPSession.DateTimeToNptTimestamp32(DateTime.Now);
+                        //}
+
+                        //Console.WriteLine($"{(sampleProps.HasVideoSample?"V":"A")} timestamp {sampleProps.Timestamp}");
+
+                        if (sampleProps.EndOfStream == true)
                         {
-                            var sampleProps = sampler.GetSample(ref sampleBuffer);
+                            logger.Warn("End of stream , show is over, re-initialise media file.");
+                            sampler.InitFromFile(MEDIA_FILE);
+                            sampleWidth = 0;
+                            sampleHeight = 0;
+                            sampleStride = 0;
+                        }
+                        else if (sampleProps.Success == false)
+                        {
+                            logger.Warn("The request for the next media sample failed.");
+                        }
+
+                        if (sampleProps.HasVideoSample == true)
+                        {
+                            videoBytesPerSecond += (uint)sampleBuffer.Length;
+                            videoSamplesPerSecond++;
+
+                            if (videoSamplePeriodStart == null)
+                            {
+                                videoSamplePeriodStart = DateTime.Now;
+                            }
+                            else if (DateTime.Now.Subtract(videoSamplePeriodStart.Value).TotalSeconds > 1)
+                            {
+                                Console.WriteLine($"Video samples per second {videoSamplesPerSecond}, bytes per second {videoBytesPerSecond}.");
+                                videoSamplesPerSecond = 0;
+                                videoBytesPerSecond = 0;
+                                videoSamplePeriodStart = DateTime.Now;
+                            }
 
                             if (sampleProps.Width != 0 && sampleProps.Height != 0 &&
-                                sampleProps.Width != sampleWidth && sampleProps.Height != sampleHeight)
+                                (sampleProps.Width != sampleWidth || sampleProps.Height != sampleHeight || sampleProps.Stride != sampleStride))
                             {
                                 sampleWidth = sampleProps.Width;
                                 sampleHeight = sampleProps.Height;
+                                sampleStride = sampleProps.Stride;
 
                                 vpxEncoder.InitEncoder((uint)sampleWidth, (uint)sampleHeight, (uint)sampleStride);
 
-                                Console.WriteLine($"VPX encoder dimensions set to {sampleWidth} x {sampleHeight}.");
+                                Console.WriteLine($"VPX encoder dimensions set to {sampleWidth} x {sampleHeight} and stride {sampleStride}.");
                             }
 
-                            // Save frame to Bitmap for diagnostics.
                             if (sampleBuffer != null && sampleBuffer.Length > 0)
                             {
-                                Bitmap bmp = null;
+                                byte[] vpxEncodedBuffer = null;
 
-                                fixed (byte* p = sampleBuffer)
+                                unsafe
                                 {
-                                    IntPtr ptr = (IntPtr)p;
-                                    bmp = new Bitmap((int)sampleWidth, (int)sampleHeight, (int)sampleStride, PixelFormat.Format32bppRgb, ptr);
-                                    //Bitmap bmp = new Bitmap((int)sampleWidth, (int)sampleHeight, (int)sampleStride, PixelFormat.Format24bppRgb, ptr);
-                                    //bmp.Save("bmp\\sample_" + sampleCount + ".bmp");
-                                    //bmp.Save("bmp\\sample.bmp");
-                                }
-
-
-                                //Bitmap frameBmp = new Bitmap("bmp\\sample_" + sampleCount + ".bmp");
-                                var bmpSampleBuffer = BitmapToRGB24(bmp as System.Drawing.Bitmap);
-                                //var stampedTestPattern = testPattern.Clone() as System.Drawing.Image;
-                                //AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
-                                //sampleBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
-
-                                fixed (byte* p = bmpSampleBuffer)
-                                {
-                                    byte[] convertedFrame = null;
-                                    //colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB24, testPattern.Width, testPattern.Height, VideoSubTypesEnum.I420, ref convertedFrame);
-                                    colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, (int)sampleWidth, (int)sampleHeight, (int)sampleStride, VideoSubTypesEnum.I420, ref convertedFrame);
-                                    //colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB32, (int)sampleWidth, (int)sampleHeight, VideoSubTypesEnum.YUY2, ref convertedFrame);
-
-                                    fixed (byte* q = convertedFrame)
+                                    fixed (byte* p = sampleBuffer)
                                     {
-                                        //int encodeResult = vpxEncoder.Encode(q, sampleBuffer.Length, 1, ref encodedBuffer);
-                                        int encodeResult = vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
+                                        int encodeResult = vpxEncoder.Encode(p, sampleBuffer.Length, 1, ref vpxEncodedBuffer);
 
                                         if (encodeResult != 0)
                                         {
@@ -700,335 +672,245 @@ namespace WebRTCVideoServer
                                     }
                                 }
 
-                                //stampedTestPattern.Dispose();
-                                //stampedTestPattern = null;
+                                videoTimestamp += VP8_TIMESTAMP_SPACING;
 
-                                lock (_webRtcSessions)
+                                lock (_webRtcSessionsUnencrypted)
                                 {
-                                    foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true
-                                        //&& x.Value.Peer.LocalIceCandidates.Any(y => y.MediaType == RtpMediaTypesEnum.Video && y.RemoteRtpEndPoint != null)))
-                                        && x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                                    foreach (var session in _webRtcSessionsUnencrypted.Where(x => x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
                                     {
-                                        session.Value.SendVp8(encodedBuffer, 0);
+                                        session.Value.SendVp8Unencrypted(vpxEncodedBuffer, videoTimestamp);
                                     }
                                 }
 
-                                encodedBuffer = null;
+                                videoSampleCount++;
+                                videoSamplesSinceLastRtcp++;
+                                videoOctetsCount += (uint)vpxEncodedBuffer.Length;
 
-                                sampleCount++;
+                                vpxEncodedBuffer = null;
                             }
                         }
-
-                        Thread.Sleep(30);
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SendTestPattern. " + excp);
-            }
-        }
-
-        private void SendMp4Audio()
-        {
-            try
-            {
-                unsafe
-                {
-                    SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
-                    sampler.InitFromFile(MEDIA_FILE);
-
-                    byte[] sampleBuffer = null;
-
-                    while (!_exit)
-                    {
-                        if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
+                        else if (sampleProps.HasAudioSample == true)
                         {
-                            var sampleProps = sampler.GetNextSample(MFReaderSampleType.FIRST_AUDIO_STREAM.GetHashCode(), ref sampleBuffer);
+                            //Console.WriteLine($"Audio sample, length {sampleBuffer.Length}, timestamp {sampleProps.Timestamp / 10000}.");
 
-                            if (sampleProps.Success == false || sampleBuffer.Length == 0)
+                            //Console.WriteLine($"Audio sample, length {sampleBuffer.Length}, timestamp {sampleProps.Timestamp / 10000}.");
+                            audioBytesPerSecond += (uint)sampleBuffer.Length;
+                            audioSamplesPerSecond++;
+
+                            if (audioSamplePeriodStart == null)
                             {
-                                logger.Warn($"Failed to get audio sample, error code {sampleProps.Error}.");
+                                audioSamplePeriodStart = DateTime.Now;
                             }
-                            else
+                            else if (DateTime.Now.Subtract(audioSamplePeriodStart.Value).TotalSeconds > 1)
                             {
-                                uint sampleDuration = (uint)(sampleBuffer.Length / 2);
-
-                                byte[] mulawSample = new byte[sampleDuration];
-                                int sampleIndex = 0;
-
-                                for (int index = 0; index < sampleBuffer.Length; index += 2)
-                                {
-                                    var ulawByte = MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(sampleBuffer, index));
-                                    mulawSample[sampleIndex++] = ulawByte;
-                                }
-
-                                lock (_webRtcSessions)
-                                {
-                                    foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true &&
-                                        x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
-                                    {
-                                        session.Value.SendPcmu(mulawSample, (uint)sampleProps.Timestamp);
-                                    }
-                                }
-
-                                Thread.Sleep(30);
-                            }
-                        }
-                        else
-                        {
-                            Thread.Sleep(500);
-                        }
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SendTestPattern. " + excp);
-            }
-        }
-
-        private void SendMp4()
-        {
-            try
-            {
-                unsafe
-                {
-                    //Bitmap testPattern = new Bitmap("wizard.jpeg");
-
-                    SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
-                    //videoSampler.Init(videoMode.DeviceIndex, VideoSubTypesEnum.RGB24, videoMode.Width, videoMode.Height);
-                    sampler.InitFromFile(MEDIA_FILE);
-
-                    int sampleWidth = 0; // Convert.ToUInt32(sampler.Width);
-                    int sampleHeight = 0; // Convert.ToUInt32(sampler.Height);
-                                          //VideoSubTypesHelper.GetPixelFormatForVideoSubType(sampleHeight.)
-
-                    logger.Debug($"Sampler width {sampleWidth}, height {sampleHeight}.");
-
-                    SIPSorceryMedia.VPXEncoder vpxEncoder = new VPXEncoder();
-                    //vpxEncoder.InitEncoder(sampleWidth, sampleHeight);
-                    //vpxEncoder.InitEncoder(Convert.ToUInt32(testPattern.Width), Convert.ToUInt32(testPattern.Height));
-
-                    SIPSorceryMedia.ImageConvert colorConverter = new ImageConvert();
-
-                    byte[] sampleBuffer = null;
-                    byte[] encodedBuffer = new byte[4096];
-                    int sampleCount = 0;
-
-                    while (!_exit)
-                    {
-                        if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
-                        {
-                            var sampleProps = sampler.GetSample(ref sampleBuffer);
-
-                            if (sampleProps.Width != 0 && sampleProps.Height != 0 &&
-                                sampleProps.Width != sampleWidth && sampleProps.Height != sampleHeight)
-                            {
-                                sampleWidth = sampleProps.Width;
-                                sampleHeight = sampleProps.Height;
-
-                                vpxEncoder.InitEncoder((uint)sampleWidth, (uint)sampleHeight, 2176);
-
-                                Console.WriteLine($"VPX encoder dimensions set to {sampleWidth} x {sampleHeight}.");
+                                Console.WriteLine($"Audio samples per second {audioSamplesPerSecond}, bytes per second {audioBytesPerSecond}.");
+                                audioSamplesPerSecond = 0;
+                                audioBytesPerSecond = 0;
+                                audioSamplePeriodStart = DateTime.Now;
                             }
 
-                            // Save frame to Bitmap for diagnostics.
-                            //fixed (byte* p = sampleBuffer)
-                            //{
-                            //    IntPtr ptr = (IntPtr)p;
-                            //    Bitmap bmp = new Bitmap((int)sampleWidth, (int)sampleHeight, (int)sampleStride, PixelFormat.Format32bppRgb, ptr);
-                            //    bmp.Save(@"bmp\sample_" + sampleCount + ".bmp");
-                            //}
+                            uint sampleDuration = (uint)(sampleBuffer.Length / 2);
 
-                            //var stampedTestPattern = testPattern.Clone() as System.Drawing.Image;
-                            //AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
-                            //sampleBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
+                            byte[] mulawSample = new byte[sampleDuration];
+                            int sampleIndex = 0;
 
-                            fixed (byte* p = sampleBuffer)
+                            // ToDo: Find a way to wire up the Media foundation WAVE_FORMAT_MULAW codec so the encoding below is not necessary.
+                            for (int index = 0; index < sampleBuffer.Length; index += 2)
                             {
-                                byte[] convertedFrame = null;
-                                //colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB24, testPattern.Width, testPattern.Height, VideoSubTypesEnum.I420, ref convertedFrame);
-                                colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB32, (int)sampleWidth, (int)sampleHeight, 2176, VideoSubTypesEnum.I420, ref convertedFrame);
-                                //colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB32, (int)sampleWidth, (int)sampleHeight, VideoSubTypesEnum.YUY2, ref convertedFrame);
-
-                                fixed (byte* q = convertedFrame)
-                                {
-                                    //int encodeResult = vpxEncoder.Encode(q, sampleBuffer.Length, 1, ref encodedBuffer);
-                                    int encodeResult = vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
-
-                                    if (encodeResult != 0)
-                                    {
-                                        logger.Warn("VPX encode of video sample failed.");
-                                        continue;
-                                    }
-                                }
+                                var ulawByte = MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(sampleBuffer, index));
+                                mulawSample[sampleIndex++] = ulawByte;
                             }
 
-                            //stampedTestPattern.Dispose();
-                            //stampedTestPattern = null;
+                            audioTimestamp += sampleDuration;
 
                             lock (_webRtcSessions)
                             {
-                                foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                                foreach (var session in _webRtcSessionsUnencrypted.Where(x => x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
                                 {
-                                    session.Value.SendVp8(encodedBuffer, 0);
+                                    session.Value.SendPcmuUnencrypted(mulawSample, audioTimestamp);
                                 }
                             }
 
-                            encodedBuffer = null;
+                            audioSampleCount++;
+                            audioSamplesSinceLastRtcp++;
+                            audioOctetsCount += (uint)mulawSample.Length;
 
-                            sampleCount++;
+                            nextAudioSampleDueAt = sampleProps.NowMilliseconds + AUDIO_SAMPLE_PERIOD_MILLISECONDS;
                         }
 
-                        Thread.Sleep(30);
+                        if (audioSampleCount > 0 && videoSampleCount > 0 &&
+                            (lastRtcpSRSentAt == DateTime.MinValue || DateTime.Now.Subtract(lastRtcpSRSentAt).TotalSeconds > RTCP_SR_PERIOD_SECONDS))
+                        {
+                            var ntp = RTSPSession.DateTimeToNptTimestamp(DateTime.Now);
+
+                            lock (_webRtcSessions)
+                            {
+                                foreach (var session in _webRtcSessionsUnencrypted.Where(x => x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                                {
+                                    var webRtcSession = session.Value;
+
+                                    webRtcSession.SendRtcpSenderReportUnencrypted(webRtcSession.Peer.AudioSSRC, ntp, audioTimestamp, audioSampleCount, audioOctetsCount);
+                                    webRtcSession.SendRtcpSenderReportUnencrypted(webRtcSession.Peer.VideoSSRC, ntp, videoTimestamp, videoSampleCount, videoOctetsCount);
+
+                                    videoSamplesSinceLastRtcp = 0;
+                                    audioSamplesSinceLastRtcp = 0;
+                                }
+                            }
+
+                            lastRtcpSRSentAt = DateTime.Now;
+                        }
+                    }
+                    else
+                    {
+                        // Wait for a WebRTC client to connect.
+                        Thread.Sleep(500);
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SendTestPattern. " + excp);
+                logger.Error("Exception StreamMp4Unecrypted. " + excp);
             }
         }
 
-        private void SendMulawFileAudio()
+        /// <summary>
+        /// Sends two separate RTP streams to an application like ffplay. 
+        /// 
+        /// ffplay -i ffplay_av.sdp -protocol_whitelist "file,rtp,udp" -loglevel debug
+        /// 
+        /// The SDP that describes the streams is:
+        /// 
+        /// v=0
+        /// o=- 1129870806 2 IN IP4 127.0.0.1
+        /// s=-
+        /// c=IN IP4 192.168.11.50
+        /// t=0 0
+        /// m=audio 4040 RTP/AVP 0
+        /// a=rtpmap:0 PCMU/8000
+        /// m=video 4042 RTP/AVP 100
+        /// a=rtpmap:100 VP8/90000
+        /// </summary>
+        private void SendSamplesAsRtp()
         {
             try
             {
-                uint frameSize = 320;
+                Socket videoSrcRtpSocket = null;
+                Socket videoSrcControlSocket = null;
+                Socket audioSrcRtpSocket = null;
+                Socket audioSrcControlSocket = null;
+                IPAddress localAddress = IPAddress.Parse(LOCAL_IP_ADDRESS);
+                IPEndPoint audioRtpSocket = new IPEndPoint(localAddress, SEND_RTP_AUDIO_DEST_PORT);
+                IPEndPoint videoRtpSocket = new IPEndPoint(localAddress, SEND_RTP_VIDEO_DEST_PORT);
+                ushort videoSeqNum = 0;
+                uint videoSsrc = Convert.ToUInt32(Crypto.GetRandomInt(6));
+                uint videoTimestamp = Convert.ToUInt32(Crypto.GetRandomInt(6));
+                ushort audioSeqNum = 0;
+                uint audioSsrc = Convert.ToUInt32(Crypto.GetRandomInt(6));
+                uint audioTimestamp = Convert.ToUInt32(Crypto.GetRandomInt(6));
 
-                using (StreamReader sw = new StreamReader("mp4samples.mulaw"))
+                NetServices.CreateRtpSocket(localAddress, 5000, 5010, false, out audioSrcRtpSocket, out audioSrcControlSocket);
+                NetServices.CreateRtpSocket(localAddress, 5011, 5020, false, out videoSrcRtpSocket, out videoSrcControlSocket);
+
+                unsafe
                 {
-                    byte[] sampleBuffer = new byte[frameSize];
-                    int sampleCount = 0;
+                    SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
+                    sampler.InitFromFile(MEDIA_FILE);
+                    SIPSorceryMedia.VPXEncoder vpxEncoder = new VPXEncoder();
+
+                    // Note that these settings can change once the stream processing starts.
+                    // If they do change the VPX encoder will be reinitialised with the new dimensions.
+                    int sampleWidth = sampler.Width;
+                    int sampleHeight = sampler.Height;
+                    int sampleStride = sampler.Stride;
+
+                    logger.Debug($"Sampler width {sampleWidth}, height {sampleHeight}.");
+
+                    byte[] sampleBuffer = null;
 
                     while (!_exit)
                     {
-                        if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
-                        {
-                            int bytesRead = sw.BaseStream.Read(sampleBuffer, 0, (int)frameSize);
+                        var sampleProps = sampler.GetNextSample(MFReaderSampleType.ANY_STREAM.GetHashCode(), ref sampleBuffer, 0);
 
-                            if (bytesRead > 0)
+                        if (sampleProps.EndOfStream)
+                        {
+                            Console.WriteLine("SendSamplesAsRtp end of stream.");
+                            break;
+                        }
+                        else if (sampleProps.HasVideoSample == true)
+                        {
+                            if (sampleProps.Width != 0 && sampleProps.Height != 0 &&
+                                (sampleProps.Width != sampleWidth || sampleProps.Height != sampleHeight || sampleProps.Stride != sampleStride))
                             {
-                                lock (_webRtcSessions)
+                                sampleWidth = sampleProps.Width;
+                                sampleHeight = sampleProps.Height;
+                                sampleStride = sampleProps.Stride;
+
+                                vpxEncoder.InitEncoder((uint)sampleWidth, (uint)sampleHeight, (uint)sampleStride);
+
+                                Console.WriteLine($"VPX encoder dimensions set to {sampleWidth} x {sampleHeight} and stride {sampleStride}.");
+                            }
+
+                            if (sampleBuffer != null && sampleBuffer.Length > 0)
+                            {
+                                byte[] vpxEncodedBuffer = null;
+
+                                unsafe
                                 {
-                                    foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true &&
-                                       x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                                    fixed (byte* p = sampleBuffer)
                                     {
-                                        session.Value.SendPcmu(sampleBuffer, frameSize);
+                                        int encodeResult = vpxEncoder.Encode(p, sampleBuffer.Length, (int)sampleProps.FrameCount, ref vpxEncodedBuffer);
+
+                                        if (encodeResult != 0)
+                                        {
+                                            logger.Warn("VPX encode of video sample failed.");
+                                            continue;
+                                        }
                                     }
                                 }
+
+                                SendVp8(videoSrcRtpSocket, videoRtpSocket, videoTimestamp, videoSsrc, ref videoSeqNum, vpxEncodedBuffer);
+
+                                //Console.WriteLine($"Video SeqNum {videoSeqNum}, timestamp {videoTimestamp}, buffer length {vpxEncodedBuffer.Length}, frame count {sampleProps.FrameCount}.");
+
+                                videoTimestamp += VP8_TIMESTAMP_SPACING;
                             }
-                            sampleCount++;
-
-                            // Console.WriteLine($"Sample count {sampleCount}.");
                         }
-
-                        Thread.Sleep(30);
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SendTestPattern. " + excp);
-            }
-        }
-
-        private void SendAudioToWireshark()
-        {
-            try
-            {
-                uint frameSize = 320;
-
-                Socket rtpSocket = null;
-                Socket controlSocket = null;
-                IPAddress localAddress = IPAddress.Parse("192.168.11.50");
-                IPEndPoint wiresharkEp = new IPEndPoint(IPAddress.Parse("192.168.11.2"), 33333);
-                uint timestamp = RTPChannel.DateTimeToNptTimestamp32(DateTime.Now);
-                ushort seqNum = 0;
-                uint ssrc = 22374239;
-
-                NetServices.CreateRtpSocket(localAddress, 60000, 61000, false, out rtpSocket, out controlSocket);
-
-                using (StreamReader sw = new StreamReader("mp4samples.mulaw"))
-                {
-                    byte[] sampleBuffer = new byte[frameSize];
-
-                    int bytesRead = sw.BaseStream.Read(sampleBuffer, 0, sampleBuffer.Length);
-
-                    while (bytesRead > 0)
-                    {
-                        timestamp = (timestamp + frameSize) % UInt32.MaxValue;
-
-
-
-                        SendPcmu(rtpSocket, wiresharkEp, timestamp, ssrc, seqNum, sampleBuffer);
-
-                        Console.WriteLine($"SeqNum {seqNum}, timestamp {timestamp}, buffer {sampleBuffer[0]:X},{sampleBuffer[1]:X},{sampleBuffer[0]:X}.");
-
-                        seqNum++;
-
-                        bytesRead = sw.BaseStream.Read(sampleBuffer, 0, sampleBuffer.Length);
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SendTestPattern. " + excp);
-            }
-        }
-
-        private void SendAudioToWireshark2()
-        {
-            try
-            {
-                uint frameSize = 320;
-
-                Socket rtpSocket = null;
-                Socket controlSocket = null;
-                IPAddress localAddress = IPAddress.Parse("192.168.11.50");
-                IPEndPoint wiresharkEp = new IPEndPoint(IPAddress.Parse("192.168.11.2"), 33333);
-                uint timestamp = RTPChannel.DateTimeToNptTimestamp32(DateTime.Now);
-                ushort seqNum = 0;
-                uint ssrc = 22374239;
-
-                NetServices.CreateRtpSocket(localAddress, 60000, 61000, false, out rtpSocket, out controlSocket);
-
-                using (StreamReader sw = new StreamReader("mp4samples_s16le.raw"))
-                {
-                    byte[] sampleBuffer = new byte[frameSize];
-
-                    int bytesRead = sw.BaseStream.Read(sampleBuffer, 0, sampleBuffer.Length);
-
-                    while (bytesRead > 0)
-                    {
-                        timestamp = (timestamp + (frameSize / 2)) % UInt32.MaxValue;
-
-                        byte[] mulawSample = new byte[frameSize / 2];
-                        int sampleIndex = 0;
-
-                        for (int index = 0; index < sampleBuffer.Length; index += 2)
+                        else if (sampleProps.HasAudioSample)
                         {
-                            var ulawByte = MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(sampleBuffer, index));
-                            mulawSample[sampleIndex++] = ulawByte;
+                            uint sampleDuration = (uint)(sampleBuffer.Length / 2);
+
+                            byte[] mulawSample = new byte[sampleDuration];
+                            int sampleIndex = 0;
+
+                            // ToDo: Find a way to wire up the Media foundation WAVE_FORMAT_MULAW codec so the encoding below is not necessary.
+                            for (int index = 0; index < sampleBuffer.Length; index += 2)
+                            {
+                                var ulawByte = MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(sampleBuffer, index));
+                                mulawSample[sampleIndex++] = ulawByte;
+                            }
+
+                            lock (_webRtcSessions)
+                            {
+                                SendPcmu(audioSrcRtpSocket, audioRtpSocket, audioTimestamp, audioSsrc, audioSeqNum++, mulawSample);
+                            }
+
+                            //Console.WriteLine($"Audio SeqNum {audioSeqNum}, timestamp {audioTimestamp}, buffer length {mulawSample.Length}.");
+
+                            audioTimestamp += sampleDuration;
+                            audioSsrc++;
                         }
-
-                        SendPcmu(rtpSocket, wiresharkEp, timestamp, ssrc, seqNum, mulawSample);
-
-                        //Console.WriteLine($"SeqNum {seqNum}, timestamp {timestamp}, buffer {sampleBuffer[0]:X},{sampleBuffer[1]:X},{sampleBuffer[0]:X}.");
-
-                        seqNum++;
-
-                        bytesRead = sw.BaseStream.Read(sampleBuffer, 0, sampleBuffer.Length);
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SendTestPattern. " + excp);
+                logger.Error("Exception SendSamplesAsRtp. " + excp);
             }
         }
 
+        /// <summary>
+        /// Packages and sends a single audio PCMU packet over RTP.
+        /// </summary>
         public void SendPcmu(Socket srcRtpSocket, IPEndPoint wiresharkEp, uint timestamp, uint ssrc, ushort seqNum, byte[] buffer)
         {
             try
@@ -1047,6 +929,41 @@ namespace WebRTCVideoServer
                 var rtpBuffer = rtpPacket.GetBytes();
 
                 srcRtpSocket.SendTo(rtpBuffer, wiresharkEp);
+            }
+            catch (Exception sendExcp)
+            {
+                // logger.Error("SendRTP exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
+            }
+        }
+
+        /// <summary>
+        /// Packages and sends a single video VP8 frame over RTP.
+        /// </summary>
+        public void SendVp8(Socket srcRtpSocket, IPEndPoint destRtpSocket, uint timestamp, uint ssrc, ref ushort seqNum, byte[] buffer)
+        {
+            try
+            {
+                for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
+                {
+                    int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
+                    int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
+
+                    byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
+
+                    RTPPacket rtpPacket = new RTPPacket(payloadLength + vp8HeaderBytes.Length);
+                    rtpPacket.Header.SyncSource = ssrc;
+                    rtpPacket.Header.SequenceNumber = seqNum++;
+                    rtpPacket.Header.Timestamp = timestamp;
+                    rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
+                    rtpPacket.Header.PayloadType = VP8_PAYLOAD_TYPE_ID;
+
+                    Buffer.BlockCopy(vp8HeaderBytes, 0, rtpPacket.Payload, 0, vp8HeaderBytes.Length);
+                    Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, vp8HeaderBytes.Length, payloadLength);
+
+                    var rtpBuffer = rtpPacket.GetBytes();
+
+                    srcRtpSocket.SendTo(rtpBuffer, destRtpSocket);
+                }
             }
             catch (Exception sendExcp)
             {
@@ -1124,120 +1041,6 @@ namespace WebRTCVideoServer
             }
         }
 
-        private void SendSineWaveAudio()
-        {
-            try
-            {
-                int sampleRate = 8000;
-                byte[] buffer = new byte[8000 * 2];
-                double amplitude = 0.25 * short.MaxValue;
-                double frequency = 1000;
-
-                while (!_exit)
-                {
-                    for (int n = 0; n < buffer.Length; n += 2)
-                    {
-                        short sample = (short)(amplitude * Math.Sin((2 * Math.PI * n * frequency) / sampleRate));
-                        buffer[n] = (byte)(sample & 0xff);
-                        buffer[n + 1] = (byte)(sample >> 8 & 0xff);
-                    }
-
-                    lock (_webRtcSessions)
-                    {
-                        foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true
-                            //&& x.Value.Peer.LocalIceCandidates.Any(y => y.MediaType == RtpMediaTypesEnum.Audio && y.RemoteRtpEndPoint != null)))
-                            && x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
-                        {
-                            session.Value.SendPcmu(buffer, 80);
-                        }
-                    }
-
-                    Thread.Sleep(100);
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception PlayPcmAudio. " + excp);
-            }
-        }
-
-        private void PlayPcmAudio()
-        {
-            try
-            {
-                var readerStream = new MediaFoundationReader(MEDIA_FILE);
-                WaveFormat waveFormat = new WaveFormat(8000, 16, 2);
-                BufferedWaveProvider waveProvider = new BufferedWaveProvider(waveFormat);
-
-                var outputDevice = new WaveOutEvent();
-                outputDevice.Init(waveProvider);
-                outputDevice.Play();
-
-                unsafe
-                {
-                    SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
-                    sampler.InitFromFile(MEDIA_FILE);
-
-                    while (!_exit)
-                    {
-                        byte[] decodeBuffer = null;
-                        int result = sampler.GetAudioSample(ref decodeBuffer);
-
-                        if (result != 0 || decodeBuffer == null)
-                        {
-                            logger.Warn($"Failed to get audio sample, error code {result}.");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Decoded sample size " + decodeBuffer.Length + ".");
-                            waveProvider.AddSamples(decodeBuffer, 0, decodeBuffer.Length);
-                            Thread.Sleep(80);
-                        }
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception PlayPcmAudio. " + excp);
-            }
-        }
-
-        private void SaveMp4AudioToRawFile()
-        {
-            try
-            {
-                unsafe
-                {
-                    SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
-                    sampler.InitFromFile(MEDIA_FILE);
-
-                    byte[] sampleBuffer = null;
-
-                    using (StreamWriter sw = new StreamWriter("mp4samples_s16le.raw"))
-                    {
-                        int result = sampler.GetAudioSample(ref sampleBuffer);
-
-                        while (result == 0)
-                        {
-                            if (sampleBuffer.Length > 0)
-                            {
-                                Console.WriteLine($"Audio sample size {sampleBuffer.Length}.");
-                                sw.BaseStream.Write(sampleBuffer, 0, sampleBuffer.Length);
-                            }
-
-                            result = sampler.GetAudioSample(ref sampleBuffer);
-                        }
-                    }
-
-                    Console.WriteLine("Finished writing audio samples.");
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.Error("Exception SendTestPattern. " + excp);
-            }
-        }
-
         private static byte[] BitmapToRGB24(Bitmap bitmap)
         {
             try
@@ -1289,49 +1092,6 @@ namespace WebRTCVideoServer
                     }
                 }
             }
-        }
-    }
-
-    public class SDPExchangeReceiver : WebSocketBehavior
-    {
-        public static event Action<WebSocketSharp.Net.WebSockets.WebSocketContext, string> WebSocketOpened;
-        public static event Action<string, string> SDPAnswerReceived;
-
-        protected override void OnMessage(MessageEventArgs e)
-        {
-            SDPAnswerReceived(this.ID, e.Data);
-        }
-
-        protected override void OnOpen()
-        {
-            base.OnOpen();
-            WebSocketOpened(this.Context, this.ID);
-        }
-    }
-
-    public class SineWaveProvider32 : WaveProvider32
-    {
-        int sample;
-
-        public SineWaveProvider32()
-        {
-            Frequency = 1000;
-            Amplitude = 0.25f; // let's not hurt our ears
-        }
-
-        public float Frequency { get; set; }
-        public float Amplitude { get; set; }
-
-        public override int Read(float[] buffer, int offset, int sampleCount)
-        {
-            int sampleRate = WaveFormat.SampleRate;
-            for (int n = 0; n < sampleCount; n++)
-            {
-                buffer[n + offset] = (float)(Amplitude * Math.Sin((2 * Math.PI * sample * Frequency) / sampleRate));
-                sample++;
-                if (sample >= sampleRate) sample = 0;
-            }
-            return sampleCount;
         }
     }
 }

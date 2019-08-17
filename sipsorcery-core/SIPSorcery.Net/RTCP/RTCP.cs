@@ -32,14 +32,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using System.Net;
-using System.Net.Sockets;
-using System.Runtime.Serialization;
-using System.Text;
 using System.Threading;
 using SIPSorcery.Sys;
 using log4net;
@@ -50,12 +45,15 @@ namespace SIPSorcery.Net
 	{
 		//public DateTime SendTime;                 // The send time of the RTP packet adjusted to be local time using a rolling average tranist time to calculate.
 		public DateTime ReceiveTime;                // Local time the RTP packet was received.
-		public UInt16 SequenceNumber;
-		public long RTPBytes;			            // Includes RTP Header and payload.
+        private UInt16 sequenceNumber;
+        public long RTPBytes;			            // Includes RTP Header and payload.
         public uint Jitter;
 		public int Duplicates;
         public bool InSequence = false;             // Whether the packet is the next expected one in the sequence. Only in sequnce packets are used for sampling jitter.
         public bool JitterBufferDiscard = false;    // Whether a packet would have been discarded from the jitter buffer.
+
+        public ushort SequenceNumber { get => sequenceNumber; set => sequenceNumber = value; }
+
         //public int AverageTransit;                  // The average tranist time in milliseconds at the time the packet was received.
 
         public RTPReceiveRecord(DateTime receiveTime, UInt16 sequenceNumber, long rtpBytes, uint jitter, bool inSequence, bool jitterDiscard)

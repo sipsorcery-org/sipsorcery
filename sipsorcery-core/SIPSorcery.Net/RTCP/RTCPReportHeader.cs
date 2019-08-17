@@ -47,13 +47,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
-using System.Net;
 using SIPSorcery.Sys;
-
-#if UNITTEST
-using NUnit.Framework;
-#endif
 
 namespace SIPSorcery.Net
 {
@@ -124,37 +118,5 @@ namespace SIPSorcery.Net
 
             return rtcpReportHeader;
 		}
-
-		#region Unit testing.
-
-		#if UNITTEST
-	
-		[TestFixture]
-		public class RTCPReportHeaderUnitTest
-		{
-			[TestFixtureSetUp]
-			public void Init()
-			{
-				
-			}
-
-			[TestFixtureTearDown]
-			public void Dispose()
-			{			
-				
-			}
-
-			[Test]
-			public void SampleTest()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-				
-				Assert.IsTrue(true, "True was false.");
-			}
-		}
-
-		#endif
-
-		#endregion
 	}
 }

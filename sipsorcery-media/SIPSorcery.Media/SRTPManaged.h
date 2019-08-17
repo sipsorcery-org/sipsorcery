@@ -32,6 +32,7 @@ namespace SIPSorceryMedia {
 			~SRTPManaged();
 			int ProtectRTP(cli::array<System::Byte>^ buffer, int length);
 			int UnprotectRTP(cli::array<System::Byte>^ buffer, int length);
+      int ProtectRTCP(cli::array<System::Byte>^ buffer, int length);
 
 		private:
 

@@ -164,16 +164,15 @@ namespace WebRTCVideoServer
                     rtpPacket.Header.SyncSource = Peer.AudioSSRC;
                     rtpPacket.Header.SequenceNumber = Peer.AudioSequenceNumber++;
                     rtpPacket.Header.Timestamp = sampleTimestamp; //Peer.LastTimestamp;
-                    rtpPacket.Header.MarkerBit =  0;
+                    rtpPacket.Header.MarkerBit = 0;
                     rtpPacket.Header.PayloadType = PCMU_PAYLOAD_TYPE_ID;
 
                     Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, 0, payloadLength);
 
                     var rtpBuffer = rtpPacket.GetBytes();
 
-                    Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).First().LocalRtpSocket.SendTo(rtpBuffer, wiresharkEp);
+                    //Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).First().LocalRtpSocket.SendTo(rtpBuffer, wiresharkEp);
 
-                    //int rtperr = AudioSrtpContext.ProtectRTP(rtpBuffer, rtpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
                     int rtperr = SrtpContext.ProtectRTP(rtpBuffer, rtpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
                     if (rtperr != 0)
                     {
@@ -227,6 +226,39 @@ namespace WebRTCVideoServer
                         var connectedIceCandidate = Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).First();
                         connectedIceCandidate.LocalRtpSocket.SendTo(rtpBuffer, connectedIceCandidate.RemoteRtpEndPoint);
                     }
+                }
+            }
+            catch (Exception sendExcp)
+            {
+                // logger.Error("SendRTP exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
+            }
+        }
+
+        public void SendRtcpSenderReport(uint senderSyncSource, ulong ntpTimestamp, uint rtpTimestamp, uint senderPacketCount, uint senderOctetCount)
+        {
+            try
+            {
+                var rtcpSRPacket = new RTCPPacket(senderSyncSource, ntpTimestamp, rtpTimestamp, senderPacketCount, senderOctetCount);
+                var rtcpSRBytes = rtcpSRPacket.GetBytes();
+
+                byte[] sendBuffer = new byte[rtcpSRBytes.Length + SRTP_AUTH_KEY_LENGTH];
+                //byte[] sendBuffer = new byte[rtcpHeaderBytes.Length + senderReportBuffer.Length];
+
+                Buffer.BlockCopy(rtcpSRBytes, 0, sendBuffer, 0, rtcpSRBytes.Length);
+
+                var connectedIceCandidate = Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).First();
+
+                // DEBUG. Sending to wireshark for diagnostic purposes. Should be commente\d out unless deliberately required.
+                connectedIceCandidate.LocalRtpSocket.SendTo(rtcpSRBytes, wiresharkEp);
+
+                int rtperr = SrtpContext.ProtectRTCP(sendBuffer, sendBuffer.Length - SRTP_AUTH_KEY_LENGTH);
+                if (rtperr != 0)
+                {
+                    logger.Warn("SRTP RTCP packet protection failed, result " + rtperr + ".");
+                }
+                else
+                {
+                    connectedIceCandidate.LocalRtpSocket.SendTo(sendBuffer, connectedIceCandidate.RemoteRtpEndPoint);
                 }
             }
             catch (Exception sendExcp)

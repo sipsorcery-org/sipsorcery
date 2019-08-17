@@ -90,48 +90,13 @@ namespace SIPSorcery.Net
         private bool _isClosed;
         private Queue<RTPPacket> _packets = new Queue<RTPPacket>();
 
-        private IPEndPoint _remoteEndPoint;
-        public IPEndPoint RemoteEndPoint
-        {
-            get { return _remoteEndPoint; }
-            set { _remoteEndPoint = value; }
-        }
-
-        private int _rtpPort;
-        public int RTPPort
-        {
-            get { return _rtpPort; }
-        }
-
-        private DateTime _createdAt;
-        public DateTime CreatedAt
-        {
-            get { return _createdAt; }
-        }
-
-        private DateTime _startedAt;
-        public DateTime StartedAt
-        {
-            get { return _startedAt; }
-        }
-
-        private DateTime _rtpLastActivityAt;
-        public DateTime RTPLastActivityAt
-        {
-            get { return _rtpLastActivityAt; }
-        }
-
-        private int _controlPort;
-        public int ControlPort
-        {
-            get { return _controlPort; }
-        }
-
-        private DateTime _controlLastActivityAt;
-        public DateTime ControlLastActivityAt
-        {
-            get { return _controlLastActivityAt; }
-        }
+        public IPEndPoint RemoteEndPoint { get; set; }
+        public int RTPPort { get; private set; }
+        public DateTime CreatedAt { get; }
+        public DateTime StartedAt { get; private set; }
+        public DateTime RTPLastActivityAt { get; private set; }
+        public int ControlPort { get; private set; }
+        public DateTime ControlLastActivityAt { get; private set; }
 
         //private int _rtpPayloadHeaderLength = 0;    // Some RTP media types use a payload header to carry information about the encoded media. Typically this header needs to be stripped off before passing to a decoder.
         //public int RTPPayloadHeaderLength
@@ -181,13 +146,13 @@ namespace SIPSorcery.Net
 
         public RTPChannel()
         {
-            _createdAt = DateTime.Now;
+            CreatedAt = DateTime.Now;
         }
 
         public RTPChannel(IPEndPoint remoteEndPoint)
             : this()
         {
-            _remoteEndPoint = remoteEndPoint;
+            RemoteEndPoint = remoteEndPoint;
             _syncSource = Convert.ToUInt32(Crypto.GetRandomInt(0, 9999999));
         }
 
@@ -222,8 +187,8 @@ namespace SIPSorcery.Net
             {
                 var inUseUDPPorts = (from p in System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners() where p.Port >= startPort select p.Port).OrderBy(x => x).ToList();
 
-                _rtpPort = 0;
-                _controlPort = 0;
+                RTPPort = 0;
+                ControlPort = 0;
 
                 if (inUseUDPPorts.Count > 0)
                 {
@@ -232,40 +197,40 @@ namespace SIPSorcery.Net
                     {
                         if (!inUseUDPPorts.Contains(index))
                         {
-                            _rtpPort = index;
+                            RTPPort = index;
                             break;
                         }
                     }
 
                     // Find the next available for the control socket.
-                    for (int index = _rtpPort + 1; index <= endPort; index++)
+                    for (int index = RTPPort + 1; index <= endPort; index++)
                     {
                         if (!inUseUDPPorts.Contains(index))
                         {
-                            _controlPort = index;
+                            ControlPort = index;
                             break;
                         }
                     }
                 }
                 else
                 {
-                    _rtpPort = startPort;
-                    _controlPort = startPort + 1;
+                    RTPPort = startPort;
+                    ControlPort = startPort + 1;
                 }
 
-                if (_rtpPort != 0 && _controlPort != 0)
+                if (RTPPort != 0 && ControlPort != 0)
                 {
                     // The potential ports have been found now try and use them.
                     _rtpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                     _rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                     _rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
 
-                    _rtpSocket.Bind(new IPEndPoint(IPAddress.Any, _rtpPort));
+                    _rtpSocket.Bind(new IPEndPoint(IPAddress.Any, RTPPort));
 
                     _controlSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                    _controlSocket.Bind(new IPEndPoint(IPAddress.Any, _controlPort));
+                    _controlSocket.Bind(new IPEndPoint(IPAddress.Any, ControlPort));
 
-                    logger.Debug("RTPChannel allocated RTP port of " + _rtpPort + " and control port of " + _controlPort + ".");
+                    logger.Debug("RTPChannel allocated RTP port of " + RTPPort + " and control port of " + ControlPort + ".");
                 }
                 else
                 {
@@ -281,7 +246,7 @@ namespace SIPSorcery.Net
         {
             if (_rtpSocket != null && _controlSocket != null)
             {
-                _startedAt = DateTime.Now;
+                StartedAt = DateTime.Now;
 
                 ThreadPool.QueueUserWorkItem(delegate { RTPReceive(); });
                 ThreadPool.QueueUserWorkItem(delegate { ProcessRTPPackets(); });
@@ -304,7 +269,7 @@ namespace SIPSorcery.Net
             {
                 try
                 {
-                    logger.Debug("RTPChannel closing, RTP port " + _rtpPort + ".");
+                    logger.Debug("RTPChannel closing, RTP port " + RTPPort + ".");
 
                     _isClosed = true;
 
@@ -339,7 +304,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                Thread.CurrentThread.Name = "rtpchanrecv-" + _rtpPort;
+                Thread.CurrentThread.Name = "rtpchanrecv-" + RTPPort;
 
                 byte[] buffer = new byte[2048];
 
@@ -353,7 +318,7 @@ namespace SIPSorcery.Net
                         {
                             //_rtpSocket.SendTo(buffer, bytesRead, SocketFlags.None, _wiresharkEP);
 
-                            _rtpLastActivityAt = DateTime.Now;
+                            RTPLastActivityAt = DateTime.Now;
 
                             if (bytesRead > RTPHeader.MIN_HEADER_LEN)
                             {
@@ -452,7 +417,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.Warn("Zero bytes read from RTPChannel RTP socket connected to " + _remoteEndPoint + ".");
+                            logger.Warn("Zero bytes read from RTPChannel RTP socket connected to " + RemoteEndPoint + ".");
                             //break;
                         }
                     }
@@ -498,7 +463,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                Thread.CurrentThread.Name = "rtpchanproc-" + _rtpPort;
+                Thread.CurrentThread.Name = "rtpchanproc-" + RTPPort;
 
                 _lastRTPReceivedAt = DateTime.Now;
                 _lastBWCalcAt = DateTime.Now;
@@ -629,7 +594,7 @@ namespace SIPSorcery.Net
 
                     if (DateTime.Now.Subtract(_lastRTPReceivedAt).TotalSeconds > RTP_TIMEOUT_SECONDS)
                     {
-                        logger.Warn("No RTP packets were receoved on local port " + _rtpPort + " for " + RTP_TIMEOUT_SECONDS + ". The session will now be closed.");
+                        logger.Warn("No RTP packets were receoved on local port " + RTPPort + " for " + RTP_TIMEOUT_SECONDS + ". The session will now be closed.");
                         Close();
                     }
                     else
@@ -652,7 +617,7 @@ namespace SIPSorcery.Net
 
                 if (_controlSocketError == SocketError.Success)
                 {
-                    _controlLastActivityAt = DateTime.Now;
+                    ControlLastActivityAt = DateTime.Now;
 
                     if (bytesRead > 0)
                     {
@@ -718,7 +683,7 @@ namespace SIPSorcery.Net
                     //Stopwatch sw = new Stopwatch();
                     //sw.Start();
 
-                    _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
+                    _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, RemoteEndPoint);
 
                     //sw.Stop();
 
@@ -732,7 +697,7 @@ namespace SIPSorcery.Net
             {
                 if (!_isClosed)
                 {
-                    logger.Warn("Exception RTPChannel.SendAudioFrame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
+                    logger.Warn("Exception RTPChannel.SendAudioFrame attempting to send to the RTP socket at " + RemoteEndPoint + ". " + excp);
 
                     OnRTPSocketDisconnected?.Invoke();
                 }
@@ -793,7 +758,7 @@ namespace SIPSorcery.Net
                         //Stopwatch sw = new Stopwatch();
                         //sw.Start();
 
-                        _rtpSocket.SendTo(rtpBytes, _remoteEndPoint);
+                        _rtpSocket.SendTo(rtpBytes, RemoteEndPoint);
 
                         //sw.Stop();
 
@@ -811,7 +776,7 @@ namespace SIPSorcery.Net
             {
                 if (!_isClosed)
                 {
-                    logger.Warn("Exception RTPChannel.SendJpegFrame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
+                    logger.Warn("Exception RTPChannel.SendJpegFrame attempting to send to the RTP socket at " + RemoteEndPoint + ". " + excp);
                     //_rtpSocketError = SocketError.SocketError;
 
                     OnRTPSocketDisconnected?.Invoke();
@@ -888,7 +853,7 @@ namespace SIPSorcery.Net
                         //Stopwatch sw = new Stopwatch();
                         //sw.Start();
 
-                        _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
+                        _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, RemoteEndPoint);
 
                         //sw.Stop();
 
@@ -903,7 +868,7 @@ namespace SIPSorcery.Net
             {
                 if (!_isClosed)
                 {
-                    logger.Warn("Exception RTPChannel.SendH264Frame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
+                    logger.Warn("Exception RTPChannel.SendH264Frame attempting to send to the RTP socket at " + RemoteEndPoint + ". " + excp);
 
                     OnRTPSocketDisconnected?.Invoke();
                 }
@@ -969,7 +934,7 @@ namespace SIPSorcery.Net
                         //Stopwatch sw = new Stopwatch();
                         //sw.Start();
 
-                        _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, _remoteEndPoint);
+                        _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, RemoteEndPoint);
 
                         //sw.Stop();
 
@@ -984,7 +949,7 @@ namespace SIPSorcery.Net
             {
                 if (!_isClosed)
                 {
-                    logger.Warn("Exception RTPChannel.SendVP8Frame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
+                    logger.Warn("Exception RTPChannel.SendVP8Frame attempting to send to the RTP socket at " + RemoteEndPoint + ". " + excp);
 
                     OnRTPSocketDisconnected?.Invoke();
                 }
@@ -998,16 +963,16 @@ namespace SIPSorcery.Net
         {
             try
             {
-                if (!_isClosed && _rtpSocket != null && _remoteEndPoint != null && _rtpSocketError == SocketError.Success)
+                if (!_isClosed && _rtpSocket != null && RemoteEndPoint != null && _rtpSocketError == SocketError.Success)
                 {
-                    _rtpSocket.SendTo(payload, _remoteEndPoint);
+                    _rtpSocket.SendTo(payload, RemoteEndPoint);
                 }
             }
             catch (Exception excp)
             {
                 if (!_isClosed)
                 {
-                    logger.Error("Exception RTPChannel.SendRTPRaw attempting to send to " + _remoteEndPoint + ". " + excp);
+                    logger.Error("Exception RTPChannel.SendRTPRaw attempting to send to " + RemoteEndPoint + ". " + excp);
 
                     OnRTPSocketDisconnected?.Invoke();
                 }

@@ -250,10 +250,13 @@ namespace SIPSorceryMedia {
     CHECK_HR(MFCreateMediaType(&pVideoOutType), L"Failed to create output media type.");
     CHECK_HR(pVideoOutType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video), L"Failed to set output media major type.");
     //CHECK_HR(pVideoOutType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB24), L"Failed to set output media sub type (RGB24).");
-    CHECK_HR(pVideoOutType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32), L"Failed to set output media sub type (RGB32).");
+    //CHECK_HR(pVideoOutType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32), L"Failed to set output media sub type (RGB32)."); // **
     //CHECK_HR(pVideoOutType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_NV12), L"Failed to set output media sub type (NV12).");
     //CHECK_HR(pVideoOutType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_YV12), L"Failed to set output media sub type (NV12).");
-    //CHECK_HR(pVideoOutType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_I420), L"Failed to set output media sub type (I420).");
+    CHECK_HR(pVideoOutType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_I420), L"Failed to set output media sub type (I420).");
+    //CHECK_HR(pVideoOutType->SetUINT32(MF_MT_FRAME_RATE, 10), L"Failed to set the output frame rate.");
+    //CHECK_HR(pVideoOutType->SetUINT32(MF_MT_AVG_BITRATE, 308722), L"Failed to set the video output average bit rate."); // Original was 617544.
+    //CHECK_HR(pVideoOutType->SetUINT32(MF_MT_FIXED_SIZE_SAMPLES, FALSE), L"Failed to set the video output fixed size samples.");
 
     CHECK_HR(_sourceReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, NULL, pVideoOutType),
       L"Error setting video reader media type.\n");
@@ -299,6 +302,7 @@ namespace SIPSorceryMedia {
     CHECK_HR(pAudioOutType->SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, 1), L"Failed to set audio output to mono.");
     CHECK_HR(pAudioOutType->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, 16), L"Failed to set audio bits per sample.");
     CHECK_HR(pAudioOutType->SetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, 8000), L"Failed to set audio samples per second.");
+    //CHECK_HR(pAudioOutType->SetUINT32(MF_MT_AUDIO_AVG_BYTES_PER_SECOND, 16000), L"Failed to set the audio average bytes per second.");
 
     CHECK_HR(_sourceReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, NULL, pAudioOutType),
       L"Error setting reader audio type.\n");
@@ -555,7 +559,7 @@ namespace SIPSorceryMedia {
   }
 
   // Gets the next available sample from the source reader.
-  MediaSampleProperties^ MFVideoSampler::GetNextSample(int streamTypeIndex, /* out */ array<Byte> ^% buffer)
+  MediaSampleProperties^ MFVideoSampler::GetNextSample(int streamTypeIndex, /* out */ array<Byte> ^% buffer, uint64_t delayUntil)
   {
     MediaSampleProperties^ sampleProps = gcnew MediaSampleProperties();
 
@@ -582,119 +586,136 @@ namespace SIPSorceryMedia {
         std::cout << "End of stream." << std::endl;
         sampleProps->EndOfStream = true;
       }
-      if(flags & MF_SOURCE_READERF_NEWSTREAM)
-      {
-        std::cout << "New stream." << std::endl;
-      }
-      if(flags & MF_SOURCE_READERF_NATIVEMEDIATYPECHANGED)
-      {
-        std::cout << "Native type changed." << std::endl;
-      }
-      if(flags & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED)
-      {
-        std::cout << "Current type changed for stream index " << streamIndex << "." << std::endl;
-
-        IMFMediaType *videoType = nullptr;
-        CHECK_HR_EXTENDED(_sourceReader->GetCurrentMediaType(
-          (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
-          &videoType), L"Error retrieving current media type from first video stream.");
-
-        Console::WriteLine(GetMediaTypeDescription(videoType));
-
-        // Get the frame dimensions and stride
-        UINT32 nWidth, nHeight;
-        MFGetAttributeSize(videoType, MF_MT_FRAME_SIZE, &nWidth, &nHeight);
-        _width = nWidth;
-        _height = nHeight;
-
-        LONG lFrameStride;
-        videoType->GetUINT32(MF_MT_DEFAULT_STRIDE, (UINT32*)&lFrameStride);
-
-        sampleProps->Width = nWidth;
-        sampleProps->Height = nHeight;
-        sampleProps->Stride = lFrameStride;
-
-        videoType->Release();
-      }
-      if(flags & MF_SOURCE_READERF_STREAMTICK)
-      {
-        std::cout << "Stream tick." << std::endl;
-      }
-
-      if(sample == nullptr)
-      {
-        std::cout << "Failed to get media sample in from source reader." << std::endl;
-      }
       else
       {
-        //std::cout << "Stream index " << streamIndex << ", timestamp " <<  sampleTimestamp << ", flags " << flags << "." << std::endl;
-
-        // Accroding to https://docs.microsoft.com/en-us/windows/win32/api/mfreadwrite/nf-mfreadwrite-imfsourcereader-readsample 
-        // the timestamp is in 100ns units.
-        sampleProps->Timestamp = sampleTimestamp;
-
-        // ToDo: Get the stream indexes of teh frist audio and video stream properly rather than relying on default values.
-        //else if(streamIndex == (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM)
-        if(streamIndex == 1)
+        if(flags & MF_SOURCE_READERF_NEWSTREAM)
         {
-          DWORD nCurrBufferCount = 0;
-          CHECK_HR_EXTENDED(sample->GetBufferCount(&nCurrBufferCount), L"Failed to get the buffer count from the video sample.\n");
-          sampleProps->FrameCount = nCurrBufferCount;
-
-          IMFMediaBuffer * pVideoBuffer;
-          CHECK_HR_EXTENDED(sample->ConvertToContiguousBuffer(&pVideoBuffer), L"Failed to extract the video sample into a raw buffer.\n");
-
-          DWORD nCurrLen = 0;
-          CHECK_HR_EXTENDED(pVideoBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the video sample.\n");
-
-          byte *imgBuff;
-          DWORD buffCurrLen = 0;
-          DWORD buffMaxLen = 0;
-          pVideoBuffer->Lock(&imgBuff, &buffMaxLen, &buffCurrLen);
-
-          buffer = gcnew array<Byte>(buffCurrLen);
-          Marshal::Copy((IntPtr)imgBuff, buffer, 0, buffCurrLen);
-
-          pVideoBuffer->Unlock();
-          pVideoBuffer->Release();
-
-          sampleProps->HasVideoSample = true;
-
-          sample->Release();
+          std::cout << "New stream." << std::endl;
         }
-        //else if(streamIndex == (DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM)
-        else if(streamIndex == 0)
+        if(flags & MF_SOURCE_READERF_NATIVEMEDIATYPECHANGED)
         {
-          DWORD nCurrBufferCount = 0;
-          CHECK_HR_EXTENDED(sample->GetBufferCount(&nCurrBufferCount), L"Failed to get the buffer count from the audio sample.\n");
-          sampleProps->FrameCount = nCurrBufferCount;
-
-          IMFMediaBuffer* pAudioBuffer;
-          CHECK_HR_EXTENDED(sample->ConvertToContiguousBuffer(&pAudioBuffer), L"Failed to extract the audio sample into a raw buffer.\n");
-
-          DWORD nCurrLen = 0;
-          CHECK_HR_EXTENDED(pAudioBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the audio sample.\n");
-
-          byte *audioBuff;
-          DWORD buffCurrLen = 0;
-          DWORD buffMaxLen = 0;
-          pAudioBuffer->Lock(&audioBuff, &buffMaxLen, &buffCurrLen);
-
-          buffer = gcnew array<Byte>(buffCurrLen);
-          Marshal::Copy((IntPtr)audioBuff, buffer, 0, buffCurrLen);
-
-          //for(int i=0; i<buffCurrLen; i++) {
-          //  buffer[i] = (buffer[i] < 0x80) ? 0x80 | buffer[i] : 0x7f & buffer[i]; // Convert from an 8 bit unsigned sample to an 8 bit 2's complement signed sample.
-          //}
-
-          pAudioBuffer->Unlock();
-          pAudioBuffer->Release();
-
-          sampleProps->HasAudioSample = true;
-
-          sample->Release();
+          std::cout << "Native type changed." << std::endl;
         }
-      }
+        if(flags & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED)
+        {
+          std::cout << "Current type changed for stream index " << streamIndex << "." << std::endl;
+
+          IMFMediaType *videoType = nullptr;
+          CHECK_HR_EXTENDED(_sourceReader->GetCurrentMediaType(
+            (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
+            &videoType), L"Error retrieving current media type from first video stream.");
+
+          Console::WriteLine(GetMediaTypeDescription(videoType));
+
+          // Get the frame dimensions and stride
+          UINT32 nWidth, nHeight;
+          MFGetAttributeSize(videoType, MF_MT_FRAME_SIZE, &nWidth, &nHeight);
+          _width = nWidth;
+          _height = nHeight;
+
+          LONG lFrameStride;
+          videoType->GetUINT32(MF_MT_DEFAULT_STRIDE, (UINT32*)&lFrameStride);
+
+          sampleProps->Width = nWidth;
+          sampleProps->Height = nHeight;
+          sampleProps->Stride = lFrameStride;
+
+          videoType->Release();
+        }
+        if(flags & MF_SOURCE_READERF_STREAMTICK)
+        {
+          std::cout << "Stream tick." << std::endl;
+        }
+
+        if(sample == nullptr)
+        {
+          std::cout << "Failed to get media sample in from source reader." << std::endl;
+        }
+        else
+        {
+          //std::cout << "Stream index " << streamIndex << ", timestamp " <<  sampleTimestamp << ", flags " << flags << "." << std::endl;
+
+          // Accroding to https://docs.microsoft.com/en-us/windows/win32/api/mfreadwrite/nf-mfreadwrite-imfsourcereader-readsample 
+          // the timestamp is in 100ns units.
+          sampleProps->Timestamp = sampleTimestamp;
+          sampleProps->NowMilliseconds = std::chrono::milliseconds(std::time(NULL)).count();
+
+          // ToDo: Get the stream indexes of teh frist audio and video stream properly rather than relying on default values.
+          if(streamIndex == 1)
+          {
+            //std::cout << "video:" << sampleTimestamp / 10000 << "." << std::endl;
+
+            DWORD nCurrBufferCount = 0;
+            CHECK_HR_EXTENDED(sample->GetBufferCount(&nCurrBufferCount), L"Failed to get the buffer count from the video sample.\n");
+            sampleProps->FrameCount = nCurrBufferCount;
+
+            IMFMediaBuffer * pVideoBuffer;
+            CHECK_HR_EXTENDED(sample->ConvertToContiguousBuffer(&pVideoBuffer), L"Failed to extract the video sample into a raw buffer.\n");
+
+            DWORD nCurrLen = 0;
+            CHECK_HR_EXTENDED(pVideoBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the video sample.\n");
+
+            byte *imgBuff;
+            DWORD buffCurrLen = 0;
+            DWORD buffMaxLen = 0;
+            pVideoBuffer->Lock(&imgBuff, &buffMaxLen, &buffCurrLen);
+
+            buffer = gcnew array<Byte>(buffCurrLen);
+            Marshal::Copy((IntPtr)imgBuff, buffer, 0, buffCurrLen);
+
+            pVideoBuffer->Unlock();
+            pVideoBuffer->Release();
+
+            sampleProps->HasVideoSample = true;
+
+            sample->Release();
+
+            //Sleep(20);
+          }
+          else if(streamIndex == 0)
+          {
+            //std::cout << "audio:" << sampleTimestamp / 10000 << "." << std::endl;
+
+            DWORD nCurrBufferCount = 0;
+            CHECK_HR_EXTENDED(sample->GetBufferCount(&nCurrBufferCount), L"Failed to get the buffer count from the audio sample.\n");
+            sampleProps->FrameCount = nCurrBufferCount;
+
+            IMFMediaBuffer* pAudioBuffer;
+            CHECK_HR_EXTENDED(sample->ConvertToContiguousBuffer(&pAudioBuffer), L"Failed to extract the audio sample into a raw buffer.\n");
+
+            DWORD nCurrLen = 0;
+            CHECK_HR_EXTENDED(pAudioBuffer->GetCurrentLength(&nCurrLen), L"Failed to get the length of the raw buffer holding the audio sample.\n");
+
+            byte *audioBuff;
+            DWORD buffCurrLen = 0;
+            DWORD buffMaxLen = 0;
+            pAudioBuffer->Lock(&audioBuff, &buffMaxLen, &buffCurrLen);
+
+            buffer = gcnew array<Byte>(buffCurrLen);
+            Marshal::Copy((IntPtr)audioBuff, buffer, 0, buffCurrLen);
+
+            //for(int i=0; i<buffCurrLen; i++) {
+            //  buffer[i] = (buffer[i] < 0x80) ? 0x80 | buffer[i] : 0x7f & buffer[i]; // Convert from an 8 bit unsigned sample to an 8 bit 2's complement signed sample.
+            //}
+
+            pAudioBuffer->Unlock();
+            pAudioBuffer->Release();
+
+            sampleProps->HasAudioSample = true;
+
+            sample->Release();
+
+            //Sleep(5);
+
+           /* auto now = std::chrono::milliseconds(std::time(NULL)).count();
+            if(delayUntil > now)
+            {
+              std::cout << "sample delivery delay " << delayUntil - now << "." << std::endl;
+              Sleep(delayUntil - now);
+            }*/
+          }
+        }
+      } // End of sample.
 
       return sampleProps;
     }

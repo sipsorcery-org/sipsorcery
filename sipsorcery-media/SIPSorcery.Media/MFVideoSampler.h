@@ -22,6 +22,8 @@
 
 #include "VideoSubTypes.h"
 
+#include <chrono>
+#include <ctime>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -89,6 +91,7 @@ namespace SIPSorceryMedia {
     String ^ VideoSubTypeFriendlyName;
     UInt64 Timestamp;
     UInt32 FrameCount;               // Number of audio of video frames contained in the raw sample.
+    UInt64 NowMilliseconds;         // THe current time the sample was received in millisecodn resolution.
 
     MediaSampleProperties():
       Success(true),
@@ -133,7 +136,7 @@ namespace SIPSorceryMedia {
 		HRESULT FindVideoMode(IMFSourceReader *pReader, const GUID mediaSubType, UInt32 width, UInt32 height, /* out */ IMFMediaType *&foundpType);
     MediaSampleProperties^ GetSample(/* out */ array<Byte> ^% buffer);
 		HRESULT GetAudioSample(/* out */ array<Byte> ^% buffer);
-    MediaSampleProperties^ GetNextSample(int streamTypeIndex, /* out */ array<Byte> ^% buffer);
+    MediaSampleProperties^ GetNextSample(int streamTypeIndex, /* out */ array<Byte> ^% buffer, uint64_t delayUntil);
 		HRESULT PlayAudio();
 		void Stop();
 		void DumpVideoSubTypes();
@@ -257,9 +260,10 @@ namespace SIPSorceryMedia {
 			INTERNAL_GUID_TO_STRING(MFVideoFormat_WMV3, 14);                  // WMV3
 			INTERNAL_GUID_TO_STRING(MFVideoFormat_MPG1, 14);                  // MPG1
 			INTERNAL_GUID_TO_STRING(MFVideoFormat_MPG2, 14);                  // MPG2
-			INTERNAL_GUID_TO_STRING(MFVideoFormat_RGB24, 14);				  // RGB24
-			INTERNAL_GUID_TO_STRING(MFVideoFormat_YUY2, 14);				  // YUY2
-			INTERNAL_GUID_TO_STRING(MFVideoFormat_I420, 14);				  // I420
+			INTERNAL_GUID_TO_STRING(MFVideoFormat_RGB24, 14);				          // RGB24
+			INTERNAL_GUID_TO_STRING(MFVideoFormat_YUY2, 14);				          // YUY2
+      INTERNAL_GUID_TO_STRING(MFVideoFormat_YV12, 14);                   // YV12
+			INTERNAL_GUID_TO_STRING(MFVideoFormat_I420, 14);				          // I420
 
 			// Minor audio type values
 			INTERNAL_GUID_TO_STRING(MFAudioFormat_Base, 14);                  // Base

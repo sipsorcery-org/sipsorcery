@@ -252,6 +252,7 @@
     <Compile Include="ICE\IceConnectionStatesEnum.cs" />
     <Compile Include="ICE\TurnServer.cs" />
     <Compile Include="ICE\IceCandidate.cs" />
+    <Compile Include="RTCP\RTCPReportPacket.cs" />
     <Compile Include="RTP\RTPChannel.cs" />
     <Compile Include="RTP\RTPFrame.cs" />
     <Compile Include="RTP\RTPVP8Header.cs" />
@@ -302,7 +303,7 @@
     <Compile Include="RTCP\RTCPHeader.cs" />
     <Compile Include="RTCP\RTCPPacket.cs" />
     <Compile Include="RTCP\RTCPReportHeader.cs" />
-    <Compile Include="RTCP\RTCPReportPacket.cs" />
+    <Compile Include="RTCP\RTCPSenderReport.cs" />
     <Compile Include="RTP\RTPHeader.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -336,6 +337,7 @@
     <Compile Include="STUN\STUNListener.cs" />
     <Compile Include="STUN\STUNMessage.cs" />
     <Compile Include="STUN\STUNServer.cs" />
+    <Compile Include="WebRTC\WebRtcPeerUnencrypted.cs" />
     <Compile Include="WebRTC\WebRtcPeer.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -3,6 +3,22 @@
         crossorigin="anonymous"></script>
 
 <script type="text/javascript">
+
+    const WebSocketUrl = "ws://192.168.11.50:8081/stream";
+    const NoCryptWebSocketUrl = "ws://192.168.11.50:8081/nocrypt";
+    CurrentWebSocketUrl = WebSocketUrl;
+
+    $(document).ready(function () {
+        console.log("document ready!");
+
+        $("#nocrypt").change(function () {
+            CurrentWebSocketUrl = (this.checked) ? NoCryptWebSocketUrl : WebSocketUrl;
+            console.log("web socket URL changed to " + CurrentWebSocketUrl);
+        });
+    });
+
+
+
     var stun = { url: 'stun:stun.ekiga.net' };
 
     var iceServers = {
@@ -14,7 +30,7 @@
             { 'DtlsSrtpKeyAgreement': true },
             { 'RtpDataChannels': false },
             { 'iceTransports': 'udp' },
-            { 'bundlePolicy': "max-bundle"}
+            { 'bundlePolicy': "max-bundle" }
         ]
     };
 
@@ -124,8 +140,9 @@
         pc.oniceconnectionstatechange = handleIceStateChange;
 
         //ws = new WebSocket("wss://www.sipsorcery.com:8081/stream?path=0.hivpx");
-        ws = new WebSocket("ws://192.168.11.50:8081/stream");
+        //ws = new WebSocket("ws://192.168.11.50:8081/stream");
         //ws = new WebSocket("ws://localhost:8081");
+        ws = new WebSocket(CurrentWebSocketUrl);
 
         ws.onopen = function () {
             console.log("web socket onopen.");
@@ -224,5 +241,7 @@
     <button onclick="wsConnect();">Click here to start</button>
 </div>
 
-<!--<audio controls autoplay="autoplay" id="remoteAudio" />-->
+<input type="checkbox" id="nocrypt" name="nocrypt" value="nocrypt"> No encryption (only works if browser has disable encryption flag set)
+<br>
 
+<!--<audio controls autoplay="autoplay" id="remoteAudio" />-->

@@ -193,5 +193,45 @@ namespace SIPSorcery.Net.UnitTests.RTCP
             Assert.IsTrue(report.OutOfOrderPackets == 2, "Incorrect outoforder packet count.");	
         }
         */
+
+        [TestMethod]
+        public void GetRTCPHeaderTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            RTCPHeader rtcpHeader = new RTCPHeader();
+            byte[] headerBuffer = rtcpHeader.GetHeader(0, 0);
+
+            int byteNum = 1;
+            foreach (byte headerByte in headerBuffer)
+            {
+                Console.WriteLine(byteNum + ": " + headerByte.ToString("x"));
+                byteNum++;
+            }
+        }
+
+        [TestMethod]
+        public void RTCPHeaderRoundTripTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            RTCPHeader src = new RTCPHeader();
+            byte[] headerBuffer = src.GetHeader(17, 54443);
+            RTCPHeader dst = new RTCPHeader(headerBuffer);
+
+            Console.WriteLine("Version: " + src.Version + ", " + dst.Version);
+            Console.WriteLine("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
+            Console.WriteLine("ReceptionReportCount: " + src.ReceptionReportCount + ", " + dst.ReceptionReportCount);
+            Console.WriteLine("PacketType: " + src.PacketType + ", " + dst.PacketType);
+            Console.WriteLine("Length: " + src.Length + ", " + dst.Length);
+
+            //Console.WriteLine("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
+
+            Assert.IsTrue(src.Version == dst.Version, "Version was mismatched.");
+            Assert.IsTrue(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
+            Assert.IsTrue(src.ReceptionReportCount == dst.ReceptionReportCount, "ReceptionReportCount was mismatched.");
+            Assert.IsTrue(src.PacketType == dst.PacketType, "PacketType was mismatched.");
+            Assert.IsTrue(src.Length == dst.Length, "Length was mismatched.");
+        }
     }
 }

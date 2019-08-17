@@ -49,13 +49,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
-using System.Net;
 using SIPSorcery.Sys;
-
-#if UNITTEST
-using NUnit.Framework;
-#endif
 
 namespace SIPSorcery.Net
 {
@@ -65,7 +59,7 @@ namespace SIPSorcery.Net
         public const int MAX_RECEPTIONREPORT_COUNT = 32;
 
 		public const int RTCP_VERSION = 2;
-        public const UInt16 RTCP_PACKET_TYPE = 200;
+        public const UInt16 RTCP_PACKET_TYPE = 200;             // 200 for Sender Report.
 
 		public int Version = RTCP_VERSION;						// 2 bits.
 		public int PaddingFlag = 0;								// 1 bit.
@@ -135,77 +129,5 @@ namespace SIPSorcery.Net
 
 			return header;
 		}
-
-		#region Unit testing.
-
-		#if UNITTEST
-	
-		[TestFixture]
-		public class RTCPHeaderUnitTest
-		{
-			[TestFixtureSetUp]
-			public void Init()
-			{
-				
-			}
-
-			[TestFixtureTearDown]
-			public void Dispose()
-			{			
-				
-			}
-
-			[Test]
-			public void SampleTest()
-			{
-				Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-				
-				Assert.IsTrue(true, "True was false.");
-			}
-
-            [Test]
-            public void GetRTCPHeaderTest()
-            {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                RTCPHeader rtcpHeader = new RTCPHeader();
-                byte[] headerBuffer = rtcpHeader.GetHeader(0, 0);
-
-                int byteNum = 1;
-                foreach (byte headerByte in headerBuffer)
-                {
-                    Console.WriteLine(byteNum + ": " + headerByte.ToString("x"));
-                    byteNum++;
-                }
-            }
-
-            [Test]
-            public void RTCPHeaderRoundTripTest()
-            {
-                Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-                RTCPHeader src = new RTCPHeader();
-                byte[] headerBuffer = src.GetHeader(17, 54443);
-                RTCPHeader dst = new RTCPHeader(headerBuffer);
-
-                Console.WriteLine("Version: " + src.Version + ", " + dst.Version);
-                Console.WriteLine("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
-                Console.WriteLine("ReceptionReportCount: " + src.ReceptionReportCount + ", " + dst.ReceptionReportCount);
-                Console.WriteLine("PacketType: " + src.PacketType + ", " + dst.PacketType);
-                Console.WriteLine("Length: " + src.Length + ", " + dst.Length);
-
-                //Console.WriteLine("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
-
-                Assert.IsTrue(src.Version == dst.Version, "Version was mismatched.");
-                Assert.IsTrue(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
-                Assert.IsTrue(src.ReceptionReportCount == dst.ReceptionReportCount, "ReceptionReportCount was mismatched.");
-                Assert.IsTrue(src.PacketType == dst.PacketType, "PacketType was mismatched.");
-                Assert.IsTrue(src.Length == dst.Length, "Length was mismatched.");
-            }
-		}
-
-		#endif
-
-		#endregion
 	}
 }

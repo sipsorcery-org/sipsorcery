@@ -155,6 +155,17 @@ namespace SIPSorceryMedia {
 		return result;
 	}
 
+  int SRTPManaged::ProtectRTCP(cli::array<System::Byte>^ buffer, int length)
+  {
+    pin_ptr<System::Byte> p = &buffer[0];
+    unsigned char* pby = p;
+    char* pch = reinterpret_cast<char*>(pby);
+
+    srtp_err_status_t result = srtp_protect_rtcp(*_session, pch, &length);
+
+    return result;
+  }
+
 	SRTPManaged::~SRTPManaged()
 	{
 		if (_session != nullptr)
