@@ -204,12 +204,6 @@ namespace WebRTCVideoServer
                 SendToWebRtcClients();
 
                 mfSampleGrabber.Run(MEDIA_FILE, true);
-
-                // Streaming methods
-                //Task.Run(StreamMp4);              // Send to WebRtc enabled browser.
-                //Task.Run(StreamMp4Unecrypted);    // Send to Chrome Canary with webrtc encryption disabled.
-                //Task.Run(SendSamplesAsRtp);       // Send to ffplay.
-                //Task.Run(SendTestPattern);      // Streams a static test pattern image overlayed with text of teh current time.
             }
             catch (Exception excp)
             {
@@ -219,9 +213,9 @@ namespace WebRTCVideoServer
 
         private void MfSampleGrabber_OnVideoResolutionChangedEvent(uint width, uint height, uint stride)
         {
-            //if (_vpxEncoder == null ||
-            //    (_vpxEncoder.GetWidth() != width || _vpxEncoder.GetHeight() != height || _vpxEncoder.GetStride() != stride))
-            //{
+            if (_vpxEncoder == null ||
+                (_vpxEncoder.GetWidth() != width || _vpxEncoder.GetHeight() != height || _vpxEncoder.GetStride() != stride))
+            {
                 if (_vpxEncoder != null)
                 {
                     _vpxEncoder.Dispose();
@@ -231,7 +225,7 @@ namespace WebRTCVideoServer
 
                 _vpxEncoder = new VPXEncoder();
                 _vpxEncoder.InitEncoder(width, height, stride);
-            //}
+            }
         }
 
         unsafe private void MfSampleGrabber_OnProcessSampleEvent(int mediaTypeID, uint dwSampleFlags, long llSampleTime, long llSampleDuration, uint dwSampleSize, ref byte[] sampleBuffer)
@@ -349,9 +343,9 @@ namespace WebRTCVideoServer
 
             var mediaTypes = new List<RtpMediaTypesEnum> { RtpMediaTypesEnum.Video, RtpMediaTypesEnum.Audio };
 
-            lock (_webRtcSessions)
+            lock(_webRtcSessionsUnencrypted)
             {
-                if (!_webRtcSessions.Any(x => x.Key == webSocketID))
+                if (!_webRtcSessionsUnencrypted.Any(x => x.Key == webSocketID))
                 {
                     var webRtcSessionUnencrypted = new WebRtcSessionUnencrypted(webSocketID);
 
@@ -364,7 +358,7 @@ namespace WebRTCVideoServer
                     }
                     else
                     {
-                        logger.Error("Failed to add new WebRTC client to sessions dictionary.");
+                        logger.Error("Failed to add new unencrypted WebRTC client to sessions dictionary.");
                     }
                 }
             }
@@ -475,13 +469,13 @@ namespace WebRTCVideoServer
                         {
                             session.Value.SendVp8(sample, _vp8Timestamp);
                         }
+                    }
 
-                        lock (_webRtcSessionsUnencrypted)
+                    lock (_webRtcSessionsUnencrypted)
+                    {
+                        foreach (var session in _webRtcSessionsUnencrypted.Where(x => x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
                         {
-                            foreach (var session in _webRtcSessionsUnencrypted.Where(x => x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
-                            {
-                                session.Value.SendVp8Unencrypted(sample, _vp8Timestamp);
-                            }
+                            session.Value.SendVp8Unencrypted(sample, _vp8Timestamp);
                         }
                     }
                 }
@@ -558,7 +552,7 @@ namespace WebRTCVideoServer
                 Socket videoSrcRtpSocket = null;
                 Socket videoSrcControlSocket = null;
                 Socket audioSrcRtpSocket = null;
-                Socket audioSrcControlSocket = null; 
+                Socket audioSrcControlSocket = null;
 
                 IPAddress localAddress = IPAddress.Parse(LOCAL_IP_ADDRESS);
                 IPEndPoint audioRtpSocket = new IPEndPoint(localAddress, SEND_RTP_AUDIO_DEST_PORT);
@@ -587,7 +581,7 @@ namespace WebRTCVideoServer
             {
                 logger.Error("Exception SendSamplesAsRtp. " + excp);
             }
-        }      
+        }
 
         /// <summary>
         /// Packages and sends a single audio PCMU packet over RTP.
