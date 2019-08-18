@@ -21,6 +21,8 @@ namespace SIPSorceryMedia
   void MFSampleGrabber::OnProcessSample(REFGUID guidMajorMediaType, DWORD dwSampleFlags, LONGLONG llSampleTime, LONGLONG llSampleDuration, const BYTE * pSampleBuffer, DWORD dwSampleSize)
   {
     //Console::WriteLine("C++ MFSampleGrabber.OnProcessSample " + dwSampleSize);
+    // TODO: Properly determine whether audio or video.
+    // MFMediaType_Audio MFMediaType_Video
     int mediaType = (dwSampleSize > 5000) ? VIDEO_TYPE_ID : AUDIO_TYPE_ID;
 
     auto buffer = gcnew array<Byte>(dwSampleSize);
@@ -29,7 +31,12 @@ namespace SIPSorceryMedia
     OnProcessSampleEvent(mediaType, dwSampleFlags, llSampleTime, llSampleDuration, dwSampleSize, buffer);
   }
 
-  HRESULT MFSampleGrabber::Run(System::String^ mediaPath)
+  void MFSampleGrabber::OnVideoResolutionChanged(UINT32 width, UINT32 height, UINT32 stride)
+  {
+    OnVideoResolutionChangedEvent(width, height, stride);
+  }
+
+  HRESULT MFSampleGrabber::Run(System::String^ mediaPath, bool loop)
   {
     System::Console::WriteLine("MFSampleGrabber.Run " + mediaPath + ".");
 
@@ -63,12 +70,12 @@ namespace SIPSorceryMedia
     CHECK_HR(hr = MFCreateSampleGrabberSinkActivate(pVideoType, pSampleGrabberSinkCallback, &pVideoSinkActivate));
 
     OnClockStartDelegate ^clockStartDelegate = gcnew OnClockStartDelegate(this, &MFSampleGrabber::OnClockStart);
-    GCHandle gchClockStart = GCHandle::Alloc(clockStartDelegate); // Stop delegate from being garbage ollected. gch.Free(); when finished.
+    GCHandle gchClockStart = GCHandle::Alloc(clockStartDelegate); // Stop delegate from being garbage ollected. TODO: gch.Free(); when finished.
     IntPtr ipClockStart = Marshal::GetFunctionPointerForDelegate(clockStartDelegate);
     OnClockStartFunc cbClockStart = static_cast<OnClockStartFunc>(ipClockStart.ToPointer());
 
     OnProcessSampleDelegateNative ^processSampleDelegate = gcnew OnProcessSampleDelegateNative(this, &MFSampleGrabber::OnProcessSample);
-    GCHandle gchProcessSample = GCHandle::Alloc(processSampleDelegate); // Stop delegate from being garbage ollected. gch.Free(); when finished.
+    GCHandle gchProcessSample = GCHandle::Alloc(processSampleDelegate); // Stop delegate from being garbage ollected. TODO: gch.Free(); when finished.
     IntPtr ipProcessSample = Marshal::GetFunctionPointerForDelegate(processSampleDelegate);
     OnProcessSampleFunc cbProcessSample = static_cast<OnProcessSampleFunc>(ipProcessSample.ToPointer());
 
@@ -86,8 +93,15 @@ namespace SIPSorceryMedia
     // Create the topology.
     CHECK_HR(hr = CreateTopology(pSource, pVideoSinkActivate, pAudioSinkActivate, &pTopology));
 
-    // Run the media session.
-    CHECK_HR(hr = RunSession(pSession, pTopology));
+    OnVideoResolutionChangedDelegate ^vidResChangedDelegate = gcnew OnVideoResolutionChangedDelegate(this, &MFSampleGrabber::OnVideoResolutionChanged);
+    GCHandle gchVidResChanged = GCHandle::Alloc(vidResChangedDelegate); // Stop delegate from being garbage ollected. TODO: gch.Free(); when finished.
+    IntPtr ipPVidResChanged = Marshal::GetFunctionPointerForDelegate(vidResChangedDelegate);
+    OnVideoResolutionChangedFunc cbVidResChanged = static_cast<OnVideoResolutionChangedFunc>(ipPVidResChanged.ToPointer());
+
+    do {
+      // Run the media session.
+      CHECK_HR(hr = RunSession(pSession, pTopology, cbVidResChanged));
+    } while(loop == true);
 
   done:
     // Clean up.
@@ -110,7 +124,7 @@ namespace SIPSorceryMedia
     SafeRelease(&pAudioType);
     return hr;
   }
-}
+} // End SIPSorceryMedia namespace
 
 // SampleGrabberCB implementation
 
@@ -196,6 +210,15 @@ STDMETHODIMP SampleGrabberCB::OnProcessSample(REFGUID guidMajorMediaType, DWORD 
   LONGLONG llSampleTime, LONGLONG llSampleDuration, const BYTE * pSampleBuffer,
   DWORD dwSampleSize)
 {
+  if(dwSampleFlags & MF_SOURCE_READERF_NATIVEMEDIATYPECHANGED)
+  {
+    std::cout << "Native type changed." << std::endl;
+  }
+  if(dwSampleFlags & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED)
+  {
+    std::cout << "Current type changed for media type " << guidMajorMediaType.Data1 << "." << std::endl;
+  }
+
   // Display information about the sample.
   //printf("Sample: start = %I64d, duration = %I64d, bytes = %d\n", llSampleTime, llSampleDuration, dwSampleSize);
   _onProcessSampleFunc(guidMajorMediaType, dwSampleFlags, llSampleTime, llSampleDuration, pSampleBuffer, dwSampleSize);
@@ -206,7 +229,6 @@ STDMETHODIMP SampleGrabberCB::OnShutdown()
 {
   return S_OK;
 }
-
 
 // Create a media source from a URL.
 HRESULT CreateMediaSource(PCWSTR pszURL, IMFMediaSource **ppSource)
@@ -227,72 +249,6 @@ HRESULT CreateMediaSource(PCWSTR pszURL, IMFMediaSource **ppSource)
 done:
   SafeRelease(&pSourceResolver);
   SafeRelease(&pSource);
-  return hr;
-}
-
-HRESULT RunSampleGrabber(PCWSTR pszFileName)
-{
-  IMFMediaSession *pSession = NULL;
-  IMFMediaSource *pSource = NULL;
-  SampleGrabberCB *pSampleGrabberSinkCallback = NULL;
-  IMFActivate *pAudioSinkActivate = NULL, *pVideoSinkActivate = NULL;
-  IMFTopology *pTopology = NULL;
-  IMFMediaType *pVideoType = NULL, *pAudioType = NULL;
-
-  // Configure the media type that the Sample Grabber will receive.
-  // Setting the major and subtype is usually enough for the topology loader
-  // to resolve the topology.
-  HRESULT hr = S_OK;
-  CHECK_HR(hr = MFCreateMediaType(&pVideoType));
-  CHECK_HR(hr = pVideoType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
-  CHECK_HR(hr = pVideoType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_I420));
-
-  CHECK_HR(hr = MFCreateMediaType(&pAudioType));
-  CHECK_HR(hr = pAudioType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio));
-  CHECK_HR(hr = pAudioType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM));
-  CHECK_HR(hr = pAudioType->SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, 1));
-  CHECK_HR(hr = pAudioType->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, 16));
-  CHECK_HR(hr = pAudioType->SetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, 8000));
-
-  // Create the sample grabber sink.
-  CHECK_HR(hr = SampleGrabberCB::CreateInstance(&pSampleGrabberSinkCallback));
-  CHECK_HR(hr = MFCreateSampleGrabberSinkActivate(pAudioType, pSampleGrabberSinkCallback, &pAudioSinkActivate));
-  CHECK_HR(hr = MFCreateSampleGrabberSinkActivate(pVideoType, pSampleGrabberSinkCallback, &pVideoSinkActivate));
-
-  // To run as fast as possible, set this attribute (requires Windows 7):
-  //CHECK_HR(hr = pSinkActivate->SetUINT32(MF_SAMPLEGRABBERSINK_IGNORE_CLOCK, TRUE));
-
-  // Create the Media Session.
-  CHECK_HR(hr = MFCreateMediaSession(NULL, &pSession));
-
-  // Create the media source.
-  CHECK_HR(hr = CreateMediaSource(pszFileName, &pSource));
-
-  // Create the topology.
-  CHECK_HR(hr = CreateTopology(pSource, pVideoSinkActivate, pAudioSinkActivate, &pTopology));
-
-  // Run the media session.
-  CHECK_HR(hr = RunSession(pSession, pTopology));
-
-done:
-  // Clean up.
-  if(pSource)
-  {
-    pSource->Shutdown();
-  }
-  if(pSession)
-  {
-    pSession->Shutdown();
-  }
-
-  SafeRelease(&pSession);
-  SafeRelease(&pSource);
-  SafeRelease(&pSampleGrabberSinkCallback);
-  SafeRelease(&pAudioSinkActivate);
-  SafeRelease(&pVideoSinkActivate);
-  SafeRelease(&pTopology);
-  SafeRelease(&pVideoType);
-  SafeRelease(&pAudioType);
   return hr;
 }
 
@@ -384,6 +340,7 @@ HRESULT CreateTopology(IMFMediaSource *pSource, IMFActivate *pVideoSinkActivate,
     else if(majorType == MFMediaType_Audio && fSelected)
     {
       CHECK_HR(hr = AddSourceNode(pTopology, pSource, pPD, pSD, &pAudioSourceNode));
+      // TODO: Should be possible to add the MULAW codec here using AddTransformNode, see https://docs.microsoft.com/en-us/windows/win32/medfound/adding-a-decoder-to-a-topology.
       CHECK_HR(hr = AddOutputNode(pTopology, pAudioSinkActivate, 0, &pAudioSinkNode));
       CHECK_HR(hr = pAudioSourceNode->ConnectOutput(0, pAudioSinkNode, 0));
     }
@@ -411,9 +368,14 @@ done:
   return hr;
 }
 
-HRESULT RunSession(IMFMediaSession *pSession, IMFTopology *pTopology)
+HRESULT RunSession(IMFMediaSession *pSession, IMFTopology *pTopology, OnVideoResolutionChangedFunc onVideoResolutionChanged)
 {
   IMFMediaEvent *pEvent = NULL;
+  IMFTopologyNode *pNode = nullptr;
+  IMFStreamSink *pStreamSink = nullptr;
+  IUnknown *pNodeObject = NULL;
+  IMFMediaTypeHandler *pMediaTypeHandler = nullptr;
+  IMFMediaType *pMediaType = nullptr;
 
   PROPVARIANT var;
   PropVariantInit(&var);
@@ -437,14 +399,67 @@ HRESULT RunSession(IMFMediaSession *pSession, IMFTopology *pTopology)
       hr = hrStatus;
       goto done;
     }
+    else
+    {
+      //printf("Session event: event id: %d\n",  met);
+      switch(met)
+      {
+      case MESessionStreamSinkFormatChanged:
+        //std::cout << "MESessionStreamSinkFormatChanged." << std::endl;
+
+        {
+          MF_TOPOLOGY_TYPE nodeType;
+          UINT64 outputNode{0};
+          GUID majorMediaType;
+          UINT64 videoResolution{0};
+          UINT32 stride{0};
+
+          // This seems a ridiculously convoluted way to extract the change to the video resolution. There may
+          // be a simpler way but then again this is the Media Foundation and COM!
+          CHECK_HR_ERROR(pEvent->GetUINT64(MF_EVENT_OUTPUT_NODE, &outputNode), "Failed to get ouput node from media changed event.");
+          CHECK_HR_ERROR(pTopology->GetNodeByID(outputNode, &pNode), "Failed to get topology node for output ID.");
+          CHECK_HR_ERROR(pNode->GetObject(&pNodeObject), "Failed to get the node's object pointer.");
+          CHECK_HR_ERROR(pNodeObject->QueryInterface(IID_PPV_ARGS(&pStreamSink)), "Failed to get media stream sink from activation object.");
+          CHECK_HR_ERROR(pStreamSink->GetMediaTypeHandler(&pMediaTypeHandler), "Failed to get media type handler from stream sink.");
+          CHECK_HR_ERROR(pMediaTypeHandler->GetCurrentMediaType(&pMediaType), "Failed to get current media type.");
+          CHECK_HR_ERROR(pMediaType->GetMajorType(&majorMediaType), "Failed to get major media type.");
+          
+          if(majorMediaType == MFMediaType_Video)
+          {
+            CHECK_HR_ERROR(pMediaType->GetUINT64(MF_MT_FRAME_SIZE, &videoResolution), "Failed to get new video resolution.");
+            CHECK_HR_ERROR(pMediaType->GetUINT32(MF_MT_DEFAULT_STRIDE, &stride), "Failed to get the new stride.");
+            std::cout << "Media session video resolution changed to width " << std::to_string(HI32(videoResolution)) 
+              << " and height " << std::to_string(LO32(videoResolution)) 
+              << " and stride " << stride << "." << std::endl;
+            if(onVideoResolutionChanged != nullptr) {
+              onVideoResolutionChanged(HI32(videoResolution), LO32(videoResolution), stride);
+            }
+          }
+          break;
+        }
+      default:
+        break;
+      }
+    }
+
     if(met == MESessionEnded)
     {
       break;
     }
     SafeRelease(&pEvent);
+    SafeRelease(&pNode);
+    SafeRelease(&pStreamSink);
+    SafeRelease(&pNodeObject);
+    SafeRelease(&pMediaTypeHandler);
+    SafeRelease(&pMediaType);
   }
 
 done:
   SafeRelease(&pEvent);
+  SafeRelease(&pNode);
+  SafeRelease(&pStreamSink);
+  SafeRelease(&pNodeObject);
+  SafeRelease(&pMediaTypeHandler);
+  SafeRelease(&pMediaType);
   return hr;
 }

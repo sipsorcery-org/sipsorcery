@@ -29,6 +29,10 @@ namespace SIPSorceryMedia {
 			int Encode(unsigned char * i420, int i420Length, int sampleCount, array<Byte> ^% buffer);
 			int Decode(unsigned char* buffer, int bufferSize, array<Byte> ^% outBuffer, unsigned int % width, unsigned int % height);
 
+      int GetWidth() { return _width; }
+      int GetHeight() { return _height; }
+      int GetStride() { return _stride; }
+
 		private:
 
 			vpx_codec_ctx_t * _vpxCodec;
