@@ -126,6 +126,7 @@
   <ItemGroup>
     <ClInclude Include="DtlsManaged.h" />
     <ClInclude Include="ImageConvert.h" />
+    <ClInclude Include="MFSampleGrabber.h" />
     <ClInclude Include="MFVideoSampler.h" />
     <ClInclude Include="SRTPManaged.h" />
     <ClInclude Include="VideoSubTypes.h" />
@@ -135,6 +136,7 @@
     <ClCompile Include="AssemblyInfo.cpp" />
     <ClCompile Include="DtlsManaged.cpp" />
     <ClCompile Include="ImageConvert.cpp" />
+    <ClCompile Include="MFSampleGrabber.cpp" />
     <ClCompile Include="MFVideoSampler.cpp" />
     <ClCompile Include="SRTPManaged.cpp" />
     <ClCompile Include="VPXEncoder.cpp" />

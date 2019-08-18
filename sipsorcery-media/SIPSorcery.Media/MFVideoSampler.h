@@ -32,7 +32,7 @@ using namespace System;
 using namespace System::Collections::Generic;
 using namespace System::Runtime::InteropServices;
 
-#define CHECK_HR(hr, msg) if (HRHasFailed(hr, msg)) return hr;
+#define CHECK_HR(hr, msg) if (hr != S_OK) { std::cout << msg << std::endl; return hr; }
 //#define CHECK_HR(hr, msg) if (hr != S_OK) { printf(msg); printf("Error: %.2X.\n", hr); goto done; }
 
 #define CHECK_HR_EXTENDED(hr, msg) if (HRHasFailed(hr, msg)) { \

@@ -83,6 +83,13 @@ namespace WebRTCVideoServer
         FIRST_VIDEO_STREAM = -4
     }
 
+    public enum MediaSampleTypeEnum
+    {
+        Unknown = 0,
+        Mulaw = 1,
+        VP8 = 2,
+    }
+
     public class SDPExchangeReceiver : WebSocketBehavior
     {
         public event Action<WebSocketSharp.Net.WebSockets.WebSocketContext, string> WebSocketOpened;
@@ -136,6 +143,14 @@ namespace WebRTCVideoServer
         private ConcurrentDictionary<string, WebRtcSession> _webRtcSessions = new ConcurrentDictionary<string, WebRtcSession>();
         private ConcurrentDictionary<string, WebRtcSessionUnencrypted> _webRtcSessionsUnencrypted = new ConcurrentDictionary<string, WebRtcSessionUnencrypted>();
 
+        SIPSorceryMedia.VPXEncoder _vpxEncoder;
+        private uint _vp8Timestamp;
+        private uint _mulawTimestamp;
+
+        private delegate void MediaSampleReadyDelegate(MediaSampleTypeEnum sampleType, uint timestamp, byte[] sample);
+
+        private event MediaSampleReadyDelegate OnMediaSampleReady;
+
         public void Start()
         {
             try
@@ -177,16 +192,90 @@ namespace WebRTCVideoServer
                 _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/nocrypt", () => noEncryptionSdpReceiver);
                 _receiverWSS.Start();
 
+                SIPSorceryMedia.MFSampleGrabber mfSampleGrabber = new SIPSorceryMedia.MFSampleGrabber();
+                mfSampleGrabber.OnClockStartEvent += MfSampleGrabber_OnClockStartEvent;
+                unsafe
+                {
+                    mfSampleGrabber.OnProcessSampleEvent += MfSampleGrabber_OnProcessSampleEvent;
+                }
+
+                SendSamplesAsRtp();
+                SendToWebRtcClients();
+
+                mfSampleGrabber.Run(MEDIA_FILE);
+
                 // Streaming methods
-                Task.Run(StreamMp4);              // Send to WebRtc enabled browser.
-                Task.Run(StreamMp4Unecrypted);    // Send to Chrome Canary with webrtc encryption disabled.
-                Task.Run(SendSamplesAsRtp);       // Send to ffplay.
+                //Task.Run(StreamMp4);              // Send to WebRtc enabled browser.
+                //Task.Run(StreamMp4Unecrypted);    // Send to Chrome Canary with webrtc encryption disabled.
+                //Task.Run(SendSamplesAsRtp);       // Send to ffplay.
                 //Task.Run(SendTestPattern);      // Streams a static test pattern image overlayed with text of teh current time.
             }
             catch (Exception excp)
             {
                 logger.Error("Exception WebRTCDaemon.Start. " + excp);
             }
+        }
+
+        unsafe private void MfSampleGrabber_OnProcessSampleEvent(int mediaTypeID, uint dwSampleFlags, long llSampleTime, long llSampleDuration, uint dwSampleSize, ref byte[] sampleBuffer)
+        {
+            //Console.WriteLine($"C# OnProcessSample {dwSampleSize}.");
+
+            if (mediaTypeID == 0)
+            {
+                if (_vpxEncoder == null)
+                {
+                    _vpxEncoder = new VPXEncoder();
+                    //vpxEncoder.InitEncoder(540, 360, 540);
+                    _vpxEncoder.InitEncoder(544, 366, 544);
+                }
+
+                byte[] vpxEncodedBuffer = null;
+
+                unsafe
+                {
+                    fixed (byte* p = sampleBuffer)
+                    {
+                        int encodeResult = _vpxEncoder.Encode(p, (int)dwSampleSize, 1, ref vpxEncodedBuffer);
+
+                        if (encodeResult != 0)
+                        {
+                            logger.Warn("VPX encode of video sample failed.");
+                        }
+                    }
+                }
+
+                OnMediaSampleReady?.Invoke(MediaSampleTypeEnum.VP8, _vp8Timestamp, vpxEncodedBuffer);
+                //SendVp8(videoSrcRtpSocket, videoRtpSocket, videoTimestamp, videoSsrc, ref videoSeqNum, vpxEncodedBuffer);
+
+                //Console.WriteLine($"Video SeqNum {videoSeqNum}, timestamp {videoTimestamp}, buffer length {vpxEncodedBuffer.Length}, frame count {sampleProps.FrameCount}.");
+
+                _vp8Timestamp += VP8_TIMESTAMP_SPACING;
+            }
+            else
+            {
+                uint sampleDuration = (uint)(sampleBuffer.Length / 2);
+
+                byte[] mulawSample = new byte[sampleDuration];
+                int sampleIndex = 0;
+
+                // ToDo: Find a way to wire up the Media foundation WAVE_FORMAT_MULAW codec so the encoding below is not necessary.
+                for (int index = 0; index < sampleBuffer.Length; index += 2)
+                {
+                    var ulawByte = MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(sampleBuffer, index));
+                    mulawSample[sampleIndex++] = ulawByte;
+                }
+
+                OnMediaSampleReady?.Invoke(MediaSampleTypeEnum.Mulaw, _mulawTimestamp, mulawSample);
+
+                //Console.WriteLine($"Audio SeqNum {audioSeqNum}, timestamp {audioTimestamp}, buffer length {mulawSample.Length}.");
+
+                _mulawTimestamp += sampleDuration;
+            }
+        }
+
+        public void MfSampleGrabber_OnClockStartEvent(long hnsSystemTime, long llClockStartOffset)
+        {
+            Console.WriteLine($"C# OnClockStart {hnsSystemTime}, {llClockStartOffset}.");
         }
 
         public void Stop()
@@ -774,6 +863,36 @@ namespace WebRTCVideoServer
             }
         }
 
+
+        private void SendToWebRtcClients()
+        {
+            OnMediaSampleReady += (mediaType, timestamp, sample) =>
+            {
+                if (mediaType == MediaSampleTypeEnum.VP8)
+                {
+                    lock (_webRtcSessions)
+                    {
+                        foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true &&
+                           x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                        {
+                            session.Value.SendVp8(sample, _vp8Timestamp);
+                        }
+                    }
+                }
+                else
+                {
+                    lock (_webRtcSessions)
+                    {
+                        foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true &&
+                            x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                        {
+                            session.Value.SendPcmu(sample, _mulawTimestamp);
+                        }
+                    }
+                }
+            };
+        }
+
         /// <summary>
         /// Sends two separate RTP streams to an application like ffplay. 
         /// 
@@ -798,115 +917,36 @@ namespace WebRTCVideoServer
                 Socket videoSrcRtpSocket = null;
                 Socket videoSrcControlSocket = null;
                 Socket audioSrcRtpSocket = null;
-                Socket audioSrcControlSocket = null;
+                Socket audioSrcControlSocket = null; 
+
                 IPAddress localAddress = IPAddress.Parse(LOCAL_IP_ADDRESS);
                 IPEndPoint audioRtpSocket = new IPEndPoint(localAddress, SEND_RTP_AUDIO_DEST_PORT);
                 IPEndPoint videoRtpSocket = new IPEndPoint(localAddress, SEND_RTP_VIDEO_DEST_PORT);
-                ushort videoSeqNum = 0;
                 uint videoSsrc = Convert.ToUInt32(Crypto.GetRandomInt(6));
-                uint videoTimestamp = Convert.ToUInt32(Crypto.GetRandomInt(6));
-                ushort audioSeqNum = 0;
                 uint audioSsrc = Convert.ToUInt32(Crypto.GetRandomInt(6));
-                uint audioTimestamp = Convert.ToUInt32(Crypto.GetRandomInt(6));
+                ushort videoSeqNum = 0;
+                ushort audioSeqNum = 0;
 
                 NetServices.CreateRtpSocket(localAddress, 5000, 5010, false, out audioSrcRtpSocket, out audioSrcControlSocket);
                 NetServices.CreateRtpSocket(localAddress, 5011, 5020, false, out videoSrcRtpSocket, out videoSrcControlSocket);
 
-                unsafe
+                OnMediaSampleReady += (mediaType, timestamp, sample) =>
                 {
-                    SIPSorceryMedia.MFVideoSampler sampler = new MFVideoSampler();
-                    sampler.InitFromFile(MEDIA_FILE);
-                    SIPSorceryMedia.VPXEncoder vpxEncoder = new VPXEncoder();
-
-                    // Note that these settings can change once the stream processing starts.
-                    // If they do change the VPX encoder will be reinitialised with the new dimensions.
-                    int sampleWidth = sampler.Width;
-                    int sampleHeight = sampler.Height;
-                    int sampleStride = sampler.Stride;
-
-                    logger.Debug($"Sampler width {sampleWidth}, height {sampleHeight}.");
-
-                    byte[] sampleBuffer = null;
-
-                    while (!_exit)
+                    if (mediaType == MediaSampleTypeEnum.VP8)
                     {
-                        var sampleProps = sampler.GetNextSample(MFReaderSampleType.ANY_STREAM.GetHashCode(), ref sampleBuffer, 0);
-
-                        if (sampleProps.EndOfStream)
-                        {
-                            Console.WriteLine("SendSamplesAsRtp end of stream.");
-                            break;
-                        }
-                        else if (sampleProps.HasVideoSample == true)
-                        {
-                            if (sampleProps.Width != 0 && sampleProps.Height != 0 &&
-                                (sampleProps.Width != sampleWidth || sampleProps.Height != sampleHeight || sampleProps.Stride != sampleStride))
-                            {
-                                sampleWidth = sampleProps.Width;
-                                sampleHeight = sampleProps.Height;
-                                sampleStride = sampleProps.Stride;
-
-                                vpxEncoder.InitEncoder((uint)sampleWidth, (uint)sampleHeight, (uint)sampleStride);
-
-                                Console.WriteLine($"VPX encoder dimensions set to {sampleWidth} x {sampleHeight} and stride {sampleStride}.");
-                            }
-
-                            if (sampleBuffer != null && sampleBuffer.Length > 0)
-                            {
-                                byte[] vpxEncodedBuffer = null;
-
-                                unsafe
-                                {
-                                    fixed (byte* p = sampleBuffer)
-                                    {
-                                        int encodeResult = vpxEncoder.Encode(p, sampleBuffer.Length, (int)sampleProps.FrameCount, ref vpxEncodedBuffer);
-
-                                        if (encodeResult != 0)
-                                        {
-                                            logger.Warn("VPX encode of video sample failed.");
-                                            continue;
-                                        }
-                                    }
-                                }
-
-                                SendVp8(videoSrcRtpSocket, videoRtpSocket, videoTimestamp, videoSsrc, ref videoSeqNum, vpxEncodedBuffer);
-
-                                //Console.WriteLine($"Video SeqNum {videoSeqNum}, timestamp {videoTimestamp}, buffer length {vpxEncodedBuffer.Length}, frame count {sampleProps.FrameCount}.");
-
-                                videoTimestamp += VP8_TIMESTAMP_SPACING;
-                            }
-                        }
-                        else if (sampleProps.HasAudioSample)
-                        {
-                            uint sampleDuration = (uint)(sampleBuffer.Length / 2);
-
-                            byte[] mulawSample = new byte[sampleDuration];
-                            int sampleIndex = 0;
-
-                            // ToDo: Find a way to wire up the Media foundation WAVE_FORMAT_MULAW codec so the encoding below is not necessary.
-                            for (int index = 0; index < sampleBuffer.Length; index += 2)
-                            {
-                                var ulawByte = MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(sampleBuffer, index));
-                                mulawSample[sampleIndex++] = ulawByte;
-                            }
-
-                            lock (_webRtcSessions)
-                            {
-                                SendPcmu(audioSrcRtpSocket, audioRtpSocket, audioTimestamp, audioSsrc, audioSeqNum++, mulawSample);
-                            }
-
-                            //Console.WriteLine($"Audio SeqNum {audioSeqNum}, timestamp {audioTimestamp}, buffer length {mulawSample.Length}.");
-
-                            audioTimestamp += sampleDuration;
-                        }
+                        SendVp8(videoSrcRtpSocket, videoRtpSocket, _vp8Timestamp, videoSsrc, ref videoSeqNum, sample);
                     }
-                }
+                    else
+                    {
+                        SendPcmu(audioSrcRtpSocket, audioRtpSocket, _mulawTimestamp, audioSsrc, audioSeqNum++, sample);
+                    }
+                };
             }
             catch (Exception excp)
             {
                 logger.Error("Exception SendSamplesAsRtp. " + excp);
             }
-        }
+        }      
 
         /// <summary>
         /// Packages and sends a single audio PCMU packet over RTP.

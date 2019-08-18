@@ -207,6 +207,10 @@ namespace SIPSorceryMedia {
     IMFMediaType *videoType = nullptr;
     IMFMediaType *audioType = nullptr;
 
+    IMFPresentationDescriptor *pSourcePD = nullptr;
+    DWORD sourceStreamCount = 0;
+    IMFMediaSession *pSession = nullptr;
+
     std::wstring pathNative = msclr::interop::marshal_as<std::wstring>(path);
 
     // Create the source resolver.
@@ -223,6 +227,19 @@ namespace SIPSorceryMedia {
 
     // Get the IMFMediaSource interface from the media source.
     CHECK_HR(uSource->QueryInterface(IID_PPV_ARGS(&mediaFileSource)), L"Failed to get IMFMediaSource.");
+
+    //CHECK_HR(mediaFileSource->CreatePresentationDescriptor(&pSourcePD), L"Failed to create presentation descriptor from source.\n");
+
+    //// Get the number of streams in the media source.
+    //CHECK_HR(pSourcePD->GetStreamDescriptorCount(&sourceStreamCount), L"Failed to get source stream count.\n");
+
+    //printf("Source stream count %i.\n", sourceStreamCount);
+
+    //CHECK_HR(MFCreateMediaSession(NULL, &pSession), L"Failed to create media session.\n");
+
+    //IMFMediaEvent * mediaEvent = nullptr;
+    //DWORD flags = 0;
+    //CHECK_HR(pSession->GetEvent(flags, &mediaEvent), L"Failed to get event from session.");
 
     CHECK_HR(MFCreateAttributes(&mediaFileConfig, 2), L"Failed to create MF atttributes.");;
 
