@@ -34,7 +34,7 @@
 using System.ComponentModel;
 using System.ServiceProcess;
 
-namespace WebRTCVideoServer
+namespace SIPSorcery.Net.WebRtc
 {
     [RunInstaller(true)]
     public class QikIDHeavyBiometricsServiceInstaller : System.Configuration.Install.Installer

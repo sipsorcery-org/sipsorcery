@@ -47,7 +47,7 @@ using System.Threading.Tasks;
 using log4net;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net.WebRtc
 {
     public class WebRtcPeer
     {

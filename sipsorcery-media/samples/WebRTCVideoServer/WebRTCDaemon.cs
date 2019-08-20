@@ -74,7 +74,7 @@ using NAudio.Wave;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 
-namespace WebRTCVideoServer
+namespace SIPSorcery.Net.WebRtc
 {
     public enum MFReaderSampleType
     {
@@ -115,18 +115,16 @@ namespace WebRTCVideoServer
         private const int POINTS_PER_INCH = 72;
         private const string LOCAL_IP_ADDRESS = "192.168.11.50";
 
-        private const string MEDIA_FILE = "max_intro.mp4";
-        //private const string MEDIA_FILE = "max4.1.mp4";
+        //private const string MEDIA_FILE = "max_intro.mp4";
+        private const string MEDIA_FILE = "max4.1.mp4";
         //private const string MEDIA_FILE = "max4.mp4";
+        //private const string MEDIA_FILE = "big_buck_bunny.mp4";
+        //private const string MEDIA_FILE = "big_buck_bunny_48k.mp4";
         //private const string MEDIA_FILE = @"c:\tools\ffmpeg\max4small.mp4";
-        private const int CACHE_SAMPLE_SIZE = 1000;
         private const int VP8_TIMESTAMP_SPACING = 3000;
         private const int RTP_MAX_PAYLOAD = 1400;
         private const int VP8_PAYLOAD_TYPE_ID = 100;
         private const int RTCP_SR_PERIOD_SECONDS = 3;
-        private const int VIDEO_FRAMES_EXPECTED_PER_SECOND = 30;
-        private const int PER_FRAME_DELAY_MINIMUM_THRESHOLD = 5;
-        private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 8;
 
         private const int SEND_RTP_AUDIO_DEST_PORT = 4040;
         private const int SEND_RTP_VIDEO_DEST_PORT = 4042;
@@ -139,7 +137,6 @@ namespace WebRTCVideoServer
         private string _webSocketCertificatePassword = AppState.GetConfigSetting("WebSocketCertificatePassword");
 
         private bool _exit = false;
-        private WebSocketServer _receiverWSS;
         private ConcurrentDictionary<string, WebRtcSession> _webRtcSessions = new ConcurrentDictionary<string, WebRtcSession>();
         private ConcurrentDictionary<string, WebRtcSessionUnencrypted> _webRtcSessionsUnencrypted = new ConcurrentDictionary<string, WebRtcSessionUnencrypted>();
 
@@ -157,40 +154,43 @@ namespace WebRTCVideoServer
             {
                 logger.Debug("WebRTCDaemon starting.");
 
-                //var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(_webSocketCertificatePath, _webSocketCertificatePassword);
-                //logger.Debug("Web Socket Server Certificate CN: " + wssCertificate.Subject + ", have key " + wssCertificate.HasPrivateKey + ", Expires " + wssCertificate.GetExpirationDateString() + ".");
+                var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(_webSocketCertificatePath, _webSocketCertificatePassword);
+                logger.Debug("Web Socket Server Certificate CN: " + wssCertificate.Subject + ", have key " + wssCertificate.HasPrivateKey + ", Expires " + wssCertificate.GetExpirationDateString() + ".");
 
-                _receiverWSS = new WebSocketServer("ws://192.168.11.50:8081");
-                //_receiverWSS.Certificate = wssCertificate;
-                //_receiverWSS.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
-                //_receiverWSS.Start(socket =>
-                //{
-                //    socket.OnOpen = () => Console.WriteLine("Open!");
-                //    socket.OnClose = () => Console.WriteLine("Close!");
-                //    socket.OnMessage = message => socket.Send(message);
-                //});
-
-                //_receiverWSS = new WebSocketServer(8081, true);
-                _receiverWSS.Log.Level = LogLevel.Debug;
-                //_receiverWSS.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate, false,
-                //     System.Security.Authentication.SslProtocols.Tls,
-                //    false);
+                //_receiverWSS = new WebSocketServer("ws://localhost:8081");
+                var wss = new WebSocketServer(8081, true);
+                wss.Log.Level = LogLevel.Debug;
+                wss.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate);
+                //wss.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate, false, System.Security.Authentication.SslProtocols.Tls12, false);
 
                 // Standard encrypted WebRtc stream.
-                SDPExchangeReceiver sdpReceiver = new SDPExchangeReceiver { IgnoreExtensions = true };
-                sdpReceiver.WebSocketOpened += WebRtcStartCall;
-                sdpReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
-
-                _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/stream", () => sdpReceiver);
-                _receiverWSS.Start();
+                //SDPExchangeReceiver sdpReceiver = new SDPExchangeReceiver { IgnoreExtensions = true };
+                //sdpReceiver.WebSocketOpened += WebRtcStartCall;
+                //sdpReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
 
                 // Decrypted WebRtc stream for diagnostics (browsers do not support this without specific flags being enabled).
-                SDPExchangeReceiver noEncryptionSdpReceiver = new SDPExchangeReceiver { IgnoreExtensions = true };
-                noEncryptionSdpReceiver.WebSocketOpened += WebRtcStartCallUnencrypted;
-                noEncryptionSdpReceiver.SDPAnswerReceived += WebRtcAnswerReceivedUnencrypted;
+                //SDPExchangeReceiver noEncryptionSdpReceiver = new SDPExchangeReceiver { IgnoreExtensions = true };
+                //noEncryptionSdpReceiver.WebSocketOpened += WebRtcStartCallUnencrypted;
+                //noEncryptionSdpReceiver.SDPAnswerReceived += WebRtcAnswerReceivedUnencrypted;
 
-                _receiverWSS.AddWebSocketService<SDPExchangeReceiver>("/nocrypt", () => noEncryptionSdpReceiver);
-                _receiverWSS.Start();
+                // Standard encrypted WebRtc stream.
+                wss.AddWebSocketService<SDPExchangeReceiver>("/stream", () => 
+                {
+                    SDPExchangeReceiver sdpReceiver = new SDPExchangeReceiver { IgnoreExtensions = true };
+                    sdpReceiver.WebSocketOpened += WebRtcStartCall;
+                    sdpReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
+                    return sdpReceiver;
+                });
+
+                // Decrypted WebRtc stream for diagnostics (browsers do not support this without specific flags being enabled).
+                wss.AddWebSocketService<SDPExchangeReceiver>("/nocrypt", () =>
+                {
+                    SDPExchangeReceiver noEncryptionSdpReceiver = new SDPExchangeReceiver { IgnoreExtensions = true };
+                    noEncryptionSdpReceiver.WebSocketOpened += WebRtcStartCallUnencrypted;
+                    noEncryptionSdpReceiver.SDPAnswerReceived += WebRtcAnswerReceivedUnencrypted;
+                    return noEncryptionSdpReceiver;
+                });
+                wss.Start();
 
                 SIPSorceryMedia.MFSampleGrabber mfSampleGrabber = new SIPSorceryMedia.MFSampleGrabber();
                 mfSampleGrabber.OnClockStartEvent += MfSampleGrabber_OnClockStartEvent;
@@ -321,13 +321,17 @@ namespace WebRTCVideoServer
                 {
                     var webRtcSession = new WebRtcSession(webSocketID);
 
+                    context.WebSocket.OnClose += (sender, e) => {
+                        Console.WriteLine($"Web socket {webSocketID} closed, closing WebRtc peer.");
+                        webRtcSession.Peer.Close(); };
+
                     if (_webRtcSessions.TryAdd(webSocketID, webRtcSession))
                     {
                         webRtcSession.Peer.OnSdpOfferReady += (sdp) => { logger.Debug("Offer SDP: " + sdp); context.WebSocket.Send(sdp); };
                         webRtcSession.Peer.OnDtlsPacket += webRtcSession.DtlsPacketReceived;
                         webRtcSession.Peer.OnMediaPacket += webRtcSession.MediaPacketReceived;
                         webRtcSession.Peer.Initialise(DTLS_CERTIFICATE_THUMBRPINT, null, mediaTypes, IPAddress.Parse(LOCAL_IP_ADDRESS));
-                        webRtcSession.Peer.OnClose += () => { PeerClosed(webSocketID); };
+                        webRtcSession.Peer.OnClose += () => {PeerClosed(webSocketID);};
                     }
                     else
                     {
@@ -343,7 +347,7 @@ namespace WebRTCVideoServer
 
             var mediaTypes = new List<RtpMediaTypesEnum> { RtpMediaTypesEnum.Video, RtpMediaTypesEnum.Audio };
 
-            lock(_webRtcSessionsUnencrypted)
+            lock (_webRtcSessionsUnencrypted)
             {
                 if (!_webRtcSessionsUnencrypted.Any(x => x.Key == webSocketID))
                 {

@@ -41,7 +41,7 @@ using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace WebRTCVideoServer
+namespace SIPSorcery.Net.WebRtc
 {
     public class WebRtcSessionUnencrypted
     {

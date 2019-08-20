@@ -33,7 +33,7 @@
 using System.ServiceProcess;
 using System.Threading;
 
-namespace WebRTCVideoServer
+namespace SIPSorcery.Net.WebRtc
 {
     public class WebRTCService : ServiceBase
     {

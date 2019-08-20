@@ -141,8 +141,8 @@
 
         //ws = new WebSocket("wss://www.sipsorcery.com:8081/stream?path=0.hivpx");
         //ws = new WebSocket("ws://192.168.11.50:8081/stream");
-        //ws = new WebSocket("ws://localhost:8081");
-        ws = new WebSocket(CurrentWebSocketUrl);
+        ws = new WebSocket("wss://localhost:8081/stream");
+        //ws = new WebSocket(CurrentWebSocketUrl);
 
         ws.onopen = function () {
             console.log("web socket onopen.");

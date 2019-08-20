@@ -38,7 +38,7 @@ using SIPSorceryMedia;
 using SIPSorcery.Sys;
 using log4net;
 
-namespace WebRTCVideoServer
+namespace SIPSorcery.Net.WebRtc
 {
     class Program
     {
