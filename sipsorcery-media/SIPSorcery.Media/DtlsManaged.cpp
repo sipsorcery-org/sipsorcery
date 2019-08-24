@@ -29,8 +29,11 @@ namespace SIPSorceryMedia {
 		SSL_WHERE_INFO(ssl, where, SSL_CB_HANDSHAKE_DONE, "HANDSHAKE DONE");
 	}
 
-	DtlsManaged::DtlsManaged()
+	DtlsManaged::DtlsManaged(System::String ^ certFile, System::String ^ keyFile)
 	{
+    _certFile::set(certFile);
+    _keyFile::set(keyFile);
+
 		SSL_library_init();
 		SSL_load_error_strings();
 		ERR_load_BIO_strings();
@@ -109,21 +112,25 @@ namespace SIPSorceryMedia {
 		}
 
 		/* load key and certificate */
-		char certfile[1024];
+		/*char certfile[1024];
 		char keyfile[1024];
 		sprintf(certfile, "./%s-cert.pem", "server");
-		sprintf(keyfile, "./%s-key.pem", "server");
+		sprintf(keyfile, "./%s-key.pem", "server");*/
+
+    std::string certFilePath = msclr::interop::marshal_as<std::string>(_certFile);
 
 		/* certificate file; contains also the public key */
-		r = SSL_CTX_use_certificate_file(_k->ctx, certfile, SSL_FILETYPE_PEM);
+		r = SSL_CTX_use_certificate_file(_k->ctx, certFilePath.c_str(), SSL_FILETYPE_PEM);
 		if (r != 1) {
 			printf("Error: cannot load certificate file.\n");
 			ERR_print_errors_fp(stderr);
 			return -4;
 		}
 
+    std::string keyFilePath = msclr::interop::marshal_as<std::string>(_keyFile);
+
 		/* load private key */
-		r = SSL_CTX_use_PrivateKey_file(_k->ctx, keyfile, SSL_FILETYPE_PEM);
+		r = SSL_CTX_use_PrivateKey_file(_k->ctx, keyFilePath.c_str(), SSL_FILETYPE_PEM);
 		if (r != 1) {
 			printf("Error: cannot load private key file.\n");
 			ERR_print_errors_fp(stderr);

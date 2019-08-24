@@ -135,12 +135,25 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
+    <None Include="localhost.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="localhost.pfx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="localhost_key.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
-    <None Include="server-cert.pem" />
-    <None Include="server-key.pem" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="max_intro.mp4">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="webrtcsample.html" />
+    <Content Include="wizard.jpeg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\github\NAudio\NAudio\NAudio.csproj">

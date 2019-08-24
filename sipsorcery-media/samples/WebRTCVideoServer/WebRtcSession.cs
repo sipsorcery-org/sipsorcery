@@ -32,6 +32,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -55,20 +56,25 @@ namespace SIPSorcery.Net.WebRtc
         private static ManualResetEvent _dtlsInitMre = new ManualResetEvent(false);
 
         public WebRtcPeer Peer;
+       
 
         public DtlsManaged DtlsContext;
         public SRTPManaged SrtpContext;
         public SRTPManaged SrtpReceiveContext;  // Used to decrypt packets received from the remote peer.
 
-        private static IPEndPoint wiresharkEp = new IPEndPoint(IPAddress.Parse("192.168.11.2"), 33333);
+        private string _dtlsCertFilePath;
+        private string _dtlsKeyFilePath;
 
         public string CallID
         {
             get { return Peer.CallID; }
         }
 
-        public WebRtcSession(string callID)
+        public WebRtcSession(string dtlsCertFilePath, string dtlsKeyFilePath, string callID)
         {
+            _dtlsCertFilePath = dtlsCertFilePath;
+            _dtlsKeyFilePath = dtlsKeyFilePath;
+
             Peer = new WebRtcPeer() { CallID = callID };
         }
 
@@ -76,11 +82,22 @@ namespace SIPSorcery.Net.WebRtc
         {
             logger.Debug("DTLS packet received for media type " + iceCandidate.MediaType.ToString().ToUpper() + " of " + buffer.Length + " bytes from " + remoteEndPoint.ToString() + ".");
 
+            if(!File.Exists(_dtlsCertFilePath))
+            {
+                throw new ApplicationException($"The DTLS certificate file could not be found at {_dtlsCertFilePath}.");
+            }
+
+            if (!File.Exists(_dtlsKeyFilePath))
+            {
+                throw new ApplicationException($"The DTLS key file could not be found at {_dtlsKeyFilePath}.");
+            }
+
             if (DtlsContext == null)
             {
                 lock (_dtlsInitMre)
                 {
-                    DtlsContext = new DtlsManaged();
+                    DtlsContext = new DtlsManaged(_dtlsCertFilePath, _dtlsKeyFilePath);
+                    //DtlsContext = new DtlsManaged();
                     int res = DtlsContext.Init();
                     logger.Debug("DtlsContext initialisation result=" + res);
                 }
@@ -247,9 +264,6 @@ namespace SIPSorcery.Net.WebRtc
                 Buffer.BlockCopy(rtcpSRBytes, 0, sendBuffer, 0, rtcpSRBytes.Length);
 
                 var connectedIceCandidate = Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).First();
-
-                // DEBUG. Sending to wireshark for diagnostic purposes. Should be commente\d out unless deliberately required.
-                connectedIceCandidate.LocalRtpSocket.SendTo(rtcpSRBytes, wiresharkEp);
 
                 int rtperr = SrtpContext.ProtectRTCP(sendBuffer, sendBuffer.Length - SRTP_AUTH_KEY_LENGTH);
                 if (rtperr != 0)
