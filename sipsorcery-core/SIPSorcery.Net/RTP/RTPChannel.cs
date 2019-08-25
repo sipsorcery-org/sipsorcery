@@ -43,14 +43,6 @@ using log4net;
 
 namespace SIPSorcery.Net
 {
-    public enum FrameTypesEnum
-    {
-        Audio = 0,
-        JPEG = 1,
-        H264 = 2,
-        VP8 = 3
-    }
-
     public class RTPChannel
     {
         public const int H264_RTP_HEADER_LENGTH = 2;

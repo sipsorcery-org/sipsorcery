@@ -37,6 +37,14 @@ using System.Text;
 
 namespace SIPSorcery.Net
 {
+    public enum FrameTypesEnum
+    {
+        Audio = 0,
+        JPEG = 1,
+        H264 = 2,
+        VP8 = 3
+    }
+
     public class RTPFrame
     {
         public uint Timestamp;

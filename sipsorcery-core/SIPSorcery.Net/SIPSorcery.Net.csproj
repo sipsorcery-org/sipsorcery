@@ -254,6 +254,7 @@
     <Compile Include="ICE\IceCandidate.cs" />
     <Compile Include="RTCP\RTCPReportPacket.cs" />
     <Compile Include="RTP\RTPChannel.cs" />
+    <Compile Include="RTP\RTPSession.cs" />
     <Compile Include="RTP\RTPFrame.cs" />
     <Compile Include="RTP\RTPVP8Header.cs" />
     <Compile Include="RTSP\Mjpeg.cs" />

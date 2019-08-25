@@ -146,7 +146,6 @@ namespace SIPSorcery.Net.WebRtc
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
 
-        private const string MEDIA_FILE = "max_intro.mp4";
         private const int VP8_TIMESTAMP_SPACING = 3000;
         private const int RTP_MAX_PAYLOAD = 1400;
         private const int VP8_PAYLOAD_TYPE_ID = 100;
@@ -163,7 +162,7 @@ namespace SIPSorcery.Net.WebRtc
         private string _dtlsCertificatePath = AppState.GetConfigSetting("DtlsCertificatePath");
         private string _dtlsKeyPath = AppState.GetConfigSetting("DtlsKeyPath");
         private string _rawRtpBaseEndPoint = AppState.GetConfigSetting("RawRtpBaseEndPoint");
-        private string _localWebRtcIPAddress = AppState.GetConfigSetting("LocalWebRtcIPAddress");
+        private string _mediaFilePath = AppState.GetConfigSetting("MediaFilePath");
 
         // Properties for RTCP sender reports.
         private uint _audioSampleCount = 0, _videoSampleCount = 0;
@@ -192,9 +191,9 @@ namespace SIPSorcery.Net.WebRtc
                 var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(_webSocketCertificatePath, _webSocketCertificatePassword);
                 logger.Debug("Web Socket Server Certificate: " + wssCertificate.Subject + ", have key " + wssCertificate.HasPrivateKey + ", Expires " + wssCertificate.GetExpirationDateString() + ".");
 
-                if (!File.Exists(MEDIA_FILE))
+                if (!File.Exists(_mediaFilePath))
                 {
-                    throw new ApplicationException($"The media file at does not exist at {MEDIA_FILE}.");
+                    throw new ApplicationException($"The media file at does not exist at {_mediaFilePath}.");
                 }
 
                 //_receiverWSS = new WebSocketServer("ws://localhost:8081");
@@ -249,7 +248,7 @@ namespace SIPSorcery.Net.WebRtc
                     }
                 }
 
-                mfSampleGrabber.Run(MEDIA_FILE, true);
+                mfSampleGrabber.Run(_mediaFilePath, true);
             }
             catch (Exception excp)
             {
@@ -615,31 +614,31 @@ namespace SIPSorcery.Net.WebRtc
                 Socket audioSrcRtpSocket = null;
                 Socket audioSrcControlSocket = null;
 
-                IPAddress localAddress = IPAddress.Any;
+                IPAddress localIPAddress = IPAddress.Any;
                 IPEndPoint audioRtpEP = dstBaseEndPoint;
                 IPEndPoint audioRtcpEP = new IPEndPoint(dstBaseEndPoint.Address, dstBaseEndPoint.Port + 1);
                 IPEndPoint videoRtpEP = new IPEndPoint(dstBaseEndPoint.Address, dstBaseEndPoint.Port + 2);
                 IPEndPoint videoRtcpEP = new IPEndPoint(dstBaseEndPoint.Address, dstBaseEndPoint.Port + 3);
-                uint videoSsrc = Convert.ToUInt32(Crypto.GetRandomInt(6));
-                uint audioSsrc = Convert.ToUInt32(Crypto.GetRandomInt(6));
-                ushort videoSeqNum = 0;
-                ushort audioSeqNum = 0;
 
-                NetServices.CreateRtpSocket(localAddress, RAW_RTP_START_PORT_RANGE, RAW_RTP_END_PORT_RANGE, true, out audioSrcRtpSocket, out audioSrcControlSocket);
-                NetServices.CreateRtpSocket(localAddress, ((IPEndPoint)audioSrcRtpSocket.LocalEndPoint).Port, RAW_RTP_END_PORT_RANGE, true, out videoSrcRtpSocket, out videoSrcControlSocket);
+                RTPSession audioRtpSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null);
+                RTPSession videoRtpSession = new RTPSession(VP8_PAYLOAD_TYPE_ID, null);
+
+                NetServices.CreateRtpSocket(localIPAddress, RAW_RTP_START_PORT_RANGE, RAW_RTP_END_PORT_RANGE, true, out audioSrcRtpSocket, out audioSrcControlSocket);
+                NetServices.CreateRtpSocket(localIPAddress, ((IPEndPoint)audioSrcRtpSocket.LocalEndPoint).Port, RAW_RTP_END_PORT_RANGE, true, out videoSrcRtpSocket, out videoSrcControlSocket);
 
                 OnMediaSampleReady += (mediaType, timestamp, sample) =>
                 {
                     if (mediaType == MediaSampleTypeEnum.VP8)
                     {
-                        SendVp8(videoSrcRtpSocket, videoRtpEP, _vp8Timestamp, videoSsrc, ref videoSeqNum, sample);
+                        videoRtpSession.SendVp8Frame(videoSrcRtpSocket, videoRtpEP, _vp8Timestamp, sample);
                     }
                     else
                     {
-                        SendPcmu(audioSrcRtpSocket, audioRtpEP, _mulawTimestamp, audioSsrc, audioSeqNum++, sample);
+                        audioRtpSession.SendAudioFrame(audioSrcRtpSocket, audioRtpEP, _mulawTimestamp, sample);
                     }
                 };
 
+                // Deliver periodic RTCP sender reports. This helps the receiver to sync the audio and video stream timestamps.
                 Task.Run(async () =>
                 {
                     while (!_exit)
@@ -647,10 +646,10 @@ namespace SIPSorcery.Net.WebRtc
                         await Task.Delay(RTCP_SR_PERIOD_SECONDS * 1000);
                         var ntp = RTSPSession.DateTimeToNptTimestamp(DateTime.Now);
 
-                        var rtcpVideoSRPacket = new RTCPPacket(videoSsrc, ntp, _vp8Timestamp, _videoSampleCount, _videoOctetsCount);
+                        var rtcpVideoSRPacket = new RTCPPacket(videoRtpSession.Ssrc, ntp, _vp8Timestamp, videoRtpSession.PacketsSent, videoRtpSession.OctetsSent);
                         videoSrcControlSocket.SendTo(rtcpVideoSRPacket.GetBytes(), videoRtcpEP);
 
-                        var rtcpAudioSRPacket = new RTCPPacket(audioSsrc, ntp, _mulawTimestamp, _audioSampleCount, _audioOctetsCount);
+                        var rtcpAudioSRPacket = new RTCPPacket(audioRtpSession.Ssrc, ntp, _mulawTimestamp, audioRtpSession.PacketsSent, audioRtpSession.OctetsSent);
                         audioSrcControlSocket.SendTo(rtcpAudioSRPacket.GetBytes(), audioRtcpEP);
                     }
                 });
@@ -658,82 +657,6 @@ namespace SIPSorcery.Net.WebRtc
             catch (Exception excp)
             {
                 logger.Error("Exception SendSamplesAsRtp. " + excp);
-            }
-        }
-
-        /// <summary>
-        /// Packages and sends a single audio PCMU packet over RTP.
-        /// </summary>
-        public void SendPcmu(Socket srcRtpSocket, IPEndPoint destRtpSocket, uint timestamp, uint ssrc, ushort seqNum, byte[] buffer)
-        {
-            try
-            {
-                int payloadLength = buffer.Length;
-
-                RTPPacket rtpPacket = new RTPPacket(payloadLength);
-                rtpPacket.Header.SyncSource = ssrc;
-                rtpPacket.Header.SequenceNumber = seqNum;
-                rtpPacket.Header.Timestamp = timestamp;
-                rtpPacket.Header.MarkerBit = 0;
-                rtpPacket.Header.PayloadType = 0; // PCMU_PAYLOAD_TYPE_ID;
-
-                Buffer.BlockCopy(buffer, 0, rtpPacket.Payload, 0, payloadLength);
-
-                var rtpBuffer = rtpPacket.GetBytes();
-
-                srcRtpSocket.SendTo(rtpBuffer, destRtpSocket);
-            }
-            catch (Exception sendExcp)
-            {
-                logger.Error("Exception SendPcmu. " + sendExcp.Message);
-            }
-        }
-
-        /// <summary>
-        /// Packages and sends a single video VP8 frame over RTP.
-        /// </summary>
-        public void SendVp8(Socket srcRtpSocket, IPEndPoint destRtpSocket, uint timestamp, uint ssrc, ref ushort seqNum, byte[] buffer)
-        {
-            try
-            {
-                for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
-                {
-                    int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
-                    int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
-
-                    byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
-
-                    RTPPacket rtpPacket = new RTPPacket(payloadLength + vp8HeaderBytes.Length);
-                    rtpPacket.Header.SyncSource = ssrc;
-                    rtpPacket.Header.SequenceNumber = seqNum++;
-                    rtpPacket.Header.Timestamp = timestamp;
-                    rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
-                    rtpPacket.Header.PayloadType = VP8_PAYLOAD_TYPE_ID;
-
-                    Buffer.BlockCopy(vp8HeaderBytes, 0, rtpPacket.Payload, 0, vp8HeaderBytes.Length);
-                    Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, vp8HeaderBytes.Length, payloadLength);
-
-                    var rtpBuffer = rtpPacket.GetBytes();
-
-                    srcRtpSocket.SendTo(rtpBuffer, destRtpSocket);
-                }
-            }
-            catch (Exception sendExcp)
-            {
-                // logger.Error("SendRTP exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
-            }
-        }
-
-        public void SendRtcpSenderReport(Socket sendFrom, IPEndPoint dst, uint senderSyncSource, ulong ntpTimestamp, uint rtpTimestamp, uint senderPacketCount, uint senderOctetCount)
-        {
-            try
-            {
-                var rtcpSRPacket = new RTCPPacket(senderSyncSource, ntpTimestamp, rtpTimestamp, senderPacketCount, senderOctetCount);
-                sendFrom.SendTo(rtcpSRPacket.GetBytes(), dst);
-            }
-            catch (Exception sendExcp)
-            {
-                // logger.Error("SendRTP exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
             }
         }
 
