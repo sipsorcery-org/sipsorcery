@@ -5,7 +5,7 @@
         <version>1.6.2</version>
         <authors>Aaron Clauson</authors>
         <owners>Aaron Clauson</owners>
-		<releaseNotes>Added RTPSession and tweaks to WebRtc classes to add audio to the exitsing video support.</releaseNotes>
+		<releaseNotes>Added RTPSession and tweaks to WebRtc classes to add audio to the existing video support.</releaseNotes>
         <licenseUrl>https://github.com/sipsorcery/sipsorcery/blob/master/LICENSE.md</licenseUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>The SIPSorcery package consists of a C# SIP protocol stack that implements all the required UDP, TCP and TLS transports as specified in RFC3261. There are also partial implementations of a number of related protocols: STUN, SDP, RTP and RTCP. The SIP functionality includes a number of user agents which
