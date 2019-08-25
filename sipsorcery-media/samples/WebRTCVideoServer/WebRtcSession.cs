@@ -60,6 +60,7 @@ namespace SIPSorcery.Net.WebRtc
         public RTPSession _videoRtpSession;
 
         public bool IsEncryptionDisabled { get; private set; }
+        public MediaSourceEnum MediaSource { get; private set; }
 
         private string _dtlsCertFilePath;
         private string _dtlsKeyFilePath;
@@ -69,11 +70,12 @@ namespace SIPSorcery.Net.WebRtc
             get { return Peer.CallID; }
         }
 
-        public WebRtcSession(string dtlsCertFilePath, string dtlsKeyFilePath, string callID, bool isEncryptionDisabled)
+        public WebRtcSession(string dtlsCertFilePath, string dtlsKeyFilePath, string callID, bool isEncryptionDisabled, MediaSourceEnum mediaSource)
         {
             _dtlsCertFilePath = dtlsCertFilePath;
             _dtlsKeyFilePath = dtlsKeyFilePath;
             IsEncryptionDisabled = isEncryptionDisabled;
+            MediaSource = mediaSource;
 
             Peer = new WebRtcPeer() { CallID = callID };
         }

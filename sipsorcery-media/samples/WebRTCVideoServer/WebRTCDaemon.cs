@@ -125,15 +125,23 @@ namespace SIPSorcery.Net.WebRtc
         VP8 = 2,
     }
 
+    public enum MediaSourceEnum
+    {
+        Max = 0,
+        TestPattern = 1
+    }
+
     public class SDPExchange : WebSocketBehavior
     {
+        public MediaSourceEnum MediaSource { get; private set; }
         public bool IsEncryptionDisabled { get; private set; }
 
-        public event Action<WebSocketSharp.Net.WebSockets.WebSocketContext, string, IPAddress, bool> WebSocketOpened;
+        public event Action<WebSocketSharp.Net.WebSockets.WebSocketContext, string, IPAddress, bool, MediaSourceEnum> WebSocketOpened;
         public event Action<string, string> SDPAnswerReceived;
 
-        public SDPExchange(bool isEncryptionDisabled)
+        public SDPExchange(MediaSourceEnum mediaSource, bool isEncryptionDisabled)
         {
+            MediaSource = mediaSource;
             IsEncryptionDisabled = isEncryptionDisabled;
         }
 
@@ -145,7 +153,7 @@ namespace SIPSorcery.Net.WebRtc
         protected override void OnOpen()
         {
             base.OnOpen();
-            WebSocketOpened(this.Context, this.ID, this.Context.ServerEndPoint.Address, IsEncryptionDisabled);
+            WebSocketOpened(this.Context, this.ID, this.Context.ServerEndPoint.Address, IsEncryptionDisabled, MediaSource);
         }
     }
 
@@ -159,7 +167,6 @@ namespace SIPSorcery.Net.WebRtc
         private const int POINTS_PER_INCH = 72;
 
         private const int VP8_TIMESTAMP_SPACING = 3000;
-        private const int RTP_MAX_PAYLOAD = 1400;
         private const int VP8_PAYLOAD_TYPE_ID = 100;
         private const int RTCP_SR_PERIOD_SECONDS = 3;
         private const int RAW_RTP_START_PORT_RANGE = 48000;
@@ -205,7 +212,6 @@ namespace SIPSorcery.Net.WebRtc
                 }
 
                 // Configure the web socket and the differetn end point handlers.
-                //_receiverWSS = new WebSocketServer("ws://localhost:8081");
                 var wss = new WebSocketServer(8081, true);
                 //wss.Log.Level = LogLevel.Debug;
                 wss.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate, false, System.Security.Authentication.SslProtocols.Default, false);
@@ -213,7 +219,7 @@ namespace SIPSorcery.Net.WebRtc
                 // Standard encrypted WebRtc stream.
                 wss.AddWebSocketService<SDPExchange>("/max", () =>
                 {
-                    SDPExchange sdpReceiver = new SDPExchange(false) { IgnoreExtensions = true };
+                    SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.Max, false) { IgnoreExtensions = true };
                     sdpReceiver.WebSocketOpened += WebRtcStartCall;
                     sdpReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
                     return sdpReceiver;
@@ -222,11 +228,20 @@ namespace SIPSorcery.Net.WebRtc
                 // Decrypted WebRtc stream for diagnostics (browsers do not support this without specific flags being enabled).
                 wss.AddWebSocketService<SDPExchange>("/maxnocry", () =>
                 {
-                    SDPExchange sdpReceiver = new SDPExchange(true) { IgnoreExtensions = true };
+                    SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.Max, true) { IgnoreExtensions = true };
                     sdpReceiver.WebSocketOpened += WebRtcStartCall;
                     sdpReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
                     return sdpReceiver;
                 });
+
+                wss.AddWebSocketService<SDPExchange>("/testpattern", () =>
+                {
+                    SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.TestPattern, false) { IgnoreExtensions = true };
+                    sdpReceiver.WebSocketOpened += WebRtcStartCall;
+                    sdpReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
+                    return sdpReceiver;
+                });
+
                 wss.Start();
 
                 // Initialise the Media Foundation library that will pull the samples from the mp4 file.
@@ -240,6 +255,9 @@ namespace SIPSorcery.Net.WebRtc
 
                 // Hook up event handlers to send the media samples to the network.
                 InitMediaToWebRtcClients();
+
+                // Start test pattern.
+                Task.Run(SendTestPattern);
 
                 if (!String.IsNullOrEmpty(_rawRtpBaseEndPoint))
                 {
@@ -377,7 +395,7 @@ namespace SIPSorcery.Net.WebRtc
             //Console.WriteLine($"C# OnClockStart {hnsSystemTime}, {llClockStartOffset}.");
         }
 
-        private void WebRtcStartCall(WebSocketSharp.Net.WebSockets.WebSocketContext context, string webSocketID, IPAddress defaultIPAddress, bool isEncryptionDisabled)
+        private void WebRtcStartCall(WebSocketSharp.Net.WebSockets.WebSocketContext context, string webSocketID, IPAddress defaultIPAddress, bool isEncryptionDisabled, MediaSourceEnum mediaSource)
         {
             logger.Debug($"New WebRTC client added for web socket connection {webSocketID} and local IP address {defaultIPAddress}, encryption disabled {isEncryptionDisabled}.");
 
@@ -387,7 +405,7 @@ namespace SIPSorcery.Net.WebRtc
             {
                 if (!_webRtcSessions.Any(x => x.Key == webSocketID))
                 {
-                    var webRtcSession = new WebRtcSession(_dtlsCertificatePath, _dtlsKeyPath, webSocketID, isEncryptionDisabled);
+                    var webRtcSession = new WebRtcSession(_dtlsCertificatePath, _dtlsKeyPath, webSocketID, isEncryptionDisabled, mediaSource);
 
                     context.WebSocket.OnClose += (sender, e) =>
                     {
@@ -486,7 +504,7 @@ namespace SIPSorcery.Net.WebRtc
                 lock (_webRtcSessions)
                 {
                     foreach (var session in _webRtcSessions.Where(x => (x.Value.Peer.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
-                       x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                       x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null) && x.Value.MediaSource == MediaSourceEnum.Max))
                     {
                         session.Value.SendMedia(mediaType, timestamp, sample);
                     }
@@ -497,8 +515,8 @@ namespace SIPSorcery.Net.WebRtc
                 // In this case the samples are from an mp4 file which provides a constant uninterrupted stream.
                 if (DateTime.Now.Subtract(_lastRtcpSenderReportSentAt).TotalSeconds >= RTCP_SR_PERIOD_SECONDS)
                 {
-                    foreach (var session in _webRtcSessions.Where(x => (x.Value.Peer.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) && 
-                      x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                    foreach (var session in _webRtcSessions.Where(x => (x.Value.Peer.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
+                      x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null) && x.Value.MediaSource == MediaSourceEnum.Max))
                     {
                         session.Value.SendRtcpSenderReports(_mulawTimestamp, _vp8Timestamp);
                     }
@@ -594,12 +612,15 @@ namespace SIPSorcery.Net.WebRtc
                     SIPSorceryMedia.ImageConvert colorConverter = new ImageConvert();
 
                     byte[] sampleBuffer = null;
-                    byte[] encodedBuffer = new byte[5000000];
+                    byte[] encodedBuffer = new byte[50000];
                     int sampleCount = 0;
+                    uint rtpTimestamp = 0;
 
-                    while (!_exit && sampleCount < 10)
+                    while (!_exit)
                     {
-                        if (_webRtcSessions.Any(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.IsClosed == false))
+                        if (_webRtcSessions.Any(x => (x.Value.Peer.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
+                             x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null && x.Value.MediaSource == MediaSourceEnum.TestPattern &&
+                             x.Value.Peer.IsClosed == false)))
                         {
                             var stampedTestPattern = testPattern.Clone() as System.Drawing.Image;
                             AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
@@ -628,16 +649,18 @@ namespace SIPSorcery.Net.WebRtc
 
                             lock (_webRtcSessions)
                             {
-                                foreach (var session in _webRtcSessions.Where(x => x.Value.Peer.IsDtlsNegotiationComplete == true && x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null)))
+                                foreach (var session in _webRtcSessions.Where(x => (x.Value.Peer.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
+                                        x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null) && x.Value.MediaSource == MediaSourceEnum.TestPattern))
                                 {
                                     //session.Value.SendVp8(encodedBuffer, 0);
-                                    session.Value.SendMedia(MediaSampleTypeEnum.VP8, 0, encodedBuffer);
+                                    session.Value.SendMedia(MediaSampleTypeEnum.VP8, rtpTimestamp, encodedBuffer);
                                 }
                             }
 
                             encodedBuffer = null;
 
                             sampleCount++;
+                            rtpTimestamp += VP8_TIMESTAMP_SPACING;
                         }
 
                         Thread.Sleep(30);
