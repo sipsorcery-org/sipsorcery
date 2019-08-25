@@ -2,17 +2,16 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>SIPSorcery</id>
-        <version>1.6.1</version>
+        <version>1.6.2</version>
         <authors>Aaron Clauson</authors>
         <owners>Aaron Clauson</owners>
-		<releaseNotes>Fixed SDP parsing bug.
-		Improved the selection of interface for multi-honed hosts.</releaseNotes>
+		<releaseNotes>Added RTPSession and tweaks to WebRtc classes to add audio to the exitsing video support.</releaseNotes>
         <licenseUrl>https://github.com/sipsorcery/sipsorcery/blob/master/LICENSE.md</licenseUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>The SIPSorcery package consists of a C# SIP protocol stack that implements all the required UDP, TCP and TLS transports as specified in RFC3261. There are also partial implementations of a number of related protocols: STUN, SDP, RTP and RTCP. The SIP functionality includes a number of user agents which
 		can be used to initiate and receive both calls and registrations.</description>
       <summary>This is the official package of SIPSorcery. Full source code can be found at https://github.com/sipsorcery/sipsorcery.</summary>  
-      <copyright>Copyright (c) 2018, Aaron Clauson</copyright>
+      <copyright>Copyright (c) 2019, Aaron Clauson</copyright>
         <language>en-US</language>
 		<projectUrl>https://github.com/sipsorcery/sipsorcery</projectUrl>
 		<iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>

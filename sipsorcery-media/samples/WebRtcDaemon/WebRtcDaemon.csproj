@@ -158,14 +158,6 @@
     <Content Include="webrtcsample.html" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\github\NAudio\NAudio\NAudio.csproj">
-      <Project>{06f589c9-3e57-4a4c-973f-5f9bb0b75b7d}</Project>
-      <Name>NAudio</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\sipsorcery-core\SIPSorcery.Net\SIPSorcery.Net.csproj">
-      <Project>{55898587-8456-40d4-bb88-c9fc8bd6ba9c}</Project>
-      <Name>SIPSorcery.Net</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\SIPSorcery.Media\SIPSorcery.Media.vcxproj">
       <Project>{60cc689c-2616-441c-a38a-e1b764c7c446}</Project>
       <Name>SIPSorceryMedia</Name>
