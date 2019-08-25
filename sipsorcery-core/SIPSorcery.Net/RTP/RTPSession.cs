@@ -42,6 +42,8 @@ using log4net;
 
 namespace SIPSorcery.Net
 {
+    public delegate int ProtectRtpPacket(byte[] payload, int length);
+
     public class RTPSession
     {
         private const int RTP_MAX_PAYLOAD = 1400;
@@ -52,14 +54,26 @@ namespace SIPSorcery.Net
         public int PayloadType { get; private set; }
         public uint Ssrc       { get; private set; }
         public ushort SeqNum   { get; private set; }
-        public Func<byte[], int, int> SrtpProtect { get; private set; }
+
         public uint PacketsSent { get; private set; }
         public uint OctetsSent { get; private set; }
 
-        public RTPSession(int payloadType, Func<byte[], int, int> srtpProtect = null)
+        /// <summary>
+        /// Function pointer to an SRTP context that encrypts an RTP packet.
+        /// </summary>
+        public ProtectRtpPacket SrtpProtect { get; private set; }
+
+        /// <summary>
+        /// Function pointer to an SRTCP context that encrypts an RTCP packet.
+        /// </summary>
+        public ProtectRtpPacket SrtcpProtect { get; private set; }
+
+
+        public RTPSession(int payloadType, ProtectRtpPacket srtpProtect, ProtectRtpPacket srtcpProtect)
         {
             PayloadType = payloadType;
             SrtpProtect = srtpProtect;
+            SrtcpProtect = srtcpProtect;
             Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
             SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
         }
@@ -67,7 +81,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Packages and sends a single audio frame over one or more RTP packets.
         /// </summary>
-        public void SendAudioFrame(Socket srcRtpSocket, IPEndPoint destRtpSocket, uint timestamp, byte[] buffer)
+        public void SendAudioFrame(Socket srcRtpSocket, IPEndPoint dstRtpSocket, uint timestamp, byte[] buffer)
         {
             try
             {
@@ -97,7 +111,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        srcRtpSocket.SendTo(rtpBuffer, destRtpSocket);
+                        srcRtpSocket.SendTo(rtpBuffer, dstRtpSocket);
                     }
 
                     PacketsSent++;
@@ -110,7 +124,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public void SendVp8Frame(Socket srcRtpSocket, IPEndPoint destRtpSocket, uint timestamp, byte[] buffer)
+        public void SendVp8Frame(Socket srcRtpSocket, IPEndPoint dstRtpSocket, uint timestamp, byte[] buffer)
         {
             try
             {
@@ -144,7 +158,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        srcRtpSocket.SendTo(rtpBuffer, destRtpSocket);
+                        srcRtpSocket.SendTo(rtpBuffer, dstRtpSocket);
                     }
 
                     PacketsSent++;
@@ -154,6 +168,40 @@ namespace SIPSorcery.Net
             catch (System.Net.Sockets.SocketException sockExcp)
             {
                 logger.Error("SocketException SendVp8Frame. " + sockExcp.Message);
+            }
+        }
+
+        public void SendRtcpSenderReport(Socket srcRtpSocket, IPEndPoint dstRtpSocket, uint timestamp)
+        {
+            try
+            {
+                var ntp = RTSPSession.DateTimeToNptTimestamp(DateTime.Now);
+                var rtcpSRPacket = new RTCPPacket(Ssrc, ntp, timestamp, PacketsSent, OctetsSent);
+
+                if(SrtcpProtect == null)
+                {
+                    srcRtpSocket.SendTo(rtcpSRPacket.GetBytes(), dstRtpSocket);
+                }
+                else
+                {
+                    var rtcpSRBytes = rtcpSRPacket.GetBytes();
+                    byte[] sendBuffer = new byte[rtcpSRBytes.Length + SRTP_AUTH_KEY_LENGTH];
+                    Buffer.BlockCopy(rtcpSRBytes, 0, sendBuffer, 0, rtcpSRBytes.Length);
+
+                    int rtperr = SrtcpProtect(sendBuffer, sendBuffer.Length - SRTP_AUTH_KEY_LENGTH);
+                    if (rtperr != 0)
+                    {
+                        logger.Warn("SRTP RTCP packet protection failed, result " + rtperr + ".");
+                    }
+                    else
+                    {
+                        srcRtpSocket.SendTo(sendBuffer, dstRtpSocket);
+                    }
+                }
+            }
+            catch(Exception excp)
+            {
+                logger.Warn("Exception SendRtcpSenderReport. " + excp.Message);
             }
         }
     }

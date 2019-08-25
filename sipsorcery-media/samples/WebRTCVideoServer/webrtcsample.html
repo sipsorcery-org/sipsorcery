@@ -4,8 +4,8 @@
 
 <script type="text/javascript">
 
-    const WebSocketUrl = "ws://192.168.11.50:8081/stream";
-    const NoCryptWebSocketUrl = "ws://192.168.11.50:8081/nocrypt";
+    const WebSocketUrl = "wss:/localhost:8081/max";
+    const NoCryptWebSocketUrl = "wss://localhost:8081/maxnocry";
     CurrentWebSocketUrl = WebSocketUrl;
 
     $(document).ready(function () {
@@ -16,8 +16,6 @@
             console.log("web socket URL changed to " + CurrentWebSocketUrl);
         });
     });
-
-
 
     var stun = { url: 'stun:stun.ekiga.net' };
 
@@ -141,8 +139,8 @@
 
         //ws = new WebSocket("wss://www.sipsorcery.com:8081/stream?path=0.hivpx");
         //ws = new WebSocket("ws://192.168.11.5,. 0:8081/stream");
-        ws = new WebSocket("wss://localhost:8081/stream");
-        //ws = new WebSocket(CurrentWebSocketUrl);
+        //ws = new WebSocket("wss://localhost:8081/max");
+        ws = new WebSocket(CurrentWebSocketUrl);
 
         ws.onopen = function () {
             console.log("web socket onopen.");

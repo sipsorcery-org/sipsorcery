@@ -6,6 +6,7 @@
 //
 // History:
 // 04 Mar 2016	Aaron Clauson	Created.
+// 25 Aug 2019  Aaron Clauson   Updated from video only to audio and video.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -38,7 +39,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using SIPSorceryMedia;
-using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -46,21 +46,20 @@ namespace SIPSorcery.Net.WebRtc
 {
     public class WebRtcSession
     {
-        private const int RTP_MAX_PAYLOAD = 1400;
         private const int VP8_PAYLOAD_TYPE_ID = 100;
-        private const int PCMU_PAYLOAD_TYPE_ID = 0;
-        private const int SRTP_AUTH_KEY_LENGTH = 10;
 
         private static ILog logger = AppState.logger;
 
         private static ManualResetEvent _dtlsInitMre = new ManualResetEvent(false);
 
         public WebRtcPeer Peer;
-       
-
         public DtlsManaged DtlsContext;
         public SRTPManaged SrtpContext;
         public SRTPManaged SrtpReceiveContext;  // Used to decrypt packets received from the remote peer.
+        public RTPSession _audioRtpSession;
+        public RTPSession _videoRtpSession;
+
+        public bool IsEncryptionDisabled { get; private set; }
 
         private string _dtlsCertFilePath;
         private string _dtlsKeyFilePath;
@@ -70,10 +69,11 @@ namespace SIPSorcery.Net.WebRtc
             get { return Peer.CallID; }
         }
 
-        public WebRtcSession(string dtlsCertFilePath, string dtlsKeyFilePath, string callID)
+        public WebRtcSession(string dtlsCertFilePath, string dtlsKeyFilePath, string callID, bool isEncryptionDisabled)
         {
             _dtlsCertFilePath = dtlsCertFilePath;
             _dtlsKeyFilePath = dtlsKeyFilePath;
+            IsEncryptionDisabled = isEncryptionDisabled;
 
             Peer = new WebRtcPeer() { CallID = callID };
         }
@@ -82,7 +82,7 @@ namespace SIPSorcery.Net.WebRtc
         {
             logger.Debug("DTLS packet received for media type " + iceCandidate.MediaType.ToString().ToUpper() + " of " + buffer.Length + " bytes from " + remoteEndPoint.ToString() + ".");
 
-            if(!File.Exists(_dtlsCertFilePath))
+            if (!File.Exists(_dtlsCertFilePath))
             {
                 throw new ApplicationException($"The DTLS certificate file could not be found at {_dtlsCertFilePath}.");
             }
@@ -132,8 +132,24 @@ namespace SIPSorcery.Net.WebRtc
                         SrtpReceiveContext = new SRTPManaged(DtlsContext, true);
                         Peer.IsDtlsNegotiationComplete = true;
                         iceCandidate.RemoteRtpEndPoint = remoteEndPoint;
+
+                        _audioRtpSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, SrtpContext.ProtectRTP, SrtpContext.ProtectRTCP);
+                        _videoRtpSession = new RTPSession(VP8_PAYLOAD_TYPE_ID, SrtpContext.ProtectRTP, SrtpContext.ProtectRTCP);
                     }
                 }
+            }
+        }
+
+        public void InitEncryptionDisabledSession(IceCandidate iceCandidate, IPEndPoint remoteEndPoint)
+        {
+            if (_audioRtpSession == null || _videoRtpSession == null)
+            {
+                logger.Debug($"Initialising non encrypted WebRtc session for remote end point {remoteEndPoint.ToString()}.");
+
+                iceCandidate.RemoteRtpEndPoint = remoteEndPoint;
+
+                _audioRtpSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
+                _videoRtpSession = new RTPSession(VP8_PAYLOAD_TYPE_ID, null, null);
             }
         }
 
@@ -165,119 +181,37 @@ namespace SIPSorcery.Net.WebRtc
             }
         }
 
-        // https://tools.ietf.org/html/rfc3551#section-4.5.14: 8 bit PCMU samples must be signed.
-        public void SendPcmu(byte[] buffer, uint sampleTimestamp)
+        public void SendMedia(MediaSampleTypeEnum mediaType, uint sampleTimestamp, byte[] sample)
         {
-            try
-            {
-                //Peer.LastTimestamp = (Peer.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : Peer.LastTimestamp + sampleDuarion;
+            var connectedIceCandidate = Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).FirstOrDefault();
 
-                for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
+            if (connectedIceCandidate != null)
+            {
+                var srcRtpEndPoint = connectedIceCandidate.LocalRtpSocket;
+                var dstRtpEndPoint = connectedIceCandidate.RemoteRtpEndPoint;
+
+                if (mediaType == MediaSampleTypeEnum.VP8)
                 {
-                    int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
-                    int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
-
-                    RTPPacket rtpPacket = new RTPPacket(payloadLength + SRTP_AUTH_KEY_LENGTH);
-                    rtpPacket.Header.SyncSource = Peer.AudioSSRC;
-                    rtpPacket.Header.SequenceNumber = Peer.AudioSequenceNumber++;
-                    rtpPacket.Header.Timestamp = sampleTimestamp; //Peer.LastTimestamp;
-                    rtpPacket.Header.MarkerBit = 0;
-                    rtpPacket.Header.PayloadType = PCMU_PAYLOAD_TYPE_ID;
-
-                    Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, 0, payloadLength);
-
-                    var rtpBuffer = rtpPacket.GetBytes();
-
-                    //Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).First().LocalRtpSocket.SendTo(rtpBuffer, wiresharkEp);
-
-                    int rtperr = SrtpContext.ProtectRTP(rtpBuffer, rtpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
-                    if (rtperr != 0)
-                    {
-                        logger.Warn("SRTP packet protection failed, result " + rtperr + ".");
-                    }
-                    else
-                    {
-                        var connectedIceCandidate = Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).First();
-                        connectedIceCandidate.LocalRtpSocket.SendTo(rtpBuffer, connectedIceCandidate.RemoteRtpEndPoint);
-                    }
-                }
-            }
-            catch (Exception sendExcp)
-            {
-                // logger.Error("SendRTP exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
-            }
-        }
-
-        public void SendVp8(byte[] buffer, uint sampleTimestamp)
-        {
-            try
-            {
-                //Peer.LastTimestamp = (Peer.LastTimestamp == 0) ? RTSPSession.DateTimeToNptTimestamp32(DateTime.Now) : Peer.LastTimestamp + TIMESTAMP_SPACING;
-
-                for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
-                {
-                    int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
-                    int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
-
-                    byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
-
-                    RTPPacket rtpPacket = new RTPPacket(payloadLength + SRTP_AUTH_KEY_LENGTH + vp8HeaderBytes.Length);
-                    rtpPacket.Header.SyncSource = Peer.VideoSSRC;
-                    rtpPacket.Header.SequenceNumber = Peer.VideoSequenceNumber++;
-                    rtpPacket.Header.Timestamp = sampleTimestamp; // Peer.LastTimestamp;
-                    rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
-                    rtpPacket.Header.PayloadType = VP8_PAYLOAD_TYPE_ID;
-
-                    Buffer.BlockCopy(vp8HeaderBytes, 0, rtpPacket.Payload, 0, vp8HeaderBytes.Length);
-                    Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, vp8HeaderBytes.Length, payloadLength);
-
-                    var rtpBuffer = rtpPacket.GetBytes();
-
-                    int rtperr = SrtpContext.ProtectRTP(rtpBuffer, rtpBuffer.Length - SRTP_AUTH_KEY_LENGTH);
-                    if (rtperr != 0)
-                    {
-                        logger.Warn("SRTP packet protection failed, result " + rtperr + ".");
-                    }
-                    else
-                    {
-                        var connectedIceCandidate = Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).First();
-                        connectedIceCandidate.LocalRtpSocket.SendTo(rtpBuffer, connectedIceCandidate.RemoteRtpEndPoint);
-                    }
-                }
-            }
-            catch (Exception sendExcp)
-            {
-                // logger.Error("SendRTP exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
-            }
-        }
-
-        public void SendRtcpSenderReport(uint senderSyncSource, ulong ntpTimestamp, uint rtpTimestamp, uint senderPacketCount, uint senderOctetCount)
-        {
-            try
-            {
-                var rtcpSRPacket = new RTCPPacket(senderSyncSource, ntpTimestamp, rtpTimestamp, senderPacketCount, senderOctetCount);
-                var rtcpSRBytes = rtcpSRPacket.GetBytes();
-
-                byte[] sendBuffer = new byte[rtcpSRBytes.Length + SRTP_AUTH_KEY_LENGTH];
-                //byte[] sendBuffer = new byte[rtcpHeaderBytes.Length + senderReportBuffer.Length];
-
-                Buffer.BlockCopy(rtcpSRBytes, 0, sendBuffer, 0, rtcpSRBytes.Length);
-
-                var connectedIceCandidate = Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).First();
-
-                int rtperr = SrtpContext.ProtectRTCP(sendBuffer, sendBuffer.Length - SRTP_AUTH_KEY_LENGTH);
-                if (rtperr != 0)
-                {
-                    logger.Warn("SRTP RTCP packet protection failed, result " + rtperr + ".");
+                    _videoRtpSession.SendVp8Frame(srcRtpEndPoint, dstRtpEndPoint, sampleTimestamp, sample);
                 }
                 else
                 {
-                    connectedIceCandidate.LocalRtpSocket.SendTo(sendBuffer, connectedIceCandidate.RemoteRtpEndPoint);
+                    _audioRtpSession.SendAudioFrame(srcRtpEndPoint, dstRtpEndPoint, sampleTimestamp, sample);
                 }
             }
-            catch (Exception sendExcp)
+        }
+
+        public void SendRtcpSenderReports(uint audioTimestamp, uint videoTimestamp)
+        {
+            var connectedIceCandidate = Peer.LocalIceCandidates.Where(y => y.RemoteRtpEndPoint != null).FirstOrDefault();
+
+            if (connectedIceCandidate != null)
             {
-                // logger.Error("SendRTP exception sending to " + client.SocketAddress + ". " + sendExcp.Message);
+                var srcRtpEndPoint = connectedIceCandidate.LocalRtpSocket;
+                var dstRtpEndPoint = connectedIceCandidate.RemoteRtpEndPoint;
+
+                _audioRtpSession.SendRtcpSenderReport(srcRtpEndPoint, dstRtpEndPoint, audioTimestamp);
+                _videoRtpSession.SendRtcpSenderReport(srcRtpEndPoint, dstRtpEndPoint, videoTimestamp);
             }
         }
     }
