@@ -338,7 +338,6 @@
     <Compile Include="STUN\STUNListener.cs" />
     <Compile Include="STUN\STUNMessage.cs" />
     <Compile Include="STUN\STUNServer.cs" />
-    <Compile Include="WebRTC\WebRtcPeerUnencrypted.cs" />
     <Compile Include="WebRTC\WebRtcPeer.cs" />
   </ItemGroup>
   <ItemGroup>

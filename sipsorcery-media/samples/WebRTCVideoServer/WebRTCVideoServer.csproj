@@ -128,7 +128,6 @@
     <Compile Include="WebRTCServiceInstaller.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="WebRtcSessionUnencrypted.cs" />
     <Compile Include="WebRtcSession.cs" />
   </ItemGroup>
   <ItemGroup>

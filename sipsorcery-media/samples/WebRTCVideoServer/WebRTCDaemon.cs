@@ -180,7 +180,6 @@ namespace SIPSorcery.Net.WebRtc
         private bool _exit = false;
         private DateTime _lastRtcpSenderReportSentAt = DateTime.MinValue;
         private ConcurrentDictionary<string, WebRtcSession> _webRtcSessions = new ConcurrentDictionary<string, WebRtcSession>();
-        private ConcurrentDictionary<string, WebRtcSessionUnencrypted> _webRtcSessionsUnencrypted = new ConcurrentDictionary<string, WebRtcSessionUnencrypted>();
 
         SIPSorceryMedia.VPXEncoder _vpxEncoder;
         private uint _vp8Timestamp;
