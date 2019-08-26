@@ -183,6 +183,7 @@ namespace SIPSorcery.Net.WebRtc
         private string _dtlsKeyPath = AppState.GetConfigSetting("DtlsKeyPath");
         private string _rawRtpBaseEndPoint = AppState.GetConfigSetting("RawRtpBaseEndPoint");
         private string _mediaFilePath = AppState.GetConfigSetting("MediaFilePath");
+        private string _testPattermImagePath = AppState.GetConfigSetting("TestPatternFilePath");
 
         private bool _exit = false;
         private DateTime _lastRtcpSenderReportSentAt = DateTime.MinValue;
@@ -234,13 +235,16 @@ namespace SIPSorcery.Net.WebRtc
                     return sdpReceiver;
                 });
 
-                wss.AddWebSocketService<SDPExchange>("/testpattern", () =>
+                if (!String.IsNullOrEmpty(_testPattermImagePath) && File.Exists(_testPattermImagePath))
                 {
-                    SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.TestPattern, false) { IgnoreExtensions = true };
-                    sdpReceiver.WebSocketOpened += WebRtcStartCall;
-                    sdpReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
-                    return sdpReceiver;
-                });
+                    wss.AddWebSocketService<SDPExchange>("/testpattern", () =>
+                    {
+                        SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.TestPattern, false) { IgnoreExtensions = true };
+                        sdpReceiver.WebSocketOpened += WebRtcStartCall;
+                        sdpReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
+                        return sdpReceiver;
+                    });
+                }
 
                 wss.Start();
 
@@ -604,15 +608,27 @@ namespace SIPSorcery.Net.WebRtc
             {
                 unsafe
                 {
-                    Bitmap testPattern = new Bitmap("wizard.jpeg");
+                    Bitmap testPattern = new Bitmap(_testPattermImagePath);
 
+                    // Get the stride.
+                    Rectangle rect = new Rectangle(0, 0, testPattern.Width, testPattern.Height);
+                    System.Drawing.Imaging.BitmapData bmpData =
+                        testPattern.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite,
+                        testPattern.PixelFormat);
+
+                    // Get the address of the first line.
+                    int stride = bmpData.Stride;
+
+                    testPattern.UnlockBits(bmpData);
+
+                    // Initialise the video codec and color converter.
                     SIPSorceryMedia.VPXEncoder vpxEncoder = new VPXEncoder();
-                    vpxEncoder.InitEncoder(Convert.ToUInt32(testPattern.Width), Convert.ToUInt32(testPattern.Height), 2160);
+                    vpxEncoder.InitEncoder((uint)testPattern.Width, (uint)testPattern.Height, (uint)stride);
 
                     SIPSorceryMedia.ImageConvert colorConverter = new ImageConvert();
 
                     byte[] sampleBuffer = null;
-                    byte[] encodedBuffer = new byte[50000];
+                    byte[] encodedBuffer = null;
                     int sampleCount = 0;
                     uint rtpTimestamp = 0;
 
@@ -630,7 +646,7 @@ namespace SIPSorcery.Net.WebRtc
                             {
                                 byte[] convertedFrame = null;
                                 //colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB24, testPattern.Width, testPattern.Height, VideoSubTypesEnum.I420, ref convertedFrame);
-                                colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, testPattern.Width, testPattern.Height, testPattern.Width * 3, VideoSubTypesEnum.I420, ref convertedFrame);
+                                colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, testPattern.Width, testPattern.Height, stride, VideoSubTypesEnum.I420, ref convertedFrame);
 
                                 fixed (byte* q = convertedFrame)
                                 {

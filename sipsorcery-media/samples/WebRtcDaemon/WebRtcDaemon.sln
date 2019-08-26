@@ -7,7 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SIPSorceryMedia", "..\..\SI
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRtcDaemon", "WebRtcDaemon.csproj", "{6886EF9D-7FF7-4712-9AB3-54BD85CEE232}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "srtp", "..\..\..\..\libsrtp\srtp.vcxproj", "{EEF031CB-FED8-451E-A471-91EC8D4F6750}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "srtp2", "..\..\libsrtp\srtp2.vcxproj", "{EEF031CB-FED8-451E-A471-91EC8D4F6750}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

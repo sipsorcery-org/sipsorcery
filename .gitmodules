@@ -1,0 +1,4 @@
+[submodule "sipsorcery-media/libsrtp"]
+	path = sipsorcery-media/libsrtp
+	url = https://github.com/cisco/libsrtp.git
+	branch = master

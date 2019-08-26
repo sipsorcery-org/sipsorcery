@@ -75,7 +75,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libsrtp\include;..\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
       <CallingConvention>
       </CallingConvention>
@@ -95,7 +95,7 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libsrtp\include;..\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
       <CallingConvention>
       </CallingConvention>
@@ -116,7 +116,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libsrtp\include;..\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
       <CallingConvention>
       </CallingConvention>
@@ -135,7 +135,7 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\..\..\libsrtp\include;..\..\..\libsrtp\crypto\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libsrtp\include;..\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
       <CallingConvention>
       </CallingConvention>
@@ -173,7 +173,7 @@
     <ClCompile Include="VPXEncoder.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\libsrtp\srtp.vcxproj">
+    <ProjectReference Include="..\libsrtp\srtp2.vcxproj">
       <Project>{eef031cb-fed8-451e-a471-91ec8d4f6750}</Project>
     </ProjectReference>
   </ItemGroup>
