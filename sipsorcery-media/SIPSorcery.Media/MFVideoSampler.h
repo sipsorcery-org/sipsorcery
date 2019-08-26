@@ -142,7 +142,7 @@ namespace SIPSorceryMedia {
     MediaSampleProperties^ GetNextSample(int streamTypeIndex, /* out */ array<Byte> ^% buffer, uint64_t delayUntil);
 		HRESULT PlayAudio();
 		void Stop();
-		void DumpVideoSubTypes();
+		//void DumpVideoSubTypes();
 		HRESULT MFVideoSampler::PlayTestAudio();
 		HRESULT MFVideoSampler::PlayFileToSpeaker();
 

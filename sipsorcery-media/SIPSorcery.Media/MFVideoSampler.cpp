@@ -1267,16 +1267,16 @@ namespace SIPSorceryMedia {
   /*
   Or just go to http://msdn.microsoft.com/en-us/library/windows/desktop/dd757532(v=vs.85).aspx.
   */
-  void MFVideoSampler::DumpVideoSubTypes()
-  {
-    char* buffer;
+  //void MFVideoSampler::DumpVideoSubTypes()
+  //{
+  //  char* buffer;
 
-    UuidToString((const _GUID *)&MFVideoFormat_RGB24, (RPC_WSTR*)&buffer);
-    Console::WriteLine("RGB24: " + Marshal::PtrToStringUni((IntPtr)buffer));
+  //  UuidToString((const _GUID *)&MFVideoFormat_RGB24, (RPC_WSTR*)&buffer);
+  //  Console::WriteLine("RGB24: " + Marshal::PtrToStringUni((IntPtr)buffer));
 
-    UuidToString((const _GUID *)&MFVideoFormat_I420, (RPC_WSTR*)&buffer);
-    Console::WriteLine("I420: " + Marshal::PtrToStringUni((IntPtr)buffer));
-  }
+  //  UuidToString((const _GUID *)&MFVideoFormat_I420, (RPC_WSTR*)&buffer);
+  //  Console::WriteLine("I420: " + Marshal::PtrToStringUni((IntPtr)buffer));
+  //}
 
   HRESULT MFVideoSampler::PlayTestAudio()
   {

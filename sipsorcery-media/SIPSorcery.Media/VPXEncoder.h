@@ -6,13 +6,7 @@
 #include "vpx\vp8cx.h"
 #include "vpx\vp8dx.h"
 
-extern "C"
-{
-#include "libswscale\swscale.h"
-#include "libavcodec\avcodec.h"
-#include "libavformat\avformat.h"
-#include "libavutil\avutil.h"
-}
+#include <memory>
 
 using namespace System;
 using namespace System::Runtime::InteropServices;
