@@ -99,6 +99,11 @@
 // Chrome: Allow a non-trusted localhost certificate for the web socket connection (this didn't seem to work)
 // chrome://flags/#allow-insecure-localhost
 //
+// Firefox: to allow secure web socket (wss) connection to localhost, enter about:config in address bar.
+// Search for network.stricttransportsecurity.preloadlist and set to false.
+// Search for network.stricttransportsecurity.preloadlist and set to false.
+// Open https://localhost:8081/ and accept risk which seems to add an exception
+//
 //-----------------------------------------------------------------------------
 
 using System;
@@ -112,6 +117,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using SIPSorceryMedia;
@@ -224,7 +230,7 @@ namespace SIPSorcery.Net.WebRtc
                     throw new ApplicationException($"The media file at does not exist at {_mediaFilePath}.");
                 }
 
-                // Configure the web socket and the differetn end point handlers.
+                // Configure the web socket and the different end point handlers.
                 var wss = new WebSocketServer(8081, true);
                 wss.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate, false, System.Security.Authentication.SslProtocols.Default, false);
                 wss.Log.Level = LogLevel.Debug;
