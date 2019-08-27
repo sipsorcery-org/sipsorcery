@@ -85,7 +85,7 @@
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Browser flags:
+// Browser flags for localhost testing:
 //
 // Edge: allow web socket connections with localhost
 // C:\WINDOWS\system32>CheckNetIsolation LoopbackExempt -a -n=Microsoft.MicrosoftEdge_8wekyb3d8bbwe
@@ -100,8 +100,7 @@
 // chrome://flags/#allow-insecure-localhost
 //
 // Firefox: to allow secure web socket (wss) connection to localhost, enter about:config in address bar.
-// Search for network.stricttransportsecurity.preloadlist and set to false.
-// Search for network.stricttransportsecurity.preloadlist and set to false.
+// Search for network.stricttransportsecurity.preloadlist and set to false. (TODO: this is insecure keep looking for a better way)
 // Open https://localhost:8081/ and accept risk which seems to add an exception
 //
 //-----------------------------------------------------------------------------
@@ -117,7 +116,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using SIPSorceryMedia;

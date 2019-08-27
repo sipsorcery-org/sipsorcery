@@ -94,15 +94,25 @@
             pc.setLocalDescription(sessionDescription, null, showError);
         }
 
-        function handleRemoteStreamAdded(event) {
-            console.log('Remote stream added.');
+        //function handleRemoteStreamAdded(event) {
+        //    console.log('Remote stream added.');
+        //    console.log(event);
+
+        //    document.querySelector("#remoteVideo").srcObject = event.stream;
+        //    document.querySelector("#remoteVideo").play();
+
+        //    //document.querySelector("#remoteAudio").srcObject = event.stream;
+        //    //document.querySelector("#remoteAudio").play();
+        //}
+
+        function handleRemoteTrackAdded(event) {
+            console.log('Remote track added.');
             console.log(event);
 
-            document.querySelector("#remoteVideo").srcObject = event.stream;
-            document.querySelector("#remoteVideo").play();
-
-            //document.querySelector("#remoteAudio").srcObject = event.stream;
-            //document.querySelector("#remoteAudio").play();
+            if (event != null && event.streams.length > 0) {
+                document.querySelector("#remoteVideo").srcObject = event.streams[0];
+                document.querySelector("#remoteVideo").play();
+            }
         }
 
         function handleRemoteStreamRemoved(event) {
@@ -142,9 +152,10 @@
             ws.onopen = function () {
                 console.log("web socket onopen.");
 
-                pc = new webkitRTCPeerConnection(null, pc_constraints);
+                pc = new RTCPeerConnection(null, pc_constraints);
                 pc.onicecandidate = handleIceCandidate;
-                pc.onaddstream = handleRemoteStreamAdded;
+                //pc.onaddstream = handleRemoteStreamAdded;
+                pc.ontrack = handleRemoteTrackAdded;
                 pc.onremovestream = handleRemoteStreamRemoved;
                 pc.onsignalingstatechange = handleSignalingStateChange;
                 pc.oniceconnectionstatechange = handleIceStateChange;

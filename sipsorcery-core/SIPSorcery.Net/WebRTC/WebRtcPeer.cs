@@ -84,24 +84,26 @@ a=group:BUNDLE audio video
 @"m=audio {0} {1} 0
 c=IN IP4 {2}
 {3}
+a=end-of-candidates 
 a=ice-ufrag:{4}
 a=ice-pwd:{5}{6}
 a=setup:actpass
 a=mid:audio
-a=sendrecv
+a=sendonly
 a=rtcp-mux
 a=mid:audio
 a=rtpmap:0 PCMU/8000
-a=end-of-candidates 
 ";
 
         private static string _sdpVideoOfferTemplate =
 "m=video 0 {0} " + PAYLOAD_TYPE_ID + @"
 c=IN IP4 {1}
+a=ice-ufrag:{2}
+a=ice-pwd:{3}{4}
 a=bundle-only 
 a=setup:actpass
 a=mid:video
-a=sendrecv
+a=sendonly
 a=rtcp-mux
 a=mid:video
 a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
@@ -206,7 +208,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         /// <param name="localAddress">Optional parameter to specify the local IP address to use for STUN/TRP sockets. If null all available interfaces will be used.</param>
         public void Initialise(string dtlsCertificateFingerprint, IPEndPoint turnServerEndPoint, List<RtpMediaTypesEnum> mediaTypes, IPAddress localAddress, bool isEncryptionDisabled)
         {
-             MediaTypes = mediaTypes;
+            MediaTypes = mediaTypes;
             _localIPAddresses = new List<IPAddress>();
             _isEncryptionDisabled = isEncryptionDisabled;
 
@@ -260,7 +262,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     var localIceCandidate = GetIceCandidatesForMediaType(RtpMediaTypesEnum.None).First();
 
                     var offerHeader = String.Format(_sdpOfferTemplate, Crypto.GetRandomInt(10).ToString());
-     
+
                     string dtlsAttribute = (_isEncryptionDisabled == false) ? String.Format(_dtlsFingerprint, _dtlsCertificateFingerprint) : null;
                     string rtpSecurityDescriptor = (_isEncryptionDisabled == false) ? RTP_MEDIA_SECURE_DESCRIPTOR : RTP_MEDIA_UNSECURE_DESCRIPTOR;
 
@@ -273,7 +275,12 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                          localIcePassword,
                          dtlsAttribute) : null;
 
-                    var videoOffer = String.Format(_sdpVideoOfferTemplate, rtpSecurityDescriptor, localIceCandidate.LocalAddress);
+                    var videoOffer = String.Format(_sdpVideoOfferTemplate,
+                        rtpSecurityDescriptor,
+                        localIceCandidate.LocalAddress,
+                        localIceUser,
+                         localIcePassword,
+                         dtlsAttribute);
 
                     string offer = offerHeader + audioOffer + videoOffer;
 
