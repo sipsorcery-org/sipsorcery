@@ -2,20 +2,20 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>SIPSorceryMedia</id>
-        <version>1.6.2</version>
+        <version>1.6.3</version>
         <authors>Aaron Clauson</authors>
         <owners>Aaron Clauson</owners>
 		<releaseNotes>Added some new Media Foundation hooks to support sample grabbing.</releaseNotes>
         <licenseUrl>https://github.com/sipsorcery/sipsorcery/blob/master/LICENSE.md</licenseUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>The SIPSorcery package for media functions. This dll is built for 64 bit systems only and requires the Visual C++ 2013 runtime to
+        <description>The SIPSorcery package for media functions. This dll is built for 64 bit systems only and requires the Visual C++ 2019 runtime to
 		be installed on any machine that consumes the dll.</description>
       <summary>This is the official package for SIPSorceryMedia. Full source code can be found at https://github.com/sipsorcery/sipsorcery.</summary>  
       <copyright>Copyright (c) 2019, Aaron Clauson</copyright>
         <language>en-US</language>
 		<projectUrl>https://github.com/sipsorcery/sipsorcery</projectUrl>
 		<iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
-        <tags>sip sipsorcery</tags>
+        <tags>SIP WebRtc MediaFoundation</tags>
         <references>
             <reference file="SIPSorceryMedia.dll" />
         </references>

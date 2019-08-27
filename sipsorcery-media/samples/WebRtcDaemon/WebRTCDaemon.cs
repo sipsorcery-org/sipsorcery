@@ -62,11 +62,6 @@
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// To use with encryption disabled:
-// "C:\Users\aaron\AppData\Local\Google\Chrome SxS\Application\chrome.exe" -disable-webrtc-encryption
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // ffmpeg command for an audio and video container that "should" work well with this sample is:
 // ToDo: Determine good output codec/format parameters.
 // ffmpeg -i max.mp4 -ss 00:00:06 max_even_better.mp4
@@ -87,6 +82,16 @@
 //a=rtpmap:0 PCMU/8000
 //m=video 4042 RTP/AVP 100
 //a=rtpmap:100 VP8/90000
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Browser flags:
+// Edge: allow web socket connections with localhost
+// C:\WINDOWS\system32>CheckNetIsolation LoopbackExempt -a -n=Microsoft.MicrosoftEdge_8wekyb3d8bbwe
+//
+// Chrome: allow WebRtc with DTLS encryption disabled (so RTP pakcets can be captured and checked):
+// "C:\Users\aaron\AppData\Local\Google\Chrome SxS\Application\chrome.exe" -disable-webrtc-encryption
+//
 //-----------------------------------------------------------------------------
 
 using System;

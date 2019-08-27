@@ -1,10 +1,12 @@
+<!DOCTYPE html>
+
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"
         integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
         crossorigin="anonymous"></script>
 
 <script type="text/javascript">
 
-    const WebSocketUrl = "wss:/localhost:8081/max";
+    const WebSocketUrl = "wss://localhost:8081/max";
     //const WebSocketUrl = "wss:/localhost:8081/testpattern";
     const NoCryptWebSocketUrl = "wss://localhost:8081/maxnocry";
     CurrentWebSocketUrl = WebSocketUrl;
@@ -131,13 +133,6 @@
 
     function wsConnect() {
 
-        pc = new webkitRTCPeerConnection(null, pc_constraints);
-        pc.onicecandidate = handleIceCandidate;
-        pc.onaddstream = handleRemoteStreamAdded;
-        pc.onremovestream = handleRemoteStreamRemoved;
-        pc.onsignalingstatechange = handleSignalingStateChange;
-        pc.oniceconnectionstatechange = handleIceStateChange;
-
         //ws = new WebSocket("wss://www.sipsorcery.com:8081/stream?path=0.hivpx");
         //ws = new WebSocket("ws://192.168.11.5,. 0:8081/stream");
         //ws = new WebSocket("wss://localhost:8081/max");
@@ -145,6 +140,13 @@
 
         ws.onopen = function () {
             console.log("web socket onopen.");
+
+            pc = new webkitRTCPeerConnection(null, pc_constraints);
+            pc.onicecandidate = handleIceCandidate;
+            pc.onaddstream = handleRemoteStreamAdded;
+            pc.onremovestream = handleRemoteStreamRemoved;
+            pc.onsignalingstatechange = handleSignalingStateChange;
+            pc.oniceconnectionstatechange = handleIceStateChange;
         };
 
         ws.onmessage = function (evt) {
