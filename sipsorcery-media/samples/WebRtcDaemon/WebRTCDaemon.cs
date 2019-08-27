@@ -86,11 +86,18 @@
 
 //-----------------------------------------------------------------------------
 // Browser flags:
+//
 // Edge: allow web socket connections with localhost
 // C:\WINDOWS\system32>CheckNetIsolation LoopbackExempt -a -n=Microsoft.MicrosoftEdge_8wekyb3d8bbwe
 //
 // Chrome: allow WebRtc with DTLS encryption disabled (so RTP pakcets can be captured and checked):
 // "C:\Users\aaron\AppData\Local\Google\Chrome SxS\Application\chrome.exe" -disable-webrtc-encryption
+//
+// Chrome: prevent hostnames using the <addr>.local format being set in ICE candidates (TODO: handle the .local hostnames)
+// chrome://flags/#enable-webrtc-hide-local-ips-with-mdns
+//
+// Chrome: Allow a non-trusted localhost certificate for the web socket connection (this didn't seem to work)
+// chrome://flags/#allow-insecure-localhost
 //
 //-----------------------------------------------------------------------------
 
@@ -219,8 +226,8 @@ namespace SIPSorcery.Net.WebRtc
 
                 // Configure the web socket and the differetn end point handlers.
                 var wss = new WebSocketServer(8081, true);
-                //wss.Log.Level = LogLevel.Debug;
                 wss.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate, false, System.Security.Authentication.SslProtocols.Default, false);
+                wss.Log.Level = LogLevel.Debug;
 
                 // Standard encrypted WebRtc stream.
                 wss.AddWebSocketService<SDPExchange>("/max", () =>
