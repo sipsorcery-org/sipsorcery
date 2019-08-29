@@ -62,7 +62,7 @@
 //
 // Media description
 // m=  (media name and transport address)
-//     <media> <port> <transport> <fmt list>
+//     <media> <port> <transport> [<fmt list>]
 // i=* (media title)
 // c=* (connection information - optional if included at session-level)
 // b=* (bandwidth information)
@@ -218,7 +218,7 @@ namespace SIPSorcery.Net
                         }
                         else if (sdpLine.Trim().StartsWith("m="))
                         {
-                            Match mediaMatch = Regex.Match(sdpLine.Substring(2).Trim(), @"(?<type>\w+)\s+(?<port>\d+)\s+(?<transport>\S+)\s+(?<formats>.*)$");
+                            Match mediaMatch = Regex.Match(sdpLine.Substring(2).Trim(), @"(?<type>\w+)\s+(?<port>\d+)\s+(?<transport>\S+)(\s*)(?<formats>.*)$");
                             if (mediaMatch.Success)
                             {
                                 SDPMediaAnnouncement announcement = new SDPMediaAnnouncement();

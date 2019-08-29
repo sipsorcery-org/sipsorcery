@@ -151,14 +151,16 @@ namespace SIPSorcery.Net.WebRtc
     {
         public MediaSourceEnum MediaSource { get; private set; }
         public bool IsEncryptionDisabled { get; private set; }
+        public IPAddress RtpIPAddress { get; private set;}
 
         public event Action<WebSocketSharp.Net.WebSockets.WebSocketContext, string, IPAddress, bool, MediaSourceEnum> WebSocketOpened;
         public event Action<string, string> SDPAnswerReceived;
 
-        public SDPExchange(MediaSourceEnum mediaSource, bool isEncryptionDisabled)
+        public SDPExchange(MediaSourceEnum mediaSource, bool isEncryptionDisabled, IPAddress rtpIPAddress)
         {
             MediaSource = mediaSource;
             IsEncryptionDisabled = isEncryptionDisabled;
+            RtpIPAddress = rtpIPAddress;
         }
 
         protected override void OnMessage(MessageEventArgs e)
@@ -169,7 +171,8 @@ namespace SIPSorcery.Net.WebRtc
         protected override void OnOpen()
         {
             base.OnOpen();
-            WebSocketOpened(this.Context, this.ID, this.Context.ServerEndPoint.Address, IsEncryptionDisabled, MediaSource);
+            IPAddress rtpIpAddress = RtpIPAddress ?? this.Context.ServerEndPoint.Address;
+            WebSocketOpened(this.Context, this.ID, rtpIpAddress, IsEncryptionDisabled, MediaSource);
         }
     }
 
@@ -200,6 +203,7 @@ namespace SIPSorcery.Net.WebRtc
         private string _rawRtpBaseEndPoint = AppState.GetConfigSetting("RawRtpBaseEndPoint");
         private string _mediaFilePath = AppState.GetConfigSetting("MediaFilePath");
         private string _testPattermImagePath = AppState.GetConfigSetting("TestPatternFilePath");
+        private string _localRtpIPAddress = AppState.GetConfigSetting("LocalRtpIPAddress");
 
         private bool _exit = false;
         private DateTime _lastRtcpSenderReportSentAt = DateTime.MinValue;
@@ -228,6 +232,12 @@ namespace SIPSorcery.Net.WebRtc
                     throw new ApplicationException($"The media file at does not exist at {_mediaFilePath}.");
                 }
 
+                IPAddress rtpIPAddress = null;
+                if(String.IsNullOrEmpty(_localRtpIPAddress) == false)
+                {
+                    rtpIPAddress = IPAddress.Parse(_localRtpIPAddress);
+                }
+
                 // Configure the web socket and the different end point handlers.
                 var wss = new WebSocketServer(8081, true);
                 wss.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate, false, System.Security.Authentication.SslProtocols.Default, false);
@@ -236,7 +246,7 @@ namespace SIPSorcery.Net.WebRtc
                 // Standard encrypted WebRtc stream.
                 wss.AddWebSocketService<SDPExchange>("/max", () =>
                 {
-                    SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.Max, false) { IgnoreExtensions = true };
+                    SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.Max, false, rtpIPAddress) { IgnoreExtensions = true };
                     sdpReceiver.WebSocketOpened += WebRtcStartCall;
                     sdpReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
                     return sdpReceiver;
@@ -245,7 +255,7 @@ namespace SIPSorcery.Net.WebRtc
                 // Decrypted WebRtc stream for diagnostics (browsers do not support this without specific flags being enabled).
                 wss.AddWebSocketService<SDPExchange>("/maxnocry", () =>
                 {
-                    SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.Max, true) { IgnoreExtensions = true };
+                    SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.Max, true, rtpIPAddress) { IgnoreExtensions = true };
                     sdpReceiver.WebSocketOpened += WebRtcStartCall;
                     sdpReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
                     return sdpReceiver;
@@ -255,7 +265,7 @@ namespace SIPSorcery.Net.WebRtc
                 {
                     wss.AddWebSocketService<SDPExchange>("/testpattern", () =>
                     {
-                        SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.TestPattern, false) { IgnoreExtensions = true };
+                        SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.TestPattern, false, rtpIPAddress) { IgnoreExtensions = true };
                         sdpReceiver.WebSocketOpened += WebRtcStartCall;
                         sdpReceiver.SDPAnswerReceived += WebRtcAnswerReceived;
                         return sdpReceiver;

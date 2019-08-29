@@ -153,5 +153,54 @@ namespace SIPSorcery.Net.UnitTests
             //Assert.AreEqual(49290, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault().Port);
             // Assert.AreEqual(56674, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault().Port);
         }
+
+        /// <summary>
+        /// Test that an SDP payload from Mircosoft's Edge browser for a WebRtc session gets parsed correctly..
+        /// </summary>
+        [TestMethod]
+        public void ParseEdgeBrowserSdpUnitTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr = @"v=0
+o=- 8028343537520473029 0 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=msid-semantic: WMS
+a=group:BUNDLE audio
+m=audio 7038 UDP/TLS/RTP/SAVPF 0
+c=IN IP4 10.0.75.1
+a=rtpmap:0 PCMU/8000
+a=rtcp:9 IN IP4 0.0.0.0
+a=setup:active
+a=mid:audio
+a=maxptime:60
+a=recvonly
+a=ice-ufrag:1Fs+
+a=ice-pwd:oiLbCgce1c9xzyamdrWtn9Q/
+a=fingerprint:sha-256 B0:1F:2C:72:8F:1A:14:CD:92:15:47:F0:C3:0A:69:F9:A9:43:35:EE:10:CB:F0:11:18:B8:0E:F9:A6:95:5F:B1
+a=candidate:1 1 udp 2130706431 10.0.75.1 7038 typ host
+a=candidate:2 1 udp 2130705919 172.22.240.1 31136 typ host
+a=candidate:3 1 udp 2130705407 172.22.48.1 21390 typ host
+a=candidate:4 1 udp 2130704895 192.168.11.50 26878 typ host
+a=candidate:5 1 tcp 1684797439 10.0.75.1 7038 typ srflx raddr 10.0.75.1 rport 7038 tcptype active
+a=rtcp-mux
+m=video 0 UDP/TLS/RTP/SAVPF
+c=IN IP4 0.0.0.0
+a=inactive";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Debug.WriteLine(sdp.ToString());
+
+            Assert.AreEqual(2, sdp.Media.Count);
+            Assert.IsTrue(sdp.Media.First().Media == SDPMediaTypesEnum.audio);
+            Assert.IsTrue(sdp.Media.First().Transport == "UDP/TLS/RTP/SAVPF");
+            Assert.IsTrue(sdp.Media.Last().Media == SDPMediaTypesEnum.video);
+            Assert.IsTrue(sdp.Media.Last().Transport == "UDP/TLS/RTP/SAVPF");
+            //Assert.AreEqual(2, sdp.Connection);
+            //Assert.AreEqual(49290, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault().Port);
+            // Assert.AreEqual(56674, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault().Port);
+        }
     }
 }

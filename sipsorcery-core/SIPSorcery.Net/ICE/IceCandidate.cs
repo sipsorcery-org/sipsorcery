@@ -82,6 +82,7 @@ namespace SIPSorcery.Net
         public int StunConnectionRequestAttempts = 0;
         public DateTime LastCommunicationAt;
         public RtpMediaTypesEnum MediaType;
+        public bool HasConnectionError;
 
         public string Transport;
         public string NetworkAddress;
