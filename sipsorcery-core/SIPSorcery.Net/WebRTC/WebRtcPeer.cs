@@ -51,10 +51,8 @@ namespace SIPSorcery.Net.WebRtc
 {
     public class WebRtcPeer
     {
-        private const int WEBRTC_START_AUDIO_PORT = 49000;
-        private const int WEBRTC_END_AUDIO_PORT = 49100;
-        private const int WEBRTC_START_VIDEO_PORT = 49101;
-        private const int WEBRTC_END_VIDEO_PORT = 49200;
+        private const int WEBRTC_START_RTP_PORT = 49000;
+        private const int WEBRTC_END_RTP_PORT = 49500;
         private const int PAYLOAD_TYPE_ID = 100;
         private const int ICE_GATHERING_TIMEOUT_MILLISECONDS = 5000;
         private const int INITIAL_STUN_BINDING_PERIOD_MILLISECONDS = 500;       // The period to send the initial STUN requests used to get an ICE candidates public IP address.
@@ -67,7 +65,7 @@ namespace SIPSorcery.Net.WebRtc
         private const int CLOSE_SOCKETS_TIMEOUT_WAIT_MILLISECONDS = 3000;
         private const string RTP_MEDIA_SECURE_DESCRIPTOR = "RTP/SAVPF";
         private const string RTP_MEDIA_UNSECURE_DESCRIPTOR = "RTP/AVP";
-
+        
         private static string _sdpOfferTemplate = @"v=0
 o=- {0} 2 IN IP4 127.0.0.1
 s=-
@@ -333,27 +331,13 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         private List<IceCandidate> GetIceCandidatesForMediaType(RtpMediaTypesEnum mediaType)
         {
-            int startPort = WEBRTC_START_AUDIO_PORT;
-            int endPort = WEBRTC_END_VIDEO_PORT;
-
-            if (mediaType == RtpMediaTypesEnum.Audio)
-            {
-                startPort = WEBRTC_START_AUDIO_PORT;
-                endPort = WEBRTC_END_AUDIO_PORT;
-            }
-            else if (mediaType == RtpMediaTypesEnum.Video)
-            {
-                startPort = WEBRTC_START_VIDEO_PORT;
-                endPort = WEBRTC_END_VIDEO_PORT;
-            }
-
             List<IceCandidate> candidates = new List<IceCandidate>();
 
             foreach (var candidate in LocalIceCandidates)
             {
                 var localRtpEndPoint = candidate.LocalRtpSocket.LocalEndPoint as IPEndPoint;
 
-                if (localRtpEndPoint.Port >= startPort && localRtpEndPoint.Port <= endPort)
+                if (localRtpEndPoint.Port >= WEBRTC_START_RTP_PORT && localRtpEndPoint.Port <= WEBRTC_END_RTP_PORT)
                 {
                     candidates.Add(candidate);
                 }
@@ -400,7 +384,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 Socket rtpSocket = null;
                 Socket controlSocket = null;
 
-                NetServices.CreateRtpSocket(address, WEBRTC_START_AUDIO_PORT, WEBRTC_END_VIDEO_PORT, false, out rtpSocket, out controlSocket);
+                NetServices.CreateRtpSocket(address, WEBRTC_START_RTP_PORT, WEBRTC_END_RTP_PORT, false, out rtpSocket, out controlSocket);
 
                 if (rtpSocket != null)
                 {

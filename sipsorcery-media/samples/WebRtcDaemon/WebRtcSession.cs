@@ -99,7 +99,6 @@ namespace SIPSorcery.Net.WebRtc
                 lock (_dtlsInitMre)
                 {
                     DtlsContext = new DtlsManaged(_dtlsCertFilePath, _dtlsKeyFilePath);
-                    //DtlsContext = new DtlsManaged();
                     int res = DtlsContext.Init();
                     logger.Debug("DtlsContext initialisation result=" + res);
                 }
@@ -113,7 +112,7 @@ namespace SIPSorcery.Net.WebRtc
             }
             else
             {
-                byte[] dtlsOutBytes = new byte[2048];
+                byte[] dtlsOutBytes = new byte[4096];
 
                 int bytesRead = DtlsContext.Read(dtlsOutBytes, dtlsOutBytes.Length);
 
