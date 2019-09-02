@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace SIPSorcery.Entities.IntegrationTests
 {
     [TestClass]
+    [Ignore] // Integration only tests, require DB.
     public class CustomerAccountDataLayerTest
     {
         [TestMethod]
