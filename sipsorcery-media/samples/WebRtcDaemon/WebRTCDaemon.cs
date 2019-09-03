@@ -59,6 +59,9 @@
 //
 // Get thumbrpint for certificate used for DTLS:
 // openssl x509 -fingerprint -sha256 -in localhost.pem
+//
+// Note Microsoft Edge:
+// Not supported due to apparent issue with 4096 bit certificates: https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14561214/
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -87,10 +90,10 @@
 //-----------------------------------------------------------------------------
 // Browser flags for localhost testing:
 //
-// Edge: allow web socket connections with localhost
+// Edge: allow web socket connections with localhost (**see note above aout Edge not working with openssl)
 // C:\WINDOWS\system32>CheckNetIsolation LoopbackExempt -a -n=Microsoft.MicrosoftEdge_8wekyb3d8bbwe
 //
-// Chrome: allow WebRtc with DTLS encryption disabled (so RTP pakcets can be captured and checked):
+// Chrome Canary: allow WebRtc with DTLS encryption disabled (so RTP pakcets can be captured and checked):
 // "C:\Users\aaron\AppData\Local\Google\Chrome SxS\Application\chrome.exe" -disable-webrtc-encryption
 //
 // Chrome: prevent hostnames using the <addr>.local format being set in ICE candidates (TODO: handle the .local hostnames)

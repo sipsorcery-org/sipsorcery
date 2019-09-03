@@ -50,7 +50,7 @@ namespace SIPSorcery.Net.WebRtc
 
         private static ILog logger = AppState.logger;
 
-        private static ManualResetEvent _dtlsInitMre = new ManualResetEvent(false);
+        private static ManualResetEvent _secureChannelInitMre = new ManualResetEvent(false);
 
         public WebRtcPeer Peer;
         public DtlsManaged DtlsContext;
@@ -96,7 +96,7 @@ namespace SIPSorcery.Net.WebRtc
 
             if (DtlsContext == null)
             {
-                lock (_dtlsInitMre)
+                lock (_secureChannelInitMre)
                 {
                     DtlsContext = new DtlsManaged(_dtlsCertFilePath, _dtlsKeyFilePath);
                     int res = DtlsContext.Init();
@@ -129,8 +129,13 @@ namespace SIPSorcery.Net.WebRtc
                     if (DtlsContext.GetState() == 3)
                     {
                         logger.Debug("DTLS negotiation complete for " + remoteEndPoint.ToString() + ".");
-                        SrtpContext = new SRTPManaged(DtlsContext, false);
-                        SrtpReceiveContext = new SRTPManaged(DtlsContext, true);
+
+                        lock (_secureChannelInitMre)
+                        {
+                            SrtpContext = new SRTPManaged(DtlsContext, false);
+                            SrtpReceiveContext = new SRTPManaged(DtlsContext, true);
+                        }
+
                         Peer.IsDtlsNegotiationComplete = true;
                         iceCandidate.RemoteRtpEndPoint = remoteEndPoint;
 

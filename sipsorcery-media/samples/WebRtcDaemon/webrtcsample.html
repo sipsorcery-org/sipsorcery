@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"
@@ -94,26 +94,33 @@
             pc.setLocalDescription(sessionDescription, null, showError);
         }
 
-        //function handleRemoteStreamAdded(event) {
-        //    console.log('Remote stream added.');
+        //function handleRemoteTrackAdded(event) {
+        //    console.log('Remote track added.');
         //    console.log(event);
 
-        //    document.querySelector("#remoteVideo").srcObject = event.stream;
-        //    document.querySelector("#remoteVideo").play();
-
-        //    //document.querySelector("#remoteAudio").srcObject = event.stream;
-        //    //document.querySelector("#remoteAudio").play();
+        //    if (event != null && event.streams.length > 0) {
+        //        document.querySelector("#remoteVideo").srcObject = event.streams[0];
+        //        document.querySelector("#remoteVideo").play();
+        //    }
         //}
 
-        function handleRemoteTrackAdded(event) {
+        function handleRemoteTrackAdded(ev) {
             console.log('Remote track added.');
-            console.log(event);
+            console.log(ev);
+            videoElem = document.querySelector("#remoteVideo")
 
-            if (event != null && event.streams.length > 0) {
-                document.querySelector("#remoteVideo").srcObject = event.streams[0];
-                document.querySelector("#remoteVideo").play();
+            if (ev.streams && ev.streams[0]) {
+                videoElem.srcObject = ev.streams[0];
+            }
+            else {
+                if (!inboundStream) {
+                    inboundStream = new MediaStream();
+                    videoElem.srcObject = inboundStream;
+                }
+                inboundStream.addTrack(ev.track);
             }
         }
+
 
         function handleRemoteStreamRemoved(event) {
             console.log('Remote stream removed. Event: ', event);
