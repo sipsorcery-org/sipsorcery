@@ -37,7 +37,7 @@
 
 #pragma once
 
-#include "srtp.h"
+#include "srtp2/srtp.h"
 #include "openssl\srtp.h"
 #include "openssl\err.h"
 #include <msclr\marshal.h>
