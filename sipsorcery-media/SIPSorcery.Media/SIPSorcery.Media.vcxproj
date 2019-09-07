@@ -82,6 +82,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAs>Default</CompileAs>
       <OmitFramePointers>false</OmitFramePointers>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -114,6 +115,7 @@
       </AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
       <OmitFramePointers>false</OmitFramePointers>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

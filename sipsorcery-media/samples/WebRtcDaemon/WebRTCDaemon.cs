@@ -33,13 +33,14 @@
 
 //-----------------------------------------------------------------------------
 // Create a self signed localhost certificate for use with the web socket server and that is accepted by Chrome
-// NOTE: The localhost.pfx needs to be added to the Local Computer/Trusted Root Certification Authorities to make Chrome happy
-// Also need to set these two Chorme flags (enter the strings below in the address bar):
-// chrome://flags/#allow-insecure-localhost
-// chrome://flags/#enable-webrtc-hide-local-ips-with-mdns
+// NOTE: See section below about various flags that may need to be set for different browsers including trusting self 
+// signed certificate importing.
 //
 // openssl req -config req.conf -x509 -newkey rsa:4096 -keyout private/localhost.pem -out localhost.pem -nodes -days 3650
 // openssl pkcs12 -export -in localhost.pem -inkey private/localhost.pem -out localhost.pfx -nodes
+//
+// openssl req -config req.conf -x509 -newkey rsa:2048 -keyout winsvr19-test-key.pem -out winsvr19-test.pem -nodes -days 3650
+// openssl pkcs12 -export -in winsvr19-test.pem -inkey winsvr19-test-key.pem -out winsvr19-test.pfx -nodes
 //
 // cat req.conf
 //[ req ]
@@ -60,8 +61,6 @@
 // Get thumbrpint for certificate used for DTLS:
 // openssl x509 -fingerprint -sha256 -in localhost.pem
 //
-// Note Microsoft Edge:
-// Not supported due to apparent issue with 4096 bit certificates: https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14561214/
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -88,12 +87,21 @@
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Browser flags for localhost testing:
+// Browser flags for webrtc testing and certificate management:
 //
 // Edge: allow web socket connections with localhost (**see note above aout Edge not working with openssl)
 // C:\WINDOWS\system32>CheckNetIsolation LoopbackExempt -a -n=Microsoft.MicrosoftEdge_8wekyb3d8bbwe
 //
-// Chrome Canary: allow WebRtc with DTLS encryption disabled (so RTP pakcets can be captured and checked):
+// Edge:
+// Does not support OpenSSL's RSA (2048 or 4096) bit certificates for DTLS which is required for the WebRTC connection,
+// https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14561214/
+//
+// Edge:
+// To trust a self signed certificate the only approach I found was to add to the Current User\Trusted Root Certificate Authorities.
+// This is incorrect because it's a self signed certificate not a certificate authority.
+// This certificate store can be access by Windows Search bar->certmgr select "Trusted Root Certificate Authority".
+//
+// Chrome Canary: allow WebRtc with DTLS encryption disabled (so RTP packets can be captured and checked):
 // "C:\Users\aaron\AppData\Local\Google\Chrome SxS\Application\chrome.exe" -disable-webrtc-encryption
 //
 // Chrome: prevent hostnames using the <addr>.local format being set in ICE candidates (TODO: handle the .local hostnames)
@@ -102,6 +110,20 @@
 // Chrome: Allow a non-trusted localhost certificate for the web socket connection (this didn't seem to work)
 // chrome://flags/#allow-insecure-localhost
 //
+// Chrome: Add certificate to the appropriate Windows store to be trusted for web socket connection:
+// Note that the steps below correspond to importing into the Windows Current User\Personal\Certificates store.
+// This store can be managed directly by typing "certmgr" in the Windows search bar.
+// 1. chrome://settings/?search=cert,
+// 2. Click the manage certificated popup icon (next to "Manage certificates"),
+// 3. Browse to the localhost.pem file and import.
+//
+// Firefox:
+// 1. about:preferences#privacy
+// 2. Scroll down to certificates and click "View Certificates" to bring up the Certificate Manager,
+// 3. Click Servers->Add Exception and in the Location type https://localhost:8081 or the address of the web socket server,
+// 4. Click Get Certificate, verify the certificate using View and if happy then check the "Permanently store this exception" and
+//    click the "Confirm Security Exception" button.
+// 
 // Firefox: to allow secure web socket (wss) connection to localhost, enter about:config in address bar.
 // Search for network.stricttransportsecurity.preloadlist and set to false. (TODO: this is insecure keep looking for a better way)
 // Open https://localhost:8081/ and accept risk which seems to add an exception
@@ -193,20 +215,19 @@ namespace SIPSorcery.Net.WebRtc
         private const int RTCP_SR_PERIOD_SECONDS = 3;
         private const int RAW_RTP_START_PORT_RANGE = 48000;
         private const int RAW_RTP_END_PORT_RANGE = 48200;
-
-        // This needs to match the cerificate used for DTLS comunications: openssl x509 -fingerprint -sha256 -in localhost.pem
-        // TODO: Extract this programatically from the DTLS Certificate.
-        private const string DTLS_CERTIFICATE_THUMBRPINT = "C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
+        private const int DEFAULT_WEB_SOCKET_PORT = 8081;
 
         // Application configuration settings.
         private string _webSocketCertificatePath = AppState.GetConfigSetting("WebSocketCertificatePath");
         private string _webSocketCertificatePassword = AppState.GetConfigSetting("WebSocketCertificatePassword");
         private string _dtlsCertificatePath = AppState.GetConfigSetting("DtlsCertificatePath");
         private string _dtlsKeyPath = AppState.GetConfigSetting("DtlsKeyPath");
+        private string _dtlsCertificateThumbprint = AppState.GetConfigSetting("DtlsCertificateThumbprint"); // TODO: Extract this programatically from the DTLS Certificate.
         private string _rawRtpBaseEndPoint = AppState.GetConfigSetting("RawRtpBaseEndPoint");
         private string _mediaFilePath = AppState.GetConfigSetting("MediaFilePath");
         private string _testPattermImagePath = AppState.GetConfigSetting("TestPatternFilePath");
         private string _localRtpIPAddress = AppState.GetConfigSetting("LocalRtpIPAddress");
+        private string _webSocketPort = AppState.GetConfigSetting("WebSocketPort");
 
         private bool _exit = false;
         private DateTime _lastRtcpSenderReportSentAt = DateTime.MinValue;
@@ -229,6 +250,8 @@ namespace SIPSorcery.Net.WebRtc
 
                 var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(_webSocketCertificatePath, _webSocketCertificatePassword);
                 logger.Debug("Web Socket Server Certificate: " + wssCertificate.Subject + ", have key " + wssCertificate.HasPrivateKey + ", Expires " + wssCertificate.GetExpirationDateString() + ".");
+                logger.Debug($"DTLS certificate thumbprint {_dtlsCertificateThumbprint}.");
+                logger.Debug($"Web socket port {_webSocketPort}.");
 
                 if (!File.Exists(_mediaFilePath))
                 {
@@ -242,7 +265,8 @@ namespace SIPSorcery.Net.WebRtc
                 }
 
                 // Configure the web socket and the different end point handlers.
-                var wss = new WebSocketServer(8081, true);
+                int webSocketPort = (!String.IsNullOrEmpty(_webSocketPort)) ? Int32.Parse(_webSocketPort) : DEFAULT_WEB_SOCKET_PORT;
+                var wss = new WebSocketServer(webSocketPort, true);
                 wss.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate, false, System.Security.Authentication.SslProtocols.Default, false);
                 wss.Log.Level = LogLevel.Debug;
 
@@ -446,7 +470,7 @@ namespace SIPSorcery.Net.WebRtc
                         webRtcSession.Peer.Close();
                     };
 
-                    string dtlsThumbrpint = (isEncryptionDisabled == false) ? DTLS_CERTIFICATE_THUMBRPINT : null;
+                    string dtlsThumbrpint = (isEncryptionDisabled == false) ? _dtlsCertificateThumbprint : null;
 
                     if (_webRtcSessions.TryAdd(webSocketID, webRtcSession))
                     {

@@ -7,8 +7,8 @@
     <ProjectGuid>{6886EF9D-7FF7-4712-9AB3-54BD85CEE232}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>WebRTCVideoServer</RootNamespace>
-    <AssemblyName>WebRTCVideoServer</AssemblyName>
+    <RootNamespace>WebRTCDaemon</RootNamespace>
+    <AssemblyName>WebRTCDaemon</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
