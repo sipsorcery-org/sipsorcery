@@ -7,32 +7,7 @@
 
     <script type="text/javascript">
 
-        //const WebSocketUrl = "wss://webrtc.sipsorcery.com:8080/max";
-        //const WebSocketUrl = "wss://webrtc.sipsorcery.com:8080/testpattern";
-        //const WebSocketUrl = "wss://localhost:8081/max";
-        //const WebSocketUrl = "wss://localhost:8081/testpattern";
-        //const NoCryptWebSocketUrl = "wss://localhost:8081/maxnocry";
-        //CurrentWebSocketUrl = WebSocketUrl;
-
-        const MaxWsUrl = "wss://webrtc.sipsorcery.com:8080/max";
-        const TestPatternWsUrl = "wss://webrtc.sipsorcery.com:8080/testpattern";
-
-        $(document).ready(function () {
-            console.log("document ready!");
-
-            $("#nocrypt").change(function () {
-                CurrentWebSocketUrl = (this.checked) ? NoCryptWebSocketUrl : WebSocketUrl;
-                console.log("web socket URL changed to " + CurrentWebSocketUrl);
-            });
-        });
-
-        var stun = { url: 'stun:stun.ekiga.net' };
-
-        var iceServers = {
-            iceServers: [stun]
-        };
-
-        var pc_constraints = {
+        const pc_constraints = {
             'optional': [
                 { 'DtlsSrtpKeyAgreement': true },
                 { 'RtpDataChannels': false },
@@ -41,131 +16,12 @@
             ]
         };
 
-        var offerOptions = {
-            offerToReceiveAudio: 1,
-            offerToReceiveVideo: 1
-        };
-
-        var media_constraints = {
-            audio: true,
-            video: true
-        };
-
-        // Set up audio and video regardless of what devices are present.
-        var sdpConstraints = {
-            'mandatory': {
-                'OfferToReceiveAudio': true,
-                'OfferToReceiveVideo': true
-            }
-        };
-
-        var constraints = { video: true, audio: true };
-
-        var count = 0;
-        var ws;
-        var pc;
-        var servers = null;
-
-        function handleIceCandidate(event) {
-            console.log('handleIceCandidate event: ', event);
-            if (event.candidate) {
-                console.log(parseCandidate(event.candidate.candidate));
-            }
-            console.log("ice gathering state " + pc.iceGatheringState);
-            if (pc.iceGatheringState == "complete") {
-                console.log("Sending offer SDP.");
-                ws.send(pc.localDescription.sdp);
-            }
-        }
-
-        function handleSignalingStateChange(event) {
-            console.log('handleSignalingStateChange ' + pc.signalingState + '. Event: ', event);
-        }
-
-        function setLocalSDP(sessionDescription) {
-            pc.setLocalDescription(sessionDescription, localDescriptionSuccess, showError);
-        }
-
-        function localDescriptionSuccess(event) {
-            console.log("Local description successfully set. " + event);
-        }
-
-        function remoteDescriptionSuccess(event) {
-            console.log("Remote description successfully set. " + event);
-            pc.createAnswer(setLocalSDP, showError, sdpConstraints);
-        }
-
-        function answerCreated(sessionDescription) {
-            pc.setLocalDescription(sessionDescription, null, showError);
-        }
-
-        //function handleRemoteTrackAdded(event) {
-        //    console.log('Remote track added.');
-        //    console.log(event);
-
-        //    if (event != null && event.streams.length > 0) {
-        //        document.querySelector("#remoteVideo").srcObject = event.streams[0];
-        //        document.querySelector("#remoteVideo").play();
-        //    }
-        //}
-
-        function handleRemoteTrackAdded(ev) {
-            console.log('Remote track added.');
-            console.log(ev);
-            videoElem = document.querySelector("#remoteVideo")
-
-            if (ev.streams && ev.streams[0]) {
-                videoElem.srcObject = ev.streams[0];
-            }
-            else {
-                if (!inboundStream) {
-                    inboundStream = new MediaStream();
-                    videoElem.srcObject = inboundStream;
-                }
-                inboundStream.addTrack(ev.track);
-            }
-        }
-
-
-        function handleRemoteStreamRemoved(event) {
-            console.log('Remote stream removed. Event: ', event);
-        }
-
-        function handleIceStateChange(event) {
-            console.log('ICE state changed, connection state ' + pc.iceConnectionState + ', gathering state ' + pc.iceGatheringState + '. Event: ', event);
-        }
-
-        function showError(error) {
-            console.log("ERROR: " + error);
-        }
-
-        function parseCandidate(text) {
-            var candidateStr = "candidate:";
-            var pos = text.indexOf(candidateStr) + candidateStr.length;
-            var fields = text.substr(pos).split(" ");
-            return {
-                "component": fields[1],
-                "type": fields[7],
-                "foundation": fields[0],
-                "protocol": fields[2],
-                "address": fields[4],
-                "port": fields[5],
-                "priority": fields[3]
-            };
-        }
-
-
-        function wsConnect(url) {
-
-            if (typeof ws !== 'undefined') {
-                ws.close();
-            }
-
-            if (typeof pc !== 'undefined') {
-                pc.close();
-            }
+        function wsConnect(url, videoControl) {
 
             console.log("Web socket URL " + url);
+
+            var ws;
+            var pc;
 
             ws = new WebSocket(url, []);
 
@@ -173,110 +29,57 @@
                 console.log("web socket onopen.");
 
                 pc = new RTCPeerConnection(null, pc_constraints);
-                pc.onicecandidate = handleIceCandidate;
-                pc.ontrack = handleRemoteTrackAdded;
-                pc.onremovestream = handleRemoteStreamRemoved;
-                pc.onsignalingstatechange = handleSignalingStateChange;
-                pc.oniceconnectionstatechange = handleIceStateChange;
-            };
 
-            ws.onmessage = function (evt) {
-                console.log("web socket onmessage: " + evt.data + ".");
-                pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }), remoteDescriptionSuccess, showError);
-            };
+                pc.ontrack = function (event) {
+                    console.log('Remote track added.');
+                    console.log(event);
 
-            ws.onclose = function () {
-                console.log("web socket closed.");
-            };
-
-            count++;
-        };
-
-        function attachMediaErrorCallback(error) {
-            console.log('Error attaching media: ', error);
-        }
-
-        function onCreateSessionDescriptionError(error) {
-            trace('Failed to create session description: ' + error.toString());
-        }
-
-        function onCreateOfferSuccess(desc) {
-            trace('Offer from pc\n' + desc.sdp);
-            trace('pc setLocalDescription start');
-            pc.setLocalDescription(desc, function () {
-                onSetLocalSuccess(pc);
-            }, onSetSessionDescriptionError);
-        }
-
-        function onSetLocalSuccess(pc) {
-            trace(' setLocalDescription complete');
-        }
-
-        function onSetRemoteSuccess(pc) {
-            trace(' setRemoteDescription complete');
-            pc.createAnswer(onCreateAnswerSuccess, onCreateSessionDescriptionError);
-        }
-
-        function onCreateAnswerSuccess(desc) {
-            trace('Answer from pc:\n' + desc.sdp);
-            trace('pc setLocalDescription start');
-            pc.setLocalDescription(desc, function () {
-                onSetLocalSuccess(pc);
-            }, onSetSessionDescriptionError);
-        }
-
-
-        function onSetSessionDescriptionError(error) {
-            trace('Failed to set session description: ' + error.toString());
-        }
-
-        function onIceCandidate(pc, event) {
-            if (event.candidate) {
-                pc.addIceCandidate(new RTCIceCandidate(event.candidate),
-                    function () {
-                        onAddIceCandidateSuccess(pc);
-                    },
-                    function (err) {
-                        onAddIceCandidateError(pc, err);
+                    if (event.streams && event.streams[0]) {
+                        videoControl.srcObject = event.streams[0];
                     }
-                );
-                trace(' ICE candidate: \n' + event.candidate.candidate);
-            }
-        }
+                    else {
+                        if (!inboundStream) {
+                            inboundStream = new MediaStream();
+                            videoControl.srcObject = inboundStream;
+                        }
+                        inboundStream.addTrack(event.track);
+                    }
+                }
+            };
 
-        function onAddIceCandidateSuccess(pc) {
-            trace(' addIceCandidate success ' + pc.iceGatheringState);
+            ws.onmessage = async function (evt) {
+                // Received SDP offer from the remote web socket server.
+                console.log("web socket onmessage: " + evt.data + ".");
+                await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
 
-            if (pc.iceGatheringState == "complete") {
-                console.log("Sending offer SDP.");
-                //ws.send(pc.localDescription.sdp);
-                trace(pc.localDescription.sdp);
-            }
-        }
-
-        function onAddIceCandidateError(pc, error) {
-            trace(' failed to add ICE Candidate: ' + error.toString());
-        }
-
-        function onIceStateChange(pc, event) {
-            trace(' ICE state change ', event);
-            if (pc) {
-                trace(' ICE state: ' + pc.iceConnectionState);
-                console.log('ICE state change event: ', event);
-            }
-        }
+                // Now create our offer SDP to send back to the web socket server.
+                pc.createAnswer().then(function (answer) {
+                    return pc.setLocalDescription(answer);
+                }).then(function () {
+                    console.log("Sending offer SDP.");
+                    ws.send(pc.localDescription.sdp);
+                    ws.close();
+                });
+            };
+        };
 
     </script>
 </head>
 <body>
 
-    <video controls autoplay="autoplay" id="remoteVideo" width="1080" height="720"></video>
+    <video controls autoplay="autoplay" id="maxVideo" width="1080" height="720"></video>
 
-    <br/><br />
+    <br /><br />
 
     <div>
-        <button type="button" class="btn btn-success" onclick="wsConnect(TestPatternWsUrl);">Play Test Pattern</button>
-        <button type="button" class="btn btn-success" onclick="wsConnect(MaxWsUrl);">Play Max</button>
+        <button type="button" class="btn btn-success" onclick="wsConnect('wss://localhost:8081/max', document.querySelector('#maxVideo'));">Play Max</button>
     </div>
 
+    <br /><br />
+
+    <video controls autoplay="autoplay" id="testPatternVideo" width="640" height="480"></video>
+
+    <br /><br />
+
+    <button type="button" class="btn btn-success" onclick="wsConnect('wss://localhost:8081/testpattern', document.querySelector('#testPatternVideo'));">Play Test Pattern</button>
 </body>

@@ -486,12 +486,6 @@ namespace SIPSorcery.Net.WebRtc
                 {
                     var webRtcSession = new WebRtcSession(_dtlsCertificatePath, _dtlsKeyPath, webSocketID, isEncryptionDisabled, mediaSource);
 
-                    context.WebSocket.OnClose += (sender, e) =>
-                    {
-                        Console.WriteLine($"Web socket {webSocketID} closed, closing WebRtc peer.");
-                        webRtcSession.Peer.Close();
-                    };
-
                     string dtlsThumbrpint = (isEncryptionDisabled == false) ? _dtlsCertificateThumbprint : null;
 
                     if (_webRtcSessions.TryAdd(webSocketID, webRtcSession))
@@ -564,6 +558,8 @@ namespace SIPSorcery.Net.WebRtc
                         peer.AppendRemoteIceCandidate(iceCandidate);
                     }
                 }
+
+                // TODO: The web socket has now completed it's job and can be closed.
             }
             catch (Exception excp)
             {
