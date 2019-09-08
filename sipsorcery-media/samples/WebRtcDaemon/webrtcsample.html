@@ -8,11 +8,14 @@
     <script type="text/javascript">
 
         //const WebSocketUrl = "wss://webrtc.sipsorcery.com:8080/max";
-       const WebSocketUrl = "wss://webrtc.sipsorcery.com:8080/testpattern";
+        //const WebSocketUrl = "wss://webrtc.sipsorcery.com:8080/testpattern";
         //const WebSocketUrl = "wss://localhost:8081/max";
         //const WebSocketUrl = "wss://localhost:8081/testpattern";
-        const NoCryptWebSocketUrl = "wss://localhost:8081/maxnocry";
-        CurrentWebSocketUrl = WebSocketUrl;
+        //const NoCryptWebSocketUrl = "wss://localhost:8081/maxnocry";
+        //CurrentWebSocketUrl = WebSocketUrl;
+
+        const MaxWsUrl = "wss://webrtc.sipsorcery.com:8080/max";
+        const TestPatternWsUrl = "wss://webrtc.sipsorcery.com:8080/testpattern";
 
         $(document).ready(function () {
             console.log("document ready!");
@@ -151,19 +154,26 @@
             };
         }
 
-        function wsConnect() {
 
-            //ws = new WebSocket("wss://www.sipsorcery.com:8081/stream?path=0.hivpx");
-            //ws = new WebSocket("ws://192.168.11.5,. 0:8081/stream");
-            //ws = new WebSocket("wss://localhost:8081/max");
-            ws = new WebSocket(CurrentWebSocketUrl, []);
+        function wsConnect(url) {
+
+            if (typeof ws !== 'undefined') {
+                ws.close();
+            }
+
+            if (typeof pc !== 'undefined') {
+                pc.close();
+            }
+
+            console.log("Web socket URL " + url);
+
+            ws = new WebSocket(url, []);
 
             ws.onopen = function () {
                 console.log("web socket onopen.");
 
                 pc = new RTCPeerConnection(null, pc_constraints);
                 pc.onicecandidate = handleIceCandidate;
-                //pc.onaddstream = handleRemoteStreamAdded;
                 pc.ontrack = handleRemoteTrackAdded;
                 pc.onremovestream = handleRemoteStreamRemoved;
                 pc.onsignalingstatechange = handleSignalingStateChange;
@@ -261,12 +271,12 @@
 <body>
 
     <video controls autoplay="autoplay" id="remoteVideo" width="1080" height="720"></video>
+
+    <br/><br />
+
     <div>
-        <button onclick="wsConnect();">Click here to start</button>
+        <button type="button" class="btn btn-success" onclick="wsConnect(TestPatternWsUrl);">Play Test Pattern</button>
+        <button type="button" class="btn btn-success" onclick="wsConnect(MaxWsUrl);">Play Max</button>
     </div>
 
-    <input type="checkbox" id="nocrypt" name="nocrypt" value="nocrypt"> No encryption (only works if browser has disable encryption flag set)
-    <br>
-
-    <!--<audio controls autoplay="autoplay" id="remoteAudio" />-->
 </body>
