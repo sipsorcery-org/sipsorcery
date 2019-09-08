@@ -42,7 +42,10 @@ namespace SIPSorceryMedia
 
     std::wstring mediaPathNative = msclr::interop::marshal_as<std::wstring>(mediaPath);
 
-    IMFMediaSession *pSession = NULL;
+    // Need to create a pinned copy of the media session pointer it's a managed resource being access by native code.
+    cli::pin_ptr<IMFMediaSession*> pinnedMediaSession = &_pcliSession;
+    IMFMediaSession * pMediaSession = reinterpret_cast<IMFMediaSession*>(pinnedMediaSession);
+
     IMFMediaSource *pSource = NULL;
     SampleGrabberCB *pSampleGrabberSinkCallback = NULL;
     IMFActivate *pAudioSinkActivate = NULL, *pVideoSinkActivate = NULL;
@@ -85,7 +88,7 @@ namespace SIPSorceryMedia
     //CHECK_HR(hr = pSinkActivate->SetUINT32(MF_SAMPLEGRABBERSINK_IGNORE_CLOCK, TRUE));
 
     // Create the Media Session.
-    CHECK_HR(hr = MFCreateMediaSession(NULL, &pSession));
+    CHECK_HR(hr = MFCreateMediaSession(NULL, &pMediaSession));
 
     // Create the media source.
     CHECK_HR(hr = CreateMediaSource(mediaPathNative.c_str(), &pSource));
@@ -100,8 +103,15 @@ namespace SIPSorceryMedia
 
     do {
       // Run the media session.
-      CHECK_HR(hr = RunSession(pSession, pTopology, cbVidResChanged));
-    } while(loop == true);
+      if(_paused) {
+        Sleep(1000);
+      }
+      else {
+        CHECK_HR(hr = RunSession(pMediaSession, pTopology, cbVidResChanged));
+      }
+    } while(loop == true && _exit == false);
+
+    System::Console::WriteLine("MFSampleGrabber.Run, finished.");
 
   done:
     // Clean up.
@@ -109,12 +119,12 @@ namespace SIPSorceryMedia
     {
       pSource->Shutdown();
     }
-    if(pSession)
+    if(pMediaSession)
     {
-      pSession->Shutdown();
+      pMediaSession->Shutdown();
     }
 
-    SafeRelease(&pSession);
+    SafeRelease((IMFMediaSession**)(&pMediaSession));
     SafeRelease(&pSource);
     SafeRelease(&pSampleGrabberSinkCallback);
     SafeRelease(&pAudioSinkActivate);
@@ -123,6 +133,53 @@ namespace SIPSorceryMedia
     SafeRelease(&pVideoType);
     SafeRelease(&pAudioType);
     return hr;
+  }
+
+  // Pauses an initialised session.
+  HRESULT MFSampleGrabber::Pause()
+  {
+    System::Console::WriteLine("MFSampleGrabber.Pause.");
+
+    if(_paused == false)
+    {
+      _paused = true;
+
+      if(_pcliSession != nullptr)
+      {
+        // Need to create a pinned copy of the media session pointer it's a managed resource being access by native code.
+        cli::pin_ptr<IMFMediaSession*> pinnedMediaSession = &_pcliSession;
+        IMFMediaSession * pMediaSession = reinterpret_cast<IMFMediaSession*>(pinnedMediaSession);
+        _pcliSession->Pause();
+      }
+    }
+
+    return S_OK;
+  }
+
+  // Restarts a paused session (relies on the do/while loop in Run, see above).
+  HRESULT MFSampleGrabber::Start()
+  {
+    System::Console::WriteLine("MFSampleGrabber.Start.");
+    _paused = false;
+    return S_OK;
+  }
+
+  // Stops the media session 
+  HRESULT MFSampleGrabber::StopAndExit()
+  {
+    System::Console::WriteLine("MFSampleGrabber.Stop.");
+
+    _exit = true;
+
+    if(_pcliSession != nullptr)
+    {
+      // Need to create a pinned copy of the media session pointer it's a managed resource being access by native code.
+      cli::pin_ptr<IMFMediaSession*> pinnedMediaSession = &_pcliSession;
+      IMFMediaSession * pMediaSession = reinterpret_cast<IMFMediaSession*>(pinnedMediaSession);
+      _pcliSession->Stop();
+    }
+
+    return S_OK;
   }
 } // End SIPSorceryMedia namespace
 
@@ -384,7 +441,7 @@ HRESULT RunSession(IMFMediaSession *pSession, IMFTopology *pTopology, OnVideoRes
   CHECK_HR(hr = pSession->SetTopology(0, pTopology));
   CHECK_HR(hr = pSession->Start(&GUID_NULL, &var));
 
-  while(1)
+  while(true)
   {
     HRESULT hrStatus = S_OK;
     MediaEventType met;
@@ -428,9 +485,9 @@ HRESULT RunSession(IMFMediaSession *pSession, IMFTopology *pTopology, OnVideoRes
           {
             CHECK_HR_ERROR(pMediaType->GetUINT64(MF_MT_FRAME_SIZE, &videoResolution), "Failed to get new video resolution.");
             CHECK_HR_ERROR(pMediaType->GetUINT32(MF_MT_DEFAULT_STRIDE, &stride), "Failed to get the new stride.");
-            std::cout << "Media session video resolution changed to width " << std::to_string(HI32(videoResolution)) 
-              << " and height " << std::to_string(LO32(videoResolution)) 
-              << " and stride " << stride << "." << std::endl;
+            //std::cout << "Media session video resolution changed to width " << std::to_string(HI32(videoResolution)) 
+            //  << " and height " << std::to_string(LO32(videoResolution)) 
+            //  << " and stride " << stride << "." << std::endl;
             if(onVideoResolutionChanged != nullptr) {
               onVideoResolutionChanged(HI32(videoResolution), LO32(videoResolution), stride);
             }
@@ -442,7 +499,7 @@ HRESULT RunSession(IMFMediaSession *pSession, IMFTopology *pTopology, OnVideoRes
       }
     }
 
-    if(met == MESessionEnded)
+    if(met == MESessionEnded || met == MESessionPaused)
     {
       break;
     }

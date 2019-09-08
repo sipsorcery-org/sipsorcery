@@ -31,7 +31,7 @@
 //-----------------------------------------------------------------------------
 
 using System.ServiceProcess;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace SIPSorcery.Net.WebRtc
 {
@@ -48,8 +48,7 @@ namespace SIPSorcery.Net.WebRtc
 
         protected override void OnStart(string[] args)
         {
-            Thread daemonThread = new Thread(new ThreadStart(_daemon.Start));
-            daemonThread.Start();
+            Task.Run(_daemon.Start);
         }
 
         protected override void OnStop()

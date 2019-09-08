@@ -33,7 +33,7 @@
 using System;
 using System.Collections;
 using System.Configuration.Install;
-using System.Threading;
+using System.Threading.Tasks;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -47,8 +47,6 @@ namespace SIPSorcery.Net.WebRtc
         {
             try
             {
-                Console.WriteLine("WebRTC Video Service Console:");
-
                 //Windows service has system32 as default working folder, we change the working dir to install dir for file access
                 System.IO.Directory.SetCurrentDirectory(System.AppDomain.CurrentDomain.BaseDirectory);
                 logger.Debug("Setting current directory to " + System.AppDomain.CurrentDomain.BaseDirectory);
@@ -115,13 +113,20 @@ namespace SIPSorcery.Net.WebRtc
                 }
                 else if ((args != null && args.Length == 1 && args[0].StartsWith("-c")) || System.Environment.UserInteractive == true)
                 {
-                    Thread daemonThread = new Thread(daemon.Start);
-                    daemonThread.Start();
+                    Task.Run(daemon.Start);
 
-                    Console.WriteLine("Daemon successfully started.");
+                    Console.WriteLine("Press q to quit at any time.");
+                    while(true)
+                    {
+                        string option = Console.ReadLine();
+                        if(option?.ToLower() == "q")
+                        {
+                            Console.WriteLine("User requested quit.");
+                            break;
+                        }
+                    }
 
-                    var mre = new ManualResetEvent(false);
-                    mre.WaitOne();
+                    daemon.Stop();
                 }
                 else
                 {

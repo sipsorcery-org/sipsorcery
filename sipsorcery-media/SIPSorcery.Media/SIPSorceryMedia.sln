@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.29209.62
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SIPSorceryMedia", "SIPSorcery.Media.vcxproj", "{60CC689C-2616-441C-A38A-E1B764C7C446}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "srtp2", "..\libsrtp\srtp2.vcxproj", "{EEF031CB-FED8-451E-A471-91EC8D4F6750}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -23,14 +21,6 @@ Global
 		{60CC689C-2616-441C-A38A-E1B764C7C446}.Release|Win32.Build.0 = Release|Win32
 		{60CC689C-2616-441C-A38A-E1B764C7C446}.Release|x64.ActiveCfg = Release|x64
 		{60CC689C-2616-441C-A38A-E1B764C7C446}.Release|x64.Build.0 = Release|x64
-		{EEF031CB-FED8-451E-A471-91EC8D4F6750}.Debug|Win32.ActiveCfg = Debug|Win32
-		{EEF031CB-FED8-451E-A471-91EC8D4F6750}.Debug|Win32.Build.0 = Debug|Win32
-		{EEF031CB-FED8-451E-A471-91EC8D4F6750}.Debug|x64.ActiveCfg = Debug|x64
-		{EEF031CB-FED8-451E-A471-91EC8D4F6750}.Debug|x64.Build.0 = Debug|x64
-		{EEF031CB-FED8-451E-A471-91EC8D4F6750}.Release|Win32.ActiveCfg = Release|Win32
-		{EEF031CB-FED8-451E-A471-91EC8D4F6750}.Release|Win32.Build.0 = Release|Win32
-		{EEF031CB-FED8-451E-A471-91EC8D4F6750}.Release|x64.ActiveCfg = Release|x64
-		{EEF031CB-FED8-451E-A471-91EC8D4F6750}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

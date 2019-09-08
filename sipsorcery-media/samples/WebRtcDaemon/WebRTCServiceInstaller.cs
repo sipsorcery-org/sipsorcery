@@ -30,7 +30,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
-
 using System.ComponentModel;
 using System.ServiceProcess;
 
@@ -39,7 +38,7 @@ namespace SIPSorcery.Net.WebRtc
     [RunInstaller(true)]
     public class QikIDHeavyBiometricsServiceInstaller : System.Configuration.Install.Installer
     {
-        private const string DAEMON_NAME = "SIPSorcery WebRTC Video Service";
+        private const string DAEMON_NAME = "SIPSorcery WebRTC Daemon";
 		
 		private System.ServiceProcess.ServiceProcessInstaller serviceProcessInstaller1;
 		private System.ServiceProcess.ServiceInstaller serviceInstaller1;
@@ -69,7 +68,7 @@ namespace SIPSorcery.Net.WebRtc
 		{
 			// Start the service.
 			ServiceController DaemonService = new ServiceController(DAEMON_NAME);
-			DaemonService.Start(new string[] {"nothing"});
+			DaemonService.Start();
 		}
     }
 }

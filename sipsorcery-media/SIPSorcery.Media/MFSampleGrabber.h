@@ -61,9 +61,16 @@ namespace SIPSorceryMedia
     const int VIDEO_TYPE_ID = 0;
     const int AUDIO_TYPE_ID = 1;
 
+    property bool Paused {
+      bool get() { return _paused; }
+    }
+
     MFSampleGrabber();
     ~MFSampleGrabber();
-    HRESULT Run(System::String^ path, bool loop);
+    HRESULT Run(System::String^ path, bool loop); // Initialises and starts the session (no need to call Start, it's done automatically).
+    HRESULT Pause();                              // Pauses the media session.
+    HRESULT Start();                              // Restarts the session after pausing.
+    HRESULT StopAndExit();                        // Stops and exits the session. Cannot be restarted (use pause if restart is required).
 
     event OnClockStartDelegate^ OnClockStartEvent;
     event OnProcessSampleDelegateManaged^ OnProcessSampleEvent;
@@ -72,6 +79,11 @@ namespace SIPSorceryMedia
     void OnClockStart(MFTIME hnsSystemTime, LONGLONG llClockStartOffset);
     void OnProcessSample(REFGUID guidMajorMediaType, DWORD dwSampleFlags, LONGLONG llSampleTime, LONGLONG llSampleDuration, const BYTE * pSampleBuffer, DWORD dwSampleSize);
     void OnVideoResolutionChanged(UINT32 width, UINT32 height, UINT32 stride);
+
+  private:
+    bool _exit = false;
+    bool _paused = false;
+    IMFMediaSession * _pcliSession = nullptr;
   };
 }
 

@@ -2,14 +2,14 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>SIPSorceryMedia</id>
-        <version>1.6.3</version>
+        <version>1.7.0<version>
         <authors>Aaron Clauson</authors>
         <owners>Aaron Clauson</owners>
 		<releaseNotes>Added some new Media Foundation hooks to support sample grabbing.</releaseNotes>
         <licenseUrl>https://github.com/sipsorcery/sipsorcery/blob/master/LICENSE.md</licenseUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>The SIPSorcery package for media functions. This dll is built for 64 bit systems only and requires the Visual C++ 2019 runtime to
-		be installed on any machine that consumes the dll.</description>
+        <description>The SIPSorcery package for media functions. This dll requires the latest Microsoft C++ Redistributable
+		from https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads.</description>
       <summary>This is the official package for SIPSorceryMedia. Full source code can be found at https://github.com/sipsorcery/sipsorcery.</summary>  
       <copyright>Copyright (c) 2019, Aaron Clauson</copyright>
         <language>en-US</language>
@@ -23,9 +23,8 @@
     <files>
 	    <file src="SIPSorcery.Media\x64\Release\SIPSorceryMedia.dll" target="lib\net45\SIPSorceryMedia.dll" />
 		<file src="build\release_x64\SIPSorceryMedia.targets" target="build\SIPSorceryMedia.targets" />
-		<file src="build\release_x64\avcodec-56.dll" target="build\x64\avcodec-56.dll" />
-		<file src="build\release_x64\avformat-56.dll" target="build\x64\avformat-56.dll" />
-		<file src="build\release_x64\avutil-54.dll" target="build\x64\avutil-54.dll" />
+		<file src="x64\Release\avcodec-58.dll" target="build\x64\avcodec-58.dll" />
+		<file src="x64\Release\avutil-56.dll" target="build\x64\avutil-56.dll" />
 		<file src="build\release_x64\libeay32.dll" target="build\x64\libeay32.dll" />
 		<file src="build\release_x64\ssleay32.dll" target="build\x64\ssleay32.dll" />
 		<file src="build\release_x64\swscale-3.dll" target="build\x64\swscale-3.dll" />

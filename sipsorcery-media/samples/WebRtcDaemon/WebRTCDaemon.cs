@@ -89,35 +89,24 @@
 //-----------------------------------------------------------------------------
 // Browser flags for webrtc testing and certificate management:
 //
-// Edge: allow web socket connections with localhost (**see note above aout Edge not working with openssl)
-// C:\WINDOWS\system32>CheckNetIsolation LoopbackExempt -a -n=Microsoft.MicrosoftEdge_8wekyb3d8bbwe
-//
-// Edge:
-// Does not support OpenSSL's RSA (2048 or 4096) bit certificates for DTLS which is required for the WebRTC connection,
-// https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14561214/
-//
-// Edge:
-// To trust a self signed certificate the only approach I found was to add to the Current User\Trusted Root Certificate Authorities.
-// This is incorrect because it's a self signed certificate not a certificate authority.
-// This certificate store can be access by Windows Search bar->certmgr select "Trusted Root Certificate Authority".
-//
-// Chrome Canary: allow WebRtc with DTLS encryption disabled (so RTP packets can be captured and checked):
-// "C:\Users\aaron\AppData\Local\Google\Chrome SxS\Application\chrome.exe" -disable-webrtc-encryption
-//
 // Chrome: prevent hostnames using the <addr>.local format being set in ICE candidates (TODO: handle the .local hostnames)
 // chrome://flags/#enable-webrtc-hide-local-ips-with-mdns
 //
 // Chrome: Allow a non-trusted localhost certificate for the web socket connection (this didn't seem to work)
 // chrome://flags/#allow-insecure-localhost
 //
-// Chrome: Add certificate to the appropriate Windows store to be trusted for web socket connection:
+// Chrome: To trust a self signed certificate:
+// Add certificate to the appropriate Windows store to be trusted for web socket connection:
 // Note that the steps below correspond to importing into the Windows Current User\Personal\Certificates store.
 // This store can be managed directly by typing "certmgr" in the Windows search bar.
 // 1. chrome://settings/?search=cert,
 // 2. Click the manage certificated popup icon (next to "Manage certificates"),
 // 3. Browse to the localhost.pem file and import.
 //
-// Firefox:
+// Chrome Canary: allow WebRtc with DTLS encryption disabled (so RTP packets can be captured and checked):
+// "C:\Users\aaron\AppData\Local\Google\Chrome SxS\Application\chrome.exe" -disable-webrtc-encryption
+//
+// Firefox: To trust a self signed certificate:
 // 1. about:preferences#privacy
 // 2. Scroll down to certificates and click "View Certificates" to bring up the Certificate Manager,
 // 3. Click Servers->Add Exception and in the Location type https://localhost:8081 or the address of the web socket server,
@@ -128,6 +117,32 @@
 // Search for network.stricttransportsecurity.preloadlist and set to false. (TODO: this is insecure keep looking for a better way)
 // Open https://localhost:8081/ and accept risk which seems to add an exception
 //
+// Edge: NOTE as of 8 Sep 2019 Edge is not working with this program due to the OpenSSL/DTLS issue below.
+//
+// Edge: allow web socket connections with localhost (**see note above aout Edge not working with openssl)
+// C:\WINDOWS\system32>CheckNetIsolation LoopbackExempt -a -n=Microsoft.MicrosoftEdge_8wekyb3d8bbwe
+//
+// Edge:
+// Does not support OpenSSL's RSA (2048 or 4096) bit certificates for DTLS which is required for the WebRTC connection,
+// https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14561214/
+//
+// Edge: To trust a self signed certificate:
+// The only approach found was to add the certificate to the Current User\Trusted Root Certificate Authorities.
+// This is not ideal and is incorrect because it's a self signed certificate not a certificate authority.
+// This certificate store can be access by Windows Search bar->certmgr select "Trusted Root Certificate Authority".
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// To install as a Windows Service:
+// c:\Apps\WebRtcDaemon> WebRTCDaemon.exe -i
+// or
+// Note: leave the space after "binpath=" and "start="
+// c:\Apps\WebRtcDaemon>sc create "SIPSorcery WebRTC Daemon" binpath= "C:\Apps\WebRTCDaemon\WebRTCDaemon.exe" start= auto
+//
+// To uninstall Windows Service:
+// c:\Apps\WebRtcDaemon> WebRTCDaemon.exe -u
+// or
+// c:\Apps\WebRtcDaemon>sc delete "SIPSorcery WebRTC Daemon" 
 //-----------------------------------------------------------------------------
 
 using System;
@@ -230,6 +245,8 @@ namespace SIPSorcery.Net.WebRtc
         private string _webSocketPort = AppState.GetConfigSetting("WebSocketPort");
 
         private bool _exit = false;
+        private WebSocketServer _webSocketServer;
+        private SIPSorceryMedia.MFSampleGrabber _mfSampleGrabber;
         private DateTime _lastRtcpSenderReportSentAt = DateTime.MinValue;
         private ConcurrentDictionary<string, WebRtcSession> _webRtcSessions = new ConcurrentDictionary<string, WebRtcSession>();
 
@@ -266,12 +283,12 @@ namespace SIPSorcery.Net.WebRtc
 
                 // Configure the web socket and the different end point handlers.
                 int webSocketPort = (!String.IsNullOrEmpty(_webSocketPort)) ? Int32.Parse(_webSocketPort) : DEFAULT_WEB_SOCKET_PORT;
-                var wss = new WebSocketServer(webSocketPort, true);
-                wss.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate, false, System.Security.Authentication.SslProtocols.Default, false);
-                wss.Log.Level = LogLevel.Debug;
+                _webSocketServer = new WebSocketServer(webSocketPort, true);
+                _webSocketServer.SslConfiguration = new WebSocketSharp.Net.ServerSslConfiguration(wssCertificate, false, System.Security.Authentication.SslProtocols.Default, false);
+                _webSocketServer.Log.Level = LogLevel.Debug;
 
                 // Standard encrypted WebRtc stream.
-                wss.AddWebSocketService<SDPExchange>("/max", () =>
+                _webSocketServer.AddWebSocketService<SDPExchange>("/max", () =>
                 {
                     SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.Max, false, rtpIPAddress) { IgnoreExtensions = true };
                     sdpReceiver.WebSocketOpened += WebRtcStartCall;
@@ -280,7 +297,7 @@ namespace SIPSorcery.Net.WebRtc
                 });
 
                 // Decrypted WebRtc stream for diagnostics (browsers do not support this without specific flags being enabled).
-                wss.AddWebSocketService<SDPExchange>("/maxnocry", () =>
+                _webSocketServer.AddWebSocketService<SDPExchange>("/maxnocry", () =>
                 {
                     SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.Max, true, rtpIPAddress) { IgnoreExtensions = true };
                     sdpReceiver.WebSocketOpened += WebRtcStartCall;
@@ -290,7 +307,7 @@ namespace SIPSorcery.Net.WebRtc
 
                 if (!String.IsNullOrEmpty(_testPattermImagePath) && File.Exists(_testPattermImagePath))
                 {
-                    wss.AddWebSocketService<SDPExchange>("/testpattern", () =>
+                    _webSocketServer.AddWebSocketService<SDPExchange>("/testpattern", () =>
                     {
                         SDPExchange sdpReceiver = new SDPExchange(MediaSourceEnum.TestPattern, false, rtpIPAddress) { IgnoreExtensions = true };
                         sdpReceiver.WebSocketOpened += WebRtcStartCall;
@@ -299,15 +316,15 @@ namespace SIPSorcery.Net.WebRtc
                     });
                 }
 
-                wss.Start();
+                _webSocketServer.Start();
 
                 // Initialise the Media Foundation library that will pull the samples from the mp4 file.
-                SIPSorceryMedia.MFSampleGrabber mfSampleGrabber = new SIPSorceryMedia.MFSampleGrabber();
-                mfSampleGrabber.OnClockStartEvent += OnClockStartEvent;
-                mfSampleGrabber.OnVideoResolutionChangedEvent += OnVideoResolutionChangedEvent;
+                _mfSampleGrabber = new SIPSorceryMedia.MFSampleGrabber();
+                _mfSampleGrabber.OnClockStartEvent += OnClockStartEvent;
+                _mfSampleGrabber.OnVideoResolutionChangedEvent += OnVideoResolutionChangedEvent;
                 unsafe
                 {
-                    mfSampleGrabber.OnProcessSampleEvent += OnProcessSampleEvent;
+                    _mfSampleGrabber.OnProcessSampleEvent += OnProcessSampleEvent;
                 }
 
                 // Hook up event handlers to send the media samples to the network.
@@ -335,7 +352,7 @@ namespace SIPSorcery.Net.WebRtc
                 }
 
                 // Start sampling the media file.
-                mfSampleGrabber.Run(_mediaFilePath, true);
+                Task.Run(() => _mfSampleGrabber.Run(_mediaFilePath, true));
             }
             catch (Exception excp)
             {
@@ -350,6 +367,9 @@ namespace SIPSorcery.Net.WebRtc
                 logger.Debug("Stopping WebRTCDaemon.");
 
                 _exit = true;
+
+                _mfSampleGrabber.StopAndExit();
+                _webSocketServer.Stop();
 
                 foreach (var session in _webRtcSessions.Values)
                 {
@@ -458,6 +478,8 @@ namespace SIPSorcery.Net.WebRtc
 
             var mediaTypes = new List<RtpMediaTypesEnum> { RtpMediaTypesEnum.Video, RtpMediaTypesEnum.Audio };
 
+            _mfSampleGrabber.Start();  // Does nothing if media session is not paused.
+
             lock (_webRtcSessions)
             {
                 if (!_webRtcSessions.Any(x => x.Key == webSocketID))
@@ -558,27 +580,38 @@ namespace SIPSorcery.Net.WebRtc
         {
             OnMediaSampleReady += (mediaType, timestamp, sample) =>
             {
-                lock (_webRtcSessions)
+                if (String.IsNullOrEmpty(_rawRtpBaseEndPoint) && _webRtcSessions.Count() == 0)
                 {
-                    foreach (var session in _webRtcSessions.Where(x => (x.Value.Peer.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
-                       x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null) && x.Value.MediaSource == MediaSourceEnum.Max))
+                    if (_mfSampleGrabber.Paused == false)
                     {
-                        session.Value.SendMedia(mediaType, timestamp, sample);
+                        logger.Info("No active clients, pausing media sampling.");
+                        _mfSampleGrabber.Pause();
                     }
                 }
-
-                // Deliver periodic RTCP sender reports. This helps the receiver to sync the audio and video stream timestamps.
-                // If there are gaps in the media, silence supression etc. then the sender repors shouldn't be triggered from the media samples.
-                // In this case the samples are from an mp4 file which provides a constant uninterrupted stream.
-                if (DateTime.Now.Subtract(_lastRtcpSenderReportSentAt).TotalSeconds >= RTCP_SR_PERIOD_SECONDS)
+                else
                 {
-                    foreach (var session in _webRtcSessions.Where(x => (x.Value.Peer.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
-                      x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null) && x.Value.MediaSource == MediaSourceEnum.Max))
+                    lock (_webRtcSessions)
                     {
-                        session.Value.SendRtcpSenderReports(_mulawTimestamp, _vp8Timestamp);
+                        foreach (var session in _webRtcSessions.Where(x => (x.Value.Peer.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
+                           x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null) && x.Value.MediaSource == MediaSourceEnum.Max))
+                        {
+                            session.Value.SendMedia(mediaType, timestamp, sample);
+                        }
                     }
 
-                    _lastRtcpSenderReportSentAt = DateTime.Now;
+                    // Deliver periodic RTCP sender reports. This helps the receiver to sync the audio and video stream timestamps.
+                    // If there are gaps in the media, silence supression etc. then the sender repors shouldn't be triggered from the media samples.
+                    // In this case the samples are from an mp4 file which provides a constant uninterrupted stream.
+                    if (DateTime.Now.Subtract(_lastRtcpSenderReportSentAt).TotalSeconds >= RTCP_SR_PERIOD_SECONDS)
+                    {
+                        foreach (var session in _webRtcSessions.Where(x => (x.Value.Peer.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
+                          x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null) && x.Value.MediaSource == MediaSourceEnum.Max))
+                        {
+                            session.Value.SendRtcpSenderReports(_mulawTimestamp, _vp8Timestamp);
+                        }
+
+                        _lastRtcpSenderReportSentAt = DateTime.Now;
+                    }
                 }
             };
         }
