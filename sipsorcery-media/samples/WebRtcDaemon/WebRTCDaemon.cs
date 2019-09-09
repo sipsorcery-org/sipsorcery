@@ -191,7 +191,7 @@ namespace SIPSorcery.Net.WebRtc
     {
         public MediaSourceEnum MediaSource { get; private set; }
         public bool IsEncryptionDisabled { get; private set; }
-        public IPAddress RtpIPAddress { get; private set;}
+        public IPAddress RtpIPAddress { get; private set; }
 
         public event Action<WebSocketSharp.Net.WebSockets.WebSocketContext, string, IPAddress, bool, MediaSourceEnum> WebSocketOpened;
         public event Action<string, string> SDPAnswerReceived;
@@ -276,7 +276,7 @@ namespace SIPSorcery.Net.WebRtc
                 }
 
                 IPAddress rtpIPAddress = null;
-                if(String.IsNullOrEmpty(_localRtpIPAddress) == false)
+                if (String.IsNullOrEmpty(_localRtpIPAddress) == false)
                 {
                     rtpIPAddress = IPAddress.Parse(_localRtpIPAddress);
                 }
@@ -553,9 +553,16 @@ namespace SIPSorcery.Net.WebRtc
                     peer.RemoteIceUser = answerSDP.IceUfrag;
                     peer.RemoteIcePassword = answerSDP.IcePwd;
 
-                    foreach (var iceCandidate in answerSDP.IceCandidates)
+                    if (answerSDP.IceCandidates == null)
                     {
-                        peer.AppendRemoteIceCandidate(iceCandidate);
+                        logger.Warn("SDP answer did not contain any ICE candidates.");
+                    }
+                    else
+                    {
+                        foreach (var iceCandidate in answerSDP.IceCandidates)
+                        {
+                            peer.AppendRemoteIceCandidate(iceCandidate);
+                        }
                     }
                 }
 
@@ -589,9 +596,18 @@ namespace SIPSorcery.Net.WebRtc
                     lock (_webRtcSessions)
                     {
                         foreach (var session in _webRtcSessions.Where(x => (x.Value.Peer.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
-                           x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null) && x.Value.MediaSource == MediaSourceEnum.Max))
+                           x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null) && x.Value.MediaSource == MediaSourceEnum.Max &&
+                           x.Value.Peer.IsClosed == false))
                         {
-                            session.Value.SendMedia(mediaType, timestamp, sample);
+                            try
+                            {
+                                session.Value.SendMedia(mediaType, timestamp, sample);
+                            }
+                            catch (Exception sendExcp)
+                            {
+                                logger.Warn("Exception OnMediaSampleReady.SendMedia. " + sendExcp.Message);
+                                session.Value.Peer.Close();
+                            }
                         }
                     }
 
@@ -601,9 +617,18 @@ namespace SIPSorcery.Net.WebRtc
                     if (DateTime.Now.Subtract(_lastRtcpSenderReportSentAt).TotalSeconds >= RTCP_SR_PERIOD_SECONDS)
                     {
                         foreach (var session in _webRtcSessions.Where(x => (x.Value.Peer.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
-                          x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null) && x.Value.MediaSource == MediaSourceEnum.Max))
+                          x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null) && x.Value.MediaSource == MediaSourceEnum.Max &&
+                          x.Value.Peer.IsClosed == false))
                         {
-                            session.Value.SendRtcpSenderReports(_mulawTimestamp, _vp8Timestamp);
+                            try
+                            {
+                                session.Value.SendRtcpSenderReports(_mulawTimestamp, _vp8Timestamp);
+                            }
+                            catch (Exception sendExcp)
+                            {
+                                logger.Warn("Exception OnMediaSampleReady.SendRtcpSenderReports. " + sendExcp.Message);
+                                session.Value.Peer.Close();
+                            }
                         }
 
                         _lastRtcpSenderReportSentAt = DateTime.Now;
@@ -727,7 +752,6 @@ namespace SIPSorcery.Net.WebRtc
                             fixed (byte* p = sampleBuffer)
                             {
                                 byte[] convertedFrame = null;
-                                //colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.RGB24, testPattern.Width, testPattern.Height, VideoSubTypesEnum.I420, ref convertedFrame);
                                 colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, testPattern.Width, testPattern.Height, stride, VideoSubTypesEnum.I420, ref convertedFrame);
 
                                 fixed (byte* q = convertedFrame)
@@ -750,8 +774,15 @@ namespace SIPSorcery.Net.WebRtc
                                 foreach (var session in _webRtcSessions.Where(x => (x.Value.Peer.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
                                         x.Value.Peer.LocalIceCandidates.Any(y => y.RemoteRtpEndPoint != null) && x.Value.MediaSource == MediaSourceEnum.TestPattern))
                                 {
-                                    //session.Value.SendVp8(encodedBuffer, 0);
-                                    session.Value.SendMedia(MediaSampleTypeEnum.VP8, rtpTimestamp, encodedBuffer);
+                                    try
+                                    {
+                                        session.Value.SendMedia(MediaSampleTypeEnum.VP8, rtpTimestamp, encodedBuffer);
+                                    }
+                                    catch (Exception sendExcp)
+                                    {
+                                        logger.Warn("Exception SendTestPattern.SendMedia. " + sendExcp.Message);
+                                        session.Value.Peer.Close();
+                                    }
                                 }
                             }
 
