@@ -8,12 +8,11 @@
 		<releaseNotes>Added some new Media Foundation hooks to support sample grabbing.</releaseNotes>
         <licenseUrl>https://github.com/sipsorcery/sipsorcery/blob/master/LICENSE.md</licenseUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>The SIPSorcery package for media functions. This dll requires the latest Microsoft C++ Redistributable
-		from https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads.</description>
-      <summary>This is the official package for SIPSorceryMedia. Full source code can be found at https://github.com/sipsorcery/sipsorcery.</summary>  
+        <description>The SIPSorcery package for media capabiltities. This dll requires the latest Microsoft C++ Redistributable from https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads.</description>
+      <summary>This is the official package for SIPSorceryMedia.</summary>  
       <copyright>Copyright (c) 2019, Aaron Clauson</copyright>
         <language>en-US</language>
-		<projectUrl>https://github.com/sipsorcery/sipsorcery</projectUrl>
+		<projectUrl>https://github.com/sipsorcery/sipsorcery/tree/master/sipsorcery-media</projectUrl>
 		<iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
         <tags>SIP WebRtc MediaFoundation</tags>
         <references>

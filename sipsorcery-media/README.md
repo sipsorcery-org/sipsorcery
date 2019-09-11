@@ -19,7 +19,7 @@ The Visual C++ Runtime is required in order to be able to use the SIPSorceryMedi
 
 https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
 
-The .Net Framewrok Runtime >= 4.7.2 is also requried:
+The .Net Framewrok Runtime >= 4.7.2 is also required:
 
 https://dotnet.microsoft.com/download/dotnet-framework/net472
 
