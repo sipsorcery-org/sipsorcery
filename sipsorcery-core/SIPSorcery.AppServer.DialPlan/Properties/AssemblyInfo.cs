@@ -5,5 +5,5 @@
 [assembly: AssemblyCompany("SIP Sorcery PTY LTD")]
 [assembly: AssemblyProduct("SIPSorcery.AppServer.DialPlan")]
 [assembly: AssemblyCopyright("Copyright © 2010-2019")]
-[assembly: AssemblyVersion("2.0.0.*")]
-[assembly: AssemblyFileVersion("2.0.0.0")]
+[assembly: AssemblyVersion("2.0.1.*")]
+[assembly: AssemblyFileVersion("2.0.1.0")]

@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
   <metadata>
     <id>SIPSorcery</id>
-    <version>2.0.0</version>
+    <version>2.0.1</version>
     <authors>Aaron Clauson</authors>
     <owners>Aaron Clauson</owners>
     <releaseNotes>Synchronising nuget version number with SIPSorceryMedia package prior to dotnet core refactor.</releaseNotes>
@@ -40,9 +40,9 @@
     </frameworkAssemblies>
   </metadata>
   <files>
-    <file src="..\SIPSorcery.SIP.App\bin\Release\SIPSorcery.Net.dll" target="lib\net46\SIPSorcery.Net.dll" />
-    <file src="..\SIPSorcery.SIP.App\bin\Release\SIPSorcery.SIP.App.dll" target="lib\net46\SIPSorcery.SIP.App.dll" />
-    <file src="..\SIPSorcery.SIP.App\bin\Release\SIPSorcery.SIP.Core.dll" target="lib\net46\SIPSorcery.SIP.Core.dll" />
-    <file src="..\SIPSorcery.SIP.App\bin\Release\SIPSorcery.Sys.dll" target="lib\net46\SIPSorcery.Sys.dll" />
+    <file src="..\Build\SIPSorcery.Net.dll" target="lib\net46\SIPSorcery.Net.dll" />
+    <file src="..\Build\SIPSorcery.SIP.App.dll" target="lib\net46\SIPSorcery.SIP.App.dll" />
+    <file src="..\Build\SIPSorcery.SIP.Core.dll" target="lib\net46\SIPSorcery.SIP.Core.dll" />
+    <file src="..\Build\SIPSorcery.Sys.dll" target="lib\net46\SIPSorcery.Sys.dll" />
   </files>
 </package>
