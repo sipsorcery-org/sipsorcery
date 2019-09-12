@@ -20,10 +20,10 @@
     </references>
   </metadata>
   <files>
-    <file src="x86\Release\SIPSorceryMedia.dll" target="lib\net47" />
+    <file src="..\x86\Release\SIPSorceryMedia.dll" target="lib\net47" />
     <file src="SIPSorceryMedia.targets" target="build\SIPSorceryMedia.targets" />
     <file src="SIPSorceryMedia.props" target="build\SIPSorceryMedia.props" />
-    <file src="x64\Release\*.dll" target="build\x64" />
-    <file src="x86\Release\*.dll" target="build\x86" />
+    <file src="..\x64\Release\*.dll" target="build\x64" />
+    <file src="..\x86\Release\*.dll" target="build\x86" />
   </files>
 </package>
