@@ -7,7 +7,7 @@
 4. Pack the nuget package: c:\Dev\sipsorcery\sipsorcery-public\sipsorcery-media\SIPSorcery.Media\nuspec>c:\tools\nuget pack SIPSorceryMedia.nuspec
 5. Test install of package in the WebRtcDaemon sample project, in the nuget package manager console: 
  Uninstall-Package SIPSorceryMedia
- Install-Package SIPSorceryMedia -Source ..\..\SIPSorcery.Media
+ Install-Package SIPSorceryMedia -Source ..\..\SIPSorcery.Media\nuspec
 6. Publish to nuget.org:
  c:\tools\nuget setApiKey Your-API-Key
- c:\tools\nuget push SIPSorceryMedia.nupkg
+ c:\tools\nuget push SIPSorceryMedia.2.0.0.nupkg -Source https://api.nuget.org/v3/index.json 

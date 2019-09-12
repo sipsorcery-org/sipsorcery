@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>SIPSorcery</id>
+    <version>2.0.0</version>
+    <authors>Aaron Clauson</authors>
+    <owners>Aaron Clauson</owners>
+    <releaseNotes>Synchronising nuget version number with SIPSorceryMedia package prior to dotnet core refactor.</releaseNotes>
+    <license type="expression">BSD-3-Clause</license>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>The SIPSorcery package consists of a C# SIP protocol stack that implements all the required UDP, TCP and TLS transports as specified in RFC3261. There are also partial implementations of a number of related protocols: STUN, SDP, RTP and RTCP. The SIP functionality includes a number of user agents which
+    can be used to initiate and receive both calls and registrations.</description>
+    <summary>This is the official package of SIPSorcery. Full source code can be found at https://github.com/sipsorcery/sipsorcery.</summary>  
+    <copyright>Copyright (c) 2019, Aaron Clauson</copyright>
+    <language>en-US</language>
+    <projectUrl>https://github.com/sipsorcery/sipsorcery</projectUrl>
+    <iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
+    <tags>sip sipsorcery</tags>
+    <dependencies>
+      <group targetFramework=".NETFramework4">
+        <dependency id="log4net" version="2.0.8" />
+      </group>
+    </dependencies>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.ComponentModel.DataAnnotations" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.Core" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.Data" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.Data.DataSetExtensions" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.Runtime.Serialization" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.Transactions" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.Web" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.Xml" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.Data.Linq" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.ServiceModel" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.Configuration" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.ServiceModel.Web" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.Xml.Linq" targetFramework=".NETFramework4" />
+      <frameworkAssembly assemblyName="System.Web.ApplicationServices" targetFramework=".NETFramework4" />
+    </frameworkAssemblies>
+  </metadata>
+  <files>
+    <file src="..\SIPSorcery.SIP.App\bin\Release\SIPSorcery.Net.dll" target="lib\net46\SIPSorcery.Net.dll" />
+    <file src="..\SIPSorcery.SIP.App\bin\Release\SIPSorcery.SIP.App.dll" target="lib\net46\SIPSorcery.SIP.App.dll" />
+    <file src="..\SIPSorcery.SIP.App\bin\Release\SIPSorcery.SIP.Core.dll" target="lib\net46\SIPSorcery.SIP.Core.dll" />
+    <file src="..\SIPSorcery.SIP.App\bin\Release\SIPSorcery.Sys.dll" target="lib\net46\SIPSorcery.Sys.dll" />
+  </files>
+</package>
