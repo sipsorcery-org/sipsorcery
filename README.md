@@ -1,5 +1,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/github/sipsorcery/sipsorcery?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery)
 
+[![Build status](https://ci.appveyor.com/api/projects/status/github/sipsorcery/sipsorcery?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-9ql6k)
+
 The SIPSorcery project is an experiment into the depths of the Session Initiation Protocol (http://www.ietf.org/rfc/rfc3261.txt). The project is a combination of the source code available here on GitHub (previously sourceforge & codeplex) and a live service hosted at http://www.sipsorcery.com/. 
 The project has its roots in a previous project called mysipswitch (http://www.codeplex.com/Wikipage?ProjectName=mysipswitch) which was deprecated in the mid noughties.
 
