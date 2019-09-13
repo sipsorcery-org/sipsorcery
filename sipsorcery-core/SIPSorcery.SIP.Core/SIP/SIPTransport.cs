@@ -44,14 +44,11 @@ using log4net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
-#if UNITTEST
-using NUnit.Framework;
-#endif
-
 namespace SIPSorcery.SIP
 {
     public class SIPTransport
     {
+        // TODO investigate whether there's a better .Net way to do this in 2019.
         [DllImport("iphlpapi.dll", SetLastError = true)]
         static extern int GetBestInterface(UInt32 DestAddr, out UInt32 BestIfIndex);    // For IPv6 will need to switch to GetBestInterfaceEx.
 
