@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
 // Filename: SafeXML.cs
 //
-// Description: Converts special charatcers in XML to their safe equivalent.
+// Description: Converts special characters in XML to their safe equivalent.
 //
 // History:
 // 22 jun 2005	Aaron Clauson	Created.

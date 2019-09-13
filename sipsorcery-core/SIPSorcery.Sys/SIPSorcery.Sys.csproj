@@ -135,7 +135,6 @@
     </Compile>
     <Compile Include="Auth\ServiceAuthToken.cs" />
     <Compile Include="Auth\SIPSorcerySecurityHeader.cs" />
-    <Compile Include="AzureTraceAppender.cs" />
     <Compile Include="CRC32.cs" />
     <Compile Include="Crypto\PasswordHash.cs" />
     <Compile Include="Net\FreePort.cs" />
