@@ -121,9 +121,11 @@ namespace SIPSorcery.Net
         private FrameTypesEnum _frameType;
 
         // Stats and diagnostic variables.
-        private DateTime _lastRTPReceivedAt;
+        private int _lastRTPReceivedAt;
+        private int _tickNow;
+        private int _tickNowCounter;
         private int _lastFrameSize;
-        private DateTime _lastBWCalcAt;
+        private int _lastBWCalcAt;
         private int _bytesSinceLastBWCalc;
         private int _framesSinceLastCalc;
         private double _lastBWCalc;
@@ -457,8 +459,8 @@ namespace SIPSorcery.Net
             {
                 Thread.CurrentThread.Name = "rtpchanproc-" + RTPPort;
 
-                _lastRTPReceivedAt = DateTime.Now;
-                _lastBWCalcAt = DateTime.Now;
+                _lastRTPReceivedAt = _lastBWCalcAt = _tickNow = Environment.TickCount;
+                _tickNowCounter = 0;
 
                 while (!_isClosed)
                 {
@@ -477,7 +479,7 @@ namespace SIPSorcery.Net
 
                         if (rtpPacket != null)
                         {
-                            _lastRTPReceivedAt = DateTime.Now;
+                            _lastRTPReceivedAt = Environment.TickCount;
                             _bytesSinceLastBWCalc += RTPHeader.MIN_HEADER_LEN + rtpPacket.Payload.Length;
 
                             //if (_rtpTrackingAction != null)
@@ -584,7 +586,13 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                    if (DateTime.Now.Subtract(_lastRTPReceivedAt).TotalSeconds > RTP_TIMEOUT_SECONDS)
+                    if (_tickNowCounter++ > 100)
+                    {
+                        _tickNow = Environment.TickCount;
+                        _tickNowCounter = 0;
+                    }
+                    if ((_tickNow >= _lastRTPReceivedAt && _tickNow - _lastRTPReceivedAt > 1000 * RTP_TIMEOUT_SECONDS)
+                      || (_tickNow < _lastRTPReceivedAt && Int32.MaxValue - _lastRTPReceivedAt + 1 - (Int32.MinValue - _tickNow) > 1000 * RTP_TIMEOUT_SECONDS))
                     {
                         logger.Warn("No RTP packets were receoved on local port " + RTPPort + " for " + RTP_TIMEOUT_SECONDS + ". The session will now be closed.");
                         Close();
@@ -618,15 +626,17 @@ namespace SIPSorcery.Net
 
                     _controlSocket.BeginReceive(_controlSocketBuffer, 0, _controlSocketBuffer.Length, SocketFlags.None, out _controlSocketError, ControlSocketReceive, null);
                 }
-                else
-                {
-                    if (!_isClosed)
-                    {
-                        logger.Warn("A " + _controlSocketError + " occurred.");
+                // There can be valid socket error conditions not related to the socket being closed.
+                // TODO: If the socket is going to be automatically closed the specific error conditions need to be used.
+                //else
+                //{
+                //    if (!_isClosed)
+                //    {
+                //        logger.Warn("A " + _controlSocketError + " occurred.");
 
-                        OnControlSocketDisconnected?.Invoke();
-                    }
-                }
+                //        OnControlSocketDisconnected?.Invoke();
+                //    }
+                //}
             }
             catch (Exception excp)
             {
@@ -675,8 +685,13 @@ namespace SIPSorcery.Net
                     //Stopwatch sw = new Stopwatch();
                     //sw.Start();
 
-                    _rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, RemoteEndPoint);
-
+                    SocketAsyncEventArgs args = new SocketAsyncEventArgs();
+                    args.RemoteEndPoint = RemoteEndPoint;
+                    args.SocketFlags = SocketFlags.None;
+                    args.SetBuffer(rtpBytes, 0, rtpBytes.Length);
+                    _rtpSocket.SendToAsync(args);
+                    //_rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, RemoteEndPoint);
+                    
                     //sw.Stop();
 
                     //if (sw.ElapsedMilliseconds > 15)
