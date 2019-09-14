@@ -4,6 +4,7 @@ using System.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Web;
 using System.Text;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;

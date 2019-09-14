@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace SIPSorcery.SIP.App
 {
+    public delegate int SIPRegistraBdingsCountDelegate(Guid sipAccountID);
+
+    public delegate object SIPAssetGetPropertyByIdDelegate<T>(Guid id, string propertyName);
+
     public class SIPPresenceEventSubscription : SIPEventSubscription
     {
         private const int MAX_SIPACCOUNTS_TO_RETRIEVE = 25;
@@ -15,9 +17,8 @@ namespace SIPSorcery.SIP.App
 
         private SIPEventPresence Presence;
 
-        private SIPAssetCountDelegate<SIPRegistrarBinding> GetSIPRegistrarBindingsCount_External;
-        private SIPAssetGetListDelegate<SIPAccount> GetSIPAccounts_External;
-        //private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
+        private SIPRegistraBdingsCountDelegate GetSIPRegistrarBindingsCount_External;
+        private GetSIPAccountListDelegate GetSIPAccounts_External;
         private SIPAssetGetPropertyByIdDelegate<SIPAccount> GetSipAccountProperty_External;
 
         private bool m_switchboardSIPAccountsOnly;      // If true means this subscription should only generate notifications for SIP accounts that are switchboard enabled.
@@ -46,9 +47,9 @@ namespace SIPSorcery.SIP.App
             SIPDialogue subscriptionDialogue,
             int expiry,
             //SIPAssetPersistor<SIPAccount> sipAccountPersistor,
-            SIPAssetGetListDelegate<SIPAccount> getSipAccountsExternal,
+            GetSIPAccountListDelegate getSipAccountsExternal,
             SIPAssetGetPropertyByIdDelegate<SIPAccount> getSipAccountPropertyExternal,
-            SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount,
+            SIPRegistraBdingsCountDelegate getBindingsCount,
             bool switchboardSIPAccountsOnly
             )
             : base(log, sessionID, resourceURI, canonincalResourceURI, filter, subscriptionDialogue, expiry)
@@ -98,7 +99,7 @@ namespace SIPSorcery.SIP.App
                 {
                     SIPURI aor = SIPURI.ParseSIPURIRelaxed(sipAccount.SIPUsername + "@" + sipAccount.SIPDomain);
 
-                    int bindingsCount = GetSIPRegistrarBindingsCount_External(b => b.SIPAccountId == sipAccount.Id);
+                    int bindingsCount = GetSIPRegistrarBindingsCount_External(sipAccount.Id);
                     if (bindingsCount > 0)
                     {
                         string safeSIPAccountID = sipAccount.Id.ToString();
@@ -168,7 +169,7 @@ namespace SIPSorcery.SIP.App
                     {
                         // A binding has been removed but there could still be others.
                         Guid sipAccountID = new Guid(machineEvent.ResourceID);
-                        int bindingsCount = GetSIPRegistrarBindingsCount_External(b => b.SIPAccountId == sipAccountID);
+                        int bindingsCount = GetSIPRegistrarBindingsCount_External(sipAccountID);
                         if (bindingsCount > 0)
                         {
                             Presence.Tuples.Add(new SIPEventPresenceTuple(safeSIPAccountID, SIPEventPresenceStateEnum.open, sipAccountURI, Decimal.Zero, avatarURL));

@@ -79,7 +79,7 @@ namespace SIPSorcery.Web.Services
 
         private SIPSorcery.Entities.SIPSorceryService m_service = new SIPSorcery.Entities.SIPSorceryService();
 
-        private SIPAssetPersistor<SIPAccount> SIPAccountPersistor;
+        private SIPAssetPersistor<SIPAccountAsset> SIPAccountPersistor;
         private SIPAssetPersistor<SIPDialPlan> DialPlanPersistor;
         private SIPAssetPersistor<SIPProvider> SIPProviderPersistor;
         private SIPAssetPersistor<SIPProviderBinding> SIPProviderBindingsPersistor;
@@ -97,7 +97,7 @@ namespace SIPSorcery.Web.Services
         { }
 
         public SIPProvisioningWebService(
-            SIPAssetPersistor<SIPAccount> sipAccountPersistor,
+            SIPAssetPersistor<SIPAccountAsset> sipAccountPersistor,
             SIPAssetPersistor<SIPDialPlan> sipDialPlanPersistor,
             SIPAssetPersistor<SIPProvider> sipProviderPersistor,
             SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor,
@@ -256,7 +256,7 @@ namespace SIPSorcery.Web.Services
                     if (SIPAccountPersistor.Get(s => s.SIPUsername == customer.CustomerUsername && s.SIPDomain == defaultDomain) == null)
                     {
                         SIPAccount sipAccount = new SIPAccount(customer.CustomerUsername, defaultDomain, customer.CustomerUsername, customer.CustomerPassword, "default");
-                        SIPAccountPersistor.Add(sipAccount);
+                        SIPAccountPersistor.Add(new SIPAccountAsset(sipAccount));
                         logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");
                     }
                     else
@@ -268,7 +268,7 @@ namespace SIPSorcery.Web.Services
                             if (SIPAccountPersistor.Get(s => s.SIPUsername == testUsername && s.SIPDomain == defaultDomain) == null)
                             {
                                 SIPAccount sipAccount = new SIPAccount(customer.CustomerUsername, defaultDomain, testUsername, customer.CustomerPassword, "default");
-                                SIPAccountPersistor.Add(sipAccount);
+                                SIPAccountPersistor.Add(new SIPAccountAsset(sipAccount));
                                 logger.Debug("SIP account " + sipAccount.SIPUsername + "@" + sipAccount.SIPDomain + " added for " + sipAccount.Owner + ".");
                                 break;
                             }
@@ -448,11 +448,11 @@ namespace SIPSorcery.Web.Services
             }
             else
             {
-                return SIPAccountPersistor.Count(DynamicExpression.ParseLambda<SIPAccount, bool>(authoriseExpression));
+                return SIPAccountPersistor.Count(DynamicExpression.ParseLambda<SIPAccountAsset, bool>(authoriseExpression));
             }
         }
 
-        public List<SIPAccount> GetSIPAccounts(string whereExpression, int offset, int count)
+        public List<SIPAccountAsset> GetSIPAccounts(string whereExpression, int offset, int count)
         {
             Customer customer = AuthoriseRequest();
 
@@ -465,7 +465,7 @@ namespace SIPSorcery.Web.Services
             }
             else
             {
-                return SIPAccountPersistor.Get(DynamicExpression.ParseLambda<SIPAccount, bool>(authoriseExpression), "sipusername", offset, count);
+                return SIPAccountPersistor.Get(DynamicExpression.ParseLambda<SIPAccountAsset, bool>(authoriseExpression), "sipusername", offset, count);
             }
         }
 
@@ -490,13 +490,13 @@ namespace SIPSorcery.Web.Services
         }
 
         //public string AddSIPAccount(SIPSorcery.Entities.SIPAccount sipAccount)
-        public SIPAccount AddSIPAccount(SIPAccount sipAccount)
+        public SIPAccountAsset AddSIPAccount(SIPAccountAsset sipAccountAsset)
         {
             Customer customer = AuthoriseRequest();
-            sipAccount.Owner = customer.CustomerUsername;
+            sipAccountAsset.Owner = customer.CustomerUsername;
 
             //string validationError = SIPSorcery.Entities.SIPAccount.Validate(sipAccount);
-            string validationError = SIPAccount.ValidateAndClean(sipAccount);
+            string validationError = SIPAccountAsset.ValidateAndClean(sipAccountAsset);
             if (validationError != null)
             {
                 logger.Warn("Validation error in AddSIPAccount for customer " + customer.CustomerUsername + ". " + validationError);
@@ -504,22 +504,22 @@ namespace SIPSorcery.Web.Services
             }
             else
             {
-                return SIPAccountPersistor.Add(sipAccount);
+                return SIPAccountPersistor.Add(sipAccountAsset);
                 //return m_service.InsertSIPAccount(customer.CustomerUsername, sipAccount);
             }
         }
 
-        public SIPAccount UpdateSIPAccount(SIPAccount sipAccount)
+        public SIPAccountAsset UpdateSIPAccount(SIPAccountAsset sipAccountAsset)
         {
             Customer customer = AuthoriseRequest();
 
-            if (customer.AdminId != Customer.TOPLEVEL_ADMIN_ID && sipAccount.Owner != customer.CustomerUsername)
+            if (customer.AdminId != Customer.TOPLEVEL_ADMIN_ID && sipAccountAsset.Owner != customer.CustomerUsername)
             {
-                logger.Debug("Unauthorised attempt to update SIP account by user=" + customer.CustomerUsername + ", on account owned by=" + sipAccount.Owner + ".");
+                logger.Debug("Unauthorised attempt to update SIP account by user=" + customer.CustomerUsername + ", on account owned by=" + sipAccountAsset.Owner + ".");
                 throw new ApplicationException("You are not authorised to update the SIP Account.");
             }
 
-            string validationError = SIPAccount.ValidateAndClean(sipAccount);
+            string validationError = SIPAccountAsset.ValidateAndClean(sipAccountAsset);
             if (validationError != null)
             {
                 logger.Warn("Validation error in UpdateSIPAccount for customer " + customer.CustomerUsername + ". " + validationError);
@@ -527,23 +527,23 @@ namespace SIPSorcery.Web.Services
             }
             else
             {
-                return SIPAccountPersistor.Update(sipAccount);
+                return SIPAccountPersistor.Update(sipAccountAsset);
             }
         }
 
-        public SIPAccount DeleteSIPAccount(SIPAccount sipAccount)
+        public SIPAccountAsset DeleteSIPAccount(SIPAccountAsset sipAccountAsset)
         {
             Customer customer = AuthoriseRequest();
 
-            if (customer.AdminId != Customer.TOPLEVEL_ADMIN_ID && sipAccount.Owner != customer.CustomerUsername)
+            if (customer.AdminId != Customer.TOPLEVEL_ADMIN_ID && sipAccountAsset.Owner != customer.CustomerUsername)
             {
                 throw new ApplicationException("You are not authorised to delete the SIP Account.");
             }
 
-            SIPAccountPersistor.Delete(sipAccount);
+            SIPAccountPersistor.Delete(sipAccountAsset);
 
             // Enables the caller to see which SIP account has been deleted.
-            return sipAccount;
+            return sipAccountAsset;
         }
 
         public int GetSIPRegistrarBindingsCount(string whereExpression)

@@ -38,6 +38,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Xml;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;

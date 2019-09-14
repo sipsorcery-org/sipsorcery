@@ -7,12 +7,7 @@ using System.ServiceModel.Configuration;
 using System.ServiceModel.Channels;
 using System.ServiceModel.Description;
 using System.ServiceModel.Dispatcher;
-using System.Text;
-using SIPSorcery.CRM;
-using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
-using log4net;
-
+using SIPSorcery.Persistence;
 namespace SIPSorcery.Web.Services {
 
     public class CallManagerServiceInstanceProvider : IInstanceProvider, IServiceBehavior {

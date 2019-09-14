@@ -6,6 +6,7 @@ using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using SIPSorcery.CRM;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using log4net;

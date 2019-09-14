@@ -297,7 +297,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 m_dialPlanContext.TraceLog.AppendLine("DialPlan=> Dialplan trace commenced at " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff") + ".");
                 m_dialPlanContext.CallCancelledByClient += ClientCallTerminated;
 
-                SIPAssetGetDelegate<SIPAccount> getSIPAccount = null;
+                SIPAssetGetDelegate<SIPAccountAsset> getSIPAccount = null;
                 if (m_sipSorceryPersistor != null && m_sipSorceryPersistor.SIPAccountsPersistor != null)
                 {
                     getSIPAccount = m_sipSorceryPersistor.SIPAccountsPersistor.Get;
@@ -817,7 +817,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    SIPAccount sipAccount = m_sipSorceryPersistor.SIPAccountsPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain);
+                    SIPAccountAsset sipAccount = m_sipSorceryPersistor.SIPAccountsPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain);
                     if (sipAccount == null)
                     {
                         FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in IsAvailable for " + username + "@" + canonicalDomain + ".", Username));
@@ -860,7 +860,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    SIPAccount sipAccount = m_sipSorceryPersistor.SIPAccountsPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain);
+                    SIPAccountAsset sipAccount = m_sipSorceryPersistor.SIPAccountsPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == canonicalDomain);
                     if (sipAccount == null)
                     {
                         FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in IsMine for " + username + "@" + canonicalDomain + ".", Username));
@@ -933,7 +933,7 @@ namespace SIPSorcery.AppServer.DialPlan
                 }
                 else
                 {
-                    SIPAccount sipAccount = m_sipSorceryPersistor.SIPAccountsPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == domain);
+                    SIPAccountAsset sipAccount = m_sipSorceryPersistor.SIPAccountsPersistor.Get(s => s.SIPUsername == username && s.SIPDomain == domain);
                     if (sipAccount == null)
                     {
                         FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "No sip account exists in GetBindings for " + username + "@" + domain + ".", Username));
@@ -2370,7 +2370,7 @@ namespace SIPSorcery.AppServer.DialPlan
         /// Allows a list of all the dialplan owner's SIP accounts to be retrieved.
         /// </summary>
         /// <returns>A list of SIP accounts.</returns>
-        public List<SIPAccount> GetSIPAccounts()
+        public List<SIPAccountAsset> GetSIPAccounts()
         {
             return m_sipSorceryPersistor.SIPAccountsPersistor.Get(x => x.Owner == m_dialPlanContext.Owner, "SIPUsername", 0, Int32.MaxValue);
         }

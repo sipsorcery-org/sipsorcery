@@ -100,7 +100,7 @@ namespace SIPSorcery.Web.Services
                 sipProviderPersistor.Deleted += sipProviderBindingSynchroniser.SIPProviderDeleted;
 
                 return new SIPProvisioningWebService(
-                    SIPAssetPersistorFactory<SIPAccount>.CreateSIPAssetPersistor(m_serverStorageType, m_serverStorageConnStr, m_sipAccountsStorageFileName),
+                    SIPAssetPersistorFactory<SIPAccountAsset>.CreateSIPAssetPersistor(m_serverStorageType, m_serverStorageConnStr, m_sipAccountsStorageFileName),
                     SIPAssetPersistorFactory<SIPDialPlan>.CreateSIPAssetPersistor(m_serverStorageType, m_serverStorageConnStr, m_dialplansStorageFileName),
                     sipProviderPersistor,
                     sipProviderBindingsPersistor,

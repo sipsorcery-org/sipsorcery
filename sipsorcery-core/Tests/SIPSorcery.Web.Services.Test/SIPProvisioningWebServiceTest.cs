@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Dynamic;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SIPSorcery.Persistence;
 using SIPSorcery.SIP.App;
 
 namespace SIPSorcery.Web.Services.Test

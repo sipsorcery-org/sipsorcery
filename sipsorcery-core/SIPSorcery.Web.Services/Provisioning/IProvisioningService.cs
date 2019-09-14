@@ -5,7 +5,7 @@ using System.ServiceModel;
 using System.ServiceModel.Web;
 using System.Text;
 using SIPSorcery.CRM;
-using SIPSorcery.SIP.App;
+using SIPSorcery.Persistence;
 
 namespace SIPSorcery.Web.Services {
 
@@ -24,11 +24,11 @@ namespace SIPSorcery.Web.Services {
         [OperationContract] void UpdateCustomerPassword(string username, string oldPassword, string newPassword);
         [OperationContract] List<SIPDomain> GetSIPDomains(string filterExpression, int offset, int count);
         [OperationContract] int GetSIPAccountsCount(string whereExpression);
-        [OperationContract] List<SIPAccount> GetSIPAccounts(string whereExpression, int offset, int count);
+        [OperationContract] List<SIPAccountAsset> GetSIPAccounts(string whereExpression, int offset, int count);
         //[OperationContract] string AddSIPAccount(SIPSorcery.Entities.SIPAccount sipAccount);
-        [OperationContract] SIPAccount AddSIPAccount(SIPAccount sipAccount);
-        [OperationContract] SIPAccount UpdateSIPAccount(SIPAccount sipAccount);
-        [OperationContract] SIPAccount DeleteSIPAccount(SIPAccount sipAccount);
+        [OperationContract] SIPAccountAsset AddSIPAccount(SIPAccountAsset sipAccount);
+        [OperationContract] SIPAccountAsset UpdateSIPAccount(SIPAccountAsset sipAccount);
+        [OperationContract] SIPAccountAsset DeleteSIPAccount(SIPAccountAsset sipAccount);
         [OperationContract] int GetSIPRegistrarBindingsCount(string whereExpression);
         [OperationContract] List<SIPRegistrarBinding> GetSIPRegistrarBindings(string whereExpression, int offset, int count);
         [OperationContract] int GetSIPProvidersCount(string whereExpression);

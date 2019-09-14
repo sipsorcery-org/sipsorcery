@@ -90,7 +90,8 @@ namespace SIPSorcery.Servers
         private SIPMonitorLogDelegate Log_External;
         private SIPAssetGetListDelegate<SIPProvider> GetSIPProviders_External;
         private SIPAssetGetDelegate<SIPDialPlan> GetDialPlan_External;                          // Function to load user dial plans.
-        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;                         // Function in authenticate user outgoing calls.
+        private SIPAssetGetDelegate<SIPAccountAsset> GetSIPAccountAsset_External;                         // Function in authenticate user outgoing calls.
+        private GetSIPAccountDelegate GetSIPAccount_External;
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;    // Function to lookup bindings that have been registered for a SIP account.
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
 
@@ -113,7 +114,7 @@ namespace SIPSorcery.Servers
             SIPAssetPersistor<SIPCDRAsset> sipCDRPersistor,
             DialPlanEngine dialPlanEngine,
             SIPAssetGetDelegate<SIPDialPlan> getDialPlan,
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            SIPAssetGetDelegate<SIPAccountAsset> getSIPAccountAsset,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPAccountBindings,
             SIPAssetGetListDelegate<SIPProvider> getSIPProviders,
             GetCanonicalDomainDelegate getCanonicalDomain,
@@ -131,7 +132,8 @@ namespace SIPSorcery.Servers
             m_sipCDRPersistor = sipCDRPersistor;
             m_dialPlanEngine = dialPlanEngine;
             GetDialPlan_External = getDialPlan;
-            GetSIPAccount_External = getSIPAccount;
+            GetSIPAccountAsset_External = getSIPAccountAsset;
+            // TODO ac fIX THIS 14 sEP 2019!!: GetSIPAccount_External = getSIPAccount;
             GetSIPAccountBindings_External = getSIPAccountBindings;
             GetSIPProviders_External = getSIPProviders;
             GetCanonicalDomain_External = getCanonicalDomain;

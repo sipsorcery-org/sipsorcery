@@ -58,8 +58,8 @@ namespace SIPSorcery.Persistence
         private static readonly string m_sipDialoguesXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_SIPDIALOGUES_FILENAME;
         private static readonly string m_sipCDRsXMLFilename = SIPSorcery.SIP.App.AssemblyState.XML_SIPCDRS_FILENAME;
 
-        private SIPAssetPersistor<SIPAccount> m_sipAccountsPersistor;
-        public SIPAssetPersistor<SIPAccount> SIPAccountsPersistor { get { return m_sipAccountsPersistor; } }
+        private SIPAssetPersistor<SIPAccountAsset> m_sipAccountsPersistor;
+        public SIPAssetPersistor<SIPAccountAsset> SIPAccountsPersistor { get { return m_sipAccountsPersistor; } }
 
         private SIPAssetPersistor<SIPDialPlan> m_dialPlanPersistor;
         public SIPAssetPersistor<SIPDialPlan> SIPDialPlanPersistor { get { return m_dialPlanPersistor; } }
@@ -106,7 +106,7 @@ namespace SIPSorcery.Persistence
                 }
             }
 
-            m_sipAccountsPersistor = SIPAssetPersistorFactory<SIPAccount>.CreateSIPAssetPersistor(storageType, storageConnectionStr, m_sipAccountsXMLFilename);
+            m_sipAccountsPersistor = SIPAssetPersistorFactory<SIPAccountAsset>.CreateSIPAssetPersistor(storageType, storageConnectionStr, m_sipAccountsXMLFilename);
             m_dialPlanPersistor = SIPAssetPersistorFactory<SIPDialPlan>.CreateSIPAssetPersistor(storageType, storageConnectionStr, m_sipDialplansXMLFilename);
             m_sipProvidersPersistor = SIPAssetPersistorFactory<SIPProvider>.CreateSIPAssetPersistor(storageType, storageConnectionStr, m_sipProvidersXMLFilename);
             m_sipProviderBindingsPersistor = SIPAssetPersistorFactory<SIPProviderBinding>.CreateSIPAssetPersistor(storageType, storageConnectionStr, m_sipProviderBindingsXMLFilename);

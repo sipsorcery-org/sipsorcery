@@ -4,7 +4,7 @@ using System.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Web;
 using System.Text;
-using SIPSorcery.SIP.App;
+using SIPSorcery.Persistence;
 
 namespace SIPSorcery.Web.Services {
 
@@ -33,7 +33,7 @@ namespace SIPSorcery.Web.Services {
 
         [OperationContract]
         [WebGet(UriTemplate = "sipaccounts?where={whereexpression}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
-        List<SIPAccount> GetSIPAccounts(string whereExpression, int offset, int count);
+        List<SIPAccountAsset> GetSIPAccounts(string whereExpression, int offset, int count);
 
         [OperationContract]
         [WebGet(UriTemplate = "sipaccount/add?username={username}&password={password}&domain={domain}&avatarurl={avatarurl}", ResponseFormat = WebMessageFormat.Json)]

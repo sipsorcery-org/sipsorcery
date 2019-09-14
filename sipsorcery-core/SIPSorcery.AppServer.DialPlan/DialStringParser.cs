@@ -89,7 +89,7 @@ namespace SIPSorcery.AppServer.DialPlan
         private SIPAccount m_sipAccount;
         private List<SIPProvider> m_sipProviders;
         private SIPMonitorLogDelegate Log_External;
-        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
+        private SIPAssetGetDelegate<SIPAccountAsset> GetSIPAccount_External;
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetRegistrarBindings_External;
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
         private SIPTransport m_sipTransport;
@@ -115,7 +115,7 @@ namespace SIPSorcery.AppServer.DialPlan
             string owner,
             SIPAccount sipAccount,
             List<SIPProvider> sipProviders,
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            SIPAssetGetDelegate<SIPAccountAsset> getSIPAccount,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getRegistrarBindings,
             GetCanonicalDomainDelegate getCanonicalDomainDelegate,
             SIPMonitorLogDelegate logDelegate,
@@ -333,7 +333,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                 string localDomain = GetCanonicalDomain_External(callLegSIPURI.Host, false);
                                 if (localDomain != null)
                                 {
-                                    SIPAccount calledSIPAccount = GetSIPAccount_External(s => s.SIPUsername == callLegSIPURI.User && s.SIPDomain == localDomain);
+                                    SIPAccountAsset calledSIPAccount = GetSIPAccount_External(s => s.SIPUsername == callLegSIPURI.User && s.SIPDomain == localDomain);
                                     if (calledSIPAccount == null && callLegSIPURI.User.Contains("."))
                                     {
                                         // A full lookup failed. Now try a partial lookup if the incoming username is in a dotted domain name format.
@@ -347,7 +347,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                         if (calledSIPAccount.InDialPlanName.IsNullOrBlank() || (m_username == calledSIPAccount.Owner && m_dialPlanName == calledSIPAccount.InDialPlanName))
                                         {
                                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call leg is for local domain looking up bindings for " + callLegSIPURI.User + "@" + localDomain + " for call leg " + callLegDestination + ".", m_username));
-                                            switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, calledSIPAccount, customHeaders, customContentType, customContent, options, callersNetworkId, fromDisplayName, fromUsername, fromHost, contact));
+                                            switchCalls.AddRange(GetForwardsForLocalLeg(sipRequest, calledSIPAccount.SIPAccount, customHeaders, customContentType, customContent, options, callersNetworkId, fromDisplayName, fromUsername, fromHost, contact));
                                         }
                                         else
                                         {
@@ -369,7 +369,7 @@ namespace SIPSorcery.AppServer.DialPlan
                                                 content = sipRequest.Body;
                                             }
 
-                                            SIPCallDescriptor loopbackCall = new SIPCallDescriptor(calledSIPAccount, callLegSIPURI.ToString(), fromHeader.ToString(), contentType, content);
+                                            SIPCallDescriptor loopbackCall = new SIPCallDescriptor(calledSIPAccount.SIPAccount, callLegSIPURI.ToString(), fromHeader.ToString(), contentType, content);
                                             loopbackCall.SetGeneralFromHeaderFields(fromDisplayName, fromUsername, fromHost);
                                             loopbackCall.MangleIPAddress = (PublicIPAddress != null) ? PublicIPAddress : SIPPacketMangler.GetRequestIPAddress(sipRequest);
                                             loopbackCall.CustomHeaders = customHeaders;
@@ -739,7 +739,7 @@ namespace SIPSorcery.AppServer.DialPlan
             {
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Redirect is for local SIP account " + redirectURI.User + " and canonical domain " + localDomain + ", looking up bindings.", m_username));
 
-                SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == redirectURI.User && s.SIPDomain == localDomain);
+                SIPAccountAsset sipAccount = GetSIPAccount_External(s => s.SIPUsername == redirectURI.User && s.SIPDomain == localDomain);
 
                 List<SIPRegistrarBinding> bindings = GetRegistrarBindings_External(b => b.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue);
 

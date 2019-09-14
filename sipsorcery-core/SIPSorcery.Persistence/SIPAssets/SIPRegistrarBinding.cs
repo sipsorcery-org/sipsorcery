@@ -39,6 +39,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
+using SIPSorcery.SIP;
+using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -47,7 +49,7 @@ using System.Data;
 using System.Data.Linq.Mapping;
 #endif
 
-namespace SIPSorcery.SIP.App
+namespace SIPSorcery.Persistence
 {
     public enum SIPBindingRemovalReason
     {

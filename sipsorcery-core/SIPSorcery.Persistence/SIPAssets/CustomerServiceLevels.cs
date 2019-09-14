@@ -1,19 +1,19 @@
-// ============================================================================
-// FileName: SIPDialPlanScriptTypes.cs
+﻿// ============================================================================
+// FileName: CustomerServiceLevels.cs
 //
 // Description:
-// The list of script types available for the dial plan contents.
+// The list of the different sipsorcery service levels.
 //
 // Author(s):
 // Aaron Clauson
 //
 // History:
-// 29 Sep 2008	Aaron Clauson	Created.
+// 26 Apr 2011	Aaron Clauson	Created.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006-2008 Aaron Clauson (aaronc@blueface.ie), Blue Face Ltd, Dublin, Ireland (www.blueface.ie)
+// Copyright (c) 2006-2011 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery Ltd, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -21,7 +21,7 @@
 //
 // Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
 // Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following 
-// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of Blue Face Ltd. 
+// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of SIP Sorcery Ltd. 
 // nor the names of its contributors may be used to endorse or promote products derived from this software without specific 
 // prior written permission. 
 //
@@ -34,30 +34,22 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // ============================================================================
 
-using System;
-using System.Collections;
-using System.Runtime.Serialization;
-
-namespace SIPSorcery.SIP.App
+namespace SIPSorcery.Persistence
 {
-    [DataContractAttribute]
-    public enum SIPDialPlanScriptTypesEnum
+    public enum CustomerServiceLevels
     {
-        Unknown = 0,
-        Asterisk = 1,
-        Ruby = 2,
-        Python = 3,
-        JScript = 4,
-        Wizard = 5,
-        TelisWizard = 6,
-        SimpleWizard = 7,
-    }
-
-    public class SIPDialPlanScriptTypes
-    {
-        public static SIPDialPlanScriptTypesEnum GetSIPDialPlanScriptType(string scriptType)
-        {
-            return (SIPDialPlanScriptTypesEnum)Enum.Parse(typeof(SIPDialPlanScriptTypesEnum), scriptType, true);
-        }
+        None = 0,
+        Beta = 1,
+        Free = 2,
+        Premium = 3,
+        Professional = 4,
+        Gold = 5,
+        Silver = 6,
+        Bronze = 7,
+        Evaluation = 8,
+        PremiumPayReqd = 9,
+        ProfessionalPayReqd = 10,
+        Switchboard = 11,
+        SwitchboardPayReqd = 12
     }
 }

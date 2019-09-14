@@ -125,44 +125,45 @@ namespace SIPSorcery.Servers
                         string sessionID = Guid.NewGuid().ToString();
                         SIPDialogue subscribeDialogue = new SIPDialogue(subscribeRequest, owner, adminID, toTag);
 
-                        if (eventPackage == SIPEventPackage.Dialog)
-                        {
-                            string monitorFilter = "dialog " + canonicalResourceURI.ToString();
-                            if (!subscribeRequest.Body.IsNullOrBlank())
-                            {
-                                monitorFilter += " and " + subscribeRequest.Body;
-                            }
+                        // TODO: Fix this block. AC 14 sEP 2019.
+                        //if (eventPackage == SIPEventPackage.Dialog)
+                        //{
+                        //    string monitorFilter = "dialog " + canonicalResourceURI.ToString();
+                        //    if (!subscribeRequest.Body.IsNullOrBlank())
+                        //    {
+                        //        monitorFilter += " and " + subscribeRequest.Body;
+                        //    }
 
-                            m_publisher.Subscribe(owner, adminID, m_notificationsAddress, sessionID, SIPMonitorClientTypesEnum.Machine.ToString(), monitorFilter, expiry, null, out subscribeError);
+                        //    m_publisher.Subscribe(owner, adminID, m_notificationsAddress, sessionID, SIPMonitorClientTypesEnum.Machine.ToString(), monitorFilter, expiry, null, out subscribeError);
 
-                            if (subscribeError != null)
-                            {
-                                throw new ApplicationException(subscribeError);
-                            }
-                            else
-                            {
-                                SIPDialogEventSubscription subscription = new SIPDialogEventSubscription(MonitorLogEvent_External, sessionID, resourceURI, canonicalResourceURI, monitorFilter, subscribeDialogue, expiry, GetDialogues_External, GetDialogue_External);
-                                m_subscriptions.Add(sessionID, subscription);
-                                MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "New dialog subscription created for " + resourceURI.ToString() + ", expiry " + expiry + "s.", owner));
-                            }
-                        }
-                        else if (eventPackage == SIPEventPackage.Presence)
-                        {
-                            string monitorFilter = "presence " + canonicalResourceURI.ToString();
-                            m_publisher.Subscribe(owner, adminID, m_notificationsAddress, sessionID, SIPMonitorClientTypesEnum.Machine.ToString(), monitorFilter, expiry, null, out subscribeError);
+                        //    if (subscribeError != null)
+                        //    {
+                        //        throw new ApplicationException(subscribeError);
+                        //    }
+                        //    else
+                        //    {
+                        //        SIPDialogEventSubscription subscription = new SIPDialogEventSubscription(MonitorLogEvent_External, sessionID, resourceURI, canonicalResourceURI, monitorFilter, subscribeDialogue, expiry, GetDialogues_External, GetDialogue_External);
+                        //        m_subscriptions.Add(sessionID, subscription);
+                        //        MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "New dialog subscription created for " + resourceURI.ToString() + ", expiry " + expiry + "s.", owner));
+                        //    }
+                        //}
+                        //else if (eventPackage == SIPEventPackage.Presence)
+                        //{
+                        //    string monitorFilter = "presence " + canonicalResourceURI.ToString();
+                        //    m_publisher.Subscribe(owner, adminID, m_notificationsAddress, sessionID, SIPMonitorClientTypesEnum.Machine.ToString(), monitorFilter, expiry, null, out subscribeError);
 
-                            if (subscribeError != null)
-                            {
-                                throw new ApplicationException(subscribeError);
-                            }
-                            else
-                            {
-                                bool switchboardAccountsOnly = subscribeRequest.Body == SIPPresenceEventSubscription.SWITCHBOARD_FILTER;
-                                SIPPresenceEventSubscription subscription = new SIPPresenceEventSubscription(MonitorLogEvent_External, sessionID, resourceURI, canonicalResourceURI, monitorFilter, subscribeDialogue, expiry, m_sipAssetPersistor.Get, m_sipAssetPersistor.GetProperty, GetSIPRegistrarBindingsCount_External, switchboardAccountsOnly);
-                                m_subscriptions.Add(sessionID, subscription);
-                                MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "New presence subscription created for " + resourceURI.ToString() + ", expiry " + expiry + "s.", owner));
-                            }
-                        }
+                        //    if (subscribeError != null)
+                        //    {
+                        //        throw new ApplicationException(subscribeError);
+                        //    }
+                        //    else
+                        //    {
+                        //        bool switchboardAccountsOnly = subscribeRequest.Body == SIPPresenceEventSubscription.SWITCHBOARD_FILTER;
+                        //        SIPPresenceEventSubscription subscription = new SIPPresenceEventSubscription(MonitorLogEvent_External, sessionID, resourceURI, canonicalResourceURI, monitorFilter, subscribeDialogue, expiry, m_sipAssetPersistor.Get, m_sipAssetPersistor.GetProperty, GetSIPRegistrarBindingsCount_External, switchboardAccountsOnly);
+                        //        m_subscriptions.Add(sessionID, subscription);
+                        //        MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "New presence subscription created for " + resourceURI.ToString() + ", expiry " + expiry + "s.", owner));
+                        //    }
+                        //}
 
                         return sessionID;
                     }

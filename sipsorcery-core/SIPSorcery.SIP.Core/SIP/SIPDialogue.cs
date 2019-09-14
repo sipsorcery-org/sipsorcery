@@ -31,11 +31,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Net;
-using System.Runtime.Serialization;
-using System.Threading;
 using SIPSorcery.Sys;
 using log4net;
 

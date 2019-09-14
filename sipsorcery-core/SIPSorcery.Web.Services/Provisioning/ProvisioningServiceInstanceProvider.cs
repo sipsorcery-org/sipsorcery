@@ -71,7 +71,7 @@ namespace SIPSorcery.Web.Services {
                 sipProviderPersistor.Deleted += sipProviderBindingSynchroniser.SIPProviderDeleted;
 
                 return new ProvisioningServiceInstanceProvider(
-                    SIPAssetPersistorFactory<SIPAccount>.CreateSIPAssetPersistor(m_serverStorageType, m_serverStorageConnStr, m_sipAccountsStorageFileName),
+                    SIPAssetPersistorFactory<SIPAccountAsset>.CreateSIPAssetPersistor(m_serverStorageType, m_serverStorageConnStr, m_sipAccountsStorageFileName),
                     SIPAssetPersistorFactory<SIPDialPlan>.CreateSIPAssetPersistor(m_serverStorageType, m_serverStorageConnStr, m_dialplansStorageFileName),
                     sipProviderPersistor,
                     sipProviderBindingsPersistor,
@@ -97,7 +97,7 @@ namespace SIPSorcery.Web.Services {
 
     public class ProvisioningServiceInstanceProvider : IInstanceProvider, IServiceBehavior {
 
-        private SIPAssetPersistor<SIPAccount> m_sipAccountPersistor;
+        private SIPAssetPersistor<SIPAccountAsset> m_sipAccountPersistor;
         private SIPAssetPersistor<SIPDialPlan> m_sipDialPlanPersistor;
         private SIPAssetPersistor<SIPProvider> m_sipProviderPersistor;
         private SIPAssetPersistor<SIPProviderBinding> m_sipProviderBindingsPersistor;
@@ -115,7 +115,7 @@ namespace SIPSorcery.Web.Services {
         }
 
         public ProvisioningServiceInstanceProvider(
-            SIPAssetPersistor<SIPAccount> sipAccountPersistor,
+            SIPAssetPersistor<SIPAccountAsset> sipAccountPersistor,
             SIPAssetPersistor<SIPDialPlan> sipDialPlanPersistor,
             SIPAssetPersistor<SIPProvider> sipProviderPersistor,
             SIPAssetPersistor<SIPProviderBinding> sipProviderBindingsPersistor,

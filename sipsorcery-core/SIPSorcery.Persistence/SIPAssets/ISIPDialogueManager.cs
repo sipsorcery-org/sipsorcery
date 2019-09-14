@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace SIPSorcery.SIP.App
+﻿namespace SIPSorcery.Persistence
 {
     public interface ISIPDialogueManager
     {
