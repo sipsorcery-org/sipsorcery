@@ -74,7 +74,7 @@ namespace SIPSorcery.Servers
         public SIPAppServerCore(
             SIPTransport sipTransport,
             GetCanonicalDomainDelegate getCanonicalDomain,
-             GetSIPAccountDelegate getSIPAccount,
+            GetSIPAccountDelegate getSIPAccount,
             SIPMonitorLogDelegate proxyLog,
             SIPCallManager callManager,
             SIPDialogueManager sipDialogueManager,

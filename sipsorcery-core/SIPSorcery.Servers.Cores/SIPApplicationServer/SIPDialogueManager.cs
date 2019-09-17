@@ -69,7 +69,7 @@ namespace SIPSorcery.Servers
 
         private SIPMonitorLogDelegate Log_External;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;
-        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
+        private SIPAssetGetDelegate<SIPAccountAsset> GetSIPAccountAsset_External;
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
@@ -89,7 +89,7 @@ namespace SIPSorcery.Servers
             SIPAssetPersistor<SIPDialogueAsset> sipDialoguePersistor,
             SIPAssetPersistor<SIPCDRAsset> sipCDRPersistor,
             SIPAuthenticateRequestDelegate authenticateRequestDelegate,
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            SIPAssetGetDelegate<SIPAccountAsset> getSIPAccountAsset,
             GetCanonicalDomainDelegate getCanonicalDomain)
         {
             m_sipTransport = sipTransport;
@@ -98,7 +98,7 @@ namespace SIPSorcery.Servers
             m_sipDialoguePersistor = sipDialoguePersistor;
             m_sipCDRPersistor = sipCDRPersistor;
             SIPAuthenticateRequest_External = authenticateRequestDelegate;
-            GetSIPAccount_External = getSIPAccount;
+            GetSIPAccountAsset_External = getSIPAccountAsset;
             GetCanonicalDomain_External = getCanonicalDomain;
         }
 
@@ -314,7 +314,7 @@ namespace SIPSorcery.Servers
                     SIPResponse errorResponse = SIPTransport.GetResponse(referRequest, SIPResponseStatusCodesEnum.InternalServerError, null);
                     referTransaction.SendFinalResponse(errorResponse);
                 }
-                else if (GetSIPAccount_External == null)
+                else if (GetSIPAccountAsset_External == null)
                 {
                     // No point trying to authenticate if we haven't been given a  delegate to load the SIP account.
                     logger.Warn("Missing get SIP account delegate in SIPDialogueManager AuthenticateReferRequest.");
@@ -323,9 +323,9 @@ namespace SIPSorcery.Servers
                 }
                 else
                 {
-                    SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == sipUsername && s.SIPDomain == sipDomain);
+                    SIPAccountAsset sipAccountAsset = GetSIPAccountAsset_External(s => s.SIPUsername == sipUsername && s.SIPDomain == sipDomain);
 
-                    if (sipAccount == null)
+                    if (sipAccountAsset == null)
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Rejecting authentication required call for " + sipUsername + "@" + sipDomain + ", SIP account not found.", null));
                         SIPResponse errorResponse = SIPTransport.GetResponse(referRequest, SIPResponseStatusCodesEnum.Forbidden, null);
@@ -336,16 +336,16 @@ namespace SIPSorcery.Servers
                         SIPEndPoint localSIPEndPoint = (!referRequest.Header.ProxyReceivedOn.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(referRequest.Header.ProxyReceivedOn) : referRequest.LocalSIPEndPoint;
                         SIPEndPoint remoteEndPoint = (!referRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(referRequest.Header.ProxyReceivedFrom) : referRequest.RemoteSIPEndPoint;
 
-                        SIPRequestAuthenticationResult authenticationResult = SIPAuthenticateRequest_External(localSIPEndPoint, remoteEndPoint, referRequest, sipAccount, Log_External);
+                        SIPRequestAuthenticationResult authenticationResult = SIPAuthenticateRequest_External(localSIPEndPoint, remoteEndPoint, referRequest, sipAccountAsset.SIPAccount, Log_External);
                         if (authenticationResult.Authenticated)
                         {
                             if (authenticationResult.WasAuthenticatedByIP)
                             {
-                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER from " + remoteEndPoint.ToString() + " successfully authenticated by IP address.", sipAccount.Owner));
+                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER from " + remoteEndPoint.ToString() + " successfully authenticated by IP address.", sipAccountAsset.SIPAccount.Owner));
                             }
                             else
                             {
-                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER from " + remoteEndPoint.ToString() + " successfully authenticated by digest.", sipAccount.Owner));
+                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "REFER from " + remoteEndPoint.ToString() + " successfully authenticated by digest.", sipAccountAsset.SIPAccount.Owner));
                             }
 
                             return true;

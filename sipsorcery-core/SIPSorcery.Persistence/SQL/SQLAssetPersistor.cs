@@ -42,7 +42,6 @@ using System.Data.Linq.Mapping;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Persistence
@@ -397,84 +396,4 @@ namespace SIPSorcery.Persistence
             }
         }
     }
-
-    #region Unit testing.
-
-#if UNITTEST
-
-    [TestFixture]
-    public class SQLAssetPersistorUnitTest {
-
-        [Table(Name="table")]
-        private class MockSIPAsset : ISIPAsset {
-
-            private Guid m_id;
-            public Guid Id {
-                get { return m_id; }
-                set { m_id = value; }
-            }
-
-            public DataTable GetTable() {
-                throw new NotImplementedException();
-            }
-
-            public void Load(DataRow row) {
-                throw new NotImplementedException();
-            }
-
-            public Dictionary<Guid, object> Load(System.Xml.XmlDocument dom) {
-                throw new NotImplementedException();
-            }
-
-            public string ToXML() {
-                throw new NotImplementedException();
-            }
-
-            public string ToXMLNoParent() {
-                throw new NotImplementedException();
-            }
-
-            public string GetXMLElementName() {
-                throw new NotImplementedException();
-            }
-
-            public string GetXMLDocumentElementName() {
-                throw new NotImplementedException();
-            }
-        }
-     
-        [TestFixtureSetUp]
-        public void Init() { }
-
-        [TestFixtureTearDown]
-        public void Dispose() { }
-
-        [Test]
-        public void SampleTest() {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-        }
-
-        /*[Test]
-        public void BuildSingleParameterSelectQueryUnitTest() {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-            SimpleDBAssetPersistor<MockSIPAsset> persistor = new SimpleDBAssetPersistor<MockSIPAsset>(null, null);
-            string selectQuery = persistor.BuildSelectQuery("select * from table where inserted < ?1", new SqlParameter("1", DateTime.Now));
-            Console.WriteLine(selectQuery);
-        }
-
-        [Test]
-        public void BuildMultipleParameterSelectQueryUnitTest() {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-            SimpleDBAssetPersistor<MockSIPAsset> persistor = new SimpleDBAssetPersistor<MockSIPAsset>(null, null);
-            SqlParameter[] parameters = new SqlParameter[2];
-            parameters[0] = new SqlParameter("1", DateTime.Now);
-            parameters[1] = new SqlParameter("2", "test");
-            string selectQuery = persistor.BuildSelectQuery("select * from table where inserted < ?1 and name = ?2", parameters);
-            Console.WriteLine(selectQuery);
-        }*/
-    }
-
-#endif
-
-    #endregion
 }

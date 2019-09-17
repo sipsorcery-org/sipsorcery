@@ -5,10 +5,10 @@ using SIPSorcery.Entities;
 namespace SIPSorcery.Entities.IntegrationTests
 {
     [TestClass]
-    [Ignore] // Integration only tests, require DB.
+    //[Ignore] // Integration only tests, require DB.
     public class RateDataLayerTest
     {
-        [TestMethod]
+        [TestMethod, TestCategory("Integration")]
         public void GetRateTestMethod()
         {
             string id = null;

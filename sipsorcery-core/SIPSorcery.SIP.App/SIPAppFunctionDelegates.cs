@@ -36,6 +36,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Net;
 
 namespace SIPSorcery.SIP.App
@@ -54,6 +55,14 @@ namespace SIPSorcery.SIP.App
     public delegate void SIPCallFailedDelegate(ISIPClientUserAgent uac, string errorMessage);
     public delegate void SIPUASStateChangedDelegate(ISIPServerUserAgent uas, SIPResponseStatusCodesEnum statusCode, string reasonPhrase);
 
+    // Get SIP account(s) from external sources delegate.
+    public delegate SIPAccount GetSIPAccountDelegate(Expression<Func<SIPAccount, bool>> where);
+    public delegate List<SIPAccount> GetSIPAccountListDelegate(Expression<Func<SIPAccount, bool>> where, string orderByField, int offset, int limit);
+    
     // Authorisation delegates.
     public delegate SIPRequestAuthenticationResult SIPAuthenticateRequestDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, SIPAccount sipAccount, SIPMonitorLogDelegate log);
+
+    // SIP Presence delegates.
+    public delegate int SIPRegistrarBindingsCountDelegate(Guid sipAccountID);
+    public delegate object SIPAssetGetPropertyByIdDelegate<T>(Guid id, string propertyName);
 }

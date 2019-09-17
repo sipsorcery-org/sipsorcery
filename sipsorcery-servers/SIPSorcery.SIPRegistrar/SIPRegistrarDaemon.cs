@@ -72,7 +72,7 @@ namespace SIPSorcery.SIPRegistrar
         private UdpClient m_natKeepAliveSender;
 
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
-        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
+        private SIPAssetGetDelegate<SIPAccountAsset> GetSIPAccount_External;
         //private SIPAssetGetFromDirectQueryDelegate<SIPAccount> GetSIPAccountFromQuery_External;
         private SIPAssetPersistor<SIPRegistrarBinding> m_registrarBindingsPersistor;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;
@@ -80,7 +80,7 @@ namespace SIPSorcery.SIPRegistrar
 
         public SIPRegistrarDaemon(
             GetCanonicalDomainDelegate getDomain,
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            SIPAssetGetDelegate<SIPAccountAsset> getSIPAccount,
             //SIPAssetGetFromDirectQueryDelegate<SIPAccount> getSIPAccountFromQuery,
             SIPAssetPersistor<SIPRegistrarBinding> registrarBindingsPersistor,
             SIPAuthenticateRequestDelegate sipRequestAuthenticator,

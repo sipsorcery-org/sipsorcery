@@ -43,9 +43,6 @@ using log4net;
 
 namespace SIPSorcery.SIP.App
 {
-    public delegate SIPAccount GetSIPAccountDelegate(Expression<Func<SIPAccount, bool>> where);
-    public delegate List<SIPAccount> GetSIPAccountListDelegate(Expression<Func<SIPAccount, bool>> where, string orderByField, int offset, int limit);
-
     // Real-time call control delegates.
     public delegate RtccCustomerAccount RtccGetCustomerDelegate(string owner, string accountCode);
     public delegate RtccRate RtccGetRateDelegate(string owner, string rateCode, string rateDestination, int ratePlan);

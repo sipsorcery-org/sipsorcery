@@ -3,10 +3,6 @@ using System.Collections.Generic;
 
 namespace SIPSorcery.SIP.App
 {
-    public delegate int SIPRegistraBdingsCountDelegate(Guid sipAccountID);
-
-    public delegate object SIPAssetGetPropertyByIdDelegate<T>(Guid id, string propertyName);
-
     public class SIPPresenceEventSubscription : SIPEventSubscription
     {
         private const int MAX_SIPACCOUNTS_TO_RETRIEVE = 25;
@@ -17,7 +13,7 @@ namespace SIPSorcery.SIP.App
 
         private SIPEventPresence Presence;
 
-        private SIPRegistraBdingsCountDelegate GetSIPRegistrarBindingsCount_External;
+        private SIPRegistrarBindingsCountDelegate GetSIPRegistrarBindingsCount_External;
         private GetSIPAccountListDelegate GetSIPAccounts_External;
         private SIPAssetGetPropertyByIdDelegate<SIPAccount> GetSipAccountProperty_External;
 
@@ -49,7 +45,7 @@ namespace SIPSorcery.SIP.App
             //SIPAssetPersistor<SIPAccount> sipAccountPersistor,
             GetSIPAccountListDelegate getSipAccountsExternal,
             SIPAssetGetPropertyByIdDelegate<SIPAccount> getSipAccountPropertyExternal,
-            SIPRegistraBdingsCountDelegate getBindingsCount,
+            SIPRegistrarBindingsCountDelegate getBindingsCount,
             bool switchboardSIPAccountsOnly
             )
             : base(log, sessionID, resourceURI, canonincalResourceURI, filter, subscriptionDialogue, expiry)
