@@ -56,7 +56,7 @@ namespace SIPSorcery.SIP.App
     public delegate void SIPUASStateChangedDelegate(ISIPServerUserAgent uas, SIPResponseStatusCodesEnum statusCode, string reasonPhrase);
 
     // Get SIP account(s) from external sources delegate.
-    public delegate SIPAccount GetSIPAccountDelegate(Expression<Func<SIPAccount, bool>> where);
+    public delegate SIPAccount GetSIPAccountDelegate(string username, string domain);
     public delegate List<SIPAccount> GetSIPAccountListDelegate(Expression<Func<SIPAccount, bool>> where, string orderByField, int offset, int limit);
     
     // Authorisation delegates.

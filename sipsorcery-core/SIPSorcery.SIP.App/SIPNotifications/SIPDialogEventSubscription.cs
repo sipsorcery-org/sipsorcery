@@ -5,8 +5,9 @@ using System.Linq.Expressions;
 
 namespace SIPSorcery.SIP.App
 {
-    public delegate List<SIPDialogue> GetSIPDialogueListDelegate(Expression<Func<SIPDialogue, bool>> where, string orderByField, int offset, int limit);
     public delegate SIPDialogue GetSIPDialogueDelegate(Guid id);
+    public delegate List<SIPDialogue> GetDialoguesForOwnerDelegate(string owner, int offset, int limit);
+    public delegate SIPDialogue GetRemoteDialogueForBridgeDelegate(Guid bridgeID, Guid localDialogueID);
 
     public class SIPDialogEventSubscription : SIPEventSubscription
     {
@@ -16,7 +17,8 @@ namespace SIPSorcery.SIP.App
 
         private SIPEventDialogInfo DialogInfo;
 
-        private GetSIPDialogueListDelegate GetDialogues_External;
+        private GetDialoguesForOwnerDelegate GetDialoguesForOwner_External;
+        private GetRemoteDialogueForBridgeDelegate GetRemoteDialogueForBridge_External;
         private GetSIPDialogueDelegate GetDialogue_External;
 
         public override SIPEventPackage SubscriptionEventPackage
@@ -42,12 +44,14 @@ namespace SIPSorcery.SIP.App
             string filter,
             SIPDialogue subscriptionDialogue,
             int expiry,
-            GetSIPDialogueListDelegate getDialogues,
+            GetDialoguesForOwnerDelegate getDialoguesForOwner,
+            GetRemoteDialogueForBridgeDelegate getRemoteDialogueForBridge,
             GetSIPDialogueDelegate getDialogue
             )
             : base(log, sessionID, resourceURI, canonincalResourceURI, filter, subscriptionDialogue, expiry)
         {
-            GetDialogues_External = getDialogues;
+            GetDialoguesForOwner_External = getDialoguesForOwner;
+            GetRemoteDialogueForBridge_External = getRemoteDialogueForBridge;
             GetDialogue_External = getDialogue;
             DialogInfo = new SIPEventDialogInfo(0, SIPEventDialogInfoStateEnum.full, resourceURI);
         }
@@ -57,7 +61,7 @@ namespace SIPSorcery.SIP.App
             try
             {
                 DialogInfo.State = SIPEventDialogInfoStateEnum.full;
-                List<SIPDialogue> dialogues = GetDialogues_External(d => d.Owner == SubscriptionDialogue.Owner, "Inserted", 0, MAX_DIALOGUES_FOR_NOTIFY);
+                List<SIPDialogue> dialogues = GetDialoguesForOwner_External(SubscriptionDialogue.Owner, 0, MAX_DIALOGUES_FOR_NOTIFY);
 
                 foreach (SIPDialogue dialogue in dialogues)
                 {
@@ -109,7 +113,8 @@ namespace SIPSorcery.SIP.App
 
                             if (sipDialogue.BridgeId != Guid.Empty)
                             {
-                                SIPDialogue bridgedDialogue = GetDialogues_External(d => d.BridgeId == sipDialogue.BridgeId && d.Id != sipDialogue.Id, null, 0, 1).FirstOrDefault();
+                                //SIPDialogue bridgedDialogue = GetDialogues_External(d => d.BridgeId == sipDialogue.BridgeId && d.Id != sipDialogue.Id, null, 0, 1).FirstOrDefault();
+                                SIPDialogue bridgedDialogue = GetRemoteDialogueForBridge_External(sipDialogue.BridgeId, sipDialogue.Id);
                                 if (bridgedDialogue != null)
                                 {
                                     DialogInfo.DialogItems.Add(new SIPEventDialog(bridgedDialogue.Id.ToString(), state, bridgedDialogue));

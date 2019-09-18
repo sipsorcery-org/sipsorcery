@@ -57,27 +57,5 @@ namespace SIPSorcery.Persistence.IntegrationTests
                 TestHelper.ExecuteNonQuery(_serverStorageConnStr, "delete from sipaccounts where sipusername = 'test'");
             }
         }
-
-        /// <summary>
-        /// Tests using the asset persistor to get a SIPAccount object instead of a SIPAccountAsset object.
-        /// </summary>
-        [TestMethod, TestCategory("Integration")]
-        public void GetSIPAccounFromSIPAccountAssetPersistorTestMethod()
-        {
-            try
-            {
-                TestHelper.ExecuteNonQuery(_serverStorageConnStr, "insert into sipaccounts (id, sipusername, sippassword, owner, sipdomain, inserted) values (uuid(), 'test', 'password', 'aaron', 'sipsorcery.com', now())");
-
-                var sipAccountPersistor = SIPAssetPersistorFactory<SIPAccountAsset>.CreateSIPAssetPersistor(_serverStorageType, _serverStorageConnStr, null);
-
-                GetSIPAccountDelegate getSIPAccount = sipAccountPersistor.Get => (x => x.SIPUsername == "test") ;
-
-                //Assert.IsNotNull(result);
-            }
-            finally
-            {
-                TestHelper.ExecuteNonQuery(_serverStorageConnStr, "delete from sipaccounts where sipusername = 'test'");
-            }
-        }
     }
 }

@@ -5,7 +5,6 @@ using System.Data.Common;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Transactions;
-using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -133,15 +132,5 @@ namespace SIPSorcery.Persistence {
             //logger.Debug("SQL query took " + timer.ElapsedMilliseconds + "ms: " + translation + ".");
             return translation;
         }
-
-        #region Unit testing.
-
-        #if UNITTEST
-
-       
-        
-        #endif
-
-        #endregion
     }
 }

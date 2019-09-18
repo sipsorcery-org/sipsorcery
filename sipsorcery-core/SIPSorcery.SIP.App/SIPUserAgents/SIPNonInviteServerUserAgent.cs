@@ -166,7 +166,7 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    m_sipAccount = GetSIPAccount_External(s => s.SIPUsername == m_sipUsername && s.SIPDomain == m_sipDomain);
+                    m_sipAccount = GetSIPAccount_External(m_sipUsername, m_sipDomain);
 
                     if (m_sipAccount == null)
                     {
@@ -174,7 +174,7 @@ namespace SIPSorcery.SIP.App
                         if (m_sipUsername.Contains("."))
                         {
                             string sipUsernameSuffix = m_sipUsername.Substring(m_sipUsername.LastIndexOf(".") + 1);
-                            m_sipAccount = GetSIPAccount_External(s => s.SIPUsername == sipUsernameSuffix && s.SIPDomain == m_sipDomain);
+                            m_sipAccount = GetSIPAccount_External(sipUsernameSuffix, m_sipDomain);
                         }
 
                         if (m_sipAccount == null)
@@ -226,7 +226,7 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    m_sipAccount = GetSIPAccount_External(s => s.SIPUsername == m_sipUsername && s.SIPDomain == m_sipDomain);
+                    m_sipAccount = GetSIPAccount_External(m_sipUsername, m_sipDomain);
 
                     if (m_sipAccount == null)
                     {

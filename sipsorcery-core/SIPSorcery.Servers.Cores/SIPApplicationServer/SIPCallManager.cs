@@ -640,7 +640,8 @@ namespace SIPSorcery.Servers
                             if (replacesCallID.IsNullOrBlank())
                             {
                                 UASInviteTransaction dummyTransaction = GetDummyWebCallbackTransaction(number);
-                                uas = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, username, SIPDomainManager.DEFAULT_LOCAL_DOMAIN, SIPCallDirection.Out, GetSIPAccount_External, null, Log_External, dummyTransaction);
+                                GetSIPAccountDelegate getSIPAccount = (user, domain) => { return GetSIPAccountAsset_External(x => x.SIPUsername == user && x.SIPDomain == domain).SIPAccount; };
+                                uas = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, username, SIPDomainManager.DEFAULT_LOCAL_DOMAIN, SIPCallDirection.Out, getSIPAccount, null, Log_External, dummyTransaction);
                             }
                             else
                             {
@@ -726,7 +727,8 @@ namespace SIPSorcery.Servers
                 else
                 {
                     UASInviteTransaction dummyTransaction = GetDummyWebCallbackTransaction("callback");
-                    ISIPServerUserAgent uas = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, username, SIPDomainManager.DEFAULT_LOCAL_DOMAIN, SIPCallDirection.Out, GetSIPAccount_External, null, Log_External, dummyTransaction);
+                    GetSIPAccountDelegate getSIPAccount = (user, domain) => { return GetSIPAccountAsset_External(x => x.SIPUsername == user && x.SIPDomain == domain).SIPAccount; };
+                    ISIPServerUserAgent uas = new SIPServerUserAgent(m_sipTransport, m_outboundProxy, username, SIPDomainManager.DEFAULT_LOCAL_DOMAIN, SIPCallDirection.Out, getSIPAccount, null, Log_External, dummyTransaction);
 
                     string callbackScript =
                       "sys.Log(\"Callback dialString1=" + dialString1 + ", dialString2=" + dialString2 + ".\")\n" +
