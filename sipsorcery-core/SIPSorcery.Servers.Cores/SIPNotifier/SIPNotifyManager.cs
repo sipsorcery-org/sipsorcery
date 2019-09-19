@@ -14,7 +14,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2009 Aaron Clauson (aaronc@blueface.ie), Blue Face Ltd, Dublin, Ireland (www.blueface.ie)
+// Copyright (c) 2009-2019 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Dublin, Ireland
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -37,12 +37,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Net;
-using System.Text;
 using System.Threading;
-using SIPSorcery.AppServer.DialPlan;
-using SIPSorcery.CRM;
 using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -69,7 +65,7 @@ namespace SIPSorcery.Servers
         private bool m_stop;
 
         private SIPMonitorLogDelegate Log_External;
-        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;                         // Function in authenticate user outgoing calls.
+        private SIPAssetGetDelegate<SIPAccountAsset> GetSIPAccount_External;                         // Function in authenticate user outgoing calls.
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPAccountBindings_External;    // Function to lookup bindings that have been registered for a SIP account.
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
 
@@ -80,7 +76,7 @@ namespace SIPSorcery.Servers
             SIPTransport sipTransport,
             SIPEndPoint outboundProxy,
             SIPMonitorLogDelegate logDelegate,
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            SIPAssetGetDelegate<SIPAccountAsset> getSIPAccount,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPAccountBindings,
             GetCanonicalDomainDelegate getCanonicalDomain)
         {
@@ -176,7 +172,7 @@ namespace SIPSorcery.Servers
                 string domain = GetCanonicalDomain_External(sipRequest.URI.Host, true);
                 if (domain != null)
                 {
-                    SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == sipRequest.URI.User && s.SIPDomain == domain);
+                    SIPAccountAsset sipAccount = GetSIPAccount_External(s => s.SIPUsername == sipRequest.URI.User && s.SIPDomain == domain);
 
                     if (sipAccount != null)
                     {

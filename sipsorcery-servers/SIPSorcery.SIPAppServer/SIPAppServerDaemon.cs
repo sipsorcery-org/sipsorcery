@@ -1,8 +1,8 @@
 // ============================================================================
-// FileName: MainConsole.cs
+// FileName: SIPAppServerDaemon.cs
 //
 // Description:
-// Main console display for the demonstration SIP Proxy.
+// Runs the main sipsorcery service dial plan call engine.
 //
 // Author(s):
 // Aaron Clauson
@@ -35,21 +35,8 @@
 // ============================================================================
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics;
-using System.IO;
-using System.Net;
-using System.Net.Sockets;
-using System.Security;
-using System.ServiceProcess;
 using System.ServiceModel;
-using System.ServiceModel.Channels;
-using System.ServiceModel.Web;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
 using System.Xml;
 using SIPSorcery.AppServer.DialPlan;
 using SIPSorcery.CRM;
@@ -231,10 +218,13 @@ namespace SIPSorcery.SIPAppServer
                      m_dailyCallLimit);
                 m_callManager.Start();
 
+                GetSIPAccountDelegate getSIPAccount = (username, domain) => {
+                    return m_sipSorceryPersistor.SIPAccountsPersistor.Get(x => x.SIPUsername == username && x.SIPDomain == domain).SIPAccount; };
+
                 m_appServerCore = new SIPAppServerCore(
                     m_sipTransport,
                     m_sipSorceryPersistor.SIPDomainManager.GetDomain,
-                    m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                    getSIPAccount,
                     FireSIPMonitorEvent,
                     m_callManager,
                     m_sipDialogueManager,

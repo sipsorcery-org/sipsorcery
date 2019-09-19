@@ -14,7 +14,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006-2007 Aaron Clauson (aaronc@blueface.ie), Blue Face Ltd, Dublin, Ireland (www.blueface.ie)
+// Copyright (c) 2006-2019 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Dublin, Ireland
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -36,30 +36,14 @@
 // ============================================================================
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
-using System.Runtime.Serialization;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
-using System.Xml;
-using System.Xml.Serialization;
 using SIPSorcery.CRM;
 using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using log4net;
-
-#if UNITTEST
-using NUnit.Framework;
-#endif
 
 namespace SIPSorcery.Servers
 {
@@ -117,7 +101,7 @@ namespace SIPSorcery.Servers
 
         private SIPTransport m_sipTransport;
         private SIPRegistrarBindingsManager m_registrarBindingsManager;
-        private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
+        private SIPAssetGetDelegate<SIPAccountAsset> GetSIPAccount_External;
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
         private SIPAuthenticateRequestDelegate SIPRequestAuthenticator_External;
         private SIPAssetPersistor<Customer> CustomerPersistor_External;
@@ -144,7 +128,7 @@ namespace SIPSorcery.Servers
         public RegistrarCore(
             SIPTransport sipTransport,
             SIPRegistrarBindingsManager registrarBindingsManager,
-            SIPAssetGetDelegate<SIPAccount> getSIPAccount,
+            SIPAssetGetDelegate<SIPAccountAsset> getSIPAccount,
             GetCanonicalDomainDelegate getCanonicalDomain,
             bool mangleUACContact,
             bool strictRealmHandling,
@@ -340,8 +324,8 @@ namespace SIPSorcery.Servers
                     return RegisterResultEnum.DomainNotServiced;
                 }
 
-                SIPAccount sipAccount = GetSIPAccount_External(s => s.SIPUsername == toUser && s.SIPDomain == canonicalDomain);
-                SIPRequestAuthenticationResult authenticationResult = SIPRequestAuthenticator_External(registerTransaction.LocalSIPEndPoint, registerTransaction.RemoteEndPoint, sipRequest, sipAccount, FireProxyLogEvent);
+                SIPAccountAsset sipAccountAsset = GetSIPAccount_External(s => s.SIPUsername == toUser && s.SIPDomain == canonicalDomain);
+                SIPRequestAuthenticationResult authenticationResult = SIPRequestAuthenticator_External(registerTransaction.LocalSIPEndPoint, registerTransaction.RemoteEndPoint, sipRequest, sipAccountAsset.SIPAccount, FireProxyLogEvent);
 
                 if (!authenticationResult.Authenticated)
                 {
@@ -380,7 +364,7 @@ namespace SIPSorcery.Servers
                     if (sipRequest.Header.Contact == null || sipRequest.Header.Contact.Count == 0)
                     {
                         // No contacts header to update bindings with, return a list of the current bindings.
-                        List<SIPRegistrarBinding> bindings = m_registrarBindingsManager.GetBindings(sipAccount.Id);
+                        List<SIPRegistrarBinding> bindings = m_registrarBindingsManager.GetBindings(sipAccountAsset.Id);
                         //List<SIPContactHeader> contactsList = m_registrarBindingsManager.GetContactHeader(); // registration.GetContactHeader(true, null);
                         if (bindings != null)
                         {
@@ -403,7 +387,7 @@ namespace SIPSorcery.Servers
                         DateTime startTime = DateTime.Now;
 
                         List<SIPRegistrarBinding> bindingsList = m_registrarBindingsManager.UpdateBindings(
-                            sipAccount,
+                            sipAccountAsset.SIPAccount,
                             proxySIPEndPoint,
                             uacRemoteEndPoint,
                             registrarEndPoint,

@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 
 namespace SIPSorcery.SIP.App
 {
@@ -68,7 +66,8 @@ namespace SIPSorcery.SIP.App
                     DialogInfo.DialogItems.Add(new SIPEventDialog(dialogue.Id.ToString(), "confirmed", dialogue));
                 }
 
-                MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.NotifySent, "Full state notification for dialog and " + ResourceURI.ToString() + ".", SubscriptionDialogue.Owner));
+                MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.NotifySent, 
+                    "Full state notification for dialog and " + ResourceURI.ToString() + ".", SubscriptionDialogue.Owner));
             }
             catch (Exception excp)
             {
@@ -87,7 +86,9 @@ namespace SIPSorcery.SIP.App
             {
                 lock (DialogInfo)
                 {
-                    MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.Monitor, "Monitor event " + machineEvent.MachineEventType + " dialog " + ResourceURI.ToString() + " (ID " + machineEvent.ResourceID + ").", SubscriptionDialogue.Owner));
+                    MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.Monitor, 
+                        "Monitor event " + machineEvent.MachineEventType + " dialog " + ResourceURI.ToString() + " (ID " + machineEvent.ResourceID + ").",
+                        SubscriptionDialogue.Owner));
 
                     string state = GetStateForEventType(machineEvent.MachineEventType);
 

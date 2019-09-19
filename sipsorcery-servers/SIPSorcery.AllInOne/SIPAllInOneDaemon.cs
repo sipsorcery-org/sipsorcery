@@ -339,10 +339,15 @@ namespace SIPSorcery.SIPAppServer
                      m_dailyCallLimit);
                 m_callManager.Start();
 
+                GetSIPAccountDelegate getSIPAccount = (username, domain) =>
+                {
+                    return m_sipSorceryPersistor.SIPAccountsPersistor.Get(x => x.SIPUsername == username && x.SIPDomain == domain).SIPAccount;
+                };
+
                 m_appServerCore = new SIPAppServerCore(
                     m_sipTransport,
                     m_sipSorceryPersistor.SIPDomainManager.GetDomain,
-                    m_sipSorceryPersistor.SIPAccountsPersistor.Get,
+                    getSIPAccount,
                     FireSIPMonitorEvent,
                     m_callManager,
                     m_sipDialogueManager,

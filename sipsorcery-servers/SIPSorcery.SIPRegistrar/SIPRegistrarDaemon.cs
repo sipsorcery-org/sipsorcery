@@ -73,7 +73,6 @@ namespace SIPSorcery.SIPRegistrar
 
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
         private SIPAssetGetDelegate<SIPAccountAsset> GetSIPAccount_External;
-        //private SIPAssetGetFromDirectQueryDelegate<SIPAccount> GetSIPAccountFromQuery_External;
         private SIPAssetPersistor<SIPRegistrarBinding> m_registrarBindingsPersistor;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;
         public SIPAssetPersistor<Customer> CustomerPersistor_External;
@@ -81,14 +80,12 @@ namespace SIPSorcery.SIPRegistrar
         public SIPRegistrarDaemon(
             GetCanonicalDomainDelegate getDomain,
             SIPAssetGetDelegate<SIPAccountAsset> getSIPAccount,
-            //SIPAssetGetFromDirectQueryDelegate<SIPAccount> getSIPAccountFromQuery,
             SIPAssetPersistor<SIPRegistrarBinding> registrarBindingsPersistor,
             SIPAuthenticateRequestDelegate sipRequestAuthenticator,
             SIPAssetPersistor<Customer> customerPersistor)
         {
             GetCanonicalDomain_External = getDomain;
             GetSIPAccount_External = getSIPAccount;
-            //GetSIPAccountFromQuery_External = getSIPAccountFromQuery;
             m_registrarBindingsPersistor = registrarBindingsPersistor;
             SIPAuthenticateRequest_External = sipRequestAuthenticator;
             CustomerPersistor_External = customerPersistor;

@@ -66,7 +66,7 @@ namespace SIPSorcery.Servers
         private SIPAssetGetListDelegate<SIPDialogueAsset> GetDialogues_External;
         private SIPAssetGetByIdDelegate<SIPDialogueAsset> GetDialogue_External;
         private SIPAssetCountDelegate<SIPRegistrarBinding> GetSIPRegistrarBindingsCount_External;
-        private SIPAssetPersistor<SIPAccount> m_sipAssetPersistor;
+        private SIPAssetPersistor<SIPAccountAsset> m_sipAssetPersistor;
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
         private ISIPMonitorPublisher m_publisher;                           // The SIP monitor event publisher, could be a memory or WPF boundary.
@@ -78,7 +78,7 @@ namespace SIPSorcery.Servers
             SIPMonitorLogDelegate logDelegate,
             SIPAssetGetListDelegate<SIPDialogueAsset> getDialogues,
             SIPAssetGetByIdDelegate<SIPDialogueAsset> getDialogue,
-            SIPAssetPersistor<SIPAccount> sipAssetPersistor,
+            SIPAssetPersistor<SIPAccountAsset> sipAssetPersistor,
             SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount,
             SIPTransport sipTransport,
             SIPEndPoint outboundProxy,
@@ -162,7 +162,9 @@ namespace SIPSorcery.Servers
                             {
                                 bool switchboardAccountsOnly = subscribeRequest.Body == SIPPresenceEventSubscription.SWITCHBOARD_FILTER;
                                 SIPRegistrarBindingsCountDelegate getRegistrarBindingsCount = (sipAccountID) => { return GetSIPRegistrarBindingsCount_External(x => x.SIPAccountId == sipAccountID); };
-                                SIPPresenceEventSubscription subscription = new SIPPresenceEventSubscription(MonitorLogEvent_External, sessionID, resourceURI, canonicalResourceURI, monitorFilter, subscribeDialogue, expiry, m_sipAssetPersistor.Get, m_sipAssetPersistor.GetProperty, getRegistrarBindingsCount, switchboardAccountsOnly);
+                                GetSIPAccountsForUserDelegate getSIPAccountsForUser = (username, domain, offset, limit) => { return m_sipAssetPersistor.Get(x => x.SIPUsername == username && x.SIPDomain == domain, "SIPUsername", offset, limit).Select(y => y.SIPAccount).ToList(); };
+                                GetSIPAccountsForOwnerDelegate getSIPAccountsForOwner = (accountOwner, offset, limit) => { return m_sipAssetPersistor.Get(x => x.Owner == accountOwner, "SIPUsername", offset, limit).Select(y => y.SIPAccount).ToList(); };
+                                SIPPresenceEventSubscription subscription = new SIPPresenceEventSubscription(MonitorLogEvent_External, sessionID, resourceURI, canonicalResourceURI, monitorFilter, subscribeDialogue, expiry, getSIPAccountsForUser, getSIPAccountsForOwner, m_sipAssetPersistor.GetProperty, getRegistrarBindingsCount, switchboardAccountsOnly);
                                 m_subscriptions.Add(sessionID, subscription);
                                 MonitorLogEvent_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "New presence subscription created for " + resourceURI.ToString() + ", expiry " + expiry + "s.", owner));
                             }

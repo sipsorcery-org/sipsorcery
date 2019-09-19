@@ -57,8 +57,9 @@ namespace SIPSorcery.SIP.App
 
     // Get SIP account(s) from external sources delegate.
     public delegate SIPAccount GetSIPAccountDelegate(string username, string domain);
-    public delegate List<SIPAccount> GetSIPAccountListDelegate(Expression<Func<SIPAccount, bool>> where, string orderByField, int offset, int limit);
-    
+    public delegate List<SIPAccount> GetSIPAccountsForUserDelegate(string username, string domain, int offset, int limit);
+    public delegate List<SIPAccount> GetSIPAccountsForOwnerDelegate(string owner, int offset, int limit);
+
     // Authorisation delegates.
     public delegate SIPRequestAuthenticationResult SIPAuthenticateRequestDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, SIPAccount sipAccount, SIPMonitorLogDelegate log);
 

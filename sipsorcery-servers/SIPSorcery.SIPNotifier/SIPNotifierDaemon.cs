@@ -74,7 +74,7 @@ namespace SIPSorcery.SIPNotifier
         private SIPAssetGetListDelegate<SIPRegistrarBinding> GetSIPRegistrarBindings_External;
         private SIPAssetCountDelegate<SIPRegistrarBinding> GetBindingsCount_External;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;
-        private SIPAssetPersistor<SIPAccount> m_sipAssetPersistor;
+        private SIPAssetPersistor<SIPAccountAsset> m_sipAssetPersistor;
         private ISIPMonitorPublisher m_publisher;
 
         public SIPNotifierDaemon(
@@ -82,9 +82,9 @@ namespace SIPSorcery.SIPNotifier
             SIPAssetGetListDelegate<SIPDialogueAsset> getDialogues,
             SIPAssetGetByIdDelegate<SIPDialogueAsset> getDialogue,
             GetCanonicalDomainDelegate getDomain,
-            SIPAssetPersistor<SIPAccount> sipAsssetPersistor,
+            SIPAssetPersistor<SIPAccountAsset> sipAsssetPersistor,
             SIPAssetGetListDelegate<SIPRegistrarBinding> getSIPRegistrarBindings,
-            SIPAssetGetListDelegate<SIPAccount> getSIPAccounts,
+            SIPAssetGetListDelegate<SIPAccountAsset> getSIPAccounts,
             SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount,
             SIPAuthenticateRequestDelegate sipRequestAuthenticator,
             ISIPMonitorPublisher publisher)

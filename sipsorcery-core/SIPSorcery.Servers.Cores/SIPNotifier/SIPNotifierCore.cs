@@ -13,7 +13,7 @@
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2010 Aaron Clauson (aaron@sipsorcery.com), SIPSorcery Ltd, London, UK (www.sipsorcery.com)
+// Copyright (c) 2010-2019 Aaron Clauson (aaron@sipsorcery.com), SIPSorcery LTD PTY, Montreux, Switzerland (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -35,17 +35,8 @@
 // ============================================================================
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
-using System.Runtime.Serialization;
-using System.Text.RegularExpressions;
 using System.Threading;
-using System.Xml;
-using System.Xml.Serialization;
 using SIPSorcery.CRM;
 using SIPSorcery.Persistence;
 using SIPSorcery.SIP;
@@ -77,7 +68,7 @@ namespace SIPSorcery.Servers
         private SIPAssetGetDelegate<Customer> GetCustomer_External;
         private GetCanonicalDomainDelegate GetCanonicalDomain_External;
         private SIPAuthenticateRequestDelegate SIPRequestAuthenticator_External;
-        private SIPAssetPersistor<SIPAccount> m_sipAssetPersistor;
+        private SIPAssetPersistor<SIPAccountAsset> m_sipAssetPersistor;
 
         private Queue<SIPNonInviteTransaction> m_notifierQueue = new Queue<SIPNonInviteTransaction>();
         private AutoResetEvent m_notifierARE = new AutoResetEvent(false);
@@ -93,7 +84,7 @@ namespace SIPSorcery.Servers
             SIPAssetGetListDelegate<SIPDialogueAsset> getDialogues,
             SIPAssetGetByIdDelegate<SIPDialogueAsset> getDialogue,
             GetCanonicalDomainDelegate getCanonicalDomain,
-            SIPAssetPersistor<SIPAccount> sipAssetPersistor,
+            SIPAssetPersistor<SIPAccountAsset> sipAssetPersistor,
             SIPAssetCountDelegate<SIPRegistrarBinding> getBindingsCount,
             SIPAuthenticateRequestDelegate sipRequestAuthenticator,
             SIPEndPoint outboundProxy,
@@ -246,9 +237,8 @@ namespace SIPSorcery.Servers
                     subscribeTransaction.SendFinalResponse(noDomainResponse);
                     return;
                 }
-
-                SIPAccount sipAccount = m_sipAssetPersistor.Get(s => s.SIPUsername == fromUser && s.SIPDomain == canonicalDomain);
-                SIPRequestAuthenticationResult authenticationResult = SIPRequestAuthenticator_External(subscribeTransaction.LocalSIPEndPoint, subscribeTransaction.RemoteEndPoint, sipRequest, sipAccount, FireProxyLogEvent);
+                SIPAccountAsset sipAccountAsset = m_sipAssetPersistor.Get(s => s.SIPUsername == fromUser && s.SIPDomain == canonicalDomain);
+                SIPRequestAuthenticationResult authenticationResult = SIPRequestAuthenticator_External(subscribeTransaction.LocalSIPEndPoint, subscribeTransaction.RemoteEndPoint, sipRequest, sipAccountAsset.SIPAccount, FireProxyLogEvent);
 
                 if (!authenticationResult.Authenticated)
                 {
@@ -263,7 +253,7 @@ namespace SIPSorcery.Servers
                     }
                     else
                     {
-                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Authentication required for " + fromUser + "@" + canonicalDomain + " from " + subscribeTransaction.RemoteEndPoint + ".", sipAccount.Owner));
+                        FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Authentication required for " + fromUser + "@" + canonicalDomain + " from " + subscribeTransaction.RemoteEndPoint + ".", sipAccountAsset.Owner));
                     }
                     return;
                 }
@@ -281,7 +271,7 @@ namespace SIPSorcery.Servers
                             // A subscription renewal attempt failed
                             SIPResponse renewalErrorResponse = SIPTransport.GetResponse(sipRequest, errorResponse, errorResponseReason);
                             subscribeTransaction.SendFinalResponse(renewalErrorResponse);
-                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription renewal failed for event type " + sipRequest.Header.Event + " " + sipRequest.URI.ToString() + ", " + errorResponse + " " + errorResponseReason + ".", sipAccount.Owner));
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription renewal failed for event type " + sipRequest.Header.Event + " " + sipRequest.URI.ToString() + ", " + errorResponse + " " + errorResponseReason + ".", sipAccountAsset.Owner));
                         }
                         else if (sipRequest.Header.Expires == 0)
                         {
@@ -294,7 +284,7 @@ namespace SIPSorcery.Servers
                             // Existing subscription was found.
                             SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                             subscribeTransaction.SendFinalResponse(okResponse);
-                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeRenew, "Subscription renewal for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + " and expiry " + sipRequest.Header.Expires + ".", sipAccount.Owner));
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeRenew, "Subscription renewal for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + " and expiry " + sipRequest.Header.Expires + ".", sipAccountAsset.Owner));
                             m_subscriptionsManager.SendFullStateNotify(sessionID);
                         }
                     }
@@ -304,13 +294,13 @@ namespace SIPSorcery.Servers
                         SIPURI canonicalResourceURI = sipRequest.URI.CopyOf();
                         string resourceCanonicalDomain = GetCanonicalDomain_External(canonicalResourceURI.Host, true);
                         canonicalResourceURI.Host = resourceCanonicalDomain;
-                        SIPAccount resourceSIPAccount = null;
+                        SIPAccountAsset resourceSIPAccount = null;
 
                         if (resourceCanonicalDomain == null)
                         {
                             SIPResponse notFoundResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Domain " + resourceCanonicalDomain + " not serviced");
                             subscribeTransaction.SendFinalResponse(notFoundResponse);
-                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", domain not serviced.", sipAccount.Owner));
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", domain not serviced.", sipAccountAsset.Owner));
                             return;
                         }
 
@@ -322,7 +312,7 @@ namespace SIPSorcery.Servers
                             {
                                 SIPResponse notFoundResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, "Requested resource does not exist");
                                 subscribeTransaction.SendFinalResponse(notFoundResponse);
-                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", SIP account does not exist.", sipAccount.Owner));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", SIP account does not exist.", sipAccountAsset.Owner));
                                 return;
                             }
                         }
@@ -331,25 +321,25 @@ namespace SIPSorcery.Servers
                         bool authorised = false;
                         string adminID = null;
 
-                        if (canonicalResourceURI.User == m_wildcardUser || sipAccount.Owner == resourceSIPAccount.Owner)
+                        if (canonicalResourceURI.User == m_wildcardUser || sipAccountAsset.Owner == resourceSIPAccount.Owner)
                         {
                             authorised = true;
-                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Subscription to " + canonicalResourceURI.ToString() + " authorised due to common owner.", sipAccount.Owner));
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Subscription to " + canonicalResourceURI.ToString() + " authorised due to common owner.", sipAccountAsset.Owner));
                         }
                         else
                         {
                             // Lookup the customer record for the requestor and check the administrative level on it.
-                            Customer requestingCustomer = GetCustomer_External(c => c.CustomerUsername == sipAccount.Owner);
+                            Customer requestingCustomer = GetCustomer_External(c => c.CustomerUsername == sipAccountAsset.Owner);
                             adminID = requestingCustomer.AdminId;
                             if (!resourceSIPAccount.AdminMemberId.IsNullOrBlank() && requestingCustomer.AdminId == resourceSIPAccount.AdminMemberId)
                             {
                                 authorised = true;
-                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Subscription to " + canonicalResourceURI.ToString() + " authorised due to requestor admin permissions for domain " + resourceSIPAccount.AdminMemberId + ".", sipAccount.Owner));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Subscription to " + canonicalResourceURI.ToString() + " authorised due to requestor admin permissions for domain " + resourceSIPAccount.AdminMemberId + ".", sipAccountAsset.Owner));
                             }
                             else if (requestingCustomer.AdminId == m_topLevelAdminID)
                             {
                                 authorised = true;
-                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Subscription to " + canonicalResourceURI.ToString() + " authorised due to requestor having top level admin permissions.", sipAccount.Owner));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAuth, "Subscription to " + canonicalResourceURI.ToString() + " authorised due to requestor having top level admin permissions.", sipAccountAsset.Owner));
                             }
                         }
 
@@ -359,13 +349,13 @@ namespace SIPSorcery.Servers
                             SIPResponseStatusCodesEnum errorResponse = SIPResponseStatusCodesEnum.None;
                             string errorResponseReason = null;
                             string toTag = CallProperties.CreateNewTag();
-                            string sessionID = m_subscriptionsManager.SubscribeClient(sipAccount.Owner, adminID, sipRequest, toTag, canonicalResourceURI, out errorResponse, out errorResponseReason);
+                            string sessionID = m_subscriptionsManager.SubscribeClient(sipAccountAsset.Owner, adminID, sipRequest, toTag, canonicalResourceURI, out errorResponse, out errorResponseReason);
 
                             if (errorResponse != SIPResponseStatusCodesEnum.None)
                             {
                                 SIPResponse subscribeErrorResponse = SIPTransport.GetResponse(sipRequest, errorResponse, errorResponseReason);
                                 subscribeTransaction.SendFinalResponse(subscribeErrorResponse);
-                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", " + errorResponse + " " + errorResponseReason + ".", sipAccount.Owner));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", " + errorResponse + " " + errorResponseReason + ".", sipAccountAsset.Owner));
                             }
                             else
                             {
@@ -374,7 +364,7 @@ namespace SIPSorcery.Servers
                                 okResponse.Header.Expires = sipRequest.Header.Expires;
                                 okResponse.Header.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, new SIPURI(SIPSchemesEnum.sip, subscribeTransaction.LocalSIPEndPoint)) };
                                 subscribeTransaction.SendFinalResponse(okResponse);
-                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "Subscription accepted for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + " and expiry " + sipRequest.Header.Expires + ".", sipAccount.Owner));
+                                FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeAccept, "Subscription accepted for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + " and expiry " + sipRequest.Header.Expires + ".", sipAccountAsset.Owner));
 
                                 if (sessionID != null)
                                 {
@@ -386,7 +376,7 @@ namespace SIPSorcery.Servers
                         {
                             SIPResponse forbiddenResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Forbidden, "Requested resource not authorised");
                             subscribeTransaction.SendFinalResponse(forbiddenResponse);
-                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", requesting account " + sipAccount.Owner + " was not authorised.", sipAccount.Owner));
+                            FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Notifier, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription failed for " + sipRequest.URI.ToString() + ", event type " + sipRequest.Header.Event + ", requesting account " + sipAccountAsset.Owner + " was not authorised.", sipAccountAsset.Owner));
                         }
                     }
                 }
