@@ -1,52 +1,26 @@
 ﻿using System;
-using System.Text;
+using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SIPSorcery.Sys.UnitTests
 {
     [TestClass]
-    public class CryptoUnitTest
+    public class AppStateUnitTest
     {
         [TestMethod]
-        public void SampleTest()
+        public void CheckAppConfigFileExistsTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            int initRandomNumber = Crypto.GetRandomInt();
-            Console.WriteLine("Random int = " + initRandomNumber + ".");
+            Assert.IsTrue(File.Exists("app.config"), "The app.config file was not correctly deployed by the test framework.");
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
-        public void CallRandomNumberWebServiceUnitTest()
-        {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-            Console.WriteLine("Random number = " + Crypto.GetRandomInt());
-
-            Console.WriteLine("-----------------------------------------");
-        }
-
-        [TestMethod]
-        public void GetRandomNumberTest()
-        {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-            Console.WriteLine("Random number = " + Crypto.GetRandomInt());
-
-            Console.WriteLine("-----------------------------------------");
-        }
-
-        [TestMethod]
-        public void GetOneHundredRandomNumbersTest()
-        {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-            for (int index = 0; index < 100; index++)
-            {
-                Console.WriteLine("Random number = " + Crypto.GetRandomInt());
-            }
-
-            Console.WriteLine("-----------------------------------------");
-        }
+        //[TestMethod]
+        //public void CheckAppConfigFileExistsTest()
+        //{
+        //    Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    Assert.IsTrue(File.Exists("app.config"), "The app.config file was not correctly deployed by the test framework.");
+        //    Console.WriteLine("-----------------------------------------");
+        //}
     }
 }

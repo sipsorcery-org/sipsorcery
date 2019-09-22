@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using log4net;
 
 namespace SIPSorcery.SIP.Core.UnitTests
 {
@@ -13,7 +10,6 @@ namespace SIPSorcery.SIP.Core.UnitTests
     /// Summary description for SIPConnectionUnitTest
     /// </summary>
     [TestClass]
-    [DeploymentItem("App.config")]
     public class SIPConnectionUnitTest
     {
         private string CRLF = SIPConstants.CRLF;
