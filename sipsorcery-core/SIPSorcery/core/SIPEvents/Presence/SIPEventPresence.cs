@@ -47,7 +47,7 @@ namespace SIPSorcery.SIP
 {
     public class SIPEventPresence : SIPEvent
     {
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public static readonly string m_pidfXMLNS = SIPEventConsts.PIDF_XML_NAMESPACE_URN;
 

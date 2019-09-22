@@ -32,8 +32,6 @@
 
 using System;
 using System.Net;
-using System.Collections.Generic;
-using System.Text;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -51,7 +49,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTSPResponse
     {
-        private static ILog logger = AssemblyStreamState.logger;
+        private static ILog logger = Log.logger;
 		
 		private static string m_CRLF = RTSPConstants.CRLF;
 		//private static string m_rtspFullVersion = RTSPConstants.RTSP_FULLVERSION_STRING;

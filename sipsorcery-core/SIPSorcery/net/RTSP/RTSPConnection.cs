@@ -47,7 +47,7 @@ namespace SIPSorcery.Net
         private static string m_rtspEOL = RTSPConstants.CRLF;
         private static string m_rtspMessageDelimiter = RTSPConstants.CRLF + RTSPConstants.CRLF;
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public RTSPServer Server { get; private set; }
         public NetworkStream Stream { get; private set; }

@@ -62,7 +62,7 @@ namespace SIPSorcery.SIP
     /// </remarks>
     public class SIPDialogue
     {
-        protected static ILog logger = AssemblyState.logger;
+        protected static ILog logger = Log.logger;
 
         protected static string m_CRLF = SIPConstants.CRLF;
         protected static string m_sipVersion = SIPConstants.SIP_VERSION_STRING;

@@ -65,7 +65,7 @@ namespace SIPSorcery.SIP
         private X509Certificate2 m_serverCertificate;
         private static object m_writeLock = new object();
         
-        private new ILog logger = AppState.GetLogger("siptls-channel");
+        private new ILog logger = Log.logger;
 
         public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint)
         {

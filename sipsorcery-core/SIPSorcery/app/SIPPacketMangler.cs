@@ -50,7 +50,7 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPPacketMangler
     {
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public static string MangleSDP(string sdpBody, string publicIPAddress, out bool wasMangled)
         {

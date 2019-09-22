@@ -111,7 +111,7 @@ namespace SIPSorcery.Net
         public const string ICE_PWD_ATTRIBUTE_PREFIX = "ice-pwd";
         public const string ICE_CANDIDATE_ATTRIBUTE_PREFIX = "candidate";
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public decimal Version = SDP_PROTOCOL_VERSION;
 

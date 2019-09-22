@@ -45,7 +45,7 @@ namespace SIPSorcery.Net
 
     public class STUNServer
 	{
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         private IPEndPoint m_primaryEndPoint;
         private IPEndPoint m_secondaryEndPoint;

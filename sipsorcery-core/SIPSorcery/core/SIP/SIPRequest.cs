@@ -31,6 +31,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using SIPSorcery.Sys;
 using log4net;
 
 namespace SIPSorcery.SIP
@@ -48,7 +49,7 @@ namespace SIPSorcery.SIP
 	/// </bnf>
 	public class SIPRequest
 	{
-        private static ILog logger = AssemblyState.logger;
+        private static ILog logger = Log.logger;
 
         private delegate bool IsLocalSIPSocketDelegate(string socket, SIPProtocolsEnum protocol);
 

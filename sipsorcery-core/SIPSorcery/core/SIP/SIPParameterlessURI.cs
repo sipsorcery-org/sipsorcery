@@ -33,6 +33,7 @@
 
 using System;
 using System.Runtime.Serialization;
+using SIPSorcery.Sys;
 using log4net;
 
 namespace SIPSorcery.SIP
@@ -40,7 +41,7 @@ namespace SIPSorcery.SIP
     [DataContract]
     public class SIPParameterlessURI 
 	{
-        private static ILog logger = AssemblyState.logger;
+        private static ILog logger = Log.logger;
 
         private SIPURI m_uri;
 

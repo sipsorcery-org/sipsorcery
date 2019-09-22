@@ -69,7 +69,7 @@ namespace SIPSorcery.SIP
         private static string m_looseRouteParameter = SIPConstants.SIP_LOOSEROUTER_PARAMETER;
         public static IPAddress BlackholeAddress = IPAddress.Any;                               // (IPAddress.Any is 0.0.0.0) Any SIP messages with this IP address will be dropped.
 
-        private static ILog logger = AssemblyState.logger;
+        private static ILog logger = Log.logger;
 
         private bool m_queueIncoming = true;     // Dictates whether the transport later will queue incoming requests for processing on a separate thread of process immediately on the same thread.
         // Most SIP elements with the exception of Stateless Proxies would typically want to queue incoming SIP messages.

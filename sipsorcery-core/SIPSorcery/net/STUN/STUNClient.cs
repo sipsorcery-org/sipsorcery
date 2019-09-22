@@ -15,7 +15,7 @@ namespace SIPSorcery.Net
         public const int DEFAULT_STUN_PORT = 3478;
         private const int STUN_SERVER_RESPONSE_TIMEOUT = 3;
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public static IPAddress GetPublicIPAddress(string stunServer)
         {

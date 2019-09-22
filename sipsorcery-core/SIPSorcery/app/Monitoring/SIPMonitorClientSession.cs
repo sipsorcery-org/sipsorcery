@@ -12,7 +12,7 @@ namespace SIPSorcery.SIP.App
         private static readonly string m_topLevelAdminId = "*";
         private static readonly string m_filterWildcard = SIPMonitorFilter.WILDCARD;
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public string Address { get; private set; }
         public string SessionID { get; private set; }

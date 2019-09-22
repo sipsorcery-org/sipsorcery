@@ -66,7 +66,7 @@ namespace SIPSorcery.SIP.App
         private const int DNS_A_RECORD_LOOKUP_TIMEOUT = 15;              // 5 second timeout for crticial A record DNS lookups.
         private const int CACHE_UNAVAILABLE_SRV_LOOKUP_PERIOD = 300;    // Period to cache timed or empty SRV lookups for.
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static int m_defaultSIPSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;

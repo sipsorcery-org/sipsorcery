@@ -62,7 +62,7 @@ namespace SIPSorcery.Net
 
         private static int MaxMessageSize = RTSPConstants.RTSP_MAXIMUM_LENGTH;
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         private IPEndPoint m_localIPEndPoint;
         private TcpListener m_tcpServerListener;

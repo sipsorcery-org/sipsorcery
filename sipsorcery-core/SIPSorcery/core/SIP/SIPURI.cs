@@ -123,7 +123,7 @@ namespace SIPSorcery.SIP
         private const char HEADER_TAG_DELIMITER = '&';
         private const char TAG_NAME_VALUE_SEPERATOR = '=';
 
-        private static ILog logger = AssemblyState.logger;
+        private static ILog logger = Log.logger;
 
         private static char[] m_invalidSIPHostChars = new char[] { ',', '"' };
 

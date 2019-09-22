@@ -1,5 +1,5 @@
 // ============================================================================
-// FileName: STUNAppState.cs
+// FileName: STUNLog.cs
 //
 // Description:
 //  Holds application configuration information.

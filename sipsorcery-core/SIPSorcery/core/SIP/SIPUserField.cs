@@ -57,7 +57,7 @@ namespace SIPSorcery.SIP
     {
         private const char PARAM_TAG_DELIMITER = ';';
 
-        private static ILog logger = AssemblyState.logger;
+        private static ILog logger = Log.logger;
 
         [DataMember]
         public string Name;

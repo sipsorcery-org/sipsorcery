@@ -74,7 +74,7 @@ namespace SIPSorcery.SIP
     /// </remarks>
     public class SIPEventDialogInfo : SIPEvent
     {
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public static readonly string m_dialogXMLNS = SIPEventConsts.DIALOG_XML_NAMESPACE_URN;
         //private static readonly string m_sipsorceryXMLNS = SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_URN;

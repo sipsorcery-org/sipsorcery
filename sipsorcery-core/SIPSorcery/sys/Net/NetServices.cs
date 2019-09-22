@@ -38,7 +38,7 @@ namespace SIPSorcery.Sys
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
         private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 5;               // The maximum number of re-attempts that will be made when trying to bind the RTP port.
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public static PlatformEnum Platform = PlatformEnum.Windows;
 

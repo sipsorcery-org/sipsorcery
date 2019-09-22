@@ -40,7 +40,7 @@ namespace SIPSorcery.Net
 {
     public class STUNMessage
 	{
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
         
         public STUNHeader Header = new STUNHeader();
         public List<STUNAttribute> Attributes = new List<STUNAttribute>();

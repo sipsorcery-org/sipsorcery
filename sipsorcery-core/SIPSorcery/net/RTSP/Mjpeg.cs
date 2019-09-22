@@ -56,7 +56,7 @@ namespace SIPSorcery.Net
 {
     public class Mjpeg
     {
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public sealed class Tags
         {

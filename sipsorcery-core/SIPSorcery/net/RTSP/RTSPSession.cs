@@ -80,7 +80,7 @@ namespace SIPSorcery.Net
         private static DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         private static DateTime UtcEpoch1970 = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         private static int _nextMediaPort = MEDIA_PORT_START;
         private static Mutex _allocatePortsMutex = new Mutex();

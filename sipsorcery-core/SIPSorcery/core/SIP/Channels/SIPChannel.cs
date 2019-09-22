@@ -36,6 +36,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using SIPSorcery.Sys;
 using log4net;
 
 namespace SIPSorcery.SIP
@@ -62,7 +63,7 @@ namespace SIPSorcery.SIP
         private const int PRUNE_CONNECTIONS_INTERVAL = 60000;        // The period at which to prune the connections.
         private const int PRUNE_NOTRANSMISSION_MINUTES = 70;         // The number of minutes after which if no transmissions are sent or received a connection will be pruned.
 
-        protected ILog logger = AssemblyState.logger;
+        protected ILog logger = Log.logger;
 
         public static List<string> LocalTCPSockets = new List<string>(); // Keeps a list of TCP sockets this process is listening on to prevent it establishing TCP connections to itself.
 

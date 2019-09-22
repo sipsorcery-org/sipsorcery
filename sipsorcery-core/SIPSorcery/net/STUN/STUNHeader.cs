@@ -103,7 +103,7 @@ namespace SIPSorcery.Net
         public const int STUN_HEADER_LENGTH = 20;
         public const int TRANSACTION_ID_LENGTH = 16;
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public STUNMessageTypesEnum MessageType = STUNMessageTypesEnum.Unknown;
         public UInt16 MessageLength;

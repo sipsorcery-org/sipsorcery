@@ -103,7 +103,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         private static string _dtlsFingerprint = "\na=fingerprint:sha-256 {0}";
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public string CallID;
         public string SDP;

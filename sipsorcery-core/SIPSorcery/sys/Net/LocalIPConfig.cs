@@ -47,7 +47,7 @@ namespace SIPSorcery.Sys
         public const string ALL_LOCAL_IPADDRESSES_KEY = "*";
         public const string LINK_LOCAL_BLOCK_PREFIX = "169.254";    // Used by hosts attempting to acquire a DHCP address. See RFC 3330.
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public static List<IPAddress> GetLocalIPv4Addresses()
         {

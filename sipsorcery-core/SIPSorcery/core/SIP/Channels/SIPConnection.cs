@@ -32,9 +32,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -53,7 +51,7 @@ namespace SIPSorcery.SIP
 
     public class SIPConnection
     {
-        private static ILog logger = AssemblyState.logger;
+        private static ILog logger = Log.logger;
 
         public static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH;
         private static string m_sipEOL = SIPConstants.CRLF;

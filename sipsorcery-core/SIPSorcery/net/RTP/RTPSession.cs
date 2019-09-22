@@ -49,7 +49,7 @@ namespace SIPSorcery.Net
         private const int RTP_MAX_PAYLOAD = 1400;
         private const int SRTP_AUTH_KEY_LENGTH = 10;
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public int PayloadType { get; private set; }
         public uint Ssrc       { get; private set; }

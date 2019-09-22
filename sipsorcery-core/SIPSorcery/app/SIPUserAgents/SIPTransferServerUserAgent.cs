@@ -46,7 +46,7 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public class SIPTransferServerUserAgent : ISIPServerUserAgent
     {
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public SIPCallDirection CallDirection
         {

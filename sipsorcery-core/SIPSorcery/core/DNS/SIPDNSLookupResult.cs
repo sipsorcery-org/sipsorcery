@@ -81,8 +81,6 @@ namespace SIPSorcery.SIP
 
     public class SIPDNSLookupResult
     {
-        private static ILog logger = AssemblyState.logger;
-
         public SIPURI URI;
         public string LookupError;
         public DateTime? NAPTRTimedoutAt;

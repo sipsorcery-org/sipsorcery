@@ -33,12 +33,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using SIPSorcery.Sys;
 using log4net;
 
 namespace SIPSorcery.Net
@@ -51,7 +51,7 @@ namespace SIPSorcery.Net
         private const int RTP_TIMEOUT_SECONDS = 15;             // If no RTP packets are received during this interval then assume the connection has failed.
         private const int BANDWIDTH_CALCULATION_SECONDS = 5;    // The interval at which to do bandwidth calculations.
 
-        private static ILog logger = AssemblyStreamState.logger;
+        private static ILog logger = Log.logger;
 
         private string _url;
         private int _cseq = 1;

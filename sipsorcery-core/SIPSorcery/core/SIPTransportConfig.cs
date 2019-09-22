@@ -52,7 +52,7 @@ namespace SIPSorcery.SIP
         private const int m_defaultSIPTLSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;
         private static readonly List<IPAddress> m_localIPAddresses = LocalIPConfig.GetLocalIPv4Addresses();
 
-        private static readonly ILog logger = AppState.logger;
+        private static readonly ILog logger = Log.logger;
 
         private const string m_allIPAddresses = LocalIPConfig.ALL_LOCAL_IPADDRESSES_KEY;
 
@@ -153,7 +153,7 @@ namespace SIPSorcery.SIP
                 }
                 
                 var store = (certificateType == "machinestore") ? StoreLocation.LocalMachine : StoreLocation.CurrentUser;
-                return AppState.LoadCertificate(store, certifcateLocation, true);
+                return Crypto.LoadCertificate(store, certifcateLocation, true);
             }
             catch (Exception excp)
             {

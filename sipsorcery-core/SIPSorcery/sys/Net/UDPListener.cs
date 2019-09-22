@@ -47,7 +47,7 @@ namespace SIPSorcery.Sys
     {
         private const string THREAD_NAME = "udplistener-";
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         private IPEndPoint m_localEndPoint;
         private Guid m_socketId = Guid.NewGuid();

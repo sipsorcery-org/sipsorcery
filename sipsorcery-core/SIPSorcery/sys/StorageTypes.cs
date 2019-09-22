@@ -25,7 +25,7 @@ namespace SIPSorcery.Sys
 
     public class StorageTypesConverter
     {
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         public static StorageTypes GetStorageType(string storageType)
         {

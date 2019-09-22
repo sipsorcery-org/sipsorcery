@@ -17,7 +17,7 @@ namespace SIPSorcery.SIP
     /// </summary>
     public class SIPEndPoint
     {
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         private static string m_transportParameterKey = SIPHeaderAncillary.SIP_HEADERANC_TRANSPORT;
         private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;

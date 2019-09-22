@@ -45,7 +45,7 @@ namespace SIPSorcery.Net
 	{
         private const string STUN_LISTENER_THREAD_NAME = "stunlistener-";
 
-		public ILog logger = AppState.logger;
+		public ILog logger = Log.logger;
 
 		private IPEndPoint m_localEndPoint = null;
 		private UdpClient m_stunConn = null;

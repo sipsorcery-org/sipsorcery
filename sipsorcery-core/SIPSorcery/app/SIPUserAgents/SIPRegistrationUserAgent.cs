@@ -55,7 +55,7 @@ namespace SIPSorcery.SIP.App
         private const int DEFAULT_REGISTER_EXPIRY = 600;
         private const int MAX_REGISTER_ATTEMPTS = 3;                 // The maximum number of registration attempts that will be made without a failure condition before incurring a temporary failure.
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         private static readonly string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
 

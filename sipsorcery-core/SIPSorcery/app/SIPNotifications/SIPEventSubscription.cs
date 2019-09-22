@@ -9,7 +9,7 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPEventSubscription
     {
-        protected static ILog logger = AppState.logger;
+        protected static ILog logger = Log.logger;
 
         protected SIPMonitorLogDelegate MonitorLogEvent_External;
 

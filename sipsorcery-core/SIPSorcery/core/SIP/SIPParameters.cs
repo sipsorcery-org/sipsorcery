@@ -35,6 +35,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
+using SIPSorcery.Sys;
 using log4net;
 
 namespace SIPSorcery.SIP
@@ -66,7 +67,7 @@ namespace SIPSorcery.SIP
         private const char BACK_SLASH = '\\';
         private const char DEFAULT_PARAMETER_DELIMITER = ';';
 
-        private static ILog logger = AssemblyState.logger;
+        private static ILog logger = Log.logger;
 
         [DataMember]
         public char TagDelimiter = DEFAULT_PARAMETER_DELIMITER;

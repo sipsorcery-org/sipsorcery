@@ -48,7 +48,7 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPNonInviteClientUserAgent
     {
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         private static readonly string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
 

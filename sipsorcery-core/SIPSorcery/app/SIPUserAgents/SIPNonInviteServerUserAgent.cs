@@ -43,7 +43,7 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPNonInviteServerUserAgent : ISIPServerUserAgent
     {
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         private SIPMonitorLogDelegate Log_External = (e) => { }; //SIPMonitorEvent.DefaultSIPMonitorLogger;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;

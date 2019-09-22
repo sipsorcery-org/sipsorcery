@@ -59,7 +59,7 @@ namespace Heijden.DNS
         private const int SWITCH_ACTIVE_TIMEOUT_COUNT = 5;  // The timeout in seconds that if no response is received on the active DNS server it will be switched.
         private const int FAILURE_RETRY = 60;               // The timeout in seconds to retry DNS lookups that failed.
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         /// <summary>
         /// Gets list of OPENDNS servers

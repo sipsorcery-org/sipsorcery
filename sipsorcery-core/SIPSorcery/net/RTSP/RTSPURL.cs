@@ -31,6 +31,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using SIPSorcery.Sys;
 using log4net;
 
 namespace SIPSorcery.Net
@@ -63,7 +64,7 @@ namespace SIPSorcery.Net
         //private static int m_defaultRTSPPort = RTSPConstants.DEFAULT_RTSP_PORT;
         private static string m_rtspTransport = RTSPConstants.RTSP_RELIABLE_TRANSPORTID;
 		
-		private static ILog logger = AssemblyStreamState.logger;
+		private static ILog logger = Log.logger;
 
         public string URLTransport = m_rtspTransport;
         public string Host;

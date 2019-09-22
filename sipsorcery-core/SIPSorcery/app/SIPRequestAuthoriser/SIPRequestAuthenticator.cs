@@ -45,7 +45,7 @@ namespace SIPSorcery.SIP.App
     {
         private const int NONCE_REFRESH_SECONDS = 120;
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         private static string m_previousNoncePrefix = null;
         private static string m_currentNoncePrefix = null;

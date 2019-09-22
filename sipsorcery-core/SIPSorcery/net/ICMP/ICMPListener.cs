@@ -28,7 +28,7 @@ namespace SIPSorcery.Net
 {
     public class ICMPListener
     {
-        private readonly static ILog logger = AppState.logger;
+        private readonly static ILog logger = Log.logger;
 
         private Socket m_icmpListener;
         private bool m_stop;

@@ -46,7 +46,7 @@ namespace SIPSorcery.Net
         private const int MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH = 20;
         private const int FINGERPRINT_ATTRIBUTE_CRC32_LENGTH = 4;
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
         
         public STUNv2Header Header = new STUNv2Header();
         public List<STUNv2Attribute> Attributes = new List<STUNv2Attribute>();

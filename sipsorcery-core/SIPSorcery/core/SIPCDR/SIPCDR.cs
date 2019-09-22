@@ -31,16 +31,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Net;
 using System.Runtime.Serialization;
 using SIPSorcery.Sys;
 using log4net;
-
-#if !SILVERLIGHT
-using System.Data;
-#endif
 
 namespace SIPSorcery.SIP
 {
@@ -60,8 +53,8 @@ namespace SIPSorcery.SIP
     [DataContract]
     public class SIPCDR
     {
-        private static ILog logger = AppState.logger;
-        private static string m_newLine = AppState.NewLine;
+        private static ILog logger = Log.logger;
+        private static string m_newLine = Environment.NewLine;
 
         public static event CDRReadyDelegate CDRCreated = c => { };
         public static event CDRReadyDelegate CDRUpdated = c => { };

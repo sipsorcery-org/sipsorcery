@@ -199,7 +199,7 @@ namespace SIPSorcery.SIP.App
         public const string SERIALISATION_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss.ffffff zzz";
 		public const string END_MESSAGE_DELIMITER = "##";
 
-        protected static ILog logger = AppState.logger;
+        protected static ILog logger = Log.logger;
 
         protected string m_serialisationPrefix = SIPMonitorConsoleEvent.SERIALISATION_PREFIX;    // Default to a control client event.
 

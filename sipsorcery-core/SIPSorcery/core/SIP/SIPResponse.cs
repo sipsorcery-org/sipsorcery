@@ -61,7 +61,7 @@ namespace SIPSorcery.SIP
 	/// </summary>
 	public class SIPResponse
 	{
-        private static ILog logger = AssemblyState.logger;
+        private static ILog logger = Log.logger;
 		
 		private static string m_CRLF = SIPConstants.CRLF;
 		private static string m_sipVersion = SIPConstants.SIP_FULLVERSION_STRING;

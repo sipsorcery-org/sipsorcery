@@ -73,7 +73,7 @@ namespace SIPSorcery.Sys
         public const string REGISTRATION_AGENT_SIP_BAD_MESSAGES_PER_SECOND = REGISTRATION_AGENT_PREFIX + SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX;
         public const string REGISTRATION_AGENT_REGISTRATIONS_PER_SECOND = REGISTRATION_AGENT_PREFIX + "RegistrationsPerSecond";
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         private static bool m_sipsorceryCategoryReady;
         

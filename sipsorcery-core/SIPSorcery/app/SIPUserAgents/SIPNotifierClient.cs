@@ -60,7 +60,7 @@ namespace SIPSorcery.SIP.App
 
         private static readonly string m_filterTextType = SIPMIMETypes.MWI_TEXT_TYPE;
 
-        private static ILog logger = AppState.logger;
+        private static ILog logger = Log.logger;
 
         private SIPMonitorLogDelegate Log_External;
         private SIPTransport m_sipTransport;

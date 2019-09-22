@@ -32,10 +32,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
+using SIPSorcery.SIP;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -48,9 +47,9 @@ namespace SIPSorcery.Net
         public const int RTP_HEADER_OVERHEAD = 12;              // 12B RTP header.
         public const int DEFAULT_RTP_PAYLOADSIZE = 160;         // g711 @ 20ms.
 
-        private string m_CRLF = AppState.CRLF;
+        private string m_CRLF = SIPConstants.CRLF;
 
-        protected static ILog logger = AppState.logger;
+        protected static ILog logger = Log.logger;
 
         public int NumberChannels = 1;
         public int FrameSize = 20;        // In milliseconds, determines how often packets are transmitted, e.g. framezie=20ms results in 50 packets per second.

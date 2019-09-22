@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using SIPSorcery.Sys;
 using log4net;
 
 namespace SIPSorcery.SIP
 {
     public class SIPTransactionEngine
     {
-        protected static ILog logger = AssemblyState.logger;
+        protected static ILog logger = Log.logger;
 
         private static readonly int m_t6 = SIPTimings.T6;
         protected static readonly int m_maxRingTime = SIPTimings.MAX_RING_TIME; // Max time an INVITE will be left ringing for (typically 10 mins).    

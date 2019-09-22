@@ -44,8 +44,7 @@ namespace SIPSorcery.SIP.App
         private const int DNS_LOOKUP_TIMEOUT = 5000;
         private const char OUTBOUNDPROXY_AS_ROUTESET_CHAR = '<';    // If this character exists in the call descriptor OutboundProxy setting it gets treated as a Route set.
 
-        private static ILog logger = AppState.logger;
-        private static ILog rtccLogger = AppState.GetLogger("rtcc");
+        private static ILog logger = Log.logger;
 
         private static string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
         private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
@@ -323,7 +322,7 @@ namespace SIPSorcery.SIP.App
                                 if (customerAccount == null)
                                 {
                                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A billable call could not proceed as no account exists for account code or number " + m_sipCallDescriptor.AccountCode + ".", Owner));
-                                    rtccLogger.Debug("A billable call could not proceed as no account exists for account code or number " + m_sipCallDescriptor.AccountCode + " and owner " + Owner + ".");
+                                    logger.Debug("A billable call could not proceed as no account exists for account code or number " + m_sipCallDescriptor.AccountCode + " and owner " + Owner + ".");
                                     rtccError = "Real-time call control invalid account code";
                                 }
                                 else
@@ -342,7 +341,7 @@ namespace SIPSorcery.SIP.App
                                     if (rate == null)
                                     {
                                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A billable call could not proceed as no rate could be determined for destination " + rateDestination + ".", Owner));
-                                        rtccLogger.Debug("A billable call could not proceed as no rate could be determined for destination " + rateDestination + " and owner " + Owner + ".");
+                                        logger.Debug("A billable call could not proceed as no rate could be determined for destination " + rateDestination + " and owner " + Owner + ".");
                                         rtccError = "Real-time call control no rate";
                                     }
                                     else
@@ -361,7 +360,7 @@ namespace SIPSorcery.SIP.App
                                             if (balance < Rate)
                                             {
                                                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A billable call could not proceed as the available credit for " + AccountCode + " was not sufficient for 60 seconds to destination " + rateDestination + ".", Owner));
-                                                rtccLogger.Debug("A billable call could not proceed as the available credit for " + AccountCode + " was not sufficient for 60 seconds to destination " + rateDestination + " and owner " + Owner + ".");
+                                                logger.Debug("A billable call could not proceed as the available credit for " + AccountCode + " was not sufficient for 60 seconds to destination " + rateDestination + " and owner " + Owner + ".");
                                                 rtccError = "Real-time call control insufficient credit";
                                             }
                                             else
@@ -373,7 +372,7 @@ namespace SIPSorcery.SIP.App
                                                 if (reservationCost == Decimal.MinusOne)
                                                 {
                                                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call will not proceed as the intial real-time call control credit reservation failed.", Owner));
-                                                    rtccLogger.Debug("Call will not proceed as the intial real-time call control credit reservation failed for owner " + Owner + ".");
+                                                    logger.Debug("Call will not proceed as the intial real-time call control credit reservation failed for owner " + Owner + ".");
                                                     rtccError = "Real-time call control initial reservation failed";
                                                 }
                                                 else
