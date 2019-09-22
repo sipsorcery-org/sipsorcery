@@ -1,1 +1,0 @@
-﻿<% @ServiceHost Service="SIPSorcery.Web.Services.CallManagerPassThruService" %>

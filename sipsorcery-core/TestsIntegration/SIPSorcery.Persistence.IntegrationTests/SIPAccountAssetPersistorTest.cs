@@ -7,7 +7,7 @@ using SIPSorcery.SIP.App;
 namespace SIPSorcery.Persistence.IntegrationTests
 {
     [TestClass]
-
+    //[Ignore] // Integration test, requires MySQL DB
     public class SIPAccountAssetPersistorTest
     {
         private static readonly string m_storageTypeKey = SIPSorceryConfiguration.PERSISTENCE_STORAGETYPE_KEY;

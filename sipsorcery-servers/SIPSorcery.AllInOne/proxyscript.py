@@ -2,15 +2,15 @@ import clr
 clr.AddReference('SIPSorcery.SIP.Core')
 from SIPSorcery.SIP import *
 
-m_registrarSocket = "udp:127.0.0.1:5001"
-m_regAgentSocket = "udp:127.0.0.1:5002"
-m_notifierSocket = "udp:127.0.0.1:5003"
-m_appServerSocket = "udp:10.1.1.2:5065"
-m_proxySocketInternal = "udp:10.1.1.2:5060"
+m_registrarSocket = "udp:127.0.0.1:7001"
+m_regAgentSocket = "udp:127.0.0.1:7002"
+m_notifierSocket = "udp:127.0.0.1:7003"
+m_appServerSocket = "udp:192.168.11.50:7065"
+m_proxySocketInternal = "udp:192.168.11.50:5060"
 m_proxySocketLoopback = "udp:127.0.0.1:5060"
 
   #===== Utility functions to customise depending on deployment, such as single or mutliple server and private or public network. =====
-
+ 
 def GetAppServer():
   return m_appServerSocket
 
@@ -24,7 +24,7 @@ def IsFromNotifierServer():
 # on an external network.
 #def IsLocalNetDestination(SIPEndPoint destinationAddress) :
 def IsLocalNetDestination(destinationEP) :
-  if destinationEP.Address.ToString().StartsWith("10."):
+  if destinationEP.Address.ToString().StartsWith("192.168.11."):
     return True
   else:
     return False
@@ -37,7 +37,8 @@ def IsLocalNetDestination(destinationEP) :
 # request and then checking whether it is on the same subnet.
 #def SendExternalRequest(SIPEndPoint receivedOn, SIPRequest req, String proxyBranch, IPAddress publicIP, bool sendTransparently):
 def SendExternalRequest(receivedOn, req, proxyBranch, publicIP, sendTransparently):  
-  lookupResult = sys.Resolve(req)
+  #lookupResult = sys.Resolve(req) if (req.URI.Host != "asbw.alestravoip.com") else SIPDNSLookupResult(req.URI, SIPDNSLookupEndPoint(SIPEndPoint.ParseSIPEndPoint("sip:200.94.59.150"), 10000))
+  lookupResult = sys.Resolve(req) if (req.URI.Host != "asbw.alestravoip.com") else sys.Resolve(SIPURI.ParseSIPURI("sip:200.94.59.150"))
   if lookupResult.Pending:
     # Do nothing.
     #sys.Log("DNS lookup pending.")
@@ -82,7 +83,7 @@ if isreq:
   sys.Log(summary)
   req.Header.MaxForwards = req.Header.MaxForwards - 1
 
-  if req.Header.UserAgent == "Cisco-CP7965G/8.5.3" or req.Header.UserAgent == "Cisco-CP7911G/8.5.3":
+  if req.Header.UserAgent != None and req.Header.UserAgent.StartsWith("Cisco") and (req.Header.UserAgent.Contains("8.3") or req.Header.UserAgent.Contains("8.5")):
     req.Header.Vias.TopViaHeader.ViaParameters.Remove("rport")
 
   if sipMethod == "REGISTER":
@@ -95,12 +96,25 @@ if isreq:
       else:
         destRegistrar = route.ToSIPEndPoint()
         req.Header.Routes = None
-        sys.SendTransparent(destRegistrar, req, publicip)
+        sys.Log("destination registrar " + destRegistrar.ToString() + ".");
+        if destRegistrar.ToString() == "udp:10.6.34.9:5060": destRegistrar = SIPEndPoint.ParseSIPEndPoint("udp:200.94.59.150:5060")
+        #req.Header.Contact[0] = "<sip:20010197220015678910@10.1.1.2:5061;transport=TLS;ob>"
+        if destRegistrar.Address.ToString() == "147.235.185.150":
+          sys.Log("Mangling Via header for joecope and his bezeq provider.")
+          sys.SendTransparent(destRegistrar, req, IPAddress.Parse("10.1.1.5"))
+        else:
+          sys.SendTransparent(destRegistrar, req, publicip)
     else:
       sys.SendInternal(remoteEndPoint, localEndPoint, m_registrarSocket, req, proxyBranch, m_proxySocketLoopback)
 
   elif sipMethod == "SUBSCRIBE":
-    sys.SendInternal(remoteEndPoint, localEndPoint, m_notifierSocket, req, proxyBranch, m_proxySocketLoopback)
+    if remoteEndPoint.ToString() == m_regAgentSocket:
+      # The registration agent can initiate subscriptions for MWI.
+      sys.Log("MWI Subscription from registration agent, send external.")
+      SendExternalRequest(localEndPoint, req, proxyBranch, publicip, False)
+    else:
+      sys.Log("External SUBSCRIBE.");
+      sys.SendInternal(remoteEndPoint, localEndPoint, m_notifierSocket, req, proxyBranch, m_proxySocketLoopback)
 
   elif sipMethod == "NOTIFY":
     if IsFromApplicationServer() or IsFromNotifierServer():
@@ -124,11 +138,13 @@ if isreq:
         SendExternalRequest(localEndPoint, req, proxyBranch, publicip, False)
     else:
       # Request from an external user agent for an Application Server.
+
       dispatcherEndPoint = sys.DispatcherLookup(req)
       if dispatcherEndPoint != None:
         sys.SendInternal(remoteEndPoint, localEndPoint, dispatcherEndPoint.ToString(), req, proxyBranch, m_proxySocketInternal)
       else:
-        appServer = GetAppServer()
+        #appServer = GetAppServer()
+        appServer = SIPEndPoint.ParseSIPEndPoint("udp:127.0.0.1:5002") if req.Header.From.FromURI.User == "aaronpolycom" else GetAppServer()
         if appServer != None:
           sys.SendInternal(remoteEndPoint, localEndPoint, appServer.ToString(), req, proxyBranch, m_proxySocketInternal)
         else:

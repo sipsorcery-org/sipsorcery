@@ -5,7 +5,7 @@ using SIPSorcery.Entities;
 namespace SIPSorcery.Entities.IntegrationTests
 {
     [TestClass]
-    //[Ignore] // Integration only tests, require DB.
+    //[Ignore] // Integration test, requires MySQL DB
     public class CustomerDataLayerTest
     {
         [TestMethod, TestCategory("Integration")]
