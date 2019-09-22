@@ -36,13 +36,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Net;
 
 namespace SIPSorcery.SIP.App
 {
-    public delegate void SIPMonitorLogDelegate(SIPMonitorEvent monitorEvent);
-    public delegate void SIPMonitorMachineLogDelegate(SIPMonitorMachineEvent machineEvent);
     public delegate bool SIPMonitorAuthenticationDelegate(string username, string password);    // Delegate to authenticate connections to the SIP Monitor Server.
     public delegate void DialogueBridgeCreatedDelegate(SIPDialogue clientDialogue, SIPDialogue forwardedDialogue, string owner);
     public delegate void DialogueBridgeClosedDelegate(string dialogueId, string owner);
@@ -66,4 +63,8 @@ namespace SIPSorcery.SIP.App
     // SIP Presence delegates.
     public delegate int SIPRegistrarBindingsCountDelegate(Guid sipAccountID);
     public delegate object SIPAssetGetPropertyByIdDelegate<T>(Guid id, string propertyName);
+
+    // Diagnostic/logging delegates.
+    public delegate void SIPMonitorLogDelegate(SIPMonitorEvent monitorEvent);
+    public delegate void SIPMonitorMachineLogDelegate(SIPMonitorMachineEvent machineEvent);
 }

@@ -2,13 +2,11 @@
 
   <ItemGroup>
     <PackageReference Include="log4net" Version="2.0.8" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="4.5.0" />
-    <PackageReference Include="System.ServiceModel.Primitives" Version="4.5.3" />
   </ItemGroup>
   
   <PropertyGroup>
   <TargetFramework>netstandard2.0</TargetFramework>
-	<Version>3.0.0.0</Version>
+	<Version>3.0.1.0</Version>
 	<Authors>Aaron Clauson</Authors>
 	<Copyright>Copyright © 2010-2019 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>

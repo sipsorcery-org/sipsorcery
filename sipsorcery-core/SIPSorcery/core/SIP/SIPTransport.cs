@@ -1245,13 +1245,12 @@ namespace SIPSorcery.SIP
                         if (STUNRequestReceived != null)
                         {
                             STUNRequestReceived(sipChannel.SIPChannelEndPoint.GetIPEndPoint(), remoteEndPoint.GetIPEndPoint(), buffer, buffer.Length);
-
-#if !SILVERLIGHT
-                            if (PerformanceMonitorPrefix != null)
-                            {
-                                SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_STUN_REQUESTS_PER_SECOND_SUFFIX);
-                            }
-#endif
+                            
+                            // TODO: Provide a hook so consuming assemblies can get these stats.
+                            //if (PerformanceMonitorPrefix != null)
+                            //{
+                            //    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_STUN_REQUESTS_PER_SECOND_SUFFIX);
+                            //}
                         }
                     }
                     else
@@ -1264,12 +1263,11 @@ namespace SIPSorcery.SIP
                             SIPResponse tooLargeResponse = GetResponse(sipChannel.SIPChannelEndPoint, remoteEndPoint, SIPResponseStatusCodesEnum.MessageTooLarge, null);
                             SendResponse(tooLargeResponse);
 
-#if !SILVERLIGHT
-                            if (PerformanceMonitorPrefix != null)
-                            {
-                                SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
-                            }
-#endif
+                            // TODO: Provide a hook so consuming assemblies can get these stats.
+                            //if (PerformanceMonitorPrefix != null)
+                            //{
+                            //    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
+                            //}
                         }
                         else
                         {
@@ -1279,25 +1277,17 @@ namespace SIPSorcery.SIP
                                 // An emptry transmission has been received. More than likely this is a NAT keep alive and can be disregarded.
                                 //FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "No printable characters, length " + buffer.Length + " bytes.", SIPValidationFieldsEnum.Unknown, null);
 
-#if !SILVERLIGHT
-                                if (PerformanceMonitorPrefix != null)
-                                {
-                                    // SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
-                                }
-#endif
-
                                 return;
                             }
                             else if (!rawSIPMessage.Contains("SIP"))
                             {
                                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Missing SIP string.", SIPValidationFieldsEnum.NoSIPString, rawSIPMessage);
 
-#if !SILVERLIGHT
-                                if (PerformanceMonitorPrefix != null)
-                                {
-                                    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
-                                }
-#endif
+                                // TODO: Provide a hook so consuming assemblies can get these stats.
+                                //if (PerformanceMonitorPrefix != null)
+                                //{
+                                //    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
+                                //}
 
                                 return;
                             }
@@ -1312,12 +1302,11 @@ namespace SIPSorcery.SIP
 
                                     try
                                     {
-#if !SILVERLIGHT
-                                        if (PerformanceMonitorPrefix != null)
-                                        {
-                                            SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_RESPONSES_PER_SECOND_SUFFIX);
-                                        }
-#endif
+                                        // TODO: Provide a hook so consuming assemblies can get these stats.
+                                        //if (PerformanceMonitorPrefix != null)
+                                        //{
+                                        //    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_RESPONSES_PER_SECOND_SUFFIX);
+                                        //}
 
                                         SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessage);
 
@@ -1362,12 +1351,11 @@ namespace SIPSorcery.SIP
                                 {
                                     #region SIP Request.
 
-#if !SILVERLIGHT
-                                    if (PerformanceMonitorPrefix != null)
-                                    {
-                                        SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_REQUESTS_PER_SECOND_SUFFIX);
-                                    }
-#endif
+                                    // TODO: Provide a hook so consuming assemblies can get these stats.
+                                    //if (PerformanceMonitorPrefix != null)
+                                    //{
+                                    //    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_REQUESTS_PER_SECOND_SUFFIX);
+                                    //}
 
                                     try
                                     {
@@ -1479,12 +1467,11 @@ namespace SIPSorcery.SIP
                             {
                                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Not parseable as SIP message.", SIPValidationFieldsEnum.Unknown, rawSIPMessage);
 
-#if !SILVERLIGHT
-                                if (PerformanceMonitorPrefix != null)
-                                {
-                                    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
-                                }
-#endif
+                                // TODO: Provide a hook so consuming assemblies can get these stats.
+                                //if (PerformanceMonitorPrefix != null)
+                                //{
+                                //    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
+                                //}
                             }
                         }
                     }
@@ -1494,12 +1481,11 @@ namespace SIPSorcery.SIP
             {
                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Exception SIPTransport. " + excp.Message, SIPValidationFieldsEnum.Unknown, rawSIPMessage);
 
-#if !SILVERLIGHT
-                if (PerformanceMonitorPrefix != null)
-                {
-                    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
-                }
-#endif
+                // TODO: Provide a hook so consuming assemblies can get these stats.
+                //if (PerformanceMonitorPrefix != null)
+                //{
+                //    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
+                //}
             }
         }
 
