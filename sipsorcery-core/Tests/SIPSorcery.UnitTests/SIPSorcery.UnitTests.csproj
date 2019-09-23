@@ -15,7 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\SIPSorcery\SIPSorcery.csproj" />
+    <ProjectReference Include="..\..\SIPSorcery\SIPSorcery.csproj">
+      <SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
+    </ProjectReference>
   </ItemGroup>  
 
 </Project>

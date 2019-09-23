@@ -3,9 +3,13 @@
   <ItemGroup>
     <PackageReference Include="log4net" Version="2.0.8" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
+  </PropertyGroup>
   
   <PropertyGroup>
-  <TargetFramework>netstandard2.0</TargetFramework>
+  <TargetFramework>netstandard2.0;net472</TargetFramework>
 	<Version>3.0.1.0</Version>
 	<Authors>Aaron Clauson</Authors>
 	<Copyright>Copyright © 2010-2019 Aaron Clauson</Copyright>
