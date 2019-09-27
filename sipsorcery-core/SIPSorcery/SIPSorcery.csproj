@@ -5,11 +5,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
-  </PropertyGroup>
-  
-  <PropertyGroup>
-  <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
+  <TargetFrameworks>netstandard2.0;net452;net472</TargetFrameworks>
 	<Version>3.0.1.0</Version>
 	<Authors>Aaron Clauson</Authors>
 	<Copyright>Copyright © 2010-2019 Aaron Clauson</Copyright>
