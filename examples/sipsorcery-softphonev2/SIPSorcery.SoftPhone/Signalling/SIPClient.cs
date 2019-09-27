@@ -319,8 +319,15 @@ namespace SIPSorcery.SoftPhone
         {
             if (m_uac != null && m_uac.SIPDialogue != null)
             {
+                // It was outgoing call.
                 m_uac.SIPDialogue.Hangup(m_sipTransport, null);
             }
+            else if (m_uas != null && m_uas.SIPDialogue != null)
+            {
+                // It was incoming call.
+                m_uas.SIPDialogue.Hangup(m_sipTransport, null);
+            }
+
             CallFinished();
         }
 
