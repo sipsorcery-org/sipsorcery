@@ -2,7 +2,7 @@ Readme for SIPSorcery Softphone
 
 Date: 18 Feb 2016
 Author: Aaron Clauson
-URL: http://sipsorcery.codeplex.com/
+URL: https://github.com/sipsorcery/sipsorcery
 
 The SIPSorcery softphone is a demo (note the "demo") application to prototype
 using .Net as a suitable runtime environment for a softphone application requiring
@@ -25,9 +25,9 @@ will still be usable at the remote end of the call but it will be jumpy and poss
 have clicks and static.
 
 I've only implemented support for the PCMU (G711 UALW) codec so if the remote SIP 
-device doesn't support it a call will not be possible (Google Voice supports PCMU).
+device doesn't support it a call will not be possible.
 As far as audio devices go the default input and output devices are used and there
-is no facility to change that (laziness again sorry).
+is no user interface option facility to change that. Can be done via code.
 
 Settings:
 ---------
@@ -37,10 +37,12 @@ This STUN server setting needs to be a public STUN server so that the applicatio
 determine its public IP. If it can't then there will almost certainly be audio issues
 on some calls.
 
-SIPUsername - The username for your SIP account.
-SIPPassword - The password for your SIP account.
-SIPServer - The host of your SIP server.
-SIPFromName - The name you would like to appear as the display name on your SIP calls.
+SIPUsername - Optional, the username for your SIP account.
+SIPPassword - Optional, the password for your SIP account.
+SIPServer - Optional, the host of your SIP server.
+SIPFromName - Optional, the name you would like to appear as the display name on your SIP calls.
+DnsServer - Optional, a custom DNS server to use. Relevant if default DNS server does not resolve 
+            SIP SRV records 
 
 The sipsockets node can be used to configure the SIP transport layer. This is optional 
 and if the node is left commented then default values will be used.

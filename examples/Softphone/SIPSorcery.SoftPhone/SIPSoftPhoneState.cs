@@ -31,11 +31,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Xml;
 using SIPSorcery.Sys;
 using log4net;
@@ -59,6 +56,8 @@ namespace SIPSorcery.SoftPhone
         public static readonly string SIPUsername = ConfigurationManager.AppSettings["SIPUsername"];    // Get the SIP username from the config file.
         public static readonly string SIPPassword = ConfigurationManager.AppSettings["SIPPassword"];    // Get the SIP password from the config file.
         public static readonly string SIPServer = ConfigurationManager.AppSettings["SIPServer"];        // Get the SIP server from the config file.
+        public static readonly string SIPFromName = ConfigurationManager.AppSettings["SIPFromName"];    // Get the SIP From display name from the config file.
+        public static readonly string DnsServer = ConfigurationManager.AppSettings["DnsServer"];        // Get the optional DNS server from the config file.
 
         public static IPAddress DefaultLocalAddress;
 

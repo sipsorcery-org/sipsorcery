@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\SIPSorceryMedia.2.0.0\build\SIPSorceryMedia.props" Condition="Exists('..\packages\SIPSorceryMedia.2.0.0\build\SIPSorceryMedia.props')" />
+  <Import Project="..\packages\SIPSorceryMedia.3.0.0\build\SIPSorceryMedia.props" Condition="Exists('..\packages\SIPSorceryMedia.3.0.0\build\SIPSorceryMedia.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -87,8 +87,8 @@
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="NAudio, Version=1.8.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NAudio.1.8.4\lib\net35\NAudio.dll</HintPath>
+    <Reference Include="NAudio, Version=1.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NAudio.1.9.0\lib\net35\NAudio.dll</HintPath>
     </Reference>
     <Reference Include="SIPSorcery, Version=3.0.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SIPSorcery.3.0.1\lib\net472\SIPSorcery.dll</HintPath>
@@ -104,9 +104,6 @@
     </Reference>
     <Reference Include="System.Data.Entity" />
     <Reference Include="System.Data.Linq" />
-    <Reference Include="System.Diagnostics.PerformanceCounter, Version=4.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Diagnostics.PerformanceCounter.4.5.0\lib\net461\System.Diagnostics.PerformanceCounter.dll</HintPath>
-    </Reference>
     <Reference Include="System.Drawing" />
     <Reference Include="System.IdentityModel" />
     <Reference Include="System.Net">
@@ -114,13 +111,11 @@
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
-    <Reference Include="System.ServiceModel.Primitives, Version=4.5.0.3, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ServiceModel.Primitives.4.5.3\lib\net461\System.ServiceModel.Primitives.dll</HintPath>
-    </Reference>
     <Reference Include="System.ServiceModel.Web" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
     <Reference Include="System.Web.ApplicationServices" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -237,10 +232,10 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\SIPSorceryMedia.2.0.0\build\SIPSorceryMedia.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SIPSorceryMedia.2.0.0\build\SIPSorceryMedia.props'))" />
-    <Error Condition="!Exists('..\packages\SIPSorceryMedia.2.0.0\build\SIPSorceryMedia.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SIPSorceryMedia.2.0.0\build\SIPSorceryMedia.targets'))" />
+    <Error Condition="!Exists('..\packages\SIPSorceryMedia.3.0.0\build\SIPSorceryMedia.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SIPSorceryMedia.3.0.0\build\SIPSorceryMedia.props'))" />
+    <Error Condition="!Exists('..\packages\SIPSorceryMedia.3.0.0\build\SIPSorceryMedia.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SIPSorceryMedia.3.0.0\build\SIPSorceryMedia.targets'))" />
   </Target>
-  <Import Project="..\packages\SIPSorceryMedia.2.0.0\build\SIPSorceryMedia.targets" Condition="Exists('..\packages\SIPSorceryMedia.2.0.0\build\SIPSorceryMedia.targets')" />
+  <Import Project="..\packages\SIPSorceryMedia.3.0.0\build\SIPSorceryMedia.targets" Condition="Exists('..\packages\SIPSorceryMedia.3.0.0\build\SIPSorceryMedia.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

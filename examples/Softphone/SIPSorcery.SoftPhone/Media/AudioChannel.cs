@@ -60,24 +60,32 @@ namespace SIPSorcery.SoftPhone
             // Set up the device that will play the audio from the RTP received from the remote end of the call.
             m_waveOut = new WaveOut();
             m_waveProvider = new BufferedWaveProvider(_waveFormat);
+            m_waveProvider.DiscardOnBufferOverflow = true; // See https://github.com/sipsorcery/sipsorcery/issues/53
             m_waveProvider.BufferLength = 100000;
             m_waveOut.Init(m_waveProvider);
             m_waveOut.Play();
 
             // Set up the input device that will provide audio samples that can be encoded, packaged into RTP and sent to
             // the remote end of the call.
-            m_waveInEvent = new WaveInEvent();
-            m_waveInEvent.BufferMilliseconds = 20;
-            m_waveInEvent.NumberOfBuffers = 1;
-            m_waveInEvent.DeviceNumber = 0;
-            m_waveInEvent.DataAvailable += AudioSampleAvailable;
-            m_waveInEvent.WaveFormat = _waveFormat;
+            if (WaveIn.DeviceCount == 0)
+            {
+                logger.Warn("No audio input devices available. No audio will be sent.");
+            }
+            else
+            {
+                m_waveInEvent = new WaveInEvent();
+                m_waveInEvent.BufferMilliseconds = 20;
+                m_waveInEvent.NumberOfBuffers = 1;
+                m_waveInEvent.DeviceNumber = 0;
+                m_waveInEvent.DataAvailable += AudioSampleAvailable;
+                m_waveInEvent.WaveFormat = _waveFormat;
+            }
         }
 
         /// <summary>
         /// Gets the media announcement to include in the SDP payload for a call.
         /// </summary>
-        /// <returns>A media announcement containing all the suuported audio codecs.</returns>
+        /// <returns>A media announcement containing all the supported audio codecs.</returns>
         public SDPMediaAnnouncement GetMediaAnnouncement()
         {
             return new SDPMediaAnnouncement()
@@ -92,7 +100,7 @@ namespace SIPSorcery.SoftPhone
             if(!_recordingStarted)
             {
                 _recordingStarted = true;
-                m_waveInEvent.StartRecording();
+                m_waveInEvent?.StartRecording();
             }
         }
 
@@ -154,7 +162,7 @@ namespace SIPSorcery.SoftPhone
                 if (_recordingStarted)
                 {
                     _recordingStarted = false;
-                    m_waveInEvent.StopRecording();
+                    m_waveInEvent?.StopRecording();
                 }
 
                 if (m_waveOut.PlaybackState == PlaybackState.Playing)

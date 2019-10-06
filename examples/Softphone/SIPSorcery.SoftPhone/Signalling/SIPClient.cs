@@ -60,7 +60,8 @@ namespace SIPSorcery.SoftPhone
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
         private string m_sipServer = SIPSoftPhoneState.SIPServer;
-        private string m_sipFromName = ConfigurationManager.AppSettings["SIPFromName"];    // Get the SIP From display name from the config file.
+        private string m_sipFromName = SIPSoftPhoneState.SIPFromName;
+        private string m_DnsServer = SIPSoftPhoneState.DnsServer;
 
         private SIPTransport m_sipTransport;                                                // SIP transport layer.
         private SIPClientUserAgent m_uac;                                                   // A SIP user agent client used to place outgoing calls.
@@ -105,6 +106,13 @@ namespace SIPSorcery.SoftPhone
                 await Task.Run(() =>
                 {
                     _isIntialised = true;
+
+                    if (String.IsNullOrEmpty(m_DnsServer) == false)
+                    {
+                        // Use a custom DNS server.
+                        m_DnsServer = m_DnsServer.Contains(":") ? m_DnsServer : m_DnsServer + ":53";
+                        DNSManager.SetDNSServers(new List<IPEndPoint> { IPSocket.GetIPEndPoint(m_DnsServer) });
+                    }
 
                     // Configure the SIP transport layer.
                     m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
