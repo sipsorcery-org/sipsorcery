@@ -49,7 +49,6 @@ namespace SIPSorcery.SIP.App
         private static string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
         private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static readonly string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
-        //private static readonly int m_rtccInitialReservationSeconds = SIPSorcery.Entities.CustomerAccountDataLayer.INITIAL_RESERVATION_SECONDS;
 
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_localSIPEndPoint;
@@ -74,15 +73,11 @@ namespace SIPSorcery.SIP.App
         private SIPEndPoint m_outboundProxy;                        // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
         private SIPDialogue m_sipDialogue;
 
-#if !SILVERLIGHT
-
-        //private SIPSorcery.Entities.CustomerAccountDataLayer m_customerAccountDataLayer = new SIPSorcery.Entities.CustomerAccountDataLayer();
         private RtccGetCustomerDelegate RtccGetCustomer_External;
         private RtccGetRateDelegate RtccGetRate_External;
         private RtccGetBalanceDelegate RtccGetBalance_External;
         private RtccReserveInitialCreditDelegate RtccReserveInitialCredit_External;
         private RtccUpdateCdrDelegate RtccUpdateCdr_External;
-#endif
 
         public event SIPCallResponseDelegate CallTrying;
         public event SIPCallResponseDelegate CallRinging;
@@ -109,13 +104,20 @@ namespace SIPSorcery.SIP.App
             get { return m_sipCallDescriptor; }
         }
 
+        public SIPCallDescriptor SipCallDescriptor { get => m_sipCallDescriptor; set => m_sipCallDescriptor = value; }
+
+        public SIPClientUserAgent(SIPTransport sipTransport)
+        {
+            m_sipTransport = sipTransport;
+            Log_External = Log_External = (ev) => logger.LogDebug(ev?.Message);
+        }
+
         public SIPClientUserAgent(
             SIPTransport sipTransport,
             SIPEndPoint outboundProxy,
             string owner,
             string adminMemberId,
-            SIPMonitorLogDelegate logDelegate
-            )
+            SIPMonitorLogDelegate logDelegate)
         {
             m_sipTransport = sipTransport;
             m_outboundProxy = (outboundProxy != null) ? SIPEndPoint.ParseSIPEndPoint(outboundProxy.ToString()) : null;
@@ -129,8 +131,6 @@ namespace SIPSorcery.SIP.App
                 Log_External = (e) => { };
             }
         }
-
-#if !SILVERLIGHT
 
         public SIPClientUserAgent(
             SIPTransport sipTransport,
@@ -151,8 +151,6 @@ namespace SIPSorcery.SIP.App
             RtccReserveInitialCredit_External = rtccReserveInitialCredit;
             RtccUpdateCdr_External = rtccUpdateCdr;
         }
-
-#endif
 
         public void Call(SIPCallDescriptor sipCallDescriptor)
         {
@@ -312,8 +310,6 @@ namespace SIPSorcery.SIP.App
 
                             m_serverTransaction.CDR.Updated();
 
-#if !SILVERLIGHT
-
                             if (m_sipCallDescriptor.AccountCode != null && RtccGetCustomer_External != null)
                             {
                                 //var customerAccount = m_customerAccountDataLayer.CheckAccountCode(Owner, m_sipCallDescriptor.AccountCode);
@@ -385,8 +381,6 @@ namespace SIPSorcery.SIP.App
                                     }
                                 }
                             }
-#endif
-
                         }
 
                         #endregion
@@ -513,7 +507,9 @@ namespace SIPSorcery.SIP.App
         public void Hangup()
         {
             if (m_sipDialogue == null)
+            {
                 return;
+            }
 
             try
             {
